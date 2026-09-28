@@ -1,0 +1,10 @@
+{
+  "description": "Creates complete, user-friendly interfaces from design inputs to streamline development and enhance user experience for web projects.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

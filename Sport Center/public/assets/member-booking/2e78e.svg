@@ -1,0 +1,10 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="13.5" height="13.5" viewBox="0 0 13.5 13.5" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="calendar" clip-path="url(#clip0_0_15)">
+<path id="Vector" d="M4.5 1.12455V3.37473M9 1.12455V3.37473M1.6875 5.62491H11.8125M2.8125 2.24964H10.6875C11.3088 2.24964 11.8125 2.75336 11.8125 3.37473V11.2504C11.8125 11.8717 11.3088 12.3755 10.6875 12.3755H2.8125C2.19118 12.3755 1.6875 11.8717 1.6875 11.2504V3.37473C1.6875 2.75336 2.19118 2.24964 2.8125 2.24964Z" stroke="white" stroke-width="2" stroke-linecap="round"/>
+</g>
+<defs>
+<clipPath id="clip0_0_15">
+<rect width="13.5" height="13.5" fill="white"/>
+</clipPath>
+</defs>
+</svg>
