@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { assetRoots, iconNames, classItems, memberSections, MemberPage, visualPage, asset, ClassItem } from './shared';
+import { useState } from 'react';
+import { ClassItem, classItems, MemberPage } from './shared';
 import { MemberProfile } from './views/MemberProfile';
 import { Overview } from './views/Overview';
 import { MemberSection } from './views/MemberSection';
