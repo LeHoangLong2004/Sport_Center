@@ -1,5 +1,143 @@
 @import "tailwindcss";
 
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply antialiased text-slate-800 bg-[#f8fafc];
+  }
+  
+  /* Make all interactive elements transition smoothly */
+  a, button, input, select, textarea {
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  /* Subtle scale effect on hover for buttons */
+  button:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Press effect for buttons */
+  button:not(:disabled):active {
+    transform: scale(0.97) translateY(0);
+    box-shadow: none;
+  }
+  
+  /* Focus rings for accessibility and aesthetics */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-blue-500 ring-offset-2 transition-shadow duration-200;
+  }
+}
+
+/* Global fade-in animation to be used on page wrappers */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+#root > div, 
+main > div,
+.p-\[32px\],
+section[class*="-content"],
+.mp-content {
+  animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Add smooth hover effects to table rows and cards */
+.bg-white, .border {
+  @apply transition-colors duration-300;
+}
+
+/* =========================================
+   THEME OVERRIDES (MULTI-ROLE SUPPORT)
+   Dynamically swap colors based on roles
+========================================= */
+
+:root {
+  /* Default: Member Portal / Public (Energetic Orange/Rose) */
+  --theme-grad-start: #f97316;
+  --theme-grad-end: #e11d48;
+  --theme-text-color: #e11d48;
+  --theme-border-color: #f97316;
+  --theme-light-bg: #fff1f2;
+  --theme-light-border: #fecdd3;
+  --theme-dark-text: #9f1239;
+  --theme-hover-start: #ea580c;
+  --theme-hover-end: #be123c;
+}
+
+.theme-coach {
+  /* Coach Portal (Professional Teal/Green) */
+  --theme-grad-start: #0ea5e9;
+  --theme-grad-end: #10b981;
+  --theme-text-color: #059669;
+  --theme-border-color: #0ea5e9;
+  --theme-light-bg: #f0fdf4;
+  --theme-light-border: #bbf7d0;
+  --theme-dark-text: #047857;
+  --theme-hover-start: #0284c7;
+  --theme-hover-end: #059669;
+}
+
+.theme-admin {
+  /* Admin Dashboard (Premium Purple/Indigo) */
+  --theme-grad-start: #6366f1;
+  --theme-grad-end: #a855f7;
+  --theme-text-color: #7e22ce;
+  --theme-border-color: #6366f1;
+  --theme-light-bg: #faf5ff;
+  --theme-light-border: #e9d5ff;
+  --theme-dark-text: #6b21a8;
+  --theme-hover-start: #4f46e5;
+  --theme-hover-end: #9333ea;
+}
+
+.theme-receptionist {
+  /* Receptionist Portal (Trustworthy Cyan/Blue) */
+  --theme-grad-start: #06b6d4;
+  --theme-grad-end: #3b82f6;
+  --theme-text-color: #1d4ed8;
+  --theme-border-color: #06b6d4;
+  --theme-light-bg: #eff6ff;
+  --theme-light-border: #bfdbfe;
+  --theme-dark-text: #1e40af;
+  --theme-hover-start: #0891b2;
+  --theme-hover-end: #2563eb;
+}
+
+/* Apply Variables */
+.bg-\[\#3b82f6\], .bg-\[\#2563eb\] {
+  background: linear-gradient(135deg, var(--theme-grad-start) 0%, var(--theme-grad-end) 100%) !important;
+  color: white !important;
+  border: none !important;
+}
+
+.hover\:bg-\[\#2563eb\]:hover {
+  background: linear-gradient(135deg, var(--theme-hover-start) 0%, var(--theme-hover-end) 100%) !important;
+}
+
+.text-\[\#3b82f6\], .text-\[\#2563eb\] {
+  color: var(--theme-text-color) !important;
+}
+
+.border-\[\#3b82f6\], .border-\[\#2563eb\] {
+  border-color: var(--theme-border-color) !important;
+}
+
+.bg-\[\#eff6ff\] { background-color: var(--theme-light-bg) !important; }
+.bg-\[\#dbeafe\] { background-color: var(--theme-light-bg) !important; filter: brightness(0.95); }
+
+.text-\[\#1e40af\], .text-\[\#1d4ed8\] {
+  color: var(--theme-dark-text) !important;
+}
+
+.border-\[\#bfdbfe\] {
+  border-color: var(--theme-light-border) !important;
+}
+
+
 @font-face {
   font-family: "Inter:Regular";
   src: url("https://static.figma.com/font/Inter_1") format("woff2");
