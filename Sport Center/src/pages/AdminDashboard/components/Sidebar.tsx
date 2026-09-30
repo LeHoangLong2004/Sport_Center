@@ -1,24 +1,24 @@
 import React, { useState } from 'react';
-import { A, avatarSidebar, avatarTopbar, iDashboard, iUsers, iPackage, iCalendar, iReceipt, iBarChart, iSettings, iSearch, iBell, iSearch2, iDownload, iPlus, iWallet, iCheckCircle, iClock, iRotateCcw, iChevron, iEye, iPrinter, iMore, mAvatar0, mAvatar1, mAvatar2, mAvatar3, mAvatar4, iBell2, iDownload2, iKpiRevenue, iKpiMembers, iKpiClasses, iKpiRetain, iSeg1, iSeg2, iSeg3, iSeg4, iDotBlue, iDotTeal, iDotOrange, iDotPurple, iActivity0, iActivity1, iActivity2, iActivity3, iLineChart, iBarFill, coachAvatar1, coachAvatar2, coachAvatar3, coachAvatar4, hrAvatar1, hrAvatar2, hrAvatar3, hrAvatar4, iBudgetIcon, iExpenseIcon, iBudgetChevron, iPLRevIcon, memberEditAvatar, transactions, reportBarData, reportMonths, members } from '../shared';
+import { A, avatarSidebar, avatarTopbar, iDashboard, iUsers, iPackage, iCalendar, iReceipt, iBarChart, iSettings, iSearch, iBell, iSearch2, iDownload, iPlus, iWallet, iCheckCircle, iClock, iRotateCcw, iChevron, iEye, iPrinter, iMore, mAvatar0, mAvatar1, mAvatar2, mAvatar3, mAvatar4, iBell2, iDownload2, iKpiRevenue, iKpiMembers, iKpiClasses, iKpiRetain, iSeg1, iSeg2, iSeg3, iSeg4, iDotBlue, iDotTeal, iDotOrange, iDotPurple, iActivity0, iActivity1, iActivity2, iActivity3, iLineChart, iBarFill, coachAvatar1, coachAvatar2, coachAvatar3, coachAvatar4, hrAvatar1, hrAvatar2, hrAvatar3, hrAvatar4, iBudgetIcon, iExpenseIcon, iBudgetChevron, iPLRevIcon, memberEditAvatar, transactions, reportBarData, reportMonths, members, AdminPage } from '../shared';
 
 export function Sidebar({ page, setPage }: { page: AdminPage; setPage: (p: AdminPage) => void }) {
   const [financeOpen, setFinanceOpen] = useState(
-    ["budget","expenses","payroll","pl-report"].includes(page)
+    ["budget", "expenses", "payroll", "pl-report"].includes(page)
   )
   const navItems: { label: string; icon: string; page: AdminPage }[] = [
-    { label: "Tổng quan",             icon: iDashboard, page: "members"  },
-    { label: "Quản lý Người dùng",   icon: iUsers,     page: "members"  },
-    { label: "Gói hội viên",          icon: iPackage,   page: "members"  },
-    { label: "Lớp học & Lịch trình", icon: iCalendar,  page: "members"  },
-    { label: "Thanh toán & Hóa đơn", icon: iReceipt,   page: "payment"  },
+    { label: "Tổng quan", icon: iDashboard, page: "overview" },
+    { label: "Quản lý Người dùng", icon: iUsers, page: "members" },
+    { label: "Gói hội viên", icon: iPackage, page: "packages" },
+    { label: "Lớp học & Lịch trình", icon: iCalendar, page: "schedule" },
+    { label: "Thanh toán & Hóa đơn", icon: iReceipt, page: "payment" },
   ]
   const financeSubItems: { label: string; page: AdminPage }[] = [
-    { label: "Quản lý ngân sách",    page: "budget"    },
-    { label: "Chi phí vận hành",     page: "expenses"  },
-    { label: "Bảng lương nhân viên", page: "payroll"   },
-    { label: "Báo cáo lãi lỗ (P&L)",page: "pl-report" },
+    { label: "Quản lý ngân sách", page: "budget" },
+    { label: "Chi phí vận hành", page: "expenses" },
+    { label: "Bảng lương nhân viên", page: "payroll" },
+    { label: "Báo cáo lãi lỗ (P&L)", page: "pl-report" },
   ]
-  const isFinancePage = ["budget","expenses","payroll","pl-report"].includes(page)
+  const isFinancePage = ["budget", "expenses", "payroll", "pl-report"].includes(page)
 
   return (
     <aside className="bg-[#0f172a] flex flex-col gap-7 h-full items-start pb-6 pt-7 px-[18px] shrink-0 w-[260px]">
@@ -47,9 +47,8 @@ export function Sidebar({ page, setPage }: { page: AdminPage; setPage: (p: Admin
             <button
               key={item.label}
               onClick={() => setPage(item.page)}
-              className={`flex gap-3 items-center px-4 py-3 rounded-lg w-full text-left transition-colors ${
-                active ? "bg-[#2563eb]" : "hover:bg-white/5"
-              }`}
+              className={`flex gap-3 items-center px-4 py-3 rounded-lg w-full text-left transition-colors ${active ? "bg-[#2563eb]" : "hover:bg-white/5"
+                }`}
             >
               <img src={item.icon} alt="" className="size-[18px] shrink-0" />
               <span className={`text-sm flex-1 ${active ? "font-bold text-white" : "font-medium text-[#cbd5e1]"}`}>
@@ -86,9 +85,8 @@ export function Sidebar({ page, setPage }: { page: AdminPage; setPage: (p: Admin
 
         <button
           onClick={() => setPage("reports")}
-          className={`flex gap-3 items-center px-4 py-3 rounded-lg w-full text-left transition-colors ${
-            page === "reports" ? "bg-[#2563eb]" : "hover:bg-white/5"
-          }`}
+          className={`flex gap-3 items-center px-4 py-3 rounded-lg w-full text-left transition-colors ${page === "reports" ? "bg-[#2563eb]" : "hover:bg-white/5"
+            }`}
         >
           <img src={iBarChart} alt="" className="size-[18px] shrink-0" />
           <span className={`text-sm flex-1 ${page === "reports" ? "font-bold text-white" : "font-medium text-[#cbd5e1]"}`}>
@@ -115,11 +113,31 @@ export function Sidebar({ page, setPage }: { page: AdminPage; setPage: (p: Admin
       </div>
 
       {/* user */}
-      <div className="border-t border-[#1e293b] flex gap-3 items-center pt-4 w-full">
-        <img src={avatarSidebar} alt="" className="rounded-full size-10 object-cover" />
-        <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-          <p className="font-bold text-white text-[13px]">Minh Anh</p>
-          <p className="text-[#94a3b8] text-[11px]">Quản lý trung tâm</p>
+      <div className="border-[#1e293b] pt-4 w-full border-t mt-auto">
+        <div className="cursor-pointer hover:bg-white/5 p-3 -mx-3 -mb-3 rounded-xl transition-all group relative flex items-center gap-3 overflow-hidden" onClick={() => setPage("profile")}>
+          <img src={avatarSidebar} alt="" className="rounded-full size-10 shrink-0 object-cover" />
+          <div className="flex flex-col flex-1 min-w-0 transition-transform duration-200 group-hover:-translate-x-1 justify-center">
+            <p className="font-bold text-white text-[13px] truncate">Minh Anh</p>
+            <p className="text-[#94a3b8] text-[11px] truncate">Quản lý trung tâm</p>
+          </div>
+          <div className="flex items-center gap-1 opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 absolute right-3 bg-[#0f172a]/90 pl-2 py-1 shadow-sm rounded-lg backdrop-blur-sm">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); window.location.hash = "home"; }}
+              className="p-1.5 text-[#94a3b8] hover:text-white hover:bg-white/10 rounded-md transition-colors"
+              title="Trang chủ"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
+            </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); window.location.hash = "home"; window.location.reload(); }}
+              className="p-1.5 text-[#94a3b8] hover:text-red-400 hover:bg-red-400/10 rounded-md transition-colors"
+              title="Đăng xuất"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" /></svg>
+            </button>
+          </div>
         </div>
       </div>
     </aside>

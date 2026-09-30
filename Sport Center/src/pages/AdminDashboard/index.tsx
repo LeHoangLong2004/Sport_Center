@@ -11,11 +11,15 @@ import { PLReportPage } from './views/PLReportPage';
 import { MemberEditPage } from './views/MemberEditPage';
 import { MembersPage } from './views/MembersPage';
 import { SettingsPage } from './views/SettingsPage';
+import { ProfileSettings } from '../../components/ProfileSettings';
 
 export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [page, setPage] = useState<AdminPage>("members")
 
   const breadcrumbs: Record<AdminPage, [string, string]> = {
+    overview:   ["Quản lý / Tổng quan", "Tổng quan hệ thống"],
+    packages:   ["Quản lý / Gói hội viên", "Danh sách Gói hội viên"],
+    schedule:   ["Quản lý / Lịch trình", "Lịch trình & Lớp học"],
     members:    ["Quản lý / Người dùng / Hội viên", "Quản lý người dùng"],
     payment:    ["Quản lý / Thanh toán & Hóa đơn",  "Thanh toán & Hóa đơn"],
     reports:    ["Quản lý / Báo cáo & Thống kê",    "Báo cáo & Thống kê"],
@@ -25,24 +29,44 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     "pl-report":["Tài chính / Lãi lỗ",              "Báo cáo lãi lỗ (P&L)"],
     settings:   ["Quản lý / Cài đặt",               "Cài đặt & Nhật ký"],
     "member-edit":["Quản lý / Người dùng / Hội viên / Chỉnh sửa", "Chỉnh sửa thông tin hội viên"],
+    profile:    ["Quản lý / Hồ sơ cá nhân",         "Hồ sơ Quản trị viên"],
   }
 
-  const [bc, title] = breadcrumbs[page]
+  const [bc, title] = breadcrumbs[page] || ["", ""]
 
   return (
     <div className="theme-admin bg-[#f8fafc] flex h-screen w-full overflow-hidden">
       <Sidebar page={page} setPage={setPage} />
       <div className="flex flex-col flex-1 min-w-0 h-full">
-        <TopBar breadcrumb={bc} title={title} />
-        {page === "members"    && <MembersPage onEditMember={() => setPage("member-edit")} />}
-        {page === "payment"    && <PaymentPage />}
-        {page === "reports"    && <ReportsPage />}
-        {page === "budget"     && <BudgetPage />}
-        {page === "expenses"   && <ExpensesPage />}
-        {page === "payroll"    && <PayrollPage />}
-        {page === "pl-report"  && <PLReportPage />}
-        {page === "settings"   && <SettingsPage />}
-        {page === "member-edit"&& <MemberEditPage onBack={() => setPage("members")} />}
+        <TopBar breadcrumb={bc} title={title} onProfileClick={() => setPage("profile")} />
+        <div className="flex-1 overflow-y-auto">
+          {["overview", "packages", "schedule"].includes(page) && (
+            <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
+              <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+                <img src="/assets/2585a.svg" alt="Coming soon" className="size-16 mx-auto mb-4 opacity-50" />
+                <h2 className="text-2xl font-bold text-slate-800 mb-2">Tính năng đang phát triển</h2>
+                <p className="text-slate-500">Mô đun này đang được xây dựng và sẽ sớm ra mắt trong phiên bản tiếp theo.</p>
+              </div>
+            </div>
+          )}
+          {page === "members"    && <MembersPage onEditMember={() => setPage("member-edit")} />}
+          {page === "payment"    && <PaymentPage />}
+          {page === "reports"    && <ReportsPage />}
+          {page === "budget"     && <BudgetPage />}
+          {page === "expenses"   && <ExpensesPage />}
+          {page === "payroll"    && <PayrollPage />}
+          {page === "pl-report"  && <PLReportPage />}
+          {page === "settings"   && <SettingsPage />}
+          {page === "member-edit"&& <MemberEditPage onBack={() => setPage("members")} />}
+          {page === "profile"    && (
+            <div className="p-6">
+              <ProfileSettings 
+                roleLabel="Quản trị viên hệ thống" 
+                initialData={{ fullName: "Trần Quản Trị", email: "admin@sportcenter.com", phone: "0999 888 777", avatarUrl: avatarTopbar }}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

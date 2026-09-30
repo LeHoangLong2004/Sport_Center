@@ -23,28 +23,28 @@ const pageAssets = {
   schedule: {
     avatar: "33848.png",
     account: "2a759.png",
-    nav: ["a6906.svg", "c502a.svg", "2e78e.svg", "2b3e0.svg", "01d29.svg", "f1047.svg"],
+    nav: ["a6906.svg", "c502a.svg", "c502a.svg", "2e78e.svg", "2b3e0.svg", "01d29.svg", "f1047.svg"],
     search: "ce4a8.svg",
     bell: "a9acc.svg",
   },
   success: {
     avatar: "0507f.png",
     account: "6fd1f.png",
-    nav: ["198ea.svg", "a6ac8.svg", "c37d3.svg", "3ecbb.svg", "4b8d6.svg", "e7464.svg"],
+    nav: ["198ea.svg", "a6ac8.svg", "a6ac8.svg", "c37d3.svg", "3ecbb.svg", "4b8d6.svg", "e7464.svg"],
     search: "c7e83.svg",
     bell: "a3af3.svg",
   },
   workout: {
     avatar: "13619.png",
     account: "0733d.png",
-    nav: ["198ea.svg", "a6ac8.svg", "c37d3.svg", "3ecbb.svg", "4b8d6.svg", "e7464.svg"],
+    nav: ["198ea.svg", "a6ac8.svg", "a6ac8.svg", "c37d3.svg", "3ecbb.svg", "4b8d6.svg", "e7464.svg"],
     search: "c7e83.svg",
     bell: "a3af3.svg",
   },
   ai: {
     avatar: "29d1d.png",
     account: "fdb14.png",
-    nav: ["198ea.svg", "a6ac8.svg", "b486a.svg", "3ecbb.svg", "4b8d6.svg", "987d8.svg"],
+    nav: ["198ea.svg", "a6ac8.svg", "a6ac8.svg", "b486a.svg", "3ecbb.svg", "4b8d6.svg", "987d8.svg"],
     search: "c7e83.svg",
     bell: "a3af3.svg",
   },
@@ -64,8 +64,8 @@ function Shell({
   children: React.ReactNode
 }) {
   const assets = pageAssets[page]
-  const active = page === "ai" ? 5 : page === "workout" ? 4 : 2
-  const nav = ["Tổng quan", "Người dùng", "Lớp & lịch", "Thanh toán", "Báo cáo", "AI & đào tạo"]
+  const active = page === "ai" ? 6 : page === "workout" ? 5 : 3
+  const nav = ["Tổng quan", "Hồ sơ cá nhân", "Người dùng", "Lớp & lịch", "Thanh toán", "Báo cáo", "AI & đào tạo"]
   const titles = {
     schedule: ["Member Portal / Lớp & Lịch", "Lịch cá nhân của Member"],
     success: ["Member Portal / Lớp & Lịch / Đăng ký", "Đặt chỗ lớp học"],
@@ -91,13 +91,14 @@ function Shell({
               onClick={() => {
                 const destinations = [
                   "overview",
+                  "profile",
                   "users",
                   "schedule",
                   "payment",
                   "reports",
                   "ai",
                 ] as const
-                onNavigate(destinations[index])
+                onNavigate(destinations[index] as any)
               }}
               type="button"
             >
@@ -115,12 +116,30 @@ function Shell({
           </span>
         </div>
         <div className="m2-sidebar-spacer" />
-        <div className="m2-account">
-          <img src={src(page, assets.avatar)} alt="" />
-          <span>
-            <strong>Minh Anh</strong>
-            <small>Hội viên Premium</small>
-          </span>
+        <div className="m2-account cursor-pointer hover:bg-white/5 p-3 -m-3 rounded-xl transition-all group relative flex items-center gap-3 overflow-hidden" onClick={() => onNavigate("profile" as any)}>
+          <img src={src(page, assets.avatar)} alt="" className="w-10 h-10 rounded-full shrink-0" />
+          <div className="flex-1 min-w-0 transition-transform duration-200 group-hover:-translate-x-1 flex flex-col justify-center">
+            <strong className="block truncate text-sm text-white">Minh Anh</strong>
+            <small className="block truncate text-xs text-white/50">Hội viên Premium</small>
+          </div>
+          <div className="flex items-center gap-1 opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 absolute right-3 bg-slate-800/90 pl-2 py-1 shadow-sm rounded-lg backdrop-blur-sm">
+            <button 
+              type="button" 
+              onClick={(e) => { e.stopPropagation(); window.location.hash = "home"; }}
+              className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-md transition-colors"
+              title="Trang chủ"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </button>
+            <button 
+              type="button" 
+              onClick={(e) => { e.stopPropagation(); window.location.hash = "home"; window.location.reload(); }}
+              className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-md transition-colors"
+              title="Đăng xuất"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+            </button>
+          </div>
         </div>
       </aside>
       <div className="m2-workspace">

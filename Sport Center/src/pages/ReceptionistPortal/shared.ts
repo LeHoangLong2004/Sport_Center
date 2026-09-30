@@ -2,7 +2,7 @@ import { useState } from "react"
 
 export const A = "/assets"
 
-export type Page = "checkin" | "register" | "schedule" | "pos" | "lookup" | "detail"
+export type Page = "checkin" | "register" | "schedule" | "pos" | "lookup" | "detail" | "profile"
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
@@ -21,6 +21,7 @@ export const avatarByPage: Record<Page, string> = {
   pos: `${A}/7d869.png`,
   lookup: `${A}/8a918.png`,
   detail: `${A}/8a918.png`,
+  profile: `${A}/8a918.png`,
 }
 
 // ─── Main ReceptionistPortal ──────────────────────────────────────────────────
@@ -32,4 +33,5 @@ export const breadcrumbs: Record<Page, { bc: string; title: string; shift?: stri
   pos: { bc: "Lễ tân / Nghiệp vụ POS", title: "Bán hàng tại quầy", shift: "Ca làm việc: Ngọc Mai" },
   lookup: { bc: "Lễ tân / Danh sách hệ thống", title: "Tra cứu thông tin hội viên", shift: "Ca làm việc: Ngọc Mai" },
   detail: { bc: "Lễ tân / Tra cứu hội viên / Chi tiết", title: "Chi tiết hội viên", shift: "Ca làm việc: Ngọc Mai" },
+  profile: { bc: "Lễ tân / Hồ sơ cá nhân", title: "Hồ sơ Lễ tân", shift: "Ca làm việc: Ngọc Mai" },
 }

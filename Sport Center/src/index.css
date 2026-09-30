@@ -1,5 +1,5 @@
 @import "tailwindcss";
-
+@custom-variant dark (&:where(.dark, .dark *));
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -21,8 +21,22 @@
 
   /* Press effect for buttons */
   button:not(:disabled):active {
-    transform: scale(0.97) translateY(0);
+    transform: scale(0.96) translateY(0);
     box-shadow: none;
+  }
+  
+  /* Portal Table Row Hover */
+  .border-b.border-\[\#f1f5f9\]:hover,
+  .border-b.border-\[\#e2e8f0\]:hover {
+    @apply bg-slate-50 transition-colors duration-200;
+  }
+  
+  /* Card enhancements */
+  .bg-white.rounded-xl, .bg-white.rounded-\[16px\], .bg-white.rounded-2xl {
+    @apply shadow-sm transition-shadow duration-300;
+  }
+  .bg-white.rounded-xl:hover, .bg-white.rounded-\[16px\]:hover, .bg-white.rounded-2xl:hover {
+    @apply shadow-md;
   }
   
   /* Focus rings for accessibility and aesthetics */

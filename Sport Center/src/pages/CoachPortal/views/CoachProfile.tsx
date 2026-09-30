@@ -1,13 +1,48 @@
+import { useState } from "react";
 import { IconCheck } from "../Icons";
 import { A } from "../constants";
+import { ProfileSettings } from "../../../components/ProfileSettings";
 
 export default function CoachProfile() {
+  const [isEditing, setIsEditing] = useState(false);
+
   const certs = [
     "Chứng chỉ Master Yoga Alliance 200H Mỹ.",
     "Chứng nhận Huấn luyện viên thể lực CrossFit Level 2 quốc tế.",
     "Chứng chỉ PT chuyên nghiệp liên đoàn tại Việt Nam.",
     "Chuyên gia tư vấn dinh dưỡng nâng cao (Nutritional Specialist).",
   ]
+
+  if (isEditing) {
+    return (
+      <div className="p-6 h-full overflow-y-auto">
+        <div className="flex justify-between items-center max-w-4xl mx-auto mb-4">
+          <button 
+            onClick={() => setIsEditing(false)}
+            className="flex items-center gap-2 text-gray-500 hover:text-gray-800 transition-colors"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Quay lại hồ sơ
+          </button>
+        </div>
+        <ProfileSettings 
+          roleLabel="MASTER COACH" 
+          onSave={() => setIsEditing(false)} 
+          initialData={{ 
+            fullName: "Nguyễn Minh Tuấn", 
+            phone: "098 765 4321", 
+            email: "tuan.nm@sportcenter.com", 
+            gender: "male", 
+            dob: "1990-08-20",
+            avatarUrl: `${A}/f6154.png`
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="cp-profile-screen">
@@ -75,7 +110,7 @@ export default function CoachProfile() {
               <span className="cp-kpi-val" style={{ color: "#F97316" }}>115% mục tiêu</span>
             </div>
           </div>
-          <button className="cp-btn-outline cp-btn-full" style={{ marginTop: 20 }} type="button">
+          <button className="cp-btn-outline cp-btn-full" style={{ marginTop: 20 }} type="button" onClick={() => setIsEditing(true)}>
             Yêu cầu chỉnh sửa thông tin
           </button>
         </div>
