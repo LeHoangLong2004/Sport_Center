@@ -47,27 +47,32 @@ export function fmt(n: number) {
 
 export function Header() {
   return (
-    <div className="bg-white border-b border-[#e2e8f0] shrink-0 w-full">
-      <div className="flex h-[72px] items-center justify-between px-20 w-full">
-        <div className="flex gap-3 items-center">
-          <div className="bg-[#10b981] flex items-center justify-center rounded-[10px] size-10">
-            <span className="font-['Manrope'] font-extrabold text-[#0b1f3a] text-xl">SC</span>
+    <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shrink-0 w-full transition-colors duration-300">
+      <div className="flex h-[72px] items-center justify-between px-6 lg:px-20 w-full">
+        {/* Logo synced with SiteHeader */}
+        <div className="flex gap-[10px] items-center shrink-0 cursor-pointer">
+          <div className="bg-teal-500 flex items-center justify-center rounded-[8px] size-[36px] shadow-lg shadow-teal-500/30">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
           </div>
-          <div className="flex flex-col gap-px">
-            <span className="font-['Manrope'] font-extrabold text-[#0b1f3a] text-[16px] tracking-[0.5px]">SPORTCENTER</span>
-            <span className="font-['Manrope'] font-bold text-[#10b981] text-[9px] tracking-[1px] uppercase">Energy platform</span>
+          <div className="flex flex-col gap-[2px] items-start shrink-0">
+            <p className="font-sans font-extrabold text-[18px] leading-none tracking-tight text-slate-900 dark:text-white">SPORTCENTER</p>
+            <p className="font-sans font-semibold text-teal-500 text-[9px] uppercase leading-none tracking-widest">Energy Platform</p>
           </div>
         </div>
-        <div className="flex gap-8 items-center font-['Manrope'] font-semibold text-[#0f172a] text-sm tracking-[-0.2px]">
+
+        {/* Menu Items */}
+        <div className="hidden md:flex gap-8 items-center font-sans font-medium text-slate-600 dark:text-slate-300 text-[15px]">
           {["Bộ môn", "Lớp học", "Huấn luyện viên", "Gói tập", "Về chúng tôi", "Liên hệ"].map((link) => (
-            <span key={link} className="cursor-pointer hover:text-[#2563eb] transition-colors">{link}</span>
+            <span key={link} className="cursor-pointer hover:text-teal-500 transition-colors">{link}</span>
           ))}
         </div>
-        <div className="flex gap-3 items-center">
-          <div className="bg-[#2563eb] flex items-center justify-center rounded-[18px] size-9">
-            <span className="font-['Manrope'] font-bold text-white text-sm">LA</span>
+
+        {/* User Profile */}
+        <div className="flex gap-3 items-center cursor-pointer group">
+          <div className="bg-rose-500 flex items-center justify-center rounded-full size-9 shadow-md shadow-rose-500/20 group-hover:shadow-rose-500/40 transition-shadow">
+            <span className="font-sans font-bold text-white text-sm tracking-wide">LA</span>
           </div>
-          <span className="font-['Manrope'] font-bold text-[#0b1f3a] text-sm">Nguyễn Lan Anh</span>
+          <span className="font-sans font-semibold text-slate-700 dark:text-slate-200 text-sm group-hover:text-slate-900 dark:group-hover:text-white transition-colors">Nguyễn Lan Anh</span>
         </div>
       </div>
     </div>

@@ -80,8 +80,9 @@ export const memberEditAvatar = `${A}/b49d6.png`
 
 // ─── types ───────────────────────────────────────────────────────────────────
 export type AdminPage =
+  | "overview" | "packages" | "schedule"
   | "members" | "payment" | "reports" | "budget" | "expenses"
-  | "payroll" | "pl-report" | "settings" | "member-edit"
+  | "payroll" | "pl-report" | "settings" | "member-edit" | "profile"
 
 // ─── shared components ────────────────────────────────────────────────────────
 // ─── PAYMENT PAGE ─────────────────────────────────────────────────────────────

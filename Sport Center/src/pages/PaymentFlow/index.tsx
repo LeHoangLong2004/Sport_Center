@@ -10,10 +10,10 @@ import { FailedScreen } from "./FailedScreen";
 import { InvoiceScreen } from "./InvoiceScreen";
 import { MembershipCardScreen } from "./MembershipCardScreen";
 
-export default function PaymentFlow({ onExit }: { onExit: () => void }) {
-  const [screen, setScreen] = useState<Screen>("package")
+export default function PaymentFlow({ onExit, initialPlan }: { onExit: () => void; initialPlan?: PackageId }) {
+  const [screen, setScreen] = useState<Screen>(initialPlan ? "member-info" : "package")
   const [period, setPeriod] = useState<BillingPeriod>("yearly")
-  const [pkg, setPkg] = useState<PackageId>("fitness")
+  const [pkg, setPkg] = useState<PackageId>(initialPlan || "fitness")
   const [method, setMethod] = useState<PaymentMethodId>("qr")
 
   function goProcessing() {

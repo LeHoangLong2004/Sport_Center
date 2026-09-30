@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { FadeUp, FadeIn } from "../components/Motion"
 
 const A = "/assets"
 
@@ -157,17 +158,18 @@ function StatusBadge({ status, label }: { status: ClassStatus; label: string }) 
 function ClassCard({ item }: { item: ClassItem }) {
   const isAvailable = item.status !== "full"
   return (
-    <div
-      className="bg-white border border-[#e2e8f0] rounded-2xl p-5 flex gap-5 items-center shadow-[0_4px_6px_rgba(0,0,0,0.02)] cursor-pointer hover:shadow-[0_8px_16px_rgba(0,0,0,0.06)] transition-shadow"
+    <FadeUp
+      className="bg-white border border-[#e2e8f0] rounded-2xl p-5 flex gap-5 items-center shadow-[0_4px_6px_rgba(0,0,0,0.02)] cursor-pointer hover:-translate-y-1 hover:border-[#10b981] hover:shadow-[0_8px_16px_rgba(0,0,0,0.06)] transition-all duration-300 group"
       data-name="class-card"
       data-class-id={item.id}
     >
-      <div className="shrink-0 w-[180px] h-[130px] rounded-xl overflow-hidden">
-        <img src={item.img} alt={item.title} className="w-full h-full object-cover" />
+      <div className="shrink-0 w-[180px] h-[130px] rounded-xl overflow-hidden relative">
+        <img src={item.img} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+        <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
       <div className="flex-1 min-w-0 flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
-          <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[18px] leading-normal truncate max-w-[280px]">
+          <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[18px] leading-normal truncate max-w-[280px] group-hover:text-[#10b981] transition-colors">
             {item.title}
           </p>
           <StatusBadge status={item.status} label={item.statusLabel} />
@@ -210,7 +212,7 @@ function ClassCard({ item }: { item: ClassItem }) {
           )}
         </div>
       </div>
-    </div>
+    </FadeUp>
   )
 }
 
@@ -232,54 +234,28 @@ export default function ClassListPage() {
 
   return (
     <div className="bg-[#f8fafc] flex flex-col items-start w-full min-h-screen" data-node-id="2263:3450">
-      {/* Navbar */}
-      <nav
-        className="bg-white border-b border-[#e2e8f0] flex h-[72px] items-center justify-between px-[80px] w-full shrink-0"
-        data-node-id="2263:3451"
-        data-name="navbar"
-      >
-        <div className="flex gap-2.5 items-center cursor-pointer" data-name="logo-group">
-          <div className="bg-[#10b981] flex items-center justify-center rounded-lg size-9 shrink-0">
-            <img src={imgZap} alt="" className="w-4 h-4" />
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[18px] leading-none">SPORTCENTER</p>
-            <p className="font-['Inter:Semi_Bold'] font-semibold text-[#059669] text-[9px] uppercase leading-none">Energy Platform</p>
-          </div>
-        </div>
-        <div className="flex gap-2 h-full items-center" data-name="menu-items">
-          {navItems.map((item) => (
-            <div
-              key={item.label}
-              className="flex flex-col h-full items-start justify-center px-4 py-6 cursor-pointer"
-              data-name={`menu-item-${item.label}`}
-            >
-              <p className={`whitespace-nowrap text-[15px] leading-normal ${item.active ? "font-['Inter:Bold'] font-bold text-[#2563eb]" : "font-['Inter:Medium'] font-medium text-[#1e293b]"}`}>
-                {item.label}
-              </p>
-              {item.active && <div className="bg-[#2563eb] h-0.5 rounded-sm w-6 mt-1" />}
-            </div>
-          ))}
-        </div>
-        <div className="flex gap-3 items-center" data-name="navbar-actions">
-          <button className="border border-[#e2e8f0] px-[18px] py-2.5 rounded-lg" type="button" data-name="btn-login">
-            <span className="font-['Inter:Semi_Bold'] font-semibold text-[#1e293b] text-[14px] whitespace-nowrap">Đăng nhập</span>
-          </button>
-          <button className="bg-[#10b981] px-5 py-2.5 rounded-lg" type="button" data-name="btn-register">
-            <span className="font-['Inter:Bold'] font-bold text-white text-[14px] whitespace-nowrap">Đăng ký thành viên</span>
-          </button>
-        </div>
-      </nav>
+      
 
       {/* Hero */}
-      <div className="bg-[#0f172a] flex flex-col gap-4 px-[80px] py-16 w-full" data-node-id="2263:3481" data-name="hero-dark">
-        <p className="font-['Inter:Extra_Bold'] font-extrabold text-white text-[36px] leading-normal">
-          Lịch lớp học hàng tuần
-        </p>
-        <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[16px] leading-normal">
-          Tìm lớp phù hợp với thời gian và mục tiêu chuyển động của bạn. Lớp mới cập nhật liên tục mỗi tuần.
-        </p>
-      </div>
+      <section className="relative flex flex-col gap-[32px] items-center text-center px-[80px] py-[100px] w-full shrink-0 overflow-hidden min-h-[320px] justify-center">
+        <FadeIn className="absolute inset-0 pointer-events-none">
+          <img alt="" className="absolute inset-0 w-full h-full object-cover max-w-none" src="/assets/images/hero_bg.jpg" />
+          <div className="absolute inset-0 bg-slate-900/70 mix-blend-multiply" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent" />
+        </FadeIn>
+        <div className="relative z-10 flex flex-col gap-4 items-center w-full">
+          <FadeUp>
+            <p className="font-['Inter:Extra_Bold'] font-extrabold text-white text-[48px] leading-normal">
+              Lịch lớp học hàng tuần
+            </p>
+          </FadeUp>
+          <FadeUp delay={0.2}>
+            <p className="font-['Inter:Regular'] font-normal text-[#cbd5e1] text-[18px] leading-normal max-w-2xl mx-auto">
+              Tìm lớp phù hợp với thời gian và mục tiêu chuyển động của bạn. Lớp mới cập nhật liên tục mỗi tuần.
+            </p>
+          </FadeUp>
+        </div>
+      </section>
 
       {/* Filters */}
       <div className="bg-white border-b border-[#e2e8f0] px-[80px] py-6 w-full" data-node-id="2263:3484" data-name="filter-container">
@@ -344,16 +320,16 @@ export default function ClassListPage() {
       </div>
 
       {/* Classes grid */}
-      <div className="flex flex-col gap-6 py-12 px-[80px] w-full" data-node-id="2263:3506" data-name="classes-grid">
+      <section className="flex flex-col gap-6 py-12 px-[80px] w-full" data-node-id="2263:3506" data-name="classes-grid">
         {rows.map((row, ri) => (
-          <div key={ri} className="flex gap-6 w-full">
+          <FadeUp delay={ri * 0.1} key={ri} className="flex gap-6 w-full">
             {row.map((item) => (
               <div key={item.id} className="flex-1 min-w-0">
                 <ClassCard item={item} />
               </div>
             ))}
             {row.length === 1 && <div className="flex-1 min-w-0" />}
-          </div>
+          </FadeUp>
         ))}
 
         {filtered.length === 0 && (
@@ -385,66 +361,9 @@ export default function ClassListPage() {
             </button>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* Footer */}
-      <footer className="bg-[#020617] flex flex-col gap-10 pb-12 pt-16 px-[80px] w-full" data-node-id="2263:3738" data-name="footer">
-        <div className="flex items-start justify-between w-full gap-8 flex-wrap">
-          <div className="flex flex-col gap-6 max-w-[360px]">
-            <div className="flex gap-2.5 items-center cursor-pointer" data-name="logo-group-footer">
-              <div className="bg-[#10b981] flex items-center justify-center rounded-lg size-10 shrink-0">
-                <img src={imgZap1} alt="" className="w-[19px] h-[19px]" />
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <p className="font-['Inter:Extra_Bold'] font-extrabold text-white text-[20px] leading-none">SPORTCENTER</p>
-                <p className="font-['Inter:Semi_Bold'] font-semibold text-[#10b981] text-[10px] uppercase leading-none">Energy Platform</p>
-              </div>
-            </div>
-            <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[14px] leading-[1.6]">
-              Hệ thống phòng tập thể thao tiêu chuẩn quốc tế mang lại nguồn năng lượng bứt phá mỗi ngày.
-            </p>
-            <div className="flex gap-2 items-center">
-              <img src={imgPhone} alt="" className="w-[13px] h-[13px]" />
-              <p className="font-['Inter:Bold'] font-bold text-white text-[16px] whitespace-nowrap">Hotline: 1900 6868</p>
-            </div>
-          </div>
-          <div className="flex flex-col gap-4 w-[200px]">
-            <p className="font-['Inter:Bold'] font-bold text-white text-[14px] uppercase">Dịch vụ nổi bật</p>
-            {["Bơi lội Aqua", "Yoga trị liệu", "HIIT & Strength", "Boxing Kickfit", "Bóng rổ đội nhóm"].map((s) => (
-              <p key={s} className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[14px]">{s}</p>
-            ))}
-          </div>
-          <div className="flex flex-col gap-4 w-[200px]">
-            <p className="font-['Inter:Bold'] font-bold text-white text-[14px] uppercase">SportCenter</p>
-            {["Hệ thống chi nhánh", "Đội ngũ chuyên gia", "Bảng giá gói tập", "Tin tức sự kiện", "Tuyển dụng"].map((s) => (
-              <p key={s} className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[14px]">{s}</p>
-            ))}
-          </div>
-          <div className="flex flex-col gap-4 max-w-[320px]">
-            <p className="font-['Inter:Bold'] font-bold text-white text-[14px] uppercase">Địa chỉ chi nhánh chính</p>
-            <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[14px] leading-[1.5]">
-              Tòa nhà Energy Tower, 120 Đường Ba Tháng Hai, Phường 12, Quận 10, TP. Hồ Chí Minh
-            </p>
-            <div className="flex gap-3 pt-2">
-              {[imgFacebook, imgInstagram, imgYoutube, imgLinkedin].map((icon, i) => (
-                <div key={i} className="bg-[#1e293b] flex items-center justify-center rounded-lg size-9">
-                  <img src={icon} alt="" className="w-3.5 h-3.5" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="w-full h-px bg-[#1e293b]" />
-        <div className="flex items-center justify-between w-full flex-wrap gap-4" data-name="policy-links">
-          <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[13px]">
-            © 2026 SportCenter. Bảo lưu mọi quyền thương hiệu.
-          </p>
-          <div className="flex gap-6">
-            <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[13px] cursor-pointer hover:text-white transition-colors">Chính sách bảo mật</p>
-            <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[13px] cursor-pointer hover:text-white transition-colors">Điều khoản sử dụng</p>
-          </div>
-        </div>
-      </footer>
+      
     </div>
   )
 }

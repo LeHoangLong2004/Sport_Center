@@ -1,5 +1,6 @@
 const assetPathPrefix = "/assets";
 
+const imgHeroBg = "/assets/images/hero_bg.jpg";
 const imgSportSwim = `${assetPathPrefix}/cfb22.png`;
 const imgSportYoga = `${assetPathPrefix}/88bba.png`;
 const imgSportHiit = `${assetPathPrefix}/e865e.png`;
@@ -120,124 +121,30 @@ const coaches = [
   { img: imgCoach4, name: "HLV. Hoàng Kim", spec: "Boxing & Kickfit", desc: "Cựu vận động viên Boxing quốc gia, Chứng chỉ võ thuật WBA" },
 ];
 
-function Navbar({ active }: { active: string }) {
-  return (
-    <nav className="bg-white border-b border-[#e2e8f0] flex h-[72px] items-center justify-between px-[80px] w-full shrink-0 sticky top-0 z-50">
-      <div className="flex gap-[10px] items-center shrink-0" data-name="logo-group">
-        <div className="bg-[#10b981] flex items-center justify-center rounded-[8px] size-[36px] shrink-0">
-          <img alt="" src={imgZap} style={{ width: 20, height: 20 }} />
-        </div>
-        <div className="flex flex-col gap-[2px] items-start shrink-0">
-          <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[18px] leading-none">SPORTCENTER</p>
-          <p className="font-['Inter:Semi_Bold'] font-semibold text-[#059669] text-[9px] uppercase leading-none">Energy Platform</p>
-        </div>
-      </div>
-      <div className="flex gap-[4px] h-full items-center">
-        {navItems.map((label) => {
-          const isActive = label === active;
-          return (
-            <div
-              key={label}
-              className="flex flex-col h-full items-start justify-center px-[16px] py-[24px] relative shrink-0 cursor-pointer"
-              data-name={`menu-item-${label}`}
-            >
-              <p className={`font-['Inter:${isActive ? "Bold" : "Medium"}'] font-${isActive ? "bold" : "medium"} text-[15px] whitespace-nowrap ${isActive ? "text-[#2563eb]" : "text-[#1e293b]"}`}>
-                {label}
-              </p>
-              {isActive && <div className="absolute bottom-0 left-[16px] bg-[#2563eb] h-[2px] rounded-[1px] w-[24px]" />}
-            </div>
-          );
-        })}
-      </div>
-      <div className="flex gap-[12px] items-center shrink-0">
-        <div className="border border-[#e2e8f0] flex items-center px-[18px] py-[10px] rounded-[8px] cursor-pointer" data-name="btn-login">
-          <p className="font-['Inter:Semi_Bold'] font-semibold text-[#1e293b] text-[14px] whitespace-nowrap">Đăng nhập</p>
-        </div>
-        <div className="bg-[#10b981] flex items-center px-[20px] py-[10px] rounded-[8px] cursor-pointer" data-name="btn-register">
-          <p className="font-['Inter:Bold'] font-bold text-white text-[14px] whitespace-nowrap">Đăng ký thành viên</p>
-        </div>
-      </div>
-    </nav>
-  );
-}
 
-function Footer() {
-  return (
-    <footer className="bg-[#020617] flex flex-col gap-[40px] items-start pb-[48px] pt-[64px] px-[80px] w-full shrink-0">
-      <div className="flex items-start justify-between w-full">
-        <div className="flex flex-col gap-[24px] items-start w-[360px]">
-          <div className="flex gap-[10px] items-center shrink-0" data-name="logo-group-footer">
-            <div className="bg-[#10b981] flex items-center justify-center rounded-[8px] size-[40px] shrink-0">
-              <img alt="" src={imgZapFooter} style={{ width: 24, height: 24 }} />
-            </div>
-            <div className="flex flex-col gap-[2px] items-start">
-              <p className="font-['Inter:Extra_Bold'] font-extrabold text-white text-[20px] leading-none">SPORTCENTER</p>
-              <p className="font-['Inter:Semi_Bold'] font-semibold text-[#10b981] text-[10px] uppercase leading-none">Energy Platform</p>
-            </div>
-          </div>
-          <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[14px] leading-[1.6] w-full">
-            Hệ thống phòng tập thể thao tiêu chuẩn quốc tế mang lại nguồn năng lượng bứt phá mỗi ngày.
-          </p>
-          <div className="flex gap-[8px] items-center">
-            <img alt="" src={imgSmartphone} style={{ width: 16, height: 16 }} />
-            <p className="font-['Inter:Bold'] font-bold text-white text-[16px] whitespace-nowrap">Hotline: 1900 6868</p>
-          </div>
-        </div>
-        <div className="flex flex-col gap-[16px] items-start w-[200px]">
-          <p className="font-['Inter:Bold'] font-bold text-white text-[14px] uppercase">Dịch vụ nổi bật</p>
-          {["Bơi lội Aqua", "Yoga trị liệu", "HIIT & Strength", "Boxing Kickfit", "Bóng rổ đội nhóm"].map((s) => (
-            <p key={s} className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[14px]">{s}</p>
-          ))}
-        </div>
-        <div className="flex flex-col gap-[16px] items-start w-[200px]">
-          <p className="font-['Inter:Bold'] font-bold text-white text-[14px] uppercase">SportCenter</p>
-          {["Hệ thống chi nhánh", "Đội ngũ chuyên gia", "Bảng giá gói tập", "Tin tức sự kiện", "Tuyển dụng"].map((s) => (
-            <p key={s} className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[14px]">{s}</p>
-          ))}
-        </div>
-        <div className="flex flex-col gap-[16px] items-start w-[320px]">
-          <p className="font-['Inter:Bold'] font-bold text-white text-[14px] uppercase">Địa chỉ chi nhánh chính</p>
-          <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[14px] leading-[1.5]">
-            Tòa nhà Energy Tower, 120 Đường Ba Tháng Hai, Phường 12, Quận 10, TP. Hồ Chí Minh
-          </p>
-          <div className="flex gap-[12px] items-start pt-[8px]">
-            {[imgFacebook, imgInstagram, imgVideo, imgLinkedin].map((icon, i) => (
-              <div key={i} className="bg-[#1e293b] flex items-center justify-center rounded-[8px] size-[36px] shrink-0">
-                <img alt="" src={icon} style={{ width: 18, height: 18 }} />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      <div className="border-t border-[#1e293b] w-full" />
-      <div className="flex items-center justify-between w-full">
-        <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[13px]">© 2026 SportCenter. Bảo lưu mọi quyền thương hiệu.</p>
-        <div className="flex gap-[24px] items-start" data-name="policy-links">
-          <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[13px] cursor-pointer hover:text-white">Chính sách bảo mật</p>
-          <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[13px] cursor-pointer hover:text-white">Điều khoản sử dụng</p>
-        </div>
-      </div>
-    </footer>
-  );
-}
 
-function SportCard({ img, badge, icon, title, desc, stat, tall }: {
-  img: string; badge: string; icon: string; title: string; desc: string; stat: string; tall?: boolean;
+
+
+import { FadeUp, FadeIn } from '../components/Motion';
+
+function SportCard({ img, badge, icon, title, desc, stat, tall, delay = 0 }: {
+  img: string; badge: string; icon: string; title: string; desc: string; stat: string; tall?: boolean; delay?: number;
 }) {
   return (
-    <div className="bg-white border border-[#e2e8f0] flex flex-1 flex-col items-start min-w-0 overflow-clip rounded-[16px] shadow-[0px_4px_12px_0px_rgba(0,0,0,0.02)]">
-      <div className="relative w-full shrink-0" style={{ height: tall ? 220 : 200 }}>
-        <img alt={title} className="absolute inset-0 object-cover size-full max-w-none" src={img} />
-        <div className="absolute bg-[#10b981] flex items-center px-[12px] py-[6px] rounded-[100px] left-[16px] top-[16px]">
+    <FadeUp delay={delay} className="bg-white border border-[#e2e8f0] flex flex-1 flex-col items-start min-w-0 overflow-clip rounded-[16px] shadow-[0px_4px_12px_0px_rgba(0,0,0,0.02)] hover:shadow-xl hover:-translate-y-1 hover:border-[#10b981] transition-all duration-300 cursor-pointer group">
+      <div className="relative w-full shrink-0 overflow-hidden" style={{ height: tall ? 220 : 200 }}>
+        <img alt={title} className="absolute inset-0 object-cover size-full max-w-none transition-transform duration-500 group-hover:scale-105" src={img} />
+        <div className="absolute inset-0 bg-gradient-to-t from-[rgba(15,23,42,0.4)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute bg-[#10b981] flex items-center px-[12px] py-[6px] rounded-[100px] left-[16px] top-[16px] shadow-md shadow-teal-500/20">
           <p className="font-['Inter:Bold'] font-bold text-white text-[12px] whitespace-nowrap">{badge}</p>
         </div>
       </div>
       <div className="flex flex-col gap-[16px] items-start p-[24px] w-full">
         <div className="flex gap-[12px] items-center w-full">
-          <div className="bg-[#eff6ff] flex items-center justify-center rounded-[8px] size-[36px] shrink-0">
+          <div className="bg-[#eff6ff] flex items-center justify-center rounded-[8px] size-[36px] shrink-0 group-hover:bg-blue-100 transition-colors">
             <img alt="" src={icon} style={{ width: 20, height: 20 }} />
           </div>
-          <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[18px] flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{title}</p>
+          <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[18px] flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap group-hover:text-[#10b981] transition-colors">{title}</p>
         </div>
         <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px] leading-[1.5] h-[64px] overflow-hidden">{desc}</p>
         <div className="border-t border-[#e2e8f0] w-full" />
@@ -246,77 +153,85 @@ function SportCard({ img, badge, icon, title, desc, stat, tall }: {
           <p className="font-['Inter:Semi_Bold'] font-semibold text-[#059669] text-[13px] flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{stat}</p>
         </div>
         <div className="flex gap-[4px] items-center cursor-pointer" data-name="btn-sport-detail">
-          <p className="font-['Inter:Bold'] font-bold text-[#2563eb] text-[14px] whitespace-nowrap">Xem lịch tập & Chi tiết môn</p>
-          <p className="font-['Inter:Bold'] font-bold text-[#2563eb] text-[14px]">→</p>
+          <p className="font-['Inter:Bold'] font-bold text-[#2563eb] text-[14px] whitespace-nowrap group-hover:text-[#1d4ed8]">Xem lịch tập & Chi tiết môn</p>
+          <p className="font-['Inter:Bold'] font-bold text-[#2563eb] text-[14px] group-hover:translate-x-1 transition-transform group-hover:text-[#1d4ed8]">→</p>
         </div>
       </div>
-    </div>
+    </FadeUp>
   );
 }
 
 export default function BoMonPage() {
   return (
     <div className="bg-[#f8fafc] flex flex-col items-start w-full min-h-screen">
-      <Navbar active="Bộ môn" />
 
       {/* Hero Banner */}
-      <div className="bg-[#0f172a] flex flex-col gap-[32px] items-start px-[80px] py-[64px] w-full shrink-0">
-        <div className="flex flex-col gap-[16px] items-start w-full">
-          <div className="bg-[rgba(16,185,129,0.1)] border border-[#10b981] flex items-center px-[12px] py-[6px] rounded-[100px]">
-            <p className="font-['Inter:Bold'] font-bold text-[#10b981] text-[12px] uppercase whitespace-nowrap">
+      <section className="relative flex flex-col gap-[32px] items-start px-[80px] py-[100px] w-full shrink-0 overflow-hidden min-h-[480px] justify-center">
+        <FadeIn className="absolute inset-0 pointer-events-none">
+          <img alt="" className="absolute inset-0 w-full h-full object-cover max-w-none" src={imgHeroBg} />
+          <div className="absolute inset-0 bg-slate-900/70 mix-blend-multiply" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent" />
+        </FadeIn>
+        <div className="relative z-10 flex flex-col gap-[16px] items-start w-full">
+          <FadeUp className="bg-[rgba(16,185,129,0.12)] border border-[#10b981] flex items-center px-[14px] py-[7px] rounded-[100px]">
+            <p className="font-['Inter:Bold'] font-bold text-[#10b981] text-[12px] uppercase whitespace-nowrap tracking-wider">
               HỆ SINH THÁI THỂ THAO ĐA BỘ MÔN
             </p>
-          </div>
-          <p className="font-['Inter:Extra_Bold'] font-extrabold text-white text-[44px] leading-[1.2] w-full max-w-[720px]">
-            Chọn chuyển động phù hợp với cơ thể bạn
-          </p>
-          <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[16px] leading-[1.6] max-w-[640px]">
-            Khám phá 5 bộ môn thể thao tiêu chuẩn quốc tế với giáo án tối ưu theo thể trạng và mục tiêu rèn luyện cá nhân.
-          </p>
+          </FadeUp>
+          <FadeUp delay={0.2}>
+            <p className="font-['Inter:Extra_Bold'] font-extrabold text-white text-[48px] leading-[1.1] w-full max-w-[720px]">
+              Chọn chuyển động phù hợp với cơ thể bạn
+            </p>
+          </FadeUp>
+          <FadeUp delay={0.3}>
+            <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[18px] leading-[1.6] max-w-[640px]">
+              Khám phá 5 bộ môn thể thao tiêu chuẩn quốc tế với giáo án tối ưu theo thể trạng và mục tiêu rèn luyện cá nhân.
+            </p>
+          </FadeUp>
         </div>
-        <div className="flex flex-wrap gap-[12px] items-start w-full">
+        <FadeUp delay={0.4} className="relative z-10 flex flex-wrap gap-[12px] items-start w-full">
           {filterTags.map(({ label, active }) => (
             <div
               key={label}
-              className={`flex items-center px-[20px] py-[12px] rounded-[100px] cursor-pointer ${
+              className={`flex items-center px-[20px] py-[12px] rounded-[100px] cursor-pointer hover:bg-[#2563eb] transition-colors ${
                 active
                   ? "bg-[#2563eb]"
-                  : "bg-[rgba(30,41,59,0.2)] border border-[#334155]"
+                  : "bg-[rgba(30,41,59,0.5)] border border-[#334155] backdrop-blur-md"
               }`}
             >
               <p className="font-['Inter:Semi_Bold'] font-semibold text-white text-[14px] whitespace-nowrap">{label}</p>
             </div>
           ))}
-        </div>
-      </div>
+        </FadeUp>
+      </section>
 
       {/* 5 Sports Grid */}
-      <div className="bg-[#f8fafc] flex flex-col gap-[32px] items-start px-[80px] py-[64px] w-full shrink-0">
-        <div className="flex flex-col gap-[8px] items-start w-full">
+      <section className="bg-[#f8fafc] flex flex-col gap-[32px] items-start px-[80px] py-[64px] w-full shrink-0">
+        <FadeUp className="flex flex-col gap-[8px] items-start w-full">
           <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[32px]">5 Không gian luyện tập chuyên biệt</p>
           <div className="bg-[#2563eb] h-[4px] rounded-[2px] w-[80px]" />
-        </div>
+        </FadeUp>
         <div className="flex gap-[24px] items-start w-full">
-          {sportsTop.map((s) => (
-            <SportCard key={s.title} {...s} />
+          {sportsTop.map((s, index) => (
+            <SportCard delay={index * 0.1} key={s.title} {...s} />
           ))}
         </div>
         <div className="flex gap-[24px] items-start w-full">
-          {sportsBottom.map((s) => (
-            <SportCard key={s.title} {...s} tall />
+          {sportsBottom.map((s, index) => (
+            <SportCard delay={index * 0.1} key={s.title} {...s} tall />
           ))}
         </div>
-      </div>
+      </section>
 
       {/* Goals Section */}
-      <div className="bg-white flex flex-col gap-[32px] items-start px-[80px] py-[64px] w-full shrink-0">
-        <div className="flex flex-col gap-[8px] items-start w-full">
+      <section className="bg-white flex flex-col gap-[32px] items-start px-[80px] py-[64px] w-full shrink-0">
+        <FadeUp className="flex flex-col gap-[8px] items-start w-full">
           <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[32px]">Bạn muốn đạt được điều gì?</p>
           <div className="bg-[#2563eb] h-[4px] rounded-[2px] w-[80px]" />
-        </div>
+        </FadeUp>
         <div className="flex gap-[24px] items-stretch w-full">
-          {goals.map((g) => (
-            <div key={g.title} className="bg-[#f8fafc] border border-[#e2e8f0] flex flex-1 flex-col gap-[20px] items-start min-w-0 p-[32px] rounded-[16px]">
+          {goals.map((g, index) => (
+            <FadeUp delay={index * 0.1} key={g.title} className="bg-[#f8fafc] border border-[#e2e8f0] flex flex-1 flex-col gap-[20px] items-start min-w-0 p-[32px] rounded-[16px] hover:border-[#10b981] hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
               <div className="flex gap-[16px] items-center w-full">
                 <div className="bg-[#ecfdf5] flex items-center justify-center rounded-[12px] size-[48px] shrink-0">
                   <img alt="" src={g.icon} style={{ width: 24, height: 24 }} />
@@ -330,46 +245,47 @@ export default function BoMonPage() {
               <div className="bg-[#eff6ff] flex items-start px-[12px] py-[8px] rounded-[8px] w-full">
                 <p className="font-['Inter:Bold'] font-bold text-[#2563eb] text-[13px] flex-1 min-w-0">{g.suggest}</p>
               </div>
-              <div className="flex gap-[6px] items-center cursor-pointer pt-[8px]">
-                <p className="font-['Inter:Bold'] font-bold text-[#059669] text-[14px]">Xem lộ trình mẫu</p>
-                <p className="font-['Inter:Bold'] font-bold text-[#059669] text-[14px]">→</p>
+              <div className="flex gap-[6px] items-center cursor-pointer pt-[8px] group">
+                <p className="font-['Inter:Bold'] font-bold text-[#059669] text-[14px] group-hover:text-[#047857] transition-colors">Xem lộ trình mẫu</p>
+                <p className="font-['Inter:Bold'] font-bold text-[#059669] text-[14px] group-hover:translate-x-1 transition-transform group-hover:text-[#047857]">→</p>
               </div>
-            </div>
+            </FadeUp>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* Coaches Section */}
-      <div className="bg-[#f8fafc] flex flex-col gap-[32px] items-start px-[80px] py-[64px] w-full shrink-0">
-        <div className="flex flex-col gap-[8px] items-start w-full">
+      <section className="bg-[#f8fafc] flex flex-col gap-[32px] items-start px-[80px] py-[64px] w-full shrink-0">
+        <FadeUp className="flex flex-col gap-[8px] items-start w-full">
           <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[32px]">Được hướng dẫn bởi các Huấn luyện viên hàng đầu</p>
           <div className="bg-[#2563eb] h-[4px] rounded-[2px] w-[80px]" />
-        </div>
+        </FadeUp>
         <div className="flex gap-[24px] items-start w-full">
-          {coaches.map((c) => (
-            <div key={c.name} className="bg-white border border-[#e2e8f0] flex flex-1 flex-col items-start min-w-0 overflow-clip rounded-[16px]">
-              <div className="relative h-[260px] w-full shrink-0">
-                <img alt={c.name} className="absolute inset-0 object-cover size-full max-w-none" src={c.img} />
+          {coaches.map((c, index) => (
+            <FadeUp delay={index * 0.1} key={c.name} className="bg-white border border-[#e2e8f0] flex flex-1 flex-col items-start min-w-0 overflow-clip rounded-[16px] hover:border-[#10b981] hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group">
+              <div className="relative h-[260px] w-full shrink-0 overflow-hidden">
+                <img alt={c.name} className="absolute inset-0 object-cover size-full max-w-none transition-transform duration-500 group-hover:scale-105" src={c.img} />
               </div>
               <div className="flex flex-col gap-[12px] items-start p-[20px] w-full">
                 <div className="flex flex-col gap-[4px] items-start w-full">
-                  <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[18px] w-full">{c.name}</p>
+                  <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[18px] w-full group-hover:text-[#10b981] transition-colors">{c.name}</p>
                   <p className="font-['Inter:Semi_Bold'] font-semibold text-[#2563eb] text-[14px] w-full">{c.spec}</p>
                 </div>
                 <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[13px] leading-[1.4] h-[54px] overflow-hidden w-full">{c.desc}</p>
-                <div className="border border-[#2563eb] flex items-center justify-center px-[16px] py-[10px] rounded-[8px] w-full cursor-pointer" data-name="btn-coach-schedule">
-                  <p className="font-['Inter:Bold'] font-bold text-[#2563eb] text-[13px] whitespace-nowrap">Xem lịch dạy của HLV</p>
+                <div className="border border-[#2563eb] flex items-center justify-center px-[16px] py-[10px] rounded-[8px] w-full cursor-pointer hover:bg-[#2563eb] hover:text-white transition-colors" data-name="btn-coach-schedule">
+                  <p className="font-['Inter:Bold'] font-bold text-[13px] whitespace-nowrap text-inherit">Xem lịch dạy của HLV</p>
                 </div>
               </div>
-            </div>
+            </FadeUp>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* CTA Banner */}
-      <div className="bg-[#f8fafc] flex flex-col items-start pb-[64px] pt-[32px] px-[80px] w-full shrink-0">
-        <div className="bg-[#0f172a] flex flex-col gap-[32px] items-start p-[48px] rounded-[24px] w-full">
-          <div className="flex flex-col gap-[12px] items-start text-center w-full">
+      <section className="bg-[#f8fafc] flex flex-col items-start pb-[64px] pt-[32px] px-[80px] w-full shrink-0 overflow-hidden">
+        <FadeUp className="bg-[#0f172a] flex flex-col gap-[32px] items-start p-[48px] rounded-[24px] w-full relative shadow-2xl">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#10b981]/10 to-transparent pointer-events-none rounded-[24px]" />
+          <div className="flex flex-col gap-[12px] items-start text-center w-full relative z-10">
             <p className="font-['Inter:Extra_Bold'] font-extrabold text-white text-[32px] w-full">
               Trải nghiệm tập thử miễn phí 01 buổi bộ môn bạn yêu thích
             </p>
@@ -377,25 +293,28 @@ export default function BoMonPage() {
               Để lại thông tin, đội ngũ tư vấn sẽ thiết kế buổi trải nghiệm chuẩn quốc tế dành riêng cho bạn.
             </p>
           </div>
-          <div className="flex gap-[16px] items-center w-full">
-            <div className="bg-[#1e293b] border border-[#334155] flex flex-1 items-start min-w-0 px-[16px] py-[14px] rounded-[8px]">
-              <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[14px] flex-1 min-w-0">Họ và tên của bạn</p>
-            </div>
-            <div className="bg-[#1e293b] border border-[#334155] flex flex-1 items-start min-w-0 px-[16px] py-[14px] rounded-[8px]">
-              <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[14px] flex-1 min-w-0">Số điện thoại liên hệ</p>
-            </div>
-            <div className="bg-[#1e293b] border border-[#334155] flex flex-1 items-center justify-between min-w-0 px-[16px] py-[14px] rounded-[8px]">
-              <p className="font-['Inter:Regular'] font-normal text-white text-[14px] flex-1 min-w-0">Chọn bộ môn muốn thử</p>
+          <div className="flex gap-[16px] items-center w-full relative z-10">
+            <input
+              type="text"
+              placeholder="Họ và tên của bạn"
+              className="bg-[#1e293b] border border-[#334155] flex-1 min-w-0 px-[16px] py-[14px] rounded-[8px] text-white text-[14px] font-['Inter:Regular'] font-normal outline-none placeholder:text-[#94a3b8] focus:border-[#10b981] transition-colors"
+            />
+            <input
+              type="tel"
+              placeholder="Số điện thoại liên hệ"
+              className="bg-[#1e293b] border border-[#334155] flex-1 min-w-0 px-[16px] py-[14px] rounded-[8px] text-white text-[14px] font-['Inter:Regular'] font-normal outline-none placeholder:text-[#94a3b8] focus:border-[#10b981] transition-colors"
+            />
+            <div className="bg-[#1e293b] border border-[#334155] flex flex-1 items-center justify-between min-w-0 px-[16px] py-[14px] rounded-[8px] cursor-pointer hover:border-[#10b981] transition-colors">
+              <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[14px] flex-1 min-w-0">Chọn bộ môn muốn thử</p>
               <img alt="" src={imgChevronDown} style={{ width: 16, height: 16 }} />
             </div>
-            <div className="bg-[#10b981] flex flex-1 items-center justify-center min-w-0 px-[24px] py-[14px] rounded-[8px] cursor-pointer" data-name="btn-submit">
+            <button className="bg-[#10b981] flex flex-1 items-center justify-center min-w-0 px-[24px] py-[14px] rounded-[8px] cursor-pointer hover:bg-[#059669] transition-colors shadow-lg shadow-[#10b981]/25">
               <p className="font-['Inter:Extra_Bold'] font-extrabold text-white text-[14px] whitespace-nowrap">Nhận vé tập thử ngay</p>
-            </div>
+            </button>
           </div>
-        </div>
-      </div>
+        </FadeUp>
+      </section>
 
-      <Footer />
     </div>
   );
 }

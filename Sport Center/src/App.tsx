@@ -128,6 +128,7 @@ export default function App() {
   const [receptionistOpen, setReceptionistOpen] = useState(
     () => receptionistHashes.has(window.location.hash),
   )
+  const [selectedPlanId, setSelectedPlanId] = useState<string | undefined>()
 
   useEffect(() => {
     const sync = () => {
@@ -154,9 +155,11 @@ export default function App() {
   if (paymentOpen) {
     return (
       <PaymentFlow
+        initialPlan={selectedPlanId as any}
         onExit={() => {
           window.location.hash = "home"
           setPaymentOpen(false)
+          setSelectedPlanId(undefined)
         }}
       />
     )
@@ -219,7 +222,8 @@ export default function App() {
         window.location.hash = "register"
         setAdminOpen(true)
       }}
-      onOpenPayment={() => {
+      onOpenPayment={(planId) => {
+        setSelectedPlanId(planId)
         window.location.hash = "payment"
         setPaymentOpen(true)
       }}

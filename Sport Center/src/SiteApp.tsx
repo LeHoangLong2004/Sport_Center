@@ -14,6 +14,8 @@ import FaqPage from "./site-pages/FaqPage"
 import PolicyPage from "./site-pages/TermsPage"
 import ClassListPage from "./site-pages/ClassListPage"
 import ClassDetailPage from "./site-pages/ClassDetailPage"
+import { SiteHeader } from "./components/SiteHeader"
+import { SiteFooter } from "./components/SiteFooter"
 
 export type SiteRoute =
   | "home"
@@ -79,7 +81,7 @@ export default function SiteApp({
 }: {
   onOpenAdmin: () => void
   onOpenRegister: () => void
-  onOpenPayment?: () => void
+  onOpenPayment?: (planId?: string) => void
 }) {
   const [route, setRoute] = useState<SiteRoute>(routeFromHash)
   const [notice, setNotice] = useState("")
@@ -111,8 +113,12 @@ export default function SiteApp({
   function handleClick(event: MouseEvent<HTMLDivElement>) {
     const target = event.target as HTMLElement
     const clickable = target.closest<HTMLElement>(
-      '[data-name^="menu-item"], [data-name^="btn-"], [data-name="logo-group"], [data-name="logo-group-footer"], [data-name="policy-links"]',
+      'button, a, [data-name^="menu-item"], [data-name^="btn-"], [data-name="logo-group"], [data-name="logo-group-footer"], [data-name="policy-links"]',
     )
+    
+    const isLayoutContainer = ["SECTION", "MAIN", "NAV", "HEADER", "FOOTER", "BODY", "HTML"].includes(target.tagName);
+    if (!clickable && isLayoutContainer) return;
+
     const label = (clickable ?? target).textContent?.trim() ?? ""
 
     for (const [text, destination] of Object.entries(labelRoutes)) {
@@ -126,6 +132,16 @@ export default function SiteApp({
         }
         return
       }
+    }
+
+    if (clickable?.dataset.name === "btn-register") {
+      if (onOpenRegister) onOpenRegister()
+      return
+    }
+
+    if (clickable?.dataset.name === "btn-login") {
+      if (onOpenAdmin) onOpenAdmin()
+      return
     }
 
     if (
@@ -163,9 +179,17 @@ export default function SiteApp({
     if (
       label.includes("Mua ngay") ||
       label.includes("Chọn gói") ||
-      label.includes("Đăng ký ngay")
+      label.includes("Đăng ký ngay") ||
+      label.includes("Đăng ký Fitness") ||
+      label.includes("Đăng ký Premium")
     ) {
-      if (onOpenPayment) onOpenPayment()
+      let planId: string | undefined = undefined;
+      const lowerLabel = label.toLowerCase();
+      if (lowerLabel.includes("starter") || lowerLabel.includes("swim")) planId = "swim";
+      else if (lowerLabel.includes("fitness")) planId = "fitness";
+      else if (lowerLabel.includes("premium") || lowerLabel.includes("vip")) planId = "premium";
+
+      if (onOpenPayment) onOpenPayment(planId)
       return
     }
 
@@ -184,15 +208,22 @@ export default function SiteApp({
 
   return (
     <div
-      className="site-canvas"
+      className="site-canvas relative font-sans"
       onClick={handleClick}
       data-current-route={route}
     >
-      <Page />
+      <SiteHeader currentRoute={route} />
+      
+      <div className="min-h-screen">
+        <Page />
+      </div>
+
+      <SiteFooter />
+
       {notice && (
-        <div className="site-notice" role="status">
-          <span className="site-notice-mark">✓</span>
-          <span>{notice}</span>
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-full shadow-2xl shadow-slate-900/20 flex items-center gap-3 z-50 animate-[fadeUp_0.3s_ease-out]">
+          <span className="bg-teal-500 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shrink-0">✓</span>
+          <span className="text-sm font-medium">{notice}</span>
         </div>
       )}
     </div>
