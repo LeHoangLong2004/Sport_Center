@@ -52,98 +52,75 @@ const footerLinks = ["Hệ thống chi nhánh", "Đội ngũ chuyên gia", "Bả
 const footerPolicies = ["Chính sách bảo mật", "Điều khoản sử dụng", "Cookie"];
 const socialIcons = ["fb", "ig", "yt", "li"];
 
+import { FadeUp, FadeIn } from "../components/Motion"
+
 export default function HoSoHlvRedesign() {
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
-      {/* Navbar */}
-      <nav className="bg-white border-b border-[#e2e8f0] flex h-[72px] items-center justify-between px-[80px] w-full shrink-0 sticky top-0 z-50">
-        <div className="flex gap-[10px] items-center">
-          <div className="bg-[#10b981] flex items-center justify-center rounded-[8px] size-[36px]">
-            <span className="text-white font-['Inter:Extra_Bold'] font-extrabold text-[14px]">⚡</span>
-          </div>
-          <div className="flex flex-col gap-[2px]">
-            <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[18px] leading-none">SPORTCENTER</p>
-            <p className="font-['Inter:Semi_Bold'] font-semibold text-[#10b981] text-[9px] uppercase leading-none">Energy Platform</p>
-          </div>
-        </div>
-        <div className="flex gap-[4px] h-full items-center">
-          {navItems.map(([label, active]) => (
-            <div
-              key={label}
-              className="flex flex-col h-full items-start justify-center px-[14px] py-[24px] relative cursor-pointer"
-            >
-              <p className={`font-['Inter:${active ? "Bold" : "Medium"}'] font-${active ? "bold" : "medium"} text-[15px] whitespace-nowrap ${active ? "text-[#2563eb]" : "text-[#1e293b]"}`}>
-                {label}
-              </p>
-              {active && (
-                <div className="absolute bottom-0 left-[14px] bg-[#2563eb] h-[2px] rounded-[1px] w-[24px]" />
-              )}
-            </div>
-          ))}
-        </div>
-        <div className="flex gap-[12px] items-center">
-          <div className="border border-[#e2e8f0] flex items-center px-[18px] py-[10px] rounded-[8px] cursor-pointer">
-            <p className="font-['Inter:Semi_Bold'] font-semibold text-[#1e293b] text-[14px] whitespace-nowrap">Đăng nhập</p>
-          </div>
-          <div className="bg-[#10b981] flex items-center px-[20px] py-[10px] rounded-[8px] cursor-pointer">
-            <p className="font-['Inter:Bold'] font-bold text-white text-[14px] whitespace-nowrap">Đăng ký thành viên</p>
-          </div>
-        </div>
-      </nav>
+      
 
       {/* Hero */}
-      <section className="bg-[#0f172a] flex items-center gap-[64px] px-[80px] py-[80px] w-full">
-        <div className="shrink-0">
-          <img
-            src={imgCoachPortrait}
-            alt="Coach Trần Khoa"
-            className="w-[480px] h-[480px] object-cover rounded-[16px]"
-          />
-        </div>
-        <div className="flex flex-col gap-[24px] flex-1">
-          <div className="inline-flex items-center bg-[#10b981] px-[14px] py-[6px] rounded-full self-start">
-            <span className="font-['Inter:Bold'] font-bold text-white text-[12px] uppercase tracking-wider">
+      <section className="bg-[#0f172a] relative flex items-center gap-[64px] px-[80px] py-[100px] w-full min-h-[560px] overflow-hidden">
+        <FadeIn className="absolute inset-0 pointer-events-none z-0">
+          <img alt="" className="absolute inset-0 w-full h-full object-cover max-w-none" src="/assets/images/hero_bg.jpg" />
+          <div className="absolute inset-0 bg-slate-900/80 mix-blend-multiply" />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-900/90 via-slate-900/70 to-slate-900/30" />
+        </FadeIn>
+        
+        <FadeUp className="shrink-0 relative z-10">
+          <div className="relative group">
+            <div className="absolute inset-0 bg-[#10b981] rounded-[16px] transform rotate-3 group-hover:rotate-6 transition-transform duration-500 opacity-20" />
+            <img
+              src={imgCoachPortrait}
+              alt="Coach Trần Khoa"
+              className="w-[480px] h-[480px] object-cover rounded-[16px] relative z-10 shadow-2xl transition-transform duration-500 group-hover:-translate-y-2"
+            />
+          </div>
+        </FadeUp>
+        <div className="flex flex-col gap-[24px] flex-1 relative z-10">
+          <FadeUp delay={0.1} className="inline-flex items-center bg-[#10b981]/20 border border-[#10b981]/50 px-[14px] py-[6px] rounded-full self-start backdrop-blur-sm">
+            <span className="font-['Inter:Bold'] font-bold text-[#10b981] text-[12px] uppercase tracking-wider">
               🏆 HLV ĐƯỢC YÊU THÍCH NHẤT
             </span>
-          </div>
-          <div className="flex flex-col gap-[8px]">
-            <h1 className="font-['Inter:Extra_Bold'] font-extrabold text-white text-[48px] leading-tight">
+          </FadeUp>
+          <FadeUp delay={0.2} className="flex flex-col gap-[8px]">
+            <h1 className="font-['Inter:Extra_Bold'] font-extrabold text-white text-[48px] leading-tight drop-shadow-sm">
               Coach Trần Khoa
             </h1>
-            <p className="font-['Inter:Semi_Bold'] font-semibold text-[#94a3b8] text-[20px]">
+            <p className="font-['Inter:Semi_Bold'] font-semibold text-[#cbd5e1] text-[20px]">
               Master Trainer — Functional HIIT & Strength
             </p>
-          </div>
-          <div className="flex flex-wrap gap-[10px]">
+          </FadeUp>
+          <FadeUp delay={0.3} className="flex flex-wrap gap-[10px]">
             {certTags.map((tag) => (
               <span
                 key={tag}
-                className="border border-[#334155] font-['Inter:Medium'] font-medium text-[#94a3b8] text-[13px] px-[12px] py-[6px] rounded-[6px]"
+                className="border border-[#334155] bg-slate-800/50 backdrop-blur-sm font-['Inter:Medium'] font-medium text-[#cbd5e1] text-[13px] px-[12px] py-[6px] rounded-[6px]"
               >
                 {tag}
               </span>
             ))}
-          </div>
-          <div className="flex gap-[40px] pt-[8px]">
+          </FadeUp>
+          <FadeUp delay={0.4} className="flex gap-[40px] pt-[16px]">
             {[
               { value: "7", label: "Năm kinh nghiệm" },
               { value: "500+", label: "Học viên" },
               { value: "4.9/5.0", label: "Đánh giá" },
             ].map(({ value, label }) => (
               <div key={label} className="flex flex-col gap-[4px]">
-                <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#10b981] text-[36px] leading-none">
+                <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#10b981] text-[36px] leading-none drop-shadow-sm">
                   {value}
                 </p>
                 <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[14px]">{label}</p>
               </div>
             ))}
-          </div>
+          </FadeUp>
         </div>
       </section>
 
       {/* About */}
       <section className="bg-white flex gap-[48px] items-start px-[80px] py-[80px] w-full">
-        <div className="flex flex-col gap-[24px] flex-1">
+        <FadeUp className="flex flex-col gap-[24px] flex-1">
           <div className="flex flex-col gap-[12px]">
             <h2 className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[32px] leading-tight">
               Triết lý huấn luyện & Sự nghiệp
@@ -156,8 +133,8 @@ export default function HoSoHlvRedesign() {
           <p className="font-['Inter:Regular'] font-normal text-[#475569] text-[16px] leading-[1.75]">
             Hơn 7 năm gắn bó với nghề, Khoa đã đồng hành cùng hơn 500 học viên từ người mới bắt đầu cho đến vận động viên chuyên nghiệp, giúp họ đạt được những mục tiêu tưởng chừng bất khả thi.
           </p>
-        </div>
-        <div className="bg-[#f8fafc] border border-[#e2e8f0] flex flex-col gap-[20px] p-[32px] rounded-[16px] w-[360px] shrink-0">
+        </FadeUp>
+        <FadeUp delay={0.2} className="bg-[#f8fafc] border border-[#e2e8f0] flex flex-col gap-[20px] p-[32px] rounded-[16px] w-[360px] shrink-0 shadow-lg hover:shadow-xl hover:border-[#10b981] transition-all duration-300">
           <h3 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[18px]">Chuyên môn cốt lõi</h3>
           <div className="flex flex-col gap-[14px]">
             {coreSkills.map((skill) => (
@@ -167,39 +144,42 @@ export default function HoSoHlvRedesign() {
               </div>
             ))}
           </div>
-        </div>
+        </FadeUp>
       </section>
 
       {/* Disciplines */}
       <section className="bg-[#f8fafc] flex flex-col gap-[48px] px-[80px] py-[80px] w-full">
-        <div className="flex flex-col gap-[12px] items-center">
+        <FadeUp className="flex flex-col gap-[12px] items-center">
           <h2 className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[32px] leading-tight text-center">
             Các bộ môn Coach Trần Khoa trực tiếp giảng dạy
           </h2>
           <div className="bg-[#2563eb] h-[4px] w-[48px] rounded-[2px]" />
-        </div>
+        </FadeUp>
         <div className="flex gap-[24px]">
-          {disciplines.map(({ img, name, kcal }) => (
-            <div key={name} className="flex flex-col rounded-[16px] overflow-hidden bg-white border border-[#e2e8f0] flex-1">
-              <img src={img} alt={name} className="w-full h-[220px] object-cover" />
+          {disciplines.map(({ img, name, kcal }, index) => (
+            <FadeUp delay={index * 0.1} key={name} className="flex flex-col rounded-[16px] overflow-hidden bg-white border border-[#e2e8f0] flex-1 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-[#10b981] transition-all duration-300 group">
+              <div className="relative overflow-hidden">
+                <img src={img} alt={name} className="w-full h-[220px] object-cover transition-transform duration-500 group-hover:scale-105" />
+                <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
               <div className="flex flex-col gap-[8px] p-[24px]">
-                <h3 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[20px]">{name}</h3>
+                <h3 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[20px] group-hover:text-[#10b981] transition-colors">{name}</h3>
                 <p className="font-['Inter:Medium'] font-medium text-[#10b981] text-[14px]">🔥 {kcal}</p>
               </div>
-            </div>
+            </FadeUp>
           ))}
         </div>
       </section>
 
       {/* Schedule */}
       <section className="bg-white flex flex-col gap-[48px] px-[80px] py-[80px] w-full">
-        <div className="flex flex-col gap-[12px] items-center">
+        <FadeUp className="flex flex-col gap-[12px] items-center">
           <h2 className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[32px] leading-tight text-center">
             Lịch giảng dạy tuần này
           </h2>
           <div className="bg-[#2563eb] h-[4px] w-[48px] rounded-[2px]" />
-        </div>
-        <div className="rounded-[12px] overflow-hidden border border-[#e2e8f0]">
+        </FadeUp>
+        <FadeUp delay={0.2} className="rounded-[12px] overflow-hidden border border-[#e2e8f0] shadow-sm hover:shadow-lg transition-shadow duration-300">
           <div className="bg-[#0f172a] flex">
             {["Thứ", "Giờ", "Lớp học", "Bộ môn", "Phòng", "Trạng thái"].map((col) => (
               <div key={col} className="flex-1 px-[20px] py-[16px]">
@@ -212,7 +192,7 @@ export default function HoSoHlvRedesign() {
           {scheduleRows.map((row, i) => (
             <div
               key={i}
-              className={`flex border-t border-[#e2e8f0] ${i % 2 === 0 ? "bg-white" : "bg-[#f8fafc]"}`}
+              className={`flex border-t border-[#e2e8f0] hover:bg-blue-50 transition-colors cursor-pointer ${i % 2 === 0 ? "bg-white" : "bg-[#f8fafc]"}`}
             >
               <div className="flex-1 px-[20px] py-[18px]">
                 <p className="font-['Inter:Semi_Bold'] font-semibold text-[#0f172a] text-[14px]">{row.day}</p>
@@ -242,20 +222,20 @@ export default function HoSoHlvRedesign() {
               </div>
             </div>
           ))}
-        </div>
+        </FadeUp>
       </section>
 
       {/* Testimonials */}
       <section className="bg-[#f8fafc] flex flex-col gap-[48px] px-[80px] py-[80px] w-full">
-        <div className="flex flex-col gap-[12px] items-center">
+        <FadeUp className="flex flex-col gap-[12px] items-center">
           <h2 className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[32px] leading-tight text-center">
             Học viên nói gì về Coach Trần Khoa
           </h2>
           <div className="bg-[#2563eb] h-[4px] w-[48px] rounded-[2px]" />
-        </div>
+        </FadeUp>
         <div className="grid grid-cols-4 gap-[24px]">
-          {testimonials.map(({ img, name, membership, quote }) => (
-            <div key={name} className="bg-white border border-[#e2e8f0] flex flex-col gap-[16px] p-[24px] rounded-[16px]">
+          {testimonials.map(({ img, name, membership, quote }, index) => (
+            <FadeUp delay={index * 0.1} key={name} className="bg-white border border-[#e2e8f0] flex flex-col gap-[16px] p-[24px] rounded-[16px] shadow-[0_4px_6px_rgba(0,0,0,0.02)] hover:shadow-xl hover:-translate-y-1 hover:border-[#10b981] transition-all duration-300">
               <div className="flex gap-[12px] items-center">
                 <img src={img} alt={name} className="size-[48px] rounded-full object-cover shrink-0" />
                 <div className="flex flex-col gap-[2px]">
@@ -271,17 +251,19 @@ export default function HoSoHlvRedesign() {
               <p className="font-['Inter:Regular'] font-normal text-[#475569] text-[14px] leading-[1.6]">
                 "{quote}"
               </p>
-            </div>
+            </FadeUp>
           ))}
         </div>
       </section>
 
       {/* CTA */}
       <section className="bg-[#f8fafc] flex flex-col items-center px-[80px] pb-[80px]">
-        <div className="bg-[#0f172a] flex flex-col gap-[32px] items-center px-[64px] py-[64px] rounded-[24px] w-full">
-          <div className="flex flex-col gap-[12px] items-center">
+        <FadeUp className="bg-[#0f172a] relative flex flex-col gap-[32px] items-center px-[64px] py-[64px] rounded-[24px] w-full overflow-hidden shadow-2xl">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#10b981]/10 to-transparent pointer-events-none" />
+          <div className="flex flex-col gap-[12px] items-center relative z-10">
             <h2 className="font-['Inter:Extra_Bold'] font-extrabold text-white text-[32px] leading-tight text-center">
               Đặt lịch tập thử cùng Coach Trần Khoa ngay hôm nay
+
             </h2>
             <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[16px] text-center">
               Trải nghiệm 1 buổi đánh giá thể trạng miễn phí
@@ -302,67 +284,10 @@ export default function HoSoHlvRedesign() {
               Đặt lịch tập ngay
             </button>
           </div>
-        </div>
+        </FadeUp>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-[#020617] flex flex-col gap-[40px] items-start pb-[48px] pt-[64px] px-[80px] w-full shrink-0">
-        <div className="flex items-start justify-between w-full">
-          <div className="flex flex-col gap-[24px] items-start w-[360px]">
-            <div className="flex gap-[10px] items-center">
-              <div className="bg-[#10b981] flex items-center justify-center rounded-[8px] size-[40px]">
-                <span className="text-white font-['Inter:Extra_Bold'] font-extrabold text-[16px]">⚡</span>
-              </div>
-              <div className="flex flex-col gap-[2px]">
-                <p className="font-['Inter:Extra_Bold'] font-extrabold text-white text-[20px] leading-none">SPORTCENTER</p>
-                <p className="font-['Inter:Semi_Bold'] font-semibold text-[#10b981] text-[10px] uppercase">Energy Platform</p>
-              </div>
-            </div>
-            <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[14px] leading-[1.6]">
-              Hệ thống phòng tập thể thao tiêu chuẩn quốc tế mang lại nguồn năng lượng bứt phá mỗi ngày.
-            </p>
-            <p className="font-['Inter:Bold'] font-bold text-white text-[16px]">📱 Hotline: 1900 6868</p>
-          </div>
-          <div className="flex flex-col gap-[16px] items-start w-[200px] text-[14px]">
-            <p className="font-['Inter:Bold'] font-bold text-white uppercase">Dịch vụ nổi bật</p>
-            {footerServices.map((item) => (
-              <p key={item} className="font-['Inter:Regular'] font-normal text-[#94a3b8]">{item}</p>
-            ))}
-          </div>
-          <div className="flex flex-col gap-[16px] items-start w-[200px] text-[14px]">
-            <p className="font-['Inter:Bold'] font-bold text-white uppercase">SportCenter</p>
-            {footerLinks.map((item) => (
-              <p key={item} className="font-['Inter:Regular'] font-normal text-[#94a3b8]">{item}</p>
-            ))}
-          </div>
-          <div className="flex flex-col gap-[16px] items-start w-[320px]">
-            <p className="font-['Inter:Bold'] font-bold text-white text-[14px] uppercase">Địa chỉ chi nhánh chính</p>
-            <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[14px] leading-[1.5]">
-              Tòa nhà Energy Tower, 120 Đường Ba Tháng Hai, Phường 12, Quận 10, TP. Hồ Chí Minh
-            </p>
-            <div className="flex gap-[8px] items-center pt-[8px]">
-              {socialIcons.map((s) => (
-                <div
-                  key={s}
-                  className="bg-[#1e293b] flex items-center justify-center rounded-[8px] size-[36px] cursor-pointer hover:bg-[#10b981] transition-colors"
-                >
-                  <span className="text-white text-[12px] font-bold">{s}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="border-t border-[#1e293b] flex items-center justify-between pt-[32px] w-full">
-          <p className="font-['Inter:Regular'] font-normal text-[#475569] text-[13px]">© 2026 SportCenter. All rights reserved.</p>
-          <div className="flex gap-[24px] items-center">
-            {footerPolicies.map((item) => (
-              <p key={item} className="font-['Inter:Regular'] font-normal text-[#475569] text-[13px] cursor-pointer hover:text-white transition-colors">
-                {item}
-              </p>
-            ))}
-          </div>
-        </div>
-      </footer>
+      
     </div>
   );
 }
