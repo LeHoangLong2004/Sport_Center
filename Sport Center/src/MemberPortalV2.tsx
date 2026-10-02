@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react"
+import { MemberSidebar } from "./pages/MemberPortal/components/MemberSidebar"
 
 export type NewMemberPage = "schedule" | "success" | "workout" | "ai"
 
@@ -75,73 +76,7 @@ function Shell({
 
   return (
     <main className={`m2-shell m2-${page}`}>
-      <aside className="m2-sidebar">
-        <div className="m2-brand">
-          <span>SC</span>
-          <div>
-            <strong>SPORTCENTER</strong>
-            <small>{page === "schedule" ? "MEMBER" : "MEMBER PORTAL"}</small>
-          </div>
-        </div>
-        <nav className="m2-nav" aria-label="Điều hướng hội viên">
-          {nav.map((label, index) => (
-            <button
-              className={active === index ? "active" : ""}
-              key={label}
-              onClick={() => {
-                const destinations = [
-                  "overview",
-                  "profile",
-                  "users",
-                  "schedule",
-                  "payment",
-                  "reports",
-                  "ai",
-                ] as const
-                onNavigate(destinations[index] as any)
-              }}
-              type="button"
-            >
-              <img src={src(page, assets.nav[index])} alt="" />
-              <span>{label}</span>
-            </button>
-          ))}
-        </nav>
-        <div className="m2-support">
-          <strong>Cần hỗ trợ?</strong>
-          <span>
-            {page === "schedule"
-              ? "Trung tâm vận hành 06:00–22:00 hằng ngày"
-              : "Tổng đài hỗ trợ hội viên hoạt động từ 06:00 – 22:00 hằng ngày. Hotline: 1900 6868"}
-          </span>
-        </div>
-        <div className="m2-sidebar-spacer" />
-        <div className="m2-account cursor-pointer hover:bg-white/5 p-3 -m-3 rounded-xl transition-all group relative flex items-center gap-3 overflow-hidden" onClick={() => onNavigate("profile" as any)}>
-          <img src={src(page, assets.avatar)} alt="" className="w-10 h-10 rounded-full shrink-0" />
-          <div className="flex-1 min-w-0 transition-transform duration-200 group-hover:-translate-x-1 flex flex-col justify-center">
-            <strong className="block truncate text-sm text-white">Minh Anh</strong>
-            <small className="block truncate text-xs text-white/50">Hội viên Premium</small>
-          </div>
-          <div className="flex items-center gap-1 opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 absolute right-3 bg-slate-800/90 pl-2 py-1 shadow-sm rounded-lg backdrop-blur-sm">
-            <button 
-              type="button" 
-              onClick={(e) => { e.stopPropagation(); window.location.hash = "home"; }}
-              className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-md transition-colors"
-              title="Trang chủ"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            </button>
-            <button 
-              type="button" 
-              onClick={(e) => { e.stopPropagation(); window.location.hash = "home"; window.location.reload(); }}
-              className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-md transition-colors"
-              title="Đăng xuất"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
-            </button>
-          </div>
-        </div>
-      </aside>
+      <MemberSidebar page={page as any} onNavigate={onNavigate as any} />
       <div className="m2-workspace">
         <header className="m2-topbar">
           <div>
@@ -172,62 +107,127 @@ function Shell({
 
 const days = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"]
 const calendarEvents = [
-  { row: 1, column: 3, tone: "blue", title: "Yoga Flow", detail: "Mai Phương", meta: "Studio 1" },
+  { row: 1, column: 3, tone: "teal", title: "Yoga Flow", detail: "Mai Phương", meta: "Studio 1" },
   { row: 2, column: 6, tone: "green", title: "Tự tập tự do", detail: "Không có PT", meta: "Khu Gym" },
   { row: 3, column: 1, tone: "green", title: "Cardio tự do", detail: "Tập máy chạy" },
-  { row: 3, column: 2, tone: "blue", title: "Functional HIIT", detail: "Trần Khoa" },
+  { row: 3, column: 2, tone: "teal", title: "Functional HIIT", detail: "Trần Khoa" },
   { row: 3, column: 5, tone: "orange", title: "PT cá nhân", detail: "Trần Khoa" },
 ]
 
 function Schedule({ onNavigate }: { onNavigate: Navigate }) {
   return (
     <Shell page="schedule" onNavigate={onNavigate}>
-      <section className="m2-schedule-content">
-        <div className="m2-calendar-card">
-          <div className="m2-calendar-title">
-            <div><strong>Tuần học hiện tại</strong><span>21 Th9 - 27 Th9, 2026</span></div>
-            <div className="m2-legend">
-              <span><i className="blue" />Lớp nhóm</span>
-              <span><i className="orange" />HLV Cá nhân (PT)</span>
-              <span><i className="green" />Tự tập luyện</span>
+      <section className="p-8 bg-slate-50 min-h-[calc(100vh-78px)] flex gap-6 flex-col xl:flex-row items-start">
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex-1 w-full">
+          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white relative z-10">
+            <div>
+              <h2 className="text-xl font-bold text-slate-800 tracking-tight">Tuần học hiện tại</h2>
+              <p className="text-sm font-medium text-slate-500 mt-1 flex items-center gap-1.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                21 Th9 - 27 Th9, 2026
+              </p>
+            </div>
+            <div className="flex gap-5 bg-slate-50 px-5 py-2.5 rounded-full border border-slate-200/60">
+              <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-teal-500 shadow-sm shadow-teal-500/50"></span><span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Lớp nhóm</span></div>
+              <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-orange-400 shadow-sm shadow-orange-500/50"></span><span className="text-xs font-bold text-slate-600 uppercase tracking-wider">HLV Cá nhân (PT)</span></div>
+              <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-500/50"></span><span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Tự tập luyện</span></div>
             </div>
           </div>
-          <div className="m2-calendar">
-            <div className="m2-calendar-days"><span />{days.map((day) => <strong key={day}>{day}</strong>)}</div>
-            {["08:00", "10:00", "17:30"].map((time, row) => (
-              <div className="m2-calendar-row" key={time}>
-                <span>{time}</span>
-                {days.map((day) => <div key={day} />)}
-                {calendarEvents.filter((event) => event.row === row + 1).map((event) => (
-                  <button
-                    className={`m2-calendar-event ${event.tone} column-${event.column}`}
-                    key={event.title}
-                    onClick={() => event.title === "Functional HIIT" && onNavigate("workout")}
-                    type="button"
-                  >
-                    <strong>{event.title}</strong><span>{event.detail}</span>{event.meta && <small>{event.meta}</small>}
-                  </button>
-                ))}
+          
+          <div className="overflow-x-auto overflow-y-hidden">
+            <div className="min-w-[900px]">
+              <div className="grid grid-cols-[80px_repeat(7,1fr)] bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                <div className="p-4 text-center border-r border-slate-200/50"></div>
+                {days.map(day => <div key={day} className="p-4 text-center border-r border-slate-200/50">{day}</div>)}
               </div>
-            ))}
-            <div className="m2-calendar-blank" />
+              <div className="relative bg-white" style={{ minHeight: '500px' }}>
+                {["08:00", "10:00", "17:30"].map((time, row) => (
+                  <div key={time} className="grid grid-cols-[80px_repeat(7,1fr)] border-b border-slate-100 min-h-[140px]">
+                    <div className="p-4 text-center text-xs font-bold text-slate-400 border-r border-slate-100 flex items-center justify-center bg-slate-50/30">{time}</div>
+                    {days.map(day => <div key={day} className="border-r border-slate-100 last:border-r-0 relative hover:bg-teal-50/20 transition-colors cursor-crosshair"></div>)}
+                  </div>
+                ))}
+                
+                {/* Events - positioned absolute */}
+                {calendarEvents.map((ev, i) => {
+                  const bg = ev.tone === 'teal' ? 'bg-teal-50/90 border-teal-200 text-teal-700' : 
+                             ev.tone === 'green' ? 'bg-emerald-50/90 border-emerald-200 text-emerald-700' : 
+                             'bg-orange-50/90 border-orange-200 text-orange-700';
+                  const dot = ev.tone === 'teal' ? 'bg-teal-500 shadow-teal-500/40' : 
+                              ev.tone === 'green' ? 'bg-emerald-500 shadow-emerald-500/40' : 'bg-orange-500 shadow-orange-500/40';
+                  
+                  // Calculate position
+                  const top = ev.row === 1 ? '16px' : ev.row === 2 ? '156px' : '296px';
+                  
+                  return (
+                    <button type="button" onClick={() => ev.title === "Functional HIIT" && onNavigate("workout")} key={i} className={`absolute text-left p-3.5 rounded-2xl border backdrop-blur-md ${bg} hover:shadow-lg transition-all cursor-pointer z-10 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-offset-2 ${ev.tone === 'teal' ? 'focus:ring-teal-500' : ev.tone === 'green' ? 'focus:ring-emerald-500' : 'focus:ring-orange-500'}`} style={{ top, left: `calc(80px + ${((ev.column - 1) / 7) * 100}% + 8px)`, width: `calc(${100 / 7}% - 16px)`, minHeight: '108px' }}>
+                      <div className="flex items-start justify-between gap-1 mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full shadow-sm ${dot}`}></span>
+                          <strong className="text-sm font-bold leading-tight">{ev.title}</strong>
+                        </div>
+                      </div>
+                      <div className="text-xs font-medium opacity-90 mt-1 flex items-center gap-1.5">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        {ev.detail}
+                      </div>
+                      {ev.meta && (
+                        <div className="text-[11px] font-medium opacity-75 mt-1.5 flex items-center gap-1.5">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                          {ev.meta}
+                        </div>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
           </div>
         </div>
-        <aside className="m2-schedule-aside">
-          <button className="m2-book-button" onClick={() => onNavigate("classes")} type="button">+ Đặt lớp mới</button>
-          <div className="m2-side-card">
-            <strong>BUỔI TẬP TIẾP THEO</strong>
-            <div className="m2-next-class">
-              <span><small>THỨ 4</small><b>23</b></span>
-              <div><strong>Yoga Flow</strong><small>08:00 • Coach Mai Phương</small></div>
+
+        <aside className="w-full xl:w-[320px] shrink-0 flex flex-col gap-6">
+          <button className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold text-sm py-4 rounded-2xl shadow-md shadow-teal-600/20 transition-all hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm" onClick={() => onNavigate("classes")} type="button">
+            + Đặt lớp mới
+          </button>
+          
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
+            <strong className="block text-[11px] font-bold text-slate-400 tracking-widest uppercase mb-4">Buổi tập tiếp theo</strong>
+            <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="flex flex-col items-center justify-center bg-white border border-slate-200 w-14 h-16 rounded-xl shadow-sm shrink-0">
+                <span className="text-[10px] font-bold text-teal-600 uppercase">Thứ 4</span>
+                <b className="text-xl font-black text-slate-800">23</b>
+              </div>
+              <div className="flex-1 min-w-0">
+                <strong className="block text-base font-bold text-slate-800 truncate mb-1">Yoga Flow</strong>
+                <small className="block text-xs font-medium text-slate-500 truncate flex items-center gap-1">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  08:00 • Coach Mai Phương
+                </small>
+              </div>
             </div>
           </div>
-          <div className="m2-side-card">
-            <strong>TIẾN TRÌNH THÁNG 9</strong>
-            <dl>
-              <div><dt>Số buổi tập</dt><dd>12 buổi</dd></div>
-              <div><dt>Tiêu thụ calo</dt><dd className="orange">8,400 kcal</dd></div>
-              <div><dt>Chuỗi kỷ lục</dt><dd className="green">🔥 5 ngày</dd></div>
+          
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
+            <strong className="block text-[11px] font-bold text-slate-400 tracking-widest uppercase mb-4">Tiến trình tháng 9</strong>
+            <dl className="space-y-4">
+              <div className="flex justify-between items-center pb-4 border-b border-slate-100">
+                <dt className="text-sm font-medium text-slate-500">Số buổi tập</dt>
+                <dd className="text-sm font-bold text-slate-800">12 buổi</dd>
+              </div>
+              <div className="flex justify-between items-center pb-4 border-b border-slate-100">
+                <dt className="text-sm font-medium text-slate-500">Tiêu thụ calo</dt>
+                <dd className="text-sm font-bold text-orange-600 flex items-center gap-1.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>
+                  8,400 kcal
+                </dd>
+              </div>
+              <div className="flex justify-between items-center">
+                <dt className="text-sm font-medium text-slate-500">Chuỗi kỷ lục</dt>
+                <dd className="text-sm font-bold text-emerald-600 flex items-center gap-1.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+                  5 ngày
+                </dd>
+              </div>
             </dl>
           </div>
         </aside>
@@ -357,33 +357,100 @@ function AiAssistant({ onNavigate }: { onNavigate: Navigate }) {
   }
   return (
     <Shell page="ai" onNavigate={onNavigate}>
-      <section className="m2-ai-layout">
-        <aside className="m2-chat-history">
-          <div><strong>LỊCH SỬ CHAT</strong><button aria-label="Cuộc trò chuyện mới" type="button"><img src={src("ai", "8c7b7.svg")} alt="" /></button></div>
+      <section className="flex h-[calc(100vh-78px)] bg-slate-50 overflow-hidden">
+        {/* Sidebar History */}
+        <aside className="w-72 bg-white border-r border-slate-200 flex flex-col shrink-0">
+          <div className="p-5 flex items-center justify-between border-b border-slate-100">
+            <strong className="text-[11px] font-bold text-slate-400 tracking-widest uppercase">Lịch sử Chat</strong>
+            <button aria-label="Cuộc trò chuyện mới" type="button" className="p-1.5 hover:bg-slate-100 rounded-md transition-colors text-slate-500">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-3 space-y-1">
           {[
             ["Kế hoạch dinh dưỡng tuần 4", "Hôm nay"],
             ["Đau mỏi cơ sau buổi Legday", "Hôm qua"],
             ["Cách tính lượng Calories thâm hụt", "T5, 19/09"],
             ["Đề xuất lớp Yoga phù hợp gối", "T2, 16/09"],
             ["Tăng cơ giảm mỡ cho dân văn phòng", "05/09"],
-          ].map(([title, date], index) => <button className={index === 0 ? "active" : ""} key={title} type="button"><strong>{title}</strong><small>{date}</small></button>)}
-        </aside>
-        <div className="m2-chat">
-          <div className="m2-chat-head"><span><img src={src("ai", "7005e.svg")} alt="" /></span><div><strong>Move AI Coach</strong><small>● Trợ lý AI đang trực tuyến hỗ trợ bạn</small></div></div>
-          <div className="m2-chat-stream">
-            <p className="m2-chat-user">Gợi ý bài tập cho giảm mỡ bụng trong vòng 4 tuần hiệu quả nhất. Mình có thể tập 4 buổi một tuần tại nhà hoặc phòng gym đều được.</p>
-            <div className="m2-chat-ai">
-              <p>Chào Minh Anh! Để giảm mỡ bụng hiệu quả và an toàn, chúng ta cần kết hợp giữa bài tập đốt mỡ toàn thân (HIIT) và các bài tập tăng cường khối lượng cơ trung tâm (Core). Mình đề xuất cho bạn giáo án 4 ngày dưới đây:</p>
-              <div className="m2-plan-table">
-                <div><strong>NGÀY</strong><strong>BÀI TẬP CHI TIẾT</strong><strong>THỜI LƯỢNG</strong><strong>CALO ƯỚC TÍNH</strong></div>
-                {plan.map((row) => <div key={row[0]}>{row.map((cell, index) => <span className={index === 0 ? "day" : index === 3 ? "calo" : ""} key={cell}>{cell}</span>)}</div>)}
-              </div>
-              <p>Dinh dưỡng cũng đóng vai trò quyết định, hãy giữ mức thâm hụt nhẹ 300 kcal/ngày nhé. Bạn có muốn mình tạo chi tiết bài tập cho từng ngày không?</p>
-              <div className="m2-quick-actions"><button type="button">Thêm vào lịch</button><button type="button">Điều chỉnh</button><button type="button">Tạo giáo án</button></div>
-            </div>
-            {sent.map((text, index) => <p className="m2-chat-user" key={`${text}-${index}`}>{text}</p>)}
+          ].map(([title, date], index) => (
+            <button className={`w-full text-left p-3 rounded-xl transition-all ${index === 0 ? "bg-teal-50 border border-teal-100" : "hover:bg-slate-50 border border-transparent"}`} key={title} type="button">
+              <strong className={`block text-sm font-semibold truncate ${index === 0 ? "text-teal-700" : "text-slate-700"}`}>{title}</strong>
+              <small className={`block text-xs mt-1 ${index === 0 ? "text-teal-500" : "text-slate-400"}`}>{date}</small>
+            </button>
+          ))}
           </div>
-          <form className="m2-chat-input" onSubmit={submit}><input value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Hỏi về lịch tập, chế độ dinh dưỡng, kĩ thuật tập luyện..." /><button aria-label="Gửi tin nhắn" type="submit"><img src={src("ai", "34eb1.svg")} alt="" /></button></form>
+        </aside>
+
+        {/* Chat Area */}
+        <div className="flex-1 flex flex-col bg-slate-50 relative">
+          <div className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 flex items-center shrink-0 z-10 sticky top-0">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-teal-500 to-indigo-500 flex items-center justify-center shadow-md shadow-teal-500/20">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M12 2a2 2 0 0 1 2 2c0 1.1-.9 2-2 2s-2-.9-2-2a2 2 0 0 1 2-2zm0 6a2 2 0 0 1 2 2v6a2 2 0 0 1-4 0v-6a2 2 0 0 1 2-2zm0 12a2 2 0 0 1 2 2H10a2 2 0 0 1 2-2z"/></svg>
+              </div>
+              <div>
+                <strong className="block text-sm font-bold text-slate-800">Move AI Coach</strong>
+                <small className="block text-xs font-medium text-emerald-500 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Trợ lý AI đang trực tuyến hỗ trợ bạn</small>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="flex justify-end">
+              <p className="bg-white border border-slate-200 text-slate-700 shadow-sm rounded-2xl rounded-tr-sm px-5 py-3 text-sm max-w-[80%] leading-relaxed">
+                Gợi ý bài tập cho giảm mỡ bụng trong vòng 4 tuần hiệu quả nhất. Mình có thể tập 4 buổi một tuần tại nhà hoặc phòng gym đều được.
+              </p>
+            </div>
+            
+            <div className="flex justify-start items-start gap-4">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-teal-500 to-indigo-500 flex items-center justify-center shrink-0 shadow-sm mt-1">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M12 2a2 2 0 0 1 2 2c0 1.1-.9 2-2 2s-2-.9-2-2a2 2 0 0 1 2-2zm0 6a2 2 0 0 1 2 2v6a2 2 0 0 1-4 0v-6a2 2 0 0 1 2-2zm0 12a2 2 0 0 1 2 2H10a2 2 0 0 1 2-2z"/></svg>
+              </div>
+              <div className="bg-gradient-to-br from-teal-600 to-indigo-700 text-white shadow-xl shadow-teal-900/10 rounded-3xl rounded-tl-sm px-6 py-5 text-sm max-w-[85%] leading-relaxed">
+                <p className="mb-4 text-teal-50">Chào Minh Anh! Để giảm mỡ bụng hiệu quả và an toàn, chúng ta cần kết hợp giữa bài tập đốt mỡ toàn thân (HIIT) và các bài tập tăng cường khối lượng cơ trung tâm (Core). Mình đề xuất cho bạn giáo án 4 ngày dưới đây:</p>
+                
+                <div className="bg-white/10 rounded-2xl overflow-hidden border border-white/20 mb-4 backdrop-blur-sm">
+                  <div className="grid grid-cols-[1fr_2fr_1fr_1fr] bg-white/10 p-3 text-xs font-bold tracking-wider text-teal-100 uppercase border-b border-white/10">
+                    <div>NGÀY</div><div>BÀI TẬP CHI TIẾT</div><div>THỜI LƯỢNG</div><div>CALO ƯỚC TÍNH</div>
+                  </div>
+                  {plan.map((row, idx) => (
+                    <div key={row[0]} className={`grid grid-cols-[1fr_2fr_1fr_1fr] p-3 text-sm items-center ${idx !== plan.length - 1 ? 'border-b border-white/10' : ''} hover:bg-white/5 transition-colors`}>
+                      <span className="font-semibold text-white">{row[0]}</span>
+                      <span className="text-teal-50">{row[1]}</span>
+                      <span className="text-teal-100">{row[2]}</span>
+                      <span className="inline-flex items-center px-2 py-1 rounded-md bg-emerald-500/20 text-emerald-300 font-medium text-xs w-fit">{row[3]}</span>
+                    </div>
+                  ))}
+                </div>
+                
+                <p className="mb-5 text-teal-50">Dinh dưỡng cũng đóng vai trò quyết định, hãy giữ mức thâm hụt nhẹ 300 kcal/ngày nhé. Bạn có muốn mình tạo chi tiết bài tập cho từng ngày không?</p>
+                
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" className="bg-white text-teal-700 hover:bg-teal-50 font-semibold px-4 py-2 rounded-full text-xs transition-all shadow-sm">Thêm vào lịch</button>
+                  <button type="button" className="bg-white/10 text-white hover:bg-white/20 border border-white/20 font-medium px-4 py-2 rounded-full text-xs transition-all">Điều chỉnh</button>
+                  <button type="button" className="bg-white/10 text-white hover:bg-white/20 border border-white/20 font-medium px-4 py-2 rounded-full text-xs transition-all">Tạo giáo án</button>
+                </div>
+              </div>
+            </div>
+
+            {sent.map((text, index) => (
+              <div className="flex justify-end" key={`${text}-${index}`}>
+                <p className="bg-white border border-slate-200 text-slate-700 shadow-sm rounded-2xl rounded-tr-sm px-5 py-3 text-sm max-w-[80%] leading-relaxed animate-in slide-in-from-bottom-2 fade-in duration-300">
+                  {text}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="p-5 bg-white border-t border-slate-200">
+            <form className="relative flex items-center shadow-sm border border-slate-200 rounded-full bg-slate-50 focus-within:bg-white focus-within:ring-2 focus-within:ring-teal-500/20 focus-within:border-teal-500 transition-all overflow-hidden" onSubmit={submit}>
+              <input value={message} onChange={(event) => setMessage(event.target.value)} className="w-full bg-transparent outline-none py-3.5 pl-6 pr-12 text-sm text-slate-700 placeholder-slate-400" placeholder="Hỏi về lịch tập, chế độ dinh dưỡng, kĩ thuật tập luyện..." />
+              <button aria-label="Gửi tin nhắn" type="submit" className={`absolute right-2 p-2 rounded-full transition-all ${message.trim() ? 'bg-teal-600 text-white shadow-md hover:bg-teal-700' : 'bg-slate-200 text-slate-400'}`}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+              </button>
+            </form>
+          </div>
         </div>
       </section>
     </Shell>

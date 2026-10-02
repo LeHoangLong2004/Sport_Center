@@ -21,37 +21,36 @@ export function Sidebar({ page, setPage }: { page: AdminPage; setPage: (p: Admin
   const isFinancePage = ["budget", "expenses", "payroll", "pl-report"].includes(page)
 
   return (
-    <aside className="bg-[#0f172a] flex flex-col gap-7 h-full items-start pb-6 pt-7 px-[18px] shrink-0 w-[260px]">
+    <aside className="bg-[#0f172a] flex flex-col gap-[28px] items-start pb-[24px] pt-[28px] px-[18px] shrink-0 w-[230px] sticky top-0 h-screen overflow-y-auto hidden-scrollbar">
       {/* brand */}
-      <div className="flex gap-3 items-center w-full">
-        <div className="bg-[#14b8a6] flex items-center justify-center rounded-[10px] size-10">
-          <span className="font-extrabold text-[#0f172a] text-lg">SC</span>
+      <div className="flex gap-[12px] items-center shrink-0 w-full">
+        <div className="bg-[#f43f5e] flex flex-col items-center justify-center rounded-[10px] shrink-0 size-[40px] shadow-lg shadow-rose-500/20">
+          <span className="font-extrabold text-white text-[18px]">SC</span>
         </div>
-        <div className="flex flex-col gap-0.5">
-          <span className="font-extrabold text-white text-[15px] tracking-wide">SPORTCENTER</span>
-          <div className="bg-[#1e293b] px-1.5 py-px rounded-[4px]">
-            <span className="font-bold text-[#14b8a6] text-[9px] tracking-wider">CENTER MANAGER</span>
+        <div className="flex flex-col gap-[2px] items-start shrink-0">
+          <span className="font-extrabold text-[15px] text-white whitespace-nowrap tracking-wide">SPORTCENTER</span>
+          <div className="bg-[#1e293b] flex items-start px-[6px] py-px rounded-[4px] shrink-0">
+            <span className="font-bold text-[#f43f5e] text-[9px] whitespace-nowrap tracking-wider">CENTER MANAGER</span>
           </div>
         </div>
       </div>
 
       {/* nav */}
-      <nav className="flex flex-col gap-1.5 w-full flex-1">
+      <nav className="flex flex-col gap-[6px] items-start shrink-0 w-full">
         {navItems.map(item => {
           const active = item.page === "payment"
             ? page === "payment"
             : item.label === "Quản lý Người dùng"
               ? page === "members" && !isFinancePage
-              : false
+              : page === item.page
           return (
             <button
               key={item.label}
               onClick={() => setPage(item.page)}
-              className={`flex gap-3 items-center px-4 py-3 rounded-lg w-full text-left transition-colors ${active ? "bg-[#2563eb]" : "hover:bg-white/5"
-                }`}
+              className={`flex gap-[12px] items-center px-[16px] py-[12px] rounded-[8px] shrink-0 w-full text-left transition-colors duration-200 ${active ? "bg-[#f43f5e] shadow-md shadow-rose-500/20" : "bg-transparent hover:bg-white/5"}`}
             >
-              <img src={item.icon} alt="" className="size-[18px] shrink-0" />
-              <span className={`text-sm flex-1 ${active ? "font-bold text-white" : "font-medium text-[#cbd5e1]"}`}>
+              <img src={item.icon} alt="" className={`shrink-0 size-[18px] ${active ? "brightness-200" : ""}`} />
+              <span className={`flex-1 font-${active ? "bold" : "medium"} ${active ? "text-white" : "text-[#cbd5e1]"} text-[14px] leading-normal`}>
                 {item.label}
               </span>
             </button>
@@ -59,66 +58,70 @@ export function Sidebar({ page, setPage }: { page: AdminPage; setPage: (p: Admin
         })}
 
         {/* Finance section */}
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col gap-0.5 w-full">
           <button
             onClick={() => setFinanceOpen(v => !v)}
-            className={`flex gap-3 items-center px-4 py-3 rounded-lg w-full text-left hover:bg-white/5 ${isFinancePage ? "bg-[#2563eb]" : ""}`}
+            className={`flex gap-[12px] items-center px-[16px] py-[12px] rounded-[8px] shrink-0 w-full text-left transition-colors duration-200 ${isFinancePage ? "bg-[#f43f5e] shadow-md shadow-rose-500/20" : "bg-transparent hover:bg-white/5"}`}
           >
-            <span className="size-[18px] shrink-0 text-[#cbd5e1] flex items-center justify-center text-base">₫</span>
-            <span className={`text-sm flex-1 ${isFinancePage ? "font-bold text-white" : "font-medium text-[#cbd5e1]"}`}>
+            <span className={`size-[18px] shrink-0 flex items-center justify-center text-base ${isFinancePage ? "text-white font-bold" : "text-[#cbd5e1]"}`}>₫</span>
+            <span className={`flex-1 font-${isFinancePage ? "bold" : "medium"} ${isFinancePage ? "text-white" : "text-[#cbd5e1]"} text-[14px] leading-normal`}>
               Tài chính {financeOpen ? "▾" : "▸"}
             </span>
           </button>
-          {financeOpen && financeSubItems.map(sub => (
-            <button
-              key={sub.page}
-              onClick={() => setPage(sub.page)}
-              className={`flex gap-2 items-center pl-[46px] pr-4 py-2 rounded-md w-full text-left hover:bg-white/5 ${page === sub.page ? "bg-white/10" : ""}`}
-            >
-              <div className={`rounded-full size-[5px] shrink-0 ${page === sub.page ? "bg-white" : "bg-[#909dad]"}`} />
-              <span className={`text-[12.5px] ${page === sub.page ? "font-semibold text-white" : "font-normal text-[#909dad]"}`}>
-                {sub.label}
-              </span>
-            </button>
-          ))}
+          {financeOpen && (
+            <div className="flex flex-col gap-1 mt-1 pl-[42px] pr-2 w-full">
+              {financeSubItems.map(sub => (
+                <button
+                  key={sub.page}
+                  onClick={() => setPage(sub.page)}
+                  className={`flex gap-2 items-center px-2 py-1.5 rounded-md w-full text-left transition-colors ${page === sub.page ? "bg-white/10" : "hover:bg-white/5"}`}
+                >
+                  <div className={`rounded-full size-[5px] shrink-0 ${page === sub.page ? "bg-[#f43f5e]" : "bg-[#94a3b8]"}`} />
+                  <span className={`text-[12px] leading-normal ${page === sub.page ? "font-bold text-white" : "font-medium text-[#94a3b8]"}`}>
+                    {sub.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <button
           onClick={() => setPage("reports")}
-          className={`flex gap-3 items-center px-4 py-3 rounded-lg w-full text-left transition-colors ${page === "reports" ? "bg-[#2563eb]" : "hover:bg-white/5"
-            }`}
+          className={`flex gap-[12px] items-center px-[16px] py-[12px] rounded-[8px] shrink-0 w-full text-left transition-colors duration-200 ${page === "reports" ? "bg-[#f43f5e] shadow-md shadow-rose-500/20" : "bg-transparent hover:bg-white/5"}`}
         >
-          <img src={iBarChart} alt="" className="size-[18px] shrink-0" />
-          <span className={`text-sm flex-1 ${page === "reports" ? "font-bold text-white" : "font-medium text-[#cbd5e1]"}`}>
+          <img src={iBarChart} alt="" className={`shrink-0 size-[18px] ${page === "reports" ? "brightness-200" : ""}`} />
+          <span className={`flex-1 font-${page === "reports" ? "bold" : "medium"} ${page === "reports" ? "text-white" : "text-[#cbd5e1]"} text-[14px] leading-normal`}>
             Báo cáo & Thống kê
           </span>
         </button>
+        
         <button
           onClick={() => setPage("settings")}
-          className={`flex gap-3 items-center px-4 py-3 rounded-lg w-full text-left hover:bg-white/5 ${page === "settings" ? "bg-[#2563eb]" : ""}`}
+          className={`flex gap-[12px] items-center px-[16px] py-[12px] rounded-[8px] shrink-0 w-full text-left transition-colors duration-200 ${page === "settings" ? "bg-[#f43f5e] shadow-md shadow-rose-500/20" : "bg-transparent hover:bg-white/5"}`}
         >
-          <img src={iSettings} alt="" className="size-[18px] shrink-0" />
-          <span className={`text-sm flex-1 ${page === "settings" ? "font-bold text-white" : "font-medium text-[#cbd5e1]"}`}>
+          <img src={iSettings} alt="" className={`shrink-0 size-[18px] ${page === "settings" ? "brightness-200" : ""}`} />
+          <span className={`flex-1 font-${page === "settings" ? "bold" : "medium"} ${page === "settings" ? "text-white" : "text-[#cbd5e1]"} text-[14px] leading-normal`}>
             Cài đặt & Nhật ký
           </span>
         </button>
       </nav>
 
       {/* support card */}
-      <div className="bg-[#1e293b] border border-[#334155] flex flex-col gap-2 p-4 rounded-xl w-full">
-        <p className="font-bold text-white text-[13px]">Cần hỗ trợ vận hành?</p>
-        <p className="font-normal leading-[1.4] text-[#94a3b8] text-[11px]">
+      <div className="bg-[#1e293b] border border-[#334155] border-solid flex flex-col gap-[8px] items-start p-[16px] rounded-[12px] shrink-0 w-full">
+        <span className="font-bold text-[13px] text-white w-full">Cần hỗ trợ vận hành?</span>
+        <span className="font-normal leading-[1.4] text-rose-400 text-[11px] w-full">
           Hotline kỹ thuật hoạt động từ 06:00 – 22:00 hàng ngày.
-        </p>
+        </span>
       </div>
 
       {/* user */}
-      <div className="border-[#1e293b] pt-4 w-full border-t mt-auto">
+      <div className="pt-4 w-full mt-auto">
         <div className="cursor-pointer hover:bg-white/5 p-3 -mx-3 -mb-3 rounded-xl transition-all group relative flex items-center gap-3 overflow-hidden" onClick={() => setPage("profile")}>
-          <img src={avatarSidebar} alt="" className="rounded-full size-10 shrink-0 object-cover" />
+          <img src={avatarSidebar} alt="" className="rounded-full size-10 shrink-0 object-cover border-2 border-[#1e293b] group-hover:border-[#f43f5e] transition-colors" />
           <div className="flex flex-col flex-1 min-w-0 transition-transform duration-200 group-hover:-translate-x-1 justify-center">
-            <p className="font-bold text-white text-[13px] truncate">Minh Anh</p>
-            <p className="text-[#94a3b8] text-[11px] truncate">Quản lý trung tâm</p>
+            <strong className="font-bold text-white text-[13px] truncate">Minh Anh</strong>
+            <small className="text-[#94a3b8] text-[11px] truncate">Quản lý trung tâm</small>
           </div>
           <div className="flex items-center gap-1 opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 absolute right-3 bg-[#0f172a]/90 pl-2 py-1 shadow-sm rounded-lg backdrop-blur-sm">
             <button

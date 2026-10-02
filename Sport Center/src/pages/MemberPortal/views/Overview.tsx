@@ -40,7 +40,7 @@ export function Overview({
         <div className="mp-portal-grid">
           <div className="mp-dashboard-column">
             <div className="mp-stat-grid">
-              <div className="mp-stat-card blue">
+              <div className="mp-stat-card teal">
                 <span>Gói hiện tại</span>
                 <strong>Premium</strong>
                 <small>Còn 88 ngày</small>
