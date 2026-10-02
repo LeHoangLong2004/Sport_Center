@@ -13,11 +13,13 @@ export default function CoachShell({
   children: React.ReactNode
 }) {
   return (
-    <div className="cp-shell">
+    <div className="flex w-full min-h-screen bg-slate-50 dark:bg-[#0f172a] transition-colors duration-300 font-sans text-slate-900 dark:text-white selection:bg-orange-500 selection:text-white">
       <CoachSidebar screen={screen} onNavigate={onNavigate} />
-      <div className="cp-main">
+      <div className="flex flex-col flex-1 min-w-0">
         <CoachTopbar screen={screen} />
-        <div className="cp-content">{children}</div>
+        <main className="flex-1 p-6 lg:p-8 overflow-y-auto">
+          {children}
+        </main>
       </div>
     </div>
   )

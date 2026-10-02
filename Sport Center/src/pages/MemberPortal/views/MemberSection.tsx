@@ -27,7 +27,7 @@ export function MemberSection({
           <div className="mp-stat-grid">
             {content.stats.map(([label, value, detail], index) => (
               <div
-                className={`mp-stat-card ${index === 0 ? "blue" : index === 1 ? "green" : ""}`}
+                className={`mp-stat-card ${index === 0 ? "teal" : index === 1 ? "green" : ""}`}
                 key={label}
               >
                 <span>{label}</span>

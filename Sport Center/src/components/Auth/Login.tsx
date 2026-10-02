@@ -1,6 +1,6 @@
 import React, { useState, FormEvent } from 'react';
-import { AuthVisual } from './AuthVisual';
 import { ThemeToggle } from './ThemeToggle';
+import { assets } from './shared';
 
 export type DemoRole = "admin" | "member" | "coach" | "receptionist"
 
@@ -82,136 +82,168 @@ export function Login({
   }
 
   return (
-    <main className="flex min-h-screen bg-slate-50 dark:bg-[#0f172a] font-sans selection:bg-[#14b8a6] selection:text-white transition-colors duration-300">
-      <AuthVisual />
+    <main className="relative min-h-screen flex items-center justify-center p-4 font-sans selection:bg-[#14b8a6] selection:text-white overflow-hidden">
+      {/* Full-screen Background */}
+      <img 
+        className="absolute inset-0 w-full h-full object-cover scale-105" 
+        src={`${assets}/sport_center_auth_bg.jpg`} 
+        alt="Background" 
+      />
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
 
-      <section className="flex-1 flex flex-col justify-center items-center p-8 lg:p-12 relative overflow-y-auto">
+      {/* Floating Theme Toggle */}
+      <div className="absolute top-6 right-6 z-50">
         <ThemeToggle />
+      </div>
+
+      <div className="relative w-full max-w-5xl flex flex-col lg:flex-row bg-white/10 dark:bg-slate-900/40 backdrop-blur-2xl rounded-[2.5rem] border border-white/20 shadow-2xl overflow-hidden">
         
-        {/* Glow effect in background */}
-        <div className="absolute top-1/4 -right-20 w-72 h-72 bg-[#14b8a6]/10 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-1/4 -left-20 w-72 h-72 bg-[#3b82f6]/10 rounded-full blur-[100px] pointer-events-none" />
-
-        <form className="w-full max-w-md relative z-10" onSubmit={submit}>
-          {onHome && (
-            <button
-              type="button"
-              onClick={onHome}
-              className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:text-white transition-colors mb-10 group"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-1 transition-transform"><path d="m15 18-6-6 6-6"/></svg>
-              Quay về trang chủ
-            </button>
-          )}
-
-          <div className="mb-10">
-            <span className="inline-block text-[#3b82f6] font-bold text-xs tracking-widest uppercase mb-2">CHÀO MỪNG TRỞ LẠI</span>
-            <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-2 tracking-tight">Đăng nhập hệ thống</h2>
-            <p className="text-slate-500 dark:text-[#94a3b8] text-sm">
-              Nhập thông tin tài khoản để truy cập hệ thống quản trị.
+        {/* Left Side: Brand & Visuals */}
+        <div className="w-full lg:w-5/12 p-10 lg:p-12 flex flex-col justify-between bg-gradient-to-br from-[#14b8a6]/20 to-transparent border-b lg:border-b-0 lg:border-r border-white/10">
+          <div>
+            <div className="flex gap-3 items-center mb-12">
+              <div className="bg-[#14b8a6] flex items-center justify-center rounded-xl w-14 h-14 shadow-lg shadow-[#14b8a6]/30">
+                <span className="font-black text-white text-2xl">SC</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-black text-white text-xl tracking-wider">SPORTCENTER</span>
+                <span className="font-bold text-[#86efac] text-xs tracking-widest uppercase">Operating System</span>
+              </div>
+            </div>
+            
+            <h1 className="text-4xl lg:text-5xl font-bold text-white leading-tight mb-6">
+              Hệ thống quản trị<br />thông minh.
+            </h1>
+            <p className="text-slate-300 text-lg leading-relaxed max-w-sm">
+              Đăng nhập để trải nghiệm không gian số hóa toàn diện dành cho mọi thành viên của Sport Center.
             </p>
           </div>
 
-          <div className="mb-8">
-            <p className="text-xs font-bold text-slate-400 dark:text-[#64748b] uppercase tracking-wider mb-3">Tài khoản demo truy cập nhanh</p>
-            <div className="flex flex-wrap gap-2">
-              {demoAccounts.map((account) => (
-                <button
-                  key={account.email}
-                  type="button"
-                  className="flex flex-col items-start px-3 py-2 bg-white hover:bg-slate-100 border border-slate-200 dark:bg-[#1e293b] dark:hover:bg-[#334155] dark:border-[#334155] dark:hover:border-[#475569] rounded-lg transition-all text-left shadow-sm dark:shadow-none"
-                  onClick={() => fillDemo(account)}
-                >
-                  <span className="text-[10px] font-bold text-[#14b8a6] uppercase">{account.label}</span>
-                  <span className="text-xs font-medium text-slate-700 dark:text-[#cbd5e1]">{account.name}</span>
-                </button>
-              ))}
-            </div>
+          <div className="hidden lg:block mt-20">
+            <p className="text-sm text-slate-400 font-medium">© 2026 Sports Center • Phiên bản 2.0</p>
           </div>
+        </div>
 
-          <div className="space-y-4">
-            <label className="block">
-              <span className="block text-sm font-semibold text-slate-700 dark:text-[#cbd5e1] mb-1.5">Email hoặc mã nhân viên</span>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 dark:text-[#64748b]">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                </div>
-                <input
-                  value={email}
-                  onChange={(e) => { setEmail(e.target.value); setError("") }}
-                  type="text"
-                  required
-                  className="block w-full pl-10 pr-4 py-3 bg-white dark:bg-[#1e293b]/50 border border-slate-200 dark:border-[#334155] rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/50 focus:border-[#14b8a6] transition-all shadow-sm dark:shadow-none"
-                  placeholder="Nhập email của bạn"
-                />
-              </div>
-            </label>
-
-            <label className="block">
-              <span className="block text-sm font-semibold text-slate-700 dark:text-[#cbd5e1] mb-1.5">Mật khẩu</span>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 dark:text-[#64748b]">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                </div>
-                <input
-                  value={password}
-                  onChange={(e) => { setPassword(e.target.value); setError("") }}
-                  type="password"
-                  required
-                  className="block w-full pl-10 pr-4 py-3 bg-white dark:bg-[#1e293b]/50 border border-slate-200 dark:border-[#334155] rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/50 focus:border-[#14b8a6] transition-all shadow-sm dark:shadow-none"
-                  placeholder="••••••••"
-                />
-              </div>
-            </label>
-          </div>
-
-          {error && (
-            <div className="mt-4 p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg flex items-start gap-2 text-red-600 dark:text-red-400 text-sm">
-              <svg className="shrink-0 mt-0.5" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
-              <span>{error}</span>
-            </div>
-          )}
-
-          <div className="flex justify-end mt-4 mb-6">
-            <button 
-              type="button" 
-              onClick={onForgotPassword}
-              className="text-sm font-medium text-[#14b8a6] hover:text-[#0d9488] transition-colors"
-            >
-              Quên mật khẩu?
-            </button>
-          </div>
-
-          <button
-            disabled={loading}
-            type="submit"
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#14b8a6] to-[#0d9488] hover:from-[#0d9488] hover:to-[#0f766e] text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-teal-500/20 dark:shadow-teal-500/10 transition-all active:scale-[0.98] disabled:opacity-70 disabled:pointer-events-none"
-          >
-            {loading ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                Đang xác thực...
-              </>
-            ) : (
-              <>
-                Đăng nhập an toàn
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-              </>
+        {/* Right Side: The Form */}
+        <div className="w-full lg:w-7/12 p-10 lg:p-14 bg-white dark:bg-slate-900/80">
+          <form className="w-full max-w-md mx-auto" onSubmit={submit}>
+            {onHome && (
+              <button
+                type="button"
+                onClick={onHome}
+                className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors mb-8 group"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-1 transition-transform"><path d="m15 18-6-6 6-6"/></svg>
+                Quay về trang chủ
+              </button>
             )}
-          </button>
 
-          <div className="mt-8 text-center text-sm text-slate-500 dark:text-[#94a3b8]">
-            <span>Chưa có tài khoản?</span>{" "}
-            <button 
-              type="button" 
-              onClick={onRegister}
-              className="font-bold text-slate-900 hover:text-[#14b8a6] dark:text-white dark:hover:text-[#14b8a6] transition-colors"
+            <div className="mb-10">
+              <span className="inline-block px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold text-xs tracking-widest uppercase rounded-full mb-4">Chào mừng trở lại</span>
+              <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Đăng nhập</h2>
+            </div>
+
+            <div className="mb-8 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3 text-center">Tài khoản Demo (Truy cập nhanh)</p>
+              <div className="grid grid-cols-2 gap-2">
+                {demoAccounts.map((account) => (
+                  <button
+                    key={account.email}
+                    type="button"
+                    className="flex flex-col items-center p-2.5 bg-white hover:bg-[#14b8a6]/10 border border-slate-200 dark:bg-slate-800 dark:hover:bg-teal-900/30 dark:border-slate-700 dark:hover:border-teal-700/50 rounded-xl transition-all shadow-sm group"
+                    onClick={() => fillDemo(account)}
+                  >
+                    <span className="text-[10px] font-bold text-[#14b8a6] uppercase tracking-wider mb-0.5">{account.label}</span>
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white">{account.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Tên đăng nhập / Email</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                  </div>
+                  <input
+                    value={email}
+                    onChange={(e) => { setEmail(e.target.value); setError("") }}
+                    type="text"
+                    required
+                    className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/40 focus:border-[#14b8a6] transition-all focus:bg-white"
+                    placeholder="Nhập email của bạn"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Mật khẩu</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  </div>
+                  <input
+                    value={password}
+                    onChange={(e) => { setPassword(e.target.value); setError("") }}
+                    type="password"
+                    required
+                    className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/40 focus:border-[#14b8a6] transition-all focus:bg-white"
+                    placeholder="••••••••"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {error && (
+              <div className="mt-5 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl flex items-start gap-3 text-red-600 dark:text-red-400 text-sm font-medium animate-in fade-in slide-in-from-top-2">
+                <svg className="shrink-0 mt-0.5" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                <span>{error}</span>
+              </div>
+            )}
+
+            <div className="flex justify-end mt-4 mb-8">
+              <button 
+                type="button" 
+                onClick={onForgotPassword}
+                className="text-sm font-bold text-[#14b8a6] hover:text-[#0d9488] transition-colors"
+              >
+                Quên mật khẩu?
+              </button>
+            </div>
+
+            <button
+              disabled={loading}
+              type="submit"
+              className="w-full flex items-center justify-center gap-2 bg-[#14b8a6] hover:bg-[#0d9488] text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-teal-500/30 transition-all active:scale-[0.98] hover:-translate-y-1 disabled:opacity-70 disabled:pointer-events-none disabled:transform-none"
             >
-              Đăng ký ngay
+              {loading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  Đang xác thực...
+                </>
+              ) : (
+                <>
+                  Đăng nhập an toàn
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </>
+              )}
             </button>
-          </div>
-        </form>
-      </section>
+
+            <div className="mt-8 text-center text-sm font-medium text-slate-500 dark:text-slate-400">
+              <span>Chưa có tài khoản?</span>{" "}
+              <button 
+                type="button" 
+                onClick={onRegister}
+                className="font-bold text-[#14b8a6] hover:text-[#0d9488] transition-colors ml-1"
+              >
+                Đăng ký ngay
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </main>
   )
 }
