@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { A, AdminPage, avatarSidebar, avatarTopbar, iDashboard, iUsers, iPackage, iCalendar, iReceipt, iBarChart, iSettings, iSearch, iBell, iSearch2, iDownload, iPlus, iWallet, iCheckCircle, iClock, iRotateCcw, iChevron, iEye, iPrinter, iMore, mAvatar0, mAvatar1, mAvatar2, mAvatar3, mAvatar4, iBell2, iDownload2, iKpiRevenue, iKpiMembers, iKpiClasses, iKpiRetain, iSeg1, iSeg2, iSeg3, iSeg4, iDotBlue, iDotTeal, iDotOrange, iDotPurple, iActivity0, iActivity1, iActivity2, iActivity3, iLineChart, iBarFill, coachAvatar1, coachAvatar2, coachAvatar3, coachAvatar4, hrAvatar1, hrAvatar2, hrAvatar3, hrAvatar4, iBudgetIcon, iExpenseIcon, iBudgetChevron, iPLRevIcon, memberEditAvatar, transactions, reportBarData, reportMonths, members } from './shared';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
+import { OverviewPage } from './views/OverviewPage';
+import { PackagesPage } from './views/PackagesPage';
+import { SchedulePage } from './views/SchedulePage';
 import { PaymentPage } from './views/PaymentPage';
 import { ReportsPage } from './views/ReportsPage';
 import { BudgetPage } from './views/BudgetPage';
@@ -14,7 +17,7 @@ import { SettingsPage } from './views/SettingsPage';
 import { ProfileSettings } from '../../components/ProfileSettings';
 
 export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
-  const [page, setPage] = useState<AdminPage>("members")
+  const [page, setPage] = useState<AdminPage>("overview")
 
   const breadcrumbs: Record<AdminPage, [string, string]> = {
     overview:   ["Quản lý / Tổng quan", "Tổng quan hệ thống"],
@@ -35,20 +38,14 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [bc, title] = breadcrumbs[page] || ["", ""]
 
   return (
-    <div className="theme-admin bg-[#f8fafc] flex h-screen w-full overflow-hidden">
+    <div className="flex w-full h-screen bg-slate-50 dark:bg-[#0f172a] transition-colors duration-300 font-sans text-slate-900 dark:text-white selection:bg-rose-500 selection:text-white overflow-hidden">
       <Sidebar page={page} setPage={setPage} />
       <div className="flex flex-col flex-1 min-w-0 h-full">
         <TopBar breadcrumb={bc} title={title} onProfileClick={() => setPage("profile")} />
-        <div className="flex-1 overflow-y-auto">
-          {["overview", "packages", "schedule"].includes(page) && (
-            <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
-              <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-                <img src="/assets/2585a.svg" alt="Coming soon" className="size-16 mx-auto mb-4 opacity-50" />
-                <h2 className="text-2xl font-bold text-slate-800 mb-2">Tính năng đang phát triển</h2>
-                <p className="text-slate-500">Mô đun này đang được xây dựng và sẽ sớm ra mắt trong phiên bản tiếp theo.</p>
-              </div>
-            </div>
-          )}
+        <div className="flex-1 overflow-y-auto p-6 lg:p-8">
+          {page === "overview"   && <OverviewPage />}
+          {page === "packages"   && <PackagesPage />}
+          {page === "schedule"   && <SchedulePage />}
           {page === "members"    && <MembersPage onEditMember={() => setPage("member-edit")} />}
           {page === "payment"    && <PaymentPage />}
           {page === "reports"    && <ReportsPage />}
@@ -59,12 +56,10 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           {page === "settings"   && <SettingsPage />}
           {page === "member-edit"&& <MemberEditPage onBack={() => setPage("members")} />}
           {page === "profile"    && (
-            <div className="p-6">
-              <ProfileSettings 
-                roleLabel="Quản trị viên hệ thống" 
-                initialData={{ fullName: "Trần Quản Trị", email: "admin@sportcenter.com", phone: "0999 888 777", avatarUrl: avatarTopbar }}
-              />
-            </div>
+            <ProfileSettings 
+              roleLabel="Quản trị viên hệ thống" 
+              initialData={{ fullName: "Trần Quản Trị", email: "admin@sportcenter.com", phone: "0999 888 777", avatarUrl: avatarTopbar }}
+            />
           )}
         </div>
       </div>

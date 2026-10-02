@@ -3,27 +3,29 @@ import { breadcrumbs, A } from '../shared';
 
 export function TopBar({ breadcrumb, title, shiftLabel, onProfileClick }: { breadcrumb: string; title: string; shiftLabel?: string; onProfileClick?: () => void }) {
   return (
-    <div className="bg-white border-[#e2e8f0] border-b border-solid flex h-[78px] items-center justify-between px-[32px] shrink-0 w-full">
-      <div className="flex flex-col gap-[4px] items-start shrink-0">
-        <span className="font-['Manrope:Regular'] font-normal text-[#94a3b8] text-[11px]">{breadcrumb}</span>
-        <span className="font-['Manrope:ExtraBold'] font-extrabold text-[#0f172a] text-[20px]">{title}</span>
+    <header className="flex justify-between items-center px-6 lg:px-8 py-5 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-[#0f172a]/50 backdrop-blur-xl sticky top-0 z-30">
+      <div>
+        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">{breadcrumb}</p>
+        <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{title}</p>
       </div>
-      <div className="flex gap-[16px] items-center shrink-0">
-        <div className="bg-[#ecfdf5] flex items-center px-[10px] py-[4px] rounded-[99px] shrink-0">
-          <span className="font-['Manrope:Bold'] font-bold text-[#047857] text-[11px] whitespace-nowrap">
-            {shiftLabel ?? "Ca sáng • Trực tuyến"}
-          </span>
+      <div className="flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold text-xs rounded-full border border-emerald-200/50 dark:border-emerald-500/20">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          {shiftLabel ?? "Ca sáng • Trực tuyến"}
         </div>
-        <div className="border border-[#e2e8f0] border-solid flex flex-col items-center justify-center rounded-[20px] shrink-0 size-[40px]">
-          <img src={`${A}/06b01.svg`} alt="" className="size-[18px]" />
-        </div>
+        <button 
+          className="relative p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition-colors"
+        >
+          <img src={`${A}/06b01.svg`} alt="" className="size-5 brightness-50 dark:brightness-150" />
+          <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-purple-500 border-2 border-slate-100 dark:border-slate-800 rounded-full" />
+        </button>
         <img 
           src={`${A}/8a918.png`} 
           alt="Avatar" 
-          className="rounded-full size-[38px] object-cover cursor-pointer border-2 border-transparent hover:border-blue-500 transition-colors" 
+          className="rounded-full size-11 object-cover cursor-pointer border-2 border-slate-200 dark:border-slate-700 hover:border-purple-500 dark:hover:border-purple-500 transition-colors shadow-sm" 
           onClick={onProfileClick}
         />
       </div>
-    </div>
+    </header>
   )
 }

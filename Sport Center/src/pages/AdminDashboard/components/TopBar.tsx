@@ -3,23 +3,28 @@ import { avatarTopbar, iSearch, iBell } from '../shared';
 
 export function TopBar({ breadcrumb, title, onProfileClick }: { breadcrumb: string; title: string; onProfileClick?: () => void }) {
   return (
-    <header className="bg-white border-b border-[#e2e8f0] flex h-[78px] items-center justify-between px-8 shrink-0 w-full">
-      <div className="flex flex-col gap-1">
-        <p className="text-[#94a3b8] text-[11px]">{breadcrumb}</p>
-        <p className="font-extrabold text-[#0f172a] text-xl">{title}</p>
+    <header className="flex justify-between items-center px-6 lg:px-8 py-5 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-[#0f172a]/50 backdrop-blur-xl sticky top-0 z-30">
+      <div>
+        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">{breadcrumb}</p>
+        <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{title}</p>
       </div>
       <div className="flex gap-4 items-center">
-        <div className="bg-[#f1f5f9] flex gap-2 items-center px-3 py-2 rounded-lg w-[240px]">
-          <img src={iSearch} alt="" className="size-4 shrink-0" />
-          <span className="text-[#94a3b8] text-[12px] flex-1">Tìm nhanh hội viên, lớp...</span>
+        <div className="hidden md:flex bg-slate-100 dark:bg-slate-800/80 items-center gap-2 px-4 py-2.5 rounded-xl w-[260px] border border-transparent focus-within:border-rose-500/50 focus-within:bg-white dark:focus-within:bg-slate-900 transition-all">
+          <img src={iSearch} alt="" className="size-4 shrink-0 opacity-50" />
+          <input 
+            type="text" 
+            placeholder="Tìm hội viên, lớp..." 
+            className="bg-transparent border-none outline-none text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 w-full"
+          />
         </div>
-        <button className="border border-[#e2e8f0] flex items-center justify-center rounded-full size-10">
-          <img src={iBell} alt="" className="size-[18px]" />
+        <button className="relative p-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition-colors">
+          <img src={iBell} alt="" className="size-5 brightness-50 dark:brightness-150" />
+          <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 border-2 border-slate-100 dark:border-slate-800 rounded-full" />
         </button>
         <img 
           src={avatarTopbar} 
-          alt="" 
-          className="rounded-full size-[38px] object-cover cursor-pointer border-2 border-transparent hover:border-blue-500 transition-colors" 
+          alt="Profile" 
+          className="rounded-full size-11 object-cover cursor-pointer border-2 border-slate-200 dark:border-slate-700 hover:border-rose-500 dark:hover:border-rose-500 transition-colors shadow-sm" 
           onClick={onProfileClick}
         />
       </div>
