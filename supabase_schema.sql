@@ -74,7 +74,8 @@ CREATE TABLE packages (
 CREATE TABLE package_features (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     package_id VARCHAR(50) REFERENCES packages(id) ON DELETE CASCADE,
-    feature_text TEXT NOT NULL
+    feature_text TEXT NOT NULL,
+    sport_id UUID REFERENCES sports(id) ON DELETE SET NULL -- Tính năng gắn với bộ môn cụ thể (tuỳ chọn)
 );
 
 CREATE TABLE vouchers (
@@ -93,6 +94,7 @@ CREATE TABLE subscriptions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     package_id VARCHAR(50) REFERENCES packages(id),
+    sport_id UUID REFERENCES sports(id) ON DELETE SET NULL, -- Bộ môn hội viên đăng ký (tuỳ chọn)
     facility_id UUID REFERENCES facilities(id),
     voucher_id UUID REFERENCES vouchers(id),
     
@@ -146,6 +148,14 @@ CREATE TABLE sports (
     description TEXT,
     image_url TEXT,
     status BOOLEAN DEFAULT true
+);
+
+-- Bảng trung gian: Package được phép truy cập bộ môn nào (nhiều-nhiều)
+CREATE TABLE package_sports (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    package_id VARCHAR(50) NOT NULL REFERENCES packages(id) ON DELETE CASCADE,
+    sport_id UUID NOT NULL REFERENCES sports(id) ON DELETE CASCADE,
+    UNIQUE (package_id, sport_id) -- Mỗi cặp package-sport chỉ tồn tại 1 lần
 );
 
 CREATE TABLE classes (
