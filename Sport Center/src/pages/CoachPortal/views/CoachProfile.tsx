@@ -1,10 +1,10 @@
-import { useState } from "react";
 import { IconCheck } from "../Icons";
 import { A } from "../constants";
-import { ProfileSettings } from "../../../components/ProfileSettings";
+import { useUserProfile } from "../../../hooks/useUserProfile";
+import { UserAvatar } from "../../../components/UserAvatar";
 
 export default function CoachProfile() {
-  const [isEditing, setIsEditing] = useState(false);
+  const { profile, loading } = useUserProfile();
 
   const certs = [
     "Chứng chỉ Master Yoga Alliance 200H Mỹ.",
@@ -13,57 +13,28 @@ export default function CoachProfile() {
     "Chuyên gia tư vấn dinh dưỡng nâng cao (Nutritional Specialist).",
   ]
 
-  if (isEditing) {
-    return (
-      <div className="p-6 h-full overflow-y-auto">
-        <div className="flex justify-between items-center max-w-4xl mx-auto mb-4">
-          <button 
-            onClick={() => setIsEditing(false)}
-            className="flex items-center gap-2 text-gray-500 hover:text-gray-800 transition-colors"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="19" y1="12" x2="5" y2="12"></line>
-              <polyline points="12 19 5 12 12 5"></polyline>
-            </svg>
-            Quay lại hồ sơ
-          </button>
-        </div>
-        <ProfileSettings 
-          roleLabel="MASTER COACH" 
-          onSave={() => setIsEditing(false)} 
-          initialData={{ 
-            fullName: "Nguyễn Minh Tuấn", 
-            phone: "098 765 4321", 
-            email: "tuan.nm@sportcenter.com", 
-            gender: "male", 
-            dob: "1990-08-20",
-            avatarUrl: `${A}/f6154.png`
-          }}
-        />
-      </div>
-    );
-  }
+
 
   return (
     <div className="cp-profile-screen">
       <div className="cp-profile-hero-card">
-        <img src={`${A}/f6154.png`} alt="HLV Nguyễn Minh Tuấn" className="cp-profile-photo" />
+        <UserAvatar src={profile?.avatarUrl} name={profile?.fullName || "Huấn luyện viên"} className="cp-profile-photo text-3xl" />
         <div className="cp-profile-hero-info">
           <div className="cp-profile-name-row">
-            <h2 className="cp-profile-name">HLV Nguyễn Minh Tuấn</h2>
-            <span className="cp-master-badge">MASTER COACH</span>
+            <h2 className="cp-profile-name">{profile?.fullName || "Huấn luyện viên"}</h2>
+            <span className="cp-master-badge">{(profile?.roleName || "Huấn luyện viên").toUpperCase()}</span>
           </div>
           <p className="cp-profile-sub">
-            Mã HLV: HLV-4019 • Bộ môn phụ trách chính: Gym, Yoga & CrossFit
+            {profile?.id ? `Mã HLV: ${profile.id.substring(0,8)}` : "Mã HLV: Đang cập nhật"} • Bộ môn phụ trách chính: Gym, Yoga & CrossFit
           </p>
           <div className="cp-profile-fields">
             <div>
               <p className="cp-profile-field-label">ĐIỆN THOẠI</p>
-              <p className="cp-profile-field-val">098 765 4321</p>
+              <p className="cp-profile-field-val">{profile?.phone || "Chưa cập nhật"}</p>
             </div>
             <div>
               <p className="cp-profile-field-label">EMAIL LIÊN HỆ</p>
-              <p className="cp-profile-field-val">tuan.nm@sportcenter.com</p>
+              <p className="cp-profile-field-val">{profile?.email || "Chưa cập nhật"}</p>
             </div>
             <div>
               <p className="cp-profile-field-label">BẰNG CẤP & CHỨNG CHỈ</p>
@@ -110,9 +81,6 @@ export default function CoachProfile() {
               <span className="cp-kpi-val" style={{ color: "#F97316" }}>115% mục tiêu</span>
             </div>
           </div>
-          <button className="cp-btn-outline cp-btn-full" style={{ marginTop: 20 }} type="button" onClick={() => setIsEditing(true)}>
-            Yêu cầu chỉnh sửa thông tin
-          </button>
         </div>
       </div>
     </div>

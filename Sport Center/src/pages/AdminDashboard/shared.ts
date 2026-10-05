@@ -86,23 +86,11 @@ export type AdminPage =
 
 // ─── shared components ────────────────────────────────────────────────────────
 // ─── PAYMENT PAGE ─────────────────────────────────────────────────────────────
-export const transactions = [
-  { id: "#INV-2026-0891", date: "21/09/2026 14:30", name: "Nguyễn Lan Anh", memberId: "MB-2048", avatar: mAvatar0, service: "Gia hạn Premium 12 tháng",     amount: "12.000.000 đ", method: "Chuyển khoản QR", status: "Thành công",  statusColor: "green" as const },
-  { id: "#INV-2026-0890", date: "21/09/2026 11:15", name: "Trần Minh Khoa",  memberId: "MB-2017", avatar: mAvatar1, service: "Đăng ký mới Fitness Plus 6T", amount: "5.400.000 đ",  method: "Quẹt thẻ POS",      status: "Thành công",  statusColor: "green" as const },
-  { id: "#INV-2026-0889", date: "21/09/2026 09:20", name: "Lê Gia Hân",      memberId: "MB-1984", avatar: mAvatar2, service: "Gói Swim Focus 3 tháng",       amount: "2.400.000 đ",  method: "Chuyển khoản NH",    status: "Chờ đối soát",statusColor: "yellow" as const },
-  { id: "#INV-2026-0888", date: "20/09/2026 16:45", name: "Phạm Đức Long",   memberId: "MB-1902", avatar: mAvatar3, service: "Mua thêm 10 buổi PT 1-kèm-1",  amount: "6.000.000 đ",  method: "Tiền mặt",           status: "Thành công",  statusColor: "green" as const },
-  { id: "#INV-2026-0887", date: "19/09/2026 10:00", name: "Vũ Thu Trang",    memberId: "MB-1870", avatar: mAvatar4, service: "Hoàn phí hủy gói Yoga",        amount: "-2.100.000 đ", method: "Chuyển khoản lại",   status: "Đã hoàn tiền",statusColor: "red" as const },
-]
+export const transactions: any[] = []
 
 // ─── REPORTS PAGE ─────────────────────────────────────────────────────────────
-export const reportBarData = [82, 96, 104, 102, 109, 117, 126, 123, 131, 138, 142, 146]
+export const reportBarData: number[] = []
 export const reportMonths  = ["T10","T11","T12","T01","T02","T03","T04","T05","T06","T07","T08","T09"]
 
 // ─── MEMBERS PAGE (existing adapted) ─────────────────────────────────────────
-export const members = [
-  { name:"Nguyễn Lan Anh", id:"MB-2048", avatar:mAvatar0, pkg:"Premium 12 tháng",  phone:"0903 456 789", email:"lananh@email.com",    status:"Đang hoạt động", expiry:"18/12/2026", vip:true  },
-  { name:"Trần Minh Khoa",  id:"MB-2017", avatar:mAvatar1, pkg:"Fitness 6 tháng",   phone:"0918 224 560", email:"khoa.tran@email.com",  status:"Đang hoạt động", expiry:"02/10/2026"           },
-  { name:"Lê Gia Hân",      id:"MB-1984", avatar:mAvatar2, pkg:"Swim 3 tháng",      phone:"0987 322 104", email:"giahan.le@email.com",  status:"Sắp hết hạn",    expiry:"25/09/2026"           },
-  { name:"Phạm Đức Long",   id:"MB-1902", avatar:mAvatar3, pkg:"Premium 12 tháng",  phone:"0908 914 777", email:"long.pham@email.com",  status:"Tạm khóa",       expiry:"08/05/2027"           },
-  { name:"Vũ Thu Trang",    id:"MB-1870", avatar:mAvatar4, pkg:"Yoga 6 tháng",      phone:"0932 662 198", email:"thutrang.vu@email.com",status:"Đang hoạt động", expiry:"14/01/2027"           },
-]
+export const members: any[] = []

@@ -46,11 +46,11 @@ export default function ReportsTabMembers() {
         </div>
         <div className="flex flex-col gap-2">
           {[
-            { dot: "#2563eb", label: "Premium", pct: "42%" },
-            { dot: "#14b8a6", label: "Fitness Plus", pct: "28%" },
-            { dot: "#f97316", label: "Swim Focus", pct: "15%" },
-            { dot: "#f59e0b", label: "Yoga", pct: "10%" },
-            { dot: "#94a3b8", label: "Khác", pct: "5%" },
+            { dot: "#2563eb", label: "Premium", pct: "--%" },
+            { dot: "#14b8a6", label: "Fitness Plus", pct: "--%" },
+            { dot: "#f97316", label: "Swim Focus", pct: "--%" },
+            { dot: "#f59e0b", label: "Yoga", pct: "--%" },
+            { dot: "#94a3b8", label: "Khác", pct: "--%" },
           ].map(l => (
             <div key={l.label} className="flex items-center justify-between">
               <div className="flex gap-2 items-center">

@@ -1,5 +1,6 @@
 import React from 'react';
 import { assetRoots, iconNames, classItems, memberSections, MemberPage, visualPage, asset } from '../shared';
+import { UserAvatar } from '../../../components/UserAvatar';
 
 export function MemberSidebar({
   page,
@@ -19,6 +20,17 @@ export function MemberSidebar({
     ["reports", "Báo cáo", icons.reports],
     ["ai", "AI & đào tạo", icons.ai],
   ] as const
+
+  const userStr = localStorage.getItem("user")
+  let userName = "Hội viên"
+  let avatarUrl = null;
+  if (userStr) {
+    try {
+      const user = JSON.parse(userStr)
+      userName = user.fullName || user.name || user.email?.split('@')[0] || "Hội viên"
+      avatarUrl = user.avatarUrl;
+    } catch(e) {}
+  }
 
   return (
     <div className="bg-[#0f172a] flex flex-col gap-[28px] items-start pb-[24px] pt-[28px] px-[18px] shrink-0 w-[230px] sticky top-0 h-screen overflow-y-auto hidden-scrollbar">
@@ -76,9 +88,9 @@ export function MemberSidebar({
       {/* User profile */}
       <div className="pt-4 w-full mt-auto">
         <div className="cursor-pointer hover:bg-white/5 p-3 -mx-3 -mb-3 rounded-xl transition-all group relative flex items-center gap-3 overflow-hidden" onClick={() => onNavigate("profile")}>
-          <img src={asset(currentVisualPage, icons.avatar)} alt="" className="rounded-full size-10 shrink-0 object-cover" />
+          <UserAvatar src={avatarUrl} name={userName} className="rounded-full size-10 shrink-0 object-cover" />
           <div className="flex flex-col flex-1 min-w-0 transition-transform duration-200 group-hover:-translate-x-1 justify-center">
-            <strong className="font-bold text-white text-[13px] truncate">Minh Anh</strong>
+            <strong className="font-bold text-white text-[13px] truncate">{userName}</strong>
             <small className="text-[#94a3b8] text-[11px] truncate">
               {page === "overview" ? "Ca sáng • Đang hoạt động" : "Hội viên Premium"}
             </small>

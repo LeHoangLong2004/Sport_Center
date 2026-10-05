@@ -4,11 +4,7 @@ import KpiCard from '../components/KpiCard';
 import SimpleLineChart from '../components/SimpleLineChart';
 
 export function OverviewPage() {
-  const activities = [
-    { id: 1, text: "Nguyễn Lan Anh vừa đăng ký gói Premium 12 tháng", time: "10 phút trước", icon: iActivity0, color: "bg-blue-50 dark:bg-blue-500/20 text-blue-500" },
-    { id: 2, text: "Trần Minh Khoa đã check-in vào phòng Gym", time: "25 phút trước", icon: iActivity1, color: "bg-emerald-50 dark:bg-emerald-500/20 text-emerald-500" },
-    { id: 3, text: "Lớp Yoga Hatha (18:00) đã đầy chỗ (20/20)", time: "1 giờ trước", icon: iActivity2, color: "bg-orange-50 dark:bg-orange-500/20 text-orange-500" },
-  ];
+  const activities: any[] = [];
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -21,27 +17,27 @@ export function OverviewPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <KpiCard
           label="Tổng doanh thu tháng"
-          value="452.500.000 đ"
-          sub="+12.5% so với tháng trước"
-          badge="Tăng trưởng"
+          value="-- đ"
+          sub="-- so với tháng trước"
+          badge="--"
           badgeColor="green"
           icon={iKpiRevenue}
           iconBg="bg-blue-50 dark:bg-blue-500/10"
         />
         <KpiCard
           label="Hội viên đang hoạt động"
-          value="2.486"
-          sub="+42 hội viên mới tuần này"
-          badge="Tích cực"
+          value="--"
+          sub="-- hội viên mới tuần này"
+          badge="--"
           badgeColor="green"
           icon={iKpiMembers}
           iconBg="bg-emerald-50 dark:bg-emerald-500/10"
         />
         <KpiCard
           label="Lớp học diễn ra hôm nay"
-          value="34"
-          sub="Tỷ lệ lấp đầy trung bình 85%"
-          badge="Tối ưu"
+          value="--"
+          sub="Tỷ lệ lấp đầy trung bình --%"
+          badge="--"
           badgeColor="yellow"
           icon={iKpiClasses}
           iconBg="bg-orange-50 dark:bg-orange-500/10"

@@ -4,12 +4,7 @@ import { iSettings, iCheckCircle, iSearch2, mAvatar0 } from '../shared';
 export function SettingsPage() {
   const [activeTab, setActiveTab] = useState("Nhật ký hệ thống");
 
-  const auditLogs = [
-    { id: 1, time: "21/09/2026 14:35", user: "Admin (Bạn)", action: "Cập nhật giá gói Premium VIP", oldVal: "10.000.000 đ", newVal: "12.000.000 đ", ip: "192.168.1.45" },
-    { id: 2, time: "21/09/2026 10:15", user: "Admin (Bạn)", action: "Khóa tài khoản hội viên MB-1902", oldVal: "Active", newVal: "Suspended", ip: "192.168.1.45" },
-    { id: 3, time: "20/09/2026 16:20", user: "Receptionist_01", action: "Hoàn tiền hóa đơn #INV-0887", oldVal: "N/A", newVal: "Đã hoàn -2.1tr", ip: "10.0.0.12" },
-    { id: 4, time: "19/09/2026 09:00", user: "Admin (Bạn)", action: "Thêm HLV mới (David)", oldVal: "N/A", newVal: "Role: COACH", ip: "192.168.1.45" },
-  ];
+  const auditLogs: any[] = [];
 
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">

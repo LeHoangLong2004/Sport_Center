@@ -2,44 +2,8 @@ import React, { useState, FormEvent } from 'react';
 import { ThemeToggle } from './ThemeToggle';
 import { assets } from './shared';
 
-export type DemoRole = "admin" | "member" | "coach" | "receptionist"
+export type UserRole = "admin" | "member" | "coach" | "receptionist"
 
-export const demoAccounts: {
-  email: string
-  password: string
-  role: DemoRole
-  label: string
-  name: string
-}[] = [
-  {
-    email: "manager@sportscenter.vn",
-    password: "sportscenter",
-    role: "admin",
-    label: "Quản trị viên",
-    name: "Trần Minh Quân",
-  },
-  {
-    email: "lananh@email.com",
-    password: "member123",
-    role: "member",
-    label: "Hội viên",
-    name: "Nguyễn Lan Anh",
-  },
-  {
-    email: "coach@sportscenter.vn",
-    password: "coach123",
-    role: "coach",
-    label: "Huấn luyện viên",
-    name: "Lê Văn Hùng",
-  },
-  {
-    email: "letan@sportscenter.vn",
-    password: "letan123",
-    role: "receptionist",
-    label: "Lễ tân",
-    name: "Ngọc Mai",
-  },
-]
 
 export function Login({
   onLogin,
@@ -49,55 +13,21 @@ export function Login({
   onHome,
 }: {
   onLogin: () => void
-  onLoginAs?: (role: DemoRole) => void
+  onLoginAs?: (role: UserRole) => void
   onRegister: () => void
   onForgotPassword: () => void
   onHome?: () => void
 }) {
   const [loading, setLoading] = useState(false)
-  const [email, setEmail] = useState("manager@sportscenter.vn")
-  const [password, setPassword] = useState("sportscenter")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [error, setError] = useState("")
-
-  function fillDemo(account: (typeof demoAccounts)[0]) {
-    setEmail(account.email)
-    setPassword(account.password)
-    setError("")
-  }
 
   async function submit(event: FormEvent) {
     event.preventDefault()
     setLoading(true)
     setError("")
 
-    // Frontend demo mode: authenticate against local mock accounts.
-    await new Promise((resolve) => setTimeout(resolve, 250))
-    const mockAccount = demoAccounts.find(
-      (item) =>
-        item.email.toLowerCase() === email.trim().toLowerCase() &&
-        item.password === password,
-    )
-
-    if (!mockAccount) {
-      setError("Email hoặc mật khẩu demo không đúng.")
-      setLoading(false)
-      return
-    }
-
-    const mockProfile = {
-      id: `mock-${mockAccount.role}`,
-      fullName: mockAccount.name,
-      email: mockAccount.email,
-      role: mockAccount.role === "admin" ? "CenterManager" : mockAccount.role,
-      emailVerified: true,
-    }
-
-    localStorage.setItem("token", `mock-token-${mockAccount.role}`)
-    localStorage.setItem("user", JSON.stringify(mockProfile))
-    if (onLoginAs) onLoginAs(mockAccount.role)
-    else onLogin()
-    return
-    
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -108,17 +38,17 @@ export function Login({
       const data = await res.json().catch(() => ({}))
       
       if (!res.ok) {
-        setError(data.message || "Đăng nhập thất bại. Hãy kiểm tra thông tin hoặc CSDL.")
+        setError(data.message || data.title || "Đăng nhập thất bại. Hãy kiểm tra thông tin.")
         setLoading(false)
         return
       }
       
       localStorage.setItem("token", data.token)
-      localStorage.setItem("user", JSON.stringify(data.profile))
+      localStorage.setItem("user", JSON.stringify(data))
       
       if (onLoginAs) {
-        const roleStr = data.profile.role?.toLowerCase()
-        if (roleStr === "centermanager" || roleStr === "admin") onLoginAs("admin")
+        const roleStr = data.role?.toLowerCase() || ""
+        if (roleStr === "manager" || roleStr === "admin") onLoginAs("admin")
         else if (roleStr === "coach") onLoginAs("coach")
         else if (roleStr === "receptionist") onLoginAs("receptionist")
         else onLoginAs("member")
@@ -191,23 +121,6 @@ export function Login({
             <div className="mb-10">
               <span className="inline-block px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold text-xs tracking-widest uppercase rounded-full mb-4">Chào mừng trở lại</span>
               <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Đăng nhập</h2>
-            </div>
-
-            <div className="mb-8 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700/50">
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3 text-center">Tài khoản Demo (Truy cập nhanh)</p>
-              <div className="grid grid-cols-2 gap-2">
-                {demoAccounts.map((account) => (
-                  <button
-                    key={account.email}
-                    type="button"
-                    className="flex flex-col items-center p-2.5 bg-white hover:bg-[#14b8a6]/10 border border-slate-200 dark:bg-slate-800 dark:hover:bg-teal-900/30 dark:border-slate-700 dark:hover:border-teal-700/50 rounded-xl transition-all shadow-sm group"
-                    onClick={() => fillDemo(account)}
-                  >
-                    <span className="text-[10px] font-bold text-[#14b8a6] uppercase tracking-wider mb-0.5">{account.label}</span>
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white">{account.name}</span>
-                  </button>
-                ))}
-              </div>
             </div>
 
             <div className="space-y-5">

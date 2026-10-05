@@ -28,7 +28,7 @@ const apptSlots = [
     bg: "bg-[#f8fafc]",
     border: "border-[#e2e8f0]",
     title: "Tư vấn gia hạn gói tập vàng",
-    sub: "Khách: Vũ Phương Thảo • Lễ tân Ngọc Mai",
+    sub: "Khách: Vũ Phương Thảo • Lễ tân",
     badgeBg: "bg-[#e2e8f0]",
     badgeText: "text-[#64748b]",
     badge: "Đã hủy",
