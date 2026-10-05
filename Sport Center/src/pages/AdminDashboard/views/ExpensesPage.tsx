@@ -5,13 +5,7 @@ import SimpleLineChart from '../components/SimpleLineChart';
 import { FinanceTopBar } from '../components/FinanceTopBar';
 
 export function ExpensesPage() {
-  const expenses = [
-    {id:"EXP-2026-005",date:"21/09/2026 10:15",cat:"Thiết bị & bảo trì",desc:"Sửa chữa khẩn cấp hệ thống mot...",amount:"12.500.000",requester:"Nguyễn Văn Hùng",status:"Chờ duyệt",  statusC:"yellow"},
-    {id:"EXP-2026-004",date:"20/09/2026 16:40",cat:"Vật tư tiêu hao",   desc:"Mua bổ sung 100 khăn tập cotto...",amount:"4.800.000", requester:"Lê Ngọc Mai",    status:"Đã duyệt",   statusC:"green"},
-    {id:"EXP-2026-003",date:"19/09/2026 09:30",cat:"Tiện ích & vận hành",desc:"Thanh toán hóa đơn tiền điện th...",amount:"42.150.000",requester:"Phùng Minh Anh", status:"Đã duyệt",   statusC:"green"},
-    {id:"EXP-2026-002",date:"18/09/2026 11:15",cat:"Marketing & Ads",   desc:"Ngân sách chạy quảng cáo Face...",amount:"15.000.000",requester:"Đỗ Thùy Trang",  status:"Đã duyệt",   statusC:"green"},
-    {id:"EXP-2026-001",date:"17/09/2026 14:00",cat:"Thiết bị & bảo trì",desc:"Thay thế bộ lọc cát & hóa chất di...",amount:"8.900.000", requester:"Nguyễn Văn Hùng",status:"Từ chối",    statusC:"red"},
-  ]
+  const expenses: any[] = [];
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
       <div>
@@ -40,7 +34,7 @@ export function ExpensesPage() {
             <img src={iChevron} alt="" className="size-4" />
           </button>
         ))}
-        <span className="ml-auto font-medium text-[#64748b] text-sm">Tổng số: 124 phiếu chi</span>
+        <span className="ml-auto font-medium text-[#64748b] text-sm">Tổng số: -- phiếu chi</span>
       </div>
       {/* table */}
       <div className="bg-white border border-[#e2e8f0] overflow-hidden rounded-xl">

@@ -3,7 +3,7 @@ import SimpleLineChart from '../components/SimpleLineChart';
 
 export default function ReportsTabClasses() {
   const classTypes = ["Yoga", "HIIT", "Pilates", "Zumba", "Boxing", "Swimming"]
-  const fills = [90, 95, 82, 88, 78, 85]
+  const fills: number[] = []
   return (
     <div className="flex gap-5">
       <div className="bg-white border border-[#e2e8f0] drop-shadow-[0_8px_12px_rgba(24,33,58,0.06)] flex flex-1 flex-col gap-5 min-w-0 p-6 rounded-xl">

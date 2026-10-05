@@ -1,89 +1,91 @@
-using SmartGym.Application.DTOs.Auth;
-using SmartGym.Application.Interfaces.Repositories;
-using SmartGym.Application.Interfaces.Services;
-using SmartGym.Domain.Enums;
+using SmartGym.Application.DTOs;
+using SmartGym.Application.Interfaces;
+using SmartGym.Domain.Entities;
+using System;
+using System.Threading.Tasks;
 
 namespace SmartGym.Application.Services;
 
-public sealed class AuthService
+public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
-    private readonly IPasswordHasher _passwordHasher;
-    private readonly IJwtTokenGenerator _jwtTokenGenerator;
+    private readonly ITokenService _tokenService;
 
-    public AuthService(
-        IUserRepository userRepository,
-        IPasswordHasher passwordHasher,
-        IJwtTokenGenerator jwtTokenGenerator)
+    public AuthService(IUserRepository userRepository, ITokenService tokenService)
     {
         _userRepository = userRepository;
-        _passwordHasher = passwordHasher;
-        _jwtTokenGenerator = jwtTokenGenerator;
+        _tokenService = tokenService;
     }
 
-    public async Task<(AuthResponse? Response, string? Error, bool IsForbid)> LoginAsync(LoginRequest request)
+    public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+        var existingUser = await _userRepository.GetByEmailAsync(request.Email);
+        if (existingUser != null)
         {
-            return (null, "Email and password are required.", false);
+            throw new Exception("Email already exists");
         }
 
-        var user = await _userRepository.FindByEmailAsync(request.Email);
-        if (user is null || !_passwordHasher.Verify(request.Password, user.PasswordHash))
+        // Hash password
+        string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+
+        // Lấy Role từ Database
+        var role = await _userRepository.GetRoleByNameAsync(request.RoleName);
+        if (role == null)
         {
-            return (null, "Invalid credentials.", false);
+            throw new Exception($"Role '{request.RoleName}' does not exist in the system.");
         }
 
-        if (!user.IsActive)
+        var user = new User
         {
-            return (null, "Account is not active.", true);
-        }
-
-        if (!user.EmailVerified)
-        {
-            return (null, "Email has not been verified.", false);
-        }
-
-        var profile = new UserProfile(user.Id, user.FullName, user.Email, user.Role.ToString(), user.EmailVerified);
-        var token = _jwtTokenGenerator.GenerateToken(user);
-
-        return (new AuthResponse(token, profile), null, false);
-    }
-
-    public async Task<(AuthResponse? Response, string? Error)> RegisterAsync(RegisterRequest request)
-    {
-        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password) || string.IsNullOrWhiteSpace(request.FullName))
-        {
-            return (null, "Email, password, and full name are required.");
-        }
-
-        var existingUser = await _userRepository.FindByEmailAsync(request.Email);
-        if (existingUser is not null)
-        {
-            return (null, "Email is already registered.");
-        }
-
-        var user = new SmartGym.Domain.Entities.AppUser(
-            id: Guid.NewGuid(),
-            branchId: null,
-            email: request.Email,
-            passwordHash: _passwordHasher.Hash(request.Password),
-            fullName: request.FullName,
-            phoneNumber: request.Phone ?? "",
-            role: UserRole.Member,
-            memberCode: null,
-            qrSecretToken: null,
-            referralCode: Guid.NewGuid().ToString("N")[..8].ToUpper(),
-            avatarUrl: null,
-            isMfaEnabled: false,
-            isActive: true // Default to active/verified for simplicity unless verification is strictly enforced
-        );
+            Id = Guid.NewGuid(),
+            RoleId = role.Id,
+            Role = role,
+            FullName = request.FullName,
+            Email = request.Email,
+            PhoneNumber = request.PhoneNumber,
+            PasswordHash = passwordHash,
+            Status = true,
+            CreatedAt = DateTime.UtcNow
+        };
 
         await _userRepository.AddAsync(user);
 
-        var profile = new UserProfile(user.Id, user.FullName, user.Email, user.Role.ToString(), user.EmailVerified);
-        var token = _jwtTokenGenerator.GenerateToken(user);
+        string token = _tokenService.GenerateJwtToken(user, role.Name);
 
-        return (new AuthResponse(token, profile), null);
+        return new AuthResponse
+        {
+            Id = user.Id,
+            Token = token,
+            FullName = user.FullName,
+            Email = user.Email,
+            Role = role.Name
+        };
+    }
+
+    public async Task<AuthResponse> LoginAsync(LoginRequest request)
+    {
+        var user = await _userRepository.GetByEmailAsync(request.Email);
+        
+        if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        {
+            throw new Exception("Invalid email or password");
+        }
+
+        if (!user.Status)
+        {
+            throw new Exception("Account is inactive");
+        }
+
+        string roleName = user.Role?.Name ?? "Member";
+        string token = _tokenService.GenerateJwtToken(user, roleName);
+
+        return new AuthResponse
+        {
+            Id = user.Id,
+            Token = token,
+            FullName = user.FullName,
+            Email = user.Email,
+            Role = roleName
+        };
     }
 }

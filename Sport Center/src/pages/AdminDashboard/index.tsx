@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { A, AdminPage, avatarSidebar, avatarTopbar, iDashboard, iUsers, iPackage, iCalendar, iReceipt, iBarChart, iSettings, iSearch, iBell, iSearch2, iDownload, iPlus, iWallet, iCheckCircle, iClock, iRotateCcw, iChevron, iEye, iPrinter, iMore, mAvatar0, mAvatar1, mAvatar2, mAvatar3, mAvatar4, iBell2, iDownload2, iKpiRevenue, iKpiMembers, iKpiClasses, iKpiRetain, iSeg1, iSeg2, iSeg3, iSeg4, iDotBlue, iDotTeal, iDotOrange, iDotPurple, iActivity0, iActivity1, iActivity2, iActivity3, iLineChart, iBarFill, coachAvatar1, coachAvatar2, coachAvatar3, coachAvatar4, hrAvatar1, hrAvatar2, hrAvatar3, hrAvatar4, iBudgetIcon, iExpenseIcon, iBudgetChevron, iPLRevIcon, memberEditAvatar, transactions, reportBarData, reportMonths, members } from './shared';
+import { useUserProfile } from '../../hooks/useUserProfile';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { OverviewPage } from './views/OverviewPage';
@@ -18,6 +19,8 @@ import { ProfileSettings } from '../../components/ProfileSettings';
 
 export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [page, setPage] = useState<AdminPage>("overview")
+  const [selectedMember, setSelectedMember] = useState<any>(null)
+  const { profile } = useUserProfile()
 
   const breadcrumbs: Record<AdminPage, [string, string]> = {
     overview:   ["Quản lý / Tổng quan", "Tổng quan hệ thống"],
@@ -46,7 +49,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           {page === "overview"   && <OverviewPage />}
           {page === "packages"   && <PackagesPage />}
           {page === "schedule"   && <SchedulePage />}
-          {page === "members"    && <MembersPage onEditMember={() => setPage("member-edit")} />}
+          {page === "members"    && <MembersPage onEditMember={(member) => { setSelectedMember(member); setPage("member-edit"); }} />}
           {page === "payment"    && <PaymentPage />}
           {page === "reports"    && <ReportsPage />}
           {page === "budget"     && <BudgetPage />}
@@ -54,11 +57,18 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           {page === "payroll"    && <PayrollPage />}
           {page === "pl-report"  && <PLReportPage />}
           {page === "settings"   && <SettingsPage />}
-          {page === "member-edit"&& <MemberEditPage onBack={() => setPage("members")} />}
+          {page === "member-edit"&& <MemberEditPage memberData={selectedMember} onBack={() => setPage("members")} />}
           {page === "profile"    && (
             <ProfileSettings 
-              roleLabel="Quản trị viên hệ thống" 
-              initialData={{ fullName: "Trần Quản Trị", email: "admin@sportcenter.com", phone: "0999 888 777", avatarUrl: avatarTopbar }}
+              roleLabel={profile?.roleName || "Quản trị viên hệ thống"} 
+              initialData={profile ? {
+                fullName: profile.fullName,
+                email: profile.email,
+                phone: profile.phone,
+                dob: profile.dob,
+                gender: profile.gender,
+                avatarUrl: profile.avatarUrl,
+              } : undefined}
             />
           )}
         </div>

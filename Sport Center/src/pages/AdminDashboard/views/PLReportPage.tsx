@@ -29,11 +29,7 @@ export function PLReportPage() {
       </div>
       {/* KPIs */}
       <div className="flex gap-5">
-        {[
-          {label:"Tổng Doanh Thu Q3",  value:"3.840.000.000 đ",badge:"▲ +12% so với Q2",green:true},
-          {label:"Tổng Chi Phí Q3",    value:"2.760.000.000 đ",badge:"▲ +8% so với Q2", green:false},
-          {label:"Lợi Nhuận Ròng",     value:"1.080.000.000 đ",badge:"▲ +22% so với Q2",green:true},
-        ].map(k=>(
+        {([] as any[]).map(k=>(
           <div key={k.label} className="bg-white border border-[#e2e8f0] flex flex-1 flex-col gap-3 min-w-0 p-5 rounded-xl">
             <p className="font-medium text-[#64748b] text-sm">{k.label}</p>
             <p className="font-bold text-[#0f172a] text-[22px]">{k.value}</p>
@@ -54,12 +50,7 @@ export function PLReportPage() {
             <span className="w-[140px]">Q2/2026</span>
             <span className="w-[90px]">% TĂNG</span>
           </div>
-          {[
-            {cat:"Doanh thu Gói thành viên",           q3:"2.227.000.000 đ",q2:"1.980.000.000 đ",pct:"▲ +12.5%",green:true},
-            {cat:"Dịch vụ Huấn luyện viên cá nhân (PT)",q3:"844.000.000 đ",  q2:"760.000.000 đ", pct:"▲ +11.0%",green:true},
-            {cat:"Doanh thu Lớp học nhóm (Group Class)",q3:"460.000.000 đ",  q2:"410.000.000 đ", pct:"▲ +12.1%",green:true},
-            {cat:"Dịch vụ Giá trị gia tăng khác",      q3:"309.000.000 đ",  q2:"290.000.000 đ", pct:"▲ +6.5%", green:true},
-          ].map(r=>(
+          {([] as any[]).map(r=>(
             <div key={r.cat} className="border-b border-[#e2e8f0] flex gap-4 items-center px-6 py-3.5">
               <div className="flex-1"><p className="font-medium text-[#0f172a] text-sm">{r.cat}</p></div>
               <div className="w-[140px]"><p className="text-[#0f172a] text-sm">{r.q3}</p></div>
@@ -79,13 +70,7 @@ export function PLReportPage() {
             <span className="w-[140px]">Q2/2026</span>
             <span className="w-[90px]">% TĂNG</span>
           </div>
-          {[
-            {cat:"Chi phí nhân sự",              q3:"1.280.000.000 đ",q2:"1.200.000.000 đ",pct:"▼ +6.6%", red:true},
-            {cat:"Chi phí mặt bằng & quản lý tòa nhà",q3:"450.000.000 đ",  q2:"450.000.000 đ", pct:"— 0.0%",  red:false},
-            {cat:"Khấu hao thiết bị & sửa chữa máy",  q3:"380.000.000 đ",  q2:"300.000.000 đ", pct:"▼ +26.6%",red:true},
-            {cat:"Chi phí tiếp thị & quảng cáo",      q3:"350.000.000 đ",  q2:"310.000.000 đ", pct:"▼ +12.9%",red:true},
-            {cat:"Chi phí điện nước & vận hành cơ sở", q3:"300.000.000 đ",  q2:"295.000.000 đ", pct:"▼ +1.6%", red:true},
-          ].map(r=>(
+          {([] as any[]).map(r=>(
             <div key={r.cat} className="border-b border-[#e2e8f0] flex gap-4 items-center px-6 py-3.5">
               <div className="flex-1"><p className="font-medium text-[#0f172a] text-sm">{r.cat}</p></div>
               <div className="w-[140px]"><p className="text-[#0f172a] text-sm">{r.q3}</p></div>

@@ -18,6 +18,7 @@ export function Registration({
     const name = formData.get("name") as string
     const email = formData.get("email") as string
     const phone = formData.get("phone") as string
+    const role = formData.get("role") as string
     const password = formData.get("password") as string
     const passwordConfirmation = formData.get("passwordConfirmation") as string
 
@@ -30,7 +31,7 @@ export function Registration({
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName: name, email, phone, password })
+        body: JSON.stringify({ fullName: name, email, phoneNumber: phone, password, roleName: role })
       })
       
       const data = await res.json().catch(() => ({}))
@@ -195,6 +196,27 @@ export function Registration({
                       type="password"
                       className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/40 focus:border-[#14b8a6] transition-all focus:bg-white"
                     />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Vai trò (Role)</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </div>
+                  <select
+                    name="role"
+                    className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/40 focus:border-[#14b8a6] transition-all focus:bg-white appearance-none"
+                  >
+                    <option value="member">Hội viên (Member)</option>
+                    <option value="manager">Quản lý (Manager)</option>
+                    <option value="staff">Lễ tân (Staff)</option>
+                    <option value="coach">Huấn luyện viên (Coach)</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                   </div>
                 </div>
               </div>

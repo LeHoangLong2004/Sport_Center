@@ -1,7 +1,19 @@
 import React from 'react';
 import { Page, navItems, avatarByPage } from '../shared';
+import { UserAvatar } from '../../../components/UserAvatar';
 
 export function Sidebar({ page, onNavigate, onLogout }: { page: Page; onNavigate: (p: Page) => void; onLogout: () => void }) {
+  const userStr = localStorage.getItem("user")
+  let userName = "Lễ Tân"
+  let avatarUrl = null;
+  if (userStr) {
+    try {
+      const user = JSON.parse(userStr)
+      userName = user.fullName || user.name || user.email?.split('@')[0] || "Lễ Tân"
+      avatarUrl = user.avatarUrl;
+    } catch(e) {}
+  }
+
   return (
     <div className="bg-[#0f172a] flex flex-col gap-[28px] items-start pb-[24px] pt-[28px] px-[18px] shrink-0 w-[230px] sticky top-0 h-screen overflow-y-auto hidden-scrollbar">
       {/* Brand */}
@@ -48,9 +60,9 @@ export function Sidebar({ page, onNavigate, onLogout }: { page: Page; onNavigate
       {/* User profile */}
       <div className="pt-4 w-full mt-auto">
         <div className="cursor-pointer hover:bg-white/5 p-3 -mx-3 -mb-3 rounded-xl transition-all group relative flex items-center gap-3 overflow-hidden" onClick={() => onNavigate("profile")}>
-          <img src={avatarByPage[page]} alt="" className="rounded-full size-10 shrink-0 object-cover border-2 border-[#1e293b] group-hover:border-[#a855f7] transition-colors" />
+          <UserAvatar src={avatarUrl} name={userName} className="rounded-full size-10 shrink-0 object-cover border-2 border-[#1e293b] group-hover:border-[#a855f7] transition-colors" />
           <div className="flex flex-col flex-1 min-w-0 transition-transform duration-200 group-hover:-translate-x-1 justify-center">
-            <p className="font-bold text-white text-[13px] truncate">Ngọc Mai</p>
+            <p className="font-bold text-white text-[13px] truncate">{userName}</p>
             <p className="text-[#94a3b8] text-[11px] truncate">Bộ phận Lễ tân</p>
           </div>
           <div className="flex items-center gap-1 opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 absolute right-3 bg-[#0f172a]/90 pl-2 py-1 shadow-sm rounded-lg backdrop-blur-sm">

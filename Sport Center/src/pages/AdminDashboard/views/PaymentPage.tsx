@@ -45,10 +45,10 @@ export function PaymentPage() {
 
       {/* KPI row */}
       <div className="flex gap-5">
-        <KpiCard label="Tổng thực thu (Tháng này)" value="1,28 tỷ đ"      sub="so với tháng trước" badge="▲ +14,2%" badgeColor="green"  icon={iWallet}     iconBg="bg-[rgba(37,99,235,0.08)]" />
-        <KpiCard label="Giao dịch thành công"       value="418 giao dịch"  sub="98.5% tỷ lệ thành công"                                  icon={iCheckCircle} iconBg="bg-[rgba(21,128,61,0.08)]" />
-        <KpiCard label="Chờ đối soát / Xử lý"       value="18.400.000 đ"   sub="3 giao dịch chuyển khoản chờ duyệt"                      icon={iClock}       iconBg="bg-[rgba(217,119,6,0.08)]" />
-        <KpiCard label="Hoàn tiền (Tháng này)"      value="5.400.000 đ"    sub="1 yêu cầu hủy gói do lý do y tế"                         icon={iRotateCcw}   iconBg="bg-[rgba(220,38,38,0.08)]" />
+        <KpiCard label="Tổng thực thu (Tháng này)" value="-- đ"      sub="so với tháng trước" badge="--" badgeColor="green"  icon={iWallet}     iconBg="bg-[rgba(37,99,235,0.08)]" />
+        <KpiCard label="Giao dịch thành công"       value="-- giao dịch"  sub="-- tỷ lệ thành công"                                  icon={iCheckCircle} iconBg="bg-[rgba(21,128,61,0.08)]" />
+        <KpiCard label="Chờ đối soát / Xử lý"       value="-- đ"   sub="-- giao dịch chuyển khoản chờ duyệt"                      icon={iClock}       iconBg="bg-[rgba(217,119,6,0.08)]" />
+        <KpiCard label="Hoàn tiền (Tháng này)"      value="-- đ"    sub="-- yêu cầu hủy gói do lý do y tế"                         icon={iRotateCcw}   iconBg="bg-[rgba(220,38,38,0.08)]" />
       </div>
 
       {/* filter bar */}

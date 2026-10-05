@@ -40,9 +40,9 @@ export function ReportsPage() {
             <p className="font-semibold text-[#64748b] text-sm">Doanh thu tháng 09/2026</p>
             <img src={iKpiRevenue} alt="" className="size-5 shrink-0" />
           </div>
-          <p className="font-extrabold text-[#0f172a] text-[28px]">1,28 tỷ đ</p>
+          <p className="font-extrabold text-[#0f172a] text-[28px]">-- đ</p>
           <div className="flex gap-2 items-center">
-            <span className="bg-[#dcfce7] font-bold px-2 py-0.5 rounded-full text-[#15803d] text-[11px]">+14,2%</span>
+            <span className="bg-[#dcfce7] font-bold px-2 py-0.5 rounded-full text-[#15803d] text-[11px]">--%</span>
             <span className="text-[#64748b] text-[13px]">so với tháng trước</span>
           </div>
         </div>
@@ -51,9 +51,9 @@ export function ReportsPage() {
             <p className="font-semibold text-[#64748b] text-sm">Hội viên hoạt động</p>
             <img src={iKpiMembers} alt="" className="size-5 shrink-0" />
           </div>
-          <p className="font-extrabold text-[#0f172a] text-[28px]">2.486 người</p>
+          <p className="font-extrabold text-[#0f172a] text-[28px]">-- người</p>
           <div className="flex gap-2 items-center">
-            <span className="bg-[#dcfce7] font-bold px-2 py-0.5 rounded-full text-[#15803d] text-[11px]">+8,4%</span>
+            <span className="bg-[#dcfce7] font-bold px-2 py-0.5 rounded-full text-[#15803d] text-[11px]">--%</span>
             <span className="text-[#64748b] text-[13px]">tăng trưởng</span>
           </div>
         </div>
@@ -62,9 +62,9 @@ export function ReportsPage() {
             <p className="font-semibold text-[#64748b] text-sm">Lớp học đã tổ chức</p>
             <img src={iKpiClasses} alt="" className="size-5 shrink-0" />
           </div>
-          <p className="font-extrabold text-[#0f172a] text-[28px]">156 lớp</p>
+          <p className="font-extrabold text-[#0f172a] text-[28px]">-- lớp</p>
           <div className="flex gap-2 items-center">
-            <span className="bg-[#dcfce7] font-bold px-2 py-0.5 rounded-full text-[#15803d] text-[11px]">87%</span>
+            <span className="bg-[#dcfce7] font-bold px-2 py-0.5 rounded-full text-[#15803d] text-[11px]">--%</span>
             <span className="text-[#64748b] text-[13px]">Tỷ lệ lấp đầy</span>
           </div>
         </div>
@@ -73,9 +73,9 @@ export function ReportsPage() {
             <p className="font-semibold text-[#64748b] text-sm">Tỷ lệ giữ chân</p>
             <img src={iKpiRetain} alt="" className="size-5 shrink-0" />
           </div>
-          <p className="font-extrabold text-[#0f172a] text-[28px]">92,3%</p>
+          <p className="font-extrabold text-[#0f172a] text-[28px]">--%</p>
           <div className="flex gap-2 items-center">
-            <span className="bg-[#fef3c7] font-bold px-2 py-0.5 rounded-full text-[#b45309] text-[11px]">+3,1%</span>
+            <span className="bg-[#fef3c7] font-bold px-2 py-0.5 rounded-full text-[#b45309] text-[11px]">--%</span>
             <span className="text-[#64748b] text-[13px]">so với quý trước</span>
           </div>
         </div>

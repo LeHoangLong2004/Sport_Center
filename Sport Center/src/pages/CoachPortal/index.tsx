@@ -8,6 +8,7 @@ import { CoachAssessment } from "./views/CoachAssessment";
 import { CoachAttendance } from "./views/CoachAttendance";
 import CoachProfile from "./views/CoachProfile";
 import { CoachAI } from "./views/CoachAI";
+import CoachSettings from "./views/CoachSettings";
 
 export default function CoachPortal() {
   const [screen, setScreen] = useState<CoachScreen>("dashboard")
@@ -20,6 +21,7 @@ export default function CoachPortal() {
     attendance: <CoachAttendance />,
     profile: <CoachProfile />,
     ai: <CoachAI />,
+    settings: <CoachSettings />,
   }
 
   return (

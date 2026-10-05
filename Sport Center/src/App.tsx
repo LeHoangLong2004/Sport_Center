@@ -18,7 +18,7 @@ function AdminPortal({
   initialMemberPage = "overview",
 }: {
   onExit: () => void
-  initialStep?: "register" | "login" | "verify" | "member"
+  initialStep?: "register" | "login" | "verify" | "forgotPassword" | "member" | "dashboard"
   initialMemberPage?: MemberPage
 }) {
   const [step, setStep] = useState<
@@ -94,6 +94,7 @@ const coachHashes = new Set([
 
 const adminHashes = new Set([
   "#admin",
+  "#dashboard",
   "#register",
   "#member",
   "#classes",
@@ -175,21 +176,21 @@ export default function App() {
     return (
       <AdminPortal
         initialStep={
-          window.location.hash === "#admin"
+          window.location.hash === "#dashboard" 
+            ? "dashboard"
+            : window.location.hash === "#admin"
             ? "login"
             : [
-              "#member",
-              "#classes",
-              "#booking-confirm",
-              "#schedule",
-              "#booking-success",
-              "#workout-detail",
-              "#move-ai",
-            ].includes(
-              window.location.hash,
-            )
-              ? "member"
-              : "register"
+                "#member",
+                "#classes",
+                "#booking-confirm",
+                "#schedule",
+                "#booking-success",
+                "#workout-detail",
+                "#move-ai",
+              ].includes(window.location.hash)
+            ? "member"
+            : "register"
         }
         initialMemberPage={
           window.location.hash === "#classes"

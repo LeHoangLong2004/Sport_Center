@@ -23,7 +23,7 @@ export default function ReportsTabRevenue() {
               <div key={i} className="flex flex-col flex-1 h-full items-start justify-end min-w-0 relative">
                 {i === 11 && (
                   <div className="absolute bg-[#0f172a] flex items-center px-2 py-1 rounded top-[-30px] left-0">
-                    <span className="font-semibold text-white text-[10px] whitespace-nowrap">1,28 tỷ</span>
+                    <span className="font-semibold text-white text-[10px] whitespace-nowrap">--</span>
                   </div>
                 )}
                 <div
@@ -57,7 +57,7 @@ export default function ReportsTabRevenue() {
             </div>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className="text-[#64748b] text-[11px]">Doanh thu</span>
-              <span className="font-extrabold text-[#0f172a] text-base">1,28 tỷ</span>
+              <span className="font-extrabold text-[#0f172a] text-base">--</span>
             </div>
           </div>
         </div>

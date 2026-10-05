@@ -4,11 +4,70 @@ import KpiCard from '../components/KpiCard';
 import SimpleLineChart from '../components/SimpleLineChart';
 import { FinanceTopBar } from '../components/FinanceTopBar';
 
-export function MemberEditPage({ onBack }: { onBack: () => void }) {
+export function MemberEditPage({ memberData, onBack }: { memberData?: any, onBack: () => void }) {
+  const member = memberData || {
+    name: "",
+    id: "",
+    phone: "",
+    email: "",
+    avatar: memberEditAvatar,
+    statusRaw: true,
+    vip: false
+  };
+  const [isSaving, setIsSaving] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(member.avatar);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!member.realId) {
+      alert("Lỗi: Không tìm thấy ID của hội viên.");
+      return;
+    }
+
+    const formData = new FormData(e.target as HTMLFormElement);
+    const payload = {
+      fullName: formData.get("name"),
+      phoneNumber: formData.get("phone"),
+      email: formData.get("email"),
+      dateOfBirth: formData.get("dob") || null,
+      gender: formData.get("gender"),
+      emergencyContact: formData.get("emergencyContact"),
+      avatarUrl: avatarUrl !== memberEditAvatar ? avatarUrl : undefined
+    };
+
+    setIsSaving(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/users/${member.realId}/profile`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        alert("Lưu thông tin thành công!");
+        onBack();
+      } else {
+        alert("Lưu thất bại.");
+      }
+    } catch {
+      alert("Lỗi kết nối.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleChangeAvatar = () => {
+    const url = prompt("Nhập URL hình ảnh mới:");
+    if (url) setAvatarUrl(url);
+  };
+
   return (
-    <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
+    <form onSubmit={handleSave} className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
       <div>
-        <p className="text-[#64748b] text-sm">Cập nhật thông tin cá nhân và chỉ số của hội viên Nguyễn Lan Anh (MB-2048)</p>
+        <p className="text-[#64748b] text-sm">Cập nhật thông tin cá nhân và chỉ số của hội viên {member.name} ({member.id})</p>
       </div>
       <div className="flex gap-6">
         {/* main form */}
@@ -18,26 +77,27 @@ export function MemberEditPage({ onBack }: { onBack: () => void }) {
             <p className="font-extrabold text-[#0f172a] text-base mb-5">Thông tin cá nhân</p>
             <div className="grid grid-cols-2 gap-4">
               {[
-                {label:"Họ và tên *",       value:"Nguyễn Lan Anh",     type:"text"},
-                {label:"Ngày sinh *",        value:"15/08/1998",          type:"text"},
-                {label:"Giới tính *",        value:"Nữ",                  type:"select"},
-                {label:"Số điện thoại *",    value:"0903 456 789",        type:"text"},
-                {label:"Email *",            value:"lananh@email.com",    type:"email", fullWidth:true},
-                {label:"Địa chỉ",            value:"Số 15 Ngõ 102, Chúa Bộc, Đống Đa, Hà Nội",type:"text"},
-                {label:"Liên hệ khẩn cấp (Tên)",value:"Nguyễn Văn A (Bố)",type:"text"},
-                {label:"Liên hệ khẩn cấp (SĐT)",value:"0912 345 678",    type:"text"},
+                {label:"Họ và tên *",       value:member.name,          name:"name", type:"text", required: true},
+                {label:"Ngày sinh",         value:member.dob || "",     name:"dob", type:"date", required: false},
+                {label:"Giới tính",         value:member.gender || "",  name:"gender", type:"select", required: false},
+                {label:"Số điện thoại *",   value:member.phone,         name:"phone", type:"text", required: true},
+                {label:"Email *",           value:member.email,         name:"email", type:"email", fullWidth:true, required: true},
+                {label:"Liên hệ khẩn cấp",  value:member.emergencyContact || "", name:"emergencyContact", type:"text", fullWidth:true, required: false},
               ].map((f,i)=>(
                 <label key={i} className={f.fullWidth ? "col-span-2 flex flex-col gap-1" : "flex flex-col gap-1"}>
                   <span className="font-semibold text-[#0f172a] text-sm">{f.label}</span>
                   {f.type === "select" ? (
                     <div className="relative">
-                      <select className="appearance-none bg-white border border-[#e2e8f0] px-3 py-2.5 rounded-lg text-sm w-full">
-                        <option>{f.value}</option>
+                      <select name={f.name} defaultValue={f.value} required={f.required} className="appearance-none bg-white border border-[#e2e8f0] px-3 py-2.5 rounded-lg text-sm w-full">
+                        <option value="">Chọn giới tính</option>
+                        <option value="Nam">Nam</option>
+                        <option value="Nữ">Nữ</option>
+                        <option value="Khác">Khác</option>
                       </select>
                       <img src={iChevron} alt="" className="absolute right-3 top-1/2 -translate-y-1/2 size-4 pointer-events-none"/>
                     </div>
                   ) : (
-                    <input defaultValue={f.value} type={f.type} className="border border-[#e2e8f0] px-3 py-2.5 rounded-lg text-sm" />
+                    <input name={f.name} defaultValue={f.value} type={f.type} required={f.required} className="border border-[#e2e8f0] px-3 py-2.5 rounded-lg text-sm" />
                   )}
                 </label>
               ))}
@@ -49,20 +109,20 @@ export function MemberEditPage({ onBack }: { onBack: () => void }) {
             <div className="grid grid-cols-3 gap-4">
               <label className="flex flex-col gap-1">
                 <span className="font-semibold text-[#0f172a] text-sm">Chiều cao (cm) *</span>
-                <input defaultValue="165" className="border border-[#e2e8f0] px-3 py-2.5 rounded-lg text-sm" />
+                <input defaultValue="" className="border border-[#e2e8f0] px-3 py-2.5 rounded-lg text-sm" />
               </label>
               <label className="flex flex-col gap-1">
                 <span className="font-semibold text-[#0f172a] text-sm">Cân nặng (kg) *</span>
-                <input defaultValue="52" className="border border-[#e2e8f0] px-3 py-2.5 rounded-lg text-sm" />
+                <input defaultValue="" className="border border-[#e2e8f0] px-3 py-2.5 rounded-lg text-sm" />
               </label>
               <label className="flex flex-col gap-1">
                 <span className="font-semibold text-[#0f172a] text-sm">BMI (Tự động tính)</span>
-                <input defaultValue="19.1" readOnly className="border border-[#e2e8f0] bg-[#f8fafc] px-3 py-2.5 rounded-lg text-sm text-[#94a3b8]" />
+                <input defaultValue="" readOnly className="border border-[#e2e8f0] bg-[#f8fafc] px-3 py-2.5 rounded-lg text-sm text-[#94a3b8]" />
               </label>
             </div>
             <label className="flex flex-col gap-1 mt-4">
               <span className="font-semibold text-[#0f172a] text-sm">Mục tiêu tập luyện</span>
-              <textarea defaultValue="Tăng cường dẻo dai & săn chắc cơ bụng" rows={3} className="border border-[#e2e8f0] px-3 py-2.5 rounded-lg text-sm resize-none" />
+              <textarea defaultValue="" rows={3} className="border border-[#e2e8f0] px-3 py-2.5 rounded-lg text-sm resize-none" />
             </label>
           </div>
         </div>
@@ -72,8 +132,8 @@ export function MemberEditPage({ onBack }: { onBack: () => void }) {
           <div className="bg-white border border-[#e2e8f0] p-6 rounded-xl">
             <p className="font-extrabold text-[#0f172a] text-base mb-5">Ảnh đại diện hội viên</p>
             <div className="flex flex-col items-center gap-4">
-              <img src={memberEditAvatar} alt="" className="rounded-full size-24 object-cover" />
-              <button className="border border-[#e2e8f0] flex gap-2 items-center px-4 py-2 rounded-lg">
+              <img src={avatarUrl} alt="" className="rounded-full size-24 object-cover" />
+              <button type="button" onClick={handleChangeAvatar} className="border border-[#e2e8f0] flex gap-2 items-center px-4 py-2 rounded-lg">
                 <span className="text-[#0f172a] text-sm">✏ Thay đổi hình ảnh</span>
               </button>
               <p className="text-[#94a3b8] text-[11px] text-center">Hỗ trợ file PNG, JPG tối đa 5MB</p>
@@ -82,8 +142,10 @@ export function MemberEditPage({ onBack }: { onBack: () => void }) {
           <div className="bg-white border border-[#e2e8f0] p-6 rounded-xl">
             <p className="font-extrabold text-[#475569] text-[11px] tracking-wider uppercase mb-3">Trạng thái hiện tại</p>
             <div className="flex gap-2 flex-wrap">
-              <span className="bg-[#dcfce7] font-semibold px-3 py-1 rounded-full text-[#15803d] text-[12px]">Đang hoạt động</span>
-              <span className="bg-[#dbeafe] font-semibold px-3 py-1 rounded-full text-[#1d4ed8] text-[12px]">Hội Viên VIP</span>
+              <span className={`font-semibold px-3 py-1 rounded-full text-[12px] ${member.statusRaw ? 'bg-[#dcfce7] text-[#15803d]' : 'bg-[#fee2e2] text-[#b91c1c]'}`}>
+                {member.statusRaw ? "Đang hoạt động" : "Tạm khóa"}
+              </span>
+              {member.vip && <span className="bg-[#dbeafe] font-semibold px-3 py-1 rounded-full text-[#1d4ed8] text-[12px]">Hội Viên VIP</span>}
             </div>
           </div>
         </div>
@@ -91,13 +153,13 @@ export function MemberEditPage({ onBack }: { onBack: () => void }) {
 
       {/* actions */}
       <div className="flex gap-3 justify-end">
-        <button onClick={onBack} className="bg-white border border-[#e2e8f0] px-6 py-2.5 rounded-lg">
+        <button type="button" onClick={onBack} className="bg-white border border-[#e2e8f0] px-6 py-2.5 rounded-lg">
           <span className="font-semibold text-[#0f172a] text-sm">Hủy bỏ</span>
         </button>
-        <button className="bg-[#2563eb] px-6 py-2.5 rounded-lg">
-          <span className="font-semibold text-white text-sm">Lưu thay đổi</span>
+        <button type="submit" disabled={isSaving} className="bg-[#2563eb] disabled:bg-blue-300 px-6 py-2.5 rounded-lg">
+          <span className="font-semibold text-white text-sm">{isSaving ? "Đang lưu..." : "Lưu thay đổi"}</span>
         </button>
       </div>
-    </div>
+    </form>
   )
 }
