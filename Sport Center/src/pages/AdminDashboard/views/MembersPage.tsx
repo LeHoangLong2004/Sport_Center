@@ -4,10 +4,71 @@ import KpiCard from '../components/KpiCard';
 import SimpleLineChart from '../components/SimpleLineChart';
 import { FinanceTopBar } from '../components/FinanceTopBar';
 
-export function MembersPage({ onEditMember }: { onEditMember: () => void }) {
+export function MembersPage({ onEditMember }: { onEditMember: (member: any) => void }) {
   const [query, setQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("Tất cả")
-  const filtered = members.filter(m => {
+  const [membersList, setMembersList] = useState<any[]>([])
+
+  const fetchUsers = () => {
+    const token = localStorage.getItem("token");
+    fetch("/api/users", {
+      headers: { "Authorization": `Bearer ${token}` }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (Array.isArray(data)) {
+        const mapped = data.map((u: any, index: number) => {
+          const avatars = [mAvatar0, mAvatar1, mAvatar2, mAvatar3, mAvatar4];
+          return {
+            id: u.id.substring(0, 8).toUpperCase(),
+            realId: u.id,
+            name: u.fullName,
+            phone: u.phoneNumber || "N/A",
+            email: u.email,
+            pkg: u.roleName || "Member",
+            vip: false,
+            status: u.status ? "Đang hoạt động" : "Tạm khóa",
+            statusRaw: u.status,
+            expiry: new Date(u.createdAt).toLocaleDateString('vi-VN'),
+            avatar: u.avatarUrl || avatars[index % avatars.length],
+            dob: u.dateOfBirth ? u.dateOfBirth.split('T')[0] : "",
+            gender: u.gender,
+            emergencyContact: u.emergencyContact
+          };
+        });
+        setMembersList(mapped);
+      }
+    })
+    .catch(err => console.error("Failed to fetch users:", err));
+  };
+
+  React.useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const handleToggleStatus = async (realId: string, currentStatus: boolean) => {
+    if (!window.confirm(`Bạn có chắc muốn ${currentStatus ? "KHÓA" : "MỞ KHÓA"} tài khoản này không?`)) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/users/${realId}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: !currentStatus })
+      });
+      if (res.ok) {
+        fetchUsers();
+      } else {
+        alert("Cập nhật trạng thái thất bại.");
+      }
+    } catch {
+      alert("Lỗi kết nối.");
+    }
+  };
+
+  const filtered = membersList.filter(m => {
     const q = query.toLowerCase()
     return (`${m.name} ${m.id} ${m.phone}`).toLowerCase().includes(q)
       && (statusFilter === "Tất cả" || m.status === statusFilter)
@@ -24,14 +85,14 @@ export function MembersPage({ onEditMember }: { onEditMember: () => void }) {
       <div className="flex items-center justify-between">
         <div>
           <p className="font-bold text-[#0f172a] text-[28px]">Quản lý người dùng</p>
-          <p className="text-[#64748b] text-sm mt-1">2.486 hồ sơ đang được quản lý tập trung trên toàn hệ thống.</p>
+          <p className="text-[#64748b] text-sm mt-1">-- hồ sơ đang được quản lý tập trung trên toàn hệ thống.</p>
         </div>
         <div className="flex gap-3">
-          <button className="bg-white border border-[#cbd5e1] flex gap-2 items-center px-4 py-2.5 rounded-lg">
+          <button onClick={() => alert("Đang xuất dữ liệu ra file Excel...")} className="bg-white border border-[#cbd5e1] flex gap-2 items-center px-4 py-2.5 rounded-lg">
             <img src={iDownload} alt="" className="size-4" />
             <span className="font-semibold text-[#0f172a] text-sm">Xuất dữ liệu Excel</span>
           </button>
-          <button className="bg-[#2563eb] flex gap-2 items-center px-4 py-2.5 rounded-lg">
+          <button onClick={() => alert("Vui lòng sử dụng màn hình Đăng ký (Register) để tạo tài khoản mới.")} className="bg-[#2563eb] flex gap-2 items-center px-4 py-2.5 rounded-lg">
             <span className="font-semibold text-white text-sm">+ Thêm hội viên mới</span>
           </button>
         </div>
@@ -39,7 +100,7 @@ export function MembersPage({ onEditMember }: { onEditMember: () => void }) {
 
       {/* tabs */}
       <div className="border-b border-[#e2e8f0] flex gap-6">
-        {[["Thành viên","2.214"],["Huấn luyện viên","48"],["Nhân viên","224"]].map(([t,c],i)=>(
+        {[["Thành viên","--"],["Huấn luyện viên","--"],["Nhân viên","--"]].map(([t,c],i)=>(
           <button key={t} className={`pb-3 text-sm ${i===0?"border-b-2 border-[#2563eb] font-bold text-[#2563eb]":"font-medium text-[#64748b]"}`}>{t} ({c})</button>
         ))}
       </div>
@@ -98,18 +159,16 @@ export function MembersPage({ onEditMember }: { onEditMember: () => void }) {
             </div>
             <div className="w-[120px]"><p className="text-[#0f172a] text-sm">{m.expiry}</p></div>
             <div className="flex gap-2 items-center justify-end w-[120px]">
-              {m.status === "Sắp hết hạn" ? (
-                <button className="bg-[#2563eb] font-semibold px-3 py-1.5 rounded-md text-white text-[12px]">Gia hạn</button>
-              ) : (
-                <>
-                  <button className="bg-white border border-[#e2e8f0] flex items-center justify-center rounded-md size-8">
-                    <img src={iEye} alt="" className="size-4" />
-                  </button>
-                  <button onClick={onEditMember} className="bg-white border border-[#e2e8f0] flex items-center justify-center rounded-md size-8">
-                    <img src={iMore} alt="" className="size-4" />
-                  </button>
-                </>
-              )}
+              <button 
+                onClick={() => handleToggleStatus(m.realId, m.statusRaw)} 
+                title={m.statusRaw ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                className={`flex items-center justify-center rounded-md size-8 border ${m.statusRaw ? 'bg-white border-[#e2e8f0] hover:bg-red-50' : 'bg-red-100 border-red-200 hover:bg-green-100'}`}
+              >
+                <img src={m.statusRaw ? iEye : iRotateCcw} alt="Toggle Status" className="size-4" />
+              </button>
+              <button onClick={() => onEditMember(m)} title="Sửa thông tin" className="bg-white border border-[#e2e8f0] hover:bg-blue-50 flex items-center justify-center rounded-md size-8">
+                <img src={iMore} alt="Edit" className="size-4" />
+              </button>
             </div>
           </div>
         ))}

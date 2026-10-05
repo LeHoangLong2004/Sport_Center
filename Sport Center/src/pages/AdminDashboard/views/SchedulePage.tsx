@@ -5,13 +5,7 @@ export function SchedulePage() {
   const days = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
   const hours = ["06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"];
 
-  const classes = [
-    { day: 0, hour: 0, name: "Yoga Morning", coach: "Elena", color: "bg-teal-50 border-teal-200", text: "text-teal-700", room: "Studio 1", enrolled: "15/20", duration: 2 },
-    { day: 1, hour: 6, name: "Zumba Dance", coach: "Maria", color: "bg-pink-50 border-pink-200", text: "text-pink-700", room: "Studio 2", enrolled: "25/30", duration: 2 },
-    { day: 2, hour: 4, name: "CrossFit X", coach: "David", color: "bg-orange-50 border-orange-200", text: "text-orange-700", room: "Gym Area", enrolled: "10/15", duration: 2 },
-    { day: 4, hour: 5, name: "Pilates Core", coach: "Elena", color: "bg-teal-50 border-teal-200", text: "text-teal-700", room: "Studio 1", enrolled: "18/20", duration: 2 },
-    { day: 5, hour: 1, name: "Body Pump", coach: "Alex", color: "bg-blue-50 border-blue-200", text: "text-blue-700", room: "Studio 3", enrolled: "22/25", duration: 2 },
-  ];
+  const classes: any[] = [];
 
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
@@ -48,11 +42,7 @@ export function SchedulePage() {
           <div className="bg-white border border-[#e2e8f0] rounded-xl p-4 drop-shadow-sm">
             <p className="font-bold text-[#0f172a] text-sm mb-3">Huấn luyện viên (Workload)</p>
             <div className="flex flex-col gap-3">
-              {[
-                { name: "Elena (Yoga)", hours: 14, avatar: coachAvatar1, color: "bg-teal-500" },
-                { name: "Maria (Dance)", hours: 18, avatar: coachAvatar2, color: "bg-pink-500" },
-                { name: "David (Fitness)", hours: 26, avatar: hrAvatar1, color: "bg-orange-500" },
-              ].map((c, i) => (
+              {([] as any[]).map((c, i) => (
                 <div key={i} className="flex gap-3 items-center">
                   <img src={c.avatar} alt="" className="size-8 rounded-full object-cover" />
                   <div className="flex-1 min-w-0">

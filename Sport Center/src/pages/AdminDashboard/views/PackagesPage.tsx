@@ -3,42 +3,97 @@ import { iPackage, iCheckCircle, iSearch2, mAvatar0, mAvatar1, mAvatar2 } from '
 
 export function PackagesPage() {
   const [activeTab, setActiveTab] = useState("Danh mục gói");
+  const [packages, setPackages] = useState<any[]>([]);
 
-  const packages = [
-    {
-      id: "pkg-1",
-      name: "Premium VIP",
-      price: "12.000.000 đ",
-      duration: "12 tháng",
-      color: "from-amber-400 to-amber-600",
-      features: ["Truy cập tất cả CLB", "Không giới hạn lớp học", "Tặng 5 buổi PT 1:1", "Tủ đồ cá nhân VIP", "Miễn phí thức uống"],
-      tag: "Phổ biến nhất"
-    },
-    {
-      id: "pkg-2",
-      name: "Fitness Standard",
-      price: "5.400.000 đ",
-      duration: "6 tháng",
-      color: "from-blue-500 to-indigo-600",
-      features: ["Truy cập 1 CLB đăng ký", "Tham gia các lớp cơ bản", "Đo InBody 1 lần/tháng", "Sử dụng phòng xông hơi"],
-      tag: ""
-    },
-    {
-      id: "pkg-3",
-      name: "Yoga Focus",
-      price: "3.200.000 đ",
-      duration: "3 tháng",
-      color: "from-emerald-400 to-teal-500",
-      features: ["Không giới hạn lớp Yoga", "Sử dụng khu vực thư giãn", "Tặng thảm tập cá nhân"],
-      tag: ""
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    id: "",
+    name: "",
+    packageType: "membership",
+    monthlyPrice: 0,
+    features: [] as string[]
+  });
+
+  const fetchPackages = () => {
+    fetch("/api/packages")
+      .then(res => res.json())
+      .then(data => {
+        const mapped = data.map((pkg: any, index: number) => {
+          const colors = [
+            "from-amber-400 to-amber-600",
+            "from-blue-500 to-indigo-600",
+            "from-emerald-400 to-teal-500",
+            "from-purple-500 to-fuchsia-600"
+          ];
+          return {
+            id: pkg.id,
+            name: pkg.name,
+            price: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(pkg.monthlyPrice),
+            duration: "1 tháng",
+            color: colors[index % colors.length],
+            features: pkg.features?.map((f: any) => typeof f === 'string' ? f : (f.featureText || "")) || [],
+            tag: pkg.packageType === "membership" ? "VIP" : ""
+          };
+        });
+        setPackages(mapped);
+      })
+      .catch(err => console.error("Failed to fetch packages:", err));
+  };
+
+  React.useEffect(() => {
+    fetchPackages();
+  }, []);
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Bạn có chắc muốn khóa/xóa gói này không?")) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/packages/${id}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) fetchPackages();
+      else alert("Xóa gói thất bại");
+    } catch {
+      alert("Lỗi kết nối");
     }
-  ];
+  };
 
-  const recentSubscriptions = [
-    { name: "Nguyễn Lan Anh", pkg: "Premium VIP", date: "21/09/2026", amount: "12.000.000 đ", avatar: mAvatar0 },
-    { name: "Trần Minh Khoa", pkg: "Fitness Standard", date: "21/09/2026", amount: "5.400.000 đ", avatar: mAvatar1 },
-    { name: "Lê Gia Hân", pkg: "Yoga Focus", date: "20/09/2026", amount: "3.200.000 đ", avatar: mAvatar2 },
-  ];
+  const handleCreateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem("token");
+      const payload = {
+        id: formData.id || "PKG-" + Date.now(),
+        name: formData.name,
+        packageType: formData.packageType,
+        monthlyPrice: formData.monthlyPrice,
+        yearlyPrice: formData.monthlyPrice * 10, // Giả lập giảm giá năm
+        features: formData.features.length > 0 ? formData.features : ["Sử dụng phòng Gym", "Phòng thay đồ & tắm"]
+      };
+
+      const res = await fetch(`/api/packages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        setIsModalOpen(false);
+        fetchPackages();
+        setFormData({ id: "", name: "", packageType: "membership", monthlyPrice: 0, features: [] });
+      } else {
+        const data = await res.json().catch(()=>({}));
+        alert("Thêm gói thất bại: " + (data.message || res.statusText));
+      }
+    } catch {
+      alert("Lỗi kết nối");
+    }
+  };
+
+  const recentSubscriptions: any[] = [];
 
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
@@ -47,15 +102,15 @@ export function PackagesPage() {
           <p className="font-bold text-[#0f172a] text-[28px]">Gói hội viên</p>
           <p className="text-[#64748b] text-sm mt-1">Quản lý danh mục gói cước và theo dõi hợp đồng hội viên.</p>
         </div>
-        <button className="bg-[#2563eb] flex gap-2 items-center px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors">
+        <button onClick={() => setIsModalOpen(true)} className="bg-[#2563eb] flex gap-2 items-center px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors">
           <span className="font-semibold text-white text-sm">+ Tạo gói mới</span>
         </button>
       </div>
 
       <div className="border-b border-[#e2e8f0] flex gap-6">
         {["Danh mục gói", "Hợp đồng hội viên"].map(t => (
-          <button 
-            key={t} 
+          <button
+            key={t}
             onClick={() => setActiveTab(t)}
             className={`pb-3 text-sm ${activeTab === t ? "border-b-2 border-[#2563eb] font-bold text-[#2563eb]" : "font-medium text-[#64748b] hover:text-[#0f172a]"}`}
           >
@@ -80,7 +135,7 @@ export function PackagesPage() {
               <div className="p-6 flex-1 flex flex-col">
                 <p className="text-3xl font-extrabold text-[#0f172a] mb-6">{pkg.price}</p>
                 <div className="flex flex-col gap-3 flex-1 mb-6">
-                  {pkg.features.map((feat, i) => (
+                  {pkg.features.map((feat: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined, i: React.Key | null | undefined) => (
                     <div key={i} className="flex gap-3 items-start">
                       <img src={iCheckCircle} alt="check" className="size-5 shrink-0 opacity-70" />
                       <span className="text-[#475569] text-sm leading-tight">{feat}</span>
@@ -88,8 +143,8 @@ export function PackagesPage() {
                   ))}
                 </div>
                 <div className="flex gap-2">
-                  <button className="flex-1 border border-[#cbd5e1] py-2 rounded-lg text-sm font-semibold text-[#0f172a] hover:bg-slate-50 transition-colors">Sửa</button>
-                  <button className="flex-1 bg-slate-100 py-2 rounded-lg text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors">Khóa</button>
+                  <button onClick={() => alert("Tính năng chỉnh sửa gói tập đang được phát triển.")} className="flex-1 border border-[#cbd5e1] py-2 rounded-lg text-sm font-semibold text-[#0f172a] hover:bg-slate-50 transition-colors">Sửa</button>
+                  <button onClick={() => handleDelete(pkg.id)} className="flex-1 bg-slate-100 py-2 rounded-lg text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors">Khóa</button>
                 </div>
               </div>
             </div>
@@ -103,7 +158,7 @@ export function PackagesPage() {
               <input placeholder="Tìm hợp đồng, tên hội viên..." className="flex-1 text-sm outline-none" />
             </div>
           </div>
-          
+
           <div className="bg-white border border-[#e2e8f0] overflow-hidden rounded-xl">
             <div className="bg-[#f1f5f9] flex font-semibold items-center px-6 text-[#475569] text-[12px]">
               <div className="py-3 flex-1">HỘI VIÊN</div>
@@ -128,6 +183,43 @@ export function PackagesPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Modal Tạo Gói Mới */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="font-bold text-lg text-slate-900">Tạo Gói Tập Mới</h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+            </div>
+            <form onSubmit={handleCreateSubmit} className="p-6 flex flex-col gap-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">Mã Gói (ID)</label>
+                <input value={formData.id} onChange={e => setFormData({...formData, id: e.target.value})} placeholder="VD: PKG-YOGA" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" required />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">Tên Gói</label>
+                <input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="VD: Premium Fitness" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" required />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">Loại Gói</label>
+                <select value={formData.packageType} onChange={e => setFormData({...formData, packageType: e.target.value})} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                  <option value="membership">Thẻ Hội Viên (Membership)</option>
+                  <option value="sport">Bộ môn lẻ (Sport)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">Giá Tháng (VNĐ)</label>
+                <input type="number" value={formData.monthlyPrice} onChange={e => setFormData({...formData, monthlyPrice: Number(e.target.value)})} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" required />
+              </div>
+              <div className="pt-4 flex gap-3">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-slate-100 text-slate-700 font-semibold py-2.5 rounded-lg text-sm hover:bg-slate-200">Hủy</button>
+                <button type="submit" className="flex-1 bg-blue-600 text-white font-semibold py-2.5 rounded-lg text-sm hover:bg-blue-700">Xác Nhận Tạo</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

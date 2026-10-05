@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { UserAvatar } from './UserAvatar';
 
 interface ProfileData {
   avatarUrl: string;
@@ -22,14 +23,23 @@ export function ProfileSettings({
   extraInfo?: React.ReactNode;
 }) {
   const [data, setData] = useState<ProfileData>({
-    avatarUrl: initialData?.avatarUrl || "https://i.pravatar.cc/150?img=11",
-    fullName: initialData?.fullName || "Nguyễn Văn A",
-    email: initialData?.email || "user@sportcenter.com",
-    phone: initialData?.phone || "0912345678",
-    dob: initialData?.dob || "1995-05-15",
-    gender: initialData?.gender || "male",
-    address: initialData?.address || "123 Đường Lê Lợi, Quận 1, TP.HCM",
+    avatarUrl: initialData?.avatarUrl || "",
+    fullName: initialData?.fullName || "",
+    email: initialData?.email || "",
+    phone: initialData?.phone || "",
+    dob: initialData?.dob || "",
+    gender: initialData?.gender || "",
+    address: initialData?.address || "",
   });
+
+  useEffect(() => {
+    if (initialData) {
+      setData(prev => ({
+        ...prev,
+        ...initialData
+      }));
+    }
+  }, [initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setData({ ...data, [e.target.name]: e.target.value });
@@ -50,7 +60,7 @@ export function ProfileSettings({
           <div className="bg-white dark:bg-slate-800/80 rounded-3xl p-8 shadow-sm border border-slate-200 dark:border-slate-700/50 flex flex-col items-center text-center relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-blue-600 to-indigo-700 dark:from-slate-700 dark:to-slate-900"></div>
             <div className="relative z-10 w-32 h-32 rounded-full overflow-hidden border-4 border-white dark:border-slate-800 shadow-lg ring-4 ring-blue-50 dark:ring-slate-700/50 bg-white dark:bg-slate-800 mt-10 mb-4 group cursor-pointer">
-              <img src={data.avatarUrl} alt="Avatar" className="w-full h-full object-cover group-hover:opacity-75 transition-opacity" />
+              <UserAvatar src={data.avatarUrl} name={data.fullName || "User"} className="w-full h-full object-cover group-hover:opacity-75 transition-opacity text-5xl" />
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
               </div>

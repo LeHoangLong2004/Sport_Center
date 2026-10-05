@@ -458,15 +458,15 @@ CREATE INDEX idx_notifications_unread
 -- BẢNG TỔNG KẾT (29 BẢNG)
 -- ==============================================================
 -- PHẦN 1  — Tài khoản  : roles, users
--- PHẦN 2  — Cơ sở      : facilities
--- PHẦN 3  — Bộ môn     : sports
--- PHẦN 4  — Gói tập    : packages, package_features, package_sports, membership_benefits
--- PHẦN 5  — Đăng ký    : vouchers, subscriptions
--- PHẦN 6  — Hệ thống   : notifications, check_in_logs
--- PHẦN 7  — HLV        : coaches, coach_sports
--- PHẦN 8  — PT         : pt_packages, pt_enrollments, pt_sessions, reviews
--- PHẦN 9  — Lớp học    : classes, class_bookings
--- PHẦN 10 — Sức khoẻ  : body_metrics, workout_plans, diet_plans
--- PHẦN 11 — POS        : products, invoices, invoice_items
--- PHẦN 12 — Website    : article_categories, articles, contact_messages
+-- ...
 -- ==============================================================
+
+-- ==============================================================
+-- DỮ LIỆU MẪU (SEED DATA)
+-- ==============================================================
+INSERT INTO roles (name, description) VALUES
+    ('manager', 'Quản lý trung tâm'),
+    ('coach', 'Huấn luyện viên / PT'),
+    ('receptionist', 'Lễ tân / Thu ngân'),
+    ('member', 'Hội viên')
+ON CONFLICT (name) DO NOTHING;

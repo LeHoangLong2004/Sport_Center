@@ -5,13 +5,7 @@ import SimpleLineChart from '../components/SimpleLineChart';
 import { FinanceTopBar } from '../components/FinanceTopBar';
 
 export function PayrollPage() {
-  const rows = [
-    {id:"NV-008",name:"Trần Minh Khoa",  role:"Huấn luyện viên cá nhân (Coach)",base:"12.000.000",allowance:"1.500.000",commission:"8.500.000",deduct:"-1.260.000",net:"20.740.000"},
-    {id:"NV-012",name:"Lê Ngọc Mai",     role:"Nhân viên lễ tân",               base:"7.000.000", allowance:"500.000",  commission:"1.200.000",deduct:"-785.000",  net:"7.915.000"},
-    {id:"NV-015",name:"Nguyễn Văn Hùng",role:"Kỹ thuật viên phòng máy",        base:"9.500.000", allowance:"800.000",  commission:"1.500.000",deduct:"-1.025.000",net:"10.775.000"},
-    {id:"NV-001",name:"Phùng Minh Anh",  role:"Quản lý trung tâm (Manager)",    base:"25.000.000",allowance:"2.500.000",commission:"10.000.000",deduct:"-2.625.000",net:"34.875.000"},
-    {id:"NV-009",name:"Trịnh Mai Phương",role:"Huấn luyện viên Yoga (Coach)",   base:"12.500.000",allowance:"1.500.000",commission:"6.200.000",deduct:"-1.320.000",net:"18.880.000"},
-  ]
+  const rows: any[] = [];
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
       <div>
@@ -37,9 +31,9 @@ export function PayrollPage() {
       {/* KPIs */}
       <div className="flex gap-5">
         {[
-          {label:"Tổng quỹ lương đã duyệt",value:"485.000.000 đ",sub:"Thực nhận nhân viên",icon:"📋",bg:"#f0f9ff"},
-          {label:"Số nhân viên áp dụng",    value:"48 Nhân sự",   sub:"Đã tính 100%",      icon:"✓", bg:"#f0fdf4"},
-          {label:"Lương trung bình / người",value:"10.104.000 đ", sub:"Bình ổn",            icon:"⏱",bg:"#fffbeb"},
+          {label:"Tổng quỹ lương đã duyệt",value:"-- đ",sub:"Thực nhận nhân viên",icon:"📋",bg:"#f0f9ff"},
+          {label:"Số nhân viên áp dụng",    value:"-- Nhân sự",   sub:"--% tính",      icon:"✓", bg:"#f0fdf4"},
+          {label:"Lương trung bình / người",value:"-- đ", sub:"Bình ổn",            icon:"⏱",bg:"#fffbeb"},
         ].map(k=>(
           <div key={k.label} className="bg-white border border-[#e2e8f0] flex flex-1 flex-col gap-3 min-w-0 p-5 rounded-xl">
             <div className="flex items-center justify-between">

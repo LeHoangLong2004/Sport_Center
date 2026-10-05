@@ -9,9 +9,11 @@ import { PosPage } from './views/PosPage';
 import { LookupPage } from './views/LookupPage';
 import { DetailPage } from './views/DetailPage';
 import { ProfileSettings } from '../../components/ProfileSettings';
+import { useUserProfile } from '../../hooks/useUserProfile';
 
 export default function ReceptionistPortal({ onExit }: { onExit: () => void }) {
   const [page, setPage] = useState<Page>("checkin")
+  const { profile, loading } = useUserProfile()
 
   const { bc, title, shift } = breadcrumbs[page]
 
@@ -28,10 +30,23 @@ export default function ReceptionistPortal({ onExit }: { onExit: () => void }) {
           {page === "lookup" && <LookupPage onDetail={() => setPage("detail")} />}
           {page === "detail" && <DetailPage onBack={() => setPage("lookup")} />}
           {page === "profile" && (
-            <ProfileSettings 
-              roleLabel="Lễ tân" 
-              initialData={{ fullName: "Ngọc Mai", email: "mai.ngoc@sportcenter.com", phone: "0888 123 456", avatarUrl: avatarByPage.profile }}
-            />
+            loading ? (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-slate-400">Đang tải thông tin...</p>
+              </div>
+            ) : (
+              <ProfileSettings
+                roleLabel={profile?.roleName || "Lễ tân"}
+                initialData={profile ? {
+                  fullName: profile.fullName,
+                  email: profile.email,
+                  phone: profile.phone,
+                  avatarUrl: profile.avatarUrl,
+                  dob: profile.dob,
+                  gender: profile.gender,
+                } : undefined}
+              />
+            )
           )}
         </div>
       </div>

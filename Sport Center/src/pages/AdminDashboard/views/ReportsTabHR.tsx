@@ -16,18 +16,18 @@ export default function ReportsTabHR() {
               <circle cx="70" cy="70" r="55" fill="none" stroke="#94a3b8" strokeWidth="20" strokeDasharray="29.9 335.9" strokeDashoffset="-326.3" transform="rotate(-90 70 70)" />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="font-bold text-[#0f172a] text-xl">48</span>
+              <span className="font-bold text-[#0f172a] text-xl">--</span>
               <span className="text-[#64748b] text-[10px]">Nhân viên</span>
             </div>
           </div>
           <div className="flex flex-col gap-2 flex-1">
             {[
-              { dot: "#2563eb", label: "HLV/PT", count: "18 người (38%)" },
-              { dot: "#14b8a6", label: "Lễ tân", count: "8 người (17%)" },
-              { dot: "#f97316", label: "Kỹ thuật", count: "6 người (13%)" },
-              { dot: "#f59e0b", label: "Chăm sóc KH", count: "5 người (10%)" },
-              { dot: "#a855f7", label: "Vệ sinh", count: "7 người (15%)" },
-              { dot: "#94a3b8", label: "Quản lý", count: "4 người (8%)" },
+              { dot: "#2563eb", label: "HLV/PT", count: "-- người (--%)" },
+              { dot: "#14b8a6", label: "Lễ tân", count: "-- người (--%)" },
+              { dot: "#f97316", label: "Kỹ thuật", count: "-- người (--%)" },
+              { dot: "#f59e0b", label: "Chăm sóc KH", count: "-- người (--%)" },
+              { dot: "#a855f7", label: "Vệ sinh", count: "-- người (--%)" },
+              { dot: "#94a3b8", label: "Quản lý", count: "-- người (--%)" },
             ].map(l => (
               <div key={l.label} className="flex items-center justify-between">
                 <div className="flex gap-2 items-center">
@@ -47,11 +47,7 @@ export default function ReportsTabHR() {
               <span key={h} className={h === "#" ? "w-8" : h === "HLV" ? "flex-1" : "w-[110px]"}>{h}</span>
             ))}
           </div>
-          {[
-            { rank: 1, name: "Nguyễn Minh Tuyết", classes: "24 lớp", avg: "17.5 học viên/lớp", rating: "4.9", rev: "42.000.000 đ" },
-            { rank: 2, name: "Trần Đức Khoa", classes: "20 lớp", avg: "19.2 học viên/lớp", rating: "4.7", rev: "38.000.000 đ" },
-            { rank: 3, name: "Lê Thu Linh", classes: "18 lớp", avg: "15.8 học viên/lớp", rating: "4.6", rev: "28.000.000 đ" },
-          ].map(r => (
+          {([] as any[]).map(r => (
             <div key={r.rank} className="border-b border-[#e2e8f0] flex gap-3 items-center px-4 py-3">
               <span className="text-[#64748b] text-[13px] w-8">{r.rank}</span>
               <span className="font-semibold text-[#0f172a] text-sm flex-1">{r.name}</span>
@@ -81,7 +77,7 @@ export default function ReportsTabHR() {
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
-            {[{ c: "#14b8a6", l: "Đúng giờ", v: "94.1%" }, { c: "#f59e0b", l: "Đi muộn", v: "3.8%" }, { c: "#ef4444", l: "Vắng mặt", v: "2.1%" }].map(i => (
+            {([] as any[]).map(i => (
               <div key={i.l} className="flex items-center justify-between">
                 <div className="flex gap-2 items-center"><div className="rounded-full size-2" style={{ background: i.c }} /><span className="text-[#0f172a] text-[12px]">{i.l}</span></div>
                 <span className="font-semibold text-[12px]" style={{ color: i.c }}>{i.v}</span>

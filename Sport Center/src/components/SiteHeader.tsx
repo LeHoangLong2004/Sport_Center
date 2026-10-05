@@ -81,22 +81,73 @@ export function SiteHeader({ currentRoute }: { currentRoute: string }) {
       </div>
 
       <div className="flex gap-[12px] items-center shrink-0">
-        <button 
-          className={`px-5 py-2.5 rounded-xl font-semibold text-[14px] transition-all ${
-            scrolled 
-              ? 'text-slate-700 hover:bg-slate-100' 
-              : 'text-slate-800 lg:text-white hover:bg-white/10'
-          }`}
-          data-name="btn-login"
-        >
-          Đăng nhập
-        </button>
-        <button 
-          className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-teal-500/25 transition-transform hover:-translate-y-0.5 active:translate-y-0"
-          data-name="btn-register"
-        >
-          Đăng ký ngay
-        </button>
+        {localStorage.getItem("user") ? (() => {
+          const userStr = localStorage.getItem("user");
+          const user = userStr ? JSON.parse(userStr) : null;
+          return (
+            <div className="flex items-center gap-4">
+              <button
+                className="flex items-center gap-2 group"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const roleStr = user?.role?.toLowerCase() || "";
+                  if (roleStr === "admin" || roleStr === "manager") {
+                    window.location.hash = "dashboard";
+                  } else if (roleStr === "coach") {
+                    window.location.hash = "coach-portal";
+                  } else if (roleStr === "receptionist") {
+                    window.location.hash = "receptionist";
+                  } else {
+                    window.location.hash = "member";
+                  }
+                }}
+                title="Vào Bảng điều khiển"
+              >
+                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-teal-500 to-indigo-500 flex items-center justify-center shadow-md text-white font-bold text-[15px] border-2 border-white/20">
+                  {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <div className="flex flex-col items-start hidden sm:flex">
+                  <span className={`text-sm font-bold ${scrolled ? 'text-slate-700' : 'text-slate-800 lg:text-white'}`}>{user?.fullName || 'Người dùng'}</span>
+                  <span className={`text-[10px] font-semibold uppercase tracking-wider ${scrolled ? 'text-teal-600' : 'text-teal-600 lg:text-teal-300'}`}>Bảng điều khiển</span>
+                </div>
+              </button>
+              <button 
+                className={`px-3 py-1.5 rounded-lg text-[13px] font-semibold border transition-colors ${
+                  scrolled 
+                    ? 'border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-red-500' 
+                    : 'border-transparent lg:border-white/20 text-slate-800 lg:text-white/80 lg:hover:bg-white/10 lg:hover:text-white'
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  localStorage.removeItem("token");
+                  localStorage.removeItem("user");
+                  window.location.reload();
+                }}
+              >
+                Đăng xuất
+              </button>
+            </div>
+          );
+        })() : (
+          <>
+            <button 
+              className={`px-5 py-2.5 rounded-xl font-semibold text-[14px] transition-all ${
+                scrolled 
+                  ? 'text-slate-700 hover:bg-slate-100' 
+                  : 'text-slate-800 lg:text-white hover:bg-white/10'
+              }`}
+              data-name="btn-login"
+            >
+              Đăng nhập
+            </button>
+            <button 
+              className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-teal-500/25 transition-transform hover:-translate-y-0.5 active:translate-y-0"
+              data-name="btn-register"
+            >
+              Đăng ký ngay
+            </button>
+          </>
+        )}
       </div>
     </nav>
   );

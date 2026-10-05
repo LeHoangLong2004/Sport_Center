@@ -6,3 +6,4 @@ export type CoachScreen =
   | "attendance"
   | "profile"
   | "ai"
+  | "settings"

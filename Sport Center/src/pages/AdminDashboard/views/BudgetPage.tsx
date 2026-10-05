@@ -5,12 +5,7 @@ import SimpleLineChart from '../components/SimpleLineChart';
 import { FinanceTopBar } from '../components/FinanceTopBar';
 
 export function BudgetPage() {
-  const budgetItems = [
-    { name:"Nhân sự & Chế độ đãi ngộ",     budget:"1.200.000.000 đ", actual:"1.180.000.000 đ", diff:"+20.000.000 đ",  status:"Trong ngân sách", green:true  },
-    { name:"Thiết bị & Bảo trì máy tập",   budget:"600.000.000 đ",   actual:"680.000.000 đ",   diff:"-80.000.000 đ",  status:"Vượt ngân sách",  green:false },
-    { name:"Marketing & Quảng cáo",         budget:"400.000.000 đ",   actual:"390.000.000 đ",   diff:"+10.000.000 đ",  status:"Trong ngân sách", green:true  },
-    { name:"Tiện ích (Điện, nước...)",      budget:"300.000.000 đ",   actual:"295.000.000 đ",   diff:"+5.000.000 đ",   status:"Trong ngân sách", green:true  },
-  ]
+  const budgetItems: any[] = [];
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
       <div>
@@ -28,10 +23,10 @@ export function BudgetPage() {
       {/* KPIs */}
       <div className="flex gap-5">
         {[
-          {label:"Tổng ngân sách Q3/2026",value:"2.800.000.000 đ",sub:"Tổng phân bổ",      icon:"🗂",bg:"#f0f9ff"},
-          {label:"Đã sử dụng",            value:"1.950.000.000 đ",sub:"69.6% Đã chi",       icon:"✓", bg:"#f0fdf4"},
-          {label:"Còn lại khả dụng",       value:"850.000.000 đ",  sub:"An toàn",            icon:"⏱",bg:"#fffbeb"},
-          {label:"Vượt ngân sách",         value:"2 Hạng mục",     sub:"Cảnh báo cao",       icon:"⚠",bg:"#fef2f2"},
+          {label:"Tổng ngân sách Q3/2026",value:"-- đ",sub:"Tổng phân bổ",      icon:"🗂",bg:"#f0f9ff"},
+          {label:"Đã sử dụng",            value:"-- đ",sub:"--% Đã chi",       icon:"✓", bg:"#f0fdf4"},
+          {label:"Còn lại khả dụng",       value:"-- đ",  sub:"An toàn",            icon:"⏱",bg:"#fffbeb"},
+          {label:"Vượt ngân sách",         value:"-- Hạng mục",     sub:"Cảnh báo cao",       icon:"⚠",bg:"#fef2f2"},
         ].map(k=>(
           <div key={k.label} className="bg-white border border-[#e2e8f0] flex flex-1 flex-col gap-3 min-w-0 p-5 rounded-xl">
             <div className="flex items-center justify-between">

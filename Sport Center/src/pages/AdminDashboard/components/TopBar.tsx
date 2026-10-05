@@ -1,7 +1,19 @@
 import React from 'react';
 import { avatarTopbar, iSearch, iBell } from '../shared';
+import { UserAvatar } from '../../../components/UserAvatar';
 
 export function TopBar({ breadcrumb, title, onProfileClick }: { breadcrumb: string; title: string; onProfileClick?: () => void }) {
+  const userStr = localStorage.getItem("user");
+  let userName = "Admin";
+  let avatarUrl = null;
+  if (userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      userName = user.fullName || user.name || user.email?.split('@')[0] || "Admin";
+      avatarUrl = user.avatarUrl;
+    } catch(e) {}
+  }
+
   return (
     <header className="flex justify-between items-center px-6 lg:px-8 py-5 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-[#0f172a]/50 backdrop-blur-xl sticky top-0 z-30">
       <div>
@@ -21,9 +33,9 @@ export function TopBar({ breadcrumb, title, onProfileClick }: { breadcrumb: stri
           <img src={iBell} alt="" className="size-5 brightness-50 dark:brightness-150" />
           <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 border-2 border-slate-100 dark:border-slate-800 rounded-full" />
         </button>
-        <img 
-          src={avatarTopbar} 
-          alt="Profile" 
+        <UserAvatar 
+          src={avatarUrl} 
+          name={userName}
           className="rounded-full size-11 object-cover cursor-pointer border-2 border-slate-200 dark:border-slate-700 hover:border-rose-500 dark:hover:border-rose-500 transition-colors shadow-sm" 
           onClick={onProfileClick}
         />
