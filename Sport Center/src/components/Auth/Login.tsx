@@ -65,20 +65,70 @@ export function Login({
     setError("")
   }
 
-  function submit(event: FormEvent) {
+  async function submit(event: FormEvent) {
     event.preventDefault()
-    const matched = demoAccounts.find(
-      (a) => a.email === email.trim() && a.password === password,
+    setLoading(true)
+    setError("")
+
+    // Frontend demo mode: authenticate against local mock accounts.
+    await new Promise((resolve) => setTimeout(resolve, 250))
+    const mockAccount = demoAccounts.find(
+      (item) =>
+        item.email.toLowerCase() === email.trim().toLowerCase() &&
+        item.password === password,
     )
-    if (!matched) {
-      setError("Email hoặc mật khẩu không đúng. Hãy dùng tài khoản demo bên dưới.")
+
+    if (!mockAccount) {
+      setError("Email hoặc mật khẩu demo không đúng.")
+      setLoading(false)
       return
     }
-    setLoading(true)
-    window.setTimeout(() => {
-      if (onLoginAs) onLoginAs(matched.role)
-      else onLogin()
-    }, 450)
+
+    const mockProfile = {
+      id: `mock-${mockAccount.role}`,
+      fullName: mockAccount.name,
+      email: mockAccount.email,
+      role: mockAccount.role === "admin" ? "CenterManager" : mockAccount.role,
+      emailVerified: true,
+    }
+
+    localStorage.setItem("token", `mock-token-${mockAccount.role}`)
+    localStorage.setItem("user", JSON.stringify(mockProfile))
+    if (onLoginAs) onLoginAs(mockAccount.role)
+    else onLogin()
+    return
+    
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      })
+      
+      const data = await res.json().catch(() => ({}))
+      
+      if (!res.ok) {
+        setError(data.message || "Đăng nhập thất bại. Hãy kiểm tra thông tin hoặc CSDL.")
+        setLoading(false)
+        return
+      }
+      
+      localStorage.setItem("token", data.token)
+      localStorage.setItem("user", JSON.stringify(data.profile))
+      
+      if (onLoginAs) {
+        const roleStr = data.profile.role?.toLowerCase()
+        if (roleStr === "centermanager" || roleStr === "admin") onLoginAs("admin")
+        else if (roleStr === "coach") onLoginAs("coach")
+        else if (roleStr === "receptionist") onLoginAs("receptionist")
+        else onLoginAs("member")
+      } else {
+        onLogin()
+      }
+    } catch (err) {
+      setError("Lỗi kết nối đến server API.")
+      setLoading(false)
+    }
   }
 
   return (

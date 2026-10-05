@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "E:\\Coding\\Code\\SWP\\fitness\\SmartGym.Application\\SmartGym.Application.csproj": {}
+    "E:\\Coding\\Code\\SWP\\Sport_Center\\backend\\SmartGym.Application\\SmartGym.Application.csproj": {}
   },
   "projects": {
-    "E:\\Coding\\Code\\SWP\\fitness\\SmartGym.Application\\SmartGym.Application.csproj": {
+    "E:\\Coding\\Code\\SWP\\Sport_Center\\backend\\SmartGym.Application\\SmartGym.Application.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\Coding\\Code\\SWP\\fitness\\SmartGym.Application\\SmartGym.Application.csproj",
+        "projectUniqueName": "E:\\Coding\\Code\\SWP\\Sport_Center\\backend\\SmartGym.Application\\SmartGym.Application.csproj",
         "projectName": "SmartGym.Application",
-        "projectPath": "E:\\Coding\\Code\\SWP\\fitness\\SmartGym.Application\\SmartGym.Application.csproj",
+        "projectPath": "E:\\Coding\\Code\\SWP\\Sport_Center\\backend\\SmartGym.Application\\SmartGym.Application.csproj",
         "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "E:\\Coding\\Code\\SWP\\fitness\\SmartGym.Application\\obj\\",
+        "outputPath": "E:\\Coding\\Code\\SWP\\Sport_Center\\backend\\SmartGym.Application\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -33,8 +33,8 @@
             "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {
-              "E:\\Coding\\Code\\SWP\\fitness\\SmartGym.Domain\\SmartGym.Domain.csproj": {
-                "projectPath": "E:\\Coding\\Code\\SWP\\fitness\\SmartGym.Domain\\SmartGym.Domain.csproj"
+              "E:\\Coding\\Code\\SWP\\Sport_Center\\backend\\SmartGym.Domain\\SmartGym.Domain.csproj": {
+                "projectPath": "E:\\Coding\\Code\\SWP\\Sport_Center\\backend\\SmartGym.Domain\\SmartGym.Domain.csproj"
               }
             }
           }
@@ -349,14 +349,14 @@
         }
       }
     },
-    "E:\\Coding\\Code\\SWP\\fitness\\SmartGym.Domain\\SmartGym.Domain.csproj": {
+    "E:\\Coding\\Code\\SWP\\Sport_Center\\backend\\SmartGym.Domain\\SmartGym.Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\Coding\\Code\\SWP\\fitness\\SmartGym.Domain\\SmartGym.Domain.csproj",
+        "projectUniqueName": "E:\\Coding\\Code\\SWP\\Sport_Center\\backend\\SmartGym.Domain\\SmartGym.Domain.csproj",
         "projectName": "SmartGym.Domain",
-        "projectPath": "E:\\Coding\\Code\\SWP\\fitness\\SmartGym.Domain\\SmartGym.Domain.csproj",
+        "projectPath": "E:\\Coding\\Code\\SWP\\Sport_Center\\backend\\SmartGym.Domain\\SmartGym.Domain.csproj",
         "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "E:\\Coding\\Code\\SWP\\fitness\\SmartGym.Domain\\obj\\",
+        "outputPath": "E:\\Coding\\Code\\SWP\\Sport_Center\\backend\\SmartGym.Domain\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

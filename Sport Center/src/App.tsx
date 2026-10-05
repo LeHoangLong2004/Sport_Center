@@ -145,6 +145,8 @@ export default function App() {
     return (
       <ReceptionistPortal
         onExit={() => {
+          localStorage.removeItem("token")
+          localStorage.removeItem("user")
           window.location.hash = "home"
           setReceptionistOpen(false)
         }}
@@ -205,6 +207,8 @@ export default function App() {
                       : "overview"
         }
         onExit={() => {
+          localStorage.removeItem("token")
+          localStorage.removeItem("user")
           window.location.hash = "home"
           setAdminOpen(false)
         }}

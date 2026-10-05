@@ -9,3 +9,15 @@ E:\Coding\Code\SWP\fitness\SmartGym.Domain\obj\Debug\net10.0\SmartGym.Domain.dll
 E:\Coding\Code\SWP\fitness\SmartGym.Domain\obj\Debug\net10.0\refint\SmartGym.Domain.dll
 E:\Coding\Code\SWP\fitness\SmartGym.Domain\obj\Debug\net10.0\SmartGym.Domain.pdb
 E:\Coding\Code\SWP\fitness\SmartGym.Domain\obj\Debug\net10.0\ref\SmartGym.Domain.dll
+E:\Coding\Code\SWP\Sport_Center\backend\SmartGym.Domain\bin\Debug\net10.0\SmartGym.Domain.deps.json
+E:\Coding\Code\SWP\Sport_Center\backend\SmartGym.Domain\bin\Debug\net10.0\SmartGym.Domain.dll
+E:\Coding\Code\SWP\Sport_Center\backend\SmartGym.Domain\bin\Debug\net10.0\SmartGym.Domain.pdb
+E:\Coding\Code\SWP\Sport_Center\backend\SmartGym.Domain\obj\Debug\net10.0\SmartGym.Domain.GeneratedMSBuildEditorConfig.editorconfig
+E:\Coding\Code\SWP\Sport_Center\backend\SmartGym.Domain\obj\Debug\net10.0\SmartGym.Domain.AssemblyInfoInputs.cache
+E:\Coding\Code\SWP\Sport_Center\backend\SmartGym.Domain\obj\Debug\net10.0\SmartGym.Domain.AssemblyInfo.cs
+E:\Coding\Code\SWP\Sport_Center\backend\SmartGym.Domain\obj\Debug\net10.0\SmartGym.Domain.csproj.CoreCompileInputs.cache
+E:\Coding\Code\SWP\Sport_Center\backend\SmartGym.Domain\obj\Debug\net10.0\SmartGym.Domain.sourcelink.json
+E:\Coding\Code\SWP\Sport_Center\backend\SmartGym.Domain\obj\Debug\net10.0\SmartGym.Domain.dll
+E:\Coding\Code\SWP\Sport_Center\backend\SmartGym.Domain\obj\Debug\net10.0\refint\SmartGym.Domain.dll
+E:\Coding\Code\SWP\Sport_Center\backend\SmartGym.Domain\obj\Debug\net10.0\SmartGym.Domain.pdb
+E:\Coding\Code\SWP\Sport_Center\backend\SmartGym.Domain\obj\Debug\net10.0\ref\SmartGym.Domain.dll

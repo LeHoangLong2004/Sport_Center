@@ -11,10 +11,36 @@ export function ForgotPassword({
 }) {
   const [loading, setLoading] = useState(false)
 
-  function submit(event: FormEvent) {
+  async function submit(event: FormEvent) {
     event.preventDefault()
     setLoading(true)
-    window.setTimeout(onSubmit, 450)
+    
+    const formData = new FormData(event.target as HTMLFormElement)
+    const email = formData.get("email") as string
+
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      })
+      
+      const data = await res.json().catch(() => ({}))
+      
+      if (!res.ok) {
+        alert(data.message || "Gửi yêu cầu thất bại.")
+        setLoading(false)
+        return
+      }
+      
+      localStorage.setItem("reset_email", email)
+      if (data.resetToken) localStorage.setItem("reset_token_demo", data.resetToken)
+      
+      onSubmit()
+    } catch (err) {
+      alert("Lỗi kết nối đến server API.")
+      setLoading(false)
+    }
   }
 
   return (
@@ -58,6 +84,7 @@ export function ForgotPassword({
                   type="email"
                   required
                   autoComplete="email"
+                  name="email"
                   className="block w-full pl-10 pr-4 py-3 bg-white dark:bg-[#1e293b]/50 border border-slate-200 dark:border-[#334155] rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/50 focus:border-[#14b8a6] transition-all shadow-sm dark:shadow-none"
                 />
               </div>
