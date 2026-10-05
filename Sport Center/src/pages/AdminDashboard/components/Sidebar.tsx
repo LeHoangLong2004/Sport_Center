@@ -20,21 +20,15 @@ export function Sidebar({ page, setPage }: { page: AdminPage; setPage: (p: Admin
     }
   } catch (e) {}
 
-  const [financeOpen, setFinanceOpen] = useState(
-    ["budget", "expenses", "payroll", "pl-report"].includes(page)
-  )
   const navItems: { label: string; icon: string; page: AdminPage }[] = [
     { label: "Tổng quan", icon: iDashboard, page: "overview" },
-    { label: "Quản lý Người dùng", icon: iUsers, page: "members" },
-    { label: "Gói hội viên", icon: iPackage, page: "packages" },
-    { label: "Lớp học & Lịch trình", icon: iCalendar, page: "schedule" },
-    { label: "Thanh toán & Hóa đơn", icon: iReceipt, page: "payment" },
-  ]
-  const financeSubItems: { label: string; page: AdminPage }[] = [
-    { label: "Quản lý ngân sách", page: "budget" },
-    { label: "Chi phí vận hành", page: "expenses" },
-    { label: "Bảng lương nhân viên", page: "payroll" },
-    { label: "Báo cáo lãi lỗ (P&L)", page: "pl-report" },
+    { label: "Thành viên", icon: iUsers, page: "members" },
+    { label: "Nhân sự", icon: iUsers, page: "staff" },
+    { label: "Bộ môn & phòng tập", icon: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxyZWN0IHg9IjMiIHk9IjMiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgcng9IjIiIHJ5PSIyIi8+PHBhdGggZD0iTTkgM3YxOCIvPjxwYXRoIGQ9Ik0xNSAzdjE4Ii8+PC9zdmc+", page: "facilities" },
+    { label: "Lớp học", icon: iCalendar, page: "classes" },
+    { label: "Gói thành viên", icon: iPackage, page: "packages" },
+    { label: "Thanh toán", icon: iReceipt, page: "payment" },
+    { label: "Báo cáo", icon: iBarChart, page: "reports" },
   ]
   const isFinancePage = ["budget", "expenses", "payroll", "pl-report"].includes(page)
 
@@ -56,73 +50,20 @@ export function Sidebar({ page, setPage }: { page: AdminPage; setPage: (p: Admin
       {/* nav */}
       <nav className="flex flex-col gap-[6px] items-start shrink-0 w-full">
         {navItems.map(item => {
-          const active = item.page === "payment"
-            ? page === "payment"
-            : item.label === "Quản lý Người dùng"
-              ? page === "members" && !isFinancePage
-              : page === item.page
+          const active = page === item.page
           return (
             <button
               key={item.label}
               onClick={() => setPage(item.page)}
               className={`flex gap-[12px] items-center px-[16px] py-[12px] rounded-[8px] shrink-0 w-full text-left transition-colors duration-200 ${active ? "bg-[#f43f5e] shadow-md shadow-rose-500/20" : "bg-transparent hover:bg-white/5"}`}
             >
-              <img src={item.icon} alt="" className={`shrink-0 size-[18px] ${active ? "brightness-200" : ""}`} />
+              <img src={item.icon} alt="" className={`shrink-0 size-[18px] ${active ? "brightness-200" : "opacity-70"}`} />
               <span className={`flex-1 font-${active ? "bold" : "medium"} ${active ? "text-white" : "text-[#cbd5e1]"} text-[14px] leading-normal`}>
                 {item.label}
               </span>
             </button>
           )
         })}
-
-        {/* Finance section */}
-        <div className="flex flex-col gap-0.5 w-full">
-          <button
-            onClick={() => setFinanceOpen(v => !v)}
-            className={`flex gap-[12px] items-center px-[16px] py-[12px] rounded-[8px] shrink-0 w-full text-left transition-colors duration-200 ${isFinancePage ? "bg-[#f43f5e] shadow-md shadow-rose-500/20" : "bg-transparent hover:bg-white/5"}`}
-          >
-            <span className={`size-[18px] shrink-0 flex items-center justify-center text-base ${isFinancePage ? "text-white font-bold" : "text-[#cbd5e1]"}`}>₫</span>
-            <span className={`flex-1 font-${isFinancePage ? "bold" : "medium"} ${isFinancePage ? "text-white" : "text-[#cbd5e1]"} text-[14px] leading-normal`}>
-              Tài chính {financeOpen ? "▾" : "▸"}
-            </span>
-          </button>
-          {financeOpen && (
-            <div className="flex flex-col gap-1 mt-1 pl-[42px] pr-2 w-full">
-              {financeSubItems.map(sub => (
-                <button
-                  key={sub.page}
-                  onClick={() => setPage(sub.page)}
-                  className={`flex gap-2 items-center px-2 py-1.5 rounded-md w-full text-left transition-colors ${page === sub.page ? "bg-white/10" : "hover:bg-white/5"}`}
-                >
-                  <div className={`rounded-full size-[5px] shrink-0 ${page === sub.page ? "bg-[#f43f5e]" : "bg-[#94a3b8]"}`} />
-                  <span className={`text-[12px] leading-normal ${page === sub.page ? "font-bold text-white" : "font-medium text-[#94a3b8]"}`}>
-                    {sub.label}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <button
-          onClick={() => setPage("reports")}
-          className={`flex gap-[12px] items-center px-[16px] py-[12px] rounded-[8px] shrink-0 w-full text-left transition-colors duration-200 ${page === "reports" ? "bg-[#f43f5e] shadow-md shadow-rose-500/20" : "bg-transparent hover:bg-white/5"}`}
-        >
-          <img src={iBarChart} alt="" className={`shrink-0 size-[18px] ${page === "reports" ? "brightness-200" : ""}`} />
-          <span className={`flex-1 font-${page === "reports" ? "bold" : "medium"} ${page === "reports" ? "text-white" : "text-[#cbd5e1]"} text-[14px] leading-normal`}>
-            Báo cáo & Thống kê
-          </span>
-        </button>
-        
-        <button
-          onClick={() => setPage("settings")}
-          className={`flex gap-[12px] items-center px-[16px] py-[12px] rounded-[8px] shrink-0 w-full text-left transition-colors duration-200 ${page === "settings" ? "bg-[#f43f5e] shadow-md shadow-rose-500/20" : "bg-transparent hover:bg-white/5"}`}
-        >
-          <img src={iSettings} alt="" className={`shrink-0 size-[18px] ${page === "settings" ? "brightness-200" : ""}`} />
-          <span className={`flex-1 font-${page === "settings" ? "bold" : "medium"} ${page === "settings" ? "text-white" : "text-[#cbd5e1]"} text-[14px] leading-normal`}>
-            Cài đặt & Nhật ký
-          </span>
-        </button>
       </nav>
 
       {/* support card */}
