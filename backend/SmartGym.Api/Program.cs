@@ -25,7 +25,7 @@ if (!string.IsNullOrEmpty(supabaseUrl) && !string.IsNullOrEmpty(supabaseKey))
     var options = new Supabase.SupabaseOptions
     {
         AutoRefreshToken = true,
-        AutoConnectRealtime = true,
+        AutoConnectRealtime = false,
     };
     // Need to await initialization for client
     var supabaseClient = new Supabase.Client(supabaseUrl, supabaseKey, options);
@@ -122,6 +122,13 @@ auth.MapPost("/login", async (LoginRequest request, AuthService authService) =>
 {
     var (response, error, isForbid) = await authService.LoginAsync(request);
     if (isForbid) return Results.Forbid();
+    if (error is not null) return Results.BadRequest(new { message = error });
+    return Results.Ok(response);
+});
+
+auth.MapPost("/register", async (RegisterRequest request, AuthService authService) =>
+{
+    var (response, error) = await authService.RegisterAsync(request);
     if (error is not null) return Results.BadRequest(new { message = error });
     return Results.Ok(response);
 });

@@ -49,4 +49,41 @@ public sealed class AuthService
 
         return (new AuthResponse(token, profile), null, false);
     }
+
+    public async Task<(AuthResponse? Response, string? Error)> RegisterAsync(RegisterRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password) || string.IsNullOrWhiteSpace(request.FullName))
+        {
+            return (null, "Email, password, and full name are required.");
+        }
+
+        var existingUser = await _userRepository.FindByEmailAsync(request.Email);
+        if (existingUser is not null)
+        {
+            return (null, "Email is already registered.");
+        }
+
+        var user = new SmartGym.Domain.Entities.AppUser(
+            id: Guid.NewGuid(),
+            branchId: null,
+            email: request.Email,
+            passwordHash: _passwordHasher.Hash(request.Password),
+            fullName: request.FullName,
+            phoneNumber: request.Phone ?? "",
+            role: UserRole.Member,
+            memberCode: null,
+            qrSecretToken: null,
+            referralCode: Guid.NewGuid().ToString("N")[..8].ToUpper(),
+            avatarUrl: null,
+            isMfaEnabled: false,
+            isActive: true // Default to active/verified for simplicity unless verification is strictly enforced
+        );
+
+        await _userRepository.AddAsync(user);
+
+        var profile = new UserProfile(user.Id, user.FullName, user.Email, user.Role.ToString(), user.EmailVerified);
+        var token = _jwtTokenGenerator.GenerateToken(user);
+
+        return (new AuthResponse(token, profile), null);
+    }
 }

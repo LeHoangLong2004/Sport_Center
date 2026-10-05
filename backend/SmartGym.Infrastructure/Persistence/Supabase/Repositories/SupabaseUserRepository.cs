@@ -31,6 +31,28 @@ public sealed class SupabaseUserRepository : IUserRepository
         return response?.ToDomain();
     }
 
+    public async Task AddAsync(AppUser user)
+    {
+        var model = new UserModel
+        {
+            Id = user.Id,
+            BranchId = user.BranchId,
+            Email = user.Email,
+            PasswordHash = user.PasswordHash,
+            FullName = user.FullName,
+            PhoneNumber = user.PhoneNumber,
+            Role = user.Role.ToString().ToUpper(),
+            MemberCode = user.MemberCode,
+            QrSecretToken = user.QrSecretToken,
+            ReferralCode = user.ReferralCode,
+            AvatarUrl = user.AvatarUrl,
+            IsMfaEnabled = user.IsMfaEnabled,
+            IsActive = user.IsActive
+        };
+
+        await _client.From<UserModel>().Insert(model);
+    }
+
     public async Task UpdateAsync(AppUser user)
     {
         var model = new UserModel

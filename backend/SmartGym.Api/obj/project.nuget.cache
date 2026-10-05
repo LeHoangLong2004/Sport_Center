@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "ItA42K8fC0A=",
+  "dgSpecHash": "tmOPOB1yMNo=",
   "success": true,
-  "projectFilePath": "E:\\Coding\\Code\\SWP\\fitness\\SmartGym.Api\\SmartGym.Api.csproj",
+  "projectFilePath": "E:\\Coding\\Code\\SWP\\Sport_Center\\backend\\SmartGym.Api\\SmartGym.Api.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Admin\\.nuget\\packages\\bcrypt.net-next\\4.2.0\\bcrypt.net-next.4.2.0.nupkg.sha512",
     "C:\\Users\\Admin\\.nuget\\packages\\functions-csharp\\1.3.2\\functions-csharp.1.3.2.nupkg.sha512",
@@ -33,9 +33,9 @@
       "code": "NU1902",
       "level": "Warning",
       "message": "Package 'Microsoft.IdentityModel.JsonWebTokens' 7.0.3 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-59j7-ghrg-fj52",
-      "projectPath": "E:\\Coding\\Code\\SWP\\fitness\\SmartGym.Api\\SmartGym.Api.csproj",
+      "projectPath": "E:\\Coding\\Code\\SWP\\Sport_Center\\backend\\SmartGym.Api\\SmartGym.Api.csproj",
       "warningLevel": 1,
-      "filePath": "E:\\Coding\\Code\\SWP\\fitness\\SmartGym.Api\\SmartGym.Api.csproj",
+      "filePath": "E:\\Coding\\Code\\SWP\\Sport_Center\\backend\\SmartGym.Api\\SmartGym.Api.csproj",
       "libraryId": "Microsoft.IdentityModel.JsonWebTokens",
       "targetGraphs": [
         "net10.0"
@@ -45,9 +45,9 @@
       "code": "NU1902",
       "level": "Warning",
       "message": "Package 'System.IdentityModel.Tokens.Jwt' 7.0.3 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-59j7-ghrg-fj52",
-      "projectPath": "E:\\Coding\\Code\\SWP\\fitness\\SmartGym.Api\\SmartGym.Api.csproj",
+      "projectPath": "E:\\Coding\\Code\\SWP\\Sport_Center\\backend\\SmartGym.Api\\SmartGym.Api.csproj",
       "warningLevel": 1,
-      "filePath": "E:\\Coding\\Code\\SWP\\fitness\\SmartGym.Api\\SmartGym.Api.csproj",
+      "filePath": "E:\\Coding\\Code\\SWP\\Sport_Center\\backend\\SmartGym.Api\\SmartGym.Api.csproj",
       "libraryId": "System.IdentityModel.Tokens.Jwt",
       "targetGraphs": [
         "net10.0"
