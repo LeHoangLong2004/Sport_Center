@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\Coding\\Code\\SWP\\fitness\\SmartGym.Domain\\SmartGym.Domain.csproj",
+      "projectUniqueName": "E:\\Coding\\Code\\SWP\\Sport_Center\\backend\\SmartGym.Domain\\SmartGym.Domain.csproj",
       "projectName": "SmartGym.Domain",
-      "projectPath": "E:\\Coding\\Code\\SWP\\fitness\\SmartGym.Domain\\SmartGym.Domain.csproj",
+      "projectPath": "E:\\Coding\\Code\\SWP\\Sport_Center\\backend\\SmartGym.Domain\\SmartGym.Domain.csproj",
       "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-      "outputPath": "E:\\Coding\\Code\\SWP\\fitness\\SmartGym.Domain\\obj\\",
+      "outputPath": "E:\\Coding\\Code\\SWP\\Sport_Center\\backend\\SmartGym.Domain\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

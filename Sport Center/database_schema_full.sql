@@ -7,51 +7,51 @@
 -- PHẦN 1: HỆ THỐNG PHÂN QUYỀN VÀ TÀI KHOẢN
 -- ==========================================================
 CREATE TABLE Roles (
-    id INT IDENTITY(1,1) PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL UNIQUE, -- Admin, Receptionist, Coach, Member
-    description NVARCHAR(255)
+    description VARCHAR(255)
 );
 
 CREATE TABLE Users (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    role_id INT FOREIGN KEY REFERENCES Roles(id),
-    full_name NVARCHAR(100) NOT NULL,
+    id SERIAL PRIMARY KEY,
+    role_id INT REFERENCES Roles(id),
+    full_name VARCHAR(100) NOT NULL,
     phone_number VARCHAR(20) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     avatar_url VARCHAR(255),
     date_of_birth DATE,
-    gender NVARCHAR(10),
-    emergency_contact NVARCHAR(255),
-    status BIT DEFAULT 1, -- 1: Active, 0: Banned/Inactive
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    gender VARCHAR(10),
+    emergency_contact VARCHAR(255),
+    status BOOLEAN DEFAULT TRUE, -- 1: Active, 0: Banned/Inactive
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE Notifications (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    user_id INT FOREIGN KEY REFERENCES Users(id),
-    title NVARCHAR(255) NOT NULL,
-    message NVARCHAR(MAX),
-    is_read BIT DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES Users(id),
+    title VARCHAR(255) NOT NULL,
+    message TEXT,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ==========================================================
 -- PHẦN 2: QUẢN LÝ CƠ SỞ VẬT CHẤT & ĐIỂM DANH
 -- ==========================================================
 CREATE TABLE Facilities (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    name NVARCHAR(100) NOT NULL, 
-    address NVARCHAR(255) NOT NULL,
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL, 
+    address VARCHAR(255) NOT NULL,
     hotline VARCHAR(20),
-    status BIT DEFAULT 1
+    status BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE CheckIn_Logs (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    user_id INT FOREIGN KEY REFERENCES Users(id),
-    facility_id INT FOREIGN KEY REFERENCES Facilities(id),
-    check_in_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES Users(id),
+    facility_id INT REFERENCES Facilities(id),
+    check_in_time TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(50) -- 'Success', 'Failed'
 );
 
@@ -60,37 +60,37 @@ CREATE TABLE CheckIn_Logs (
 -- ==========================================================
 CREATE TABLE Packages (
     id VARCHAR(50) PRIMARY KEY, -- 'swim', 'fitness', 'premium'
-    name NVARCHAR(100) NOT NULL,
-    tagline NVARCHAR(255),
+    name VARCHAR(100) NOT NULL,
+    tagline VARCHAR(255),
     monthly_price DECIMAL(18,2) NOT NULL,
     yearly_price DECIMAL(18,2) NOT NULL,
-    status BIT DEFAULT 1
+    status BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE Package_Features (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    package_id VARCHAR(50) FOREIGN KEY REFERENCES Packages(id),
-    feature_text NVARCHAR(255) NOT NULL
+    id SERIAL PRIMARY KEY,
+    package_id VARCHAR(50) REFERENCES Packages(id),
+    feature_text VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE Vouchers (
-    id INT IDENTITY(1,1) PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     code VARCHAR(50) UNIQUE NOT NULL,
     discount_percent DECIMAL(5,2),
     max_discount DECIMAL(18,2),
-    valid_from DATETIME,
-    valid_to DATETIME,
+    valid_from TIMESTAMPTZ,
+    valid_to TIMESTAMPTZ,
     usage_limit INT,
     used_count INT DEFAULT 0,
-    status BIT DEFAULT 1
+    status BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE Subscriptions (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    user_id INT FOREIGN KEY REFERENCES Users(id),
-    package_id VARCHAR(50) FOREIGN KEY REFERENCES Packages(id),
-    facility_id INT FOREIGN KEY REFERENCES Facilities(id),
-    voucher_id INT NULL FOREIGN KEY REFERENCES Vouchers(id),
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES Users(id),
+    package_id VARCHAR(50) REFERENCES Packages(id),
+    facility_id INT REFERENCES Facilities(id),
+    voucher_id INT NULL REFERENCES Vouchers(id),
     
     billing_period VARCHAR(20), -- 'monthly', 'yearly'
     total_amount DECIMAL(18,2) NOT NULL,
@@ -99,71 +99,71 @@ CREATE TABLE Subscriptions (
     
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ==========================================================
 -- PHẦN 4: HUẤN LUYỆN VIÊN & LỊCH TẬP PT (COACH PORTAL)
 -- ==========================================================
 CREATE TABLE Coaches (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    user_id INT UNIQUE FOREIGN KEY REFERENCES Users(id), -- Map với bảng Users
-    specialty NVARCHAR(255),
-    bio NVARCHAR(MAX),
+    id SERIAL PRIMARY KEY,
+    user_id INT UNIQUE REFERENCES Users(id), -- Map với bảng Users
+    specialty VARCHAR(255),
+    bio TEXT,
     experience_years INT,
     rating DECIMAL(3,2) DEFAULT 0
 );
 
 CREATE TABLE PT_Sessions (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    user_id INT FOREIGN KEY REFERENCES Users(id), -- Hội viên
-    coach_id INT FOREIGN KEY REFERENCES Coaches(id), -- HLV
-    schedule_time DATETIME NOT NULL,
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES Users(id), -- Hội viên
+    coach_id INT REFERENCES Coaches(id), -- HLV
+    schedule_time TIMESTAMPTZ NOT NULL,
     duration_minutes INT DEFAULT 60,
     status VARCHAR(50) DEFAULT 'scheduled', -- 'scheduled', 'completed', 'cancelled'
-    notes NVARCHAR(MAX)
+    notes TEXT
 );
 
 CREATE TABLE Reviews (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    user_id INT FOREIGN KEY REFERENCES Users(id),
-    coach_id INT FOREIGN KEY REFERENCES Coaches(id),
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES Users(id),
+    coach_id INT REFERENCES Coaches(id),
     rating INT CHECK (rating >= 1 AND rating <= 5),
-    comment NVARCHAR(MAX),
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    comment TEXT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ==========================================================
 -- PHẦN 5: BỘ MÔN & LỚP HỌC GROUP-X
 -- ==========================================================
 CREATE TABLE Sports (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    name NVARCHAR(100) NOT NULL,
-    description NVARCHAR(MAX),
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
     image_url VARCHAR(255),
-    status BIT DEFAULT 1
+    status BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE Classes (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    sport_id INT FOREIGN KEY REFERENCES Sports(id),
-    coach_id INT FOREIGN KEY REFERENCES Coaches(id),
-    facility_id INT FOREIGN KEY REFERENCES Facilities(id),
+    id SERIAL PRIMARY KEY,
+    sport_id INT REFERENCES Sports(id),
+    coach_id INT REFERENCES Coaches(id),
+    facility_id INT REFERENCES Facilities(id),
     
-    class_name NVARCHAR(100) NOT NULL,
-    schedule_time DATETIME NOT NULL,
+    class_name VARCHAR(100) NOT NULL,
+    schedule_time TIMESTAMPTZ NOT NULL,
     duration_minutes INT DEFAULT 60,
     capacity INT NOT NULL,
     current_enrolled INT DEFAULT 0,
-    status BIT DEFAULT 1
+    status BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE Class_Bookings (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    user_id INT FOREIGN KEY REFERENCES Users(id),
-    class_id INT FOREIGN KEY REFERENCES Classes(id),
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES Users(id),
+    class_id INT REFERENCES Classes(id),
     status VARCHAR(50) DEFAULT 'confirmed',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT UC_ClassBooking UNIQUE (user_id, class_id)
 );
 
@@ -171,61 +171,64 @@ CREATE TABLE Class_Bookings (
 -- PHẦN 6: THEO DÕI SỨC KHOẺ HỘI VIÊN (MEMBER PORTAL)
 -- ==========================================================
 CREATE TABLE Body_Metrics (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    user_id INT FOREIGN KEY REFERENCES Users(id),
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES Users(id),
     weight DECIMAL(5,2), -- kg
     height DECIMAL(5,2), -- cm
     body_fat DECIMAL(5,2), -- %
     muscle_mass DECIMAL(5,2), -- kg
     bmi DECIMAL(5,2),
-    recorded_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    recorded_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE Workout_Plans (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    user_id INT FOREIGN KEY REFERENCES Users(id),
-    coach_id INT FOREIGN KEY REFERENCES Coaches(id),
-    plan_name NVARCHAR(255) NOT NULL,
-    description NVARCHAR(MAX),
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES Users(id),
+    coach_id INT REFERENCES Coaches(id),
+    plan_name VARCHAR(255) NOT NULL,
+    description TEXT,
     start_date DATE,
     end_date DATE
 );
 
 CREATE TABLE Diet_Plans (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    user_id INT FOREIGN KEY REFERENCES Users(id),
-    coach_id INT FOREIGN KEY REFERENCES Coaches(id),
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES Users(id),
+    coach_id INT REFERENCES Coaches(id),
     calories_target INT,
-    meals_description NVARCHAR(MAX),
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    meals_description TEXT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ==========================================================
 -- PHẦN 7: BÁN LẺ & POS (RECEPTIONIST PORTAL)
 -- ==========================================================
 CREATE TABLE Products (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    name NVARCHAR(255) NOT NULL,
-    category NVARCHAR(100), -- Nước uống, Khăn, Thực phẩm bổ sung
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    category VARCHAR(100), -- Nước uống, Khăn, Thực phẩm bổ sung
     price DECIMAL(18,2) NOT NULL,
     stock_quantity INT DEFAULT 0,
     image_url VARCHAR(255),
-    status BIT DEFAULT 1
+    status BOOLEAN DEFAULT TRUE
 );
 
+
+
+
 CREATE TABLE Invoices (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    user_id INT NULL FOREIGN KEY REFERENCES Users(id), -- Khách vãng lai thì NULL
-    created_by INT FOREIGN KEY REFERENCES Users(id), -- Lễ tân tạo HĐ
+    id SERIAL PRIMARY KEY,
+    user_id INT NULL REFERENCES Users(id), -- Khách vãng lai thì NULL
+    created_by INT REFERENCES Users(id), -- Lễ tân tạo HĐ
     total_amount DECIMAL(18,2) NOT NULL,
     payment_method VARCHAR(50),
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE Invoice_Items (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    invoice_id INT FOREIGN KEY REFERENCES Invoices(id),
-    product_id INT FOREIGN KEY REFERENCES Products(id),
+    id SERIAL PRIMARY KEY,
+    invoice_id INT REFERENCES Invoices(id),
+    product_id INT REFERENCES Products(id),
     quantity INT NOT NULL,
     unit_price DECIMAL(18,2) NOT NULL
 );
@@ -234,28 +237,120 @@ CREATE TABLE Invoice_Items (
 -- PHẦN 8: WEBSITE TIN TỨC & LIÊN HỆ
 -- ==========================================================
 CREATE TABLE Article_Categories (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    name NVARCHAR(100) NOT NULL,
-    description NVARCHAR(255)
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description VARCHAR(255)
 );
 
 CREATE TABLE Articles (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    category_id INT FOREIGN KEY REFERENCES Article_Categories(id),
-    author_id INT FOREIGN KEY REFERENCES Users(id),
-    title NVARCHAR(255) NOT NULL,
+    id SERIAL PRIMARY KEY,
+    category_id INT REFERENCES Article_Categories(id),
+    author_id INT REFERENCES Users(id),
+    title VARCHAR(255) NOT NULL,
     thumbnail_url VARCHAR(255),
-    content NVARCHAR(MAX) NOT NULL,
+    content TEXT NOT NULL,
     status VARCHAR(50) DEFAULT 'published', -- 'draft', 'published'
-    published_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    published_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE Contact_Messages (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    sender_name NVARCHAR(100) NOT NULL,
+    id SERIAL PRIMARY KEY,
+    sender_name VARCHAR(100) NOT NULL,
     sender_email VARCHAR(100) NOT NULL,
     sender_phone VARCHAR(20),
-    message NVARCHAR(MAX) NOT NULL,
-    is_resolved BIT DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    message TEXT NOT NULL,
+    is_resolved BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==========================================================
+-- PHẦN 9: BỔ SUNG CHO ADMIN DASHBOARD & COACH PORTAL
+-- Các bảng dưới đây được thêm mới để phục vụ các màn hình FE hiện tại.
+-- Không thay đổi các bảng đã có ở phía trên.
+-- ==========================================================
+
+CREATE TABLE IF NOT EXISTS Audit_Logs (
+    id SERIAL PRIMARY KEY,
+    actor_id INT NULL REFERENCES Users(id),
+    action VARCHAR(100) NOT NULL,
+    entity_type VARCHAR(100),
+    entity_id INT NULL,
+    old_value TEXT,
+    new_value TEXT,
+    ip_address VARCHAR(45),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS Budgets (
+    id SERIAL PRIMARY KEY,
+    facility_id INT NOT NULL REFERENCES Facilities(id),
+    category VARCHAR(100) NOT NULL,
+    period_start DATE NOT NULL,
+    period_end DATE NOT NULL,
+    allocated_amount DECIMAL(18,2) NOT NULL DEFAULT 0,
+    spent_amount DECIMAL(18,2) NOT NULL DEFAULT 0,
+    status VARCHAR(50) DEFAULT 'active',
+    created_by INT NULL REFERENCES Users(id),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    CHECK (period_end >= period_start)
+);
+
+CREATE TABLE IF NOT EXISTS Expenses (
+    id SERIAL PRIMARY KEY,
+    facility_id INT NOT NULL REFERENCES Facilities(id),
+    category VARCHAR(100) NOT NULL,
+    description VARCHAR(500) NOT NULL,
+    amount DECIMAL(18,2) NOT NULL CHECK (amount >= 0),
+    expense_date DATE NOT NULL,
+    status VARCHAR(50) DEFAULT 'pending',
+    created_by INT NULL REFERENCES Users(id),
+    approved_by INT NULL REFERENCES Users(id),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS Payroll_Records (
+    id SERIAL PRIMARY KEY,
+    employee_id INT NOT NULL REFERENCES Users(id),
+    facility_id INT NULL REFERENCES Facilities(id),
+    payroll_month DATE NOT NULL,
+    base_salary DECIMAL(18,2) NOT NULL DEFAULT 0,
+    bonus DECIMAL(18,2) NOT NULL DEFAULT 0,
+    deduction DECIMAL(18,2) NOT NULL DEFAULT 0,
+    net_salary DECIMAL(18,2) NOT NULL DEFAULT 0,
+    status VARCHAR(50) DEFAULT 'draft',
+    paid_at TIMESTAMPTZ NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (employee_id, payroll_month)
+);
+
+CREATE TABLE IF NOT EXISTS Class_Attendance (
+    id SERIAL PRIMARY KEY,
+    class_id INT NOT NULL REFERENCES Classes(id),
+    booking_id INT NULL REFERENCES Class_Bookings(id),
+    user_id INT NOT NULL REFERENCES Users(id),
+    attendance_status VARCHAR(30) NOT NULL DEFAULT 'present',
+    note VARCHAR(500),
+    marked_by INT NULL REFERENCES Users(id),
+    marked_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (class_id, user_id)
+);
+
+-- Gộp bài tập, nhật ký, đánh giá và AI vào một bảng JSONB để giữ schema
+-- dưới 30 bảng mà vẫn lưu được đầy đủ dữ liệu của Coach/Member Portal.
+CREATE TABLE IF NOT EXISTS Training_Records (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES Users(id),
+    coach_id INT NULL REFERENCES Coaches(id),
+    workout_plan_id INT NULL REFERENCES Workout_Plans(id),
+    record_type VARCHAR(50) NOT NULL,
+    title VARCHAR(255),
+    goal VARCHAR(100),
+    score DECIMAL(5,2),
+    duration_minutes INT,
+    calories_burned INT,
+    details JSONB NOT NULL DEFAULT '{}'::jsonb,
+    ai_prompt TEXT,
+    ai_recommendation TEXT,
+    disclaimer VARCHAR(500),
+    recorded_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );

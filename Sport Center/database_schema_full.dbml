@@ -1,0 +1,369 @@
+// SmartGym OS - DBML converted from database_schema_full.sql
+// Import this file into https://dbdiagram.io
+
+Project SmartGym_OS_Legacy {
+  database_type: 'PostgreSQL'
+  Note: 'ERD generated from Sport Center/database_schema_full.sql - 30 tables'
+}
+
+Table Roles [headercolor: #2563EB] {
+  id int [pk, increment]
+  name varchar(50) [unique, not null]
+  description varchar(255)
+}
+
+Table Users [headercolor: #2563EB] {
+  id int [pk, increment]
+  role_id int
+  full_name varchar(100) [not null]
+  phone_number varchar(20) [unique, not null]
+  email varchar(100) [unique, not null]
+  password_hash varchar(255) [not null]
+  avatar_url varchar(255)
+  date_of_birth date
+  gender varchar(10)
+  emergency_contact varchar(255)
+  status boolean [default: true]
+  created_at timestamptz [default: `CURRENT_TIMESTAMP`]
+}
+
+Table Notifications [headercolor: #2563EB] {
+  id int [pk, increment]
+  user_id int
+  title varchar(255) [not null]
+  message text
+  is_read boolean [default: false]
+  created_at timestamptz [default: `CURRENT_TIMESTAMP`]
+}
+
+Table Facilities [headercolor: #10B981] {
+  id int [pk, increment]
+  name varchar(100) [not null]
+  address varchar(255) [not null]
+  hotline varchar(20)
+  status boolean [default: true]
+}
+
+Table CheckIn_Logs [headercolor: #10B981] {
+  id int [pk, increment]
+  user_id int
+  facility_id int
+  check_in_time timestamptz [default: `CURRENT_TIMESTAMP`]
+  status varchar(50)
+}
+
+Table Packages [headercolor: #F97316] {
+  id varchar(50) [pk]
+  name varchar(100) [not null]
+  tagline varchar(255)
+  monthly_price decimal(18,2) [not null]
+  yearly_price decimal(18,2) [not null]
+  status boolean [default: true]
+}
+
+Table Package_Features [headercolor: #F97316] {
+  id int [pk, increment]
+  package_id varchar(50)
+  feature_text varchar(255) [not null]
+}
+
+Table Vouchers [headercolor: #F97316] {
+  id int [pk, increment]
+  code varchar(50) [unique, not null]
+  discount_percent decimal(5,2)
+  max_discount decimal(18,2)
+  valid_from timestamptz
+  valid_to timestamptz
+  usage_limit int
+  used_count int [default: 0]
+  status boolean [default: true]
+}
+
+Table Subscriptions [headercolor: #F97316] {
+  id int [pk, increment]
+  user_id int
+  package_id varchar(50)
+  facility_id int
+  voucher_id int
+  billing_period varchar(20)
+  total_amount decimal(18,2) [not null]
+  payment_method varchar(50)
+  payment_status varchar(50) [default: 'pending']
+  start_date date [not null]
+  end_date date [not null]
+  created_at timestamptz [default: `CURRENT_TIMESTAMP`]
+}
+
+Table Coaches [headercolor: #8B5CF6] {
+  id int [pk, increment]
+  user_id int [unique]
+  specialty varchar(255)
+  bio text
+  experience_years int
+  rating decimal(3,2) [default: 0]
+}
+
+Table PT_Sessions [headercolor: #8B5CF6] {
+  id int [pk, increment]
+  user_id int
+  coach_id int
+  schedule_time timestamptz [not null]
+  duration_minutes int [default: 60]
+  status varchar(50) [default: 'scheduled']
+  notes text
+}
+
+Table Reviews [headercolor: #8B5CF6] {
+  id int [pk, increment]
+  user_id int
+  coach_id int
+  rating int [note: 'CHECK rating BETWEEN 1 AND 5']
+  comment text
+  created_at timestamptz [default: `CURRENT_TIMESTAMP`]
+}
+
+Table Sports [headercolor: #14B8A6] {
+  id int [pk, increment]
+  name varchar(100) [not null]
+  description text
+  image_url varchar(255)
+  status boolean [default: true]
+}
+
+Table Classes [headercolor: #14B8A6] {
+  id int [pk, increment]
+  sport_id int
+  coach_id int
+  facility_id int
+  class_name varchar(100) [not null]
+  schedule_time timestamptz [not null]
+  duration_minutes int [default: 60]
+  capacity int [not null]
+  current_enrolled int [default: 0]
+  status boolean [default: true]
+}
+
+Table Class_Bookings [headercolor: #14B8A6] {
+  id int [pk, increment]
+  user_id int
+  class_id int
+  status varchar(50) [default: 'confirmed']
+  created_at timestamptz [default: `CURRENT_TIMESTAMP`]
+  indexes {
+    (user_id, class_id) [unique]
+  }
+}
+
+Table Body_Metrics [headercolor: #EC4899] {
+  id int [pk, increment]
+  user_id int
+  weight decimal(5,2)
+  height decimal(5,2)
+  body_fat decimal(5,2)
+  muscle_mass decimal(5,2)
+  bmi decimal(5,2)
+  recorded_at timestamptz [default: `CURRENT_TIMESTAMP`]
+}
+
+Table Workout_Plans [headercolor: #EC4899] {
+  id int [pk, increment]
+  user_id int
+  coach_id int
+  plan_name varchar(255) [not null]
+  description text
+  start_date date
+  end_date date
+}
+
+Table Diet_Plans [headercolor: #EC4899] {
+  id int [pk, increment]
+  user_id int
+  coach_id int
+  calories_target int
+  meals_description text
+  created_at timestamptz [default: `CURRENT_TIMESTAMP`]
+}
+
+Table Products [headercolor: #EAB308] {
+  id int [pk, increment]
+  name varchar(255) [not null]
+  category varchar(100)
+  price decimal(18,2) [not null]
+  stock_quantity int [default: 0]
+  image_url varchar(255)
+  status boolean [default: true]
+}
+
+Table Invoices [headercolor: #EAB308] {
+  id int [pk, increment]
+  user_id int
+  created_by int
+  total_amount decimal(18,2) [not null]
+  payment_method varchar(50)
+  created_at timestamptz [default: `CURRENT_TIMESTAMP`]
+}
+
+Table Invoice_Items [headercolor: #EAB308] {
+  id int [pk, increment]
+  invoice_id int
+  product_id int
+  quantity int [not null]
+  unit_price decimal(18,2) [not null]
+}
+
+Table Article_Categories [headercolor: #F43F5E] {
+  id int [pk, increment]
+  name varchar(100) [not null]
+  description varchar(255)
+}
+
+Table Articles [headercolor: #F43F5E] {
+  id int [pk, increment]
+  category_id int
+  author_id int
+  title varchar(255) [not null]
+  thumbnail_url varchar(255)
+  content text [not null]
+  status varchar(50) [default: 'published']
+  published_at timestamptz [default: `CURRENT_TIMESTAMP`]
+}
+
+Table Contact_Messages [headercolor: #F43F5E] {
+  id int [pk, increment]
+  sender_name varchar(100) [not null]
+  sender_email varchar(100) [not null]
+  sender_phone varchar(20)
+  message text [not null]
+  is_resolved boolean [default: false]
+  created_at timestamptz [default: `CURRENT_TIMESTAMP`]
+}
+
+Ref: Roles.id < Users.role_id
+Ref: Users.id < Notifications.user_id
+Ref: Users.id < CheckIn_Logs.user_id
+Ref: Facilities.id < CheckIn_Logs.facility_id
+Ref: Packages.id < Package_Features.package_id
+Ref: Users.id < Subscriptions.user_id
+Ref: Packages.id < Subscriptions.package_id
+Ref: Facilities.id < Subscriptions.facility_id
+Ref: Vouchers.id < Subscriptions.voucher_id
+Ref: Users.id - Coaches.user_id
+Ref: Users.id < PT_Sessions.user_id
+Ref: Coaches.id < PT_Sessions.coach_id
+Ref: Users.id < Reviews.user_id
+Ref: Coaches.id < Reviews.coach_id
+Ref: Sports.id < Classes.sport_id
+Ref: Coaches.id < Classes.coach_id
+Ref: Facilities.id < Classes.facility_id
+Ref: Users.id < Class_Bookings.user_id
+Ref: Classes.id < Class_Bookings.class_id
+Ref: Users.id < Body_Metrics.user_id
+Ref: Users.id < Workout_Plans.user_id
+Ref: Coaches.id < Workout_Plans.coach_id
+Ref: Users.id < Diet_Plans.user_id
+Ref: Coaches.id < Diet_Plans.coach_id
+Ref: Users.id < Invoices.user_id
+Ref: Users.id < Invoices.created_by
+Ref: Invoices.id < Invoice_Items.invoice_id
+Ref: Products.id < Invoice_Items.product_id
+Ref: Article_Categories.id < Articles.category_id
+Ref: Users.id < Articles.author_id
+
+Table Audit_Logs [headercolor: #64748B] {
+  id int [pk, increment]
+  actor_id int
+  action varchar(100) [not null]
+  entity_type varchar(100)
+  entity_id int
+  old_value text
+  new_value text
+  ip_address varchar(45)
+  created_at timestamptz
+}
+
+Table Budgets [headercolor: #64748B] {
+  id int [pk, increment]
+  facility_id int [not null]
+  category varchar(100) [not null]
+  period_start date [not null]
+  period_end date [not null]
+  allocated_amount decimal(18,2) [not null]
+  spent_amount decimal(18,2) [not null]
+  status varchar(50)
+  created_by int
+  created_at timestamptz
+}
+
+Table Expenses [headercolor: #64748B] {
+  id int [pk, increment]
+  facility_id int [not null]
+  category varchar(100) [not null]
+  description varchar(500) [not null]
+  amount decimal(18,2) [not null]
+  expense_date date [not null]
+  status varchar(50)
+  created_by int
+  approved_by int
+  created_at timestamptz
+}
+
+Table Payroll_Records [headercolor: #64748B] {
+  id int [pk, increment]
+  employee_id int [not null]
+  facility_id int
+  payroll_month date [not null]
+  base_salary decimal(18,2) [not null]
+  bonus decimal(18,2) [not null]
+  deduction decimal(18,2) [not null]
+  net_salary decimal(18,2) [not null]
+  status varchar(50)
+  paid_at timestamptz
+  created_at timestamptz
+  indexes { (employee_id, payroll_month) [unique] }
+}
+
+Table Class_Attendance [headercolor: #14B8A6] {
+  id int [pk, increment]
+  class_id int [not null]
+  booking_id int
+  user_id int [not null]
+  attendance_status varchar(30) [not null]
+  note varchar(500)
+  marked_by int
+  marked_at timestamptz
+  indexes { (class_id, user_id) [unique] }
+}
+
+Table Training_Records [headercolor: #8B5CF6] {
+  id int [pk, increment]
+  user_id int [not null]
+  coach_id int
+  workout_plan_id int
+  record_type varchar(50) [not null]
+  title varchar(255)
+  goal varchar(100)
+  score decimal(5,2)
+  duration_minutes int
+  calories_burned int
+  details jsonb [not null]
+  ai_prompt text
+  ai_recommendation text
+  disclaimer varchar(500)
+  recorded_at timestamptz
+}
+
+Ref: Users.id < Audit_Logs.actor_id
+Ref: Facilities.id < Budgets.facility_id
+Ref: Users.id < Budgets.created_by
+Ref: Facilities.id < Expenses.facility_id
+Ref: Users.id < Expenses.created_by
+Ref: Users.id < Expenses.approved_by
+Ref: Users.id < Payroll_Records.employee_id
+Ref: Facilities.id < Payroll_Records.facility_id
+Ref: Classes.id < Class_Attendance.class_id
+Ref: Class_Bookings.id < Class_Attendance.booking_id
+Ref: Users.id < Class_Attendance.user_id
+Ref: Users.id < Class_Attendance.marked_by
+Ref: Users.id < Training_Records.user_id
+Ref: Coaches.id < Training_Records.coach_id
+Ref: Workout_Plans.id < Training_Records.workout_plan_id

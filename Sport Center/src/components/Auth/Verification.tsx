@@ -36,13 +36,38 @@ export function Verification({ onVerified }: { onVerified: () => void }) {
     }
   }
 
-  function verify(event: FormEvent) {
+  async function verify(event: FormEvent) {
     event.preventDefault()
     if (digits.some((digit) => !digit)) {
       setError("Vui lòng nhập đủ 6 chữ số.")
       return
     }
-    onVerified()
+    
+    const token = digits.join("")
+    const email = localStorage.getItem("reset_email")
+    
+    if (email) {
+      try {
+        const res = await fetch("/api/auth/verify-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, token })
+        })
+        
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}))
+          setError(data.message || "Mã xác minh không chính xác hoặc đã hết hạn.")
+          return
+        }
+        
+        localStorage.removeItem("reset_email")
+        onVerified()
+      } catch (err) {
+        setError("Lỗi kết nối máy chủ API.")
+      }
+    } else {
+      onVerified()
+    }
   }
 
   function resend() {
