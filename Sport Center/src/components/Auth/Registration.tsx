@@ -11,9 +11,42 @@ export function Registration({
   onLogin: () => void
   onHome?: () => void
 }) {
-  function submit(event: FormEvent) {
+  async function submit(event: FormEvent) {
     event.preventDefault()
-    onRegistered()
+    
+    const formData = new FormData(event.target as HTMLFormElement)
+    const name = formData.get("name") as string
+    const email = formData.get("email") as string
+    const phone = formData.get("phone") as string
+    const password = formData.get("password") as string
+    const passwordConfirmation = formData.get("passwordConfirmation") as string
+
+    if (password !== passwordConfirmation) {
+      alert("Mật khẩu xác nhận không khớp!")
+      return
+    }
+
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fullName: name, email, phone, password })
+      })
+      
+      const data = await res.json().catch(() => ({}))
+      
+      if (!res.ok) {
+        alert(data.message || "Đăng ký thất bại.")
+        return
+      }
+      
+      if (data.token) localStorage.setItem("token", data.token)
+      if (data.profile) localStorage.setItem("user", JSON.stringify(data.profile))
+      
+      onRegistered()
+    } catch (err) {
+      alert("Lỗi kết nối đến server API.")
+    }
   }
 
   return (
