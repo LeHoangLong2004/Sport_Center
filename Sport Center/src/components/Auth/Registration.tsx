@@ -1,4 +1,4 @@
-import React, { FormEvent } from 'react';
+import React, { FormEvent, useState } from 'react';
 import { ThemeToggle } from './ThemeToggle';
 import { assets } from './shared';
 
@@ -11,6 +11,8 @@ export function Registration({
   onLogin: () => void
   onHome?: () => void
 }) {
+  const [successMsg, setSuccessMsg] = useState("");
+
   async function submit(event: FormEvent) {
     event.preventDefault()
     
@@ -41,10 +43,14 @@ export function Registration({
         return
       }
       
-      if (data.token) localStorage.setItem("token", data.token)
-      if (data.profile) localStorage.setItem("user", JSON.stringify(data.profile))
+      // Note: intentionally skipping token/user save if we force them to login again,
+      // but keeping it as it was if backend auto-logs in.
+      // However, we redirect to login screen anyway.
       
-      onRegistered()
+      setSuccessMsg("Đăng ký thành công! Đang chuyển qua trang đăng nhập...");
+      setTimeout(() => {
+        onLogin();
+      }, 2000);
     } catch (err) {
       alert("Lỗi kết nối đến server API.")
     }
@@ -111,6 +117,15 @@ export function Registration({
               <span className="inline-block px-3 py-1 bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 font-bold text-xs tracking-widest uppercase rounded-full mb-4">Tạo tài khoản mới</span>
               <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Đăng ký</h2>
             </div>
+            
+            {successMsg && (
+              <div className="mb-6 p-4 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <p className="text-emerald-700 dark:text-emerald-400 font-medium text-sm">{successMsg}</p>
+              </div>
+            )}
 
             <div className="space-y-5">
               <div>
@@ -224,10 +239,15 @@ export function Registration({
 
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-2 bg-[#14b8a6] hover:bg-[#0d9488] text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-teal-500/30 transition-all active:scale-[0.98] hover:-translate-y-1 mt-8"
+              disabled={!!successMsg}
+              className={`w-full flex items-center justify-center gap-2 font-bold py-4 px-6 rounded-xl shadow-lg transition-all active:scale-[0.98] hover:-translate-y-1 mt-8 ${
+                successMsg 
+                  ? "bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed shadow-none" 
+                  : "bg-[#14b8a6] hover:bg-[#0d9488] text-white shadow-teal-500/30"
+              }`}
             >
               Đăng ký tài khoản
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              {!successMsg && <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>}
             </button>
 
             <div className="mt-8 text-center text-sm font-medium text-slate-500 dark:text-slate-400">
