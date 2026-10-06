@@ -55,20 +55,9 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
         var classModels = classResponse.Models;
         if (!classModels.Any()) return Enumerable.Empty<ClassResponse>();
 
-<<<<<<< Updated upstream
-        // Lấy thông tin Sport, Facility, Coach (Batch Fetch)
-        var sportIds = classModels.Select(c => c.SportId).Distinct().ToList();
-        var facilityIds = classModels.Select(c => c.FacilityId).Distinct().ToList();
-        var coachIds = classModels.Where(c => c.CoachId.HasValue).Select(c => c.CoachId!.Value).Distinct().ToList();
-
-        var sports = (await _client.From<SportModel>().Get()).Models;
-        var facilities = (await _client.From<FacilityModel>().Get()).Models;
-        var coaches = (await _client.From<CoachModel>().Get()).Models;
-=======
         var sports = await _dbContext.Database.SqlQueryRaw<SportSqlRawModel>("SELECT id, name FROM sports").ToListAsync();
         var facilities = await _dbContext.Database.SqlQueryRaw<FacilitySqlRawModel>("SELECT id, name FROM facilities").ToListAsync();
         var coaches = await _dbContext.Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches").ToListAsync();
->>>>>>> Stashed changes
         var users = await _dbContext.Users.ToListAsync();
 
         return classModels.Select(c =>
@@ -183,18 +172,7 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
         }
     }
 
-<<<<<<< Updated upstream
-    public async Task<GroupClass?> GetByIdAsync(Guid id)
-    {
-        var response = await _client.From<GroupClassModel>()
-            .Where(x => x.Id == id)
-            .Single();
 
-        return response?.ToDomain();
-    }
-
-=======
->>>>>>> Stashed changes
     public async Task<(bool IsSuccess, string? ErrorMessage)> CancelBookingTransactionAsync(Guid userId, Guid classId)
     {
         using var transaction = await _dbContext.Database.BeginTransactionAsync();
@@ -229,11 +207,7 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-<<<<<<< Updated upstream
-            return (false, "Lỗi hệ thống khi hủy lớp. " + ex.Message);
-=======
             return (false, "Lỗi hệ thống khi hủy đặt lớp. " + ex.Message);
->>>>>>> Stashed changes
         }
     }
 
@@ -254,10 +228,7 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
                 return (false, "Lớp học không tồn tại.");
             }
 
-<<<<<<< Updated upstream
             // Update bookings
-=======
->>>>>>> Stashed changes
             await _dbContext.Database.ExecuteSqlRawAsync(
                 @"UPDATE class_bookings 
                   SET status = 'class_cancelled' 
@@ -274,33 +245,9 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
         }
     }
 
-<<<<<<< Updated upstream
-    public async Task UpdateAsync(GroupClass groupClass)
-    {
-        var model = new GroupClassModel
-        {
-            Id = groupClass.Id,
-            SportId = groupClass.SportId,
-            CoachId = groupClass.CoachId,
-            FacilityId = groupClass.FacilityId,
-            ClassName = groupClass.ClassName,
-            ScheduleTime = groupClass.ScheduleTime,
-            DurationMinutes = groupClass.DurationMinutes,
-            Capacity = groupClass.Capacity,
-            CurrentEnrolled = groupClass.CurrentEnrolled,
-            Status = groupClass.Status
-        };
-
-        await _client.From<GroupClassModel>().Update(model);
-    }
-
     public async Task NotifyAffectedMembersAsync(Guid classId, string title, string message)
     {
         // Insert notifications for all confirmed members of the class and the coach
-=======
-    public async Task NotifyAffectedMembersAsync(Guid classId, string title, string message)
-    {
->>>>>>> Stashed changes
         await _dbContext.Database.ExecuteSqlRawAsync(
             @"INSERT INTO notifications (user_id, title, message)
               SELECT user_id, {1}, {2} 
@@ -316,8 +263,7 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
               WHERE classes.id = {0}",
             classId, title, message);
     }
-<<<<<<< Updated upstream
-=======
+
 
     // ── GIAI ĐOẠN G: ĐIỂM DANH & XEM LỊCH ──
 
@@ -582,5 +528,5 @@ public class PtEnrollmentRawModel
     public Guid UserId { get; set; }
     public Guid PtSessionId { get; set; }
     public string Status { get; set; } = string.Empty;
->>>>>>> Stashed changes
+
 }

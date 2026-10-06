@@ -88,15 +88,11 @@ public sealed class ClassService
 
     public async Task<(bool IsSuccess, string? ErrorMessage)> BookClassAsync(Guid userId, Guid classId)
     {
-<<<<<<< Updated upstream
         // 1. Kiểm tra tồn tại lớp học
-=======
->>>>>>> Stashed changes
         var targetClass = await _classRepository.GetByIdAsync(classId);
         if (targetClass == null)
         {
             return (false, "Class not found.");
-<<<<<<< Updated upstream
         }
 
         // 2. Lấy danh sách subscription của User và kiểm tra còn hạn tại thời điểm diễn ra lớp học
@@ -113,22 +109,6 @@ public sealed class ClassService
         }
 
         // 3. Gọi hàm thực thi Transaction ở tầng Data (nguyên tử)
-=======
-        }
-
-        var userSubs = await _subscriptionRepository.GetByUserIdAsync(userId);
-        
-        var validSub = userSubs.FirstOrDefault(s => 
-            s.PaymentStatus == "completed" &&
-            s.StartDate <= targetClass.ScheduleTime &&
-            targetClass.ScheduleTime <= s.EndDate);
-
-        if (validSub == null)
-        {
-            return (false, "You do not have a valid subscription active for the class date.");
-        }
-
->>>>>>> Stashed changes
         return await _classRepository.BookClassTransactionAsync(userId, classId, validSub.Id);
     }
 
@@ -140,10 +120,7 @@ public sealed class ClassService
             return (false, "Class not found.");
         }
 
-<<<<<<< Updated upstream
         // Logic check time (e.g. at least 2 hours before)
-=======
->>>>>>> Stashed changes
         if (DateTime.UtcNow.AddHours(2) > targetClass.ScheduleTime)
         {
             return (false, "Chỉ có thể hủy lớp trước 2 tiếng so với giờ bắt đầu.");
@@ -186,10 +163,7 @@ public sealed class ClassService
             return (false, "Schedule time must be in the future.");
         }
 
-<<<<<<< Updated upstream
         // Check overlap if schedule or coach changed
-=======
->>>>>>> Stashed changes
         if (targetClass.ScheduleTime != request.ScheduleTime || targetClass.CoachId != request.CoachId || targetClass.DurationMinutes != request.DurationMinutes)
         {
             var newStart = request.ScheduleTime;
@@ -239,8 +213,6 @@ public sealed class ClassService
 
         return (true, null);
     }
-<<<<<<< Updated upstream
-=======
 
     // ── GIAI ĐOẠN G: ĐIỂM DANH & XEM LỊCH ──
 
@@ -274,5 +246,4 @@ public sealed class ClassService
     {
         return await _classRepository.GetManagerScheduleAsync(facilityId, coachId, sportId, date);
     }
->>>>>>> Stashed changes
 }
