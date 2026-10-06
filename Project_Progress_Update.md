@@ -44,16 +44,34 @@
 
 ---
 
+### 1.8. Luồng Quản Lý Lớp Học, Đặt Chỗ, Hủy Lớp & Lịch Tập (Flow 2 Backend) - **HOÀN THÀNH**
+- **Tạo Buổi Học Nhóm (`POST /api/classes`)**: Kiểm tra quyền Manager, tự động rà soát trùng lịch dạy lớp học nhóm và lịch tập cá nhân PT của Huấn luyện viên, kiểm tra sức chứa `capacity > 0` và thời gian diễn ra trong tương lai.
+- **Xem Danh Sách Lớp Khả Dụng (`GET /api/classes/available`)**: Truy vấn các lớp đang hoạt động (`status = true`), chưa diễn ra, tự động tính số chỗ còn trống (`capacity - current_enrolled`) và trả về chi tiết tên Bộ môn, Cơ sở, HLV.
+- **Member Đặt Chỗ Lớp Học (`POST /api/classes/{id}/book`)**: Kiểm tra quyền Member, xác minh gói tập (`subscription`) hợp lệ (còn hạn tại thời điểm học, đúng bộ môn, đã thanh toán `completed`), kiểm tra trùng lịch cá nhân. Áp dụng **SQL Transaction nguyên tử** để cập nhật số chỗ, tạo bản ghi đặt chỗ và gửi thông báo hệ thống tự động.
+- **Lễ Tân Đặt Hộ Lớp Học (`POST /api/classes/{id}/book-for-member`)**: Cho phép Lễ tân / Manager đăng ký lớp học hộ cho Hội viên theo mã `memberId` với đầy đủ quy trình kiểm tra điều kiện gói tập và trùng lịch.
+- **Hủy Đăng Ký Lớp (`POST /api/classes/{id}/cancel-booking`)**: Kiểm tra điều kiện hủy chỗ (trước giờ học tối thiểu 2 tiếng), chạy SQL Transaction nguyên tử chuyển trạng thái booking sang `cancelled`, hoàn trả chỗ trống (`current_enrolled - 1`) và gửi thông báo xác nhận cho hội viên.
+- **Cập Nhật Thông Tin Lớp Học (`PUT /api/classes/{id}`)**: Cho phép Manager/Admin chỉnh sửa chi tiết lớp học, tự động rà soát lại trùng lịch HLV nếu có thay đổi thời gian/HLV và gửi thông báo cập nhật tới toàn bộ hội viên đã đặt.
+- **Hủy Buổi Học Nhóm (`POST /api/classes/{id}/cancel`)**: Cho phép Manager/Admin đóng lớp học (`status = false`), tự động chuyển toàn bộ booking của học viên sang `class_cancelled` và gửi thông báo đồng loạt cho tất cả Hội viên đã đặt chỗ + HLV phụ trách.
+- **Điểm Danh Học Viên Theo Lớp (`POST /api/classes/{id}/attendance`)**: Cho phép HLV / Lễ tân cập nhật danh sách điểm danh cho từng học viên trong lớp thành `attended` (Có mặt) hoặc `no_show` (Vắng mặt).
+- **Xem Lịch Theo Vai Trò Người Dùng (`GET /api/schedule/member`, `GET /api/schedule/coach`, `GET /api/schedule/manager`)**:
+  - *Member*: Xem toàn bộ các buổi học nhóm đã đặt kèm các buổi tập cá nhân PT.
+  - *HLV*: Xem danh sách các lớp dạy phụ trách kèm danh sách chi tiết học viên đăng ký trong từng lớp.
+  - *Manager*: Xem toàn bộ lịch lớp học trên hệ thống kèm bộ lọc linh hoạt theo Cơ sở, HLV, Bộ môn, Ngày.
+
+---
+
 ## 2. Các Công Việc Đang Thực Hiện (In Progress)
-- Tiếp tục rà soát các thao tác API khác cho Flow 1 (Ví dụ: Chỉnh sửa thông tin, đổi ảnh đại diện...) hoặc chuẩn bị mở rộng sang Flow 2.
+- Tiếp tục rà soát các thao tác API cho Flow 1 và Flow 2.
+- Chuẩn bị dữ liệu mẫu (Seed data) và kiểm thử diện rộng cho các API Xem lịch và Điểm danh.
 
 ---
 
 ## 3. Các Bước Tiếp Theo (Next Steps)
 Căn cứ theo PRD (Hồ sơ yêu cầu dự án), các bước tiếp theo sẽ tiến hành:
-1. **Flow 2 - Class Booking & Schedule Management:** Bắt đầu xây dựng API Quản lý lớp học (`classes`), bộ môn (`sports`), và chức năng đặt chỗ/hủy chỗ (`class_bookings`).
+1. **Flow 3 & Flow 4 - Quản Lý Tập PT & Điểm Danh Cổng / Check-in:** Xây dựng API Đăng ký tập với HLV cá nhân (PT) và tích hợp luồng điểm danh cổng.
 2. **Thiết lập Middleware Xử Lý Lỗi (Global Exception Handling):** Bắt và trả về các lỗi JSON chuẩn thay vì log thô để Frontend dễ dàng bắt lỗi.
 3. **Thanh toán trực tuyến:** Tích hợp với dịch vụ Payment Gateway (VNPay / PayOS) để hoàn tất trạng thái thanh toán (PaymentStatus) thay vì chỉ gán là `pending`.
 
 ---
-*Ghi chú: File `Project_Tracking.md` cũng đã được cập nhật trạng thái "Done" cho Task 1, 2, 3 và 4.*
+*Ghi chú: File `Project_Tracking.md` cũng đã được cập nhật trạng thái "Done" cho các tính năng thuộc Flow 2.*
+
