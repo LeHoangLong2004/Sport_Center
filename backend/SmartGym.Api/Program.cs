@@ -126,12 +126,16 @@ using (var scope = app.Services.CreateScope())
             ('33333333-3333-3333-3333-333333333333', 'SmartGym Quận 1', '123 Nguyễn Huệ, Q1, TP.HCM')
             ON CONFLICT (id) DO NOTHING;
 
-            INSERT INTO coaches (id, user_id, specialty, experience_years)
-            SELECT u.id, u.id, 'Yoga & Fitness', 5
-            FROM users u 
+            INSERT INTO packages (id, name, package_type, monthly_price) VALUES 
+            ('yoga_pack', 'Gói Tập Yoga', 'sport', 500000)
+            ON CONFLICT (id) DO NOTHING;
+
+            INSERT INTO subscriptions (id, user_id, package_id, sport_id, total_amount, payment_status, start_date, end_date)
+            SELECT gen_random_uuid(), u.id, 'yoga_pack', '11111111-1111-1111-1111-111111111111', 500000, 'completed', CURRENT_DATE - INTERVAL '1 day', CURRENT_DATE + INTERVAL '30 days'
+            FROM users u
             JOIN roles r ON u.role_id = r.id
-            WHERE r.name = 'coach'
-            ON CONFLICT (user_id) DO NOTHING;
+            WHERE r.name = 'member'
+            AND NOT EXISTS (SELECT 1 FROM subscriptions s WHERE s.user_id = u.id AND s.payment_status = 'completed');
         ");
         app.Logger.LogInformation("Successfully granted permissions and seeded initial testing data.");
     }
@@ -186,6 +190,46 @@ app.MapPost("/api/classes/{id}/book", async (Guid id, HttpContext httpContext, C
     
     return Results.Ok(new { message = "Successfully booked the class!" });
 }).RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
+
+// Giai đoạn D: Receptionist đặt hộ
+app.MapPost("/api/classes/{id}/book-for-member", async (Guid id, [Microsoft.AspNetCore.Mvc.FromBody] SmartGym.Application.DTOs.Classes.BookForMemberRequest request, ClassService service) =>
+{
+    var (isSuccess, errorMessage) = await service.BookClassAsync(request.MemberId, id);
+    if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
+    
+    return Results.Ok(new { message = "Successfully booked the class for member!" });
+}).RequireAuthorization(policy => policy.RequireRole("receptionist", "manager", "admin"));
+
+// Giai đoạn E: Hủy đăng ký
+app.MapPost("/api/classes/{id}/cancel-booking", async (Guid id, HttpContext httpContext, ClassService service) =>
+{
+    var userIdClaim = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var (isSuccess, errorMessage) = await service.CancelBookingAsync(userId, id);
+    if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
+    
+    return Results.Ok(new { message = "Successfully cancelled the booking!" });
+}).RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
+
+// Giai đoạn F: Thay đổi thông tin lớp học
+app.MapPut("/api/classes/{id}", async (Guid id, [Microsoft.AspNetCore.Mvc.FromBody] SmartGym.Application.DTOs.Classes.CreateClassRequest request, ClassService service) =>
+{
+    var (isSuccess, errorMessage) = await service.UpdateClassAsync(id, request);
+    if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
+    return Results.Ok(new { message = "Class updated successfully" });
+}).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
+
+// Giai đoạn F: Hủy lớp học
+app.MapPost("/api/classes/{id}/cancel", async (Guid id, ClassService service) =>
+{
+    var (isSuccess, errorMessage) = await service.CancelClassAsync(id);
+    if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
+    return Results.Ok(new { message = "Class cancelled successfully" });
+}).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
 
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
