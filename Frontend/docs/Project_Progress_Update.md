@@ -41,6 +41,7 @@
 - Đồng bộ thông tin người dùng được trích xuất trực tiếp từ phiên đăng nhập (dữ liệu lưu trong `localStorage`).
 - Xây dựng component `UserAvatar` để tạo ảnh đại diện mặc định (có màu nền và chữ cái đầu của tên) khi tài khoản chưa có ảnh tải lên, tương tự giao diện Gmail.
 - Cải thiện luồng thao tác (UX) ở **Coach Portal**: Tách biệt trang xem hồ sơ tĩnh và trang chỉnh sửa thông tin. Giờ đây, người dùng nhấp vào avatar ở sidebar để chuyển hướng mượt mà đến trang cài đặt hồ sơ.
+- **Admin Dashboard (Center Manager)**: Điều chỉnh lại giao diện Sidebar theo đúng thiết kế, cập nhật màu chủ đạo (Rose), tinh gọn menu (xóa các tab không cần thiết như Lịch & phân công, Phân quyền, v.v.) và custom icon SVG cho mục "Bộ môn & phòng tập".
 
 ---
 

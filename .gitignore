@@ -1,0 +1,61 @@
+# ==================================
+# DÀNH CHO TOÀN BỘ PROJECT
+# ==================================
+.DS_Store
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# IDE / Trình chỉnh sửa code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*~
+
+# ==================================
+# BACKEND (.NET)
+# ==================================
+backend/bin/
+backend/obj/
+backend/*/bin/
+backend/*/obj/
+
+# File cấu hình cục bộ (chứa chuỗi kết nối DB thật, secret thật) không được đưa lên Git
+backend/**/appsettings.Development.json
+backend/**/appsettings.Local.json
+backend/**/secrets.json
+
+# Log
+backend/**/*.log
+
+# ==================================
+# FRONTEND (Node.js / React / Vue)
+# ==================================
+Frontend/node_modules/
+Frontend/dist/
+Frontend/build/
+Frontend/.next/
+Frontend/out/
+
+# Biến môi trường cục bộ
+Frontend/.env
+Frontend/.env.local
+Frontend/.env.development.local
+Frontend/.env.test.local
+Frontend/.env.production.local
+
+# Logs
+Frontend/npm-debug.log*
+Frontend/yarn-debug.log*
+Frontend/yarn-error.log*
+Frontend/pnpm-debug.log*
+
+# Bộ nhớ đệm (Cache)
+Frontend/.eslintcache
+Frontend/.stylelintcache
+Frontend/.vite/

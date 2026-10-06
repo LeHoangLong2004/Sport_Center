@@ -12,23 +12,6 @@ public interface IGroupClassRepository
     Task<IEnumerable<GroupClass>> GetClassesByCoachAndDateAsync(Guid coachId, DateTime date);
     Task<IEnumerable<ClassResponse>> GetAvailableClassesAsync();
     Task AddAsync(GroupClass groupClass);
-<<<<<<< Updated upstream
-
-    // Lấy thông tin chi tiết một lớp học
-    Task<GroupClass?> GetByIdAsync(Guid id);
-
-    // Hủy đăng ký
-    Task<(bool IsSuccess, string? ErrorMessage)> CancelBookingTransactionAsync(Guid userId, Guid classId);
-
-    // Hủy lớp học
-    Task<(bool IsSuccess, string? ErrorMessage)> CancelClassTransactionAsync(Guid classId);
-
-    // Cập nhật lớp học
-    Task UpdateAsync(GroupClass groupClass);
-
-    // Thông báo cho các thành viên
-    Task NotifyAffectedMembersAsync(Guid classId, string title, string message);
-=======
     Task UpdateAsync(GroupClass groupClass);
     
     // Transactions
@@ -42,5 +25,4 @@ public interface IGroupClassRepository
     Task<MemberScheduleResponse> GetMemberScheduleAsync(Guid userId);
     Task<IEnumerable<CoachClassScheduleDto>> GetCoachScheduleAsync(Guid coachUserId, DateTime? date);
     Task<IEnumerable<ClassResponse>> GetManagerScheduleAsync(Guid? facilityId, Guid? coachId, Guid? sportId, DateTime? date);
->>>>>>> Stashed changes
 }
