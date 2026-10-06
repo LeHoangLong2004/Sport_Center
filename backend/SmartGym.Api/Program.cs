@@ -200,7 +200,11 @@ app.MapPost("/api/classes/{id}/book-for-member", async (Guid id, [Microsoft.AspN
     return Results.Ok(new { message = "Successfully booked the class for member!" });
 }).RequireAuthorization(policy => policy.RequireRole("receptionist", "manager", "admin"));
 
+<<<<<<< Updated upstream
 // Giai đoạn E: Hủy đăng ký
+=======
+// Giai đoạn E: Hủy đăng ký (Hội viên / Lễ tân)
+>>>>>>> Stashed changes
 app.MapPost("/api/classes/{id}/cancel-booking", async (Guid id, HttpContext httpContext, ClassService service) =>
 {
     var userIdClaim = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -213,7 +217,11 @@ app.MapPost("/api/classes/{id}/cancel-booking", async (Guid id, HttpContext http
     if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
     
     return Results.Ok(new { message = "Successfully cancelled the booking!" });
+<<<<<<< Updated upstream
 }).RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
+=======
+}).RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager", "receptionist"));
+>>>>>>> Stashed changes
 
 // Giai đoạn F: Thay đổi thông tin lớp học
 app.MapPut("/api/classes/{id}", async (Guid id, [Microsoft.AspNetCore.Mvc.FromBody] SmartGym.Application.DTOs.Classes.CreateClassRequest request, ClassService service) =>
@@ -223,7 +231,11 @@ app.MapPut("/api/classes/{id}", async (Guid id, [Microsoft.AspNetCore.Mvc.FromBo
     return Results.Ok(new { message = "Class updated successfully" });
 }).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
 
+<<<<<<< Updated upstream
 // Giai đoạn F: Hủy lớp học
+=======
+// Giai đoạn F: Hủy lớp học (Quản lý)
+>>>>>>> Stashed changes
 app.MapPost("/api/classes/{id}/cancel", async (Guid id, ClassService service) =>
 {
     var (isSuccess, errorMessage) = await service.CancelClassAsync(id);
@@ -231,6 +243,53 @@ app.MapPost("/api/classes/{id}/cancel", async (Guid id, ClassService service) =>
     return Results.Ok(new { message = "Class cancelled successfully" });
 }).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
 
+<<<<<<< Updated upstream
+=======
+// ── GIAI ĐOẠN G: ĐIỂM DANH VÀ XEM LỊCH ──
+
+// Điểm danh theo lớp (HLV / Receptionist / Manager / Admin)
+app.MapPost("/api/classes/{id}/attendance", async (Guid id, [Microsoft.AspNetCore.Mvc.FromBody] SmartGym.Application.DTOs.Classes.UpdateAttendanceRequest request, ClassService service) =>
+{
+    var (isSuccess, errorMessage) = await service.UpdateAttendanceAsync(id, request);
+    if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
+    return Results.Ok(new { message = "Attendance updated successfully" });
+}).RequireAuthorization(policy => policy.RequireRole("coach", "receptionist", "manager", "admin"));
+
+// Xem lịch dành cho Member (Lớp + Buổi PT)
+app.MapGet("/api/schedule/member", async (HttpContext httpContext, ClassService service) =>
+{
+    var userIdClaim = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var schedule = await service.GetMemberScheduleAsync(userId);
+    return Results.Ok(schedule);
+}).RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
+
+// Xem lịch dành cho HLV (Các lớp phụ trách + danh sách học viên)
+app.MapGet("/api/schedule/coach", async (DateTime? date, HttpContext httpContext, ClassService service) =>
+{
+    var userIdClaim = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var schedule = await service.GetCoachScheduleAsync(userId, date);
+    return Results.Ok(schedule);
+}).RequireAuthorization(policy => policy.RequireRole("coach", "manager", "admin"));
+
+// Xem lịch tổng quan dành cho Manager (Lọc theo cơ sở, HLV, bộ môn, ngày)
+app.MapGet("/api/schedule/manager", async (Guid? facilityId, Guid? coachId, Guid? sportId, DateTime? date, ClassService service) =>
+{
+    var schedule = await service.GetManagerScheduleAsync(facilityId, coachId, sportId, date);
+    return Results.Ok(schedule);
+}).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
+
+>>>>>>> Stashed changes
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.Run();
+

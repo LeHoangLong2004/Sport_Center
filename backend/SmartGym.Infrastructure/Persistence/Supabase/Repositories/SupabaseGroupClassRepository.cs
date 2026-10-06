@@ -5,6 +5,9 @@ using SmartGym.Infrastructure.Persistence.EF;
 using SmartGym.Infrastructure.Persistence.Supabase.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace SmartGym.Infrastructure.Persistence.Supabase.Repositories;
 
@@ -17,6 +20,15 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
     {
         _client = client;
         _dbContext = dbContext;
+    }
+
+    public async Task<GroupClass?> GetByIdAsync(Guid id)
+    {
+        var response = await _client.From<GroupClassModel>()
+            .Where(x => x.Id == id)
+            .Single();
+
+        return response?.ToDomain();
     }
 
     public async Task<IEnumerable<GroupClass>> GetClassesByCoachAndDateAsync(Guid coachId, DateTime date)
@@ -35,7 +47,6 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
 
     public async Task<IEnumerable<ClassResponse>> GetAvailableClassesAsync()
     {
-        // Giai đoạn B: Lọc status = true và schedule_time > now()
         var classResponse = await _client.From<GroupClassModel>()
             .Where(x => x.Status == true)
             .Where(x => x.ScheduleTime > DateTime.UtcNow)
@@ -44,6 +55,7 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
         var classModels = classResponse.Models;
         if (!classModels.Any()) return Enumerable.Empty<ClassResponse>();
 
+<<<<<<< Updated upstream
         // Lấy thông tin Sport, Facility, Coach (Batch Fetch)
         var sportIds = classModels.Select(c => c.SportId).Distinct().ToList();
         var facilityIds = classModels.Select(c => c.FacilityId).Distinct().ToList();
@@ -52,9 +64,13 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
         var sports = (await _client.From<SportModel>().Get()).Models;
         var facilities = (await _client.From<FacilityModel>().Get()).Models;
         var coaches = (await _client.From<CoachModel>().Get()).Models;
+=======
+        var sports = await _dbContext.Database.SqlQueryRaw<SportSqlRawModel>("SELECT id, name FROM sports").ToListAsync();
+        var facilities = await _dbContext.Database.SqlQueryRaw<FacilitySqlRawModel>("SELECT id, name FROM facilities").ToListAsync();
+        var coaches = await _dbContext.Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches").ToListAsync();
+>>>>>>> Stashed changes
         var users = await _dbContext.Users.ToListAsync();
 
-        // Map DTO
         return classModels.Select(c =>
         {
             var sport = sports.FirstOrDefault(s => s.Id == c.SportId);
@@ -108,9 +124,27 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
         await _client.From<GroupClassModel>().Insert(model);
     }
 
+    public async Task UpdateAsync(GroupClass groupClass)
+    {
+        var model = new GroupClassModel
+        {
+            Id = groupClass.Id,
+            SportId = groupClass.SportId,
+            CoachId = groupClass.CoachId,
+            FacilityId = groupClass.FacilityId,
+            ClassName = groupClass.ClassName,
+            ScheduleTime = groupClass.ScheduleTime,
+            DurationMinutes = groupClass.DurationMinutes,
+            Capacity = groupClass.Capacity,
+            CurrentEnrolled = groupClass.CurrentEnrolled,
+            Status = groupClass.Status
+        };
+
+        await _client.From<GroupClassModel>().Update(model);
+    }
+
     public async Task<(bool IsSuccess, string? ErrorMessage)> BookClassTransactionAsync(Guid userId, Guid classId, Guid subscriptionId)
     {
-        // Thực thi SQL Transaction thông qua Entity Framework (được Inject ở tầng Infrastructure)
         using var transaction = await _dbContext.Database.BeginTransactionAsync();
         try
         {
@@ -127,7 +161,6 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
                 return (false, "Lớp đã đầy, đã đóng hoặc đã bắt đầu.");
             }
 
-            // Insert or Update booking
             await _dbContext.Database.ExecuteSqlRawAsync(
                 @"INSERT INTO class_bookings (user_id, class_id, subscription_id, status)
                   VALUES ({0}, {1}, {2}, 'confirmed')
@@ -135,7 +168,6 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
                   DO UPDATE SET status = 'confirmed', subscription_id = {2}",
                 userId, classId, subscriptionId);
 
-            // Insert notification
             await _dbContext.Database.ExecuteSqlRawAsync(
                 @"INSERT INTO notifications (user_id, title, message)
                   VALUES ({0}, 'Đặt lớp thành công', 'Bạn đã đặt chỗ thành công cho lớp học.')",
@@ -151,6 +183,7 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
         }
     }
 
+<<<<<<< Updated upstream
     public async Task<GroupClass?> GetByIdAsync(Guid id)
     {
         var response = await _client.From<GroupClassModel>()
@@ -160,6 +193,8 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
         return response?.ToDomain();
     }
 
+=======
+>>>>>>> Stashed changes
     public async Task<(bool IsSuccess, string? ErrorMessage)> CancelBookingTransactionAsync(Guid userId, Guid classId)
     {
         using var transaction = await _dbContext.Database.BeginTransactionAsync();
@@ -194,7 +229,11 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
+<<<<<<< Updated upstream
             return (false, "Lỗi hệ thống khi hủy lớp. " + ex.Message);
+=======
+            return (false, "Lỗi hệ thống khi hủy đặt lớp. " + ex.Message);
+>>>>>>> Stashed changes
         }
     }
 
@@ -215,7 +254,10 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
                 return (false, "Lớp học không tồn tại.");
             }
 
+<<<<<<< Updated upstream
             // Update bookings
+=======
+>>>>>>> Stashed changes
             await _dbContext.Database.ExecuteSqlRawAsync(
                 @"UPDATE class_bookings 
                   SET status = 'class_cancelled' 
@@ -232,6 +274,7 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
         }
     }
 
+<<<<<<< Updated upstream
     public async Task UpdateAsync(GroupClass groupClass)
     {
         var model = new GroupClassModel
@@ -254,6 +297,10 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
     public async Task NotifyAffectedMembersAsync(Guid classId, string title, string message)
     {
         // Insert notifications for all confirmed members of the class and the coach
+=======
+    public async Task NotifyAffectedMembersAsync(Guid classId, string title, string message)
+    {
+>>>>>>> Stashed changes
         await _dbContext.Database.ExecuteSqlRawAsync(
             @"INSERT INTO notifications (user_id, title, message)
               SELECT user_id, {1}, {2} 
@@ -269,4 +316,271 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
               WHERE classes.id = {0}",
             classId, title, message);
     }
+<<<<<<< Updated upstream
+=======
+
+    // ── GIAI ĐOẠN G: ĐIỂM DANH & XEM LỊCH ──
+
+    public async Task<(bool IsSuccess, string? ErrorMessage)> UpdateAttendanceAsync(Guid classId, List<AttendanceRecordDto> attendanceList)
+    {
+        using var transaction = await _dbContext.Database.BeginTransactionAsync();
+        try
+        {
+            foreach (var item in attendanceList)
+            {
+                var validStatus = item.Status.ToLower() == "no_show" ? "no_show" : "attended";
+
+                await _dbContext.Database.ExecuteSqlRawAsync(
+                    @"UPDATE class_bookings 
+                      SET status = {2} 
+                      WHERE class_id = {0} AND user_id = {1}",
+                    classId, item.MemberId, validStatus);
+            }
+
+            await transaction.CommitAsync();
+            return (true, null);
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            return (false, "Lỗi hệ thống khi điểm danh. " + ex.Message);
+        }
+    }
+
+    public async Task<MemberScheduleResponse> GetMemberScheduleAsync(Guid userId)
+    {
+        var response = new MemberScheduleResponse();
+
+        var classBookings = await _dbContext.Database.SqlQueryRaw<ClassBookingRawModel>(
+            "SELECT id, user_id, class_id, status FROM class_bookings WHERE user_id = {0}", userId
+        ).ToListAsync();
+
+        if (classBookings.Any())
+        {
+            var classes = await _dbContext.Database.SqlQueryRaw<ClassSqlRawModel>(
+                "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status FROM classes").ToListAsync();
+            var sports = await _dbContext.Database.SqlQueryRaw<SportSqlRawModel>("SELECT id, name FROM sports").ToListAsync();
+            var facilities = await _dbContext.Database.SqlQueryRaw<FacilitySqlRawModel>("SELECT id, name FROM facilities").ToListAsync();
+            var coaches = await _dbContext.Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches").ToListAsync();
+            var users = await _dbContext.Users.ToListAsync();
+
+            response.ClassBookings = classBookings.Select(cb =>
+            {
+                var targetClass = classes.FirstOrDefault(c => c.Id == cb.ClassId);
+                var sport = targetClass != null ? sports.FirstOrDefault(s => s.Id == targetClass.SportId) : null;
+                var facility = targetClass != null ? facilities.FirstOrDefault(f => f.Id == targetClass.FacilityId) : null;
+                var coach = targetClass != null ? coaches.FirstOrDefault(co => co.Id == targetClass.CoachId) : null;
+                var coachUser = coach != null ? users.FirstOrDefault(u => u.Id == coach.UserId) : null;
+
+                return new MemberClassBookingDto
+                {
+                    BookingId = cb.Id,
+                    ClassId = cb.ClassId,
+                    ClassName = targetClass?.ClassName ?? "Unknown Class",
+                    SportName = sport?.Name ?? "N/A",
+                    FacilityName = facility?.Name ?? "N/A",
+                    CoachName = coachUser?.FullName ?? "N/A",
+                    ScheduleTime = targetClass?.ScheduleTime ?? DateTime.MinValue,
+                    DurationMinutes = targetClass?.DurationMinutes ?? 60,
+                    Status = cb.Status
+                };
+            }).OrderBy(x => x.ScheduleTime).ToList();
+        }
+
+        var ptEnrollments = await _dbContext.Database.SqlQueryRaw<PtEnrollmentRawModel>(
+            "SELECT id, user_id, pt_session_id, status FROM pt_enrollments WHERE user_id = {0}", userId
+        ).ToListAsync();
+
+        if (ptEnrollments.Any())
+        {
+            var ptSessions = await _dbContext.Database.SqlQueryRaw<PtSessionSqlRawModel>(
+                "SELECT id, schedule_time, duration_minutes FROM pt_sessions").ToListAsync();
+            response.PtSessions = ptEnrollments.Select(pe =>
+            {
+                var ps = ptSessions.FirstOrDefault(s => s.Id == pe.PtSessionId);
+                return new MemberPtSessionDto
+                {
+                    SessionId = pe.PtSessionId,
+                    CoachName = "Personal Trainer",
+                    ScheduleTime = ps?.ScheduleTime ?? DateTime.MinValue,
+                    DurationMinutes = ps?.DurationMinutes ?? 60,
+                    Status = pe.Status
+                };
+            }).OrderBy(x => x.ScheduleTime).ToList();
+        }
+
+        return response;
+    }
+
+    public async Task<IEnumerable<CoachClassScheduleDto>> GetCoachScheduleAsync(Guid coachUserId, DateTime? date)
+    {
+        var coach = await _dbContext.Database.SqlQueryRaw<CoachSqlRawModel>(
+            "SELECT id, user_id FROM coaches WHERE user_id = {0}", coachUserId).FirstOrDefaultAsync();
+
+        if (coach == null) return Enumerable.Empty<CoachClassScheduleDto>();
+
+        var allClasses = await _dbContext.Database.SqlQueryRaw<ClassSqlRawModel>(
+            "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status FROM classes WHERE coach_id = {0}", coach.Id).ToListAsync();
+
+        if (date.HasValue)
+        {
+            var startOfDay = date.Value.Date;
+            var endOfDay = startOfDay.AddDays(1);
+            allClasses = allClasses.Where(c => c.ScheduleTime >= startOfDay && c.ScheduleTime < endOfDay).ToList();
+        }
+
+        if (!allClasses.Any()) return Enumerable.Empty<CoachClassScheduleDto>();
+
+        var sports = await _dbContext.Database.SqlQueryRaw<SportSqlRawModel>("SELECT id, name FROM sports").ToListAsync();
+        var facilities = await _dbContext.Database.SqlQueryRaw<FacilitySqlRawModel>("SELECT id, name FROM facilities").ToListAsync();
+        var allBookings = await _dbContext.Database.SqlQueryRaw<ClassBookingRawModel>("SELECT id, user_id, class_id, status FROM class_bookings").ToListAsync();
+        var users = await _dbContext.Users.ToListAsync();
+
+        var result = new List<CoachClassScheduleDto>();
+
+        foreach (var c in allClasses)
+        {
+            var sport = sports.FirstOrDefault(s => s.Id == c.SportId);
+            var facility = facilities.FirstOrDefault(f => f.Id == c.FacilityId);
+
+            var enrolledMembers = (
+                from cb in allBookings
+                join u in users on cb.UserId equals u.Id
+                where cb.ClassId == c.Id && cb.Status != "cancelled"
+                select new EnrolledMemberDto
+                {
+                    MemberId = u.Id,
+                    FullName = u.FullName,
+                    PhoneNumber = u.PhoneNumber,
+                    BookingStatus = cb.Status
+                }
+            ).ToList();
+
+            result.Add(new CoachClassScheduleDto
+            {
+                ClassId = c.Id,
+                ClassName = c.ClassName,
+                SportName = sport?.Name ?? "N/A",
+                FacilityName = facility?.Name ?? "N/A",
+                ScheduleTime = c.ScheduleTime,
+                DurationMinutes = c.DurationMinutes,
+                Capacity = c.Capacity,
+                CurrentEnrolled = c.CurrentEnrolled,
+                EnrolledMembers = enrolledMembers
+            });
+        }
+
+        return result.OrderBy(x => x.ScheduleTime).ToList();
+    }
+
+    public async Task<IEnumerable<ClassResponse>> GetManagerScheduleAsync(Guid? facilityId, Guid? coachId, Guid? sportId, DateTime? date)
+    {
+        var allClasses = await _dbContext.Database.SqlQueryRaw<ClassSqlRawModel>(
+            "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status FROM classes").ToListAsync();
+
+        if (facilityId.HasValue && facilityId.Value != Guid.Empty)
+            allClasses = allClasses.Where(c => c.FacilityId == facilityId.Value).ToList();
+
+        if (coachId.HasValue && coachId.Value != Guid.Empty)
+            allClasses = allClasses.Where(c => c.CoachId == coachId.Value).ToList();
+
+        if (sportId.HasValue && sportId.Value != Guid.Empty)
+            allClasses = allClasses.Where(c => c.SportId == sportId.Value).ToList();
+
+        if (date.HasValue)
+        {
+            var startOfDay = date.Value.Date;
+            var endOfDay = startOfDay.AddDays(1);
+            allClasses = allClasses.Where(c => c.ScheduleTime >= startOfDay && c.ScheduleTime < endOfDay).ToList();
+        }
+
+        if (!allClasses.Any()) return Enumerable.Empty<ClassResponse>();
+
+        var sports = await _dbContext.Database.SqlQueryRaw<SportSqlRawModel>("SELECT id, name FROM sports").ToListAsync();
+        var facilities = await _dbContext.Database.SqlQueryRaw<FacilitySqlRawModel>("SELECT id, name FROM facilities").ToListAsync();
+        var coaches = await _dbContext.Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches").ToListAsync();
+        var users = await _dbContext.Users.ToListAsync();
+
+        return allClasses.Select(c =>
+        {
+            var sport = sports.FirstOrDefault(s => s.Id == c.SportId);
+            var facility = facilities.FirstOrDefault(f => f.Id == c.FacilityId);
+            var coach = coaches.FirstOrDefault(co => co.Id == c.CoachId);
+            var user = coach != null ? users.FirstOrDefault(u => u.Id == coach.UserId) : null;
+
+            return new ClassResponse(
+                Id: c.Id,
+                SportId: c.SportId,
+                SportName: sport?.Name ?? "Unknown Sport",
+                FacilityId: c.FacilityId,
+                FacilityName: facility?.Name ?? "Unknown Facility",
+                CoachId: c.CoachId,
+                CoachName: user?.FullName ?? "N/A",
+                ClassName: c.ClassName,
+                ScheduleTime: c.ScheduleTime,
+                DurationMinutes: c.DurationMinutes,
+                Capacity: c.Capacity,
+                CurrentEnrolled: c.CurrentEnrolled,
+                AvailableSpots: c.Capacity - c.CurrentEnrolled
+            );
+        }).OrderBy(x => x.ScheduleTime).ToList();
+    }
+}
+
+// ── RAW SQL POCO DTOs FOR EF CORE RAW QUERIES ──
+
+public class ClassSqlRawModel
+{
+    public Guid Id { get; set; }
+    public Guid SportId { get; set; }
+    public Guid FacilityId { get; set; }
+    public Guid? CoachId { get; set; }
+    public string ClassName { get; set; } = string.Empty;
+    public DateTime ScheduleTime { get; set; }
+    public int DurationMinutes { get; set; }
+    public int Capacity { get; set; }
+    public int CurrentEnrolled { get; set; }
+    public bool Status { get; set; }
+}
+
+public class SportSqlRawModel
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+}
+
+public class FacilitySqlRawModel
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+}
+
+public class CoachSqlRawModel
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+}
+
+public class PtSessionSqlRawModel
+{
+    public Guid Id { get; set; }
+    public DateTime ScheduleTime { get; set; }
+    public int DurationMinutes { get; set; }
+}
+
+public class ClassBookingRawModel
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public Guid ClassId { get; set; }
+    public string Status { get; set; } = string.Empty;
+}
+
+public class PtEnrollmentRawModel
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public Guid PtSessionId { get; set; }
+    public string Status { get; set; } = string.Empty;
+>>>>>>> Stashed changes
 }
