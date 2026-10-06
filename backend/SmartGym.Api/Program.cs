@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SmartGym.Api.Endpoints;
 using SmartGym.Application.Interfaces;
+using SmartGym.Application.Interfaces.Repositories;
 using SmartGym.Application.Services;
 using SmartGym.Infrastructure.Authentication;
 using SmartGym.Infrastructure.Persistence.EF;
@@ -22,9 +23,16 @@ builder.Services.AddDbContext<SmartGymDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 // ── Services: Infrastructure ──
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IPackageRepository, PackageRepository>();
-builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+var supabaseUrl = builder.Configuration["Supabase:Url"];
+var supabaseKey = builder.Configuration["Supabase:Key"];
+var options = new Supabase.SupabaseOptions { AutoConnectRealtime = true };
+builder.Services.AddSingleton(new Supabase.Client(supabaseUrl, supabaseKey, options));
+
+builder.Services.AddScoped<SmartGym.Application.Interfaces.IUserRepository, UserRepository>();
+builder.Services.AddScoped<SmartGym.Application.Interfaces.IPackageRepository, PackageRepository>();
+builder.Services.AddScoped<SmartGym.Application.Interfaces.ISubscriptionRepository, SubscriptionRepository>();
+builder.Services.AddScoped<SmartGym.Application.Interfaces.Repositories.IGroupClassRepository, SmartGym.Infrastructure.Persistence.Supabase.Repositories.SupabaseGroupClassRepository>();
+builder.Services.AddScoped<SmartGym.Application.Interfaces.Repositories.IPtSessionRepository, SmartGym.Infrastructure.Persistence.Supabase.Repositories.SupabasePtSessionRepository>();
 builder.Services.AddSingleton<ITokenService, TokenService>();
 // Note: Keeping IJwtTokenGenerator for the custom middleware backward compatibility
 builder.Services.AddSingleton<SmartGym.Application.Interfaces.Services.IJwtTokenGenerator, JwtTokenGenerator>();
@@ -35,6 +43,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPackageService, PackageService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
+builder.Services.AddScoped<ClassService>();
 
 // ── Authentication & Authorization ──
 builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)
@@ -97,9 +106,42 @@ using (var scope = app.Services.CreateScope())
             app.Logger.LogInformation("Successfully executed supabase_schema.sql on startup.");
         }
     }
-    catch
+    catch (Exception ex)
     {
-        // Ignore errors if tables already exist
+        app.Logger.LogWarning("DB init error: {Message}", ex.Message);
+    }
+
+    try
+    {
+        db.Database.ExecuteSqlRaw("GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated;");
+        db.Database.ExecuteSqlRaw("GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;");
+        
+        db.Database.ExecuteSqlRaw(@"
+            INSERT INTO sports (id, name, description) VALUES 
+            ('11111111-1111-1111-1111-111111111111', 'Yoga', 'Lớp học Yoga thư giãn'),
+            ('22222222-2222-2222-2222-222222222222', 'Bơi lội', 'Lớp học bơi căn bản')
+            ON CONFLICT (id) DO NOTHING;
+
+            INSERT INTO facilities (id, name, address) VALUES 
+            ('33333333-3333-3333-3333-333333333333', 'SmartGym Quận 1', '123 Nguyễn Huệ, Q1, TP.HCM')
+            ON CONFLICT (id) DO NOTHING;
+
+            INSERT INTO packages (id, name, package_type, monthly_price) VALUES 
+            ('yoga_pack', 'Gói Tập Yoga', 'sport', 500000)
+            ON CONFLICT (id) DO NOTHING;
+
+            INSERT INTO subscriptions (id, user_id, package_id, sport_id, total_amount, payment_status, start_date, end_date)
+            SELECT gen_random_uuid(), u.id, 'yoga_pack', '11111111-1111-1111-1111-111111111111', 500000, 'completed', CURRENT_DATE - INTERVAL '1 day', CURRENT_DATE + INTERVAL '30 days'
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            WHERE r.name = 'member'
+            AND NOT EXISTS (SELECT 1 FROM subscriptions s WHERE s.user_id = u.id AND s.payment_status = 'completed');
+        ");
+        app.Logger.LogInformation("Successfully granted permissions and seeded initial testing data.");
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning("DB grant/seed error: {Message}", ex.Message);
     }
 }
 
@@ -122,6 +164,132 @@ app.MapUserEndpoints();
 app.MapPackageEndpoints();
 app.MapSubscriptionEndpoints();
 
+app.MapPost("/api/classes", async (SmartGym.Application.DTOs.Classes.CreateClassRequest request, ClassService service) =>
+{
+    var (isSuccess, errorMessage) = await service.CreateClassAsync(request);
+    if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
+    return Results.Ok(new { message = "Class created successfully" });
+}).RequireAuthorization(policy => policy.RequireRole("manager"));
+
+app.MapGet("/api/classes/available", async (ClassService service) =>
+{
+    var classes = await service.GetAvailableClassesAsync();
+    return Results.Ok(classes);
+});
+
+app.MapPost("/api/classes/{id}/book", async (Guid id, HttpContext httpContext, ClassService service) =>
+{
+    var userIdClaim = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var (isSuccess, errorMessage) = await service.BookClassAsync(userId, id);
+    if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
+    
+    return Results.Ok(new { message = "Successfully booked the class!" });
+}).RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
+
+// Giai đoạn D: Receptionist đặt hộ
+app.MapPost("/api/classes/{id}/book-for-member", async (Guid id, [Microsoft.AspNetCore.Mvc.FromBody] SmartGym.Application.DTOs.Classes.BookForMemberRequest request, ClassService service) =>
+{
+    var (isSuccess, errorMessage) = await service.BookClassAsync(request.MemberId, id);
+    if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
+    
+    return Results.Ok(new { message = "Successfully booked the class for member!" });
+}).RequireAuthorization(policy => policy.RequireRole("receptionist", "manager", "admin"));
+
+<<<<<<< Updated upstream
+// Giai đoạn E: Hủy đăng ký
+=======
+// Giai đoạn E: Hủy đăng ký (Hội viên / Lễ tân)
+>>>>>>> Stashed changes
+app.MapPost("/api/classes/{id}/cancel-booking", async (Guid id, HttpContext httpContext, ClassService service) =>
+{
+    var userIdClaim = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var (isSuccess, errorMessage) = await service.CancelBookingAsync(userId, id);
+    if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
+    
+    return Results.Ok(new { message = "Successfully cancelled the booking!" });
+<<<<<<< Updated upstream
+}).RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
+=======
+}).RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager", "receptionist"));
+>>>>>>> Stashed changes
+
+// Giai đoạn F: Thay đổi thông tin lớp học
+app.MapPut("/api/classes/{id}", async (Guid id, [Microsoft.AspNetCore.Mvc.FromBody] SmartGym.Application.DTOs.Classes.CreateClassRequest request, ClassService service) =>
+{
+    var (isSuccess, errorMessage) = await service.UpdateClassAsync(id, request);
+    if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
+    return Results.Ok(new { message = "Class updated successfully" });
+}).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
+
+<<<<<<< Updated upstream
+// Giai đoạn F: Hủy lớp học
+=======
+// Giai đoạn F: Hủy lớp học (Quản lý)
+>>>>>>> Stashed changes
+app.MapPost("/api/classes/{id}/cancel", async (Guid id, ClassService service) =>
+{
+    var (isSuccess, errorMessage) = await service.CancelClassAsync(id);
+    if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
+    return Results.Ok(new { message = "Class cancelled successfully" });
+}).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
+
+<<<<<<< Updated upstream
+=======
+// ── GIAI ĐOẠN G: ĐIỂM DANH VÀ XEM LỊCH ──
+
+// Điểm danh theo lớp (HLV / Receptionist / Manager / Admin)
+app.MapPost("/api/classes/{id}/attendance", async (Guid id, [Microsoft.AspNetCore.Mvc.FromBody] SmartGym.Application.DTOs.Classes.UpdateAttendanceRequest request, ClassService service) =>
+{
+    var (isSuccess, errorMessage) = await service.UpdateAttendanceAsync(id, request);
+    if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
+    return Results.Ok(new { message = "Attendance updated successfully" });
+}).RequireAuthorization(policy => policy.RequireRole("coach", "receptionist", "manager", "admin"));
+
+// Xem lịch dành cho Member (Lớp + Buổi PT)
+app.MapGet("/api/schedule/member", async (HttpContext httpContext, ClassService service) =>
+{
+    var userIdClaim = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var schedule = await service.GetMemberScheduleAsync(userId);
+    return Results.Ok(schedule);
+}).RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
+
+// Xem lịch dành cho HLV (Các lớp phụ trách + danh sách học viên)
+app.MapGet("/api/schedule/coach", async (DateTime? date, HttpContext httpContext, ClassService service) =>
+{
+    var userIdClaim = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var schedule = await service.GetCoachScheduleAsync(userId, date);
+    return Results.Ok(schedule);
+}).RequireAuthorization(policy => policy.RequireRole("coach", "manager", "admin"));
+
+// Xem lịch tổng quan dành cho Manager (Lọc theo cơ sở, HLV, bộ môn, ngày)
+app.MapGet("/api/schedule/manager", async (Guid? facilityId, Guid? coachId, Guid? sportId, DateTime? date, ClassService service) =>
+{
+    var schedule = await service.GetManagerScheduleAsync(facilityId, coachId, sportId, date);
+    return Results.Ok(schedule);
+}).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
+
+>>>>>>> Stashed changes
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.Run();
+

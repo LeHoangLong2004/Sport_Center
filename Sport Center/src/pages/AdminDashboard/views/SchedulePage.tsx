@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { iCalendar, iSearch2, iChevron, coachAvatar1, coachAvatar2, hrAvatar1 } from '../shared';
+import { CreateClassModal } from '../components/CreateClassModal';
 
 export function SchedulePage() {
   const days = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
   const hours = ["06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"];
 
   const classes: any[] = [];
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
@@ -14,10 +16,15 @@ export function SchedulePage() {
           <p className="font-bold text-[#0f172a] text-[28px]">Lịch trình & Lớp học</p>
           <p className="text-[#64748b] text-sm mt-1">Sắp xếp thời khóa biểu và phân công HLV cho các lớp Group-X.</p>
         </div>
-        <button className="bg-[#2563eb] flex gap-2 items-center px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors">
+        <button 
+          onClick={() => setShowCreateModal(true)}
+          className="bg-[#2563eb] flex gap-2 items-center px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors"
+        >
           <span className="font-semibold text-white text-sm">+ Tạo lớp mới</span>
         </button>
       </div>
+
+      {showCreateModal && <CreateClassModal onClose={() => setShowCreateModal(false)} />}
 
       <div className="flex gap-4">
         {/* Sidebar Filters */}
