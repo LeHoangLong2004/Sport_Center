@@ -16,4 +16,19 @@ public interface IGroupClassRepository
 
     // Thêm một lớp học mới
     Task AddAsync(GroupClass groupClass);
+
+    // Lấy thông tin chi tiết một lớp học
+    Task<GroupClass?> GetByIdAsync(Guid id);
+
+    // Hủy đăng ký
+    Task<(bool IsSuccess, string? ErrorMessage)> CancelBookingTransactionAsync(Guid userId, Guid classId);
+
+    // Hủy lớp học
+    Task<(bool IsSuccess, string? ErrorMessage)> CancelClassTransactionAsync(Guid classId);
+
+    // Cập nhật lớp học
+    Task UpdateAsync(GroupClass groupClass);
+
+    // Thông báo cho các thành viên
+    Task NotifyAffectedMembersAsync(Guid classId, string title, string message);
 }

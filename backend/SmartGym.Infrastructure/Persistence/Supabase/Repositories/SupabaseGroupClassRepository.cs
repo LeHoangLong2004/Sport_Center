@@ -49,9 +49,9 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
         var facilityIds = classModels.Select(c => c.FacilityId).Distinct().ToList();
         var coachIds = classModels.Where(c => c.CoachId.HasValue).Select(c => c.CoachId!.Value).Distinct().ToList();
 
-        var sports = await _dbContext.Database.SqlQueryRaw<SportModel>("SELECT * FROM sports").ToListAsync();
-        var facilities = await _dbContext.Database.SqlQueryRaw<FacilityModel>("SELECT * FROM facilities").ToListAsync();
-        var coaches = await _dbContext.Database.SqlQueryRaw<CoachModel>("SELECT * FROM coaches").ToListAsync();
+        var sports = (await _client.From<SportModel>().Get()).Models;
+        var facilities = (await _client.From<FacilityModel>().Get()).Models;
+        var coaches = (await _client.From<CoachModel>().Get()).Models;
         var users = await _dbContext.Users.ToListAsync();
 
         // Map DTO
@@ -149,5 +149,124 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
             await transaction.RollbackAsync();
             return (false, "Lỗi hệ thống khi đặt lớp. " + ex.Message);
         }
+    }
+
+    public async Task<GroupClass?> GetByIdAsync(Guid id)
+    {
+        var response = await _client.From<GroupClassModel>()
+            .Where(x => x.Id == id)
+            .Single();
+
+        return response?.ToDomain();
+    }
+
+    public async Task<(bool IsSuccess, string? ErrorMessage)> CancelBookingTransactionAsync(Guid userId, Guid classId)
+    {
+        using var transaction = await _dbContext.Database.BeginTransactionAsync();
+        try
+        {
+            var affectedBooking = await _dbContext.Database.ExecuteSqlRawAsync(
+                @"UPDATE class_bookings 
+                  SET status = 'cancelled' 
+                  WHERE user_id = {0} AND class_id = {1} AND status = 'confirmed'",
+                userId, classId);
+
+            if (affectedBooking == 0)
+            {
+                await transaction.RollbackAsync();
+                return (false, "Không tìm thấy thông tin đặt chỗ hoặc đã bị hủy.");
+            }
+
+            await _dbContext.Database.ExecuteSqlRawAsync(
+                @"UPDATE classes 
+                  SET current_enrolled = current_enrolled - 1 
+                  WHERE id = {0}",
+                classId);
+
+            await _dbContext.Database.ExecuteSqlRawAsync(
+                @"INSERT INTO notifications (user_id, title, message)
+                  VALUES ({0}, 'Hủy đặt lớp thành công', 'Bạn đã hủy chỗ thành công cho lớp học.')",
+                userId);
+
+            await transaction.CommitAsync();
+            return (true, null);
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            return (false, "Lỗi hệ thống khi hủy lớp. " + ex.Message);
+        }
+    }
+
+    public async Task<(bool IsSuccess, string? ErrorMessage)> CancelClassTransactionAsync(Guid classId)
+    {
+        using var transaction = await _dbContext.Database.BeginTransactionAsync();
+        try
+        {
+            var affected = await _dbContext.Database.ExecuteSqlRawAsync(
+                @"UPDATE classes 
+                  SET status = false 
+                  WHERE id = {0}",
+                classId);
+
+            if (affected == 0)
+            {
+                await transaction.RollbackAsync();
+                return (false, "Lớp học không tồn tại.");
+            }
+
+            // Update bookings
+            await _dbContext.Database.ExecuteSqlRawAsync(
+                @"UPDATE class_bookings 
+                  SET status = 'class_cancelled' 
+                  WHERE class_id = {0} AND status = 'confirmed'",
+                classId);
+
+            await transaction.CommitAsync();
+            return (true, null);
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            return (false, "Lỗi hệ thống khi hủy lớp học. " + ex.Message);
+        }
+    }
+
+    public async Task UpdateAsync(GroupClass groupClass)
+    {
+        var model = new GroupClassModel
+        {
+            Id = groupClass.Id,
+            SportId = groupClass.SportId,
+            CoachId = groupClass.CoachId,
+            FacilityId = groupClass.FacilityId,
+            ClassName = groupClass.ClassName,
+            ScheduleTime = groupClass.ScheduleTime,
+            DurationMinutes = groupClass.DurationMinutes,
+            Capacity = groupClass.Capacity,
+            CurrentEnrolled = groupClass.CurrentEnrolled,
+            Status = groupClass.Status
+        };
+
+        await _client.From<GroupClassModel>().Update(model);
+    }
+
+    public async Task NotifyAffectedMembersAsync(Guid classId, string title, string message)
+    {
+        // Insert notifications for all confirmed members of the class and the coach
+        await _dbContext.Database.ExecuteSqlRawAsync(
+            @"INSERT INTO notifications (user_id, title, message)
+              SELECT user_id, {1}, {2} 
+              FROM class_bookings 
+              WHERE class_id = {0} AND status = 'confirmed'",
+            classId, title, message);
+
+        await _dbContext.Database.ExecuteSqlRawAsync(
+            @"INSERT INTO notifications (user_id, title, message)
+              SELECT coaches.user_id, {1}, {2} 
+              FROM classes 
+              INNER JOIN coaches ON classes.coach_id = coaches.id
+              WHERE classes.id = {0}",
+            classId, title, message);
     }
 }
