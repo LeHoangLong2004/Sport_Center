@@ -20,7 +20,13 @@ var builder = WebApplication.CreateBuilder(args);
 // ── Database Configuration ──
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<SmartGymDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(connectionString, npgsqlOptions =>
+    {
+        npgsqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorCodesToAdd: null);
+    }));
 
 // ── Services: Infrastructure ──
 var supabaseUrl = builder.Configuration["Supabase:Url"];

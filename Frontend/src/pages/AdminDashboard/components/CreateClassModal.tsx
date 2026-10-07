@@ -27,17 +27,18 @@ export function CreateClassModal({ onClose }: { onClose: () => void }) {
     setSuccess('');
 
     try {
-      // Combine date and time to ISO string
-      const datetime = new Date(`${formData.scheduleDate}T${formData.scheduleTime}:00`).toISOString();
+      // Combine date and time
+      const startDateTime = new Date(`${formData.scheduleDate}T${formData.scheduleTime}:00`);
+      const endDateTime = new Date(startDateTime.getTime() + Number(formData.durationMinutes) * 60000);
       
       const payload = {
-        sportId: formData.sportId,
-        facilityId: formData.facilityId,
+        name: formData.className,
+        description: "Lớp học được tạo từ Admin Dashboard",
         coachId: formData.coachId,
-        className: formData.className,
-        scheduleTime: datetime,
-        durationMinutes: Number(formData.durationMinutes),
-        capacity: Number(formData.capacity)
+        roomId: formData.facilityId, // assuming facilityId in UI corresponds to roomId in backend
+        maxCapacity: Number(formData.capacity),
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString()
       };
 
       const token = localStorage.getItem("token");

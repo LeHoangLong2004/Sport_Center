@@ -6,6 +6,7 @@ using SmartGym.Infrastructure.Persistence.Supabase.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -58,7 +59,7 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
         var sports = await _dbContext.Database.SqlQueryRaw<SportSqlRawModel>("SELECT id, name FROM sports").ToListAsync();
         var facilities = await _dbContext.Database.SqlQueryRaw<FacilitySqlRawModel>("SELECT id, name FROM facilities").ToListAsync();
         var coaches = await _dbContext.Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches").ToListAsync();
-        var users = await _dbContext.Users.ToListAsync();
+        var users = await _dbContext.Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number FROM users").ToListAsync();
 
         return classModels.Select(c =>
         {
@@ -172,7 +173,6 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
         }
     }
 
-
     public async Task<(bool IsSuccess, string? ErrorMessage)> CancelBookingTransactionAsync(Guid userId, Guid classId)
     {
         using var transaction = await _dbContext.Database.BeginTransactionAsync();
@@ -228,7 +228,6 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
                 return (false, "Lớp học không tồn tại.");
             }
 
-            // Update bookings
             await _dbContext.Database.ExecuteSqlRawAsync(
                 @"UPDATE class_bookings 
                   SET status = 'class_cancelled' 
@@ -247,7 +246,6 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
 
     public async Task NotifyAffectedMembersAsync(Guid classId, string title, string message)
     {
-        // Insert notifications for all confirmed members of the class and the coach
         await _dbContext.Database.ExecuteSqlRawAsync(
             @"INSERT INTO notifications (user_id, title, message)
               SELECT user_id, {1}, {2} 
@@ -263,7 +261,6 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
               WHERE classes.id = {0}",
             classId, title, message);
     }
-
 
     // ── GIAI ĐOẠN G: ĐIỂM DANH & XEM LỊCH ──
 
@@ -308,7 +305,7 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
             var sports = await _dbContext.Database.SqlQueryRaw<SportSqlRawModel>("SELECT id, name FROM sports").ToListAsync();
             var facilities = await _dbContext.Database.SqlQueryRaw<FacilitySqlRawModel>("SELECT id, name FROM facilities").ToListAsync();
             var coaches = await _dbContext.Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches").ToListAsync();
-            var users = await _dbContext.Users.ToListAsync();
+            var users = await _dbContext.Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number FROM users").ToListAsync();
 
             response.ClassBookings = classBookings.Select(cb =>
             {
@@ -333,25 +330,22 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
             }).OrderBy(x => x.ScheduleTime).ToList();
         }
 
-        var ptEnrollments = await _dbContext.Database.SqlQueryRaw<PtEnrollmentRawModel>(
-            "SELECT id, user_id, pt_session_id, status FROM pt_enrollments WHERE user_id = {0}", userId
+        var ptSessions = await _dbContext.Database.SqlQueryRaw<PtSessionMemberSqlDto>(
+            @"SELECT ps.id, ps.schedule_time, ps.duration_minutes, ps.status 
+              FROM pt_sessions ps 
+              INNER JOIN pt_enrollments pe ON ps.enrollment_id = pe.id 
+              WHERE pe.user_id = {0}", userId
         ).ToListAsync();
 
-        if (ptEnrollments.Any())
+        if (ptSessions.Any())
         {
-            var ptSessions = await _dbContext.Database.SqlQueryRaw<PtSessionSqlRawModel>(
-                "SELECT id, schedule_time, duration_minutes FROM pt_sessions").ToListAsync();
-            response.PtSessions = ptEnrollments.Select(pe =>
+            response.PtSessions = ptSessions.Select(ps => new MemberPtSessionDto
             {
-                var ps = ptSessions.FirstOrDefault(s => s.Id == pe.PtSessionId);
-                return new MemberPtSessionDto
-                {
-                    SessionId = pe.PtSessionId,
-                    CoachName = "Personal Trainer",
-                    ScheduleTime = ps?.ScheduleTime ?? DateTime.MinValue,
-                    DurationMinutes = ps?.DurationMinutes ?? 60,
-                    Status = pe.Status
-                };
+                SessionId = ps.Id,
+                CoachName = "Personal Trainer",
+                ScheduleTime = ps.ScheduleTime,
+                DurationMinutes = ps.DurationMinutes,
+                Status = ps.Status
             }).OrderBy(x => x.ScheduleTime).ToList();
         }
 
@@ -380,7 +374,7 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
         var sports = await _dbContext.Database.SqlQueryRaw<SportSqlRawModel>("SELECT id, name FROM sports").ToListAsync();
         var facilities = await _dbContext.Database.SqlQueryRaw<FacilitySqlRawModel>("SELECT id, name FROM facilities").ToListAsync();
         var allBookings = await _dbContext.Database.SqlQueryRaw<ClassBookingRawModel>("SELECT id, user_id, class_id, status FROM class_bookings").ToListAsync();
-        var users = await _dbContext.Users.ToListAsync();
+        var users = await _dbContext.Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number FROM users").ToListAsync();
 
         var result = new List<CoachClassScheduleDto>();
 
@@ -445,7 +439,7 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
         var sports = await _dbContext.Database.SqlQueryRaw<SportSqlRawModel>("SELECT id, name FROM sports").ToListAsync();
         var facilities = await _dbContext.Database.SqlQueryRaw<FacilitySqlRawModel>("SELECT id, name FROM facilities").ToListAsync();
         var coaches = await _dbContext.Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches").ToListAsync();
-        var users = await _dbContext.Users.ToListAsync();
+        var users = await _dbContext.Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number FROM users").ToListAsync();
 
         return allClasses.Select(c =>
         {
@@ -477,56 +471,114 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
 
 public class ClassSqlRawModel
 {
+    [Column("id")]
     public Guid Id { get; set; }
+
+    [Column("sport_id")]
     public Guid SportId { get; set; }
+
+    [Column("facility_id")]
     public Guid FacilityId { get; set; }
+
+    [Column("coach_id")]
     public Guid? CoachId { get; set; }
+
+    [Column("class_name")]
     public string ClassName { get; set; } = string.Empty;
+
+    [Column("schedule_time")]
     public DateTime ScheduleTime { get; set; }
+
+    [Column("duration_minutes")]
     public int DurationMinutes { get; set; }
+
+    [Column("capacity")]
     public int Capacity { get; set; }
+
+    [Column("current_enrolled")]
     public int CurrentEnrolled { get; set; }
+
+    [Column("status")]
     public bool Status { get; set; }
 }
 
 public class SportSqlRawModel
 {
+    [Column("id")]
     public Guid Id { get; set; }
+
+    [Column("name")]
     public string Name { get; set; } = string.Empty;
 }
 
 public class FacilitySqlRawModel
 {
+    [Column("id")]
     public Guid Id { get; set; }
+
+    [Column("name")]
     public string Name { get; set; } = string.Empty;
 }
 
 public class CoachSqlRawModel
 {
+    [Column("id")]
     public Guid Id { get; set; }
+
+    [Column("user_id")]
     public Guid UserId { get; set; }
 }
 
-public class PtSessionSqlRawModel
+public class UserSqlRawModel
 {
+    [Column("id")]
     public Guid Id { get; set; }
+
+    [Column("full_name")]
+    public string FullName { get; set; } = string.Empty;
+
+    [Column("phone_number")]
+    public string PhoneNumber { get; set; } = string.Empty;
+}
+
+public class PtSessionMemberSqlDto
+{
+    [Column("id")]
+    public Guid Id { get; set; }
+
+    [Column("schedule_time")]
     public DateTime ScheduleTime { get; set; }
+
+    [Column("duration_minutes")]
     public int DurationMinutes { get; set; }
+
+    [Column("status")]
+    public string Status { get; set; } = string.Empty;
 }
 
 public class ClassBookingRawModel
 {
+    [Column("id")]
     public Guid Id { get; set; }
+
+    [Column("user_id")]
     public Guid UserId { get; set; }
+
+    [Column("class_id")]
     public Guid ClassId { get; set; }
+
+    [Column("status")]
     public string Status { get; set; } = string.Empty;
 }
 
 public class PtEnrollmentRawModel
 {
+    [Column("id")]
     public Guid Id { get; set; }
-    public Guid UserId { get; set; }
-    public Guid PtSessionId { get; set; }
-    public string Status { get; set; } = string.Empty;
 
+    [Column("user_id")]
+    public Guid UserId { get; set; }
+
+    [Column("coach_id")]
+    public Guid? CoachId { get; set; }
 }

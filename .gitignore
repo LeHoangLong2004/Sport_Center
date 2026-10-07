@@ -45,7 +45,7 @@ Frontend/out/
 # Biến môi trường cục bộ
 Frontend/.env
 Frontend/.env.local
-Frontend/.env.development.local
+Frontend/.env.development.localA
 Frontend/.env.test.local
 Frontend/.env.production.local
 
@@ -59,3 +59,6 @@ Frontend/pnpm-debug.log*
 Frontend/.eslintcache
 Frontend/.stylelintcache
 Frontend/.vite/
+
+dist/
+node_modules/
