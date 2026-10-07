@@ -86,6 +86,11 @@ public sealed class ClassService
         return await _classRepository.GetAvailableClassesAsync();
     }
 
+    public async Task<ClassDetailResponse?> GetClassDetailAsync(Guid classId)
+    {
+        return await _classRepository.GetClassDetailByIdAsync(classId);
+    }
+
     public async Task<(bool IsSuccess, string? ErrorMessage)> BookClassAsync(Guid userId, Guid classId)
     {
         // 1. Kiểm tra tồn tại lớp học
