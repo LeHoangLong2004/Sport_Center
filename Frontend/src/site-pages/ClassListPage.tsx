@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { FadeUp, FadeIn } from "../components/Motion"
 
 const A = "/assets"
@@ -41,96 +41,18 @@ interface ClassItem {
   img: string
 }
 
-const classes: ClassItem[] = [
-  {
-    id: "aqua",
-    title: "Aqua Basic Therapy",
-    status: "available",
-    statusLabel: "Còn chỗ",
-    trainer: "HLV. Alexander Trần",
-    schedule: "Thứ Ba, Thứ Năm - 08:00",
-    location: "Hồ Bơi Lớn A",
-    spots: "Còn 5 suất trống",
-    img: classImages[0],
-  },
-  {
-    id: "yoga",
-    title: "Vinyasa Flow Yoga",
-    status: "available",
-    statusLabel: "Còn chỗ",
-    trainer: "HLV. Minh Thư",
-    schedule: "Thứ Tư, Thứ Sáu - 17:30",
-    location: "Phòng Studio 3",
-    spots: "Còn 2 suất trống",
-    img: classImages[1],
-  },
-  {
-    id: "hiit",
-    title: "Functional HIIT Performance",
-    status: "available",
-    statusLabel: "Còn chỗ",
-    trainer: "HLV. Marcus Đặng",
-    schedule: "Thứ Năm, Thứ Bảy - 18:30",
-    location: "Khu Thể Lực Tổng Hợp",
-    spots: "Còn 6 suất trống",
-    img: classImages[2],
-  },
-  {
-    id: "kickboxing",
-    title: "Kickboxing Core Stress-Relief",
-    status: "full",
-    statusLabel: "Đã đầy",
-    trainer: "HLV. Hoàng Kim",
-    schedule: "Thứ Hai, Thứ Sáu - 19:30",
-    location: "Khu Boxing Gym",
-    spots: "Lớp học đã kín chỗ",
-    img: classImages[3],
-  },
-  {
-    id: "pilates",
-    title: "Pilates Hồi Phục Cột Sống",
-    status: "available",
-    statusLabel: "Còn chỗ",
-    trainer: "HLV. Minh Thư",
-    schedule: "Thứ Ba - 10:00",
-    location: "Phòng Reformer Pilates",
-    spots: "Còn 4 suất trống",
-    img: classImages[4],
-  },
-  {
-    id: "bongro",
-    title: "Bóng Rổ Thiếu Niên U12",
-    status: "almost",
-    statusLabel: "Sắp đầy",
-    trainer: "HLV. Alexander Trần",
-    schedule: "Chủ Nhật - 08:00",
-    location: "Sân Đa Năng 2",
-    spots: "Còn 1 suất trống",
-    img: classImages[5],
-  },
-  {
-    id: "swimming",
-    title: "Bơi Sải Nâng Cao",
-    status: "full",
-    statusLabel: "Đã đầy",
-    trainer: "HLV. Alexander Trần",
-    schedule: "Thứ Bảy - 16:00",
-    location: "Hồ Bơi Lớn A",
-    spots: "Lớp học đã kín chỗ",
-    img: classImages[6],
-  },
-  {
-    id: "strength",
-    title: "Strength Conditioning",
-    status: "available",
-    statusLabel: "Còn chỗ",
-    trainer: "HLV. Marcus Đặng",
-    schedule: "Thứ Tư - 19:00",
-    location: "Phòng Tạ Tự Do",
-    spots: "Còn 12 suất trống",
-    img: classImages[7],
-  },
-]
+const formatSchedule = (isoString: string) => {
+  try {
+    const d = new Date(isoString);
+    const dayNames = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+    const day = dayNames[d.getDay()];
+    const hours = d.getHours().toString().padStart(2, "0");
+    const minutes = d.getMinutes().toString().padStart(2, "0");
+    return `${day} - ${hours}:${minutes}`;
+  } catch {
+    return isoString;
+  }
+}
 
 const navItems = [
   { label: "Trang chủ", active: false },
@@ -217,13 +139,59 @@ function ClassCard({ item }: { item: ClassItem }) {
 }
 
 export default function ClassListPage() {
+  const [classes, setClasses] = useState<ClassItem[]>([])
+  const [loading, setLoading] = useState(true)
   const [subject, setSubject] = useState("")
   const [day, setDay] = useState("")
   const [shift, setShift] = useState("")
   const [page, setPage] = useState(1)
 
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        const res = await fetch("/api/classes/available");
+        if (!res.ok) throw new Error("Failed to fetch classes");
+        const data = await res.json();
+        
+        const mapped: ClassItem[] = data.map((d: any, index: number) => {
+          const avail = d.maxCapacity - d.currentBookings;
+          let status: ClassStatus = "available";
+          let statusLabel = "Còn chỗ";
+          let spots = `Còn ${avail} suất trống`;
+          
+          if (avail <= 0) {
+            status = "full";
+            statusLabel = "Đã đầy";
+            spots = "Lớp học đã kín chỗ";
+          } else if (avail <= 3) {
+            status = "almost";
+            statusLabel = "Sắp đầy";
+          }
+          
+          return {
+            id: d.id,
+            title: d.name,
+            status,
+            statusLabel,
+            trainer: d.coachName || "N/A",
+            schedule: formatSchedule(d.startTime),
+            location: d.roomName || "N/A",
+            spots,
+            img: classImages[index % classImages.length],
+          };
+        });
+        setClasses(mapped);
+      } catch (error) {
+        console.error("Error fetching classes:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchClasses();
+  }, []);
+
   const filtered = classes.filter((c) => {
-    if (subject && c.title !== subject) return false
+    if (subject && !c.title.toLowerCase().includes(subject.toLowerCase())) return false
     return true
   })
 
