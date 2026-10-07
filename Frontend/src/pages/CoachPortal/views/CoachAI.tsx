@@ -1,193 +1,192 @@
+/**
+ * CO-09 — AI gợi ý bài tập
+ * AI tạo bản nháp, Coach duyệt rồi mới lưu/giao.
+ * Không tự giao khi AI vừa trả kết quả.
+ * Dùng dữ liệu mẫu với nhãn "Gợi ý minh họa" vì chưa có AI backend.
+ */
 import { useState } from "react";
-import { IconSearch, IconChevronDown, IconRefresh } from "../Icons";
-import { A } from "../constants";
+import { MOCK_MEMBERS } from "../services/mockData";
 
-const AI_EXERCISES = [
-  { icon: "🔥", name: "HIIT Tabata 20/10 Core Burn", duration: "45 phút", target: "Đốt mỡ bụng", level: "Cao" },
-  { icon: "🥊", name: "Shadow Boxing & Footwork Drills", duration: "30 phút", target: "Tăng sức bền", level: "Trung bình" },
-  { icon: "🏋️", name: "Kettlebell Swings & Thrusters", duration: "25 phút", target: "Sức mạnh cơ trung tâm", level: "Cao" },
-  { icon: "💜", name: "Cool-down & Stretch giãn cơ sâu", duration: "15 phút", target: "Phục hồi cơ bắp", level: "Thấp" },
-]
+const SPORT_OPTIONS = ["Yoga", "Gym", "Bơi", "CrossFit", "Cầu lông"];
+const LEVEL_OPTIONS = ["Cơ bản", "Trung cấp", "Nâng cao"];
+const EQUIPMENT_OPTIONS = ["Thảm tập", "Tạ tay", "Hồ bơi", "Xà đơn", "Dây kháng lực", "Không dụng cụ"];
 
-const groupClasses = [
-  { name: "Yoga Gây & Dây Cơ Bản", subject: "Yoga", members: 12, next: "Thứ Sáu - 07:00" },
-  { name: "Gym Group BodyCombat", subject: "Cardio", members: 20, next: "Thứ Bảy - 09:00" },
-  { name: "CrossFit Thể Lực Cao Độ", subject: "Thể lực", members: 8, next: "Chủ nhật - 17:00" },
-]
+const AI_SUGGESTIONS: Record<string, { name: string; reps: string; note: string }[]> = {
+  Yoga: [
+    { name: "Tư thế Núi (Tadasana)", reps: "5 phút", note: "Giữ lưng thẳng, thở đều" },
+    { name: "Tư thế Chó úp mặt (Down Dog)", reps: "3 × 30s", note: "" },
+    { name: "Tư thế Chiến binh I (Warrior I)", reps: "3 × 30s mỗi bên", note: "" },
+    { name: "Tư thế Em bé (Balasana)", reps: "2 phút", note: "Thư giãn" },
+  ],
+  Gym: [
+    { name: "Squat", reps: "4 × 12", note: "Giữ gót chân chạm sàn" },
+    { name: "Push-up", reps: "3 × 15", note: "" },
+    { name: "Plank", reps: "3 × 45s", note: "Giữ hông không sụp" },
+    { name: "Dumbbell Row", reps: "3 × 12 mỗi bên", note: "" },
+  ],
+  Bơi: [
+    { name: "Khởi động nước", reps: "200m chậm", note: "" },
+    { name: "Kick board (chân)", reps: "4 × 50m", note: "Tập trung vào cú đập chân" },
+    { name: "Freestyle kỹ thuật", reps: "4 × 100m", note: "Đếm nhịp tay" },
+  ],
+  CrossFit: [
+    { name: "Box Jump", reps: "3 × 10", note: "" },
+    { name: "Kettlebell Swing", reps: "3 × 15", note: "Hip hinge, không dùng lưng" },
+    { name: "Burpee", reps: "3 × 10", note: "" },
+    { name: "Air Squat", reps: "3 × 20", note: "" },
+  ],
+  "Cầu lông": [
+    { name: "Khởi động", reps: "10 phút", note: "" },
+    { name: "Di chuyển footwork 4 góc", reps: "5 × 2 phút", note: "" },
+    { name: "Tập cầu cao", reps: "3 × 20 cái", note: "" },
+    { name: "Tập smash", reps: "3 × 15 cái", note: "" },
+  ],
+};
 
-const levelColorAI: Record<string, string> = {
-  Cao: "#EF4444",
-  "Trung bình": "#F97316",
-  Thấp: "#10B981",
-}
+export default function CoachAI() {
+  const [sport, setSport] = useState("Yoga");
+  const [level, setLevel] = useState("Cơ bản");
+  const [goal, setGoal] = useState("");
+  const [equipment, setEquipment] = useState<string[]>([]);
+  const [targetId, setTargetId] = useState(MOCK_MEMBERS[0]?.id || "");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [draft, setDraft] = useState<{ name: string; reps: string; note: string }[] | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
 
-export function CoachAI() {
-  const [studentOpen, setStudentOpen] = useState(true)
+  const toggleEquipment = (e: string) => {
+    setEquipment((prev) => prev.includes(e) ? prev.filter((x) => x !== e) : [...prev, e]);
+  };
+
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    setDraft(null);
+    setSaved(false);
+    setFeedback(null);
+    // Giả lập delay AI (chưa có backend)
+    await new Promise((r) => setTimeout(r, 1500));
+    setDraft(AI_SUGGESTIONS[sport] || AI_SUGGESTIONS.Yoga);
+    setIsGenerating(false);
+  };
+
+  const handleSaveDraft = () => {
+    if (!draft) return;
+    setSaved(true);
+    setFeedback("Gợi ý đã được lưu thành Nháp giáo án (Demo). Bạn có thể vào Giáo án để sửa và giao.");
+  };
 
   return (
-    <div className="cp-ai-screen">
-      <div className="cp-ai-selector">
-        <label className="cp-student-select" onClick={() => setStudentOpen(!studentOpen)}>
-          <IconSearch />
-          <span>Chọn học viên để gợi ý bài tập...</span>
-          <IconChevronDown />
-        </label>
-        <span className="cp-selected-badge">Đã chọn 1 học viên</span>
+    <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-400 max-w-3xl">
+      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">AI gợi ý bài tập</h1>
+      <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-xl px-4 py-3 text-purple-800 dark:text-purple-200 text-sm">
+        <strong>Lưu ý:</strong> Chưa có AI backend — kết quả dưới đây là{" "}
+        <strong>Gợi ý minh họa</strong>, không phải phản hồi AI thật.
+        Coach cần duyệt trước khi lưu hoặc giao.
       </div>
 
-      <div className="cp-ai-student-card">
-        <img src={`${A}/c814c.png`} alt="Nguyễn Minh Khoa" className="cp-ai-student-avatar" />
-        <div className="cp-ai-student-info">
-          <strong>Nguyễn Minh Khoa</strong>
-          <span className="cp-ai-student-tag">HIIT & Boxing</span>
+      {/* Step 1: Input */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 flex flex-col gap-4">
+        <h2 className="font-semibold text-slate-800 dark:text-slate-100">1. Thông tin gợi ý</h2>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Học viên / Lớp</label>
+            <select value={targetId} onChange={(e) => setTargetId(e.target.value)} className={selectCls}>
+              {MOCK_MEMBERS.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Môn</label>
+            <select value={sport} onChange={(e) => { setSport(e.target.value); setDraft(null); }} className={selectCls}>
+              {SPORT_OPTIONS.map((s) => <option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Trình độ</label>
+            <select value={level} onChange={(e) => setLevel(e.target.value)} className={selectCls}>
+              {LEVEL_OPTIONS.map((l) => <option key={l}>{l}</option>)}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Mục tiêu</label>
+            <input type="text" value={goal} onChange={(e) => setGoal(e.target.value)}
+              placeholder="VD: Giảm cân, tăng cơ..." className={inputCls} />
+          </div>
         </div>
-        <div className="cp-ai-student-stat">
-          <p className="cp-ai-stat-label">TRÌNH ĐỘ</p>
-          <p className="cp-ai-stat-val">Trung bình</p>
+
+        <div className="flex flex-col gap-2">
+          <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Thiết bị có sẵn</label>
+          <div className="flex flex-wrap gap-2">
+            {EQUIPMENT_OPTIONS.map((e) => (
+              <button key={e} type="button" onClick={() => toggleEquipment(e)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${equipment.includes(e) ? "bg-teal-600 text-white border-teal-600" : "border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"}`}>
+                {e}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="cp-ai-student-stat">
-          <p className="cp-ai-stat-label">MỤC TIÊU HUẤN LUYỆN</p>
-          <p className="cp-ai-stat-val">Giảm mỡ & Tăng sức bền</p>
-        </div>
-        <div className="cp-ai-student-stat">
-          <p className="cp-ai-stat-label">ĐÃ LUYỆN TẬP</p>
-          <p className="cp-ai-stat-val">24 buổi</p>
-        </div>
-        <div className="cp-ai-student-stat">
-          <p className="cp-ai-stat-label">BUỔI GẦN NHẤT</p>
-          <p className="cp-ai-stat-val">25/10/2026</p>
-        </div>
+
+        <button type="button" onClick={handleGenerate} disabled={isGenerating}
+          className="w-full py-3 bg-gradient-to-r from-purple-600 to-teal-600 text-white rounded-xl font-semibold text-sm hover:from-purple-700 hover:to-teal-700 transition-all shadow-md disabled:opacity-60">
+          {isGenerating ? "Đang tạo gợi ý... ✨" : "✨ Tạo gợi ý bài tập"}
+        </button>
       </div>
 
-      <div className="cp-ai-body">
-        <div className="cp-ai-suggestions">
-          <div className="cp-ai-sug-head">
-            <div>
-              <h2 className="cp-panel-title">Bài tập được AI đề xuất</h2>
-              <p className="cp-ai-sug-sub">Dựa trên thể lực, lịch sử tập luyện và mục tiêu đốt mỡ</p>
-            </div>
-            <span className="cp-ai-badge">✦ Được tạo bởi AI</span>
+      {/* Step 2: Draft result */}
+      {(isGenerating || draft) && (
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-slate-800 dark:text-slate-100">2. Bản nháp gợi ý</h2>
+            <span className="text-xs px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full border border-purple-200 dark:border-purple-700 font-semibold">
+              Gợi ý minh họa — chưa phải AI thật
+            </span>
           </div>
 
-          <div className="cp-ai-plan-card">
-            <p className="cp-ai-plan-title">Kế hoạch tập luyện tuần tới (Tuần 5)</p>
-            <p className="cp-ai-plan-desc">
-              Tập trung cải thiện chỉ số Sức bền tim mạch thông qua chuỗi bài HIIT cường độ
-              cao ngắt quãng kết hợp Power Boxing.
-            </p>
-            <div className="cp-ai-exercise-list">
-              {AI_EXERCISES.map((ex) => (
-                <div className="cp-ai-exercise-item" key={ex.name}>
-                  <span className="cp-ai-ex-icon">{ex.icon}</span>
-                  <div className="cp-ai-ex-info">
-                    <strong>{ex.name}</strong>
-                    <span className="cp-ai-ex-sub">{ex.duration} • {ex.target}</span>
+          {isGenerating ? (
+            <div className="flex flex-col gap-2 animate-pulse">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-10 bg-slate-100 dark:bg-slate-700 rounded-xl" />
+              ))}
+            </div>
+          ) : draft && (
+            <>
+              <div className="flex flex-col gap-2">
+                {draft.map((ex, i) => (
+                  <div key={i} className="flex items-center gap-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl p-3">
+                    <span className="text-xs font-bold text-slate-400 w-5 shrink-0">{i + 1}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-slate-800 dark:text-slate-100 text-sm">{ex.name}</div>
+                      <div className="text-xs text-slate-400 mt-0.5">{ex.reps}{ex.note ? ` · ${ex.note}` : ""}</div>
+                    </div>
                   </div>
-                  <span
-                    className="cp-ai-ex-level"
-                    style={{ color: levelColorAI[ex.level] }}
-                  >
-                    {ex.level}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <div className="cp-ai-plan-actions">
-              <button className="cp-btn-primary cp-btn-full" type="button">
-                Áp dụng kế hoạch này
-              </button>
-              <button className="cp-btn-outline" type="button">
-                <IconRefresh /> Tạo gợi ý mới
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="cp-ai-analysis">
-          <div className="cp-ai-analysis-card">
-            <h3 className="cp-profile-card-title">Phân tích thể lực AI</h3>
-            {[
-              { label: "Sức bền (Cardio)", pct: 72, color: "#3B82F6" },
-              { label: "Sức mạnh (Power)", pct: 58, color: "#8B5CF6" },
-              { label: "Dẻo dai (Flexibility)", pct: 45, color: "#F97316" },
-            ].map((bar) => (
-              <div key={bar.label} className="cp-bar-row">
-                <div className="cp-bar-head">
-                  <span>{bar.label}</span>
-                  <span style={{ color: bar.color, fontFamily: "var(--font-bold)" }}>{bar.pct}%</span>
-                </div>
-                <div className="cp-bar-track">
-                  <div
-                    className="cp-bar-fill"
-                    style={{ width: `${bar.pct}%`, background: bar.color }}
-                  />
-                </div>
+                ))}
               </div>
-            ))}
-            <div className="cp-ai-kcal">
-              <span>⚡</span>
-              <div>
-                <p className="cp-ai-kcal-label">TIÊU THỤ NĂNG LƯỢNG TRUNG BÌNH</p>
-                <p className="cp-ai-kcal-val">520 kcal / buổi tập</p>
-              </div>
-            </div>
-          </div>
 
-          <div className="cp-ai-analysis-card">
-            <div className="cp-bar-head">
-              <h3 className="cp-profile-card-title" style={{ margin: 0 }}>Lịch sử tiến bộ</h3>
-              <span className="cp-ai-trend">Xu hướng 4 tuần</span>
-            </div>
-            <svg width="100%" height="80" viewBox="0 0 220 80" preserveAspectRatio="none">
-              <polyline
-                points="10,60 70,45 130,30 190,10"
-                fill="none"
-                stroke="#3B82F6"
-                strokeWidth="2"
-                strokeLinejoin="round"
-              />
-              {[10, 70, 130, 190].map((x, i) => (
-                <circle key={i} cx={x} cy={[60, 45, 30, 10][i]} r="4" fill="#3B82F6" />
-              ))}
-            </svg>
-            <div className="cp-chart-labels">
-              {["Tuần 1", "Tuần 2", "Tuần 3", "Tuần 4 (Hiện tại)"].map((l) => (
-                <span key={l}>{l}</span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="cp-ai-group">
-        <h2 className="cp-panel-title">Gợi ý bài tập cho lớp nhóm</h2>
-        <table className="cp-curriculum-table">
-          <thead>
-            <tr>
-              <th>TÊN LỚP HỌC</th>
-              <th>BỘ MÔN</th>
-              <th>SỐ HỘI VIÊN</th>
-              <th>GIỜ HỌC TIẾP THEO</th>
-              <th>HÀNH ĐỘNG AI</th>
-            </tr>
-          </thead>
-          <tbody>
-            {groupClasses.map((g) => (
-              <tr key={g.name}>
-                <td>{g.name}</td>
-                <td>{g.subject}</td>
-                <td>{g.members} học viên</td>
-                <td>{g.next}</td>
-                <td>
-                  <button className="cp-ai-action-btn" type="button">
-                    ✦ Tạo giáo án AI cho lớp
+              {/* Step 3: Coach action */}
+              {!saved ? (
+                <div className="flex gap-3 flex-wrap pt-2">
+                  <button type="button" onClick={handleSaveDraft}
+                    className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-md shadow-teal-500/20">
+                    Lưu thành Nháp giáo án (Demo)
                   </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                  <button type="button" onClick={() => { setDraft(null); }}
+                    className="px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">
+                    Bỏ gợi ý này
+                  </button>
+                  <p className="w-full text-xs text-slate-400">
+                    ⚠ Không tự động giao. Coach cần xem lại và xác nhận từng bước.
+                  </p>
+                </div>
+              ) : (
+                <div className="text-green-600 dark:text-green-400 text-sm font-medium">{feedback}</div>
+              )}
+            </>
+          )}
+        </div>
+      )}
     </div>
-  )
+  );
 }
+
+const selectCls = "border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 w-full";
+const inputCls = "border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 w-full";
