@@ -9,6 +9,7 @@ namespace SmartGym.Application.Interfaces.Repositories;
 public interface IGroupClassRepository
 {
     Task<GroupClass?> GetByIdAsync(Guid id);
+    Task<ClassDetailResponse?> GetClassDetailByIdAsync(Guid id);
     Task<IEnumerable<GroupClass>> GetClassesByCoachAndDateAsync(Guid coachId, DateTime date);
     Task<IEnumerable<ClassResponse>> GetAvailableClassesAsync();
     Task AddAsync(GroupClass groupClass);

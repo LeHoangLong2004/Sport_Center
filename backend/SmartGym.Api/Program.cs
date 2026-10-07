@@ -183,6 +183,13 @@ app.MapGet("/api/classes/available", async (ClassService service) =>
     return Results.Ok(classes);
 });
 
+app.MapGet("/api/classes/{id}", async (Guid id, ClassService service) =>
+{
+    var classDetail = await service.GetClassDetailAsync(id);
+    if (classDetail == null) return Results.NotFound(new { message = "Class not found" });
+    return Results.Ok(classDetail);
+});
+
 app.MapPost("/api/classes/{id}/book", async (Guid id, HttpContext httpContext, ClassService service) =>
 {
     var userIdClaim = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
