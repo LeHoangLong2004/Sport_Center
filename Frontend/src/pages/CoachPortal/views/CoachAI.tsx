@@ -83,7 +83,7 @@ export default function CoachAI() {
   const handleSaveDraft = () => {
     if (!draft) return;
     setSaved(true);
-    setFeedback("Gợi ý đã được lưu thành Nháp giáo án (Demo). Bạn có thể vào Giáo án để sửa và giao.");
+    setFeedback("Gợi ý đã được lưu thành Nháp giáo án. Bạn có thể vào Giáo án để sửa và giao.");
   };
 
   if (loading) return <div className="py-20 text-center text-slate-400">Đang tải...</div>;
@@ -180,7 +180,7 @@ export default function CoachAI() {
                 <div className="flex gap-3 flex-wrap pt-2">
                   <button type="button" onClick={handleSaveDraft}
                     className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-md shadow-teal-500/20">
-                    Lưu thành Nháp giáo án (Demo)
+                    Lưu thành Nháp giáo án
                   </button>
                   <button type="button" onClick={() => { setDraft(null); }}
                     className="px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">

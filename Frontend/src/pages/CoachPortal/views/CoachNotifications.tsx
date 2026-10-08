@@ -1,9 +1,9 @@
 /**
  * CO-08 — Thông báo & Bài tập về nhà
  * Chọn lớp/học viên có quyền. Xem lịch sử.
- * Demo: chỉ lưu mô phỏng, không gửi email/tin thật.
  */
 import { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { CoachAPI } from "../services/api";
 import type { MockNotification, MockSession, MockMember } from "../services/api";
 
@@ -39,8 +39,8 @@ export default function CoachNotifications() {
       if (uniqueClassesMap.size > 0) {
         setTargetId(Array.from(uniqueClassesMap.keys())[0]);
       }
-      setLoading(false);
-    }).catch(console.error);
+    }).catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
   const uniqueClasses = useMemo(() => {
@@ -81,7 +81,7 @@ export default function CoachNotifications() {
 
       {feedback && (
         <div className="rounded-xl px-4 py-2 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-700 text-sm">
-          ⚠️ Demo — {feedback}
+          {feedback}
         </div>
       )}
 
@@ -118,15 +118,12 @@ export default function CoachNotifications() {
       </div>
 
       {/* Form modal */}
-      {showForm && (
+      {showForm && createPortal(
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg p-6 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">Tạo thông báo</h2>
               <button type="button" onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
-            </div>
-            <div className="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-3 py-2">
-              ⚠️ Demo — chỉ lưu mô phỏng, không gửi email/tin nhắn thật.
             </div>
 
             {/* Loại */}
@@ -183,11 +180,12 @@ export default function CoachNotifications() {
               </button>
               <button type="button" onClick={handleSend} disabled={isSending}
                 className="px-5 py-2 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 disabled:bg-slate-300">
-                {isSending ? "Đang gửi..." : "Gửi (Demo)"}
+                {isSending ? "Đang gửi..." : "Gửi thông báo"}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
