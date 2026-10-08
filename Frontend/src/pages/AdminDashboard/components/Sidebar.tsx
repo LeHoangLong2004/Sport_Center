@@ -93,7 +93,7 @@ export function Sidebar({ page, setPage }: { page: AdminPage; setPage: (p: Admin
             </button>
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); window.location.hash = "home"; window.location.reload(); }}
+              onClick={(e) => { e.stopPropagation(); localStorage.removeItem("user"); localStorage.removeItem("accessToken"); window.location.hash = "login"; window.location.reload(); }}
               className="p-1.5 text-[#94a3b8] hover:text-red-400 hover:bg-red-400/10 rounded-md transition-colors"
               title="Đăng xuất"
             >

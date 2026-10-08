@@ -96,8 +96,18 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-var app = builder.Build();
+// ── CORS ──
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 
+var app = builder.Build();
 // ── Initialize Database Schema ──
 using (var scope = app.Services.CreateScope())
 {
@@ -162,6 +172,7 @@ using (var scope = app.Services.CreateScope())
 
 // ── Middleware pipeline ──
 
+app.UseCors("AllowAll");
 app.UseAuthentication();
 
 app.UseAuthorization();
