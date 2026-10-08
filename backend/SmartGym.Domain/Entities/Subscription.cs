@@ -13,8 +13,8 @@ public class Subscription
 
     public string? BillingPeriod { get; set; } // 'monthly' | 'yearly'
     public decimal TotalAmount { get; set; }
-    public string? PaymentMethod { get; set; } // 'qr' | 'card' | 'wallet' | 'counter'
-    public string PaymentStatus { get; set; } = "pending";
+    public SmartGym.Domain.Enums.PaymentMethod? PaymentMethod { get; set; }
+    public SmartGym.Domain.Enums.PaymentStatus PaymentStatus { get; set; } = SmartGym.Domain.Enums.PaymentStatus.Pending;
     
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
