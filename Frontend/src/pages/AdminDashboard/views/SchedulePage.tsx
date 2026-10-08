@@ -12,6 +12,20 @@ export function SchedulePage() {
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [editClassData, setEditClassData] = useState<any>(null);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
+  const facilities = ["Studio 1 (Yoga/Pilates)", "Studio 2 (Dance)", "Studio 3 (Cycling)", "Gym Area"];
+
+  const handleRoomChange = (room: string) => {
+    if (room === 'Tất cả') {
+      setSelectedRooms([]);
+    } else {
+      setSelectedRooms(prev => 
+        prev.includes(room) ? prev.filter(r => r !== room) : [...prev, room]
+      );
+    }
+  };
+
   // Lấy ngày bắt đầu của tuần hiện tại (Thứ 2)
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     const d = new Date();
@@ -34,7 +48,7 @@ export function SchedulePage() {
 
   const fetchClasses = async () => {
     try {
-      const res = await fetch("/api/classes/available");
+      const res = await fetch("/api/classes/all");
       if (res.ok) {
         const data = await res.json();
         const formattedClasses = data.map((c: any, i: number) => {
@@ -47,14 +61,24 @@ export function SchedulePage() {
           const hourIndex = (startHour - 6) / 2; 
           const durationIndex = (endHour - startHour) / 2;
 
-          const colorOptions = [
-            { bg: 'bg-blue-50 border-blue-200 border-l-blue-500', text: 'text-blue-700' },
-            { bg: 'bg-emerald-50 border-emerald-200 border-l-emerald-500', text: 'text-emerald-700' },
-            { bg: 'bg-violet-50 border-violet-200 border-l-violet-500', text: 'text-violet-700' },
-            { bg: 'bg-orange-50 border-orange-200 border-l-orange-500', text: 'text-orange-700' },
-            { bg: 'bg-rose-50 border-rose-200 border-l-rose-500', text: 'text-rose-700' },
-          ];
-          const color = colorOptions[i % colorOptions.length];
+          let colorBg = '';
+          let colorText = '';
+
+          if (c.status === false) {
+            colorBg = 'bg-gray-100 border-gray-300 border-l-gray-400 opacity-60';
+            colorText = 'text-gray-500 line-through';
+          } else {
+            const colorOptions = [
+              { bg: 'bg-blue-50 border-blue-200 border-l-blue-500', text: 'text-blue-700' },
+              { bg: 'bg-emerald-50 border-emerald-200 border-l-emerald-500', text: 'text-emerald-700' },
+              { bg: 'bg-violet-50 border-violet-200 border-l-violet-500', text: 'text-violet-700' },
+              { bg: 'bg-orange-50 border-orange-200 border-l-orange-500', text: 'text-orange-700' },
+              { bg: 'bg-rose-50 border-rose-200 border-l-rose-500', text: 'text-rose-700' },
+            ];
+            const color = colorOptions[i % colorOptions.length];
+            colorBg = color.bg;
+            colorText = color.text;
+          }
 
           return {
             id: c.id,
@@ -65,9 +89,10 @@ export function SchedulePage() {
             day: day,
             hour: hourIndex,
             duration: durationIndex,
-            color: color.bg,
-            text: color.text,
-            rawStart: start
+            color: colorBg,
+            text: colorText,
+            rawStart: start,
+            isCancelled: c.status === false
           };
         });
         setClasses(formattedClasses);
@@ -97,7 +122,23 @@ export function SchedulePage() {
   const weekEnd = new Date(currentWeekStart);
   weekEnd.setDate(weekEnd.getDate() + 6);
   weekEnd.setHours(23, 59, 59, 999);
-  const classesThisWeek = classes.filter(c => c.rawStart >= currentWeekStart && c.rawStart <= weekEnd);
+  
+  let classesThisWeek = classes.filter(c => c.rawStart >= currentWeekStart && c.rawStart <= weekEnd);
+
+  if (searchQuery.trim()) {
+    const q = searchQuery.toLowerCase();
+    classesThisWeek = classesThisWeek.filter(c => 
+      c.name.toLowerCase().includes(q) || 
+      (c.coach && c.coach.toLowerCase().includes(q))
+    );
+  }
+
+  if (selectedRooms.length > 0) {
+    // Chỉ lấy phần tên chính của phòng (ví dụ: "Studio 1 (Yoga/Pilates)" -> "Studio 1") để lọc chính xác
+    classesThisWeek = classesThisWeek.filter(c => 
+      selectedRooms.some(r => c.room.includes(r.split(" (")[0]))
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
@@ -127,15 +168,34 @@ export function SchedulePage() {
         <div className="w-[240px] shrink-0 flex flex-col gap-4">
           <div className="bg-white border border-[#cbd5e1] flex gap-2 items-center px-3 py-2.5 rounded-lg">
             <img src={iSearch2} alt="" className="size-4 shrink-0" />
-            <input placeholder="Tìm lớp, HLV..." className="flex-1 text-sm outline-none" />
+            <input 
+              placeholder="Tìm lớp, HLV..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 text-sm outline-none" 
+            />
           </div>
           
           <div className="bg-white border border-[#e2e8f0] rounded-xl p-4 drop-shadow-sm">
             <p className="font-bold text-[#0f172a] text-sm mb-3">Bộ lọc Phòng tập</p>
             <div className="flex flex-col gap-2">
-              {["Tất cả", "Studio 1 (Yoga/Pilates)", "Studio 2 (Dance)", "Studio 3 (Cycling)", "Gym Area"].map((r, i) => (
+              <label className="flex gap-2 items-center cursor-pointer group">
+                <input 
+                  type="checkbox" 
+                  checked={selectedRooms.length === 0}
+                  onChange={() => handleRoomChange('Tất cả')}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
+                />
+                <span className="text-[#475569] text-sm group-hover:text-[#0f172a]">Tất cả</span>
+              </label>
+              {facilities.map((r, i) => (
                 <label key={i} className="flex gap-2 items-center cursor-pointer group">
-                  <input type="checkbox" defaultChecked={i===0} className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                  <input 
+                    type="checkbox" 
+                    checked={selectedRooms.includes(r)}
+                    onChange={() => handleRoomChange(r)}
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
+                  />
                   <span className="text-[#475569] text-sm group-hover:text-[#0f172a]">{r}</span>
                 </label>
               ))}
@@ -202,7 +262,7 @@ export function SchedulePage() {
                         <div 
                           key={i} 
                           onClick={() => setSelectedClassId(c.id)}
-                          className={`absolute w-full rounded-md border border-l-4 p-1.5 flex flex-col justify-between pointer-events-auto cursor-pointer hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 overflow-hidden ${c.color}`}
+                          className={`absolute w-full rounded-md border border-l-4 p-1 flex flex-col justify-between pointer-events-auto cursor-pointer hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 overflow-hidden ${c.color}`}
                           style={{ 
                             top: `${c.hour * 6}rem`, 
                             height: `calc(${c.duration * 6}rem - 2px)`, 
@@ -210,19 +270,19 @@ export function SchedulePage() {
                             zIndex: 10
                           }}
                         >
-                          <div>
-                            <p className={`font-bold text-[11px] leading-tight truncate ${c.text}`}>{c.name}</p>
-                            <div className={`flex items-center gap-1 mt-1 opacity-80 ${c.text}`}>
-                              <svg className="w-2.5 h-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                              <p className="text-[9px] font-medium truncate">{c.room}</p>
-                            </div>
+                          <div className="flex justify-between items-start gap-1">
+                            <p className={`font-bold text-[10px] leading-tight truncate ${c.text}`}>{c.name}</p>
+                            <span className="bg-white/90 px-1 py-0.5 rounded text-[8px] font-bold shrink-0 shadow-sm border border-black/5 leading-none">{c.enrolled}</span>
                           </div>
-                          <div className="flex justify-between items-center mt-1 pt-1 border-t border-black/5">
-                            <div className="flex items-center gap-1 min-w-0">
-                              <svg className="w-2.5 h-2.5 shrink-0 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                              <p className={`text-[9px] font-medium truncate pr-1 ${c.text}`}>{c.coach}</p>
+                          <div className={`flex items-center justify-between opacity-80 mt-auto ${c.text}`}>
+                            <div className="flex items-center gap-0.5 truncate min-w-0 pr-1">
+                              <svg className="w-2.5 h-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                              <p className="text-[8px] font-medium truncate">{c.room}</p>
                             </div>
-                            <span className="bg-white/90 px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0 shadow-sm border border-black/5">{c.enrolled}</span>
+                            <div className="flex items-center gap-0.5 truncate shrink-0">
+                              <svg className="w-2.5 h-2.5 shrink-0 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                              <p className={`text-[8px] font-medium truncate ${c.text}`}>{c.coach}</p>
+                            </div>
                           </div>
                         </div>
                       ))}

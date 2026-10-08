@@ -81,6 +81,11 @@ public sealed class ClassService
         return (true, null);
     }
 
+    public async Task<IEnumerable<ClassResponse>> GetAllClassesAsync()
+    {
+        return await _classRepository.GetAllClassesAsync();
+    }
+
     public async Task<IEnumerable<ClassResponse>> GetAvailableClassesAsync()
     {
         return await _classRepository.GetAvailableClassesAsync();

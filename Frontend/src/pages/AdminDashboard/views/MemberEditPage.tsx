@@ -16,11 +16,17 @@ export function MemberEditPage({ memberData, onBack }: { memberData?: any, onBac
   };
   const [isSaving, setIsSaving] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(member.avatar);
+  const [toast, setToast] = useState<{msg: string, type: "success"|"error"}|null>(null);
+
+  const showToast = (msg: string, type: "success"|"error") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!member.realId) {
-      alert("Lỗi: Không tìm thấy ID của hội viên.");
+      showToast("Lỗi: Không tìm thấy ID của hội viên.", "error");
       return;
     }
 
@@ -47,13 +53,13 @@ export function MemberEditPage({ memberData, onBack }: { memberData?: any, onBac
         body: JSON.stringify(payload)
       });
       if (res.ok) {
-        alert("Lưu thông tin thành công!");
-        onBack();
+        showToast("Lưu thông tin thành công!", "success");
+        setTimeout(onBack, 1500);
       } else {
-        alert("Lưu thất bại.");
+        showToast("Lưu thất bại.", "error");
       }
     } catch {
-      alert("Lỗi kết nối.");
+      showToast("Lỗi kết nối.", "error");
     } finally {
       setIsSaving(false);
     }
@@ -65,13 +71,25 @@ export function MemberEditPage({ memberData, onBack }: { memberData?: any, onBac
   };
 
   return (
-    <form onSubmit={handleSave} className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
-      <div>
-        <p className="text-[#64748b] text-sm">Cập nhật thông tin cá nhân và chỉ số của hội viên {member.name} ({member.id})</p>
-      </div>
-      <div className="flex gap-6">
-        {/* main form */}
-        <div className="flex flex-col gap-5 flex-1 min-w-0">
+    <div className="relative flex-1 min-h-0 flex flex-col">
+      {toast && (
+        <div className={`absolute top-4 right-1/2 translate-x-1/2 z-50 flex items-center gap-2 px-5 py-3 rounded-lg shadow-lg shadow-black/10 border ${toast.type === "success" ? "bg-[#f0fdf4] border-[#bbf7d0] text-[#15803d]" : "bg-[#fef2f2] border-[#fecaca] text-[#b91c1c]"} transition-all animate-in slide-in-from-top-4 fade-in duration-300`}>
+          <div className={`flex items-center justify-center size-6 rounded-full ${toast.type === "success" ? "bg-[#22c55e]" : "bg-[#ef4444]"}`}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              {toast.type === "success" ? <polyline points="20 6 9 17 4 12"></polyline> : <line x1="18" y1="6" x2="6" y2="18"></line>}
+              {toast.type === "error" && <line x1="6" y1="6" x2="18" y2="18"></line>}
+            </svg>
+          </div>
+          <span className="font-bold text-sm tracking-wide">{toast.msg}</span>
+        </div>
+      )}
+      <form onSubmit={handleSave} className="flex flex-col gap-6 p-8 flex-1 overflow-y-auto">
+        <div>
+          <p className="text-[#64748b] text-sm">Cập nhật thông tin cá nhân và chỉ số của hội viên {member.name} ({member.id})</p>
+        </div>
+        <div className="flex gap-6">
+          {/* main form */}
+          <div className="flex flex-col gap-5 flex-1 min-w-0">
           {/* personal info */}
           <div className="bg-white border border-[#e2e8f0] p-6 rounded-xl">
             <p className="font-extrabold text-[#0f172a] text-base mb-5">Thông tin cá nhân</p>
@@ -161,5 +179,6 @@ export function MemberEditPage({ memberData, onBack }: { memberData?: any, onBac
         </button>
       </div>
     </form>
+    </div>
   )
 }
