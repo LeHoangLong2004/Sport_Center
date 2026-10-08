@@ -10,8 +10,8 @@ public class SubscriptionResponse
     public string? PackageName { get; set; }
     public string? BillingPeriod { get; set; }
     public decimal TotalAmount { get; set; }
-    public string? PaymentMethod { get; set; }
-    public string PaymentStatus { get; set; } = null!;
+    public SmartGym.Domain.Enums.PaymentMethod? PaymentMethod { get; set; }
+    public SmartGym.Domain.Enums.PaymentStatus PaymentStatus { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public bool AutoRenew { get; set; }
@@ -22,5 +22,5 @@ public class CreateSubscriptionRequest
 {
     public string PackageId { get; set; } = null!;
     public string BillingPeriod { get; set; } = "monthly"; // monthly, yearly
-    public string PaymentMethod { get; set; } = "credit_card"; // credit_card, cash, bank_transfer
+    public SmartGym.Domain.Enums.PaymentMethod PaymentMethod { get; set; } = SmartGym.Domain.Enums.PaymentMethod.CreditCard;
 }
