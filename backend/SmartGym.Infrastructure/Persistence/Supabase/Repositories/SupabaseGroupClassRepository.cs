@@ -98,6 +98,43 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
         return response.Models.Select(x => x.ToDomain());
     }
 
+    public async Task<IEnumerable<ClassResponse>> GetAllClassesAsync()
+    {
+        var classResponse = await _client.From<GroupClassModel>().Get();
+        var classModels = classResponse.Models;
+        if (!classModels.Any()) return Enumerable.Empty<ClassResponse>();
+
+        var sports = await _dbContext.Database.SqlQueryRaw<SportSqlRawModel>("SELECT id, name FROM sports").ToListAsync();
+        var facilities = await _dbContext.Database.SqlQueryRaw<FacilitySqlRawModel>("SELECT id, name FROM facilities").ToListAsync();
+        var coaches = await _dbContext.Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches").ToListAsync();
+        var users = await _dbContext.Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number FROM users").ToListAsync();
+
+        return classModels.Select(c =>
+        {
+            var sport = sports.FirstOrDefault(s => s.Id == c.SportId);
+            var facility = facilities.FirstOrDefault(f => f.Id == c.FacilityId);
+            var coach = coaches.FirstOrDefault(co => co.Id == c.CoachId);
+            var user = coach != null ? users.FirstOrDefault(u => u.Id == coach.UserId) : null;
+
+            return new ClassResponse(
+                Id: c.Id,
+                SportId: c.SportId,
+                SportName: sport?.Name ?? "Unknown Sport",
+                FacilityId: c.FacilityId,
+                FacilityName: facility?.Name ?? "Unknown Facility",
+                CoachId: c.CoachId,
+                CoachName: user?.FullName ?? "N/A",
+                ClassName: c.ClassName,
+                ScheduleTime: c.ScheduleTime,
+                DurationMinutes: c.DurationMinutes,
+                Capacity: c.Capacity,
+                CurrentEnrolled: c.CurrentEnrolled,
+                AvailableSpots: c.Capacity - c.CurrentEnrolled,
+                Status: c.Status
+            );
+        }).OrderBy(x => x.ScheduleTime).ToList();
+    }
+
     public async Task<IEnumerable<ClassResponse>> GetAvailableClassesAsync()
     {
         var classResponse = await _client.From<GroupClassModel>()
@@ -133,7 +170,8 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
                 DurationMinutes: c.DurationMinutes,
                 Capacity: c.Capacity,
                 CurrentEnrolled: c.CurrentEnrolled,
-                AvailableSpots: c.Capacity - c.CurrentEnrolled
+                AvailableSpots: c.Capacity - c.CurrentEnrolled,
+                Status: c.Status
             );
         }).OrderBy(x => x.ScheduleTime).ToList();
     }
@@ -210,10 +248,14 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
                   DO UPDATE SET status = 'confirmed', subscription_id = {2}",
                 userId, classId, subscriptionId);
 
-            await _dbContext.Database.ExecuteSqlRawAsync(
-                @"INSERT INTO notifications (user_id, title, message)
-                  VALUES ({0}, 'Đặt lớp thành công', 'Bạn đã đặt chỗ thành công cho lớp học.')",
-                userId);
+            // try
+            // {
+            //     await _dbContext.Database.ExecuteSqlRawAsync(
+            //         @"INSERT INTO notifications (user_id, title, message)
+            //           VALUES ({0}, 'Đặt lớp thành công', 'Bạn đã đặt chỗ thành công cho lớp học.')",
+            //         userId);
+            // }
+            // catch { /* Ignore missing table */ }
 
             await transaction.CommitAsync();
             return (true, null);
@@ -248,10 +290,14 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
                   WHERE id = {0}",
                 classId);
 
-            await _dbContext.Database.ExecuteSqlRawAsync(
-                @"INSERT INTO notifications (user_id, title, message)
-                  VALUES ({0}, 'Hủy đặt lớp thành công', 'Bạn đã hủy chỗ thành công cho lớp học.')",
-                userId);
+            // try
+            // {
+            //     await _dbContext.Database.ExecuteSqlRawAsync(
+            //         @"INSERT INTO notifications (user_id, title, message)
+            //           VALUES ({0}, 'Hủy đặt lớp thành công', 'Bạn đã hủy chỗ thành công cho lớp học.')",
+            //         userId);
+            // }
+            // catch { /* Ignore missing table */ }
 
             await transaction.CommitAsync();
             return (true, null);
@@ -298,20 +344,28 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
 
     public async Task NotifyAffectedMembersAsync(Guid classId, string title, string message)
     {
-        await _dbContext.Database.ExecuteSqlRawAsync(
-            @"INSERT INTO notifications (user_id, title, message)
-              SELECT user_id, {1}, {2} 
-              FROM class_bookings 
-              WHERE class_id = {0} AND status = 'confirmed'",
-            classId, title, message);
+        try
+        {
+            await _dbContext.Database.ExecuteSqlRawAsync(
+                @"INSERT INTO notifications (user_id, title, message)
+                  SELECT user_id, {1}, {2} 
+                  FROM class_bookings 
+                  WHERE class_id = {0} AND status = 'confirmed'",
+                classId, title, message);
 
-        await _dbContext.Database.ExecuteSqlRawAsync(
-            @"INSERT INTO notifications (user_id, title, message)
-              SELECT coaches.user_id, {1}, {2} 
-              FROM classes 
-              INNER JOIN coaches ON classes.coach_id = coaches.id
-              WHERE classes.id = {0}",
-            classId, title, message);
+            await _dbContext.Database.ExecuteSqlRawAsync(
+                @"INSERT INTO notifications (user_id, title, message)
+                  SELECT coaches.user_id, {1}, {2} 
+                  FROM classes 
+                  INNER JOIN coaches ON classes.coach_id = coaches.id
+                  WHERE classes.id = {0}",
+                classId, title, message);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Notification Error] {ex.Message}");
+            // Ignore error if notifications table doesn't exist yet
+        }
     }
 
     // ── GIAI ĐOẠN G: ĐIỂM DANH & XEM LỊCH ──
@@ -513,7 +567,8 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
                 DurationMinutes: c.DurationMinutes,
                 Capacity: c.Capacity,
                 CurrentEnrolled: c.CurrentEnrolled,
-                AvailableSpots: c.Capacity - c.CurrentEnrolled
+                AvailableSpots: c.Capacity - c.CurrentEnrolled,
+                Status: c.Status
             );
         }).OrderBy(x => x.ScheduleTime).ToList();
     }
