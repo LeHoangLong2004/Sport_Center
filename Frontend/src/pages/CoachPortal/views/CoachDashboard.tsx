@@ -2,13 +2,10 @@
  * CO-01 — Tổng quan
  * Dữ liệu tính từ cùng nguồn mock với màn chi tiết (spec §15.1 & CO-01).
  */
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import type { CoachScreen } from "../types";
-import {
-  getTodaySessions,
-  getMockAttendance,
-  MOCK_SESSIONS,
-} from "../services/mockData";
+import { CoachAPI } from "../services/api";
+import type { MockSession, AttendanceRecord } from "../services/api"; // Dùng type tạm
 
 interface Props {
   navigateTo: (s: CoachScreen, extra?: { sessionId?: string }) => void;
@@ -23,9 +20,36 @@ const dateLabel = today.toLocaleDateString("vi-VN", {
 });
 
 export default function CoachDashboard({ navigateTo }: Props) {
-  const todaySessions = useMemo(() => getTodaySessions(), []);
+  const [todaySessions, setTodaySessions] = useState<MockSession[]>([]);
+  const [attendances, setAttendances] = useState<Record<string, AttendanceRecord[]>>({});
+  const [loading, setLoading] = useState(true);
 
-  // Tính các chỉ số từ cùng dữ liệu (spec §CO-01, §15.1)
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const stats = await CoachAPI.getDashboardStats(); // Gọi nhưng chưa dùng hết trên UI
+        const allSessions = await CoachAPI.getSchedule();
+        const todayStr = new Date().toISOString().split("T")[0];
+        const todays = allSessions.filter((s: MockSession) => s.date === todayStr);
+        setTodaySessions(todays);
+        
+        // Load điểm danh cho từng buổi hôm nay
+        const atts: Record<string, AttendanceRecord[]> = {};
+        for (const s of todays) {
+          atts[s.id] = await CoachAPI.getAttendance(s.id);
+        }
+        setAttendances(atts);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  // Tính các chỉ số
   const totalRegistrations = useMemo(
     () => todaySessions.reduce((s, c) => s + c.registeredMemberIds.length, 0),
     [todaySessions]
@@ -35,10 +59,10 @@ export default function CoachDashboard({ navigateTo }: Props) {
     () =>
       todaySessions.filter((session) => {
         if (session.status === "đã hủy") return false;
-        const recs = getMockAttendance(session.id);
+        const recs = attendances[session.id] || [];
         return recs.some((r) => r.status === "chưa điểm danh");
       }).length,
-    [todaySessions]
+    [todaySessions, attendances]
   );
 
   // Buổi sắp bắt đầu (ưu tiên đang diễn ra, rồi sắp diễn ra)
@@ -54,12 +78,12 @@ export default function CoachDashboard({ navigateTo }: Props) {
     const list: string[] = [];
     todaySessions.forEach((s) => {
       if (s.status === "đã hủy") return;
-      const recs = getMockAttendance(s.id);
+      const recs = attendances[s.id] || [];
       const pending = recs.filter((r) => r.status === "chưa điểm danh").length;
       if (pending > 0) list.push(`Chưa điểm danh ${pending} học viên — ${s.className}`);
     });
     return list;
-  }, [todaySessions]);
+  }, [todaySessions, attendances]);
 
   const statusColor: Record<string, string> = {
     "sắp diễn ra": "bg-blue-100 text-blue-700",
@@ -115,12 +139,14 @@ export default function CoachDashboard({ navigateTo }: Props) {
             </button>
           </div>
 
-          {todaySessions.length === 0 ? (
+          {loading ? (
+            <EmptyState text="Đang tải dữ liệu..." />
+          ) : todaySessions.length === 0 ? (
             <EmptyState text="Không có buổi học nào hôm nay." />
           ) : (
             <div className="flex flex-col gap-3">
               {todaySessions.map((s) => {
-                const recs = getMockAttendance(s.id);
+                const recs = attendances[s.id] || [];
                 const pending = recs.filter((r) => r.status === "chưa điểm danh").length;
                 return (
                   <div

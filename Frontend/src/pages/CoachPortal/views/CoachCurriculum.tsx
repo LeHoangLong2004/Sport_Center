@@ -3,15 +3,9 @@
  * Danh sách, tạo/sửa, giao cho lớp/học viên thuộc quyền.
  * Demo: thao tác ghi rõ "chưa nối BE".
  */
-import { useState, useMemo } from "react";
-import {
-  getMockCurricula,
-  saveCurriculum,
-  assignCurriculum,
-  MOCK_MEMBERS,
-  MOCK_SESSIONS,
-  type MockCurriculum,
-} from "../services/mockData";
+import { useState, useEffect, useMemo } from "react";
+import { CoachAPI } from "../services/api";
+import type { MockCurriculum, MockSession, MockMember } from "../services/api";
 
 type CurriculumStatus = "Nháp" | "Đã giao" | "Lưu trữ";
 
@@ -40,12 +34,28 @@ function makeDraft(): MockCurriculum {
 }
 
 export default function CoachCurriculum() {
-  const [curricula, setCurricula] = useState<MockCurriculum[]>(() => getMockCurricula());
+  const [curricula, setCurricula] = useState<MockCurriculum[]>([]);
+  const [sessions, setSessions] = useState<MockSession[]>([]);
+  const [members, setMembers] = useState<MockMember[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<MockCurriculum | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [assignTarget, setAssignTarget] = useState<{ curricId: string } | null>(null);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      CoachAPI.getCurricula(),
+      CoachAPI.getSchedule(),
+      CoachAPI.getMembers()
+    ]).then(([cur, sch, mem]) => {
+      setCurricula(cur);
+      setSessions(sch);
+      setMembers(mem);
+      setLoading(false);
+    }).catch(console.error);
+  }, []);
 
   const editingCurric = useMemo(() => draft, [draft]);
 
@@ -69,26 +79,30 @@ export default function CoachCurriculum() {
     if (!draft.name.trim()) { setFeedback({ type: "error", msg: "Tên giáo án không được để trống." }); return; }
     setIsSaving(true);
     setFeedback(null);
-    await saveCurriculum({ ...draft, updatedAt: new Date().toISOString().split("T")[0] });
-    setCurricula(getMockCurricula());
+    await CoachAPI.saveCurriculum({ ...draft, updatedAt: new Date().toISOString().split("T")[0] });
+    const cur = await CoachAPI.getCurricula();
+    setCurricula(cur);
     setIsSaving(false);
-    setFeedback({ type: "success", msg: "Demo — đã lưu trên trình duyệt" });
+    setFeedback({ type: "success", msg: "Đã lưu thành công" });
     closeEdit();
   };
 
   const handleAssign = async (type: "class" | "member", id: string, name: string) => {
     if (!assignTarget) return;
-    await assignCurriculum(assignTarget.curricId, { type, id, name });
-    setCurricula(getMockCurricula());
+    await CoachAPI.assignCurriculum(assignTarget.curricId, { type, id, name });
+    const cur = await CoachAPI.getCurricula();
+    setCurricula(cur);
     setAssignTarget(null);
-    setFeedback({ type: "success", msg: "Demo — đã giao giáo án (lưu trên trình duyệt)" });
+    setFeedback({ type: "success", msg: "Đã giao giáo án thành công" });
   };
 
   const uniqueClasses = useMemo(() => {
     const map = new Map<string, { id: string; name: string }>();
-    MOCK_SESSIONS.forEach((s) => { if (!map.has(s.classId)) map.set(s.classId, { id: s.classId, name: s.className.split("–")[0].trim() }); });
+    sessions.forEach((s) => { if (!map.has(s.classId)) map.set(s.classId, { id: s.classId, name: s.className.split("–")[0].trim() }); });
     return Array.from(map.values());
-  }, []);
+  }, [sessions]);
+
+  if (loading) return <div className="py-20 text-center text-slate-400">Đang tải giáo án...</div>;
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-400 max-w-4xl">
@@ -248,7 +262,7 @@ export default function CoachCurriculum() {
                   📚 Lớp: {cls.name}
                 </button>
               ))}
-              {MOCK_MEMBERS.map((m) => (
+              {members.map((m) => (
                 <button key={m.id} type="button"
                   className="text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-teal-50 dark:hover:bg-teal-900/20 text-sm text-slate-800 dark:text-slate-100"
                   onClick={() => handleAssign("member", m.id, m.name)}>

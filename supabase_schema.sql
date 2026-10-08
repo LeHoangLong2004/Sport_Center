@@ -31,6 +31,7 @@ CREATE TABLE roles (
 CREATE TABLE users (
     id                UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
     role_id           UUID         REFERENCES roles(id) ON DELETE SET NULL,
+    member_code       VARCHAR(50)  UNIQUE, -- Mã hội viên (Coach Portal)
     full_name         TEXT         NOT NULL,
     phone_number      VARCHAR(20)  UNIQUE NOT NULL,
     email             VARCHAR(100) UNIQUE NOT NULL,
@@ -39,6 +40,8 @@ CREATE TABLE users (
     date_of_birth     DATE,
     gender            VARCHAR(20),
     emergency_contact TEXT,
+    training_goal     TEXT,                -- Mục tiêu tập luyện (Coach Portal)
+    training_level    VARCHAR(50),         -- Trình độ tập luyện (Coach Portal)
     status            BOOLEAN      DEFAULT true,
     created_at        TIMESTAMPTZ  DEFAULT now()
 );
@@ -174,12 +177,18 @@ CREATE TABLE subscriptions (
 -- ==============================================================
 
 CREATE TABLE notifications (
-    id         UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id    UUID    REFERENCES users(id) ON DELETE CASCADE,
-    title      TEXT    NOT NULL,
-    message    TEXT,
-    is_read    BOOLEAN DEFAULT false,
-    created_at TIMESTAMPTZ DEFAULT now()
+    id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    sender_id   UUID        REFERENCES coaches(id) ON DELETE SET NULL, -- Người gửi (Coach)
+    user_id     UUID        REFERENCES users(id) ON DELETE CASCADE,
+    target_type VARCHAR(20) DEFAULT 'member',    -- 'class' | 'member' (Coach Portal)
+    target_id   UUID,                            -- Chứa class_id hoặc user_id (Coach Portal)
+    type        VARCHAR(50) DEFAULT 'Thông báo', -- 'Thông báo' | 'Bài tập về nhà' (Coach Portal)
+    state       VARCHAR(20) DEFAULT 'published', -- 'draft' | 'published' (Coach Portal)
+    title       TEXT        NOT NULL,
+    message     TEXT,
+    deadline    TIMESTAMPTZ,                     -- Hạn nộp bài (Coach Portal)
+    is_read     BOOLEAN     DEFAULT false,
+    created_at  TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE check_in_logs (
@@ -287,6 +296,8 @@ CREATE TABLE classes (
     coach_id         UUID        REFERENCES coaches(id) ON DELETE SET NULL,
     facility_id      UUID        REFERENCES facilities(id) ON DELETE CASCADE,
     class_name       TEXT        NOT NULL,
+    level            VARCHAR(50),                 -- Trình độ lớp (Coach Portal)
+    room             VARCHAR(100),                -- Phòng tập (Coach Portal)
     schedule_time    TIMESTAMPTZ NOT NULL,
     duration_minutes INT         DEFAULT 60,
     capacity         INT         NOT NULL,
@@ -329,13 +340,37 @@ CREATE TABLE body_metrics (
 );
 
 CREATE TABLE workout_plans (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id     UUID REFERENCES users(id) ON DELETE CASCADE,
-    coach_id    UUID REFERENCES coaches(id) ON DELETE SET NULL,
-    plan_name   TEXT NOT NULL,
-    description TEXT,
-    start_date  DATE,
-    end_date    DATE
+    id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    coach_id         UUID        REFERENCES coaches(id) ON DELETE SET NULL,
+    sport_id         UUID        REFERENCES sports(id) ON DELETE SET NULL,
+    plan_name        TEXT        NOT NULL,
+    description      TEXT,
+    goal             TEXT,                -- Mục tiêu giáo án (Coach Portal)
+    level            VARCHAR(50),         -- Trình độ (Coach Portal)
+    duration_minutes INT,                 -- Thời lượng phút (Coach Portal)
+    status           VARCHAR(50) DEFAULT 'Nháp', -- Nháp | Đã giao | Lưu trữ
+    version          INT         DEFAULT 1,      -- Version lưu vết (Coach Portal)
+    created_at       TIMESTAMPTZ DEFAULT now(),
+    updated_at       TIMESTAMPTZ DEFAULT now()
+);
+
+-- Chi tiết các bài tập trong giáo án (Coach Portal)
+CREATE TABLE workout_plan_exercises (
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    plan_id    UUID REFERENCES workout_plans(id) ON DELETE CASCADE,
+    name       TEXT NOT NULL,
+    reps       TEXT, -- VD: "3 set x 12 reps"
+    rest       TEXT, -- VD: "60s"
+    note       TEXT
+);
+
+-- Phân công giáo án cho lớp hoặc hội viên (Coach Portal)
+CREATE TABLE workout_plan_assignments (
+    id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    plan_id     UUID        REFERENCES workout_plans(id) ON DELETE CASCADE,
+    target_type VARCHAR(20) NOT NULL, -- 'class' | 'member'
+    target_id   UUID        NOT NULL, -- class_id hoặc user_id
+    assigned_at TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE diet_plans (
@@ -412,6 +447,65 @@ CREATE TABLE contact_messages (
     created_at   TIMESTAMPTZ DEFAULT now()
 );
 
+
+-- ==============================================================
+-- PHẦN BỔ SUNG CHO COACH PORTAL (ĐIỂM DANH, KẾT QUẢ, BÀI TẬP VỀ NHÀ)
+-- ==============================================================
+
+-- Bảng lưu trạng thái của 1 phiên điểm danh (Nháp / Đã chốt)
+CREATE TABLE class_attendance_sheets (
+    session_id   UUID PRIMARY KEY REFERENCES classes(id) ON DELETE CASCADE,
+    state        VARCHAR(20) DEFAULT 'unmarked', -- 'unmarked', 'draft', 'finalized'
+    version      INT DEFAULT 1,
+    finalized_at TIMESTAMPTZ,
+    finalized_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at   TIMESTAMPTZ DEFAULT now(),
+    updated_at   TIMESTAMPTZ DEFAULT now()
+);
+
+-- Bảng chi tiết trạng thái từng học viên trong 1 buổi học
+CREATE TABLE class_attendance_records (
+    session_id UUID REFERENCES classes(id) ON DELETE CASCADE,
+    member_id  UUID REFERENCES users(id) ON DELETE CASCADE,
+    status     VARCHAR(20), -- 'present', 'late', 'absent', 'excused', null
+    note       TEXT,
+    PRIMARY KEY (session_id, member_id)
+);
+
+-- Bảng lưu lịch sử chỉnh sửa điểm danh sau khi đã chốt (Audit log)
+CREATE TABLE class_attendance_audits (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id  UUID REFERENCES classes(id) ON DELETE CASCADE,
+    actor_id    UUID REFERENCES users(id) ON DELETE SET NULL,
+    action      VARCHAR(50) NOT NULL, -- Vd: 'UPDATE_AFTER_FINALIZED'
+    reason      TEXT NOT NULL,        -- Lý do sửa bắt buộc
+    changes     JSONB NOT NULL,       -- Lưu vết thay đổi: { member_id, old_status, new_status }
+    occurred_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Bảng lưu kết quả tập luyện thực tế của học viên trong 1 buổi
+CREATE TABLE training_results (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id  UUID REFERENCES classes(id) ON DELETE CASCADE,
+    member_id   UUID REFERENCES users(id) ON DELETE CASCADE,
+    coach_id    UUID REFERENCES coaches(id) ON DELETE SET NULL,
+    metric_name TEXT NOT NULL,       -- Vd: 'Thời gian giữ thăng bằng'
+    value       DECIMAL(10,2) NOT NULL,
+    unit        VARCHAR(20),         -- Vd: 'giây', 'lần'
+    effort      INT CHECK (effort >= 1 AND effort <= 10), -- Mức gắng sức
+    comment     TEXT,
+    visibility  VARCHAR(20) DEFAULT 'coach_internal', -- 'member' hoặc 'coach_internal'
+    recorded_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Bảng theo dõi tiến độ hoàn thành bài tập về nhà
+CREATE TABLE homework_progress (
+    notification_id UUID REFERENCES notifications(id) ON DELETE CASCADE,
+    member_id       UUID REFERENCES users(id) ON DELETE CASCADE,
+    status          VARCHAR(20) DEFAULT 'pending', -- 'pending', 'completed'
+    completed_at    TIMESTAMPTZ,
+    PRIMARY KEY (notification_id, member_id)
+);
 
 -- ==============================================================
 -- INDEXES — TỐI ƯU HIỆU NĂNG

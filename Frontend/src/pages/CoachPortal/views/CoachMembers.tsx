@@ -3,9 +3,9 @@
  * Chỉ hiển thị học viên trong phạm vi phụ trách.
  * Tìm theo tên/mã; lọc môn. Bấm hàng mở đúng học viên.
  */
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import type { CoachScreen } from "../types";
-import { MOCK_MEMBERS } from "../services/mockData";
+import { CoachAPI, type MockMember } from "../services/api";
 
 interface Props {
   navigateTo: (s: CoachScreen, extra?: { memberId?: string }) => void;
@@ -14,17 +14,29 @@ interface Props {
 export default function CoachMembers({ navigateTo }: Props) {
   const [search, setSearch] = useState("");
   const [sportFilter, setSportFilter] = useState("all");
+  const [members, setMembers] = useState<MockMember[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const sports = ["all", ...Array.from(new Set(MOCK_MEMBERS.map((m) => m.sport)))];
+  useEffect(() => {
+    CoachAPI.getMembers().then(data => {
+      setMembers(data);
+      setLoading(false);
+    }).catch(err => {
+      console.error(err);
+      setLoading(false);
+    });
+  }, []);
+
+  const sports = ["all", ...Array.from(new Set(members.map((m) => m.sport)))];
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return MOCK_MEMBERS.filter((m) => {
+    return members.filter((m) => {
       if (sportFilter !== "all" && m.sport !== sportFilter) return false;
       if (q && !m.name.toLowerCase().includes(q) && !m.code.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [search, sportFilter]);
+  }, [search, sportFilter, members]);
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-400 max-w-4xl">

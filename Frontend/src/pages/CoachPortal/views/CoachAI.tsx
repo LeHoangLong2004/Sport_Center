@@ -4,8 +4,7 @@
  * Không tự giao khi AI vừa trả kết quả.
  * Dùng dữ liệu mẫu với nhãn "Gợi ý minh họa" vì chưa có AI backend.
  */
-import { useState } from "react";
-import { MOCK_MEMBERS } from "../services/mockData";
+import { useState, useEffect } from "react";
 
 const SPORT_OPTIONS = ["Yoga", "Gym", "Bơi", "CrossFit", "Cầu lông"];
 const LEVEL_OPTIONS = ["Cơ bản", "Trung cấp", "Nâng cao"];
@@ -48,11 +47,23 @@ export default function CoachAI() {
   const [level, setLevel] = useState("Cơ bản");
   const [goal, setGoal] = useState("");
   const [equipment, setEquipment] = useState<string[]>([]);
-  const [targetId, setTargetId] = useState(MOCK_MEMBERS[0]?.id || "");
+  const [targetId, setTargetId] = useState("");
+  const [members, setMembers] = useState<{ id: string; name: string }[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [draft, setDraft] = useState<{ name: string; reps: string; note: string }[] | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    import("../services/api").then(({ CoachAPI }) => {
+      CoachAPI.getMembers().then(mem => {
+        setMembers(mem);
+        if (mem.length > 0) setTargetId(mem[0].id);
+        setLoading(false);
+      });
+    });
+  }, []);
 
   const toggleEquipment = (e: string) => {
     setEquipment((prev) => prev.includes(e) ? prev.filter((x) => x !== e) : [...prev, e]);
@@ -75,6 +86,8 @@ export default function CoachAI() {
     setFeedback("Gợi ý đã được lưu thành Nháp giáo án (Demo). Bạn có thể vào Giáo án để sửa và giao.");
   };
 
+  if (loading) return <div className="py-20 text-center text-slate-400">Đang tải...</div>;
+
   return (
     <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-400 max-w-3xl">
       <h1 className="text-2xl font-bold text-slate-900 dark:text-white">AI gợi ý bài tập</h1>
@@ -92,7 +105,7 @@ export default function CoachAI() {
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Học viên / Lớp</label>
             <select value={targetId} onChange={(e) => setTargetId(e.target.value)} className={selectCls}>
-              {MOCK_MEMBERS.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+              {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
           </div>
           <div className="flex flex-col gap-1">

@@ -3,52 +3,70 @@
  * Chọn lớp/học viên có quyền. Xem lịch sử.
  * Demo: chỉ lưu mô phỏng, không gửi email/tin thật.
  */
-import { useState, useMemo } from "react";
-import {
-  getMockNotifications,
-  sendNotification,
-  MOCK_MEMBERS,
-  MOCK_SESSIONS,
-  type MockNotification,
-} from "../services/mockData";
+import { useState, useEffect, useMemo } from "react";
+import { CoachAPI } from "../services/api";
+import type { MockNotification, MockSession, MockMember } from "../services/api";
 
 type NType = "Thông báo" | "Bài tập về nhà";
 
-const uniqueClasses = (() => {
-  const map = new Map<string, { id: string; name: string }>();
-  MOCK_SESSIONS.forEach((s) => {
-    if (!map.has(s.classId)) map.set(s.classId, { id: s.classId, name: s.className.split("–")[0].trim() });
-  });
-  return Array.from(map.values());
-})();
-
 export default function CoachNotifications() {
-  const [notifications, setNotifications] = useState<MockNotification[]>(() => getMockNotifications());
+  const [notifications, setNotifications] = useState<MockNotification[]>([]);
+  const [sessions, setSessions] = useState<MockSession[]>([]);
+  const [members, setMembers] = useState<{ id: string; name: string; code: string }[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [type, setType] = useState<NType>("Thông báo");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [deadline, setDeadline] = useState("");
   const [targetType, setTargetType] = useState<"class" | "member">("class");
-  const [targetId, setTargetId] = useState(uniqueClasses[0]?.id || "");
+  const [targetId, setTargetId] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      CoachAPI.getNotifications(),
+      CoachAPI.getSchedule(),
+      CoachAPI.getMembers()
+    ]).then(([notifs, sch, mem]) => {
+      setNotifications(notifs);
+      setSessions(sch);
+      setMembers(mem);
+      
+      const uniqueClassesMap = new Map<string, string>();
+      sch.forEach((s: MockSession) => uniqueClassesMap.set(s.classId, s.classId));
+      if (uniqueClassesMap.size > 0) {
+        setTargetId(Array.from(uniqueClassesMap.keys())[0]);
+      }
+      setLoading(false);
+    }).catch(console.error);
+  }, []);
+
+  const uniqueClasses = useMemo(() => {
+    const map = new Map<string, { id: string; name: string }>();
+    sessions.forEach((s) => {
+      if (!map.has(s.classId)) map.set(s.classId, { id: s.classId, name: s.className.split("–")[0].trim() });
+    });
+    return Array.from(map.values());
+  }, [sessions]);
 
   const targetName = useMemo(() => {
     if (targetType === "class") return uniqueClasses.find((c) => c.id === targetId)?.name || "";
-    return MOCK_MEMBERS.find((m) => m.id === targetId)?.name || "";
-  }, [targetType, targetId]);
+    return members.find((m) => m.id === targetId)?.name || "";
+  }, [targetType, targetId, uniqueClasses, members]);
 
   const handleSend = async () => {
     if (!title.trim() || !content.trim()) { setFeedback("Vui lòng điền tiêu đề và nội dung."); return; }
     if (!targetId) { setFeedback("Vui lòng chọn người nhận."); return; }
     setIsSending(true);
-    await sendNotification({ title, content, type, targetType, targetId, targetName, deadline: type === "Bài tập về nhà" ? deadline : undefined });
-    setNotifications(getMockNotifications());
+    await CoachAPI.sendNotification({ title, content, type, targetType, targetId, targetName, deadline: type === "Bài tập về nhà" ? deadline : undefined });
+    const notifs = await CoachAPI.getNotifications();
+    setNotifications(notifs);
     setIsSending(false);
     setShowForm(false);
     setTitle(""); setContent(""); setDeadline("");
-    setFeedback("Demo — đã ghi nhận (không gửi email/tin thật)");
+    setFeedback("Đã gửi thông báo thành công");
   };
 
   return (
@@ -126,7 +144,7 @@ export default function CoachNotifications() {
               <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Người nhận</label>
               <div className="flex gap-2 mb-2">
                 {(["class", "member"] as const).map((tt) => (
-                  <button key={tt} type="button" onClick={() => { setTargetType(tt); setTargetId(tt === "class" ? uniqueClasses[0]?.id || "" : MOCK_MEMBERS[0]?.id || ""); }}
+                  <button key={tt} type="button" onClick={() => { setTargetType(tt); setTargetId(tt === "class" ? uniqueClasses[0]?.id || "" : members[0]?.id || ""); }}
                     className={`px-3 py-1 rounded-lg text-xs font-medium border transition-colors ${targetType === tt ? "bg-teal-600 text-white border-teal-600" : "border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400"}`}>
                     {tt === "class" ? "Lớp" : "Học viên"}
                   </button>
@@ -135,7 +153,7 @@ export default function CoachNotifications() {
               <select value={targetId} onChange={(e) => setTargetId(e.target.value)} className={selectCls}>
                 {targetType === "class"
                   ? uniqueClasses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)
-                  : MOCK_MEMBERS.map((m) => <option key={m.id} value={m.id}>{m.name} ({m.code})</option>)}
+                  : members.map((m) => <option key={m.id} value={m.id}>{m.name} ({m.code})</option>)}
               </select>
               {/* Xem trước người nhận */}
               <div className="text-xs text-slate-400 mt-1">

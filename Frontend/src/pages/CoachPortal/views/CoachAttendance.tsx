@@ -1,31 +1,7 @@
-/**
- * CO-04 — Điểm danh (ưu tiên cao nhất theo spec)
- *
- * Quy tắc dữ liệu (spec §7.3):
- * 1. Chưa có kết quả → "chưa điểm danh", không mặc định có mặt/vắng
- * 2. Mỗi cặp buổi–học viên có một kết quả hiện hành
- * 3. Đổi buổi tải đúng danh sách và kết quả của buổi mới
- * 4. Không dùng chung trạng thái học viên giữa nhiều buổi
- * 5. Không điểm danh booking/lớp đã hủy
- * 7. Tìm kiếm/lọc không làm mất thay đổi đang nhập
- * 8. Thống kê tính trên toàn danh sách, không chỉ hàng lọc
- * 9. "chưa điểm danh" là trạng thái UI riêng, không gửi thành no_show
- *
- * API contract (spec §7.5):
- *   Có mặt → "attended"
- *   Vắng   → "no_show"
- *   Đi trễ → Demo only (chưa có BE support)
- */
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import type { CoachScreen } from "../types";
-import {
-  MOCK_SESSIONS,
-  getMockAttendance,
-  saveMockAttendance,
-  getMembersForSession,
-  type AttendanceRecord,
-  type AttendanceStatus,
-} from "../services/mockData";
+import { CoachAPI } from "../services/api";
+import type { AttendanceRecord, AttendanceStatus, MockSession, MockMember } from "../services/api";
 
 interface Props {
   initialSessionId: string | null;
@@ -40,44 +16,60 @@ const STATUS_OPTIONS: { value: AttendanceStatus; label: string; style: string }[
 ];
 
 export default function CoachAttendance({ initialSessionId, navigateTo }: Props) {
-  const activeSessions = MOCK_SESSIONS.filter((s) => s.status !== "đã hủy");
-  const defaultSessionId = initialSessionId || activeSessions[0]?.id || null;
-
-  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(defaultSessionId);
+  const [activeSessions, setActiveSessions] = useState<MockSession[]>([]);
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(initialSessionId);
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [savedRecords, setSavedRecords] = useState<AttendanceRecord[]>([]);
+  const [members, setMembers] = useState<MockMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [search, setSearch] = useState("");
-  const [simulateError, setSimulateError] = useState(false);
 
-  // Detect unsaved changes
+  // Tải danh sách buổi học
+  useEffect(() => {
+    CoachAPI.getSchedule().then((sessions) => {
+      const active = sessions.filter((s: MockSession) => s.status !== "đã hủy");
+      setActiveSessions(active);
+      if (!selectedSessionId && active.length > 0) {
+        setSelectedSessionId(active[0].id);
+      }
+    });
+  }, []);
+
+  // Tải danh sách học viên & kết quả điểm danh của buổi đang chọn
+  useEffect(() => {
+    if (!selectedSessionId) return;
+    setLoading(true);
+    Promise.all([
+      CoachAPI.getAttendance(selectedSessionId),
+      CoachAPI.getSessionMembers(selectedSessionId)
+    ]).then(([attRecords, sessionMembers]) => {
+      const initialized = sessionMembers.map((m: MockMember) => {
+        const exist = attRecords.find((r: AttendanceRecord) => r.memberId === m.id);
+        return exist || { sessionId: selectedSessionId, memberId: m.id, status: "chưa điểm danh" as AttendanceStatus, note: "" };
+      });
+      setRecords(initialized);
+      setSavedRecords(initialized);
+      setMembers(sessionMembers);
+      setSaveSuccess(false);
+      setSaveError(null);
+      setLoading(false);
+    });
+  }, [selectedSessionId]);
+
   const hasChanges = useMemo(
     () => JSON.stringify(records) !== JSON.stringify(savedRecords),
     [records, savedRecords]
   );
 
-  // Load records when session changes (spec rule 3)
-  useEffect(() => {
-    if (!selectedSessionId) return;
-    const loaded = getMockAttendance(selectedSessionId);
-    setRecords(loaded);
-    setSavedRecords(loaded);
-    setSaveSuccess(false);
-    setSaveError(null);
-  }, [selectedSessionId]);
-
   const session = useMemo(
-    () => MOCK_SESSIONS.find((s) => s.id === selectedSessionId),
-    [selectedSessionId]
-  );
-  const members = useMemo(
-    () => (selectedSessionId ? getMembersForSession(selectedSessionId) : []),
-    [selectedSessionId]
+    () => activeSessions.find((s) => s.id === selectedSessionId),
+    [activeSessions, selectedSessionId]
   );
 
-  // Warn before switching session if unsaved (spec §7.4 step last)
   const handleSessionChange = useCallback(
     (newId: string) => {
       if (hasChanges) {
@@ -103,16 +95,21 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
     setSaveSuccess(false);
   }, []);
 
-  const handleSave = async () => {
+  const handleSave = async (isDraft: boolean) => {
     if (!selectedSessionId || isSaving) return;
     setIsSaving(true);
     setSaveError(null);
     try {
-      await saveMockAttendance(selectedSessionId, records, simulateError);
+      if (isDraft) {
+        await CoachAPI.saveAttendanceDraft(selectedSessionId, records);
+      } else {
+        await CoachAPI.finalizeAttendance(selectedSessionId, records);
+      }
       setSavedRecords(records);
       setSaveSuccess(true);
-    } catch (err: any) {
-      setSaveError(err?.message || "Lưu thất bại. Vui lòng thử lại.");
+    } catch (err) {
+      const e = err as Error;
+      setSaveError(e?.message || "Lưu thất bại. Vui lòng thử lại.");
     } finally {
       setIsSaving(false);
     }
@@ -125,7 +122,6 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
     setSaveError(null);
   };
 
-  // Stats trên toàn danh sách (spec rule 8), không chỉ hàng đang lọc
   const stats = useMemo(() => {
     const total = records.length;
     const attended = records.filter((r) => r.status === "attended").length;
@@ -135,7 +131,6 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
     return { total, attended, absent, late, pending };
   }, [records]);
 
-  // Search chỉ lọc hiển thị, KHÔNG làm mất records (spec rule 7)
   const filteredMembers = useMemo(() => {
     if (!search.trim()) return members;
     const q = search.toLowerCase();
@@ -155,18 +150,10 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
     );
   }
 
-  const isCancelled = session.status === "đã hủy";
-
   return (
     <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-400 max-w-4xl">
       <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Điểm danh</h1>
 
-      {/* Banner demo */}
-      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl px-4 py-2 text-amber-800 dark:text-amber-200 text-xs font-medium flex items-center gap-2">
-        ⚠️ Demo — lưu trên trình duyệt. "Đi trễ" là tùy chọn đề xuất, chưa có backend hỗ trợ.
-      </div>
-
-      {/* Bộ chọn buổi */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex flex-col md:flex-row md:items-center gap-4">
         <div className="flex-1">
           <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Chọn buổi học</label>
@@ -188,16 +175,10 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
         </div>
       </div>
 
-      {/* Cảnh báo buổi đã hủy */}
-      {isCancelled && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700 rounded-xl p-4 text-red-700 dark:text-red-300 font-semibold">
-          ⛔ Buổi này đã bị hủy — không thể điểm danh.
-        </div>
-      )}
-
-      {!isCancelled && (
+      {loading ? (
+        <div className="py-20 text-center text-slate-400">Đang tải danh sách...</div>
+      ) : (
         <>
-          {/* Thống kê — tính trên toàn danh sách */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <StatChip label="Tổng" value={stats.total} color="text-slate-700 dark:text-slate-200" />
             <StatChip label="Có mặt" value={stats.attended} color="text-green-600" />
@@ -205,42 +186,32 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
             <StatChip label="Chưa điểm danh" value={stats.pending} color={stats.pending > 0 ? "text-amber-600" : "text-slate-500"} />
           </div>
 
-          {/* Toolbar */}
           <div className="flex flex-wrap gap-3 items-center">
             <input
               type="text"
               placeholder="Tìm theo tên hoặc mã học viên..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 min-w-[200px] border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              className="flex-1 min-w-[200px] border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100"
             />
             <button
               type="button"
               onClick={handleMarkAllPresent}
-              className="px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
+              className="px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"
             >
               ✓ Tất cả có mặt
             </button>
           </div>
 
-          {/* Bảng học viên */}
           <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-            {/* Header */}
             <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-4 py-3 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-700 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               <span>Học viên</span>
               <span className="text-center">Trạng thái</span>
               <span className="w-[140px]">Ghi chú</span>
             </div>
 
-            {filteredMembers.length === 0 && members.length > 0 && (
-              <div className="px-4 py-6 text-center text-slate-400 text-sm">
-                Không tìm thấy học viên. (Thay đổi của bạn vẫn được giữ.)
-              </div>
-            )}
-            {members.length === 0 && (
-              <div className="px-4 py-6 text-center text-slate-400 text-sm">
-                Buổi này chưa có học viên đăng ký.
-              </div>
+            {filteredMembers.length === 0 && (
+              <div className="px-4 py-6 text-center text-slate-400 text-sm">Không tìm thấy học viên.</div>
             )}
 
             <div className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -251,7 +222,6 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
 
                 return (
                   <div key={m.id} className="grid grid-cols-[1fr_auto_auto] gap-2 items-center px-4 py-3">
-                    {/* Học viên */}
                     <div className="flex items-center gap-3 min-w-0">
                       <img src={m.avatar} alt={m.name} className="w-9 h-9 rounded-full object-cover shrink-0" />
                       <div className="min-w-0">
@@ -260,35 +230,30 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
                       </div>
                     </div>
 
-                    {/* Trạng thái */}
                     <div className="flex gap-1.5 shrink-0">
-                      {STATUS_OPTIONS.map((opt) => {
-                        const isActive = status === opt.value;
-                        return (
-                          <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => handleStatusChange(m.id, opt.value)}
-                            title={opt.label}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all border ${
-                              isActive
-                                ? `${opt.style} border-current ring-1 ring-current`
-                                : "bg-slate-50 dark:bg-slate-700 text-slate-400 dark:text-slate-500 border-transparent hover:border-slate-300 dark:hover:border-slate-500"
-                            }`}
-                          >
-                            {opt.label}
-                          </button>
-                        );
-                      })}
+                      {STATUS_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => handleStatusChange(m.id, opt.value)}
+                          title={opt.label}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all border ${
+                            status === opt.value
+                              ? `${opt.style} border-current ring-1 ring-current`
+                              : "bg-slate-50 dark:bg-slate-700 text-slate-400 dark:text-slate-500 border-transparent hover:border-slate-300 dark:hover:border-slate-500"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
                     </div>
 
-                    {/* Ghi chú */}
                     <input
                       type="text"
                       placeholder="Ghi chú..."
                       value={note}
                       onChange={(e) => handleNoteChange(m.id, e.target.value)}
-                      className="w-[140px] border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                      className="w-[140px] border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200"
                     />
                   </div>
                 );
@@ -296,36 +261,45 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
             </div>
           </div>
 
-          {/* Save bar */}
-          <div className="flex items-center justify-between bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+          <div className="flex items-center justify-between bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 mt-4">
             <div className="flex flex-col gap-1">
               {hasChanges && !saveError && (
                 <span className="text-amber-600 text-sm font-medium">● {stats.pending > 0 ? `${stats.pending} học viên chưa điểm danh` : "Có thay đổi chưa lưu"}</span>
               )}
               {saveSuccess && !hasChanges && (
-                <span className="text-green-600 text-sm font-medium">✓ Demo — lưu trên trình duyệt thành công</span>
+                <span className="text-green-600 text-sm font-medium">✓ Đã lưu thành công qua API</span>
               )}
               {saveError && (
                 <span className="text-red-600 text-sm font-medium">✗ {saveError}</span>
               )}
-              {/* Test error simulation */}
-              <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer mt-1">
-                <input type="checkbox" checked={simulateError} onChange={(e) => setSimulateError(e.target.checked)} />
-                Giả lập lỗi lưu (test)
-              </label>
             </div>
-            <button
-              type="button"
-              disabled={!hasChanges || isSaving}
-              onClick={handleSave}
-              className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                !hasChanges || isSaving
-                  ? "bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed"
-                  : "bg-teal-600 text-white hover:bg-teal-700 shadow-md shadow-teal-500/20"
-              }`}
-            >
-              {isSaving ? "Đang lưu..." : saveError ? "Thử lại" : "Lưu kết quả"}
-            </button>
+            <div className="flex gap-3">
+                <button
+                type="button"
+                disabled={!hasChanges || isSaving}
+                onClick={() => handleSave(true)}
+                className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                    !hasChanges || isSaving
+                    ? "bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed"
+                    : "border border-teal-600 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30"
+                }`}
+                >
+                {isSaving ? "Đang lưu..." : "Lưu nháp"}
+                </button>
+                <button
+                type="button"
+                disabled={!hasChanges || isSaving || stats.pending > 0}
+                title={stats.pending > 0 ? "Phải điểm danh đủ tất cả mới được chốt sổ" : ""}
+                onClick={() => handleSave(false)}
+                className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                    !hasChanges || isSaving || stats.pending > 0
+                    ? "bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed"
+                    : "bg-teal-600 text-white hover:bg-teal-700 shadow-md shadow-teal-500/20"
+                }`}
+                >
+                Chốt sổ
+                </button>
+            </div>
           </div>
         </>
       )}

@@ -2,7 +2,6 @@ import { useState } from "react";
 import type { CoachScreen } from "../types";
 import { navItems, A } from "../constants";
 import { UserAvatar } from "../../../components/UserAvatar";
-import { resetDemoData } from "../services/mockData";
 
 export default function CoachSidebar({
   screen,
@@ -19,15 +18,6 @@ export default function CoachSidebar({
       userName = user.fullName || user.name || user.email?.split("@")[0] || "Huấn luyện viên";
     } catch (e) {}
   }
-
-  const [resetDone, setResetDone] = useState(false);
-  const handleReset = () => {
-    if (!window.confirm("Đặt lại dữ liệu demo về mặc định? (Không xóa key localStorage khác)")) return;
-    resetDemoData();
-    setResetDone(true);
-    setTimeout(() => setResetDone(false), 3000);
-    window.location.reload();
-  };
 
   return (
     <div className="bg-[#0f172a] flex flex-col gap-[28px] items-start pb-[24px] pt-[28px] px-[18px] shrink-0 w-[240px] sticky top-0 h-screen overflow-y-auto hidden-scrollbar">
@@ -76,22 +66,7 @@ export default function CoachSidebar({
         })}
       </div>
 
-      {/* Demo Reset */}
-      <div className="w-full mt-auto">
-        <div className="bg-[#1e293b] border border-[#334155] rounded-[12px] p-[12px] flex flex-col gap-[8px]">
-          <span className="font-bold text-[12px] text-white">Demo Mode</span>
-          <span className="text-[11px] text-slate-400 leading-[1.4]">
-            Dữ liệu lưu trên trình duyệt. Không kết nối backend thật.
-          </span>
-          <button
-            type="button"
-            onClick={handleReset}
-            className="text-[11px] text-orange-400 hover:text-orange-300 underline text-left"
-          >
-            {resetDone ? "✓ Đã đặt lại!" : "↺ Đặt lại dữ liệu demo"}
-          </button>
-        </div>
-      </div>
+      <div className="mt-auto"></div>
 
       {/* User profile */}
       <div className="pt-2 w-full border-t border-[#1e293b]">
