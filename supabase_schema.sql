@@ -401,9 +401,14 @@ CREATE TABLE invoices (
     id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id        UUID        REFERENCES users(id) ON DELETE SET NULL,
     created_by     UUID        REFERENCES users(id) ON DELETE SET NULL,
+    facility_id    UUID        REFERENCES facilities(id) ON DELETE SET NULL, -- Chi nhánh thu tiền
     total_amount   DECIMAL(18,2) NOT NULL,
     payment_method VARCHAR(50),
-    created_at     TIMESTAMPTZ DEFAULT now()
+    -- payment_method: 'qr' | 'card' | 'wallet' | 'counter' | 'bank_transfer'
+    payment_status VARCHAR(50) DEFAULT 'pending',
+    -- payment_status: 'pending' | 'completed' | 'failed' | 'refunded' | 'expired'
+    created_at     TIMESTAMPTZ DEFAULT now(),
+    paid_at        TIMESTAMPTZ -- Thời điểm xác nhận thanh toán thành công
 );
 
 CREATE TABLE invoice_items (
