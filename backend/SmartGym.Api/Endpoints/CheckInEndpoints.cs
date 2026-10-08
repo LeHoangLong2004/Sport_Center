@@ -39,8 +39,7 @@ public static class CheckInEndpoints
             return Results.Ok(new CheckInResponse(
                 true, reason, member.FullName, packageName ?? "", now));
         })
-        .AddEndpointFilter(Authorize.Roles(UserRole.CenterManager, UserRole.Receptionist, UserRole.Member))
-        .WithSummary("Check-in vào cổng (BR-007)");
+        .AddEndpointFilter(Authorize.Roles(UserRole.CenterManager, UserRole.Receptionist, UserRole.Member));
 
         checkin.MapGet("/history", async (
             HttpContext context,
@@ -77,8 +76,7 @@ public static class CheckInEndpoints
 
             return Results.Ok(response);
         })
-        .AddEndpointFilter(Authorize.Roles(UserRole.CenterManager, UserRole.Receptionist, UserRole.Member))
-        .WithSummary("Lịch sử check-in");
+        .AddEndpointFilter(Authorize.Roles(UserRole.CenterManager, UserRole.Receptionist, UserRole.Member));
 
         // ── Member packages (view own packages) ──
 
@@ -108,8 +106,7 @@ public static class CheckInEndpoints
 
             return Results.Ok(response);
         })
-        .AddEndpointFilter(Authorize.Roles(UserRole.Member))
-        .WithSummary("Gói tập của tôi");
+        .AddEndpointFilter(Authorize.Roles(UserRole.Member));
 
         // ── Package Plans (public) ──
 
@@ -117,7 +114,6 @@ public static class CheckInEndpoints
         {
             var plans = await packageRepo.GetAllPlansAsync();
             return Results.Ok(plans);
-        })
-        .WithSummary("Danh sách các gói cước có sẵn");
+        });
     }
 }

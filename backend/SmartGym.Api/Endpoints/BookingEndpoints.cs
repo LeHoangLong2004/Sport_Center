@@ -24,20 +24,10 @@ public static class BookingEndpoints
             var responseTasks = results.Select(async s => await ToClassResponseAsync(s, userRepo));
             var response = await Task.WhenAll(responseTasks);
             return Results.Ok(response);
-        })
-        .WithSummary("Danh sách lớp học (lọc theo bộ môn, ngày)");
+        });
 
-        classes.MapGet("/{id:guid}", async (Guid id, IClassScheduleRepository scheduleRepo, IUserRepository userRepo) =>
-        {
-            var schedule = await scheduleRepo.FindByIdAsync(id);
-            if (schedule is null)
-            {
-                return Results.NotFound(new { message = "Lớp học không tồn tại." });
-            }
-
-            return Results.Ok(await ToClassResponseAsync(schedule, userRepo));
-        })
-        .WithSummary("Chi tiết một lớp học");
+        // Chi tiết lớp học (GET /api/classes/{id}) được đăng ký tại ClassEndpoints
+                // vì dùng ClassService.GetClassDetailAsync để trả về đủ danh sách học viên.
 
         // ── Booking management (Member, Receptionist) ──
 
@@ -65,8 +55,7 @@ public static class BookingEndpoints
                 booking
             });
         })
-        .AddEndpointFilter(Authorize.Roles(UserRole.Member, UserRole.Receptionist))
-        .WithSummary("Đặt chỗ lớp học (BR-004, BR-005)");
+        .AddEndpointFilter(Authorize.Roles(UserRole.Member, UserRole.Receptionist));
 
         bookings.MapDelete("/{id:guid}", async (
             Guid id,
@@ -108,8 +97,7 @@ public static class BookingEndpoints
                 waitlistPromoted = promotedMessage
             });
         })
-        .AddEndpointFilter(Authorize.Roles(UserRole.Member, UserRole.Receptionist))
-        .WithSummary("Hủy đặt chỗ (BR-004 penalty, BR-005 waitlist promote)");
+        .AddEndpointFilter(Authorize.Roles(UserRole.Member, UserRole.Receptionist));
 
         bookings.MapGet("/my", async (
             HttpContext context,
@@ -130,8 +118,7 @@ public static class BookingEndpoints
             var response = await Task.WhenAll(responseTasks);
             return Results.Ok(response);
         })
-        .AddEndpointFilter(Authorize.Roles(UserRole.Member, UserRole.Receptionist))
-        .WithSummary("Lịch sử đặt chỗ của tôi");
+        .AddEndpointFilter(Authorize.Roles(UserRole.Member, UserRole.Receptionist));
 
         // ── Personal schedule (Member sees booked classes, Coach sees teaching schedule) ──
 
@@ -175,8 +162,7 @@ public static class BookingEndpoints
 
             return Results.Ok(entries.OrderBy(e => e.StartTime));
         })
-        .AddEndpointFilter(Authorize.Roles(UserRole.Member, UserRole.Coach, UserRole.Receptionist))
-        .WithSummary("Lịch cá nhân (FR-010)");
+        .AddEndpointFilter(Authorize.Roles(UserRole.Member, UserRole.Coach, UserRole.Receptionist));
     }
 
     private static Guid? GetUserId(HttpContext context)
