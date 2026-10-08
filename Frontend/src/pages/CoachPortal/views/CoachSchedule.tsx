@@ -4,9 +4,10 @@
  * Coach không kéo thả, không tạo lịch (spec §CO-02).
  * Trạng thái buổi không suy ra từ điểm danh.
  */
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import type { CoachScreen } from "../types";
-import { MOCK_SESSIONS, type SessionStatus } from "../services/mockData";
+import { type SessionStatus, type MockSession } from "../services/api";
+import { CoachAPI } from "../services/api";
 
 type ViewMode = "list" | "week";
 type SportFilter = "all" | string;
@@ -16,14 +17,13 @@ interface Props {
   navigateTo: (s: CoachScreen, extra?: { sessionId?: string }) => void;
 }
 
-const SPORT_OPTIONS = ["all", ...Array.from(new Set(MOCK_SESSIONS.map((s) => s.sport)))];
 const STATUS_OPTIONS: (StatusFilter)[] = ["all", "sắp diễn ra", "đang diễn ra", "hoàn thành", "đã hủy"];
 
 const STATUS_STYLE: Record<string, string> = {
-  "sắp diễn ra":  "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+  "sắp diễn ra": "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
   "đang diễn ra": "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
-  "hoàn thành":   "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300",
-  "đã hủy":       "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
+  "hoàn thành": "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300",
+  "đã hủy": "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
 };
 
 const DAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
@@ -34,14 +34,26 @@ export default function CoachSchedule({ navigateTo }: Props) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [weekOffset, setWeekOffset] = useState(0); // 0 = tuần hiện tại
 
+  const [sessions, setSessions] = useState<MockSession[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    CoachAPI.getSchedule().then(data => {
+      setSessions(data);
+      setLoading(false);
+    });
+  }, []);
+
+  const SPORT_OPTIONS = useMemo(() => ["all", ...Array.from(new Set(sessions.map((s) => s.sport)))], [sessions]);
+
   const filtered = useMemo(
     () =>
-      MOCK_SESSIONS.filter((s) => {
+      sessions.filter((s) => {
         if (sportFilter !== "all" && s.sport !== sportFilter) return false;
         if (statusFilter !== "all" && s.status !== statusFilter) return false;
         return true;
       }).sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime)),
-    [sportFilter, statusFilter]
+    [sportFilter, statusFilter, sessions]
   );
 
   // Group by date for list view
@@ -67,11 +79,10 @@ export default function CoachSchedule({ navigateTo }: Props) {
               key={m}
               type="button"
               onClick={() => setView(m)}
-              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                view === m
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${view === m
                   ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
                   : "text-slate-500 dark:text-slate-400"
-              }`}
+                }`}
             >
               {m === "list" ? "Danh sách" : "Tuần"}
             </button>
@@ -126,33 +137,40 @@ export default function CoachSchedule({ navigateTo }: Props) {
       {/* LIST VIEW */}
       {view === "list" && (
         <div className="flex flex-col gap-4">
-          {byDate.length === 0 && (
+          {loading ? (
+             <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center text-slate-400">
+               Đang tải lịch dạy...
+             </div>
+          ) : byDate.length === 0 ? (
             <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center text-slate-400">
               Không có buổi học nào phù hợp bộ lọc.
             </div>
+          ) : (
+            <>
+              {byDate.map(([date, sessions]) => {
+                const d = new Date(date);
+                const label = d.toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit" });
+                const isToday = date === today;
+                return (
+                  <div key={date}>
+                    <div className={`text-sm font-semibold mb-2 px-1 ${isToday ? "text-teal-600 dark:text-teal-400" : "text-slate-500 dark:text-slate-400"}`}>
+                      {label.charAt(0).toUpperCase() + label.slice(1)} {isToday && "(Hôm nay)"}
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      {sessions.map((s) => (
+                        <SessionRow
+                          key={s.id}
+                          session={s}
+                          onClick={() => navigateTo("class-detail", { sessionId: s.id })}
+                          onAttendance={() => navigateTo("attendance", { sessionId: s.id })}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
           )}
-          {byDate.map(([date, sessions]) => {
-            const d = new Date(date);
-            const label = d.toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit" });
-            const isToday = date === today;
-            return (
-              <div key={date}>
-                <div className={`text-sm font-semibold mb-2 px-1 ${isToday ? "text-teal-600 dark:text-teal-400" : "text-slate-500 dark:text-slate-400"}`}>
-                  {label.charAt(0).toUpperCase() + label.slice(1)} {isToday && "(Hôm nay)"}
-                </div>
-                <div className="flex flex-col gap-2">
-                  {sessions.map((s) => (
-                    <SessionRow
-                      key={s.id}
-                      session={s}
-                      onClick={() => navigateTo("class-detail", { sessionId: s.id })}
-                      onAttendance={() => navigateTo("attendance", { sessionId: s.id })}
-                    />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
         </div>
       )}
 
@@ -205,7 +223,7 @@ export default function CoachSchedule({ navigateTo }: Props) {
 function SessionRow({
   session, onClick, onAttendance,
 }: {
-  session: ReturnType<typeof MOCK_SESSIONS[0]["valueOf"]>;
+  session: MockSession;
   onClick: () => void;
   onAttendance: () => void;
 }) {

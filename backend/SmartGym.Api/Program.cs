@@ -108,7 +108,12 @@ using (var scope = app.Services.CreateScope())
         if (File.Exists(sqlPath))
         {
             var sql = File.ReadAllText(sqlPath);
-            db.Database.ExecuteSqlRaw(sql);
+            using (var command = db.Database.GetDbConnection().CreateCommand())
+            {
+                command.CommandText = sql;
+                db.Database.OpenConnection();
+                command.ExecuteNonQuery();
+            }
             app.Logger.LogInformation("Successfully executed supabase_schema.sql on startup.");
         }
     }
@@ -173,6 +178,7 @@ app.MapAuthEndpoints();
 app.MapUserEndpoints();
 app.MapPackageEndpoints();
 app.MapSubscriptionEndpoints();
+app.MapCoachEndpoints();
 
 app.MapPost("/api/classes", async (SmartGym.Application.DTOs.Classes.CreateClassRequest request, ClassService service) =>
 {

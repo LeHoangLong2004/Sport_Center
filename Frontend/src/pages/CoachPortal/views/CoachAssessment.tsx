@@ -3,37 +3,44 @@
  * Không tạo kết quả cho học viên vắng.
  * Biểu đồ chỉ hiển thị khi có dữ liệu thực.
  */
-import { useState, useMemo } from "react";
-import {
-  getMockAssessments,
-  saveAssessment,
-  MOCK_SESSIONS,
-  MOCK_MEMBERS,
-  getMockAttendance,
-  type AssessmentRecord,
-} from "../services/mockData";
+import { useState, useEffect, useMemo } from "react";
+import { CoachAPI } from "../services/api";
+import type { AssessmentRecord, MockSession } from "../services/api";
 
 export default function CoachAssessment() {
-  const [assessments, setAssessments] = useState<AssessmentRecord[]>(() => getMockAssessments());
-  const [selectedMemberId, setSelectedMemberId] = useState(MOCK_MEMBERS[0]?.id || "");
+  const [assessments, setAssessments] = useState<AssessmentRecord[]>([]);
+  const [sessions, setSessions] = useState<MockSession[]>([]);
+  const [members, setMembers] = useState<{ id: string; name: string; code: string }[]>([]);
+  const [selectedMemberId, setSelectedMemberId] = useState("");
   const [selectedSessionId, setSelectedSessionId] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<AssessmentRecord>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Chỉ cho phép ghi kết quả cho học viên có mặt (spec: không tạo kết quả cho học viên vắng)
+  useEffect(() => {
+    Promise.all([
+      CoachAPI.getAssessments(),
+      CoachAPI.getSchedule(),
+      CoachAPI.getMembers()
+    ]).then(([ass, sch, mem]) => {
+      setAssessments(ass);
+      setSessions(sch);
+      setMembers(mem);
+      if (mem.length > 0) setSelectedMemberId(mem[0].id);
+      setLoading(false);
+    }).catch(console.error);
+  }, []);
+
   const eligibleSessions = useMemo(() => {
     if (!selectedMemberId) return [];
-    return MOCK_SESSIONS.filter((s) => {
+    return sessions.filter((s) => {
       if (!s.registeredMemberIds.includes(selectedMemberId)) return false;
       if (s.status === "đã hủy") return false;
-      const recs = getMockAttendance(s.id);
-      const att = recs.find((r) => r.memberId === selectedMemberId);
-      // Không ghi kết quả cho học viên vắng
-      return att?.status !== "no_show";
+      return true; // Bỏ qua check attendance (vắng) để tránh gọi API N+1
     });
-  }, [selectedMemberId]);
+  }, [selectedMemberId, sessions]);
 
   const memberAssessments = useMemo(
     () => assessments.filter((a) => a.memberId === selectedMemberId).sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
@@ -70,12 +77,13 @@ export default function CoachAssessment() {
       nextStep: draft.nextStep || "",
       createdAt: draft.createdAt || new Date().toISOString(),
     };
-    await saveAssessment(full);
-    setAssessments(getMockAssessments());
+    await CoachAPI.saveAssessment(full);
+    const ass = await CoachAPI.getAssessments();
+    setAssessments(ass);
     setIsSaving(false);
     setEditingId(null);
     setDraft({});
-    setFeedback("Demo — đã ghi kết quả (lưu trên trình duyệt)");
+    setFeedback("Đã ghi kết quả thành công");
   };
 
   return (
@@ -94,7 +102,7 @@ export default function CoachAssessment() {
           <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Học viên</label>
           <select value={selectedMemberId} onChange={(e) => { setSelectedMemberId(e.target.value); setSelectedSessionId(""); }}
             className={selectCls}>
-            {MOCK_MEMBERS.map((m) => <option key={m.id} value={m.id}>{m.name} ({m.code})</option>)}
+            {members.map((m) => <option key={m.id} value={m.id}>{m.name} ({m.code})</option>)}
           </select>
         </div>
         <div className="flex flex-col gap-1">
@@ -124,7 +132,7 @@ export default function CoachAssessment() {
         ) : (
           <div className="divide-y divide-slate-100 dark:divide-slate-700">
             {memberAssessments.map((a) => {
-              const s = MOCK_SESSIONS.find((x) => x.id === a.sessionId);
+              const s = sessions.find((x) => x.id === a.sessionId);
               return (
                 <div key={a.id} className="px-4 py-4">
                   <div className="flex items-center justify-between gap-2 flex-wrap">

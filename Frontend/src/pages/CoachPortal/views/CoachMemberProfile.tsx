@@ -3,15 +3,10 @@
  * Thông tin cơ bản phục vụ huấn luyện; không hiển thị thanh toán.
  * Lịch sử điểm danh, giáo án đã giao, kết quả và nhận xét.
  */
-import { useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { CoachScreen } from "../types";
-import {
-  getMemberById,
-  getMockAttendance,
-  getMockCurricula,
-  getMockAssessments,
-  getSessionsForMember,
-} from "../services/mockData";
+import { CoachAPI } from "../services/api";
+import type { MockSession, MockCurriculum, AssessmentRecord, AttendanceRecord, MockMember } from "../services/api";
 
 interface Props {
   memberId: string | null;
@@ -33,12 +28,44 @@ const ATT_STYLE: Record<string, string> = {
 };
 
 export default function CoachMemberProfile({ memberId, navigateTo }: Props) {
-  const member = useMemo(() => (memberId ? getMemberById(memberId) : null), [memberId]);
-  const sessions = useMemo(() => (memberId ? getSessionsForMember(memberId) : []), [memberId]);
-  const curricula = useMemo(() => getMockCurricula().filter((c) =>
-    c.assignedTo.some((t) => t.id === memberId)
-  ), [memberId]);
-  const assessments = useMemo(() => getMockAssessments().filter((a) => a.memberId === memberId), [memberId]);
+  const [member, setMember] = useState<MockMember | null>(null);
+  const [sessions, setSessions] = useState<MockSession[]>([]);
+  const [curricula, setCurricula] = useState<MockCurriculum[]>([]);
+  const [assessments, setAssessments] = useState<AssessmentRecord[]>([]);
+  const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceRecord>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!memberId) return;
+    
+    Promise.all([
+      CoachAPI.getMembers(),
+      CoachAPI.getSchedule(),
+      CoachAPI.getCurricula(),
+      CoachAPI.getAssessments()
+    ]).then(async ([membersData, sch, cur, ass]) => {
+      const m = membersData.find((x: MockMember) => x.id === memberId) || null;
+      setMember(m);
+      
+      const memberSessions = sch.filter((s: MockSession) => s.registeredMemberIds.includes(memberId));
+      setSessions(memberSessions);
+      setCurricula(cur.filter((c: MockCurriculum) => c.assignedTo.some((t: any) => t.id === memberId)));
+      setAssessments(ass.filter((a: AssessmentRecord) => a.memberId === memberId));
+      
+      const attMap: Record<string, AttendanceRecord> = {};
+      await Promise.all(memberSessions.map(async (s: MockSession) => {
+        try {
+          const recs = await CoachAPI.getAttendance(s.id);
+          const r = recs.find((x: AttendanceRecord) => x.memberId === memberId);
+          if (r) attMap[s.id] = r;
+        } catch (e) { }
+      }));
+      setAttendanceRecords(attMap);
+      setLoading(false);
+    }).catch(console.error);
+  }, [memberId]);
+
+  if (loading) return <div className="py-20 text-center text-slate-400">Đang tải hồ sơ...</div>;
 
   if (!member) {
     return (
@@ -51,10 +78,8 @@ export default function CoachMemberProfile({ memberId, navigateTo }: Props) {
     );
   }
 
-  // Lịch sử điểm danh
   const history = sessions.map((s) => {
-    const recs = getMockAttendance(s.id);
-    const rec = recs.find((r) => r.memberId === memberId);
+    const rec = attendanceRecords[s.id];
     return {
       session: s,
       status: rec?.status || "chưa điểm danh",
