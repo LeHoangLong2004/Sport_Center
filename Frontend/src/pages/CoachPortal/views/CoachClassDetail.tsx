@@ -3,15 +3,10 @@
  * Kết nối lịch, học viên, giáo án, điểm danh và kết quả.
  * Buổi đã hủy: thông báo nổi bật, khóa thao tác.
  */
-import { useMemo } from "react";
+import { useState, useEffect } from "react";
 import type { CoachScreen } from "../types";
-import {
-  getSessionById,
-  getMembersForSession,
-  getMockAttendance,
-  getMockCurricula,
-  getMockAssessments,
-} from "../services/mockData";
+import { CoachAPI } from "../services/api";
+import type { MockSession, MockMember, AttendanceRecord, MockCurriculum, AssessmentRecord } from "../services/api";
 
 interface Props {
   sessionId: string | null;
@@ -39,16 +34,38 @@ const ATTENDANCE_LABEL: Record<string, string> = {
 };
 
 export default function CoachClassDetail({ sessionId, navigateTo }: Props) {
-  const session = useMemo(() => (sessionId ? getSessionById(sessionId) : null), [sessionId]);
-  const members = useMemo(() => (sessionId ? getMembersForSession(sessionId!) : []), [sessionId]);
-  const attendanceRecords = useMemo(() => (sessionId ? getMockAttendance(sessionId!) : []), [sessionId]);
-  const curricula = useMemo(() => {
-    if (!session) return [];
-    return getMockCurricula().filter((c) =>
-      c.assignedTo.some((t) => t.id === session.classId)
-    );
-  }, [session]);
-  const assessments = useMemo(() => (sessionId ? getMockAssessments().filter((a) => a.sessionId === sessionId) : []), [sessionId]);
+  const [session, setSession] = useState<MockSession | null>(null);
+  const [members, setMembers] = useState<MockMember[]>([]);
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [curricula, setCurricula] = useState<MockCurriculum[]>([]);
+  const [assessments, setAssessments] = useState<AssessmentRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    setLoading(true);
+    Promise.all([
+      CoachAPI.getSessionDetail(sessionId),
+      CoachAPI.getSessionMembers(sessionId),
+      CoachAPI.getAttendance(sessionId),
+      CoachAPI.getCurricula(),
+      CoachAPI.getAssessments()
+    ]).then(([s, m, att, cur, ass]) => {
+      setSession(s);
+      setMembers(m);
+      setAttendanceRecords(att);
+      setCurricula(cur.filter((c: MockCurriculum) => c.assignedTo.some((t: any) => t.id === s.classId)));
+      setAssessments(ass.filter((a: AssessmentRecord) => a.sessionId === sessionId));
+      setLoading(false);
+    }).catch((err) => {
+      console.error(err);
+      setLoading(false);
+    });
+  }, [sessionId]);
+
+  if (loading) {
+    return <div className="py-20 text-center text-slate-400">Đang tải thông tin buổi học...</div>;
+  }
 
   if (!session) {
     return (
