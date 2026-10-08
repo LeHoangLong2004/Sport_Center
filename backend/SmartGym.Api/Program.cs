@@ -125,11 +125,15 @@ using (var scope = app.Services.CreateScope())
         db.Database.ExecuteSqlRaw(@"
             INSERT INTO sports (id, name, description) VALUES 
             ('11111111-1111-1111-1111-111111111111', 'Yoga', 'Lớp học Yoga thư giãn'),
-            ('22222222-2222-2222-2222-222222222222', 'Bơi lội', 'Lớp học bơi căn bản')
+            ('22222222-2222-2222-2222-222222222222', 'Bơi lội', 'Lớp học bơi căn bản'),
+            ('11111111-1111-1111-1111-111111111112', 'Zumba', 'Lớp học Zumba năng động'),
+            ('11111111-1111-1111-1111-111111111113', 'Pilates', 'Lớp học Pilates')
             ON CONFLICT (id) DO NOTHING;
 
             INSERT INTO facilities (id, name, address) VALUES 
-            ('33333333-3333-3333-3333-333333333333', 'SmartGym Quận 1', '123 Nguyễn Huệ, Q1, TP.HCM')
+            ('33333333-3333-3333-3333-333333333333', 'SmartGym Quận 1', '123 Nguyễn Huệ, Q1, TP.HCM'),
+            ('33333333-3333-3333-3333-333333333334', 'Studio 2 (Dance)', '123 Nguyễn Huệ, Q1, TP.HCM'),
+            ('33333333-3333-3333-3333-333333333335', 'Gym Area', '123 Nguyễn Huệ, Q1, TP.HCM')
             ON CONFLICT (id) DO NOTHING;
 
             INSERT INTO packages (id, name, package_type, monthly_price) VALUES 
@@ -176,6 +180,54 @@ app.MapPost("/api/classes", async (SmartGym.Application.DTOs.Classes.CreateClass
     if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
     return Results.Ok(new { message = "Class created successfully" });
 }).RequireAuthorization(policy => policy.RequireRole("manager"));
+
+app.MapGet("/api/sports", async (Supabase.Client client) =>
+{
+    var response = await client.From<SmartGym.Infrastructure.Persistence.Supabase.Models.SportModel>().Get();
+    return Results.Ok(response.Models.Select(s => new { id = s.Id, name = s.Name }));
+});
+
+app.MapGet("/api/facilities", async (Supabase.Client client) =>
+{
+    var response = await client.From<SmartGym.Infrastructure.Persistence.Supabase.Models.FacilityModel>().Get();
+    return Results.Ok(response.Models.Select(f => new { id = f.Id, name = f.Name }));
+});
+
+app.MapGet("/api/coaches", async (Guid? sportId, SmartGym.Infrastructure.Persistence.EF.SmartGymDbContext db) =>
+{
+    var coaches = new List<object>();
+    using var command = db.Database.GetDbConnection().CreateCommand();
+    string sql = @"
+        SELECT c.id, u.full_name, u.email 
+        FROM coaches c
+        JOIN users u ON c.user_id = u.id";
+        
+    if (sportId.HasValue)
+    {
+        sql += @"
+        JOIN coach_sports cs ON c.id = cs.coach_id
+        WHERE cs.sport_id = @sportId";
+        
+        var param = command.CreateParameter();
+        param.ParameterName = "@sportId";
+        param.Value = sportId.Value;
+        command.Parameters.Add(param);
+    }
+    
+    command.CommandText = sql;
+    await db.Database.OpenConnectionAsync();
+    using var reader = await command.ExecuteReaderAsync();
+    while (await reader.ReadAsync())
+    {
+        coaches.Add(new {
+            id = reader.GetGuid(0),
+            fullName = reader.IsDBNull(1) ? null : reader.GetString(1),
+            email = reader.IsDBNull(2) ? null : reader.GetString(2)
+        });
+    }
+    
+    return Results.Ok(coaches);
+});
 
 app.MapGet("/api/classes/available", async (ClassService service) =>
 {

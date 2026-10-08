@@ -10,6 +10,7 @@ export function SchedulePage() {
   const [classes, setClasses] = useState<any[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const [editClassData, setEditClassData] = useState<any>(null);
 
   // Lấy ngày bắt đầu của tuần hiện tại (Thứ 2)
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
@@ -114,7 +115,12 @@ export function SchedulePage() {
       </div>
 
       {showCreateModal && <CreateClassModal onClose={() => { setShowCreateModal(false); fetchClasses(); }} />}
-      {selectedClassId && <ClassDetailModal classId={selectedClassId} onClose={() => setSelectedClassId(null)} />}
+      {editClassData && <CreateClassModal editData={editClassData} onClose={() => { setEditClassData(null); fetchClasses(); }} />}
+      {selectedClassId && <ClassDetailModal 
+        classId={selectedClassId} 
+        onClose={() => { setSelectedClassId(null); fetchClasses(); }} 
+        onEdit={(data) => { setEditClassData(data); setSelectedClassId(null); }}
+      />}
 
       <div className="flex gap-4">
         {/* Sidebar Filters */}
@@ -175,12 +181,15 @@ export function SchedulePage() {
               </div>
               <div className="flex-1 relative">
                 {hours.map((h, i) => (
-                  <div key={h} className="grid grid-cols-8 gap-2 relative h-20 group">
+                  <div key={h} className="grid grid-cols-8 gap-2 relative h-24 group">
                     <div className="w-16 flex justify-end pr-3">
                       <span className="text-[#94a3b8] text-[11px] font-medium -mt-2">{h}</span>
                     </div>
                     {days.map((_, col) => (
-                      <div key={col} className="border-t border-slate-100 group-hover:bg-slate-50/50 transition-colors"></div>
+                      <div key={col} className="border-t border-slate-200 group-hover:bg-slate-50/50 transition-colors relative">
+                        {/* Đường kẻ lằn ranh đứt quãng cho giữa giờ (lẻ) */}
+                        <div className="absolute top-1/2 left-0 w-full border-t border-dashed border-slate-200/60 pointer-events-none"></div>
+                      </div>
                     ))}
                   </div>
                 ))}
@@ -193,11 +202,11 @@ export function SchedulePage() {
                         <div 
                           key={i} 
                           onClick={() => setSelectedClassId(c.id)}
-                          className={`absolute w-full rounded-md border border-l-4 p-2 flex flex-col justify-between pointer-events-auto cursor-pointer hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 overflow-hidden ${c.color}`}
+                          className={`absolute w-full rounded-md border border-l-4 p-1.5 flex flex-col justify-between pointer-events-auto cursor-pointer hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 overflow-hidden ${c.color}`}
                           style={{ 
-                            top: `${c.hour * 5}rem`, 
-                            height: `max(${c.duration * 5 - 0.25}rem, 4.5rem)`, 
-                            marginTop: '2px',
+                            top: `${c.hour * 6}rem`, 
+                            height: `calc(${c.duration * 6}rem - 2px)`, 
+                            marginTop: '1px',
                             zIndex: 10
                           }}
                         >
