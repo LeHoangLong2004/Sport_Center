@@ -59,6 +59,15 @@
   - *HLV*: Xem danh sách các lớp dạy phụ trách kèm danh sách chi tiết học viên đăng ký trong từng lớp.
   - *Manager*: Xem toàn bộ lịch lớp học trên hệ thống kèm bộ lọc linh hoạt theo Cơ sở, HLV, Bộ môn, Ngày.
 
+### 1.9. Lọc Huấn Luyện Viên Theo Chuyên Môn & Seed Data HLV (Backend & Frontend) - **HOÀN THÀNH**
+- **API Lọc HLV Theo Bộ Môn (`GET /api/coaches?sportId=...`)**: Xây dựng endpoint hỗ trợ lọc danh sách HLV thông qua truy vấn SQL JOIN bảng `coaches`, `users` và bảng trung gian `coach_sports`, chỉ trả về những HLV có chuyên môn về bộ môn được chọn.
+- **Seed Data Supabase (`coach_sports`)**: Bổ sung các bản ghi liên kết giữa danh sách HLV hiện có (Coach Nguyễn Văn A, Coach Trần Thị B, Phạm Văn C...) với các bộ môn chuyên môn (Bóng đá, Cầu lông, Yoga, Gym, Bơi lội...) trên hệ thống cơ sở dữ liệu Supabase.
+- **Dynamic Dropdown Modal Tạo Lớp (`CreateClassModal.tsx`)**: Đấu nối sự kiện thay đổi bộ môn (`sportId`), tự động gọi API lọc danh sách HLV tương ứng và tự động reset lựa chọn HLV khi bộ môn thay đổi để tránh gán nhầm HLV không có chuyên môn.
+
+### 1.10. Tối Ưu Giao Diện Lịch Trình Lớp Học (Schedule Timetable UI) - **HOÀN THÀNH**
+- **Khắc Phục Đè / Dính Card Lớp Học (`SchedulePage.tsx`)**: Tối ưu lại công thức tính toán tọa độ `top` và chiều cao `height` của các card lớp học dựa trên khung giờ học thực tế (tỉ lệ chuẩn 6rem/giờ).
+- **Giao Diện Gọn Gàng & Đường Lằn Ranh Khung Giờ**: Điều chỉnh chiều cao mỗi hàng ô lịch (`h-24`), bổ sung các đường kẻ nét đứt (dashed border) đánh dấu mốc 30 phút, giúp các card lớp học hiển thị gọn gàng, chuẩn xác vị trí theo thời gian mà không bị kéo dài trang gây mất thẩm mỹ.
+
 ---
 
 ## 2. Các Công Việc Đang Thực Hiện (In Progress)

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 
-export function ClassDetailModal({ classId, onClose }: { classId: string, onClose: () => void }) {
+export function ClassDetailModal({ classId, onClose, onEdit }: { classId: string, onClose: () => void, onEdit: (data: any) => void }) {
   const [classDetail, setClassDetail] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     const fetchClassDetail = async () => {
@@ -23,6 +24,30 @@ export function ClassDetailModal({ classId, onClose }: { classId: string, onClos
     };
     fetchClassDetail();
   }, [classId]);
+
+  const handleCancelClass = async () => {
+    if (!confirm('Bạn có chắc chắn muốn hủy lớp học này không? Mọi lượt đăng ký của học viên cũng sẽ bị hủy bỏ.')) return;
+    
+    setIsCancelling(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/classes/${classId}/cancel`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        alert('Đã hủy lớp học thành công!');
+        onClose(); // This will trigger fetchClasses in SchedulePage if we modify it
+      } else {
+        const data = await res.json().catch(() => null);
+        alert(data?.message || 'Không thể hủy lớp học lúc này.');
+      }
+    } catch (err) {
+      alert('Lỗi kết nối khi hủy lớp học.');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
@@ -128,6 +153,31 @@ export function ClassDetailModal({ classId, onClose }: { classId: string, onClos
             </div>
           ) : null}
         </div>
+
+        {/* Footer Actions */}
+        {classDetail && (
+          <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 shrink-0">
+            <button 
+              onClick={() => onEdit(classDetail)} 
+              className="px-5 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Sửa thông tin
+            </button>
+            <button 
+              onClick={handleCancelClass}
+              disabled={isCancelling}
+              className="px-5 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:bg-red-400 transition-colors flex items-center gap-2"
+            >
+              {isCancelling && (
+                <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              )}
+              {isCancelling ? 'Đang xử lý...' : 'Hủy lớp học'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

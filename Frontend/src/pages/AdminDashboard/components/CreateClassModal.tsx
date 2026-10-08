@@ -1,58 +1,101 @@
 import React, { useState, useEffect } from 'react';
 
-const SPORTS = [
-  { id: '11111111-1111-1111-1111-111111111111', name: 'Yoga' },
-  { id: '11111111-1111-1111-1111-111111111112', name: 'Zumba' },
-  { id: '11111111-1111-1111-1111-111111111113', name: 'Pilates' },
-];
-
-const FACILITIES = [
-  { id: '33333333-3333-3333-3333-333333333333', name: 'Studio 1 (Yoga/Pilates)' },
-  { id: '33333333-3333-3333-3333-333333333334', name: 'Studio 2 (Dance)' },
-  { id: '33333333-3333-3333-3333-333333333335', name: 'Gym Area' },
-];
-
-export function CreateClassModal({ onClose }: { onClose: () => void }) {
-  const [formData, setFormData] = useState({
-    sportId: '',
-    facilityId: '',
-    coachId: '',
-    className: '',
-    scheduleDate: '',
-    scheduleTime: '',
-    durationMinutes: 60,
-    capacity: 20
+export function CreateClassModal({ onClose, editData }: { onClose: () => void, editData?: any }) {
+  const [formData, setFormData] = useState(() => {
+    if (editData) {
+      const d = new Date(editData.scheduleTime);
+      const tzOffset = d.getTimezoneOffset() * 60000;
+      const localISOTime = (new Date(d.getTime() - tzOffset)).toISOString().slice(0, 16);
+      const [datePart, timePart] = localISOTime.split('T');
+      return {
+        sportId: editData.sportId || '',
+        facilityId: editData.facilityId || '',
+        coachId: editData.coachId || '',
+        className: editData.className || '',
+        scheduleDate: datePart,
+        scheduleTime: timePart,
+        durationMinutes: editData.durationMinutes || 60,
+        capacity: editData.capacity || 20
+      };
+    }
+    return {
+      sportId: '',
+      facilityId: '',
+      coachId: '',
+      className: '',
+      scheduleDate: '',
+      scheduleTime: '',
+      durationMinutes: 60,
+      capacity: 20
+    };
   });
 
   const [coaches, setCoaches] = useState<any[]>([]);
+  const [sports, setSports] = useState<any[]>([]);
+  const [facilities, setFacilities] = useState<any[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+
+        // Fetch sports
+        const sportsRes = await fetch("/api/sports");
+        if (sportsRes.ok) {
+          const sportsData = await sportsRes.json();
+          setSports(sportsData);
+        }
+
+        // Fetch facilities
+        const facilitiesRes = await fetch("/api/facilities");
+        if (facilitiesRes.ok) {
+          const facilitiesData = await facilitiesRes.json();
+          setFacilities(facilitiesData);
+        }
+
+      } catch (err) {
+        console.error("Failed to fetch data", err);
+      } finally {
+        setLoadingData(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  // Fetch coaches whenever sportId changes
+  useEffect(() => {
     const fetchCoaches = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const res = await fetch("/api/users", {
-          headers: { "Authorization": `Bearer ${token}` }
-        });
+        let url = "/api/coaches";
+        if (formData.sportId) {
+          url += `?sportId=${formData.sportId}`;
+        }
+        
+        const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
-          // Filter users who are coaches
-          const coachList = data.filter((u: any) => 
-            u.roleName?.toLowerCase() === 'coach' || u.role?.toLowerCase() === 'coach'
-          );
-          setCoaches(coachList);
+          setCoaches(data);
         }
       } catch (err) {
         console.error("Failed to fetch coaches", err);
       }
     };
     fetchCoaches();
-  }, []);
+  }, [formData.sportId]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    setFormData(prev => {
+      const next = { ...prev, [name]: value };
+      // Nếu đổi môn học, tự động reset HLV đã chọn
+      if (name === 'sportId') {
+        next.coachId = '';
+      }
+      return next;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -75,10 +118,13 @@ export function CreateClassModal({ onClose }: { onClose: () => void }) {
         capacity: Number(formData.capacity)
       };
 
+      const url = editData ? `/api/classes/${editData.id}` : "/api/classes";
+      const method = editData ? "PUT" : "POST";
+
       const token = localStorage.getItem("token");
 
-      const res = await fetch("/api/classes", {
-        method: "POST",
+      const res = await fetch(url, {
+        method: method,
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
@@ -102,10 +148,10 @@ export function CreateClassModal({ onClose }: { onClose: () => void }) {
         if (res.status === 401 || res.status === 403) {
           throw new Error("Không có quyền thực hiện (Lỗi 401/403)");
         }
-        throw new Error(data.message || 'Lỗi khi tạo lớp học');
+        throw new Error(data.message || `Lỗi khi ${editData ? 'cập nhật' : 'tạo'} lớp học`);
       }
 
-      setSuccess(data.message || "Tạo lớp học thành công!");
+      setSuccess(data.message || (editData ? "Cập nhật thành công!" : "Tạo lớp học thành công!"));
       setTimeout(() => {
         onClose();
       }, 1500);
@@ -121,7 +167,7 @@ export function CreateClassModal({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white rounded-xl shadow-lg w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-slate-50 shrink-0">
-          <h2 className="text-lg font-bold text-slate-800">Tạo lớp học mới</h2>
+          <h2 className="text-lg font-bold text-slate-800">{editData ? "Cập nhật thông tin lớp học" : "Tạo lớp học mới"}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
         </div>
 
@@ -151,14 +197,14 @@ export function CreateClassModal({ onClose }: { onClose: () => void }) {
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Môn học</label>
                 <select required name="sportId" value={formData.sportId} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 bg-white">
                   <option value="">-- Chọn môn học --</option>
-                  {SPORTS.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  {sports.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Phòng tập</label>
                 <select required name="facilityId" value={formData.facilityId} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 bg-white">
                   <option value="">-- Chọn phòng tập --</option>
-                  {FACILITIES.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                  {facilities.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
                 </select>
               </div>
             </div>
@@ -169,7 +215,8 @@ export function CreateClassModal({ onClose }: { onClose: () => void }) {
                 <option value="">-- Chọn HLV --</option>
                 {coaches.map(c => <option key={c.id} value={c.id}>{c.fullName || c.email}</option>)}
               </select>
-              {coaches.length === 0 && <p className="text-xs text-amber-600 mt-1">Đang tải danh sách HLV...</p>}
+              {loadingData && <p className="text-xs text-amber-600 mt-1">Đang tải dữ liệu...</p>}
+              {!loadingData && coaches.length === 0 && <p className="text-xs text-red-600 mt-1">Chưa có HLV nào trong hệ thống.</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -188,7 +235,7 @@ export function CreateClassModal({ onClose }: { onClose: () => void }) {
                 Hủy
               </button>
               <button type="submit" disabled={loading} className="px-5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50">
-                {loading ? 'Đang xử lý...' : 'Xác nhận tạo'}
+                {loading ? 'Đang xử lý...' : (editData ? 'Lưu thay đổi' : 'Xác nhận tạo')}
               </button>
             </div>
           </form>
