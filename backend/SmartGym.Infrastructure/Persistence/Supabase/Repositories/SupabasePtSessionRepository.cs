@@ -33,7 +33,7 @@ public sealed class SupabasePtSessionRepository : IPtSessionRepository
         // 2. Get sessions for those enrollments on the specific date
         // Note: Postgrest-csharp might not support 'in' queries on large arrays gracefully, but for small sets it's fine.
         var sessionsResponse = await _client.From<PtSessionModel>()
-            .Where(x => enrollmentIds.Contains(x.EnrollmentId))
+            .Filter(x => x.EnrollmentId, Postgrest.Constants.Operator.In, enrollmentIds)
             .Where(x => x.ScheduleTime >= startOfDay)
             .Where(x => x.ScheduleTime < endOfDay)
             .Where(x => x.Status == "scheduled") // Only consider scheduled sessions for overlap

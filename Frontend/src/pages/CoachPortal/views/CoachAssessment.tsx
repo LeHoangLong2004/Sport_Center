@@ -1,123 +1,235 @@
-import { useState } from "react";
-import { IconSearch } from "../Icons";
-import { A } from "../constants";
+/**
+ * CO-07 — Kết quả, Tiến độ & Đánh giá
+ * Không tạo kết quả cho học viên vắng.
+ * Biểu đồ chỉ hiển thị khi có dữ liệu thực.
+ */
+import { useState, useMemo } from "react";
+import {
+  getMockAssessments,
+  saveAssessment,
+  MOCK_SESSIONS,
+  MOCK_MEMBERS,
+  getMockAttendance,
+  type AssessmentRecord,
+} from "../services/mockData";
 
-const students = [
-  {
-    name: "Nguyễn Lan Anh",
-    type: "PT 1-1",
-    avatar: `${A}/50eeb.png`,
-    progress: "Tiến triển tốt",
-    progressColor: "#10B981",
-    progressBg: "#D1FAE5",
-    weight: "54kg",
-    goal: "Giảm 3kg mỡ mông đùi",
-    note: '"Hoàn thành tốt chuỗi ta Squat 15 reps x 3 sets. Khớp hông linh hoạt hơn, tuy nhiên cần chú ý hit thở sâu, không nín thở khi gồng bụng."',
-    noteTime: "Hôm nay, 14:00",
-  },
-  {
-    name: "Lê Minh Triết",
-    type: "Fitness Member",
-    avatar: `${A}/c814c.png`,
-    progress: "Ổn định",
-    progressColor: "#3B82F6",
-    progressBg: "#EEF5FF",
-    weight: "78kg",
-    goal: "Tăng 2kg cơ bắp tay",
-    note: '"Hoàn thành tốt chuỗi ta Squat 15 reps x 3 sets. Khớp hông linh hoạt hơn, tuy nhiên cần chú ý hit thở sâu, không nín thở khi gồng bụng."',
-    noteTime: "Hôm nay, 08:15",
-  },
-  {
-    name: "Vũ Thu Trang",
-    type: "Yoga VIP 1-1",
-    avatar: `${A}/88820.png`,
-    progress: "Khá chậm",
-    progressColor: "#F97316",
-    progressBg: "#FFF1E8",
-    weight: "49kg",
-    goal: "Phục hồi khớp vai thẳng trục",
-    note: '"Hoàn thành tốt chuỗi ta Squat 15 reps x 3 sets. Khớp hông linh hoạt hơn, tuy nhiên cần chú ý hit thở sâu, không nín thở khi gồng bụng."',
-    noteTime: "Hôm nay, 08:02",
-  },
-  {
-    name: "Trần Minh Khoa",
-    type: "CrossFit Team",
-    avatar: `${A}/98afc.png`,
-    progress: "Tiến triển xuất sắc",
-    progressColor: "#0D9488",
-    progressBg: "#CCFBF1",
-    weight: "82kg",
-    goal: "Cải thiện VO2 Max & Thể lực",
-    note: '"Hoàn thành tốt chuỗi ta Squat 15 reps x 3 sets. Khớp hông linh hoạt hơn, tuy nhiên cần chú ý hit thở sâu, không nín thở khi gồng bụng."',
-    noteTime: "Thứ 3, 17:00",
-  },
-]
+export default function CoachAssessment() {
+  const [assessments, setAssessments] = useState<AssessmentRecord[]>(() => getMockAssessments());
+  const [selectedMemberId, setSelectedMemberId] = useState(MOCK_MEMBERS[0]?.id || "");
+  const [selectedSessionId, setSelectedSessionId] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<Partial<AssessmentRecord>>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
 
-export function CoachAssessment() {
-  const [query, setQuery] = useState("")
-  const visible = students.filter((s) =>
-    s.name.toLowerCase().includes(query.toLowerCase()),
-  )
+  // Chỉ cho phép ghi kết quả cho học viên có mặt (spec: không tạo kết quả cho học viên vắng)
+  const eligibleSessions = useMemo(() => {
+    if (!selectedMemberId) return [];
+    return MOCK_SESSIONS.filter((s) => {
+      if (!s.registeredMemberIds.includes(selectedMemberId)) return false;
+      if (s.status === "đã hủy") return false;
+      const recs = getMockAttendance(s.id);
+      const att = recs.find((r) => r.memberId === selectedMemberId);
+      // Không ghi kết quả cho học viên vắng
+      return att?.status !== "no_show";
+    });
+  }, [selectedMemberId]);
+
+  const memberAssessments = useMemo(
+    () => assessments.filter((a) => a.memberId === selectedMemberId).sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    [assessments, selectedMemberId]
+  );
+
+  const openNew = () => {
+    if (!selectedSessionId) { setFeedback("Vui lòng chọn buổi học trước."); return; }
+    const id = `as_${Date.now()}`;
+    setDraft({
+      id,
+      sessionId: selectedSessionId,
+      memberId: selectedMemberId,
+      completion: 80,
+      metrics: [{ label: "Chỉ số", value: "", unit: "" }],
+      comment: "",
+      nextStep: "",
+      createdAt: new Date().toISOString(),
+    });
+    setEditingId(id);
+    setFeedback(null);
+  };
+
+  const handleSave = async () => {
+    if (!draft.comment && !draft.completion) return;
+    setIsSaving(true);
+    const full: AssessmentRecord = {
+      id: draft.id!,
+      sessionId: draft.sessionId!,
+      memberId: draft.memberId!,
+      completion: draft.completion || 0,
+      metrics: draft.metrics || [],
+      comment: draft.comment || "",
+      nextStep: draft.nextStep || "",
+      createdAt: draft.createdAt || new Date().toISOString(),
+    };
+    await saveAssessment(full);
+    setAssessments(getMockAssessments());
+    setIsSaving(false);
+    setEditingId(null);
+    setDraft({});
+    setFeedback("Demo — đã ghi kết quả (lưu trên trình duyệt)");
+  };
 
   return (
-    <div className="cp-assessment-screen">
-      <div className="cp-assessment-toolbar">
-        <h2 className="cp-panel-title">Theo dõi tiến trình & Ghi chú HLV</h2>
-        <label className="cp-search-box">
-          <IconSearch />
-          <input
-            placeholder="Tìm tên học viên..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-        </label>
+    <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-400 max-w-4xl">
+      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Tiến độ & Đánh giá</h1>
+
+      {feedback && (
+        <div className="rounded-xl px-4 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-700 text-sm">
+          ✓ {feedback}
+        </div>
+      )}
+
+      {/* Chọn học viên */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex flex-wrap gap-4 items-end">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Học viên</label>
+          <select value={selectedMemberId} onChange={(e) => { setSelectedMemberId(e.target.value); setSelectedSessionId(""); }}
+            className={selectCls}>
+            {MOCK_MEMBERS.map((m) => <option key={m.id} value={m.id}>{m.name} ({m.code})</option>)}
+          </select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Buổi học (đủ điều kiện)</label>
+          <select value={selectedSessionId} onChange={(e) => setSelectedSessionId(e.target.value)} className={selectCls}>
+            <option value="">-- Chọn buổi --</option>
+            {eligibleSessions.map((s) => (
+              <option key={s.id} value={s.id}>{s.className} — {s.date}</option>
+            ))}
+          </select>
+        </div>
+        <button type="button" onClick={openNew}
+          className="px-4 py-2 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-md shadow-teal-500/20">
+          + Ghi kết quả
+        </button>
       </div>
 
-      <div className="cp-student-grid">
-        {visible.map((s) => (
-          <div className="cp-student-card" key={s.name}>
-            <div className="cp-student-head">
-              <div className="cp-student-id">
-                <img src={s.avatar} alt={s.name} className="cp-student-avatar" />
-                <div>
-                  <strong className="cp-student-name">{s.name}</strong>
-                  <span className="cp-student-type">{s.type}</span>
+      {/* Tiến độ theo thời gian */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+          <h2 className="font-semibold text-slate-800 dark:text-slate-100 text-sm">Lịch sử kết quả</h2>
+        </div>
+        {memberAssessments.length === 0 ? (
+          <div className="px-4 py-8 text-center text-slate-400 text-sm">
+            Chưa có kết quả nào. Bắt đầu ghi nhận sau mỗi buổi học.
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100 dark:divide-slate-700">
+            {memberAssessments.map((a) => {
+              const s = MOCK_SESSIONS.find((x) => x.id === a.sessionId);
+              return (
+                <div key={a.id} className="px-4 py-4">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div>
+                      <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{s?.className || a.sessionId}</div>
+                      <div className="text-xs text-slate-400 mt-0.5">{s?.date} · {new Date(a.createdAt).toLocaleDateString("vi-VN")}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-right">
+                        <div className="text-xs text-slate-400">Hoàn thành</div>
+                        <div className={`text-lg font-black ${a.completion >= 80 ? "text-green-600" : a.completion >= 60 ? "text-amber-500" : "text-red-600"}`}>
+                          {a.completion}%
+                        </div>
+                      </div>
+                      {/* Simple bar chart */}
+                      <div className="w-20 h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full ${a.completion >= 80 ? "bg-green-500" : a.completion >= 60 ? "bg-amber-400" : "bg-red-500"}`}
+                          style={{ width: `${a.completion}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {a.metrics.filter((m) => m.value).map((m) => (
+                      <span key={m.label} className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full">
+                        {m.label}: {m.value}{m.unit}
+                      </span>
+                    ))}
+                  </div>
+                  {a.comment && <div className="text-sm text-slate-600 dark:text-slate-300 mt-2 italic">"{a.comment}"</div>}
+                  {a.nextStep && <div className="text-xs text-teal-600 dark:text-teal-400 mt-1">→ Hướng tiếp: {a.nextStep}</div>}
                 </div>
-              </div>
-              <span
-                className="cp-progress-badge"
-                style={{ color: s.progressColor, background: s.progressBg }}
-              >
-                {s.progress}
-              </span>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Edit form */}
+      {editingId && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg p-6 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Ghi kết quả buổi học</h2>
+            <div className="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-3 py-2">
+              ⚠️ Demo — lưu trên trình duyệt
             </div>
-            <div className="cp-student-stats">
-              <div>
-                <p className="cp-student-stat-label">CÂN NẶNG HIỆN TẠI</p>
-                <p className="cp-student-stat-val">{s.weight}</p>
-              </div>
-              <div>
-                <p className="cp-student-stat-label">MỤC TIÊU HUẤN LUYỆN</p>
-                <p className="cp-student-stat-val">{s.goal}</p>
-              </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Mức hoàn thành (%)</label>
+              <input type="range" min={0} max={100} value={draft.completion || 0}
+                onChange={(e) => setDraft({ ...draft, completion: +e.target.value })}
+                className="accent-teal-600" />
+              <div className="text-sm font-bold text-teal-600">{draft.completion}%</div>
             </div>
-            <div className="cp-student-note-wrap">
-              <p className="cp-student-note-label">
-                GHI CHÚ HLV BUỔI GẦN NHẤT ({s.noteTime})
-              </p>
-              <p className="cp-student-note">{s.note}</p>
+
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Chỉ số tập luyện</label>
+                <button type="button" className="text-xs text-teal-600 hover:underline"
+                  onClick={() => setDraft({ ...draft, metrics: [...(draft.metrics || []), { label: "", value: "", unit: "" }] })}>
+                  + Thêm
+                </button>
+              </div>
+              {(draft.metrics || []).map((m, i) => (
+                <div key={i} className="flex gap-2 items-center">
+                  <input type="text" placeholder="Tên chỉ số" value={m.label}
+                    onChange={(e) => { const ms = [...(draft.metrics || [])]; ms[i] = { ...m, label: e.target.value }; setDraft({ ...draft, metrics: ms }); }}
+                    className={`${inputCls} text-xs`} />
+                  <input type="text" placeholder="Giá trị" value={m.value}
+                    onChange={(e) => { const ms = [...(draft.metrics || [])]; ms[i] = { ...m, value: e.target.value }; setDraft({ ...draft, metrics: ms }); }}
+                    className={`${inputCls} text-xs w-20`} />
+                  <input type="text" placeholder="Đvị" value={m.unit}
+                    onChange={(e) => { const ms = [...(draft.metrics || [])]; ms[i] = { ...m, unit: e.target.value }; setDraft({ ...draft, metrics: ms }); }}
+                    className={`${inputCls} text-xs w-14`} />
+                </div>
+              ))}
             </div>
-            <div className="cp-student-actions">
-              <button className="cp-btn-primary cp-btn-sm" type="button">
-                Viết ghi chú buổi mới
+
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Nhận xét</label>
+              <textarea value={draft.comment || ""} onChange={(e) => setDraft({ ...draft, comment: e.target.value })}
+                rows={3} className={inputCls} placeholder="Nhận xét kết quả buổi học..." />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Hướng tập tiếp theo</label>
+              <input type="text" value={draft.nextStep || ""} onChange={(e) => setDraft({ ...draft, nextStep: e.target.value })}
+                className={inputCls} placeholder="VD: Tăng tạ, cải thiện tư thế..." />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button type="button" onClick={() => { setEditingId(null); setDraft({}); }}
+                className="px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-600 dark:text-slate-300">
+                Hủy
               </button>
-              <button className="cp-btn-outline cp-btn-sm" type="button">
-                Lịch sử Body Fat
+              <button type="button" onClick={handleSave} disabled={isSaving}
+                className="px-5 py-2 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 disabled:bg-slate-300">
+                {isSaving ? "Đang lưu..." : "Lưu kết quả"}
               </button>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
-  )
+  );
 }
+
+const selectCls = "border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500";
+const inputCls = "border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 w-full";

@@ -1,13 +1,103 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { iCalendar, iSearch2, iChevron, coachAvatar1, coachAvatar2, hrAvatar1 } from '../shared';
 import { CreateClassModal } from '../components/CreateClassModal';
+import { ClassDetailModal } from '../components/ClassDetailModal';
 
 export function SchedulePage() {
   const days = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
   const hours = ["06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"];
 
-  const classes: any[] = [];
+  const [classes, setClasses] = useState<any[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const [editClassData, setEditClassData] = useState<any>(null);
+
+  // Lấy ngày bắt đầu của tuần hiện tại (Thứ 2)
+  const [currentWeekStart, setCurrentWeekStart] = useState(() => {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(d.setDate(diff));
+    monday.setHours(0, 0, 0, 0);
+    return monday;
+  });
+
+  const getWeekString = () => {
+    const end = new Date(currentWeekStart);
+    end.setDate(end.getDate() + 6);
+    
+    const formatDate = (date: Date) => {
+      return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+    };
+    return `${formatDate(currentWeekStart)} - ${formatDate(end)}, ${end.getFullYear()}`;
+  };
+
+  const fetchClasses = async () => {
+    try {
+      const res = await fetch("/api/classes/available");
+      if (res.ok) {
+        const data = await res.json();
+        const formattedClasses = data.map((c: any, i: number) => {
+          const start = new Date(c.scheduleTime);
+          const end = new Date(start.getTime() + (c.durationMinutes || 60) * 60000);
+          
+          const day = start.getDay() === 0 ? 6 : start.getDay() - 1; 
+          const startHour = start.getHours() + start.getMinutes() / 60;
+          const endHour = end.getHours() + end.getMinutes() / 60;
+          const hourIndex = (startHour - 6) / 2; 
+          const durationIndex = (endHour - startHour) / 2;
+
+          const colorOptions = [
+            { bg: 'bg-blue-50 border-blue-200 border-l-blue-500', text: 'text-blue-700' },
+            { bg: 'bg-emerald-50 border-emerald-200 border-l-emerald-500', text: 'text-emerald-700' },
+            { bg: 'bg-violet-50 border-violet-200 border-l-violet-500', text: 'text-violet-700' },
+            { bg: 'bg-orange-50 border-orange-200 border-l-orange-500', text: 'text-orange-700' },
+            { bg: 'bg-rose-50 border-rose-200 border-l-rose-500', text: 'text-rose-700' },
+          ];
+          const color = colorOptions[i % colorOptions.length];
+
+          return {
+            id: c.id,
+            name: c.className,
+            room: c.facilityName || 'Studio',
+            coach: c.coachName,
+            enrolled: `${c.currentEnrolled || 0}/${c.capacity || 0}`,
+            day: day,
+            hour: hourIndex,
+            duration: durationIndex,
+            color: color.bg,
+            text: color.text,
+            rawStart: start
+          };
+        });
+        setClasses(formattedClasses);
+      }
+    } catch (error) {
+      console.error("Failed to fetch classes:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchClasses();
+  }, []);
+
+  const handlePrevWeek = () => {
+    const prev = new Date(currentWeekStart);
+    prev.setDate(prev.getDate() - 7);
+    setCurrentWeekStart(prev);
+  };
+
+  const handleNextWeek = () => {
+    const next = new Date(currentWeekStart);
+    next.setDate(next.getDate() + 7);
+    setCurrentWeekStart(next);
+  };
+
+  // Lọc các lớp trong tuần đang chọn
+  const weekEnd = new Date(currentWeekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  weekEnd.setHours(23, 59, 59, 999);
+  const classesThisWeek = classes.filter(c => c.rawStart >= currentWeekStart && c.rawStart <= weekEnd);
 
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
@@ -24,7 +114,13 @@ export function SchedulePage() {
         </button>
       </div>
 
-      {showCreateModal && <CreateClassModal onClose={() => setShowCreateModal(false)} />}
+      {showCreateModal && <CreateClassModal onClose={() => { setShowCreateModal(false); fetchClasses(); }} />}
+      {editClassData && <CreateClassModal editData={editClassData} onClose={() => { setEditClassData(null); fetchClasses(); }} />}
+      {selectedClassId && <ClassDetailModal 
+        classId={selectedClassId} 
+        onClose={() => { setSelectedClassId(null); fetchClasses(); }} 
+        onEdit={(data) => { setEditClassData(data); setSelectedClassId(null); }}
+      />}
 
       <div className="flex gap-4">
         {/* Sidebar Filters */}
@@ -49,18 +145,7 @@ export function SchedulePage() {
           <div className="bg-white border border-[#e2e8f0] rounded-xl p-4 drop-shadow-sm">
             <p className="font-bold text-[#0f172a] text-sm mb-3">Huấn luyện viên (Workload)</p>
             <div className="flex flex-col gap-3">
-              {([] as any[]).map((c, i) => (
-                <div key={i} className="flex gap-3 items-center">
-                  <img src={c.avatar} alt="" className="size-8 rounded-full object-cover" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[#0f172a] text-sm font-medium truncate">{c.name}</p>
-                    <div className="w-full bg-slate-100 h-1.5 rounded-full mt-1 overflow-hidden">
-                      <div className={`h-full ${c.color}`} style={{ width: `${(c.hours/40)*100}%` }}></div>
-                    </div>
-                  </div>
-                  <span className="text-[#64748b] text-[10px]">{c.hours}h</span>
-                </div>
-              ))}
+              <p className="text-xs text-gray-500 italic">Đang cập nhật...</p>
             </div>
           </div>
         </div>
@@ -69,11 +154,11 @@ export function SchedulePage() {
         <div className="flex-1 bg-white border border-[#e2e8f0] rounded-xl drop-shadow-sm flex flex-col min-w-0">
           <div className="flex items-center justify-between p-4 border-b border-[#e2e8f0]">
             <div className="flex items-center gap-4">
-              <button className="p-1 hover:bg-slate-100 rounded">
+              <button onClick={handlePrevWeek} className="p-1 hover:bg-slate-100 rounded">
                 <img src={iChevron} alt="" className="size-5 rotate-90 opacity-60" />
               </button>
-              <p className="font-bold text-[#0f172a] text-base">21/09 - 27/09, 2026</p>
-              <button className="p-1 hover:bg-slate-100 rounded">
+              <p className="font-bold text-[#0f172a] text-base">{getWeekString()}</p>
+              <button onClick={handleNextWeek} className="p-1 hover:bg-slate-100 rounded">
                 <img src={iChevron} alt="" className="size-5 -rotate-90 opacity-60" />
               </button>
             </div>
@@ -96,12 +181,15 @@ export function SchedulePage() {
               </div>
               <div className="flex-1 relative">
                 {hours.map((h, i) => (
-                  <div key={h} className="grid grid-cols-8 gap-2 relative h-20 group">
+                  <div key={h} className="grid grid-cols-8 gap-2 relative h-24 group">
                     <div className="w-16 flex justify-end pr-3">
                       <span className="text-[#94a3b8] text-[11px] font-medium -mt-2">{h}</span>
                     </div>
                     {days.map((_, col) => (
-                      <div key={col} className="border-t border-slate-100 group-hover:bg-slate-50/50 transition-colors"></div>
+                      <div key={col} className="border-t border-slate-200 group-hover:bg-slate-50/50 transition-colors relative">
+                        {/* Đường kẻ lằn ranh đứt quãng cho giữa giờ (lẻ) */}
+                        <div className="absolute top-1/2 left-0 w-full border-t border-dashed border-slate-200/60 pointer-events-none"></div>
+                      </div>
                     ))}
                   </div>
                 ))}
@@ -110,23 +198,31 @@ export function SchedulePage() {
                 <div className="absolute top-0 left-0 w-full h-full pointer-events-none grid grid-cols-8 gap-2 pl-[4.5rem]">
                   {days.map((_, colIdx) => (
                     <div key={colIdx} className="relative h-full">
-                      {classes.filter(c => c.day === colIdx).map((c, i) => (
+                      {classesThisWeek.filter(c => c.day === colIdx).map((c, i) => (
                         <div 
                           key={i} 
-                          className={`absolute w-full rounded-lg border p-2 flex flex-col justify-between pointer-events-auto cursor-pointer hover:brightness-95 transition-all shadow-sm ${c.color}`}
+                          onClick={() => setSelectedClassId(c.id)}
+                          className={`absolute w-full rounded-md border border-l-4 p-1.5 flex flex-col justify-between pointer-events-auto cursor-pointer hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 overflow-hidden ${c.color}`}
                           style={{ 
-                            top: `${c.hour * 5}rem`, 
-                            height: `${c.duration * 5 - 0.5}rem`, 
-                            marginTop: '2px'
+                            top: `${c.hour * 6}rem`, 
+                            height: `calc(${c.duration * 6}rem - 2px)`, 
+                            marginTop: '1px',
+                            zIndex: 10
                           }}
                         >
                           <div>
-                            <p className={`font-bold text-xs leading-tight ${c.text}`}>{c.name}</p>
-                            <p className={`text-[10px] font-medium opacity-80 ${c.text} mt-0.5`}>{c.room}</p>
+                            <p className={`font-bold text-[11px] leading-tight truncate ${c.text}`}>{c.name}</p>
+                            <div className={`flex items-center gap-1 mt-1 opacity-80 ${c.text}`}>
+                              <svg className="w-2.5 h-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                              <p className="text-[9px] font-medium truncate">{c.room}</p>
+                            </div>
                           </div>
-                          <div className="flex justify-between items-center mt-1">
-                            <p className={`text-[10px] font-medium ${c.text}`}>{c.coach}</p>
-                            <span className="bg-white/50 px-1.5 rounded text-[9px] font-bold">{c.enrolled}</span>
+                          <div className="flex justify-between items-center mt-1 pt-1 border-t border-black/5">
+                            <div className="flex items-center gap-1 min-w-0">
+                              <svg className="w-2.5 h-2.5 shrink-0 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                              <p className={`text-[9px] font-medium truncate pr-1 ${c.text}`}>{c.coach}</p>
+                            </div>
+                            <span className="bg-white/90 px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0 shadow-sm border border-black/5">{c.enrolled}</span>
                           </div>
                         </div>
                       ))}
