@@ -344,10 +344,32 @@ export function PackagesPage() {
       ])
 
       setCatalog(nextCatalog)
-
       setOrders(nextOrders)
 
-      setMembership(getMembershipStatus(nextOrders, nextCatalog))
+      let memStatus = getMembershipStatus(nextOrders, nextCatalog)
+      try {
+        const { MemberAPI } = await import('../services/api');
+        const subs = await MemberAPI.getMySubscriptions();
+        if (subs && subs.length > 0) {
+          const memSub = subs.find((s: any) => s.packageType === 'membership');
+          if (memSub && (memSub.paymentStatus === 1 || memSub.paymentStatus === 'Completed') && new Date(memSub.endDate) > new Date()) {
+             memStatus = {
+               ...memStatus,
+               name: memSub.packageName || "Hội viên",
+               tier: memSub.packageName?.toLowerCase().includes("premium") ? "premium" : memSub.packageName?.toLowerCase().includes("plus") ? "plus" : "basic",
+               startDate: memSub.startDate,
+               endDate: memSub.endDate,
+               benefits: memStatus?.benefits || [],
+               groupDiscountPct: memStatus?.groupDiscountPct || 0,
+               coachDiscountPct: memStatus?.coachDiscountPct || 0,
+               bookingAdvanceHours: memStatus?.bookingAdvanceHours || 0,
+               lockerTerms: memStatus?.lockerTerms || "",
+             };
+          }
+        }
+      } catch (e) { console.error("Could not fetch subscriptions", e) }
+
+      setMembership(memStatus)
 
       setError("")
     } catch (loadError) {
@@ -586,7 +608,7 @@ export function PackagesPage() {
                   }))
                 }
                 onChoose={() => item.tier !== "basic" && setSelected(item)}
-                membership={membership}
+                membership={membership || undefined}
                 disabled={item.tier === "basic"}
               />
             ))}
@@ -654,7 +676,7 @@ export function PackagesPage() {
                     }))
                   }
                   onChoose={() => setSelected(item)}
-                  membership={membership}
+                  membership={membership || undefined}
                 />
               ))}
             </div>

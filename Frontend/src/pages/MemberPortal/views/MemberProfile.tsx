@@ -95,7 +95,7 @@ export function MemberProfile({ onNavigate }: { onNavigate: (page: MemberPage) =
       MemberAPI.getMySubscriptions().then(data => {
         if (data && data.length > 0) {
           setSub(data.find((s: any) => s.packageType === 'sport') || null);
-          setMemSub(data.find((s: any) => s.packageType === 'membership') || data[0]);
+          setMemSub(data.find((s: any) => s.packageType === 'membership') || null);
         }
       }).catch(console.error);
     });
@@ -131,16 +131,26 @@ export function MemberProfile({ onNavigate }: { onNavigate: (page: MemberPage) =
     </div>
   );
 
+    const activeRole = memSub?.packageName || membership?.name || profile?.roleName || "Cơ bản";
+    const lowerRole = activeRole.toLowerCase();
+    let tierColor: 'blue' | 'gold' | 'black' | 'teal' = 'blue';
+    if (lowerRole.includes('vip') || lowerRole.includes('black')) tierColor = 'black';
+    else if (lowerRole.includes('premium') || lowerRole.includes('gold')) tierColor = 'gold';
+    else if (lowerRole.includes('member') || lowerRole.includes('cơ bản')) tierColor = 'teal';
+
   const memberTierInfo = (
     <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 w-full mt-2">
       <h3 className="text-xs font-bold text-slate-400 tracking-widest uppercase mb-4">Thẻ thành viên</h3>
       <div className="space-y-4">
         <div className="flex justify-between items-center pb-3 border-b border-slate-100">
           <span className="text-sm font-medium text-slate-500">Hạng thẻ</span>
-          <span className="text-sm font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded-md">
-            {membershipLoading
-              ? 'Đang tải...'
-              : membership?.name || 'Chưa có dữ liệu'}
+          <span className={`text-sm font-bold px-2 py-1 rounded-md ${
+              tierColor === 'gold' ? 'bg-amber-50 text-amber-700' :
+              tierColor === 'black' ? 'bg-slate-800 text-slate-100' :
+              tierColor === 'teal' ? 'bg-teal-50 text-teal-700' :
+              'bg-blue-50 text-blue-700'
+            }`}>
+            {activeRole}
           </span>
         </div>
         <div className="flex justify-between items-center pb-3 border-b border-slate-100">
@@ -152,15 +162,9 @@ export function MemberProfile({ onNavigate }: { onNavigate: (page: MemberPage) =
         <div className="flex justify-between items-center">
           <span className="text-sm font-medium text-slate-500">Trạng thái thẻ</span>
           <span className="text-sm font-bold flex items-center gap-1">
-            <span className={`w-1.5 h-1.5 rounded-full ${membershipError ? 'bg-red-500' : 'bg-emerald-500'}`}></span>
-            <span className={membershipError ? 'text-red-600' : 'text-emerald-600'}>
-              {membershipError
-                ? 'Không thể kiểm tra'
-                : membershipLoading
-                  ? 'Đang kiểm tra'
-                  : membership?.tier === 'basic'
-                    ? 'Cơ bản · hoạt động'
-                    : 'Đang hoạt động'}
+            <span className={`w-1.5 h-1.5 rounded-full ${memSub ? ((memSub.paymentStatus === 1 || memSub.paymentStatus === 'Completed') && new Date(memSub.endDate) > new Date() ? 'bg-emerald-500' : 'bg-slate-400') : 'bg-emerald-500'}`}></span>
+            <span className={memSub ? ((memSub.paymentStatus === 1 || memSub.paymentStatus === 'Completed') && new Date(memSub.endDate) > new Date() ? 'text-emerald-600' : 'text-slate-500') : 'text-emerald-600'}>
+              {memSub ? ((memSub.paymentStatus === 1 || memSub.paymentStatus === 'Completed') && new Date(memSub.endDate) > new Date() ? 'Hoạt động' : 'Hết hạn') : 'Cơ bản · hoạt động'}
             </span>
           </span>
         </div>
@@ -177,14 +181,7 @@ export function MemberProfile({ onNavigate }: { onNavigate: (page: MemberPage) =
     </div>
   );
 
-    let tierColor: 'blue' | 'gold' | 'black' | 'teal' = 'blue';
-    const activeRole = membershipLoading
-      ? "Đang tải hạng thành viên..."
-      : membership?.name || "Chưa có dữ liệu hạng";
-    const lowerRole = activeRole.toLowerCase();
-    if (lowerRole.includes('vip') || lowerRole.includes('black')) tierColor = 'black';
-    else if (lowerRole.includes('premium') || lowerRole.includes('gold')) tierColor = 'gold';
-    else if (lowerRole.includes('member')) tierColor = 'teal';
+
 
     return (
       <MemberShell page="profile" onNavigate={onNavigate}>
