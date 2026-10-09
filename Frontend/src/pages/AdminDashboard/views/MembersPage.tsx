@@ -17,8 +17,10 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
     .then(res => res.json())
     .then(data => {
       if (Array.isArray(data)) {
-        const mapped = data.map((u: any, index: number) => {
-          const avatars = [mAvatar0, mAvatar1, mAvatar2, mAvatar3, mAvatar4];
+        const mapped = data
+          .filter((u: any) => u.roleName && u.roleName.toLowerCase() === "member")
+          .map((u: any, index: number) => {
+            const avatars = [mAvatar0, mAvatar1, mAvatar2, mAvatar3, mAvatar4];
           return {
             id: u.id.substring(0, 8).toUpperCase(),
             realId: u.id,
@@ -74,6 +76,38 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
       && (statusFilter === "Tất cả" || m.status === statusFilter)
   })
 
+  const handleExportCSV = () => {
+    if (filtered.length === 0) {
+      alert("Không có dữ liệu để xuất!");
+      return;
+    }
+    
+    const headers = ["Mã HV", "Họ và tên", "Gói tập", "Số điện thoại", "Email", "Trạng thái", "Ngày đăng ký/Hết hạn"];
+    const rows = filtered.map(m => [
+      m.id,
+      m.name,
+      m.pkg,
+      m.phone,
+      m.email,
+      m.status,
+      m.expiry
+    ]);
+    
+    // Add BOM for UTF-8 Excel support
+    const csvContent = "\uFEFF" + 
+      headers.join(",") + "\n" + 
+      rows.map(e => e.map(cell => `"${cell}"`).join(",")).join("\n");
+      
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `danh_sach_hoi_vien_${new Date().getTime()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const statusStyle: Record<string, string> = {
     "Đang hoạt động": "bg-[#dcfce7] text-[#15803d]",
     "Sắp hết hạn":    "bg-[#fef3c7] text-[#b45309]",
@@ -88,7 +122,7 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
           <p className="text-[#64748b] text-sm mt-1">-- hồ sơ đang được quản lý tập trung trên toàn hệ thống.</p>
         </div>
         <div className="flex gap-3">
-          <button onClick={() => alert("Đang xuất dữ liệu ra file Excel...")} className="bg-white border border-[#cbd5e1] flex gap-2 items-center px-4 py-2.5 rounded-lg">
+          <button onClick={handleExportCSV} className="bg-white border border-[#cbd5e1] flex gap-2 items-center px-4 py-2.5 rounded-lg hover:bg-slate-50 transition-colors">
             <img src={iDownload} alt="" className="size-4" />
             <span className="font-semibold text-[#0f172a] text-sm">Xuất dữ liệu Excel</span>
           </button>

@@ -10,11 +10,8 @@ export function Classes({
   onSelect: (item: ClassItem) => void;
 }) {
   const [category, setCategory] = useState("Tất cả lớp");
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  });
-  const [shift, setShift] = useState("Sáng (06:00 - 12:00)");
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [shift, setShift] = useState("Tất cả");
   const [coachQuery, setCoachQuery] = useState("");
   const [classes, setClasses] = useState<any[]>([]);
   const [sports, setSports] = useState<any[]>([]);

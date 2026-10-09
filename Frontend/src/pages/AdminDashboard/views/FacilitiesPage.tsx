@@ -6,6 +6,11 @@ export function FacilitiesPage() {
   const [facilities, setFacilities] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Modal states
+  const [showModal, setShowModal] = useState<"sport" | "facility" | null>(null);
+  const [newItemName, setNewItemName] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   React.useEffect(() => {
     const fetchData = async () => {
       try {
@@ -25,6 +30,39 @@ export function FacilitiesPage() {
     fetchData();
   }, []);
 
+  const handleSubmitItem = async () => {
+    if (!newItemName.trim() || !showModal) return;
+    setIsSubmitting(true);
+    
+    try {
+      const token = localStorage.getItem("token");
+      const endpoint = showModal === "sport" ? "/api/sports" : "/api/facilities";
+      
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ name: newItemName.trim() })
+      });
+      
+      if (res.ok) {
+        const newItem = await res.json();
+        if (showModal === "sport") {
+          setSports(prev => [...prev, newItem]);
+        } else {
+          setFacilities(prev => [...prev, newItem]);
+        }
+        setShowModal(null);
+        setNewItemName("");
+      } else {
+        alert(`Thêm ${showModal === "sport" ? "bộ môn" : "phòng tập"} thất bại.`);
+      }
+    } catch (err) {
+      alert("Lỗi kết nối.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
       <div className="flex items-center justify-between">
@@ -39,7 +77,7 @@ export function FacilitiesPage() {
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-lg text-[#0f172a]">Bộ môn (Sports)</h3>
-            <button className="bg-white border border-[#cbd5e1] hover:bg-slate-50 flex gap-1.5 items-center px-3 py-1.5 rounded-md transition-colors">
+            <button onClick={() => { setShowModal("sport"); setNewItemName(""); }} className="bg-white border border-[#cbd5e1] hover:bg-slate-50 flex gap-1.5 items-center px-3 py-1.5 rounded-md transition-colors">
               <img src={iPlus} alt="" className="size-3.5 opacity-70" />
               <span className="font-semibold text-[#0f172a] text-xs">Thêm bộ môn</span>
             </button>
@@ -66,7 +104,7 @@ export function FacilitiesPage() {
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-lg text-[#0f172a]">Phòng tập (Facilities)</h3>
-            <button className="bg-white border border-[#cbd5e1] hover:bg-slate-50 flex gap-1.5 items-center px-3 py-1.5 rounded-md transition-colors">
+            <button onClick={() => { setShowModal("facility"); setNewItemName(""); }} className="bg-white border border-[#cbd5e1] hover:bg-slate-50 flex gap-1.5 items-center px-3 py-1.5 rounded-md transition-colors">
               <img src={iPlus} alt="" className="size-3.5 opacity-70" />
               <span className="font-semibold text-[#0f172a] text-xs">Thêm phòng tập</span>
             </button>
@@ -89,6 +127,52 @@ export function FacilitiesPage() {
           </div>
         </div>
       </div>
+
+      {/* Custom Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 animate-fade-in-up">
+            <h2 className="text-xl font-bold text-slate-800 mb-2">
+              {showModal === "sport" ? "Thêm bộ môn mới" : "Thêm phòng tập mới"}
+            </h2>
+            <p className="text-sm text-slate-500 mb-6">
+              Vui lòng nhập tên {showModal === "sport" ? "bộ môn" : "phòng tập"} để tạo danh mục mới trong hệ thống.
+            </p>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Tên {showModal === "sport" ? "bộ môn" : "phòng tập"} <span className="text-red-500">*</span>
+              </label>
+              <input 
+                type="text" 
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSubmitItem(); }}
+                autoFocus
+                placeholder={showModal === "sport" ? "VD: Bơi lội, Yoga, v.v." : "VD: Studio 1, Gym Area, v.v."}
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+              />
+            </div>
+            
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setShowModal(null)} 
+                disabled={isSubmitting}
+                className="px-4 py-2 font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors"
+              >
+                Hủy bỏ
+              </button>
+              <button 
+                onClick={handleSubmitItem}
+                disabled={!newItemName.trim() || isSubmitting}
+                className="px-4 py-2 font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {isSubmitting ? "Đang lưu..." : "Xác nhận thêm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

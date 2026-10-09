@@ -123,7 +123,7 @@ public sealed class ClassService
         var userSubs = await _subscriptionRepository.GetByUserIdAsync(userId);
         
         var validSub = userSubs.FirstOrDefault(s => 
-            s.PaymentStatus.Equals("completed", StringComparison.OrdinalIgnoreCase) &&
+            s.PaymentStatus == SmartGym.Domain.Enums.PaymentStatus.Completed &&
             s.StartDate <= targetClass.ScheduleTime &&
             targetClass.ScheduleTime <= s.EndDate);
 
