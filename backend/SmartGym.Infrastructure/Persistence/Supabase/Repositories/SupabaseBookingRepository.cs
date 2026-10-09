@@ -13,6 +13,12 @@ public sealed class SupabaseBookingRepository : IBookingRepository
         _client = client;
     }
 
+    public async Task<IReadOnlyList<Booking>> GetAllAsync()
+    {
+        var response = await _client.From<BookingModel>().Get();
+        return response.Models.Select(m => m.ToDomain()).ToList();
+    }
+
     public async Task AddAsync(Booking booking)
     {
         var model = BookingModel.FromDomain(booking);

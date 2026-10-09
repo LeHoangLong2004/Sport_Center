@@ -20,9 +20,12 @@ public interface IGroupClassRepository
     Task<(bool IsSuccess, string? ErrorMessage)> BookClassTransactionAsync(Guid userId, Guid classId, Guid subscriptionId);
     Task<(bool IsSuccess, string? ErrorMessage)> CancelBookingTransactionAsync(Guid userId, Guid classId);
     Task<(bool IsSuccess, string? ErrorMessage)> CancelClassTransactionAsync(Guid classId);
+    Task<(bool IsSuccess, string? ErrorMessage)> ApproveBookingAsync(Guid bookingId);
+    Task<(bool IsSuccess, string? ErrorMessage)> RejectBookingAsync(Guid bookingId);
     Task NotifyAffectedMembersAsync(Guid classId, string title, string message);
 
     // Giai đoạn G: Điểm danh & Xem lịch
+    Task<IEnumerable<BookingManagerResponse>> GetAllBookingsForManagerAsync();
     Task<(bool IsSuccess, string? ErrorMessage)> UpdateAttendanceAsync(Guid classId, List<AttendanceRecordDto> attendanceList);
     Task<MemberScheduleResponse> GetMemberScheduleAsync(Guid userId);
     Task<IEnumerable<CoachClassScheduleDto>> GetCoachScheduleAsync(Guid coachUserId, DateTime? date);

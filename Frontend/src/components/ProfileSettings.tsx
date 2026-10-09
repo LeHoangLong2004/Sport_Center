@@ -9,6 +9,10 @@ interface ProfileData {
   dob: string;
   gender: string;
   address: string;
+  specialties?: string;
+  certifications?: string;
+  experienceYears?: number;
+  bio?: string;
 }
 
 export function ProfileSettings({ 
@@ -31,6 +35,7 @@ export function ProfileSettings({
     gender: initialData?.gender || "",
     address: initialData?.address || "",
   });
+  const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -48,12 +53,22 @@ export function ProfileSettings({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (onSave) onSave(data);
-    alert("Đã lưu thông tin thành công!");
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-4 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col lg:flex-row gap-8">
+    <>
+      {showToast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-4 fade-in duration-300">
+          <div className="bg-teal-600 text-white px-6 py-3 rounded-full shadow-lg font-medium flex items-center gap-3">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            Đã lưu thông tin thành công!
+          </div>
+        </div>
+      )}
+      <div className="w-full max-w-6xl mx-auto p-4 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="flex flex-col lg:flex-row gap-8">
         
         {/* Left Column: Avatar & Extra Info */}
         <div className="w-full lg:w-[340px] shrink-0 flex flex-col gap-6">
@@ -162,6 +177,61 @@ export function ProfileSettings({
                 />
               </div>
             </div>
+
+            {(roleLabel.toLowerCase().includes("huấn luyện viên") || roleLabel.toLowerCase().includes("coach")) && (
+              <div className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-700">
+                <div className="mb-6">
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-white">Hồ sơ năng lực (Dành cho HLV)</h3>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Cập nhật chuyên môn, bằng cấp để hiển thị công khai cho học viên.</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Bộ môn chuyên môn</label>
+                    <input 
+                      type="text" 
+                      name="specialties"
+                      placeholder="VD: Gym, Yoga, Pilates..."
+                      value={data.specialties || ""} 
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Năm kinh nghiệm</label>
+                    <input 
+                      type="number" 
+                      name="experienceYears"
+                      min="0"
+                      value={data.experienceYears || 0} 
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium"
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Bằng cấp & Chứng chỉ</label>
+                    <input 
+                      type="text" 
+                      name="certifications"
+                      placeholder="VD: NASM CPT, ACE Personal Trainer..."
+                      value={data.certifications || ""} 
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium"
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Giới thiệu bản thân</label>
+                    <textarea 
+                      name="bio"
+                      rows={3}
+                      placeholder="Viết một đoạn ngắn giới thiệu về phương pháp huấn luyện của bạn..."
+                      value={data.bio || ""} 
+                      onChange={(e: any) => handleChange(e)}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium resize-none"
+                    ></textarea>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <div className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
               <button type="button" className="text-sm font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
@@ -181,5 +251,6 @@ export function ProfileSettings({
         </div>
       </div>
     </div>
+    </>
   );
 }

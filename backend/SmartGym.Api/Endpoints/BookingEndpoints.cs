@@ -24,20 +24,10 @@ public static class BookingEndpoints
             var responseTasks = results.Select(async s => await ToClassResponseAsync(s, userRepo));
             var response = await Task.WhenAll(responseTasks);
             return Results.Ok(response);
-        })
-        .WithSummary("Danh sách lớp học (lọc theo bộ môn, ngày)");
+        });
 
-        classes.MapGet("/{id:guid}", async (Guid id, IClassScheduleRepository scheduleRepo, IUserRepository userRepo) =>
-        {
-            var schedule = await scheduleRepo.FindByIdAsync(id);
-            if (schedule is null)
-            {
-                return Results.NotFound(new { message = "Lớp học không tồn tại." });
-            }
-
-            return Results.Ok(await ToClassResponseAsync(schedule, userRepo));
-        })
-        .WithSummary("Chi tiết một lớp học");
+        // Chi tiết lớp học (GET /api/classes/{id}) được đăng ký tại ClassEndpoints
+                // vì dùng ClassService.GetClassDetailAsync để trả về đủ danh sách học viên.
 
         // ── Booking management (Member, Receptionist) ──
 
@@ -65,8 +55,7 @@ public static class BookingEndpoints
                 booking
             });
         })
-        .AddEndpointFilter(Authorize.Roles(UserRole.Member, UserRole.Receptionist))
-        .WithSummary("Đặt chỗ lớp học (BR-004, BR-005)");
+        .AddEndpointFilter(Authorize.Roles(UserRole.Member, UserRole.Receptionist));
 
         bookings.MapDelete("/{id:guid}", async (
             Guid id,
@@ -108,8 +97,17 @@ public static class BookingEndpoints
                 waitlistPromoted = promotedMessage
             });
         })
-        .AddEndpointFilter(Authorize.Roles(UserRole.Member, UserRole.Receptionist))
-        .WithSummary("Hủy đặt chỗ (BR-004 penalty, BR-005 waitlist promote)");
+        .AddEndpointFilter(Authorize.Roles(UserRole.Member, UserRole.Receptionist));
+
+        /* bookings.MapGet("/all", async (
+            IBookingRepository bookingRepo,
+            IClassScheduleRepository scheduleRepo,
+            IUserRepository userRepo) =>
+        {
+... (Removed duplicate endpoint. It's mapped in Program.cs using ClassService)
+        })
+        .AddEndpointFilter(Authorize.Roles(UserRole.CenterManager, UserRole.Receptionist))
+        .WithSummary("Tất cả đơn đặt chỗ (Dành cho Quản lý)"); */
 
         bookings.MapGet("/my", async (
             HttpContext context,
@@ -130,56 +128,19 @@ public static class BookingEndpoints
             var response = await Task.WhenAll(responseTasks);
             return Results.Ok(response);
         })
-        .AddEndpointFilter(Authorize.Roles(UserRole.Member, UserRole.Receptionist))
-        .WithSummary("Lịch sử đặt chỗ của tôi");
+        .AddEndpointFilter(Authorize.Roles(UserRole.Member, UserRole.Receptionist));
 
         // ── Personal schedule (Member sees booked classes, Coach sees teaching schedule) ──
 
-        schedule.MapGet("/my", async (
+        /* schedule.MapGet("/my", async (
             HttpContext context,
             IBookingRepository bookingRepo,
             IClassScheduleRepository scheduleRepo,
             IUserRepository userRepo) =>
         {
-            var userId = GetUserId(context);
-            if (userId is null) return Results.Unauthorized();
-
-            var role = context.User.FindFirstValue(ClaimTypes.Role);
-
-            List<PersonalScheduleEntry> entries;
-
-            if (string.Equals(role, UserRole.Coach.ToString(), StringComparison.OrdinalIgnoreCase))
-            {
-                var coachClasses = await scheduleRepo.GetByCoachAsync(userId.Value);
-                entries = coachClasses.Select(s => new PersonalScheduleEntry(
-                    s.Id, s.ClassName, s.SportType, s.RoomName, "Bạn",
-                    s.StartTime, s.EndTime, "Coach", null
-                )).ToList();
-            }
-            else
-            {
-                var myBookingsRaw = await bookingRepo.GetByMemberAsync(userId.Value);
-                var myBookings = myBookingsRaw.Where(b => b.Status != BookingStatus.Cancelled).ToList();
-
-                var entryTasks = myBookings.Select(async b =>
-                {
-                    var s = await scheduleRepo.FindByIdAsync(b.ScheduleId);
-                    if (s is null) return null;
-                    var coach = await userRepo.FindByIdAsync(s.CoachId);
-                    return new PersonalScheduleEntry(
-                        s.Id, s.ClassName, s.SportType, s.RoomName, coach?.FullName ?? "Unknown",
-                        s.StartTime, s.EndTime, "Member", b.Status.ToString()
-                    );
-                });
-
-                var resolvedEntries = await Task.WhenAll(entryTasks);
-                entries = resolvedEntries.Where(e => e is not null).Cast<PersonalScheduleEntry>().ToList();
-            }
-
-            return Results.Ok(entries.OrderBy(e => e.StartTime));
+... (Removed duplicate endpoint. It's mapped in Program.cs using ClassService)
         })
-        .AddEndpointFilter(Authorize.Roles(UserRole.Member, UserRole.Coach, UserRole.Receptionist))
-        .WithSummary("Lịch cá nhân (FR-010)");
+        .AddEndpointFilter(Authorize.Roles(UserRole.Member, UserRole.Coach, UserRole.Receptionist)); */
     }
 
     private static Guid? GetUserId(HttpContext context)

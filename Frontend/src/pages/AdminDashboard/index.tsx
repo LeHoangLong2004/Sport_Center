@@ -23,9 +23,54 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [page, setPage] = useState<AdminPage>("overview")
   const [selectedMember, setSelectedMember] = useState<any>(null)
   const { profile } = useUserProfile()
+  const [error, setError] = useState<string>("");
+
+  const handleSave = async (data: any) => {
+    setError("");
+    const phoneRegex = /^(0|84)[3|5|7|8|9][0-9]{8}$/;
+    if (!phoneRegex.test(data.phone.trim())) {
+      setError("Lỗi: Số điện thoại không đúng định dạng.");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!profile?.id || !token) return;
+
+      const res = await fetch(`/api/users/${profile.id}/profile`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          fullName: data.fullName,
+          phoneNumber: data.phone,
+          dateOfBirth: data.dob ? new Date(data.dob).toISOString() : null,
+          gender: data.gender,
+          avatarUrl: data.avatarUrl,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Cập nhật thất bại");
+
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const userObj = JSON.parse(userStr);
+        userObj.fullName = data.fullName;
+        localStorage.setItem("user", JSON.stringify(userObj));
+      }
+      
+      alert("Đã cập nhật hồ sơ thành công!");
+      window.location.reload();
+    } catch (err: any) {
+      setError(err.message || "Có lỗi xảy ra khi lưu.");
+    }
+  };
 
   const breadcrumbs: Record<AdminPage, [string, string]> = {
     overview:   ["Quản lý / Tổng quan", "Tổng quan hệ thống"],
+    classes:    ["Quản lý / Lớp học", "Quản lý Lớp học"],
     packages:   ["Quản lý / Gói hội viên", "Danh sách Gói hội viên"],
     schedule:   ["Quản lý / Lịch trình", "Lịch trình & Lớp học"],
     members:    ["Quản lý / Người dùng / Hội viên", "Quản lý người dùng"],
@@ -40,6 +85,10 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     settings:   ["Quản lý / Cài đặt",               "Cài đặt & Nhật ký"],
     "member-edit":["Quản lý / Người dùng / Hội viên / Chỉnh sửa", "Chỉnh sửa thông tin hội viên"],
     profile:    ["Quản lý / Hồ sơ cá nhân",         "Hồ sơ Quản trị viên"],
+    permissions:["Quản lý / Người dùng / Phân quyền", "Phân quyền truy cập"],
+    "audit-log": ["Quản lý / Nhật ký hệ thống",      "Nhật ký hoạt động"],
+    "check-ins": ["Quản lý / Lịch sử Check-in",      "Lịch sử Check-in"],
+    support:     ["Quản lý / Hỗ trợ",               "Hỗ trợ khách hàng"],
   }
 
   const [bc, title] = breadcrumbs[page] || ["", ""]
@@ -65,17 +114,25 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           {page === "settings"   && <SettingsPage />}
           {page === "member-edit"&& <MemberEditPage memberData={selectedMember} onBack={() => setPage("members")} />}
           {page === "profile"    && (
-            <ProfileSettings 
-              roleLabel={profile?.roleName || "Quản trị viên hệ thống"} 
-              initialData={profile ? {
-                fullName: profile.fullName,
-                email: profile.email,
-                phone: profile.phone,
-                dob: profile.dob,
-                gender: profile.gender,
-                avatarUrl: profile.avatarUrl,
-              } : undefined}
-            />
+            <div className="flex flex-col gap-4">
+              {error && (
+                <div className="max-w-6xl mx-auto w-full p-4 bg-red-50 text-red-600 rounded-xl border border-red-200">
+                  {error}
+                </div>
+              )}
+              <ProfileSettings 
+                roleLabel={profile?.roleName || "Quản trị viên hệ thống"} 
+                initialData={profile ? {
+                  fullName: profile.fullName,
+                  email: profile.email,
+                  phone: profile.phone,
+                  dob: profile.dob,
+                  gender: profile.gender,
+                  avatarUrl: profile.avatarUrl,
+                } : undefined}
+                onSave={handleSave}
+              />
+            </div>
           )}
         </div>
       </div>

@@ -31,7 +31,11 @@ public class UserService : IUserService
             Gender = u.Gender,
             EmergencyContact = u.EmergencyContact,
             Status = u.Status,
-            CreatedAt = u.CreatedAt
+            CreatedAt = u.CreatedAt,
+            Specialties = u.CoachProfile?.Specialties,
+            Certifications = u.CoachProfile?.Certifications,
+            ExperienceYears = u.CoachProfile?.ExperienceYears,
+            Bio = u.CoachProfile?.Bio
         });
     }
 
@@ -52,7 +56,11 @@ public class UserService : IUserService
             Gender = user.Gender,
             EmergencyContact = user.EmergencyContact,
             Status = user.Status,
-            CreatedAt = user.CreatedAt
+            CreatedAt = user.CreatedAt,
+            Specialties = user.CoachProfile?.Specialties,
+            Certifications = user.CoachProfile?.Certifications,
+            ExperienceYears = user.CoachProfile?.ExperienceYears,
+            Bio = user.CoachProfile?.Bio
         };
     }
 
@@ -93,6 +101,18 @@ public class UserService : IUserService
         if (request.DateOfBirth != null) user.DateOfBirth = request.DateOfBirth;
         if (request.Gender != null) user.Gender = request.Gender;
         if (request.EmergencyContact != null) user.EmergencyContact = request.EmergencyContact;
+
+        if (user.Role?.Name == "coach")
+        {
+            if (user.CoachProfile == null)
+            {
+                user.CoachProfile = new Domain.Entities.CoachProfile { UserId = userId };
+            }
+            if (request.Specialties != null) user.CoachProfile.Specialties = request.Specialties;
+            if (request.Certifications != null) user.CoachProfile.Certifications = request.Certifications;
+            if (request.ExperienceYears.HasValue) user.CoachProfile.ExperienceYears = request.ExperienceYears.Value;
+            if (request.Bio != null) user.CoachProfile.Bio = request.Bio;
+        }
 
         await _userRepository.UpdateAsync(user);
         return true;

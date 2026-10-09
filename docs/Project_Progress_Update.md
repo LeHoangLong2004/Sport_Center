@@ -70,11 +70,16 @@
 
 ---
 
-## 2. Các Công Việc Đang Thực Hiện (In Progress)
-- Tiếp tục rà soát các thao tác API cho Flow 1 và Flow 2.
-- Chuẩn bị dữ liệu mẫu (Seed data) và kiểm thử diện rộng cho các API Xem lịch và Điểm danh.
+### 1.11. Nâng cấp Hồ Sơ Năng Lực HLV (Coach Profile) & Cập nhật Cài Đặt Tài Khoản Đa Nền Tảng - **HOÀN THÀNH**
+- **Mở rộng Cơ sở dữ liệu (Backend)**: Tự động khởi tạo bảng `coach_profiles` thông qua EF Core Raw SQL tại `Program.cs` để lưu trữ chuyên biệt các thông tin của Huấn luyện viên như `specialties` (Chuyên môn), `certifications` (Bằng cấp), `experience_years` (Năm kinh nghiệm) và `bio` (Giới thiệu bản thân).
+- **Cập nhật DTO & UserService**: Ánh xạ (mapping) thành công các trường dữ liệu mới của HLV vào `UserResponse` và xử lý logic lưu trữ trực tiếp trong `UpdateUserProfileAsync`.
+- **Tái cấu trúc UI & Cập nhật API (Frontend)**:
+  - Nâng cấp Component dùng chung `ProfileSettings.tsx`, tự động hiển thị thêm khu vực "Hồ sơ năng lực" nếu tài khoản đang đăng nhập là HLV. Đảm bảo form hiển thị mượt mà và trực quan.
+  - Phủ sóng tính năng cập nhật hồ sơ cá nhân (`PUT /api/users/{id}/profile`) lên **tất cả** các Portal: `MemberProfile`, `CoachSettings`, `AdminDashboard` và `ReceptionistPortal`. Tất cả các vai trò hiện đã có thể tự thay đổi thông tin cá nhân và lưu thẳng vào hệ thống theo thời gian thực (real-time).
 
 ---
+
+## 2. Các Công Việc Đang Thực Hiện (In Progress)
 
 ## 3. Các Bước Tiếp Theo (Next Steps)
 Căn cứ theo PRD (Hồ sơ yêu cầu dự án), các bước tiếp theo sẽ tiến hành:

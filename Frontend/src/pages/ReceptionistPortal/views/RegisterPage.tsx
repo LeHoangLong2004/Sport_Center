@@ -2,16 +2,22 @@ import React, { useState } from 'react';
 import { A } from '../shared';
 import StatusBadge from '../components/StatusBadge';
 
-const plans = [
-  { id: "premium", icon: `${A}/7d611.svg`, name: "Premium Class (Full access)", desc: "Đầy đủ gym, bể bơi, tủ đồ riêng, phòng tắm sauna", price: "14.500.000đ" },
-  { id: "fitness", icon: `${A}/2e287.svg`, name: "Gym & Fitness Standard", desc: "Trọn gói tập gym cơ bản tại trung tâm", price: "9.800.000đ" },
-  { id: "swim", icon: `${A}/2e287.svg`, name: "Swimming Exclusive", desc: "Vé bơi 12 tháng tại hồ nước mặn 4 mùa", price: "11.200.000đ" },
-  { id: "yoga", icon: `${A}/2e287.svg`, name: "Yoga & Pilates Morning", desc: "Chỉ áp dụng ca sáng từ 06:00 – 11:30", price: "8.500.000đ" },
-]
-
 export function RegisterPage() {
-  const [selectedPlan, setSelectedPlan] = useState("premium")
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
+  const [plans, setPlans] = useState<any[]>([])
+
+  React.useEffect(() => {
+    fetch("/api/packages/plans")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setPlans(data)
+          if (data.length > 0) setSelectedPlan(data[0].id)
+        }
+      })
+      .catch(console.error)
+  }, [])
 
   return (
     <div className="flex flex-col items-start p-[32px] w-full">
@@ -66,13 +72,13 @@ export function RegisterPage() {
                   className={`flex items-center justify-between p-[14px] rounded-[8px] shrink-0 w-full text-left transition-colors ${active ? "bg-[#eff6ff] border-[#3b82f6] border-[1.5px] border-solid" : "border border-[#e2e8f0] border-solid"}`}
                 >
                   <div className="flex gap-[12px] items-center shrink-0">
-                    <img src={plan.icon} alt="" className="size-[20px]" />
+                    <img src={`${A}/7d611.svg`} alt="" className="size-[20px]" />
                     <div className="flex flex-col gap-[2px] items-start shrink-0">
-                      <span className="font-['Manrope:Bold'] font-bold text-[#0f172a] text-[14px]">{plan.name}</span>
-                      <span className="font-['Manrope:Regular'] font-normal text-[#64748b] text-[12px]">{plan.desc}</span>
+                      <span className="font-['Manrope:Bold'] font-bold text-[#0f172a] text-[14px]">{plan.planName}</span>
+                      <span className="font-['Manrope:Regular'] font-normal text-[#64748b] text-[12px]">{plan.description}</span>
                     </div>
                   </div>
-                  <span className={`font-['Manrope:ExtraBold'] font-extrabold text-[15px] whitespace-nowrap ${active ? "text-[#3b82f6]" : "text-[#0f172a]"}`}>{plan.price}</span>
+                  <span className={`font-['Manrope:ExtraBold'] font-extrabold text-[15px] whitespace-nowrap ${active ? "text-[#3b82f6]" : "text-[#0f172a]"}`}>{plan.price.toLocaleString("vi-VN")}đ</span>
                 </button>
               )
             })}

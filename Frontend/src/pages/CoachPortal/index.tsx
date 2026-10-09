@@ -15,13 +15,21 @@ import CoachProfile from "./views/CoachProfile";
 import CoachSettings from "./views/CoachSettings";
 
 export default function CoachPortal() {
-  const [screen, setScreen] = useState<CoachScreen>("dashboard");
+  const getInitialScreen = (): CoachScreen => {
+    const hash = window.location.hash.replace("#coach-", "");
+    const validScreens: CoachScreen[] = ["dashboard", "schedule", "class-detail", "attendance", "members", "member-profile", "curriculum", "assessment", "notifications", "ai", "profile", "settings"];
+    if (hash === "portal") return "dashboard";
+    return validScreens.includes(hash as CoachScreen) ? (hash as CoachScreen) : "dashboard";
+  };
+
+  const [screen, setScreen] = useState<CoachScreen>(getInitialScreen());
   // Giữ ID đối tượng khi chuyển màn (spec §15.3)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
 
   const navigateTo = (s: CoachScreen, extra?: { sessionId?: string; memberId?: string }) => {
     setScreen(s);
+    window.location.hash = "coach-" + (s === "dashboard" ? "portal" : s);
     if (extra?.sessionId !== undefined) setSelectedSessionId(extra.sessionId);
     if (extra?.memberId !== undefined) setSelectedMemberId(extra.memberId);
   };
@@ -37,7 +45,7 @@ export default function CoachPortal() {
     assessment: <CoachAssessment />,
     notifications: <CoachNotifications />,
     ai: <CoachAI />,
-    profile: <CoachProfile />,
+    profile: <CoachProfile navigateTo={navigateTo} />,
     settings: <CoachSettings />,
   };
 

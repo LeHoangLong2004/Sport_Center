@@ -10,7 +10,62 @@ export function MemberSection({
   page: keyof typeof memberSections
   onNavigate: (page: MemberPage) => void
 }) {
-  const content = memberSections[page]
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [sub, setSub] = useState<any>(null);
+
+  React.useEffect(() => {
+    import('../services/api').then(({ MemberAPI }) => {
+      if (page === 'payment') {
+        MemberAPI.getMySubscriptions().then(data => {
+          if (data && data.length > 0) setSub(data[0]);
+        }).catch(console.error);
+        MemberAPI.getMyInvoices().then(data => setInvoices(data || [])).catch(console.error);
+      } else if (page === 'reports') {
+        MemberAPI.getMyBookings().then(data => setBookings(data || [])).catch(console.error);
+      }
+    });
+  }, [page]);
+
+  const content = useMemo(() => {
+    const base = memberSections[page];
+    if (page === 'payment') {
+      const daysLeft = sub ? Math.ceil((new Date(sub.endDate).getTime() - Date.now()) / (1000 * 3600 * 24)) : 0;
+      return {
+        ...base,
+        stats: [
+          ["Gói hiện tại", sub?.packageName || "Chưa đăng ký", sub ? "Có hiệu lực" : ""],
+          ["Ngày hết hạn", sub?.endDate ? new Date(sub.endDate).toLocaleDateString('vi-VN') : "--", daysLeft > 0 ? `Còn ${daysLeft} ngày` : "Đã hết hạn"],
+          ["Trạng thái", sub?.status === 'active' ? 'Đang hoạt động' : 'Không hoạt động', ''],
+        ],
+        rows: invoices.map(inv => [
+          inv.invoiceCode || `HD-${inv.id.substring(0,6)}`,
+          inv.description || "Thanh toán gói tập",
+          `${inv.amount.toLocaleString('vi-VN')} đ`
+        ])
+      };
+    }
+    
+    if (page === 'reports') {
+      return {
+        ...base,
+        stats: [
+          ["Buổi tập", `${bookings.length} buổi`, "Tổng cộng"],
+          ["Trạng thái", "Đang tích cực", ""],
+          ["Hoạt động", "Bình thường", ""],
+        ],
+        rows: bookings.map(b => {
+          const d = new Date(b.schedule?.scheduleTime || b.bookingDate);
+          return [
+            b.schedule?.className || b.schedule?.sportName || "Lớp học",
+            `${d.toLocaleDateString('vi-VN')} ${d.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}`,
+            b.status === 0 ? "Đã đặt" : b.status === 1 ? "Hoàn thành" : b.status === 2 ? "Hủy" : "Đã Check-in"
+          ];
+        })
+      };
+    }
+    return base;
+  }, [page, sub, invoices, bookings]);
 
   return (
     <MemberShell page={page} onNavigate={onNavigate}>

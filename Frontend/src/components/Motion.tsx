@@ -4,11 +4,13 @@ import { motion } from 'framer-motion';
 export function FadeUp({ 
   children, 
   delay = 0, 
-  className = "" 
+  className = "",
+  style
 }: { 
   children: ReactNode, 
   delay?: number,
-  className?: string 
+  className?: string,
+  style?: React.CSSProperties
 }) {
   return (
     <motion.div
@@ -17,6 +19,7 @@ export function FadeUp({
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay }}
       className={className}
+      style={style}
     >
       {children}
     </motion.div>
@@ -26,11 +29,13 @@ export function FadeUp({
 export function FadeIn({ 
   children, 
   delay = 0, 
-  className = "" 
+  className = "",
+  style
 }: { 
   children: ReactNode, 
   delay?: number,
-  className?: string 
+  className?: string,
+  style?: React.CSSProperties
 }) {
   return (
     <motion.div
@@ -39,6 +44,7 @@ export function FadeIn({
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.8, ease: "easeOut", delay }}
       className={className}
+      style={style}
     >
       {children}
     </motion.div>

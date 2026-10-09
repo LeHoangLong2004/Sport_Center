@@ -77,7 +77,7 @@ export interface AssessmentRecord {
 const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api';
 
 async function fetchApi(endpoint: string, options: RequestInit = {}) {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem('token');
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         ...(options.headers as Record<string, string> || {})
@@ -147,18 +147,58 @@ export const CoachAPI = {
 
     // 6. Giáo án
     getCurricula: async () => {
-        return fetchApi('/coach/curricula');
+        try {
+            const plans = await fetchApi('/workout-plans/coach');
+            if (!Array.isArray(plans)) return [];
+            return plans.map((p: any) => ({
+                id: p.id,
+                name: p.planName,
+                sport: "Gym",
+                goal: p.goal || "",
+                level: p.level || "",
+                duration: p.durationMinutes || 60,
+                status: "Đã giao", // or derive from assignment status
+                updatedAt: new Date().toISOString().split("T")[0],
+                description: p.description || "",
+                exercises: p.exercises?.map((e: any) => ({ 
+                    name: e.name, reps: e.reps, rest: e.rest, note: e.note 
+                })) || [],
+                assignedTo: []
+            }));
+        } catch {
+            return [];
+        }
     },
     saveCurriculum: async (curriculum: any) => {
-        return fetchApi('/coach/curricula', {
+        // Map frontend structure to backend CreateWorkoutPlanRequest
+        const payload = {
+            planName: curriculum.name,
+            description: curriculum.description,
+            goal: curriculum.goal,
+            level: curriculum.level,
+            durationMinutes: curriculum.duration,
+            exercises: curriculum.exercises.map((e: any) => ({
+                name: e.name,
+                reps: e.reps,
+                rest: e.rest,
+                note: e.note
+            }))
+        };
+        return fetchApi('/workout-plans', {
             method: 'POST',
-            body: JSON.stringify(curriculum)
+            body: JSON.stringify(payload)
         });
     },
     assignCurriculum: async (id: string, target: any) => {
-        return fetchApi(`/coach/curricula/${id}/assign`, {
+        // Giao bài tập về nhà
+        const payload = {
+            memberId: target.id,
+            planId: id,
+            notes: "Vui lòng hoàn thành đúng tiến độ"
+        };
+        return fetchApi(`/homework/assign`, {
             method: 'POST',
-            body: JSON.stringify(target)
+            body: JSON.stringify(payload)
         });
     },
 

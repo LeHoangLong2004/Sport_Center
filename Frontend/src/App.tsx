@@ -67,14 +67,23 @@ function AdminPortal({
 
   return (
     <Login
-      onLogin={() => setStep("member")}
+      onLogin={() => {
+        window.location.hash = "member"
+        setStep("member")
+      }}
       onLoginAs={(role) => {
-        if (role === "admin") setStep("dashboard")
+        if (role === "admin") {
+          window.location.hash = "dashboard"
+          setStep("dashboard")
+        }
         else if (role === "coach") {
           window.location.hash = "coach-portal"
         } else if (role === "receptionist") {
           window.location.hash = "receptionist"
-        } else setStep("member")
+        } else {
+          window.location.hash = "member"
+          setStep("member")
+        }
       }}
       onRegister={() => setStep("register")}
       onForgotPassword={() => setStep("forgotPassword")}
@@ -85,15 +94,23 @@ function AdminPortal({
 
 const coachHashes = new Set([
   "#coach-portal",
+  "#coach-dashboard",
   "#coach-schedule",
+  "#coach-class-detail",
+  "#coach-attendance",
+  "#coach-members",
+  "#coach-member-profile",
   "#coach-curriculum",
   "#coach-assessment",
+  "#coach-notifications",
   "#coach-profile",
+  "#coach-settings",
   "#coach-ai",
 ])
 
 const adminHashes = new Set([
   "#admin",
+  "#login",
   "#dashboard",
   "#register",
   "#member",
@@ -176,11 +193,11 @@ export default function App() {
     return (
       <AdminPortal
         initialStep={
-          window.location.hash === "#dashboard" 
+          window.location.hash === "#dashboard"
             ? "dashboard"
-            : window.location.hash === "#admin"
-            ? "login"
-            : [
+            : (window.location.hash === "#admin" || window.location.hash === "#login")
+              ? "login"
+              : [
                 "#member",
                 "#classes",
                 "#booking-confirm",
@@ -189,8 +206,8 @@ export default function App() {
                 "#workout-detail",
                 "#move-ai",
               ].includes(window.location.hash)
-            ? "member"
-            : "register"
+                ? "member"
+                : "register"
         }
         initialMemberPage={
           window.location.hash === "#classes"
@@ -220,7 +237,7 @@ export default function App() {
   return (
     <SiteApp
       onOpenAdmin={() => {
-        window.location.hash = "admin"
+        window.location.hash = "login"
         setAdminOpen(true)
       }}
       onOpenRegister={() => {

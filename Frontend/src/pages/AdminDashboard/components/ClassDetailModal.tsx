@@ -137,10 +137,19 @@ export function ClassDetailModal({ classId, onClose, onEdit }: { classId: string
                             <td className="py-3 px-4 text-gray-600">{m.phoneNumber}</td>
                             <td className="py-3 px-4">
                               <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                                (m.bookingStatus || m.status) === 'confirmed' ? 'bg-green-100 text-green-700' : 
-                                (m.bookingStatus || m.status) === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
+                                (m.bookingStatus || m.status) === 'confirmed' ? 'bg-green-100 text-green-700 border border-green-200' : 
+                                (m.bookingStatus || m.status) === 'pending' ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' : 
+                                (m.bookingStatus || m.status) === 'rejected' ? 'bg-red-100 text-red-700 border border-red-200' : 
+                                (m.bookingStatus || m.status) === 'attended' ? 'bg-blue-100 text-blue-700 border border-blue-200' : 
+                                (m.bookingStatus || m.status) === 'no_show' ? 'bg-amber-100 text-amber-700 border border-amber-200' : 
+                                (m.bookingStatus || m.status) === 'cancelled' ? 'bg-gray-100 text-gray-700 border border-gray-200' : 'bg-gray-100 text-gray-700'
                               }`}>
-                                {(m.bookingStatus || m.status) === 'confirmed' ? 'Đã đăng ký' : (m.bookingStatus || m.status)}
+                                {(m.bookingStatus || m.status) === 'confirmed' ? '🟢 Đã đăng ký' : 
+                                 (m.bookingStatus || m.status) === 'pending' ? '⏳ Chờ duyệt' : 
+                                 (m.bookingStatus || m.status) === 'rejected' ? '❌ Bị từ chối' : 
+                                 (m.bookingStatus || m.status) === 'attended' ? '🔵 Đã tham gia' : 
+                                 (m.bookingStatus || m.status) === 'no_show' ? '🟡 Vắng mặt' : 
+                                 (m.bookingStatus || m.status) === 'cancelled' ? '⚪ Đã hủy' : (m.bookingStatus || m.status)}
                               </span>
                             </td>
                           </tr>

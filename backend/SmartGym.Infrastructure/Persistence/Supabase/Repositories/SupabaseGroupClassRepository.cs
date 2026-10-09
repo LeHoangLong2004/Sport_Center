@@ -52,7 +52,7 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
         var coachUser = coach != null ? users.FirstOrDefault(u => u.Id == coach.UserId) : null;
 
         var bookings = await _dbContext.Database.SqlQueryRaw<ClassBookingRawModel>(
-            "SELECT id, user_id, class_id, status FROM class_bookings WHERE class_id = {0}", id
+            "SELECT id, user_id, class_id, status, created_at FROM class_bookings WHERE class_id = {0}", id
         ).ToListAsync();
         
         var enrolledMembers = bookings.Select(b => {
@@ -225,9 +225,22 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
 
     public async Task<(bool IsSuccess, string? ErrorMessage)> BookClassTransactionAsync(Guid userId, Guid classId, Guid subscriptionId)
     {
-        using var transaction = await _dbContext.Database.BeginTransactionAsync();
-        try
+        var strategy = _dbContext.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
         {
+            using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            try
+            {
+            var existingBookings = await _dbContext.Database.SqlQueryRaw<ClassBookingRawModel>(
+                "SELECT id, user_id, class_id, status, created_at FROM class_bookings WHERE user_id = {0} AND class_id = {1} AND status IN ('confirmed', 'pending')",
+                userId, classId).ToListAsync();
+
+            if (existingBookings.Count > 0)
+            {
+                await transaction.RollbackAsync();
+                return (false, "Hội viên đã đặt chỗ lớp học này trước đó rồi.");
+            }
+
             var affectedRows = await _dbContext.Database.ExecuteSqlRawAsync(
                 @"UPDATE classes 
                   SET current_enrolled = current_enrolled + 1
@@ -238,24 +251,15 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
             if (affectedRows == 0)
             {
                 await transaction.RollbackAsync();
-                return (false, "Lớp đã đầy, đã đóng hoặc đã bắt đầu.");
+                return (false, "Đặt lớp thất bại: Lớp học đã hết chỗ hoặc đã ngưng nhận đăng ký.");
             }
 
             await _dbContext.Database.ExecuteSqlRawAsync(
                 @"INSERT INTO class_bookings (user_id, class_id, subscription_id, status)
-                  VALUES ({0}, {1}, {2}, 'confirmed')
+                  VALUES ({0}, {1}, {2}, 'pending')
                   ON CONFLICT (user_id, class_id) 
-                  DO UPDATE SET status = 'confirmed', subscription_id = {2}",
+                  DO UPDATE SET status = 'pending', subscription_id = {2}",
                 userId, classId, subscriptionId);
-
-            // try
-            // {
-            //     await _dbContext.Database.ExecuteSqlRawAsync(
-            //         @"INSERT INTO notifications (user_id, title, message)
-            //           VALUES ({0}, 'Đặt lớp thành công', 'Bạn đã đặt chỗ thành công cho lớp học.')",
-            //         userId);
-            // }
-            // catch { /* Ignore missing table */ }
 
             await transaction.CommitAsync();
             return (true, null);
@@ -265,17 +269,21 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
             await transaction.RollbackAsync();
             return (false, "Lỗi hệ thống khi đặt lớp. " + ex.Message);
         }
+        });
     }
 
     public async Task<(bool IsSuccess, string? ErrorMessage)> CancelBookingTransactionAsync(Guid userId, Guid classId)
     {
-        using var transaction = await _dbContext.Database.BeginTransactionAsync();
-        try
+        var strategy = _dbContext.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
         {
+            using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            try
+            {
             var affectedBooking = await _dbContext.Database.ExecuteSqlRawAsync(
                 @"UPDATE class_bookings 
                   SET status = 'cancelled' 
-                  WHERE user_id = {0} AND class_id = {1} AND status = 'confirmed'",
+                  WHERE user_id = {0} AND class_id = {1} AND status IN ('confirmed', 'pending')",
                 userId, classId);
 
             if (affectedBooking == 0)
@@ -307,13 +315,75 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
             await transaction.RollbackAsync();
             return (false, "Lỗi hệ thống khi hủy đặt lớp. " + ex.Message);
         }
+        });
     }
 
-    public async Task<(bool IsSuccess, string? ErrorMessage)> CancelClassTransactionAsync(Guid classId)
+    public async Task<(bool IsSuccess, string? ErrorMessage)> ApproveBookingAsync(Guid bookingId)
     {
-        using var transaction = await _dbContext.Database.BeginTransactionAsync();
         try
         {
+            var affected = await _dbContext.Database.ExecuteSqlRawAsync(
+                @"UPDATE class_bookings 
+                  SET status = 'confirmed' 
+                  WHERE id = {0} AND status = 'pending'",
+                bookingId);
+
+            if (affected == 0) return (false, "Không tìm thấy đơn đặt hoặc đơn không ở trạng thái chờ duyệt.");
+            return (true, null);
+        }
+        catch (Exception ex)
+        {
+            return (false, "Lỗi hệ thống khi duyệt lớp: " + ex.Message);
+        }
+    }
+
+    public async Task<(bool IsSuccess, string? ErrorMessage)> RejectBookingAsync(Guid bookingId)
+    {
+        var strategy = _dbContext.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            try
+            {
+                var booking = await _dbContext.Database.SqlQueryRaw<ClassBookingRawModel>(
+                    "SELECT id, user_id, class_id, status, created_at FROM class_bookings WHERE id = {0}", bookingId).FirstOrDefaultAsync();
+                
+                if (booking == null || booking.Status != "pending")
+                {
+                    await transaction.RollbackAsync();
+                    return (false, "Không tìm thấy đơn đặt hoặc đơn không ở trạng thái chờ duyệt.");
+                }
+
+                await _dbContext.Database.ExecuteSqlRawAsync(
+                    @"UPDATE class_bookings 
+                      SET status = 'rejected' 
+                      WHERE id = {0}",
+                    bookingId);
+
+                await _dbContext.Database.ExecuteSqlRawAsync(
+                    @"UPDATE classes 
+                      SET current_enrolled = current_enrolled - 1 
+                      WHERE id = {0}",
+                    booking.ClassId);
+
+                await transaction.CommitAsync();
+                return (true, null);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return (false, "Lỗi hệ thống khi từ chối đơn: " + ex.Message);
+            }
+        });
+    }
+    public async Task<(bool IsSuccess, string? ErrorMessage)> CancelClassTransactionAsync(Guid classId)
+    {
+        var strategy = _dbContext.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            try
+            {
             var affected = await _dbContext.Database.ExecuteSqlRawAsync(
                 @"UPDATE classes 
                   SET status = false 
@@ -329,7 +399,7 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
             await _dbContext.Database.ExecuteSqlRawAsync(
                 @"UPDATE class_bookings 
                   SET status = 'class_cancelled' 
-                  WHERE class_id = {0} AND status = 'confirmed'",
+                  WHERE class_id = {0} AND status IN ('confirmed', 'pending')",
                 classId);
 
             await transaction.CommitAsync();
@@ -340,6 +410,7 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
             await transaction.RollbackAsync();
             return (false, "Lỗi hệ thống khi hủy lớp học. " + ex.Message);
         }
+        });
     }
 
     public async Task NotifyAffectedMembersAsync(Guid classId, string title, string message)
@@ -350,7 +421,7 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
                 @"INSERT INTO notifications (user_id, title, message)
                   SELECT user_id, {1}, {2} 
                   FROM class_bookings 
-                  WHERE class_id = {0} AND status = 'confirmed'",
+                  WHERE class_id = {0} AND status IN ('confirmed', 'pending')",
                 classId, title, message);
 
             await _dbContext.Database.ExecuteSqlRawAsync(
@@ -372,9 +443,12 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
 
     public async Task<(bool IsSuccess, string? ErrorMessage)> UpdateAttendanceAsync(Guid classId, List<AttendanceRecordDto> attendanceList)
     {
-        using var transaction = await _dbContext.Database.BeginTransactionAsync();
-        try
+        var strategy = _dbContext.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
         {
+            using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            try
+            {
             foreach (var item in attendanceList)
             {
                 var validStatus = item.Status.ToLower() == "no_show" ? "no_show" : "attended";
@@ -394,6 +468,7 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
             await transaction.RollbackAsync();
             return (false, "Lỗi hệ thống khi điểm danh. " + ex.Message);
         }
+        });
     }
 
     public async Task<MemberScheduleResponse> GetMemberScheduleAsync(Guid userId)
@@ -401,7 +476,7 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
         var response = new MemberScheduleResponse();
 
         var classBookings = await _dbContext.Database.SqlQueryRaw<ClassBookingRawModel>(
-            "SELECT id, user_id, class_id, status FROM class_bookings WHERE user_id = {0}", userId
+            "SELECT id, user_id, class_id, status, created_at FROM class_bookings WHERE user_id = {0}", userId
         ).ToListAsync();
 
         if (classBookings.Any())
@@ -479,7 +554,7 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
 
         var sports = await _dbContext.Database.SqlQueryRaw<SportSqlRawModel>("SELECT id, name FROM sports").ToListAsync();
         var facilities = await _dbContext.Database.SqlQueryRaw<FacilitySqlRawModel>("SELECT id, name FROM facilities").ToListAsync();
-        var allBookings = await _dbContext.Database.SqlQueryRaw<ClassBookingRawModel>("SELECT id, user_id, class_id, status FROM class_bookings").ToListAsync();
+        var allBookings = await _dbContext.Database.SqlQueryRaw<ClassBookingRawModel>("SELECT id, user_id, class_id, status, created_at FROM class_bookings").ToListAsync();
         var users = await _dbContext.Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number FROM users").ToListAsync();
 
         var result = new List<CoachClassScheduleDto>();
@@ -571,6 +646,51 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
                 Status: c.Status
             );
         }).OrderBy(x => x.ScheduleTime).ToList();
+    }
+
+    public async Task<IEnumerable<BookingManagerResponse>> GetAllBookingsForManagerAsync()
+    {
+        var allClasses = await _dbContext.Database.SqlQueryRaw<ClassSqlRawModel>("SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status FROM classes").ToListAsync();
+        var allBookings = await _dbContext.Database.SqlQueryRaw<ClassBookingRawModel>("SELECT id, user_id, class_id, status, created_at FROM class_bookings").ToListAsync();
+        var users = await _dbContext.Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number FROM users").ToListAsync();
+        var coaches = await _dbContext.Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches").ToListAsync();
+
+        var result = new List<BookingManagerResponse>();
+
+        foreach (var b in allBookings)
+        {
+            var c = allClasses.FirstOrDefault(x => x.Id == b.ClassId);
+            if (c == null) continue;
+
+            var u = users.FirstOrDefault(x => x.Id == b.UserId);
+            var coachName = c.CoachId.HasValue 
+                ? users.FirstOrDefault(x => coaches.FirstOrDefault(co => co.Id == c.CoachId.Value)?.UserId == x.Id)?.FullName ?? "N/A"
+                : "N/A";
+
+            string formattedStatus = b.Status;
+            if (b.Status == "confirmed") formattedStatus = "Confirmed";
+            else if (b.Status == "pending") formattedStatus = "Pending";
+            else if (b.Status == "rejected") formattedStatus = "Rejected";
+            else if (b.Status == "cancelled") formattedStatus = "Cancelled";
+            else if (b.Status == "attended") formattedStatus = "Confirmed";
+            else if (b.Status == "no_show") formattedStatus = "Cancelled";
+
+            result.Add(new BookingManagerResponse
+            {
+                Id = b.Id,
+                MemberAvatar = "/assets/images/user-default.png",
+                MemberName = u?.FullName ?? "Unknown",
+                MemberPhone = u?.PhoneNumber ?? "Unknown",
+                MemberCode = "MB-" + (u?.Id.ToString().Substring(0, 4).ToUpper() ?? "0000"),
+                ClassName = c.ClassName,
+                CoachName = coachName,
+                StartTime = c.ScheduleTime,
+                BookedAt = b.CreatedAt == default ? c.ScheduleTime.AddDays(-1) : b.CreatedAt,
+                Status = formattedStatus
+            });
+        }
+
+        return result.OrderByDescending(r => r.BookedAt);
     }
 }
 
@@ -676,6 +796,9 @@ public class ClassBookingRawModel
 
     [Column("status")]
     public string Status { get; set; } = string.Empty;
+
+    [Column("created_at")]
+    public DateTime CreatedAt { get; set; }
 }
 
 public class PtEnrollmentRawModel
