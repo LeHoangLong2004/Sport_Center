@@ -66,7 +66,7 @@ function Shell({
 }) {
   const assets = pageAssets[page]
   const active = page === "ai" ? 6 : page === "workout" ? 5 : 3
-  const nav = ["Tổng quan", "Hồ sơ thành viên", "Lớp & lịch", "Thanh toán", "Báo cáo", "AI & đào tạo"]
+  const nav = ["Tổng quan", "Hồ sơ thành viên", "Lớp & lịch", "Gói tập của tôi", "Báo cáo", "AI & đào tạo"]
   const titles = {
     schedule: ["Member Portal / Lớp & Lịch", "Lịch cá nhân của Member"],
     success: ["Member Portal / Lớp & Lịch / Đăng ký", "Đặt chỗ lớp học"],

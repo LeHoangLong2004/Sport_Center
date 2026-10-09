@@ -10,6 +10,7 @@ public class Package
     public decimal? YearlyPrice { get; set; }
     public string? Description { get; set; }
     public bool Status { get; set; } = true;
+    public string? CatalogJson { get; set; }
 
     // Navigation properties
     public ICollection<PackageFeature> Features { get; set; } = new List<PackageFeature>();
