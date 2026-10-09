@@ -9,6 +9,10 @@ interface ProfileData {
   dob: string;
   gender: string;
   address: string;
+  specialties?: string;
+  certifications?: string;
+  experienceYears?: number;
+  bio?: string;
 }
 
 export function ProfileSettings({ 
@@ -173,6 +177,61 @@ export function ProfileSettings({
                 />
               </div>
             </div>
+
+            {(roleLabel.toLowerCase().includes("huấn luyện viên") || roleLabel.toLowerCase().includes("coach")) && (
+              <div className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-700">
+                <div className="mb-6">
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-white">Hồ sơ năng lực (Dành cho HLV)</h3>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Cập nhật chuyên môn, bằng cấp để hiển thị công khai cho học viên.</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Bộ môn chuyên môn</label>
+                    <input 
+                      type="text" 
+                      name="specialties"
+                      placeholder="VD: Gym, Yoga, Pilates..."
+                      value={data.specialties || ""} 
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Năm kinh nghiệm</label>
+                    <input 
+                      type="number" 
+                      name="experienceYears"
+                      min="0"
+                      value={data.experienceYears || 0} 
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium"
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Bằng cấp & Chứng chỉ</label>
+                    <input 
+                      type="text" 
+                      name="certifications"
+                      placeholder="VD: NASM CPT, ACE Personal Trainer..."
+                      value={data.certifications || ""} 
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium"
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Giới thiệu bản thân</label>
+                    <textarea 
+                      name="bio"
+                      rows={3}
+                      placeholder="Viết một đoạn ngắn giới thiệu về phương pháp huấn luyện của bạn..."
+                      value={data.bio || ""} 
+                      onChange={(e: any) => handleChange(e)}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium resize-none"
+                    ></textarea>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <div className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
               <button type="button" className="text-sm font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">

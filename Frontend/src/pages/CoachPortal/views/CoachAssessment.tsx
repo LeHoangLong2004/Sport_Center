@@ -5,6 +5,7 @@
  */
 import { useState, useEffect, useMemo } from "react";
 import { CoachAPI } from "../services/api";
+import { createPortal } from "react-dom";
 import type { AssessmentRecord, MockSession } from "../services/api";
 
 export default function CoachAssessment() {
@@ -29,8 +30,8 @@ export default function CoachAssessment() {
       setSessions(sch);
       setMembers(mem);
       if (mem.length > 0) setSelectedMemberId(mem[0].id);
-      setLoading(false);
-    }).catch(console.error);
+    }).catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
   const eligibleSessions = useMemo(() => {
@@ -171,69 +172,81 @@ export default function CoachAssessment() {
       </div>
 
       {/* Edit form */}
-      {editingId && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg p-6 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Ghi kết quả buổi học</h2>
-            <div className="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-3 py-2">
-              ⚠️ Demo — lưu trên trình duyệt
+      {editingId && createPortal(
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+            
+            {/* Header */}
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Ghi kết quả buổi học</h2>
+              <button type="button" onClick={() => { setEditingId(null); setDraft({}); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-3xl leading-none transition-colors">&times;</button>
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Mức hoàn thành (%)</label>
-              <input type="range" min={0} max={100} value={draft.completion || 0}
-                onChange={(e) => setDraft({ ...draft, completion: +e.target.value })}
-                className="accent-teal-600" />
-              <div className="text-sm font-bold text-teal-600">{draft.completion}%</div>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Chỉ số tập luyện</label>
-                <button type="button" className="text-xs text-teal-600 hover:underline"
-                  onClick={() => setDraft({ ...draft, metrics: [...(draft.metrics || []), { label: "", value: "", unit: "" }] })}>
-                  + Thêm
-                </button>
+            {/* Body */}
+            <div className="p-6 flex flex-col gap-5 overflow-y-auto flex-1 custom-scrollbar min-h-0">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Mức hoàn thành (%)</label>
+                <input type="range" min={0} max={100} value={draft.completion || 0}
+                  onChange={(e) => setDraft({ ...draft, completion: +e.target.value })}
+                  className="accent-teal-600" />
+                <div className="text-sm font-bold text-teal-600">{draft.completion}%</div>
               </div>
-              {(draft.metrics || []).map((m, i) => (
-                <div key={i} className="flex gap-2 items-center">
-                  <input type="text" placeholder="Tên chỉ số" value={m.label}
-                    onChange={(e) => { const ms = [...(draft.metrics || [])]; ms[i] = { ...m, label: e.target.value }; setDraft({ ...draft, metrics: ms }); }}
-                    className={`${inputCls} text-xs`} />
-                  <input type="text" placeholder="Giá trị" value={m.value}
-                    onChange={(e) => { const ms = [...(draft.metrics || [])]; ms[i] = { ...m, value: e.target.value }; setDraft({ ...draft, metrics: ms }); }}
-                    className={`${inputCls} text-xs w-20`} />
-                  <input type="text" placeholder="Đvị" value={m.unit}
-                    onChange={(e) => { const ms = [...(draft.metrics || [])]; ms[i] = { ...m, unit: e.target.value }; setDraft({ ...draft, metrics: ms }); }}
-                    className={`${inputCls} text-xs w-14`} />
+
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Chỉ số tập luyện</label>
+                  <button type="button" className="text-xs text-teal-600 hover:underline font-medium"
+                    onClick={() => setDraft({ ...draft, metrics: [...(draft.metrics || []), { label: "", value: "", unit: "" }] })}>
+                    + Thêm chỉ số
+                  </button>
                 </div>
-              ))}
+                {(draft.metrics || []).map((m, i) => (
+                  <div key={i} className="flex gap-2 items-center bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg border border-slate-100 dark:border-slate-700">
+                    <input type="text" placeholder="Tên chỉ số (VD: Nhịp tim)" value={m.label}
+                      onChange={(e) => { const ms = [...(draft.metrics || [])]; ms[i] = { ...m, label: e.target.value }; setDraft({ ...draft, metrics: ms }); }}
+                      className={`${inputCls} text-xs flex-1`} />
+                    <input type="text" placeholder="Giá trị" value={m.value}
+                      onChange={(e) => { const ms = [...(draft.metrics || [])]; ms[i] = { ...m, value: e.target.value }; setDraft({ ...draft, metrics: ms }); }}
+                      className={`${inputCls} text-xs w-20`} />
+                    <input type="text" placeholder="Đvị" value={m.unit}
+                      onChange={(e) => { const ms = [...(draft.metrics || [])]; ms[i] = { ...m, unit: e.target.value }; setDraft({ ...draft, metrics: ms }); }}
+                      className={`${inputCls} text-xs w-14`} />
+                    <button type="button" onClick={() => { const ms = draft.metrics!.filter((_, j) => j !== i); setDraft({ ...draft, metrics: ms }); }}
+                      className="text-slate-400 hover:text-red-500 px-1">
+                      &times;
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Nhận xét</label>
+                <textarea value={draft.comment || ""} onChange={(e) => setDraft({ ...draft, comment: e.target.value })}
+                  rows={3} className={`${inputCls} resize-none`} placeholder="Nhận xét kết quả buổi học..." />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Hướng tập tiếp theo</label>
+                <input type="text" value={draft.nextStep || ""} onChange={(e) => setDraft({ ...draft, nextStep: e.target.value })}
+                  className={inputCls} placeholder="VD: Tăng tạ, cải thiện tư thế..." />
+              </div>
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Nhận xét</label>
-              <textarea value={draft.comment || ""} onChange={(e) => setDraft({ ...draft, comment: e.target.value })}
-                rows={3} className={inputCls} placeholder="Nhận xét kết quả buổi học..." />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Hướng tập tiếp theo</label>
-              <input type="text" value={draft.nextStep || ""} onChange={(e) => setDraft({ ...draft, nextStep: e.target.value })}
-                className={inputCls} placeholder="VD: Tăng tạ, cải thiện tư thế..." />
-            </div>
-
-            <div className="flex justify-end gap-3 pt-2">
+            {/* Footer */}
+            <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 shrink-0 bg-slate-50 dark:bg-slate-900/50 rounded-b-2xl">
               <button type="button" onClick={() => { setEditingId(null); setDraft({}); }}
-                className="px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-600 dark:text-slate-300">
+                className="px-5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm">
                 Hủy
               </button>
               <button type="button" onClick={handleSave} disabled={isSaving}
-                className="px-5 py-2 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 disabled:bg-slate-300">
+                className="px-6 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-bold hover:bg-teal-700 disabled:bg-slate-400 dark:disabled:bg-slate-600 transition-colors shadow-md shadow-teal-500/20">
                 {isSaving ? "Đang lưu..." : "Lưu kết quả"}
               </button>
             </div>
+            
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -17,7 +17,7 @@ const ATT_LABEL: Record<string, string> = {
   "chưa điểm danh": "Chưa điểm danh",
   attended:          "Có mặt",
   no_show:           "Vắng",
-  late:              "Đi trễ (Demo)",
+  late:              "Đi trễ",
 };
 
 const ATT_STYLE: Record<string, string> = {

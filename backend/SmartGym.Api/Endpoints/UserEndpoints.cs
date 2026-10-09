@@ -16,22 +16,29 @@ public static class UserEndpoints
     {
         var managerAuth = new AuthorizeAttribute { Roles = "manager,receptionist" };
 
-        var group = app.MapGroup("/api/users").RequireAuthorization(managerAuth);
+        var group = app.MapGroup("/api/users").RequireAuthorization();
 
         group.MapGet("/", async (IUserService userService) =>
         {
             var users = await userService.GetAllUsersAsync();
             return Results.Ok(users);
-        });
+        }).RequireAuthorization(managerAuth);
 
         group.MapGet("/members-lookup", async (SmartGym.Application.Interfaces.IUserRepository userRepo) =>
         {
             var members = await userRepo.GetMembersLookupAsync();
             return Results.Ok(members);
         });
-
-        group.MapGet("/{id:guid}", async (Guid id, IUserService userService) =>
+        group.MapGet("/{id:guid}", async (Guid id, HttpContext context, IUserService userService) =>
         {
+            var role = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            var userId = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            
+            if (role != "manager" && userId != id.ToString()) 
+            {
+                return Results.Forbid();
+            }
+
             var user = await userService.GetUserByIdAsync(id);
             if (user == null) return Results.NotFound();
             return Results.Ok(user);
@@ -49,17 +56,25 @@ public static class UserEndpoints
             {
                 return Results.BadRequest(ex.Message);
             }
-        });
+        }).RequireAuthorization(managerAuth);
 
         group.MapPut("/{id:guid}/status", async (Guid id, [FromBody] UpdateUserStatusRequest request, IUserService userService) =>
         {
             var success = await userService.UpdateUserStatusAsync(id, request.Status);
             if (!success) return Results.NotFound("User not found.");
             return Results.Ok($"User status updated to {(request.Status ? "Active" : "Inactive")}.");
-        });
+        }).RequireAuthorization(managerAuth);
 
-        group.MapPut("/{id:guid}/profile", async (Guid id, [FromBody] UpdateUserProfileRequest request, IUserService userService) =>
+        group.MapPut("/{id:guid}/profile", async (Guid id, HttpContext context, [FromBody] UpdateUserProfileRequest request, IUserService userService) =>
         {
+            var role = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            var userId = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            
+            if (role != "manager" && userId != id.ToString()) 
+            {
+                return Results.Forbid();
+            }
+
             var success = await userService.UpdateUserProfileAsync(id, request);
             if (!success) return Results.NotFound("User not found.");
             return Results.Ok("User profile updated successfully.");

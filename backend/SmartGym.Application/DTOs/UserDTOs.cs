@@ -16,6 +16,12 @@ public class UserResponse
     public string? EmergencyContact { get; set; }
     public bool Status { get; set; }
     public DateTime CreatedAt { get; set; }
+
+    // Coach Profile Fields
+    public string? Specialties { get; set; }
+    public string? Certifications { get; set; }
+    public int? ExperienceYears { get; set; }
+    public string? Bio { get; set; }
 }
 
 public class UpdateUserRoleRequest
@@ -37,6 +43,12 @@ public class UpdateUserProfileRequest
     public DateTime? DateOfBirth { get; set; }
     public string? Gender { get; set; }
     public string? EmergencyContact { get; set; }
+
+    // Coach Profile Fields
+    public string? Specialties { get; set; }
+    public string? Certifications { get; set; }
+    public int? ExperienceYears { get; set; }
+    public string? Bio { get; set; }
 }
 
 public class RoleResponse

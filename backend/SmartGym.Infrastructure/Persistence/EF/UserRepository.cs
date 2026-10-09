@@ -16,22 +16,22 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetByEmailAsync(string email)
     {
-        return await _dbContext.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Email == email);
+        return await _dbContext.Users.Include(u => u.Role).Include(u => u.CoachProfile).FirstOrDefaultAsync(u => u.Email == email);
     }
 
     public async Task<User?> GetByPhoneNumberAsync(string phoneNumber)
     {
-        return await _dbContext.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber);
+        return await _dbContext.Users.Include(u => u.Role).Include(u => u.CoachProfile).FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber);
     }
 
     public async Task<User?> GetByIdAsync(System.Guid id)
     {
-        return await _dbContext.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id == id);
+        return await _dbContext.Users.Include(u => u.Role).Include(u => u.CoachProfile).FirstOrDefaultAsync(u => u.Id == id);
     }
 
     public async Task<System.Collections.Generic.IEnumerable<User>> GetAllUsersAsync()
     {
-        return await _dbContext.Users.Include(u => u.Role).ToListAsync();
+        return await _dbContext.Users.Include(u => u.Role).Include(u => u.CoachProfile).ToListAsync();
     }
 
     public async Task<System.Collections.Generic.IEnumerable<SmartGym.Application.DTOs.MemberLookupResponse>> GetMembersLookupAsync()

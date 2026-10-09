@@ -1,7 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function GoiTapBangGiaRedesign() {
   const [billing, setBilling] = useState<"monthly" | "6month" | "annual">("monthly");
+  const [packageCategory, setPackageCategory] = useState<"member" | "training">("member");
+  const [packages, setPackages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/packages')
+      .then(res => res.json())
+      .then(data => {
+        setPackages(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
 
   const discountMultiplier = billing === "monthly" ? 1 : billing === "6month" ? 0.85 : 0.7;
 
@@ -45,6 +61,36 @@ export default function GoiTapBangGiaRedesign() {
     { text: "4 Buổi tập cá nhân cùng PT/tháng", included: true },
     { text: "Lối đi ưu tiên - Check-in không đợi", included: true },
     { text: "Quầy bar nước uống & trái cây tươi miễn phí", included: true },
+  ];
+
+  const ptFeatures = [
+    { text: "Huấn luyện viên cá nhân 1 kèm 1", included: true },
+    { text: "Lộ trình tập luyện thiết kế riêng", included: true },
+    { text: "Tư vấn dinh dưỡng chuyên sâu", included: true },
+    { text: "Đo InBody và theo dõi chỉ số mỗi tuần", included: true },
+    { text: "Giãn cơ phục hồi sau buổi tập", included: true },
+    { text: "Tặng kèm thẻ tập trong những ngày PT", included: true },
+    { text: "Cam kết đạt mục tiêu hình thể", included: true },
+  ];
+
+  const yogaFeatures = [
+    { text: "Huấn luyện viên Master Yoga Ấn Độ", included: true },
+    { text: "Lớp học nhóm nhỏ dưới 5 người", included: true },
+    { text: "Chỉnh sửa tư thế chuẩn xác", included: true },
+    { text: "Trị liệu cổ vai gáy, thoái hóa", included: true },
+    { text: "Phòng tập Yoga tĩnh lặng chuyên biệt", included: true },
+    { text: "Thảm tập cao cấp kháng khuẩn", included: true },
+    { text: "Trà thảo mộc thanh lọc cơ thể", included: true },
+  ];
+
+  const kickfitFeatures = [
+    { text: "Tập luyện 1 kèm 1 với HLV Kickfit", included: true },
+    { text: "Giảm mỡ nhanh, cắt nét cơ thể", included: true },
+    { text: "Tăng phản xạ, tự vệ thực chiến", included: true },
+    { text: "Trang bị bao tay, giáp bảo hộ VIP", included: true },
+    { text: "Giãn cơ phục hồi sau buổi tập", included: true },
+    { text: "Tặng kèm thẻ tập tự do", included: true },
+    { text: "Chế độ ăn siết mỡ chuyên sâu", included: true },
   ];
 
   const comparisonRows = [
@@ -140,7 +186,32 @@ export default function GoiTapBangGiaRedesign() {
         <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[16px] text-center leading-relaxed max-w-[560px]">
           Hệ thống gói tập linh hoạt, minh bạch chi phí — thiết kế riêng cho từng mục tiêu và lịch trình cá nhân của bạn.
         </p>
-        {/* Billing Toggle */}
+
+        {/* Category Tabs */}
+        <div className="flex bg-[#1e293b] rounded-full p-1 gap-2 mt-4 mb-2">
+          <button
+            onClick={() => setPackageCategory("member")}
+            className={`px-8 py-3 rounded-full text-[15px] transition-colors cursor-pointer ${
+              packageCategory === "member"
+                ? "bg-teal-500 font-bold text-white shadow-lg"
+                : "font-medium text-[#94a3b8] hover:text-white"
+            }`}
+          >
+            Gói thành viên
+          </button>
+          <button
+            onClick={() => setPackageCategory("training")}
+            className={`px-8 py-3 rounded-full text-[15px] transition-colors cursor-pointer ${
+              packageCategory === "training"
+                ? "bg-teal-500 font-bold text-white shadow-lg"
+                : "font-medium text-[#94a3b8] hover:text-white"
+            }`}
+          >
+            Gói tập
+          </button>
+        </div>
+
+        {/* Billing Toggle (Only for membership, or applies to both?) */}
         <div className="flex bg-[#1e293b] rounded-[12px] p-[4px] gap-[4px]">
           {billingTabs.map(({ key, label }) => (
             <button
@@ -158,12 +229,57 @@ export default function GoiTapBangGiaRedesign() {
         </div>
       </section>
 
-      {/* Pricing Grid */}
-      <section className="bg-[#f8fafc] flex flex-col items-center gap-[48px] px-[80px] py-[80px] w-full">
-        <div className="flex gap-[24px] items-stretch w-full max-w-[1120px]">
-          {/* Starter Pack */}
-          <div className="bg-white border border-[#e2e8f0] rounded-[16px] flex flex-col gap-[24px] p-[32px] flex-1">
-            <div className="flex flex-col gap-[8px]">
+      {/* Conditional Rendering based on packageCategory */}
+      {packageCategory === "member" ? (
+        <>
+          {/* Pricing Grid */}
+          <section className="bg-[#f8fafc] flex flex-col items-center gap-[48px] px-[80px] py-[80px] w-full">
+            <div className="flex gap-[24px] items-stretch w-full max-w-[1120px] flex-wrap justify-center">
+              {packages.filter(p => p.packageType === "member" || p.packageType === "membership" || p.packageType === "subscription").length > 0 ? (
+                packages.filter(p => p.packageType === "member" || p.packageType === "membership" || p.packageType === "subscription").map((pkg, idx) => (
+                  <div key={pkg.id} className={`bg-white ${idx === 1 ? 'border-2 border-[#2563eb] shadow-lg relative' : 'border border-[#e2e8f0]'} rounded-[16px] flex flex-col gap-[24px] p-[32px] flex-1 min-w-[300px]`}>
+                    {idx === 1 && (
+                      <div className="absolute -top-[14px] left-1/2 -translate-x-1/2">
+                        <span className="bg-[#2563eb] text-white font-['Inter:Bold'] font-bold text-[11px] uppercase tracking-[1px] px-[16px] py-[6px] rounded-full whitespace-nowrap">
+                          PHỔ BIẾN NHẤT
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex flex-col gap-[8px]">
+                      <p className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[20px]">{pkg.name}</p>
+                      <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px]">
+                        {pkg.tagline || pkg.description || "Gói hội viên cao cấp"}
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-[4px]">
+                      <p className={`font-['Inter:Extra_Bold'] font-extrabold ${idx === 1 ? 'text-[#2563eb]' : 'text-[#0f172a]'} text-[36px] leading-none`}>
+                        {formatPrice(billing === "annual" ? (pkg.yearlyPrice || pkg.monthlyPrice * 12) : (pkg.monthlyPrice || 0))}
+                      </p>
+                      <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[13px]">
+                        /{billing === "annual" ? "năm" : "tháng"}
+                      </p>
+                    </div>
+                    <div className="border-t border-[#e2e8f0]" />
+                    <div className="flex flex-col gap-[12px] flex-1">
+                      {(pkg.features?.length > 0 ? pkg.features : ["Sử dụng phòng tập tiêu chuẩn", "Tham gia lớp nhóm cơ bản"]).map((f: string) => (
+                        <div key={f} className="flex gap-[10px] items-start">
+                          <span className="text-[15px] font-bold shrink-0 mt-[1px] text-[#10b981]">✓</span>
+                          <p className="font-['Inter:Regular'] font-normal text-[14px] leading-snug text-[#1e293b]">
+                            {f}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                    <button data-planid={pkg.id} className={`${idx === 1 ? 'bg-[#2563eb] hover:bg-[#1d4ed8]' : 'bg-[#0f172a] hover:bg-[#1e293b]'} text-white font-['Inter:Bold'] font-bold text-[14px] py-[14px] rounded-[10px] w-full transition-colors cursor-pointer`}>
+                      Đăng ký {pkg.name}
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <>
+                  {/* Starter Pack */}
+                  <div className="bg-white border border-[#e2e8f0] rounded-[16px] flex flex-col gap-[24px] p-[32px] flex-1">
+                    <div className="flex flex-col gap-[8px]">
               <p className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[20px]">Starter Pack</p>
               <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px]">
                 Thích hợp cho nhu cầu rèn luyện cơ bản
@@ -275,6 +391,8 @@ export default function GoiTapBangGiaRedesign() {
               Chọn gói Premium
             </button>
           </div>
+                </>
+              )}
         </div>
       </section>
 
@@ -328,6 +446,152 @@ export default function GoiTapBangGiaRedesign() {
           </table>
         </div>
       </section>
+        </>
+      ) : (
+        <>
+          <section className="bg-[#f8fafc] flex flex-col items-center gap-[48px] px-[80px] py-[80px] w-full">
+            <div className="flex gap-[24px] items-stretch w-full max-w-[1120px] flex-wrap justify-center">
+              {packages.filter(p => p.packageType === "training" || p.packageType === "sport" || p.packageType === "class").length > 0 ? (
+                packages.filter(p => p.packageType === "training" || p.packageType === "sport" || p.packageType === "class").map((pkg, idx) => (
+                  <div key={pkg.id} className={`bg-white border border-[#e2e8f0] rounded-[16px] flex flex-col gap-[24px] p-[32px] flex-1 min-w-[300px] ${idx === 0 ? 'border-2 border-[#10b981] shadow-lg relative' : ''}`}>
+                    {idx === 0 && (
+                      <div className="absolute -top-[14px] left-1/2 -translate-x-1/2">
+                        <span className="bg-[#10b981] text-white font-['Inter:Bold'] font-bold text-[11px] uppercase tracking-[1px] px-[16px] py-[6px] rounded-full whitespace-nowrap">
+                          TỐI ƯU HIỆU QUẢ
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex flex-col gap-[8px]">
+                      <p className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[20px]">{pkg.name}</p>
+                      <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px]">
+                        {pkg.tagline || pkg.description || "Gói tập chuyên nghiệp"}
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-[4px]">
+                      <p className={`font-['Inter:Extra_Bold'] font-extrabold ${idx === 0 ? 'text-[#10b981]' : 'text-[#0f172a]'} text-[36px] leading-none`}>
+                        {formatPrice(pkg.monthlyPrice || pkg.yearlyPrice || 0)}
+                      </p>
+                      <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[13px]">/khóa</p>
+                    </div>
+                    <div className="border-t border-[#e2e8f0]" />
+                    <div className="flex flex-col gap-[12px] flex-1">
+                      {(pkg.features?.length > 0 ? pkg.features : ["Tập cùng huấn luyện viên", "Đánh giá kết quả định kỳ"]).map((f: string) => (
+                        <div key={f} className="flex gap-[10px] items-start">
+                          <span className="text-[15px] font-bold shrink-0 mt-[1px] text-[#10b981]">✓</span>
+                          <p className="font-['Inter:Regular'] font-normal text-[14px] leading-snug text-[#1e293b]">
+                            {f}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                    <button data-planid={pkg.id} className={`${idx === 0 ? 'bg-[#10b981] hover:bg-[#059669]' : 'bg-[#0f172a] hover:bg-[#1e293b]'} text-white font-['Inter:Bold'] font-bold text-[14px] py-[14px] rounded-[10px] w-full transition-colors cursor-pointer`}>
+                      Đăng ký {pkg.name}
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <>
+                  {/* PT 1:1 */}
+                  <div className="bg-white border-2 border-[#10b981] rounded-[16px] flex flex-col gap-[24px] p-[32px] flex-1 relative shadow-lg">
+                <div className="absolute -top-[14px] left-1/2 -translate-x-1/2">
+                  <span className="bg-[#10b981] text-white font-['Inter:Bold'] font-bold text-[11px] uppercase tracking-[1px] px-[16px] py-[6px] rounded-full whitespace-nowrap">
+                    TỐI ƯU HIỆU QUẢ
+                  </span>
+                </div>
+                <div className="flex flex-col gap-[8px]">
+                  <p className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[20px]">Huấn luyện viên cá nhân 1:1</p>
+                  <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px]">
+                    Đạt mục tiêu nhanh chóng với giáo án riêng biệt
+                  </p>
+                </div>
+                <div className="flex flex-col gap-[4px]">
+                  <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#10b981] text-[36px] leading-none">
+                    {formatPrice(450000)}
+                  </p>
+                  <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[13px]">/buổi (gói 24 buổi)</p>
+                </div>
+                <div className="border-t border-[#e2e8f0]" />
+                <div className="flex flex-col gap-[12px] flex-1">
+                  {ptFeatures.map((f) => (
+                    <div key={f.text} className="flex gap-[10px] items-start">
+                      <span className="text-[15px] font-bold shrink-0 mt-[1px] text-[#10b981]">✓</span>
+                      <p className="font-['Inter:Regular'] font-normal text-[14px] leading-snug text-[#1e293b]">
+                        {f.text}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <button className="bg-[#10b981] text-white font-['Inter:Bold'] font-bold text-[14px] py-[14px] rounded-[10px] w-full hover:bg-[#059669] transition-colors cursor-pointer">
+                  Đăng ký tập PT
+                </button>
+              </div>
+
+              {/* Master Yoga */}
+              <div className="bg-white border border-[#e2e8f0] rounded-[16px] flex flex-col gap-[24px] p-[32px] flex-1">
+                <div className="flex flex-col gap-[8px]">
+                  <p className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[20px]">Yoga Trị Liệu Chuyên Sâu</p>
+                  <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px]">
+                    Lớp nhóm nhỏ chuẩn Ấn Độ
+                  </p>
+                </div>
+                <div className="flex flex-col gap-[4px]">
+                  <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[36px] leading-none">
+                    {formatPrice(2500000)}
+                  </p>
+                  <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[13px]">/tháng (giới hạn 5 người)</p>
+                </div>
+                <div className="border-t border-[#e2e8f0]" />
+                <div className="flex flex-col gap-[12px] flex-1">
+                  {yogaFeatures.map((f) => (
+                    <div key={f.text} className="flex gap-[10px] items-start">
+                      <span className="text-[15px] font-bold shrink-0 mt-[1px] text-[#10b981]">✓</span>
+                      <p className="font-['Inter:Regular'] font-normal text-[14px] leading-snug text-[#1e293b]">
+                        {f.text}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <button className="bg-[#0f172a] text-white font-['Inter:Bold'] font-bold text-[14px] py-[14px] rounded-[10px] w-full hover:bg-[#1e293b] transition-colors cursor-pointer">
+                  Đăng ký Yoga
+                </button>
+              </div>
+
+              {/* Kickfit */}
+              <div className="bg-white border border-[#e2e8f0] rounded-[16px] flex flex-col gap-[24px] p-[32px] flex-1">
+                <div className="flex flex-col gap-[8px]">
+                  <p className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[20px]">Kickfit Đốt Mỡ</p>
+                  <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px]">
+                    Giải tỏa căng thẳng, siết mỡ tối đa
+                  </p>
+                </div>
+                <div className="flex flex-col gap-[4px]">
+                  <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[36px] leading-none">
+                    {formatPrice(350000)}
+                  </p>
+                  <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[13px]">/buổi (gói 12 buổi)</p>
+                </div>
+                <div className="border-t border-[#e2e8f0]" />
+                <div className="flex flex-col gap-[12px] flex-1">
+                  {kickfitFeatures.map((f) => (
+                    <div key={f.text} className="flex gap-[10px] items-start">
+                      <span className="text-[15px] font-bold shrink-0 mt-[1px] text-[#10b981]">✓</span>
+                      <p className="font-['Inter:Regular'] font-normal text-[14px] leading-snug text-[#1e293b]">
+                        {f.text}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <button className="bg-[#0f172a] text-white font-['Inter:Bold'] font-bold text-[14px] py-[14px] rounded-[10px] w-full hover:bg-[#1e293b] transition-colors cursor-pointer">
+                  Đăng ký Kickfit
+                </button>
+              </div>
+                </>
+              )}
+
+            </div>
+          </section>
+        </>
+      )}
 
       {/* Add-on Services */}
       <section className="bg-[#f8fafc] flex flex-col items-center gap-[48px] px-[80px] py-[80px] w-full">

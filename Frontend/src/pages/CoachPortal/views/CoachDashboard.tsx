@@ -6,6 +6,7 @@ import { useMemo, useState, useEffect } from "react";
 import type { CoachScreen } from "../types";
 import { CoachAPI } from "../services/api";
 import type { MockSession, AttendanceRecord } from "../services/api"; // Dùng type tạm
+import { useUserProfile } from '../../../hooks/useUserProfile';
 
 interface Props {
   navigateTo: (s: CoachScreen, extra?: { sessionId?: string }) => void;
@@ -20,6 +21,9 @@ const dateLabel = today.toLocaleDateString("vi-VN", {
 });
 
 export default function CoachDashboard({ navigateTo }: Props) {
+  const { profile } = useUserProfile();
+  const userName = profile?.fullName ? profile.fullName.split(' ').pop() : 'HLV';
+  
   const [todaySessions, setTodaySessions] = useState<MockSession[]>([]);
   const [attendances, setAttendances] = useState<Record<string, AttendanceRecord[]>>({});
   const [loading, setLoading] = useState(true);
@@ -97,7 +101,7 @@ export default function CoachDashboard({ navigateTo }: Props) {
       {/* Lời chào */}
       <div>
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-          Xin chào, HLV! 👋
+          Xin chào, {userName}! 👋
         </h1>
         <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{dateLabel}</p>
       </div>

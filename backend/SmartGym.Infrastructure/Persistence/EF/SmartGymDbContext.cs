@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SmartGym.Domain.Entities;
+using SmartGym.Domain.Enums;
 
 namespace SmartGym.Infrastructure.Persistence.EF;
 
@@ -10,12 +11,22 @@ public class SmartGymDbContext : DbContext
     {
     }
 
+    private static PaymentStatus ParsePaymentStatus(string value) =>
+        Enum.TryParse<PaymentStatus>(value, true, out var status) ? status : PaymentStatus.Pending;
+
     public DbSet<Role> Roles { get; set; } = null!;
     public DbSet<User> Users { get; set; } = null!;
+    public DbSet<CoachProfile> CoachProfiles { get; set; } = null!;
     public DbSet<Package> Packages { get; set; } = null!;
     public DbSet<PackageFeature> PackageFeatures { get; set; } = null!;
     public DbSet<MembershipBenefit> MembershipBenefits { get; set; } = null!;
     public DbSet<Subscription> Subscriptions { get; set; } = null!;
+    public DbSet<Invoice> Invoices { get; set; } = null!;
+    public DbSet<BodyMetric> BodyMetrics { get; set; } = null!;
+    public DbSet<WorkoutPlan> WorkoutPlans { get; set; } = null!;
+    public DbSet<WorkoutPlanExercise> WorkoutPlanExercises { get; set; } = null!;
+    public DbSet<HomeworkProgress> HomeworkProgresses { get; set; } = null!;
+    public DbSet<Review> Reviews { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -52,6 +63,22 @@ public class SmartGymDbContext : DbContext
                 .WithMany(p => p.Users)
                 .HasForeignKey(d => d.RoleId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<CoachProfile>(entity =>
+        {
+            entity.ToTable("coach_profiles");
+            entity.HasKey(e => e.UserId);
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Specialties).HasColumnName("specialties");
+            entity.Property(e => e.Certifications).HasColumnName("certifications");
+            entity.Property(e => e.ExperienceYears).HasColumnName("experience_years");
+            entity.Property(e => e.Bio).HasColumnName("bio");
+
+            entity.HasOne(d => d.User)
+                .WithOne(p => p.CoachProfile)
+                .HasForeignKey<CoachProfile>(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Package>(entity =>
@@ -111,8 +138,18 @@ public class SmartGymDbContext : DbContext
             entity.Property(e => e.VoucherId).HasColumnName("voucher_id");
             entity.Property(e => e.BillingPeriod).HasColumnName("billing_period");
             entity.Property(e => e.TotalAmount).HasColumnName("total_amount").IsRequired();
-            entity.Property(e => e.PaymentMethod).HasColumnName("payment_method");
-            entity.Property(e => e.PaymentStatus).HasColumnName("payment_status").HasDefaultValue("pending");
+            entity.Property(e => e.PaymentMethod)
+                            .HasColumnName("payment_method")
+                            .HasConversion(
+                                v => v.HasValue ? v.Value.ToDbValue() : null,
+                                v => string.IsNullOrWhiteSpace(v) ? (PaymentMethod?)null : PaymentMethodExtensions.ParseDbValue(v));
+                        entity.Property(e => e.PaymentStatus)
+                            .HasColumnName("payment_status")
+                            .HasConversion(
+                                v => v.ToString().ToLower(),
+                                v => ParsePaymentStatus(v)
+                            )
+                .HasDefaultValue(SmartGym.Domain.Enums.PaymentStatus.Pending);
             entity.Property(e => e.StartDate).HasColumnName("start_date").IsRequired();
             entity.Property(e => e.EndDate).HasColumnName("end_date").IsRequired();
             entity.Property(e => e.AutoRenew).HasColumnName("auto_renew").HasDefaultValue(false);
@@ -127,6 +164,133 @@ public class SmartGymDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(d => d.PackageId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<Invoice>(entity =>
+        {
+            entity.ToTable("invoices");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+            entity.Property(e => e.BranchId).HasColumnName("facility_id");
+            entity.Property(e => e.TotalAmount).HasColumnName("total_amount").IsRequired();
+            entity.Property(e => e.PaymentMethod)
+                            .HasColumnName("payment_method")
+                            .HasConversion(
+                                v => v.ToDbValue(),
+                                v => PaymentMethodExtensions.ParseDbValue(v));
+                        entity.Property(e => e.Status)
+                            .HasColumnName("payment_status")
+                            .HasConversion(
+                                v => v.ToString().ToLower(),
+                                v => ParsePaymentStatus(v)
+                            )
+                .HasDefaultValue(SmartGym.Domain.Enums.PaymentStatus.Pending);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+            entity.Property(e => e.PaidAt).HasColumnName("paid_at");
+
+            entity.HasOne(d => d.User)
+                .WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<BodyMetric>(entity =>
+        {
+            entity.ToTable("body_metrics");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Weight).HasColumnName("weight");
+            entity.Property(e => e.Height).HasColumnName("height");
+            entity.Property(e => e.BodyFat).HasColumnName("body_fat");
+            entity.Property(e => e.MuscleMass).HasColumnName("muscle_mass");
+            entity.Property(e => e.Bmi).HasColumnName("bmi");
+            entity.Property(e => e.RecordedAt).HasColumnName("recorded_at").HasDefaultValueSql("now()");
+
+            entity.HasOne(d => d.User)
+                .WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<WorkoutPlan>(entity =>
+        {
+            entity.ToTable("workout_plans");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CoachId).HasColumnName("coach_id");
+            entity.Property(e => e.SportId).HasColumnName("sport_id");
+            entity.Property(e => e.PlanName).HasColumnName("plan_name").IsRequired();
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.Goal).HasColumnName("goal");
+            entity.Property(e => e.Level).HasColumnName("level");
+            entity.Property(e => e.DurationMinutes).HasColumnName("duration_minutes");
+            entity.Property(e => e.Status).HasColumnName("status").HasDefaultValue("Nháp");
+            entity.Property(e => e.Version).HasColumnName("version").HasDefaultValue(1);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
+        });
+
+        modelBuilder.Entity<WorkoutPlanExercise>(entity =>
+        {
+            entity.ToTable("workout_plan_exercises");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.PlanId).HasColumnName("plan_id");
+            entity.Property(e => e.Name).HasColumnName("name").IsRequired();
+            entity.Property(e => e.Reps).HasColumnName("reps");
+            entity.Property(e => e.Rest).HasColumnName("rest");
+            entity.Property(e => e.Note).HasColumnName("note");
+
+            entity.HasOne(d => d.Plan)
+                .WithMany(p => p.Exercises)
+                .HasForeignKey(d => d.PlanId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<HomeworkProgress>(entity =>
+        {
+            entity.ToTable("homework_progress");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.MemberId).HasColumnName("member_id");
+            entity.Property(e => e.PlanId).HasColumnName("plan_id");
+            entity.Property(e => e.AssignedBy).HasColumnName("assigned_by");
+            entity.Property(e => e.Status).HasColumnName("status").HasDefaultValue("assigned");
+            entity.Property(e => e.ProgressPct).HasColumnName("progress_pct").HasDefaultValue(0m);
+            entity.Property(e => e.AssignedDate).HasColumnName("assigned_date");
+            entity.Property(e => e.DueDate).HasColumnName("due_date");
+            entity.Property(e => e.CompletedAt).HasColumnName("completed_at");
+            entity.Property(e => e.Notes).HasColumnName("notes");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+
+            entity.HasOne(d => d.Member)
+                .WithMany()
+                .HasForeignKey(d => d.MemberId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.Plan)
+                .WithMany()
+                .HasForeignKey(d => d.PlanId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Review>(entity =>
+        {
+            entity.ToTable("reviews");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.MemberId).HasColumnName("member_id");
+            entity.Property(e => e.CoachId).HasColumnName("coach_id");
+            entity.Property(e => e.Rating).HasColumnName("rating").IsRequired();
+            entity.Property(e => e.Comment).HasColumnName("comment");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+
+            entity.HasOne(d => d.Member)
+                .WithMany()
+                .HasForeignKey(d => d.MemberId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

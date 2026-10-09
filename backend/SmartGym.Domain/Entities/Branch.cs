@@ -12,10 +12,12 @@ public sealed class Branch
         IsActive = isActive;
     }
 
-    public Guid Id { get; }
-    public string BranchCode { get; }
-    public string BranchName { get; }
-    public string Address { get; }
-    public string PhoneNumber { get; }
-    public bool IsActive { get; }
+    private Branch() { }
+
+    public Guid Id { get; private set; }
+    public string BranchCode { get; private set; }
+    public string BranchName { get; private set; }
+    public string Address { get; private set; }
+    public string PhoneNumber { get; private set; }
+    public bool IsActive { get; private set; }
 }
