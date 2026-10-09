@@ -83,45 +83,51 @@ namespace SmartGym.Api.Endpoints
             // 4. Session Members
             group.MapGet("/sessions/{sessionId}/members", async (string sessionId, SmartGymDbContext db) =>
             {
-                var members = await db.Users
+                var users = await db.Users
                     .Include(u => u.Role)
-                    .Where(u => u.Role.Name == "member")
+                    .Where(u => u.Role != null && u.Role.Name == "member")
                     .Take(2)
-                    .Select(u => new
-                    {
-                        id = u.Id.ToString(),
-                        name = u.FullName ?? (u.Email != null ? u.Email.Split('@', StringSplitOptions.None)[0] : "User"),
-                        code = "MB" + u.Id.ToString().Substring(0, 4).ToUpper(),
-                        avatar = "https://ui-avatars.com/api/?name=" + Uri.EscapeDataString(u.FullName ?? "User"),
-                        goal = "Giảm cân",
-                        level = "Cơ bản",
-                        sport = "Yoga",
-                        phone = u.PhoneNumber ?? "0900000000",
-                        email = u.Email ?? "",
-                        classIds = new string[] { sessionId }
-                    }).ToListAsync();
+                    .ToListAsync();
+                    
+                var members = users.Select(u => new
+                {
+                    id = u.Id.ToString(),
+                    name = u.FullName ?? (u.Email != null ? u.Email.Split('@')[0] : "User"),
+                    code = "MB" + u.Id.ToString().Substring(0, 4).ToUpper(),
+                    avatar = "https://ui-avatars.com/api/?name=" + Uri.EscapeDataString(u.FullName ?? "User"),
+                    goal = "Giảm cân",
+                    level = "Cơ bản",
+                    sport = "Yoga",
+                    phone = u.PhoneNumber ?? "0900000000",
+                    email = u.Email ?? "",
+                    classIds = new string[] { sessionId }
+                }).ToList();
+                
                 return Results.Ok(members);
             });
 
             // 4b. All Members
             group.MapGet("/members", async (SmartGymDbContext db) =>
             {
-                var allMembers = await db.Users
+                var users = await db.Users
                     .Include(u => u.Role)
-                    .Where(u => u.Role.Name == "member")
-                    .Select(u => new
-                    {
-                        id = u.Id.ToString(),
-                        name = u.FullName ?? (u.Email != null ? u.Email.Split('@', StringSplitOptions.None)[0] : "User"),
-                        code = "MB" + u.Id.ToString().Substring(0, 4).ToUpper(),
-                        avatar = "https://ui-avatars.com/api/?name=" + Uri.EscapeDataString(u.FullName ?? "User"),
-                        goal = "Sức khỏe",
-                        level = "Cơ bản",
-                        sport = "Đa môn",
-                        phone = u.PhoneNumber ?? "0900000000",
-                        email = u.Email ?? "",
-                        classIds = new string[] { }
-                    }).ToListAsync();
+                    .Where(u => u.Role != null && u.Role.Name == "member")
+                    .ToListAsync();
+                    
+                var allMembers = users.Select(u => new
+                {
+                    id = u.Id.ToString(),
+                    name = u.FullName ?? (u.Email != null ? u.Email.Split('@')[0] : "User"),
+                    code = "MB" + u.Id.ToString().Substring(0, 4).ToUpper(),
+                    avatar = "https://ui-avatars.com/api/?name=" + Uri.EscapeDataString(u.FullName ?? "User"),
+                    goal = "Sức khỏe",
+                    level = "Cơ bản",
+                    sport = "Đa môn",
+                    phone = u.PhoneNumber ?? "0900000000",
+                    email = u.Email ?? "",
+                    classIds = new string[] { }
+                }).ToList();
+                
                 return Results.Ok(allMembers);
             });
 

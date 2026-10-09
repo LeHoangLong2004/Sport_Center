@@ -11,40 +11,48 @@ export function Classes({
   onSelect: (item: ClassItem) => void
 }) {
   const [category, setCategory] = useState("Tất cả lớp")
-  const [selectedDay, setSelectedDay] = useState(23)
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  })
   const [shift, setShift] = useState("Sáng (06:00 - 12:00)")
   const [coachQuery, setCoachQuery] = useState("")
-  const [classes, setClasses] = useState<ClassItem[]>([])
+  const [classes, setClasses] = useState<any[]>([])
 
   React.useEffect(() => {
-    fetch('/api/classes/available')
-      .then(r => r.json())
-      .then(data => {
-        const images = ["60eeb.png", "340d3.png", "b0a09.png", "25c0c.png", "5709f.png", "8b5dc.png"];
-        const dayNames = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
-        
-        const mapped: ClassItem[] = data.map((d: any, i: number) => {
-          const date = new Date(d.scheduleTime);
-          const day = dayNames[date.getDay()];
-          const dd = String(date.getDate()).padStart(2, '0');
-          const mm = String(date.getMonth() + 1).padStart(2, '0');
-          const hh = String(date.getHours()).padStart(2, '0');
-          const min = String(date.getMinutes()).padStart(2, '0');
+    import('../services/api').then(({ MemberAPI }) => {
+      MemberAPI.getAvailableClasses()
+        .then(data => {
+          const images = ["60eeb.png", "340d3.png", "b0a09.png", "25c0c.png", "5709f.png", "8b5dc.png"];
+          const dayNames = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
           
-          return {
-            id: d.id,
-            sportName: d.sportName,
-            title: d.className || d.name || "Lớp học",
-            coach: d.coachName || "N/A",
-            schedule: `${day}, ${dd}/${mm} • ${hh}:${min} (${d.durationMinutes} phút)`,
-            room: `Phòng: ${d.facilityName}`,
-            spaces: `Còn ${d.availableSpots ?? (d.capacity - (d.currentEnrolled || d.currentBookings || 0))} chỗ`,
-            image: images[i % images.length]
-          };
-        });
-        setClasses(mapped);
-      })
-      .catch(e => console.error(e));
+          const mapped = data.map((d: any, i: number) => {
+            const date = new Date(d.scheduleTime);
+            const day = dayNames[date.getDay()];
+            const yyyy = date.getFullYear();
+            const MM = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            const hh = String(date.getHours()).padStart(2, '0');
+            const min = String(date.getMinutes()).padStart(2, '0');
+            
+            return {
+              ...d,
+              id: d.id,
+              sportName: d.sportName,
+              title: d.className || d.name || "Lớp học",
+              coach: d.coachName || "N/A",
+              schedule: `${day}, ${dd}/${MM} • ${hh}:${min} (${d.durationMinutes} phút)`,
+              room: `Phòng: ${d.facilityName}`,
+              spaces: `Còn ${d.availableSpots ?? (d.capacity - (d.currentEnrolled || d.currentBookings || 0))} chỗ`,
+              image: images[i % images.length],
+              dateStr: `${yyyy}-${MM}-${dd}`,
+              hour: date.getHours()
+            };
+          });
+          setClasses(mapped);
+        })
+        .catch(e => console.error(e));
+    });
   }, []);
 
   const visibleClasses = useMemo(
@@ -54,9 +62,15 @@ export function Classes({
         const matchCategory = category === "Tất cả lớp" || 
             (item.sportName && item.sportName.toLowerCase().includes(category.toLowerCase())) || 
             item.title.toLowerCase().includes(category.toLowerCase());
-        return matchCoach && matchCategory;
+        const matchDate = !selectedDate || item.dateStr === selectedDate;
+        let matchShift = true;
+        if (shift.includes("Sáng")) matchShift = item.hour >= 6 && item.hour < 12;
+        else if (shift.includes("Chiều")) matchShift = item.hour >= 12 && item.hour < 17;
+        else if (shift.includes("Tối")) matchShift = item.hour >= 17;
+        
+        return matchCoach && matchCategory && matchDate && matchShift;
       }),
-    [coachQuery, category, classes],
+    [coachQuery, category, classes, selectedDate, shift],
   )
 
   return (
@@ -103,27 +117,28 @@ export function Classes({
             </div>
 
             <div>
-              <strong className="block text-xs font-bold text-slate-400 tracking-widest uppercase mb-4">Lịch trong tuần (Tháng 09/2026)</strong>
-              <div className="flex overflow-x-auto pb-2 gap-3 hidden-scrollbar">
-                {[
-                  ["Thứ 2", 21],
-                  ["Thứ 3", 22],
-                  ["Thứ 4", 23],
-                  ["Thứ 5", 24],
-                  ["Thứ 6", 25],
-                  ["Thứ 7", 26],
-                  ["Chủ nhật", 27],
-                ].map(([day, date]) => (
-                  <button
-                    className={`flex flex-col items-center justify-center min-w-[80px] p-3 rounded-2xl border transition-all duration-200 ${selectedDay === date ? 'bg-teal-50 border-teal-200' : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}
-                    key={date}
-                    onClick={() => setSelectedDay(Number(date))}
-                    type="button"
+              <strong className="block text-xs font-bold text-slate-400 tracking-widest uppercase mb-4">Chọn ngày xem lịch</strong>
+              <div className="flex gap-3 items-center">
+                <div className="relative inline-block w-full md:w-auto">
+                  <input 
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all outline-none text-transparent bg-white shadow-sm font-bold w-full md:w-auto z-10 relative cursor-pointer"
+                    style={{ WebkitTextFillColor: 'transparent' }}
+                  />
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-800 font-bold z-20 flex items-center gap-2">
+                    {selectedDate ? selectedDate.split('-').reverse().join('/') : "dd/mm/yyyy"}
+                  </div>
+                </div>
+                {selectedDate && (
+                  <button 
+                    onClick={() => setSelectedDate("")}
+                    className="text-sm font-bold text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-4 py-2.5 rounded-xl transition-colors"
                   >
-                    <span className={`text-xs font-bold uppercase mb-1 ${selectedDay === date ? 'text-teal-600' : 'text-slate-400'}`}>{day}</span>
-                    <strong className={`text-2xl font-black ${selectedDay === date ? 'text-teal-700' : 'text-slate-700'}`}>{date}</strong>
+                    Xem tất cả ngày
                   </button>
-                ))}
+                )}
               </div>
             </div>
 

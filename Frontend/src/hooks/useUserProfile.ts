@@ -10,6 +10,10 @@ export interface UserProfile {
   avatarUrl: string;
   roleName: string;
   emergencyContact: string;
+  specialties?: string;
+  certifications?: string;
+  experienceYears?: number;
+  bio?: string;
 }
 
 export function useUserProfile() {
@@ -28,6 +32,10 @@ export function useUserProfile() {
           avatarUrl: '',
           roleName: user.roleName || user.role || '',
           emergencyContact: '',
+          specialties: '',
+          certifications: '',
+          experienceYears: 0,
+          bio: '',
         }
       } catch (e) {}
     }
@@ -59,6 +67,10 @@ export function useUserProfile() {
             avatarUrl: data.avatarUrl || '',
             roleName: data.roleName || '',
             emergencyContact: data.emergencyContact || '',
+            specialties: data.specialties || '',
+            certifications: data.certifications || '',
+            experienceYears: data.experienceYears || 0,
+            bio: data.bio || '',
           });
         }
       } catch (err) {

@@ -2,6 +2,7 @@ import React, { useState, useMemo, FormEvent } from 'react';
 import { assetRoots, iconNames, classItems, memberSections, MemberPage, visualPage, asset, ClassItem } from '../shared';
 import MemberShell from '../components/MemberShell';
 import Progress from '../components/Progress';
+import { useUserProfile } from '../../../hooks/useUserProfile';
 
 export function Confirm({
   selectedClass,
@@ -10,6 +11,7 @@ export function Confirm({
   selectedClass: ClassItem
   onNavigate: (page: MemberPage) => void
 }) {
+  const { profile } = useUserProfile();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,36 +25,18 @@ export function Confirm({
     setError(null);
 
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`/api/classes/${selectedClass.id}/book`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-      });
-
-      let data: any = {};
-      const text = await res.text();
-      if (text) {
+      import('../services/api').then(async ({ MemberAPI }) => {
         try {
-          data = JSON.parse(text);
-        } catch (e) {
-          console.error("JSON parse error:", e);
+          await MemberAPI.bookClass(selectedClass.id as string);
+          onNavigate("success");
+        } catch (err: any) {
+          setError(err.message || "Đã xảy ra lỗi khi đặt lớp. Vui lòng thử lại.");
+        } finally {
+          setIsSubmitting(false);
         }
-      }
-
-      if (!res.ok) {
-        if (res.status === 401 || res.status === 403) {
-          throw new Error("Phiên đăng nhập đã hết hạn hoặc bạn không có quyền. Vui lòng đăng nhập lại.");
-        }
-        throw new Error(data.message || "Đã xảy ra lỗi khi đặt lớp. Vui lòng thử lại.");
-      }
-
-      onNavigate("success");
+      });
     } catch (err: any) {
       setError(err.message);
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -84,15 +68,15 @@ export function Confirm({
             <strong>HỘI VIÊN ĐĂNG KÝ</strong>
             <div>
               <span>Họ và tên</span>
-              <b>Nguyễn Lan Anh</b>
+              <b>{profile?.fullName || "Hội viên"}</b>
             </div>
             <div>
               <span>Gói hội viên</span>
-              <small>Premium</small>
+              <small>{profile?.roleName || "Member"}</small>
             </div>
             <div>
               <span>Mã thành viên</span>
-              <b>MB-2048</b>
+              <b className="uppercase">MB-{profile?.id?.substring(0, 6) || "XXXXXX"}</b>
             </div>
           </div>
 
