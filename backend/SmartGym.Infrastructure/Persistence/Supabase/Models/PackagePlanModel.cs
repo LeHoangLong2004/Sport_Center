@@ -37,7 +37,7 @@ public class PackagePlanModel : BaseModel
 
     public PackagePlan ToDomain()
     {
-        var accessHoursEnum = AccessHours == "ALL" ? Domain.Enums.AccessHours.All : Domain.Enums.AccessHours.OffPeak;
+        var accessHoursEnum = (AccessHours ?? "").ToUpper() == "ALL" ? Domain.Enums.AccessHours.All : Domain.Enums.AccessHours.OffPeak;
 
         return new PackagePlan(
             Id,

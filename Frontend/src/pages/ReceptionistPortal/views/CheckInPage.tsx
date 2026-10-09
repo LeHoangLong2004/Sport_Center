@@ -3,15 +3,78 @@ import { A } from '../shared';
 import StatusBadge from '../components/StatusBadge';
 
 export function CheckInPage() {
-  const [scanValue, setScanValue] = useState("MB-2048")
+  const [scanValue, setScanValue] = useState("")
   const [confirmed, setConfirmed] = useState(false)
+  const [historyRows, setHistoryRows] = useState<any[]>([])
+  const [members, setMembers] = useState<any[]>([])
+
+  const fetchHistory = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/checkin/history", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setHistoryRows(data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  React.useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("/api/users/members-lookup", {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setMembers(data);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchMembers();
+    fetchHistory();
+  }, []);
+
+  const foundMember = members.find(m => m.memberCode === scanValue || m.phoneNumber === scanValue)
+
+  const handleCheckIn = async () => {
+    if (!foundMember) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/checkin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ memberId: foundMember.userId })
+      });
+      if (res.ok) {
+        setConfirmed(true);
+        fetchHistory();
+      } else {
+        const err = await res.json();
+        alert(err.reason || "Check-in thất bại");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Lỗi kết nối.");
+    }
+  }
 
   return (
     <div className="flex flex-col gap-[24px] items-start p-[32px] w-full">
       {/* Stats */}
       <div className="flex gap-[16px] items-start shrink-0 w-full">
         {[
-          { icon: `${A}/9e21f.svg`, bg: "bg-[#3b82f6]", label: "Tổng check-in hôm nay", value: "127" },
+          { icon: `${A}/9e21f.svg`, bg: "bg-[#3b82f6]", label: "Tổng check-in hôm nay", value: historyRows.length.toString() },
           { icon: `${A}/fe113.svg`, bg: "bg-[#22c55e]", label: "Đang tập tại trung tâm", value: "34" },
           { icon: `${A}/53e60.svg`, bg: "bg-[#ea580c]", label: "Lớp học sắp bắt đầu", value: "3 lớp" },
         ].map((stat) => (
@@ -38,10 +101,10 @@ export function CheckInPage() {
               className="flex-1 bg-transparent font-['Manrope:Regular'] text-[#0f172a] text-[15px] outline-none min-w-0"
               value={scanValue}
               onChange={(e) => { setScanValue(e.target.value); setConfirmed(false) }}
-              placeholder="Nhập mã hội viên..."
+              placeholder="Nhập mã hội viên hoặc SĐT..."
             />
             <span className="bg-[#3b82f6] font-['Manrope:Bold'] font-bold px-[8px] py-[2px] rounded-[4px] text-[11px] text-white whitespace-nowrap shrink-0">
-              ĐANG CHỜ QUÉT
+              {foundMember ? "ĐÃ NHẬN DIỆN" : "ĐANG CHỜ QUÉT"}
             </span>
           </div>
           <span className="font-['Manrope:Regular'] font-normal text-[#64748b] text-[13px]">
@@ -53,33 +116,41 @@ export function CheckInPage() {
         <div className="bg-white border border-[#e2e8f0] flex flex-col gap-[20px] items-start p-[24px] rounded-[12px] shrink-0 w-[480px]">
           <div className="flex items-center justify-between shrink-0 w-full">
             <span className="font-['Manrope:Bold'] font-bold text-[#94a3b8] text-[13px]">HỘI VIÊN TÌM THẤY</span>
-            <span className="bg-[#dcfce7] font-['Manrope:Bold'] font-bold px-[10px] py-[4px] rounded-[99px] text-[#15803d] text-[12px]">Đang hoạt động</span>
+            {foundMember ? <span className="bg-[#dcfce7] font-['Manrope:Bold'] font-bold px-[10px] py-[4px] rounded-[99px] text-[#15803d] text-[12px]">{foundMember.status}</span> : null}
           </div>
-          <div className="flex gap-[16px] items-center shrink-0 w-full">
-            <img src={`${A}/87fb4.png`} alt="" className="shrink-0 size-[64px] rounded-full object-cover" />
-            <div className="flex flex-col gap-[4px] items-start shrink-0">
-              <span className="font-['Manrope:ExtraBold'] font-extrabold text-[#0f172a] text-[18px]">Nguyễn Lan Anh</span>
-              <div className="flex gap-[8px] items-center shrink-0">
-                <span className="font-['Manrope:SemiBold'] font-semibold text-[#64748b] text-[13px]">Mã: MB-2048</span>
-                <span className="bg-[#eef2ff] border border-[#c7d2fe] font-['Manrope:Bold'] font-bold px-[6px] py-px rounded-[4px] text-[#4f46e5] text-[9px]">PREMIUM</span>
+          {foundMember ? (
+            <>
+              <div className="flex gap-[16px] items-center shrink-0 w-full">
+                <img src={foundMember.avatarUrl || `${A}/87fb4.png`} alt="" className="shrink-0 size-[64px] rounded-full object-cover" />
+                <div className="flex flex-col gap-[4px] items-start shrink-0">
+                  <span className="font-['Manrope:ExtraBold'] font-extrabold text-[#0f172a] text-[18px]">{foundMember.fullName}</span>
+                  <div className="flex gap-[8px] items-center shrink-0">
+                    <span className="font-['Manrope:SemiBold'] font-semibold text-[#64748b] text-[13px]">Mã: {foundMember.memberCode}</span>
+                    <span className="bg-[#eef2ff] border border-[#c7d2fe] font-['Manrope:Bold'] font-bold px-[6px] py-px rounded-[4px] text-[#4f46e5] text-[9px] uppercase">{foundMember.packageName || "KHÔNG GÓI"}</span>
+                  </div>
+                </div>
               </div>
+              <div className="bg-[#f1f5f9] h-px shrink-0 w-full" />
+              <div className="flex items-start justify-between shrink-0 text-[13px] w-full">
+                <span className="font-['Manrope:Regular'] font-normal text-[#64748b]">Ngày hết hạn gói:</span>
+                <span className="font-['Manrope:Bold'] font-bold text-[#0f172a]">{foundMember.expiryDate ? new Date(foundMember.expiryDate).toLocaleDateString('vi-VN') : "N/A"}</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCheckIn}
+                className={`flex gap-[8px] items-center justify-center p-[14px] rounded-[8px] shrink-0 w-full transition-colors ${confirmed ? "bg-[#16a34a]" : "bg-[#22c55e]"}`}
+              >
+                <img src={`${A}/b6b07.svg`} alt="" className="size-[18px]" />
+                <span className="font-['Manrope:Bold'] font-bold text-[15px] text-white">
+                  {confirmed ? "✓ ĐÃ CHECK-IN THÀNH CÔNG" : "XÁC NHẬN CHECK-IN"}
+                </span>
+              </button>
+            </>
+          ) : (
+            <div className="flex flex-1 items-center justify-center py-6">
+               <span className="font-['Manrope:Regular'] font-normal text-[#64748b] text-[13px]">Chưa tìm thấy hội viên</span>
             </div>
-          </div>
-          <div className="bg-[#f1f5f9] h-px shrink-0 w-full" />
-          <div className="flex items-start justify-between shrink-0 text-[13px] w-full">
-            <span className="font-['Manrope:Regular'] font-normal text-[#64748b]">Ngày hết hạn gói:</span>
-            <span className="font-['Manrope:Bold'] font-bold text-[#0f172a]">18/12/2026</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setConfirmed(true)}
-            className={`flex gap-[8px] items-center justify-center p-[14px] rounded-[8px] shrink-0 w-full transition-colors ${confirmed ? "bg-[#16a34a]" : "bg-[#22c55e]"}`}
-          >
-            <img src={`${A}/b6b07.svg`} alt="" className="size-[18px]" />
-            <span className="font-['Manrope:Bold'] font-bold text-[15px] text-white">
-              {confirmed ? "✓ ĐÃ CHECK-IN THÀNH CÔNG" : "XÁC NHẬN CHECK-IN"}
-            </span>
-          </button>
+          )}
         </div>
       </div>
 
@@ -97,32 +168,23 @@ export function CheckInPage() {
           <span className="w-[100px] shrink-0 text-right">ĐIỂM DANH</span>
         </div>
         {historyRows.map((row) => (
-          <div key={row.code} className="border border-[#f1f5f9] border-solid flex h-[54px] items-center px-[24px] shrink-0 w-full">
-            <span className="font-['Manrope:Regular'] font-normal text-[#0f172a] text-[13px] w-[120px] shrink-0">{row.time}</span>
+          <div key={row.id} className="border border-[#f1f5f9] border-solid flex h-[54px] items-center px-[24px] shrink-0 w-full">
+            <span className="font-['Manrope:Regular'] font-normal text-[#0f172a] text-[13px] w-[120px] shrink-0">
+              {new Date(row.checkInTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+            </span>
             <div className="flex flex-1 gap-[10px] items-center min-w-0">
-              <img src={row.avatar} alt="" className="shrink-0 size-[28px] rounded-full object-cover" />
-              <span className="font-['Manrope:Bold'] font-bold text-[#0f172a] text-[13px] whitespace-nowrap">{row.name}</span>
+              <img src={`${A}/12161.png`} alt="" className="shrink-0 size-[28px] rounded-full object-cover" />
+              <span className="font-['Manrope:Bold'] font-bold text-[#0f172a] text-[13px] whitespace-nowrap">{row.memberName}</span>
             </div>
-            <span className="font-['Manrope:Regular'] font-normal text-[#64748b] text-[13px] w-[150px] shrink-0">{row.code}</span>
-            <span className="font-['Manrope:Regular'] font-normal text-[#0f172a] text-[13px] w-[180px] shrink-0">{row.pkg}</span>
+            <span className="font-['Manrope:Regular'] font-normal text-[#64748b] text-[13px] w-[150px] shrink-0">{"..."}</span>
+            <span className="font-['Manrope:Regular'] font-normal text-[#0f172a] text-[13px] w-[180px] shrink-0">{"..."}</span>
             <div className="flex items-start w-[150px] shrink-0">
-              <StatusBadge text={row.status} color={row.statusColor as "green" | "orange" | "red"} />
+              <StatusBadge text={row.status === "APPROVED" ? "Hợp lệ" : "Từ chối"} color={row.status === "APPROVED" ? "green" : "red"} />
             </div>
-            <span className="font-['Manrope:Regular'] font-normal text-right w-[100px] shrink-0 text-[13px]" style={{ color: row.gateColor }}>{row.gate}</span>
+            <span className="font-['Manrope:Regular'] font-normal text-right w-[100px] shrink-0 text-[13px]" style={{ color: row.status === "APPROVED" ? "#22c55e" : "#ef4444" }}>Cửa chính</span>
           </div>
         ))}
       </div>
     </div>
   )
 }
-
-// ─── Lịch sử check-in ─────────────────────────────────────────────────────────
-
-const historyRows = [
-  { time: "08:15 AM", avatar: `${A}/12161.png`, name: "Lê Minh Triết", code: "MB-4021", pkg: "Fitness 6 tháng", status: "Hợp lệ", statusColor: "green", gate: "Cửa chính", gateColor: "#22c55e" },
-  { time: "08:02 AM", avatar: `${A}/b5ad1.png`, name: "Vũ Thu Trang", code: "MB-1870", pkg: "Yoga 6 tháng", status: "Hợp lệ", statusColor: "green", gate: "Yoga Room", gateColor: "#22c55e" },
-  { time: "07:55 AM", avatar: `${A}/b6742.png`, name: "Trần Minh Khoa", code: "MB-2017", pkg: "Fitness 6 tháng", status: "Hợp lệ", statusColor: "green", gate: "Cửa chính", gateColor: "#22c55e" },
-  { time: "07:40 AM", avatar: `${A}/6c23d.png`, name: "Lê Gia Hân", code: "MB-1984", pkg: "Swim 3 tháng", status: "Sắp hết hạn", statusColor: "orange", gate: "Bể bơi", gateColor: "#22c55e" },
-  { time: "07:12 AM", avatar: `${A}/86369.png`, name: "Phạm Đức Long", code: "MB-1902", pkg: "Premium 12 tháng", status: "Tạm khóa", statusColor: "red", gate: "Từ chối", gateColor: "#ef4444" },
-]
-

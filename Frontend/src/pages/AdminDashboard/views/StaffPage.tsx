@@ -6,6 +6,15 @@ export function StaffPage() {
   const [roleFilter, setRoleFilter] = useState("Tất cả")
   const [staffList, setStaffList] = useState<any[]>([])
 
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    phoneNumber: "",
+    password: "",
+    roleName: "receptionist"
+  })
+
   const fetchStaff = () => {
     const token = localStorage.getItem("token");
     fetch("/api/users", {
@@ -15,7 +24,7 @@ export function StaffPage() {
     .then(data => {
       if (Array.isArray(data)) {
         const mapped = data
-          .filter((u: any) => u.roleName && u.roleName !== "Member")
+          .filter((u: any) => u.roleName && u.roleName.toLowerCase() !== "member")
           .map((u: any, index: number) => {
             const avatars = [mAvatar0, mAvatar1, mAvatar2, mAvatar3, mAvatar4];
             return {
@@ -63,11 +72,64 @@ export function StaffPage() {
     }
   };
 
+  const handleAddStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setShowAddModal(false);
+        setFormData({ fullName: "", email: "", phoneNumber: "", password: "", roleName: "receptionist" });
+        fetchStaff();
+      } else {
+        alert("Lỗi: " + (data.message || "Không thể tạo nhân sự"));
+      }
+    } catch (err) {
+      alert("Lỗi kết nối khi tạo nhân sự.");
+    }
+  }
+
   const filtered = staffList.filter(m => {
     const q = query.toLowerCase()
     return (`${m.name} ${m.id} ${m.phone}`).toLowerCase().includes(q)
-      && (roleFilter === "Tất cả" || m.role === roleFilter)
+      && (roleFilter === "Tất cả" || String(m.role).toLowerCase() === roleFilter.toLowerCase())
   })
+
+  const handleExportCSV = () => {
+    if (filtered.length === 0) {
+      alert("Không có dữ liệu để xuất!");
+      return;
+    }
+    
+    const headers = ["Mã NV", "Họ và tên", "Vai trò", "Số điện thoại", "Email", "Trạng thái", "Ngày tham gia"];
+    const rows = filtered.map(m => [
+      m.id,
+      m.name,
+      m.role,
+      m.phone,
+      m.email,
+      m.status,
+      m.joined
+    ]);
+    
+    // Add BOM for UTF-8 Excel support
+    const csvContent = "\uFEFF" + 
+      headers.join(",") + "\n" + 
+      rows.map(e => e.map(cell => `"${cell}"`).join(",")).join("\n");
+      
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `danh_sach_nhan_su_${new Date().getTime()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const statusStyle: Record<string, string> = {
     "Đang hoạt động": "bg-[#dcfce7] text-[#15803d]",
@@ -75,22 +137,60 @@ export function StaffPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
+    <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto relative">
       <div className="flex items-center justify-between">
         <div>
           <p className="font-bold text-[#0f172a] text-[28px]">Quản lý nhân sự</p>
           <p className="text-[#64748b] text-sm mt-1">-- danh sách ban quản lý, lễ tân và huấn luyện viên.</p>
         </div>
         <div className="flex gap-3">
-          <button onClick={() => alert("Đang xuất dữ liệu ra file Excel...")} className="bg-white border border-[#cbd5e1] flex gap-2 items-center px-4 py-2.5 rounded-lg">
+          <button onClick={handleExportCSV} className="bg-white border border-[#cbd5e1] flex gap-2 items-center px-4 py-2.5 rounded-lg hover:bg-slate-50 transition-colors">
             <img src={iDownload} alt="" className="size-4" />
             <span className="font-semibold text-[#0f172a] text-sm">Xuất dữ liệu</span>
           </button>
-          <button onClick={() => alert("Vui lòng sử dụng màn hình Đăng ký (Register) với tư cách Quản lý để tạo tài khoản nhân sự.")} className="bg-[#2563eb] flex gap-2 items-center px-4 py-2.5 rounded-lg">
+          <button onClick={() => setShowAddModal(true)} className="bg-[#2563eb] flex gap-2 items-center px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm shadow-blue-500/20">
             <span className="font-semibold text-white text-sm">+ Thêm nhân sự</span>
           </button>
         </div>
       </div>
+
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <h2 className="text-xl font-bold text-[#0f172a] mb-6">Thêm nhân sự mới</h2>
+            <form onSubmit={handleAddStaff} className="flex flex-col gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-[#475569] mb-1">Họ và tên</label>
+                <input required type="text" className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-blue-500" value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} placeholder="Nguyễn Văn A" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-[#475569] mb-1">Email</label>
+                <input required type="email" className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-blue-500" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="example@smartgym.com" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-[#475569] mb-1">Số điện thoại</label>
+                <input required type="text" className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-blue-500" value={formData.phoneNumber} onChange={e => setFormData({...formData, phoneNumber: e.target.value})} placeholder="0987654321" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-[#475569] mb-1">Mật khẩu</label>
+                <input required type="password" minLength={6} className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-blue-500" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder="Ít nhất 6 ký tự" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-[#475569] mb-1">Vai trò (Role)</label>
+                <select className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-blue-500" value={formData.roleName} onChange={e => setFormData({...formData, roleName: e.target.value})}>
+                  <option value="receptionist">Lễ tân (receptionist)</option>
+                  <option value="coach">Huấn luyện viên (coach)</option>
+                  <option value="manager">Quản lý trung tâm (manager)</option>
+                </select>
+              </div>
+              <div className="flex gap-3 mt-4">
+                <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 bg-white border border-[#cbd5e1] font-semibold text-[#475569] py-2 rounded-lg hover:bg-slate-50 transition-colors">Hủy</button>
+                <button type="submit" className="flex-1 bg-[#2563eb] font-semibold text-white py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md">Lưu nhân sự</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* filters */}
       <div className="flex gap-3 items-center mt-2">
@@ -101,7 +201,6 @@ export function StaffPage() {
         <select value={roleFilter} onChange={e=>setRoleFilter(e.target.value)} className="bg-white border border-[#cbd5e1] font-medium px-3 py-2 rounded-lg text-sm">
           <option value="Tất cả">Vai trò: Tất cả</option>
           <option value="Manager">Quản lý trung tâm (Manager)</option>
-          <option value="Admin">Quản trị hệ thống (Admin)</option>
           <option value="Coach">Huấn luyện viên (Coach)</option>
           <option value="Receptionist">Lễ tân (Receptionist)</option>
         </select>

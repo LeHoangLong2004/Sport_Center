@@ -99,41 +99,15 @@ public static class BookingEndpoints
         })
         .AddEndpointFilter(Authorize.Roles(UserRole.Member, UserRole.Receptionist));
 
-        bookings.MapGet("/all", async (
+        /* bookings.MapGet("/all", async (
             IBookingRepository bookingRepo,
             IClassScheduleRepository scheduleRepo,
             IUserRepository userRepo) =>
         {
-            var allBookings = await bookingRepo.GetAllAsync();
-            var responseTasks = allBookings.Select(async b =>
-            {
-                var schedule = await scheduleRepo.FindByIdAsync(b.ScheduleId);
-                var member = await userRepo.FindByIdAsync(b.MemberId);
-                var coach = schedule != null ? await userRepo.FindByIdAsync(schedule.CoachId) : null;
-
-                return new
-                {
-                    Id = b.Id,
-                    ScheduleId = b.ScheduleId,
-                    ClassName = schedule?.ClassName ?? "Unknown",
-                    CoachName = coach?.FullName ?? "Unknown",
-                    StartTime = schedule?.StartTime ?? DateTime.MinValue,
-                    EndTime = schedule?.EndTime ?? DateTime.MinValue,
-                    MemberId = b.MemberId,
-                    MemberName = member?.FullName ?? "Unknown",
-                    MemberPhone = member?.PhoneNumber ?? "Unknown",
-                    MemberAvatar = member?.AvatarUrl ?? $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(member?.FullName ?? "U")}",
-                    MemberCode = member?.MemberCode ?? $"MB-{member?.Id.ToString().Substring(0,4).ToUpper()}",
-                    Status = b.Status.ToString(),
-                    BookedAt = b.BookedAt
-                };
-            });
-
-            var response = await Task.WhenAll(responseTasks);
-            return Results.Ok(response.OrderByDescending(x => x.BookedAt));
+... (Removed duplicate endpoint. It's mapped in Program.cs using ClassService)
         })
         .AddEndpointFilter(Authorize.Roles(UserRole.CenterManager, UserRole.Receptionist))
-        .WithSummary("Tất cả đơn đặt chỗ (Dành cho Quản lý)");
+        .WithSummary("Tất cả đơn đặt chỗ (Dành cho Quản lý)"); */
 
         bookings.MapGet("/my", async (
             HttpContext context,
@@ -158,50 +132,15 @@ public static class BookingEndpoints
 
         // ── Personal schedule (Member sees booked classes, Coach sees teaching schedule) ──
 
-        schedule.MapGet("/my", async (
+        /* schedule.MapGet("/my", async (
             HttpContext context,
             IBookingRepository bookingRepo,
             IClassScheduleRepository scheduleRepo,
             IUserRepository userRepo) =>
         {
-            var userId = GetUserId(context);
-            if (userId is null) return Results.Unauthorized();
-
-            var role = context.User.FindFirstValue(ClaimTypes.Role);
-
-            List<PersonalScheduleEntry> entries;
-
-            if (string.Equals(role, UserRole.Coach.ToString(), StringComparison.OrdinalIgnoreCase))
-            {
-                var coachClasses = await scheduleRepo.GetByCoachAsync(userId.Value);
-                entries = coachClasses.Select(s => new PersonalScheduleEntry(
-                    s.Id, s.ClassName, s.SportType, s.RoomName, "Bạn",
-                    s.StartTime, s.EndTime, "Coach", null
-                )).ToList();
-            }
-            else
-            {
-                var myBookingsRaw = await bookingRepo.GetByMemberAsync(userId.Value);
-                var myBookings = myBookingsRaw.Where(b => b.Status != BookingStatus.Cancelled).ToList();
-
-                var entryTasks = myBookings.Select(async b =>
-                {
-                    var s = await scheduleRepo.FindByIdAsync(b.ScheduleId);
-                    if (s is null) return null;
-                    var coach = await userRepo.FindByIdAsync(s.CoachId);
-                    return new PersonalScheduleEntry(
-                        s.Id, s.ClassName, s.SportType, s.RoomName, coach?.FullName ?? "Unknown",
-                        s.StartTime, s.EndTime, "Member", b.Status.ToString()
-                    );
-                });
-
-                var resolvedEntries = await Task.WhenAll(entryTasks);
-                entries = resolvedEntries.Where(e => e is not null).Cast<PersonalScheduleEntry>().ToList();
-            }
-
-            return Results.Ok(entries.OrderBy(e => e.StartTime));
+... (Removed duplicate endpoint. It's mapped in Program.cs using ClassService)
         })
-        .AddEndpointFilter(Authorize.Roles(UserRole.Member, UserRole.Coach, UserRole.Receptionist));
+        .AddEndpointFilter(Authorize.Roles(UserRole.Member, UserRole.Coach, UserRole.Receptionist)); */
     }
 
     private static Guid? GetUserId(HttpContext context)
