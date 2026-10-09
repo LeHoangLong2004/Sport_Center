@@ -12,9 +12,11 @@ export function Registration({
   onHome?: () => void
 }) {
   const [successMsg, setSuccessMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
 
   async function submit(event: FormEvent) {
     event.preventDefault()
+    setErrorMsg("")
     
     const formData = new FormData(event.target as HTMLFormElement)
     const name = formData.get("name") as string
@@ -25,7 +27,7 @@ export function Registration({
     const passwordConfirmation = formData.get("passwordConfirmation") as string
 
     if (password !== passwordConfirmation) {
-      alert("Mật khẩu xác nhận không khớp!")
+      setErrorMsg("Mật khẩu xác nhận không khớp!")
       return
     }
 
@@ -39,7 +41,15 @@ export function Registration({
       const data = await res.json().catch(() => ({}))
       
       if (!res.ok) {
-        alert(data.message || "Đăng ký thất bại.")
+        let msg = data.message || "Đăng ký thất bại.";
+        if (msg === "Email already exists") {
+          msg = "Email này đã được đăng ký. Vui lòng chọn email khác.";
+        } else if (msg === "Phone number already exists") {
+          msg = "Số điện thoại này đã được đăng ký. Vui lòng chọn số khác.";
+        } else if (msg.includes("An error occurred while saving")) {
+          msg = "Số điện thoại hoặc thông tin của bạn đã bị trùng lặp trong hệ thống.";
+        }
+        setErrorMsg(msg);
         return
       }
       
@@ -52,7 +62,7 @@ export function Registration({
         onLogin();
       }, 2000);
     } catch (err) {
-      alert("Lỗi kết nối đến server API.")
+      setErrorMsg("Lỗi kết nối đến server API.")
     }
   }
 
@@ -124,6 +134,15 @@ export function Registration({
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
                 <p className="text-emerald-700 dark:text-emerald-400 font-medium text-sm">{successMsg}</p>
+              </div>
+            )}
+
+            {errorMsg && (
+              <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center shrink-0">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </div>
+                <p className="text-red-700 dark:text-red-400 font-medium text-sm">{errorMsg}</p>
               </div>
             )}
 

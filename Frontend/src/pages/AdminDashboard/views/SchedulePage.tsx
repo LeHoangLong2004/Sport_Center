@@ -14,6 +14,8 @@ export function SchedulePage() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<'calendar' | 'bookings'>('calendar');
+  const [bookings, setBookings] = useState<any[]>([]);
   const facilities = ["Studio 1 (Yoga/Pilates)", "Studio 2 (Dance)", "Studio 3 (Cycling)", "Gym Area"];
 
   const handleRoomChange = (room: string) => {
@@ -102,8 +104,23 @@ export function SchedulePage() {
     }
   };
 
+  const fetchBookings = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/bookings/all", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setBookings(await res.json());
+      }
+    } catch (error) {
+      console.error("Failed to fetch bookings:", error);
+    }
+  };
+
   useEffect(() => {
     fetchClasses();
+    fetchBookings();
   }, []);
 
   const handlePrevWeek = () => {
@@ -140,19 +157,67 @@ export function SchedulePage() {
     );
   }
 
+  const handleApprove = async (id: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/bookings/${id}/approve`, {
+        method: 'PUT',
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        fetchBookings();
+      }
+    } catch (error) {
+      console.error("Approve failed:", error);
+    }
+  };
+
+  const handleReject = async (id: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/bookings/${id}/reject`, {
+        method: 'PUT',
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        fetchBookings();
+      }
+    } catch (error) {
+      console.error("Reject failed:", error);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between border-b border-[#e2e8f0] pb-4">
         <div>
           <p className="font-bold text-[#0f172a] text-[28px]">Lịch trình & Lớp học</p>
           <p className="text-[#64748b] text-sm mt-1">Sắp xếp thời khóa biểu và phân công HLV cho các lớp Group-X.</p>
         </div>
-        <button 
-          onClick={() => setShowCreateModal(true)}
-          className="bg-[#2563eb] flex gap-2 items-center px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <span className="font-semibold text-white text-sm">+ Tạo lớp mới</span>
-        </button>
+        <div className="flex items-center gap-4">
+          <div className="bg-[#f1f5f9] p-1 rounded-lg flex items-center shrink-0">
+            <button 
+              onClick={() => setActiveTab('calendar')}
+              className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${activeTab === 'calendar' ? 'bg-white text-[#0f172a] shadow-sm' : 'text-[#64748b] hover:text-[#0f172a]'}`}
+            >
+              Lịch trình
+            </button>
+            <button 
+              onClick={() => setActiveTab('bookings')}
+              className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${activeTab === 'bookings' ? 'bg-white text-[#0f172a] shadow-sm' : 'text-[#64748b] hover:text-[#0f172a]'}`}
+            >
+              Danh sách đặt chỗ
+            </button>
+          </div>
+          {activeTab === 'calendar' && (
+            <button 
+              onClick={() => setShowCreateModal(true)}
+              className="bg-[#2563eb] flex gap-2 items-center px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <span className="font-semibold text-white text-sm">+ Tạo lớp mới</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {showCreateModal && <CreateClassModal onClose={() => { setShowCreateModal(false); fetchClasses(); }} />}
@@ -163,8 +228,9 @@ export function SchedulePage() {
         onEdit={(data) => { setEditClassData(data); setSelectedClassId(null); }}
       />}
 
-      <div className="flex gap-4">
-        {/* Sidebar Filters */}
+      {activeTab === 'calendar' ? (
+        <div className="flex gap-4 pt-2">
+          {/* Sidebar Filters */}
         <div className="w-[240px] shrink-0 flex flex-col gap-4">
           <div className="bg-white border border-[#cbd5e1] flex gap-2 items-center px-3 py-2.5 rounded-lg">
             <img src={iSearch2} alt="" className="size-4 shrink-0" />
@@ -294,7 +360,72 @@ export function SchedulePage() {
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      ) : (
+        <div className="bg-white border border-[#e2e8f0] flex flex-col items-start overflow-hidden rounded-[12px] shrink-0 w-full flex-1 min-h-0">
+          <div className="flex flex-col w-full h-full overflow-hidden">
+            <div className="bg-[#f1f5f9] flex font-['Manrope:ExtraBold'] font-extrabold items-center px-[24px] py-[14px] text-[#64748b] text-[13px] w-full border-b border-[#e2e8f0] shrink-0">
+              <span className="flex-1 min-w-0">HỘI VIÊN</span>
+              <span className="w-[180px] shrink-0">LỚP HỌC</span>
+              <span className="w-[160px] shrink-0">THỜI GIAN</span>
+              <span className="w-[160px] shrink-0">ĐẶT LÚC</span>
+              <span className="w-[120px] shrink-0">TRẠNG THÁI</span>
+              <span className="w-[80px] shrink-0 text-right">THAO TÁC</span>
+            </div>
+            <div className="flex flex-col flex-1 w-full overflow-y-auto">
+              {bookings.map((b) => {
+                let statusColor = "bg-gray-100 text-gray-700";
+                if (b.status === "Confirmed") statusColor = "bg-green-100 text-green-700";
+                if (b.status === "Pending") statusColor = "bg-yellow-100 text-yellow-700";
+                if (b.status === "Rejected") statusColor = "bg-red-100 text-red-700 border border-red-200";
+                if (b.status === "Cancelled") statusColor = "bg-gray-200 text-gray-600";
+
+                return (
+                  <div key={b.id} className="border-[#e2e8f0] border-b border-solid flex items-center px-[24px] py-[12px] shrink-0 w-full hover:bg-slate-50 transition-colors">
+                    <div className="flex flex-1 gap-[10px] items-center min-w-0">
+                      <img src={b.memberAvatar} alt="" className="shrink-0 size-[32px] rounded-full object-cover" />
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-bold text-[#0f172a] text-[13px] truncate">{b.memberName}</span>
+                        <span className="font-medium text-[#64748b] text-[11px]">{b.memberPhone} • {b.memberCode}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col w-[180px] shrink-0">
+                      <span className="font-bold text-[#0f172a] text-[13px] truncate">{b.className}</span>
+                      <span className="font-medium text-[#64748b] text-[11px] truncate">HLV: {b.coachName}</span>
+                    </div>
+                    <div className="flex flex-col w-[160px] shrink-0">
+                      <span className="font-medium text-[#0f172a] text-[13px] truncate">{new Date(b.startTime).toLocaleDateString('vi-VN')}</span>
+                      <span className="font-medium text-[#64748b] text-[11px]">{new Date(b.startTime).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                    <div className="flex flex-col w-[160px] shrink-0">
+                      <span className="font-medium text-[#0f172a] text-[13px] truncate">{new Date(b.bookedAt).toLocaleDateString('vi-VN')}</span>
+                      <span className="font-medium text-[#64748b] text-[11px]">{new Date(b.bookedAt).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                    <div className="flex items-start w-[120px] shrink-0">
+                      <span className={`px-2 py-1 rounded-md text-[11px] font-bold ${statusColor}`}>
+                        {b.status}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-end w-[80px] shrink-0 gap-2">
+                      {b.status === "Pending" ? (
+                        <>
+                          <button onClick={() => handleApprove(b.id)} className="text-green-600 hover:text-green-800 p-1 font-bold text-xs bg-green-50 rounded" title="Duyệt">✓</button>
+                          <button onClick={() => handleReject(b.id)} className="text-red-600 hover:text-red-800 p-1 font-bold text-xs bg-red-50 rounded" title="Từ chối">✗</button>
+                        </>
+                      ) : (
+                        <button className="text-blue-600 hover:text-blue-800 p-1">...</button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {bookings.length === 0 && (
+                <div className="p-12 text-center text-gray-500 text-sm">Chưa có dữ liệu đặt chỗ</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

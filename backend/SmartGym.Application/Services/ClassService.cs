@@ -14,15 +14,18 @@ public sealed class ClassService
     private readonly IGroupClassRepository _classRepository;
     private readonly IPtSessionRepository _ptSessionRepository;
     private readonly ISubscriptionRepository _subscriptionRepository;
+    private readonly SmartGym.Application.Interfaces.IUserRepository _userRepository;
 
     public ClassService(
         IGroupClassRepository classRepository, 
         IPtSessionRepository ptSessionRepository,
-        ISubscriptionRepository subscriptionRepository)
+        ISubscriptionRepository subscriptionRepository,
+        SmartGym.Application.Interfaces.IUserRepository userRepository)
     {
         _classRepository = classRepository;
         _ptSessionRepository = ptSessionRepository;
         _subscriptionRepository = subscriptionRepository;
+        _userRepository = userRepository;
     }
 
     public async Task<(bool IsSuccess, string? ErrorMessage)> CreateClassAsync(CreateClassRequest request)
@@ -102,10 +105,21 @@ public sealed class ClassService
         var targetClass = await _classRepository.GetByIdAsync(classId);
         if (targetClass == null)
         {
-            return (false, "Class not found.");
+            return (false, "Không tìm thấy lớp học.");
         }
 
-        // 2. Lấy danh sách subscription của User và kiểm tra còn hạn tại thời điểm diễn ra lớp học
+        // 2. Kiểm tra trạng thái tài khoản hội viên (UserStatus)
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+        {
+            return (false, "Không tìm thấy thông tin hội viên.");
+        }
+        if (!user.Status)
+        {
+            return (false, "Tài khoản hội viên đang bị tạm khóa hoặc ngưng hoạt động.");
+        }
+
+        // 3. Lấy danh sách subscription của User và kiểm tra còn hạn tại thời điểm diễn ra lớp học
         var userSubs = await _subscriptionRepository.GetByUserIdAsync(userId);
         
         var validSub = userSubs.FirstOrDefault(s => 
@@ -115,10 +129,10 @@ public sealed class ClassService
 
         if (validSub == null)
         {
-            return (false, "You do not have a valid subscription active for the class date.");
+            return (false, "Hội viên chưa có gói tập hợp lệ hoặc gói tập đã hết hạn.");
         }
 
-        // 3. Gọi hàm thực thi Transaction ở tầng Data (nguyên tử)
+        // 4. Gọi hàm thực thi Transaction ở tầng Data (nguyên tử)
         return await _classRepository.BookClassTransactionAsync(userId, classId, validSub.Id);
     }
 
@@ -153,6 +167,16 @@ public sealed class ClassService
             await _classRepository.NotifyAffectedMembersAsync(classId, "Lớp học đã bị hủy", $"Lớp học {targetClass.ClassName} đã bị hủy.");
         }
         return result;
+    }
+
+    public async Task<(bool IsSuccess, string? ErrorMessage)> ApproveBookingAsync(Guid bookingId)
+    {
+        return await _classRepository.ApproveBookingAsync(bookingId);
+    }
+
+    public async Task<(bool IsSuccess, string? ErrorMessage)> RejectBookingAsync(Guid bookingId)
+    {
+        return await _classRepository.RejectBookingAsync(bookingId);
     }
 
     public async Task<(bool IsSuccess, string? ErrorMessage)> UpdateClassAsync(Guid classId, CreateClassRequest request)
@@ -262,5 +286,10 @@ public sealed class ClassService
     public async Task<IEnumerable<ClassResponse>> GetManagerScheduleAsync(Guid? facilityId, Guid? coachId, Guid? sportId, DateTime? date)
     {
         return await _classRepository.GetManagerScheduleAsync(facilityId, coachId, sportId, date);
+    }
+
+    public async Task<IEnumerable<BookingManagerResponse>> GetAllBookingsForManagerAsync()
+    {
+        return await _classRepository.GetAllBookingsForManagerAsync();
     }
 }

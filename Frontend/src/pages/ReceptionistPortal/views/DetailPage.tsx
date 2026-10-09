@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Edit3 } from 'lucide-react';
 import { A } from '../shared';
 import StatusBadge from '../components/StatusBadge';
 
@@ -45,7 +46,7 @@ export function DetailPage({ onBack }: { onBack: () => void }) {
           <div className="bg-white border border-[#e2e8f0] flex flex-col gap-[16px] items-start p-[24px] rounded-[12px] w-full">
             <div className="flex items-center justify-between w-full">
               <span className="font-['Manrope:ExtraBold'] font-extrabold text-[#0f172a] text-[16px]">Thông tin cá nhân</span>
-              <img src={`${A}/bc662.svg`} alt="Chỉnh sửa" className="size-[16px]" />
+              <Edit3 className="size-[16px] text-[#64748b]" />
             </div>
             <div className="bg-[#e2e8f0] h-px w-full" />
             {[

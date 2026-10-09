@@ -3,32 +3,23 @@ import { A } from '../shared';
 
 type CartItem = { name: string; unitPrice: number; qty: number }
 
-const allProducts = [
-  { img: `${A}/cf835.png`, cat: "Đồ uống", name: "Nước khoáng Dasani 500ml", price: 15000 },
-  { img: `${A}/c5e97.png`, cat: "Đồ uống", name: "Nước tăng lực Redbull", price: 25000 },
-  { img: `${A}/d9215.png`, cat: "Đồ uống", name: "Sữa đạm Whey Protein", price: 65000 },
-  { img: `${A}/44a36.png`, cat: "Thực phẩm", name: "Thanh ngũ cốc năng lượng Fit", price: 35000 },
-  { img: `${A}/28ab4.png`, cat: "Thực phẩm", name: "Bánh bông lan ức gà", price: 45000 },
-  { img: `${A}/1b6aa.png`, cat: "Phụ kiện", name: "Khăn lau mồ hôi Microfiber", price: 50000 },
-  { img: `${A}/235a3.png`, cat: "Phụ kiện", name: "Găng tay tập gym cao cấp", price: 150000 },
-  { img: `${A}/d497c.png`, cat: "Phụ kiện", name: "Băng quấn cổ tay bảo vệ", price: 80000 },
-  { img: `${A}/06c7f.png`, cat: "Gói tập", name: "Vé tập ngày vãng lai (Daily)", price: 120000 },
-]
-
-const tabs = ["Tất cả sản phẩm", "Đồ uống", "Thực phẩm", "Phụ kiện", "Gói tập"]
-import StatusBadge from '../components/StatusBadge';
-
 export function PosPage() {
   const [activeTab, setActiveTab] = useState("Tất cả sản phẩm")
-  const [cart, setCart] = useState<CartItem[]>([
-    { name: "Găng tay tập gym cao cấp", unitPrice: 150000, qty: 1 },
-    { name: "Nước tăng lực Redbull", unitPrice: 25000, qty: 2 },
-    { name: "Vé tập ngày vãng lai (Daily)", unitPrice: 120000, qty: 1 },
-    { name: "Khăn lau mồ hôi Microfiber", unitPrice: 50000, qty: 1 },
-  ])
+  const [cart, setCart] = useState<CartItem[]>([])
   const [paid, setPaid] = useState(false)
+  const [allProducts, setAllProducts] = useState<any[]>([])
 
-  const products = activeTab === "Tất cả sản phẩm" ? allProducts : allProducts.filter((p) => p.cat === activeTab)
+  React.useEffect(() => {
+    fetch("/api/products")
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) setAllProducts(data)
+      })
+      .catch(console.error)
+  }, [])
+
+  const tabs = ["Tất cả sản phẩm", ...Array.from(new Set(allProducts.map(p => p.category).filter(Boolean)))]
+  const products = activeTab === "Tất cả sản phẩm" ? allProducts : allProducts.filter((p) => p.category === activeTab)
 
   function addToCart(name: string, price: number) {
     setCart((prev) => {
@@ -80,11 +71,15 @@ export function PosPage() {
                   onClick={() => addToCart(p.name, p.price)}
                   className="bg-white border border-[#e2e8f0] flex flex-1 flex-col items-start min-w-0 overflow-hidden rounded-[12px] text-left hover:border-[#3b82f6] transition-colors"
                 >
-                  <div className="h-[100px] relative shrink-0 w-full overflow-hidden">
-                    <img src={p.img} alt="" className="absolute inset-0 max-w-none object-cover size-full" />
+                  <div className="h-[100px] relative shrink-0 w-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                    {p.imageUrl ? (
+                      <img src={p.imageUrl} alt="" className="absolute inset-0 max-w-none object-cover size-full" />
+                    ) : (
+                      <span className="text-gray-400 text-xs">No Image</span>
+                    )}
                   </div>
                   <div className="flex flex-col gap-[4px] items-start p-[12px] w-full">
-                    <span className="font-['Manrope:SemiBold'] font-semibold text-[#14b8a6] text-[11px] uppercase">{p.cat}</span>
+                    <span className="font-['Manrope:SemiBold'] font-semibold text-[#14b8a6] text-[11px] uppercase">{p.category}</span>
                     <span className="font-['Manrope:Bold'] font-bold text-[#0f172a] text-[13px] w-full overflow-hidden text-ellipsis whitespace-nowrap">{p.name}</span>
                     <span className="font-['Manrope:ExtraBold'] font-extrabold text-[#3b82f6] text-[14px]">{p.price.toLocaleString("vi-VN")}₫</span>
                   </div>
