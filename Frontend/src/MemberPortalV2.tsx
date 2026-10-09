@@ -168,10 +168,13 @@ function Schedule({ onNavigate }: { onNavigate: Navigate }) {
               tone: tone,
               title: item.className || "Lớp học",
               detail: item.coachName || "Coach",
-              meta: item.roomName || "Phòng tập"
+              meta: item.roomName || "Phòng tập",
+              status: item.bookingStatus
             };
           });
           setAllEvents(formatted);
+        } else if (res.status === 401 || res.status === 403) {
+          alert("Phiên đăng nhập đã hết hạn hoặc bạn chưa đăng nhập. Vui lòng đăng nhập lại để xem lịch!");
         }
       } catch (err) {
         console.error("Failed to fetch schedule", err);
@@ -264,6 +267,11 @@ function Schedule({ onNavigate }: { onNavigate: Navigate }) {
                         <div className="text-[10px] font-medium opacity-75 mt-0.5 flex items-center gap-1 truncate">
                           <svg className="shrink-0" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                           {ev.meta}
+                        </div>
+                      )}
+                      {ev.status && (
+                        <div className={`mt-1 inline-block px-1.5 py-0.5 rounded text-[8px] font-bold ${ev.status === 'Confirmed' ? 'bg-green-100/80 text-green-700' : ev.status === 'Waitlist' ? 'bg-yellow-100/80 text-yellow-700' : 'bg-slate-100/80 text-slate-700'}`}>
+                          {ev.status}
                         </div>
                       )}
                     </button>

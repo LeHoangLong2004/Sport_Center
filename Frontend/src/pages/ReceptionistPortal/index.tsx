@@ -4,6 +4,7 @@ import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { CheckInPage } from './views/CheckInPage';
 import { RegisterPage } from './views/RegisterPage';
+import { ClassesPage } from './views/ClassesPage';
 import { SchedulePage } from './views/SchedulePage';
 import { PosPage } from './views/PosPage';
 import { LookupPage } from './views/LookupPage';
@@ -25,6 +26,7 @@ export default function ReceptionistPortal({ onExit }: { onExit: () => void }) {
         <div className="flex-1 overflow-y-auto p-6 lg:p-8">
           {page === "checkin" && <CheckInPage />}
           {page === "register" && <RegisterPage />}
+          {page === "classes" && <ClassesPage />}
           {page === "schedule" && <SchedulePage />}
           {page === "pos" && <PosPage />}
           {page === "lookup" && <LookupPage onDetail={() => setPage("detail")} />}

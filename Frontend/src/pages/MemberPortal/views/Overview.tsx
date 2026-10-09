@@ -10,6 +10,21 @@ export function Overview({
 }) {
   const [message, setMessage] = useState("")
   const [conversation, setConversation] = useState<string[]>([])
+  const [upcomingBookings, setUpcomingBookings] = useState<any[]>([])
+
+  React.useEffect(() => {
+    const token = localStorage.getItem("token");
+    fetch('/api/schedule/my', {
+      headers: { "Authorization": `Bearer ${token}` }
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setUpcomingBookings(data);
+        }
+      })
+      .catch(e => console.error("Error fetching overview schedule:", e));
+  }, []);
 
   function sendMessage(event: FormEvent) {
     event.preventDefault()
@@ -25,7 +40,7 @@ export function Overview({
         <div className="mp-page-heading">
           <div>
             <span className="mp-kicker">FLOW 6 • AI ASSISTANT</span>
-            <p>Xin chào, Lan Anh 👋</p>
+            <p>Xin chào, Hội viên 👋</p>
             <small>Lịch tập, tiến độ và hỗ trợ cá nhân trong một nơi.</small>
           </div>
           <button
@@ -42,8 +57,8 @@ export function Overview({
             <div className="mp-stat-grid">
               <div className="mp-stat-card teal">
                 <span>Gói hiện tại</span>
-                <strong>Premium</strong>
-                <small>Còn 88 ngày</small>
+                <strong>Active Member</strong>
+                <small>Còn 30 ngày</small>
               </div>
               <div className="mp-stat-card green">
                 <span>Chuỗi tập</span>
@@ -58,24 +73,47 @@ export function Overview({
             </div>
 
             <div className="mp-card">
-              <strong className="mp-card-label">Lịch sắp tới</strong>
+              <div className="flex items-center justify-between mb-3">
+                <strong className="mp-card-label">Lịch sắp tới</strong>
+                <button onClick={() => onNavigate("classes")} className="text-xs text-teal-600 font-bold hover:underline">
+                  Quản lý đơn đặt
+                </button>
+              </div>
               <div className="mp-schedule-table">
                 <div className="mp-schedule-head">
                   <span>THỜI GIAN</span>
                   <span>LỚP</span>
-                  <span>COACH</span>
+                  <span>TRẠNG THÁI</span>
                 </div>
-                {[
-                  ["Hôm nay • 18:30", "Functional HIIT", "Trần Khoa"],
-                  ["T4 • 08:00", "Yoga Flow", "Mai Phương"],
-                  ["T6 • 17:30", "PT cá nhân", "Trần Khoa"],
-                ].map((row) => (
-                  <div className="mp-schedule-row" key={row[0]}>
-                    <strong>{row[0]}</strong>
-                    <span>{row[1]}</span>
-                    <span>{row[2]}</span>
+                {upcomingBookings.length > 0 ? (
+                  upcomingBookings.slice(0, 5).map((item, idx) => {
+                    const st = item.startTime ? new Date(item.startTime) : null;
+                    const dateText = st ? st.toLocaleString('vi-VN', { weekday: 'short', hour: '2-digit', minute: '2-digit' }) : 'Chưa xếp';
+                    const status = item.bookingStatus || item.status || 'confirmed';
+
+                    let badgeClass = "text-emerald-700 bg-emerald-50 border-emerald-200";
+                    let label = "Đã xác nhận";
+                    if (status === 'pending') { badgeClass = "text-yellow-700 bg-yellow-50 border-yellow-200"; label = "Chờ duyệt"; }
+                    else if (status === 'rejected') { badgeClass = "text-red-700 bg-red-50 border-red-200"; label = "Từ chối"; }
+                    else if (status === 'attended') { badgeClass = "text-blue-700 bg-blue-50 border-blue-200"; label = "Đã tham gia"; }
+                    else if (status === 'cancelled') { badgeClass = "text-rose-700 bg-rose-50 border-rose-200"; label = "Đã hủy"; }
+                    else if (status === 'no_show') { badgeClass = "text-amber-700 bg-amber-50 border-amber-200"; label = "Vắng mặt"; }
+
+                    return (
+                      <div className="mp-schedule-row flex items-center justify-between py-2 border-b border-slate-100 text-sm" key={item.id || idx}>
+                        <strong>{dateText}</strong>
+                        <span className="font-semibold text-slate-800">{item.className}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${badgeClass}`}>
+                          {label}
+                        </span>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="py-4 text-center text-slate-400 text-sm">
+                    Bạn chưa có lịch đặt lớp sắp tới.
                   </div>
-                ))}
+                )}
               </div>
             </div>
 

@@ -246,6 +246,25 @@ app.MapGet("/api/classes/all", async (ClassService service) =>
     var classes = await service.GetAllClassesAsync();
     return Results.Ok(classes);
 });
+app.MapGet("/api/bookings/all", async (ClassService service) =>
+{
+    var bookings = await service.GetAllBookingsForManagerAsync();
+    return Results.Ok(bookings);
+}).RequireAuthorization(policy => policy.RequireRole("admin", "manager", "receptionist"));
+
+app.MapPut("/api/bookings/{id}/approve", async (Guid id, ClassService service) =>
+{
+    var (isSuccess, errorMessage) = await service.ApproveBookingAsync(id);
+    if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
+    return Results.Ok(new { message = "Đã duyệt đơn đặt lớp thành công" });
+}).RequireAuthorization(policy => policy.RequireRole("admin", "manager", "receptionist"));
+
+app.MapPut("/api/bookings/{id}/reject", async (Guid id, ClassService service) =>
+{
+    var (isSuccess, errorMessage) = await service.RejectBookingAsync(id);
+    if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
+    return Results.Ok(new { message = "Đã từ chối đơn đặt lớp" });
+}).RequireAuthorization(policy => policy.RequireRole("admin", "manager", "receptionist"));
 
 app.MapGet("/api/classes/{id}", async (Guid id, ClassService service) =>
 {

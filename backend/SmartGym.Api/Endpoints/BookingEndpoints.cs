@@ -111,6 +111,42 @@ public static class BookingEndpoints
         .AddEndpointFilter(Authorize.Roles(UserRole.Member, UserRole.Receptionist))
         .WithSummary("Hủy đặt chỗ (BR-004 penalty, BR-005 waitlist promote)");
 
+        bookings.MapGet("/all", async (
+            IBookingRepository bookingRepo,
+            IClassScheduleRepository scheduleRepo,
+            IUserRepository userRepo) =>
+        {
+            var allBookings = await bookingRepo.GetAllAsync();
+            var responseTasks = allBookings.Select(async b =>
+            {
+                var schedule = await scheduleRepo.FindByIdAsync(b.ScheduleId);
+                var member = await userRepo.FindByIdAsync(b.MemberId);
+                var coach = schedule != null ? await userRepo.FindByIdAsync(schedule.CoachId) : null;
+
+                return new
+                {
+                    Id = b.Id,
+                    ScheduleId = b.ScheduleId,
+                    ClassName = schedule?.ClassName ?? "Unknown",
+                    CoachName = coach?.FullName ?? "Unknown",
+                    StartTime = schedule?.StartTime ?? DateTime.MinValue,
+                    EndTime = schedule?.EndTime ?? DateTime.MinValue,
+                    MemberId = b.MemberId,
+                    MemberName = member?.FullName ?? "Unknown",
+                    MemberPhone = member?.PhoneNumber ?? "Unknown",
+                    MemberAvatar = member?.AvatarUrl ?? $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(member?.FullName ?? "U")}",
+                    MemberCode = member?.MemberCode ?? $"MB-{member?.Id.ToString().Substring(0,4).ToUpper()}",
+                    Status = b.Status.ToString(),
+                    BookedAt = b.BookedAt
+                };
+            });
+
+            var response = await Task.WhenAll(responseTasks);
+            return Results.Ok(response.OrderByDescending(x => x.BookedAt));
+        })
+        .AddEndpointFilter(Authorize.Roles(UserRole.CenterManager, UserRole.Receptionist))
+        .WithSummary("Tất cả đơn đặt chỗ (Dành cho Quản lý)");
+
         bookings.MapGet("/my", async (
             HttpContext context,
             IBookingRepository bookingRepo,

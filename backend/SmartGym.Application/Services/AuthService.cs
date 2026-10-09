@@ -25,6 +25,12 @@ public class AuthService : IAuthService
             throw new Exception("Email already exists");
         }
 
+        var existingPhone = await _userRepository.GetByPhoneNumberAsync(request.PhoneNumber);
+        if (existingPhone != null)
+        {
+            throw new Exception("Phone number already exists");
+        }
+
         // Hash password
         string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
