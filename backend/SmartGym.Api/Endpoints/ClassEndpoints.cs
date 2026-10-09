@@ -22,6 +22,12 @@ public static class ClassEndpoints
             return Results.Ok(new { message = "Class created successfully" });
         }).RequireAuthorization(policy => policy.RequireRole("manager"));
 
+        classGroup.MapGet("/all", async (ClassService service) =>
+        {
+            var classes = await service.GetAllClassesAsync();
+            return Results.Ok(classes);
+        });
+
         classGroup.MapGet("/available", async (ClassService service) =>
         {
             var classes = await service.GetAvailableClassesAsync();
@@ -100,6 +106,8 @@ public static class ClassEndpoints
             var schedule = await service.GetMemberScheduleAsync(userId);
             return Results.Ok(schedule);
         }).RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
+
+
 
         scheduleGroup.MapGet("/coach", async (DateTime? date, HttpContext httpContext, ClassService service) =>
         {

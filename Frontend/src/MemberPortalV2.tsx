@@ -66,7 +66,7 @@ function Shell({
 }) {
   const assets = pageAssets[page]
   const active = page === "ai" ? 6 : page === "workout" ? 5 : 3
-  const nav = ["Tổng quan", "Hồ sơ cá nhân", "Người dùng", "Lớp & lịch", "Thanh toán", "Báo cáo", "AI & đào tạo"]
+  const nav = ["Tổng quan", "Hồ sơ thành viên", "Lớp & lịch", "Thanh toán", "Báo cáo", "AI & đào tạo"]
   const titles = {
     schedule: ["Member Portal / Lớp & Lịch", "Lịch cá nhân của Member"],
     success: ["Member Portal / Lớp & Lịch / Đăng ký", "Đặt chỗ lớp học"],
@@ -281,43 +281,66 @@ function Schedule({ onNavigate }: { onNavigate: Navigate }) {
           
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
             <strong className="block text-[11px] font-bold text-slate-400 tracking-widest uppercase mb-4">Buổi tập tiếp theo</strong>
-            <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-              <div className="flex flex-col items-center justify-center bg-white border border-slate-200 w-14 h-16 rounded-xl shadow-sm shrink-0">
-                <span className="text-[10px] font-bold text-teal-600 uppercase">Thứ 4</span>
-                <b className="text-xl font-black text-slate-800">23</b>
-              </div>
-              <div className="flex-1 min-w-0">
-                <strong className="block text-base font-bold text-slate-800 truncate mb-1">Yoga Flow</strong>
-                <small className="block text-xs font-medium text-slate-500 truncate flex items-center gap-1">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  08:00 • Coach Mai Phương
-                </small>
-              </div>
-            </div>
+            {(() => {
+              const nextEvent = allEvents
+                .filter(ev => ev.rawStart > new Date())
+                .sort((a, b) => a.rawStart.getTime() - b.rawStart.getTime())[0];
+
+              if (!nextEvent) {
+                return <p className="text-sm text-slate-500 italic">Chưa có lịch sắp tới</p>;
+              }
+
+              const d = nextEvent.rawStart;
+              const dayNames = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+              
+              return (
+                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="flex flex-col items-center justify-center bg-white border border-slate-200 w-14 h-16 rounded-xl shadow-sm shrink-0">
+                    <span className="text-[10px] font-bold text-teal-600 uppercase">{dayNames[d.getDay()]}</span>
+                    <b className="text-xl font-black text-slate-800">{d.getDate()}</b>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <strong className="block text-base font-bold text-slate-800 truncate mb-1">{nextEvent.title}</strong>
+                    <small className="block text-xs font-medium text-slate-500 truncate flex items-center gap-1">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      {String(d.getHours()).padStart(2, '0')}:{String(d.getMinutes()).padStart(2, '0')} • {nextEvent.detail}
+                    </small>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
           
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
-            <strong className="block text-[11px] font-bold text-slate-400 tracking-widest uppercase mb-4">Tiến trình tháng 9</strong>
-            <dl className="space-y-4">
-              <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-                <dt className="text-sm font-medium text-slate-500">Số buổi tập</dt>
-                <dd className="text-sm font-bold text-slate-800">12 buổi</dd>
-              </div>
-              <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-                <dt className="text-sm font-medium text-slate-500">Tiêu thụ calo</dt>
-                <dd className="text-sm font-bold text-orange-600 flex items-center gap-1.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>
-                  8,400 kcal
-                </dd>
-              </div>
-              <div className="flex justify-between items-center">
-                <dt className="text-sm font-medium text-slate-500">Chuỗi kỷ lục</dt>
-                <dd className="text-sm font-bold text-emerald-600 flex items-center gap-1.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
-                  5 ngày
-                </dd>
-              </div>
-            </dl>
+            <strong className="block text-[11px] font-bold text-slate-400 tracking-widest uppercase mb-4">Tiến trình tháng {new Date().getMonth() + 1}</strong>
+            {(() => {
+              const currentMonth = new Date().getMonth();
+              const currentYear = new Date().getFullYear();
+              const monthEvents = allEvents.filter(ev => ev.rawStart.getMonth() === currentMonth && ev.rawStart.getFullYear() === currentYear);
+              
+              return (
+                <dl className="space-y-4">
+                  <div className="flex justify-between items-center pb-4 border-b border-slate-100">
+                    <dt className="text-sm font-medium text-slate-500">Số buổi tập</dt>
+                    <dd className="text-sm font-bold text-slate-800">{monthEvents.length} buổi</dd>
+                  </div>
+                  <div className="flex justify-between items-center pb-4 border-b border-slate-100">
+                    <dt className="text-sm font-medium text-slate-500">Tiêu thụ calo (ước tính)</dt>
+                    <dd className="text-sm font-bold text-orange-600 flex items-center gap-1.5">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>
+                      {(monthEvents.length * 450).toLocaleString('en-US')} kcal
+                    </dd>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <dt className="text-sm font-medium text-slate-500">Chuỗi tập</dt>
+                    <dd className="text-sm font-bold text-emerald-600 flex items-center gap-1.5">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+                      -- ngày
+                    </dd>
+                  </div>
+                </dl>
+              );
+            })()}
           </div>
         </aside>
       </section>
@@ -413,39 +436,62 @@ function HeartChart() {
 }
 
 function Workout({ onNavigate }: { onNavigate: Navigate }) {
+  const [homeworks, setHomeworks] = useState<any[]>([])
+  
+  useEffect(() => {
+    import('./pages/MemberPortal/services/api').then(({ MemberAPI }) => {
+      MemberAPI.getMyHomework().then((data: any) => {
+        setHomeworks(data || [])
+      }).catch(console.error)
+    })
+  }, [])
+
   return (
     <Shell page="workout" onNavigate={onNavigate}>
       <section className="m2-workout-content">
-        <div className="m2-workout-hero">
-          <div><span>Đã hoàn thành • Hôm nay</span><strong>Functional HIIT - Đốt mỡ tối đa</strong><small>Thời gian thực hiện: 18:30 - 19:25 | Huấn luyện viên: Coach Trần Khoa</small></div>
-          <button type="button">Chia sẻ kết quả</button>
-        </div>
-        <div className="m2-workout-grid">
-          <div className="m2-workout-left">
-            <div className="m2-metrics">
-              <div><span>Năng lượng tiêu hao</span><strong>450 kcal</strong><small>Mục tiêu: 400 kcal</small></div>
-              <div><span>Thời lượng thực tế</span><strong>55 phút</strong><small>Khởi động & giãn cơ: 10'</small></div>
-              <div><span>Nhịp tim trung bình</span><strong>142 bpm</strong><small>Cao nhất: 172 bpm</small></div>
-              <div><span>Cường độ nỗ lực</span><strong>8.5 / 10</strong><small>Thang đo RPE tự đánh giá</small></div>
+        {homeworks.length === 0 ? (
+          <div className="py-20 text-center text-slate-400">Bạn chưa có bài tập về nhà nào được giao.</div>
+        ) : (
+          homeworks.map((hw: any) => (
+            <div key={hw.id} className="mb-12">
+              <div className="m2-workout-hero">
+                <div>
+                  <span>Trạng thái: {hw.status} • Ngày giao: {new Date(hw.assignedDate).toLocaleDateString('vi-VN')}</span>
+                  <strong>{hw.plan?.planName || "Bài tập"}</strong>
+                  <small>Thời gian thực hiện: {hw.plan?.durationMinutes || 0} phút | Ghi chú: {hw.notes || "Không có"}</small>
+                </div>
+                <button type="button" onClick={() => {
+                  import('./pages/MemberPortal/services/api').then(({ MemberAPI }) => {
+                    MemberAPI.updateHomeworkProgress(hw.id, { status: 'completed', progressPct: 100 })
+                      .then(() => alert('Đã cập nhật tiến độ hoàn thành!'))
+                      .catch(() => alert('Lỗi cập nhật.'));
+                  });
+                }}>Đánh dấu hoàn thành</button>
+              </div>
+              <div className="m2-workout-grid mt-6">
+                <div className="m2-workout-left">
+                  <div className="m2-coach-review">
+                    <div><img src={src("workout", "d88df.png")} alt="" /><span><strong>Mục tiêu giáo án</strong></span></div>
+                    <p>{hw.plan?.description || "Không có mô tả chi tiết."}</p>
+                    <p><strong>Cấp độ:</strong> {hw.plan?.level}</p>
+                    <p><strong>Mục tiêu:</strong> {hw.plan?.goal}</p>
+                  </div>
+                </div>
+                <aside className="m2-exercises">
+                  <strong>Giáo án bài tập ({(hw.plan?.exercises || []).length} bài)</strong>
+                  <div>
+                    {(hw.plan?.exercises || []).map((ex: any) => (
+                      <article key={ex.id}>
+                        <span><strong>{ex.name}</strong><small>{ex.reps} • Nghỉ {ex.rest}</small></span>
+                        <b>{ex.note}</b>
+                      </article>
+                    ))}
+                  </div>
+                </aside>
+              </div>
             </div>
-            <div className="m2-chart-card">
-              <div><strong>Biểu đồ nhịp tim liên tục (bpm)</strong><span>Vùng HIIT tối ưu (85% HR max)</span></div>
-              <HeartChart />
-            </div>
-            <div className="m2-coach-review">
-              <div><img src={src("workout", "d88df.png")} alt="" /><span><strong>Đánh giá từ Coach Trần Khoa</strong><small>PT riêng • Huấn luyện viên trưởng</small></span></div>
-              <p>"Hôm nay Minh Anh tập trung rất tốt, hoàn thành đầy đủ các chuỗi HIIT cường độ cao. <strong>Lưu ý cải thiện form Squat ở hiệp cuối</strong> để bảo vệ khớp gối tốt hơn nhé. Hãy tập trung đẩy mông ra sau nhiều hơn."</p>
-            </div>
-          </div>
-          <aside className="m2-exercises">
-            <strong>Giáo án bài tập đã thực hiện</strong>
-            <div>
-              {exercises.map(([title, note, result]) => (
-                <article key={title}><span><strong>{title}</strong><small>{note}</small></span><b>{result}</b></article>
-              ))}
-            </div>
-          </aside>
-        </div>
+          ))
+        )}
       </section>
     </Shell>
   )

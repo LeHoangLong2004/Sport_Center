@@ -41,6 +41,10 @@ builder.Services.AddScoped<SmartGym.Application.Interfaces.Repositories.IBooking
 builder.Services.AddScoped<SmartGym.Application.Interfaces.Repositories.ICheckInRepository, SmartGym.Infrastructure.Persistence.Supabase.Repositories.SupabaseCheckInRepository>();
 builder.Services.AddScoped<SmartGym.Application.Interfaces.Repositories.IMemberPackageRepository, SmartGym.Infrastructure.Persistence.Supabase.Repositories.SupabaseMemberPackageRepository>();
 builder.Services.AddScoped<SmartGym.Application.Interfaces.IInvoiceRepository, SmartGym.Infrastructure.Persistence.EF.InvoiceRepository>();
+builder.Services.AddScoped<SmartGym.Application.Interfaces.IBodyMetricRepository, SmartGym.Infrastructure.Persistence.EF.Repositories.BodyMetricRepository>();
+builder.Services.AddScoped<SmartGym.Application.Interfaces.IWorkoutPlanRepository, SmartGym.Infrastructure.Persistence.EF.Repositories.WorkoutPlanRepository>();
+builder.Services.AddScoped<SmartGym.Application.Interfaces.IHomeworkProgressRepository, SmartGym.Infrastructure.Persistence.EF.Repositories.HomeworkProgressRepository>();
+builder.Services.AddScoped<SmartGym.Application.Interfaces.IReviewRepository, SmartGym.Infrastructure.Persistence.EF.Repositories.ReviewRepository>();
 builder.Services.AddSingleton<ITokenService, TokenService>();
 // Note: Keeping IJwtTokenGenerator for the custom middleware backward compatibility
 builder.Services.AddSingleton<SmartGym.Application.Interfaces.Services.IJwtTokenGenerator, JwtTokenGenerator>();
@@ -57,6 +61,10 @@ builder.Services.AddScoped<IPdfService, SmartGym.Infrastructure.Services.Invoice
 builder.Services.AddScoped<ClassService>();
 builder.Services.AddScoped<BookingService>();
 builder.Services.AddScoped<CheckInService>();
+builder.Services.AddScoped<IBodyMetricService, BodyMetricService>();
+builder.Services.AddScoped<IWorkoutPlanService, WorkoutPlanService>();
+builder.Services.AddScoped<IHomeworkProgressService, HomeworkProgressService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
 
 // ── Services: Flow 3 (thanh toán trực tuyến, hóa đơn điện tử, báo cáo) ──
 builder.Services.Configure<SmartGym.Infrastructure.Services.VnPayOptions>(
@@ -193,6 +201,24 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
+        db.Database.ExecuteSqlRaw(@"
+            CREATE TABLE IF NOT EXISTS coach_profiles (
+                user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+                specialties TEXT,
+                certifications TEXT,
+                experience_years INT,
+                bio TEXT
+            );
+        ");
+        app.Logger.LogInformation("coach_profiles table ensured.");
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning("coach_profiles create error: {Message}", ex.Message);
+    }
+
+    try
+    {
         db.Database.ExecuteSqlRaw("GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated;");
         db.Database.ExecuteSqlRaw("GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;");
         
@@ -250,6 +276,10 @@ app.MapCoachEndpoints();
 app.MapClassEndpoints();
 app.MapBookingEndpoints();
 app.MapCheckInEndpoints();
+app.MapBodyMetricEndpoints();
+app.MapWorkoutPlanEndpoints();
+app.MapHomeworkEndpoints();
+app.MapReviewEndpoints();
 
 app.MapGet("/api/sports", async (Supabase.Client client) =>
 {
@@ -299,141 +329,7 @@ app.MapGet("/api/coaches", async (Guid? sportId, SmartGym.Infrastructure.Persist
     return Results.Ok(coaches);
 });
 
-app.MapGet("/api/classes/all", async (ClassService service) =>
-{
-    var classes = await service.GetAllClassesAsync();
-    return Results.Ok(classes);
-});
 
-app.MapGet("/api/classes/{id}", async (Guid id, ClassService service) =>
-{
-    var classDetail = await service.GetClassDetailAsync(id);
-    if (classDetail == null) return Results.NotFound(new { message = "Class not found" });
-    return Results.Ok(classDetail);
-});
-
-app.MapPost("/api/classes/{id}/book", async (Guid id, HttpContext httpContext, ClassService service) =>
-{
-    var userIdClaim = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-    if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-    {
-        return Results.Unauthorized();
-    }
-
-    var (isSuccess, errorMessage) = await service.BookClassAsync(userId, id);
-    if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
-    
-    return Results.Ok(new { message = "Successfully booked the class!" });
-}).RequireAuthorization(policy => policy.RequireRole("Member", "Admin", "Manager", "member", "admin", "manager"));
-
-// Giai đoạn D: Receptionist đặt hộ
-app.MapPost("/api/classes/{id}/book-for-member", async (Guid id, [Microsoft.AspNetCore.Mvc.FromBody] SmartGym.Application.DTOs.Classes.BookForMemberRequest request, ClassService service) =>
-{
-    var (isSuccess, errorMessage) = await service.BookClassAsync(request.MemberId, id);
-    if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
-    
-    return Results.Ok(new { message = "Successfully booked the class for member!" });
-}).RequireAuthorization(policy => policy.RequireRole("receptionist", "manager", "admin"));
-
-// Giai đoạn E: Hủy đăng ký (Hội viên / Lễ tân)
-app.MapPost("/api/classes/{id}/cancel-booking", async (Guid id, HttpContext httpContext, ClassService service) =>
-{
-    var userIdClaim = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-    if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-    {
-        return Results.Unauthorized();
-    }
-
-    var (isSuccess, errorMessage) = await service.CancelBookingAsync(userId, id);
-    if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
-    
-    return Results.Ok(new { message = "Successfully cancelled the booking!" });
-}).RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager", "receptionist"));
-
-// Giai đoạn F: Thay đổi thông tin lớp học
-app.MapPut("/api/classes/{id}", async (Guid id, [Microsoft.AspNetCore.Mvc.FromBody] SmartGym.Application.DTOs.Classes.CreateClassRequest request, ClassService service) =>
-{
-    var (isSuccess, errorMessage) = await service.UpdateClassAsync(id, request);
-    if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
-    return Results.Ok(new { message = "Class updated successfully" });
-}).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
-
-// Giai đoạn F: Hủy lớp học (Quản lý)
-app.MapPost("/api/classes/{id}/cancel", async (Guid id, ClassService service) =>
-{
-    var (isSuccess, errorMessage) = await service.CancelClassAsync(id);
-    if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
-    return Results.Ok(new { message = "Class cancelled successfully" });
-}).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
-
-// ── GIAI ĐOẠN G: ĐIỂM DANH VÀ XEM LỊCH ──
-
-// Điểm danh theo lớp (HLV / Receptionist / Manager / Admin)
-app.MapPost("/api/classes/{id}/attendance", async (Guid id, [Microsoft.AspNetCore.Mvc.FromBody] SmartGym.Application.DTOs.Classes.UpdateAttendanceRequest request, ClassService service) =>
-{
-    var (isSuccess, errorMessage) = await service.UpdateAttendanceAsync(id, request);
-    if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
-    return Results.Ok(new { message = "Attendance updated successfully" });
-}).RequireAuthorization(policy => policy.RequireRole("coach", "receptionist", "manager", "admin"));
-
-// Xem lịch dành cho Member (Lớp + Buổi PT)
-app.MapGet("/api/schedule/member", async (HttpContext httpContext, ClassService service) =>
-{
-    var userIdClaim = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-    if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-    {
-        return Results.Unauthorized();
-    }
-
-    var schedule = await service.GetMemberScheduleAsync(userId);
-    return Results.Ok(schedule);
-}).RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
-
-// Endpoint lịch cá nhân dạng danh sách (MemberPortalV2)
-app.MapGet("/api/schedule/my", async (HttpContext httpContext, ClassService service) =>
-{
-    var userIdClaim = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-    if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-    {
-        return Results.Unauthorized();
-    }
-
-    var schedule = await service.GetMemberScheduleAsync(userId);
-    var entries = schedule.ClassBookings.Select(b => new
-    {
-        id = b.ClassId,
-        className = b.ClassName,
-        sportType = b.SportName,
-        roomName = b.FacilityName,
-        coachName = b.CoachName,
-        startTime = b.ScheduleTime,
-        endTime = b.ScheduleTime.AddMinutes(b.DurationMinutes),
-        role = "Member",
-        bookingStatus = b.Status
-    });
-
-    return Results.Ok(entries);
-}).RequireAuthorization();
-
-// Xem lịch dành cho HLV (Các lớp phụ trách + danh sách học viên)
-app.MapGet("/api/schedule/coach", async (DateTime? date, HttpContext httpContext, ClassService service) =>
-{
-    var userIdClaim = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-    if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-    {
-        return Results.Unauthorized();
-    }
-
-    var schedule = await service.GetCoachScheduleAsync(userId, date);
-    return Results.Ok(schedule);
-}).RequireAuthorization(policy => policy.RequireRole("coach", "manager", "admin"));
-
-// Xem lịch tổng quan dành cho Manager (Lọc theo cơ sở, HLV, bộ môn, ngày)
-app.MapGet("/api/schedule/manager", async (Guid? facilityId, Guid? coachId, Guid? sportId, DateTime? date, ClassService service) =>
-{
-    var schedule = await service.GetManagerScheduleAsync(facilityId, coachId, sportId, date);
-    return Results.Ok(schedule);
-}).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.Run();

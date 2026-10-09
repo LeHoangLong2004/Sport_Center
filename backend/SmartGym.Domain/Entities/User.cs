@@ -19,4 +19,5 @@ public class User
 
     // Navigation property
     public Role? Role { get; set; }
+    public CoachProfile? CoachProfile { get; set; }
 }

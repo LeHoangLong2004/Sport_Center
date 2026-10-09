@@ -13,8 +13,7 @@ export function MemberSidebar({
   const icons = iconNames[currentVisualPage]
   const navigation = [
     ["overview", "Tổng quan", icons.dashboard],
-    ["profile", "Hồ sơ cá nhân", icons.users],
-    ["users", "Người dùng", icons.users],
+    ["profile", "Hồ sơ thành viên", icons.users],
     ["schedule", "Lớp & lịch", icons.calendar],
     ["payment", "Thanh toán", icons.payment],
     ["reports", "Báo cáo", icons.reports],

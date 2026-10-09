@@ -57,7 +57,7 @@ const labelRoutes: Record<string, SiteRoute | "admin" | "register"> = {
   "Bộ môn": "bomon",
   "Lớp học": "lophoc",
   "Huấn luyện viên": "coach",
-  "Gói tập": "pricing",
+  "Gói": "pricing",
   "Về chúng tôi": "about",
   "Liên hệ": "contact",
   "Hỗ trợ": "faq",
@@ -177,19 +177,23 @@ export default function SiteApp({
     }
 
     if (
+      clickable?.dataset.name?.startsWith("btn-") ||
       label.includes("Mua ngay") ||
       label.includes("Chọn gói") ||
       label.includes("Đăng ký ngay") ||
-      label.includes("Đăng ký Fitness") ||
-      label.includes("Đăng ký Premium")
+      label.includes("Đăng ký") ||
+      clickable?.hasAttribute("data-planid")
     ) {
-      let planId: string | undefined = undefined;
-      const lowerLabel = label.toLowerCase();
-      if (lowerLabel.includes("starter") || lowerLabel.includes("swim")) planId = "swim";
-      else if (lowerLabel.includes("fitness")) planId = "fitness";
-      else if (lowerLabel.includes("premium") || lowerLabel.includes("vip")) planId = "premium";
+      let planId: string | undefined = clickable?.dataset.planid;
+      
+      if (!planId) {
+        const lowerLabel = label.toLowerCase();
+        if (lowerLabel.includes("starter") || lowerLabel.includes("swim")) planId = "swim";
+        else if (lowerLabel.includes("fitness")) planId = "fitness";
+        else if (lowerLabel.includes("premium") || lowerLabel.includes("vip")) planId = "premium";
+      }
 
-      if (onOpenPayment) onOpenPayment(planId)
+      if (onOpenPayment && planId) onOpenPayment(planId)
       return
     }
 
