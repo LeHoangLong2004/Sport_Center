@@ -1,8 +1,9 @@
-import React, { useState, useMemo, FormEvent } from 'react';
+import React, { useEffect, useState } from 'react';
 import { assetRoots, iconNames, classItems, memberSections, MemberPage, visualPage, asset, ClassItem } from '../shared';
 import MemberShell from '../components/MemberShell';
 import Progress from '../components/Progress';
 import { useUserProfile } from '../../../hooks/useUserProfile';
+import { PackageAPI } from '../../../services/packageApi';
 
 export function Confirm({
   selectedClass,
@@ -14,8 +15,28 @@ export function Confirm({
   const { profile } = useUserProfile();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [access, setAccess] = useState<"checking" | "allowed" | "denied">("checking");
+
+  useEffect(() => {
+    let mounted = true;
+    PackageAPI.hasActiveSportAccess(selectedClass.sportName || "")
+      .then(hasAccess => {
+        if (mounted) setAccess(hasAccess ? "allowed" : "denied");
+      })
+      .catch(accessError => {
+        if (mounted) {
+          setAccess("denied");
+          setError(accessError instanceof Error ? accessError.message : "Không thể kiểm tra quyền đặt lớp.");
+        }
+      });
+    return () => { mounted = false; };
+  }, [selectedClass.sportName]);
 
   const handleConfirm = async () => {
+    if (access !== "allowed") {
+      setError("Bạn cần có gói môn đang hiệu lực phù hợp mới có thể đặt lớp này.");
+      return;
+    }
     if (!selectedClass.id) {
       setError("Không tìm thấy ID lớp học. Vui lòng thử lại.");
       return;
@@ -71,8 +92,8 @@ export function Confirm({
               <b>{profile?.fullName || "Hội viên"}</b>
             </div>
             <div>
-              <span>Gói hội viên</span>
-              <small>{profile?.roleName || "Member"}</small>
+              <span>Quyền tập bộ môn</span>
+              <small>{access === "checking" ? "Đang kiểm tra..." : access === "allowed" ? `Có quyền ${selectedClass.sportName}` : "Chưa có gói môn phù hợp"}</small>
             </div>
             <div>
               <span>Mã thành viên</span>
@@ -94,6 +115,13 @@ export function Confirm({
             </div>
           </div>
 
+          {access === "denied" && (
+            <div className="mt-4 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950 sm:flex-row sm:items-center sm:justify-between">
+              <span>Hạng thành viên không cấp quyền vào lớp. Mua gói môn phù hợp trước khi đặt chỗ.</span>
+              <button type="button" onClick={() => onNavigate("payment")} className="shrink-0 font-semibold text-teal-800 underline">Xem gói tập của tôi</button>
+            </div>
+          )}
+
           <div className="mp-confirm-actions">
             <button onClick={() => onNavigate("classes")} type="button" disabled={isSubmitting}>
               Quay lại
@@ -102,9 +130,9 @@ export function Confirm({
               className="confirm"
               onClick={handleConfirm}
               type="button"
-              disabled={isSubmitting}
+              disabled={isSubmitting || access !== "allowed"}
             >
-              {isSubmitting ? "Đang xử lý..." : "Xác nhận đặt chỗ"}
+              {isSubmitting ? "Đang xử lý..." : access === "checking" ? "Đang kiểm tra quyền..." : "Xác nhận đặt chỗ"}
             </button>
           </div>
           {error && (

@@ -67,6 +67,7 @@ builder.Services.AddScoped<IBodyMetricService, BodyMetricService>();
 builder.Services.AddScoped<IWorkoutPlanService, WorkoutPlanService>();
 builder.Services.AddScoped<IHomeworkProgressService, HomeworkProgressService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddScoped<PackageCatalogService>();
 
 // ── Services: Flow 3 (thanh toán trực tuyến, hóa đơn điện tử, báo cáo) ──
 builder.Services.Configure<SmartGym.Infrastructure.Services.VnPayOptions>(
@@ -204,6 +205,23 @@ using (var scope = app.Services.CreateScope())
     try
     {
         db.Database.ExecuteSqlRaw(@"
+            ALTER TABLE packages ADD COLUMN IF NOT EXISTS catalog_json JSONB;
+            ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS duration_months INTEGER;
+            ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS discount_pct NUMERIC(8, 3) NOT NULL DEFAULT 0;
+            ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(12, 2) NOT NULL DEFAULT 0;
+            ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS package_snapshot_json JSONB;
+            ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ;
+        ");
+        app.Logger.LogInformation("Package catalog and order schema is in sync.");
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning("Package catalog schema sync error: {Message}", ex.Message);
+    }
+
+    try
+    {
+        db.Database.ExecuteSqlRaw(@"
             CREATE TABLE IF NOT EXISTS coach_profiles (
                 user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
                 specialties TEXT,
@@ -304,6 +322,7 @@ app.MapAuthEndpoints();
 app.MapUserEndpoints();
 app.MapPackageEndpoints();
 app.MapSubscriptionEndpoints();
+app.MapPackageCatalogEndpoints();
 app.MapPaymentEndpoints();
 app.MapCoachEndpoints();
 
@@ -537,4 +556,3 @@ app.MapGet("/api/schedule/manager", async (Guid? facilityId, Guid? coachId, Guid
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.Run();
-

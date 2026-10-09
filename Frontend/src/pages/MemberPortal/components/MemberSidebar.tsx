@@ -15,7 +15,7 @@ export function MemberSidebar({
     ["overview", "Tổng quan", icons.dashboard],
     ["profile", "Hồ sơ thành viên", icons.users],
     ["schedule", "Lớp & lịch", icons.calendar],
-    ["payment", "Thanh toán", icons.payment],
+    ["payment", "Gói tập của tôi", icons.payment],
     ["reports", "Báo cáo", icons.reports],
     ["ai", "AI & đào tạo", icons.ai],
   ] as const
