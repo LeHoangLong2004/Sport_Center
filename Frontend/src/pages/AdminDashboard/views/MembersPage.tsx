@@ -7,7 +7,14 @@ import { FinanceTopBar } from '../components/FinanceTopBar';
 export function MembersPage({ onEditMember }: { onEditMember: (member: any) => void }) {
   const [query, setQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("Tất cả")
-  const [membersList, setMembersList] = useState<any[]>([])
+  const [allUsers, setAllUsers] = useState<any[]>([])
+  const [activeTab, setActiveTab] = useState("Thành viên")
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [query, statusFilter, activeTab]);
 
   const fetchUsers = () => {
     const token = localStorage.getItem("token");
@@ -17,16 +24,15 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
     .then(res => res.json())
     .then(data => {
       if (Array.isArray(data)) {
-        const mapped = data
-          .filter((u: any) => u.roleName && u.roleName.toLowerCase() === "member")
-          .map((u: any, index: number) => {
-            const avatars = [mAvatar0, mAvatar1, mAvatar2, mAvatar3, mAvatar4];
+        const mapped = data.map((u: any, index: number) => {
+          const avatars = [mAvatar0, mAvatar1, mAvatar2, mAvatar3, mAvatar4];
           return {
             id: u.id.substring(0, 8).toUpperCase(),
             realId: u.id,
             name: u.fullName,
             phone: u.phoneNumber || "N/A",
             email: u.email,
+            roleName: u.roleName?.toLowerCase() || "member",
             pkg: u.roleName || "Member",
             vip: false,
             status: u.status ? "Đang hoạt động" : "Tạm khóa",
@@ -38,7 +44,7 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
             emergencyContact: u.emergencyContact
           };
         });
-        setMembersList(mapped);
+        setAllUsers(mapped);
       }
     })
     .catch(err => console.error("Failed to fetch users:", err));
@@ -70,11 +76,30 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
     }
   };
 
-  const filtered = membersList.filter(m => {
+  const tabs = [
+    { label: "Thành viên", filter: (u: any) => u.roleName === "member" },
+    { label: "Huấn luyện viên", filter: (u: any) => u.roleName === "coach" || u.roleName === "pt" },
+    { label: "Nhân viên", filter: (u: any) => !["member", "coach", "pt"].includes(u.roleName) }
+  ];
+
+  const currentTabObj = tabs.find(t => t.label === activeTab) || tabs[0];
+  const listForTab = allUsers.filter(currentTabObj.filter);
+
+  const filtered = listForTab.filter(m => {
     const q = query.toLowerCase()
     return (`${m.name} ${m.id} ${m.phone}`).toLowerCase().includes(q)
       && (statusFilter === "Tất cả" || m.status === statusFilter)
   })
+
+  const totalPages = Math.ceil(filtered.length / rowsPerPage) || 1;
+  const paginatedList = filtered.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+
+  const getPageNumbers = () => {
+    if (totalPages <= 5) return Array.from({length: totalPages}, (_, i) => i + 1);
+    if (currentPage <= 3) return [1, 2, 3, 4, '...', totalPages];
+    if (currentPage >= totalPages - 2) return [1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+  };
 
   const handleExportCSV = () => {
     if (filtered.length === 0) {
@@ -134,9 +159,19 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
 
       {/* tabs */}
       <div className="border-b border-[#e2e8f0] flex gap-6">
-        {[["Thành viên","--"],["Huấn luyện viên","--"],["Nhân viên","--"]].map(([t,c],i)=>(
-          <button key={t} className={`pb-3 text-sm ${i===0?"border-b-2 border-[#2563eb] font-bold text-[#2563eb]":"font-medium text-[#64748b]"}`}>{t} ({c})</button>
-        ))}
+        {tabs.map((t, i) => {
+          const count = allUsers.filter(t.filter).length;
+          const isActive = t.label === activeTab;
+          return (
+            <button 
+              key={t.label} 
+              onClick={() => setActiveTab(t.label)}
+              className={`pb-3 text-sm transition-colors ${isActive ? "border-b-2 border-[#2563eb] font-bold text-[#2563eb]" : "font-medium text-[#64748b] hover:text-[#0f172a]"}`}
+            >
+              {t.label} ({count})
+            </button>
+          )
+        })}
       </div>
 
       {/* filters */}
@@ -170,7 +205,7 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
           <div className="py-3 w-[120px]">NGÀY HẾT HẠN</div>
           <div className="py-3 w-[120px] text-right">THAO TÁC</div>
         </div>
-        {filtered.map(m=>(
+        {paginatedList.map(m=>(
           <div key={m.id} className="border-b border-[#f1f5f9] flex h-16 items-center px-6">
             <div className="w-8"><input type="checkbox" /></div>
             <div className="flex gap-2.5 items-center flex-1">
@@ -212,11 +247,34 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
           </div>
         )}
         <div className="flex h-14 items-center justify-between px-6">
-          <span className="text-[#64748b] text-sm">Hiển thị 1-{filtered.length} trong tổng số 2.214 hội viên</span>
+          <span className="text-[#64748b] text-sm">
+            Hiển thị {filtered.length === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1}-{Math.min(currentPage * rowsPerPage, filtered.length)} trong tổng số {filtered.length} {currentTabObj.label.toLowerCase()}
+          </span>
           <div className="flex gap-2">
-            {["‹ Trước","1","2","3","...","222","Sau ›"].map((p,i)=>(
-              <button key={i} className={`flex items-center px-3 py-1.5 rounded-md text-[13px] ${p==="1"?"bg-[#2563eb] font-semibold text-white":"bg-white border border-[#e2e8f0] text-[#0f172a]"}`}>{p}</button>
+            <button 
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className={`flex items-center px-3 py-1.5 rounded-md text-[13px] ${currentPage === 1 ? "bg-slate-50 text-slate-400 cursor-not-allowed" : "bg-white border border-[#e2e8f0] text-[#0f172a] hover:bg-slate-50 transition-colors"}`}
+            >
+              ‹ Trước
+            </button>
+            {getPageNumbers().map((p, i) => (
+              <button 
+                key={i} 
+                onClick={() => typeof p === 'number' && setCurrentPage(p)}
+                disabled={p === '...'}
+                className={`flex items-center px-3 py-1.5 rounded-md text-[13px] transition-colors ${p === currentPage ? "bg-[#2563eb] font-semibold text-white" : p === '...' ? "bg-transparent text-slate-400 cursor-default" : "bg-white border border-[#e2e8f0] text-[#0f172a] hover:bg-slate-50"}`}
+              >
+                {p}
+              </button>
             ))}
+            <button 
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className={`flex items-center px-3 py-1.5 rounded-md text-[13px] ${currentPage === totalPages ? "bg-slate-50 text-slate-400 cursor-not-allowed" : "bg-white border border-[#e2e8f0] text-[#0f172a] hover:bg-slate-50 transition-colors"}`}
+            >
+              Sau ›
+            </button>
           </div>
         </div>
       </div>

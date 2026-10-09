@@ -17,7 +17,8 @@ public interface IPaymentService
         decimal amount,
         PaymentMethod method,
         string? billingPeriod = null,
-        bool autoRenew = false);
+        bool autoRenew = false,
+        DateTime? startDate = null);
 
     /// <summary>
     /// Processes and confirms the payment logic.

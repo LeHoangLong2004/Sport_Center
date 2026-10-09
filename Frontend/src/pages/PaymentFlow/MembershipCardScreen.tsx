@@ -1,10 +1,9 @@
 import React from "react";
-import { A, Header } from "./shared";
+import { A } from "./shared";
 
 export function MembershipCardScreen({ onHome }: { onHome: () => void }) {
   return (
     <div className="bg-[#f8fafc] flex flex-col items-start w-full min-h-screen">
-      <Header />
       <div className="flex flex-col gap-8 items-center pb-20 pt-10 px-20 w-full">
         <div className="flex flex-col gap-3 items-center w-full">
           <div className="bg-[#f0fdf4] flex items-center justify-center rounded-[32px] size-16">
@@ -27,7 +26,7 @@ export function MembershipCardScreen({ onHome }: { onHome: () => void }) {
                 </div>
                 <span className="font-['Manrope'] font-extrabold text-white text-[14px]">SPORTCENTER</span>
               </div>
-              <div className="bg-[#2563eb] flex items-start px-3 py-1 rounded-[12px]">
+              <div className="bg-teal-500 flex items-start px-3 py-1 rounded-[12px]">
                 <span className="font-['Inter'] font-bold text-white text-[11px] uppercase">Fitness Plus</span>
               </div>
             </div>
@@ -74,7 +73,7 @@ export function MembershipCardScreen({ onHome }: { onHome: () => void }) {
             <p className="font-['Inter'] font-normal text-[#64748b] text-[13px] leading-[18px] w-full">
               Bạn có đặc quyền 2 buổi PT định hướng thể chất miễn phí. Hãy thiết lập ngay.
             </p>
-            <button type="button" className="border border-[#2563eb] flex items-center justify-center py-2 rounded-[6px] w-full font-['Inter'] font-bold text-[#2563eb] text-[13px] hover:bg-[#eff6ff] transition-colors">
+            <button type="button" className="border border-teal-500 flex items-center justify-center py-2 rounded-[6px] w-full font-['Inter'] font-bold text-teal-600 text-[13px] hover:bg-teal-50 transition-colors">
               Đặt lịch PT miễn phí
             </button>
           </div>
@@ -83,7 +82,7 @@ export function MembershipCardScreen({ onHome }: { onHome: () => void }) {
             <p className="font-['Inter'] font-normal text-[#64748b] text-[13px] leading-[18px] w-full">
               Đăng ký đặt chỗ trước các lớp học cao cấp Yoga, Zumba, và Spinning hàng tuần.
             </p>
-            <button type="button" className="bg-[#2563eb] flex items-center justify-center py-2 rounded-[6px] w-full font-['Inter'] font-bold text-white text-[13px] hover:bg-[#1d4ed8] transition-colors">
+            <button type="button" className="bg-teal-500 flex items-center justify-center py-2 rounded-[6px] w-full font-['Inter'] font-bold text-white text-[13px] hover:bg-teal-600 transition-colors">
               Khám phá lịch lớp học
             </button>
           </div>
