@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, KeyboardEvent } from "react";
-import { A, BillingPeriod, PackageId, packages, Header, Stepper } from "./shared";
+import { A, BillingPeriod, Stepper, OrderSummarySidebar } from "./shared";
 
 export function OTPScreen({
   pkg,
@@ -7,7 +7,7 @@ export function OTPScreen({
   onConfirm,
   onCancel,
 }: {
-  pkg: PackageId
+  pkg: any
   period: BillingPeriod
   onConfirm: () => void
   onCancel: () => void
@@ -33,7 +33,6 @@ export function OTPScreen({
 
   return (
     <div className="bg-[#f8fafc] flex flex-col items-start w-full min-h-screen">
-      <Header />
       <Stepper active={3} />
 
       <div className="flex items-start justify-center pb-20 pt-4 px-20 w-full">
@@ -64,12 +63,12 @@ export function OTPScreen({
                           inputMode="numeric"
                           className={`size-16 rounded-[12px] text-center font-['Inter'] font-bold text-[#0f172a] text-[28px] outline-none ${
                             isActive
-                              ? "border-2 border-[#2563eb]"
+                              ? "border-2 border-teal-500"
                               : "border border-[#e2e8f0]"
                           } bg-white`}
                         />
                         {isActive && !d && (
-                          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-[#2563eb] h-6 w-0.5 animate-pulse" />
+                          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-teal-500 h-6 w-0.5 animate-pulse" />
                         )}
                       </div>
                     )
@@ -78,7 +77,7 @@ export function OTPScreen({
                 <div className="flex gap-1.5 items-start justify-center w-full text-[#64748b] text-[13px]">
                   <span className="font-['Inter'] font-normal">Không nhận được mã?</span>
                   <span className="font-['Inter'] font-semibold">
-                    Gửi lại mã sau <span className="text-[#2563eb]">{seconds}s</span>
+                    Gửi lại mã sau <span className="text-teal-600">{seconds}s</span>
                   </span>
                 </div>
               </div>
@@ -100,7 +99,7 @@ export function OTPScreen({
                 <button
                   type="button"
                   onClick={onConfirm}
-                  className="bg-[#2563eb] flex flex-1 items-center justify-center py-[14px] rounded-[8px] font-['Inter'] font-bold text-white text-[15px] hover:bg-[#1d4ed8] transition-colors"
+                  className="bg-teal-500 flex flex-1 items-center justify-center py-[14px] rounded-[8px] font-['Inter'] font-bold text-white text-[15px] hover:bg-teal-600 transition-colors"
                 >
                   Xác nhận OTP
                 </button>
@@ -108,57 +107,10 @@ export function OTPScreen({
             </div>
           </div>
 
-          <div className="bg-white border border-[#e2e8f0] flex flex-col gap-5 items-start p-6 rounded-[16px] w-[416px] shrink-0">
-            <p className="font-['Inter'] font-bold text-[#0f172a] text-lg w-full">Tóm tắt đơn hàng</p>
-            <div className="flex items-center justify-between w-full">
-              <p className="font-['Inter'] font-extrabold text-[#0f172a] text-xl">{packages[pkg].name}</p>
-              <div className="bg-[#eff6ff] flex items-start px-3 py-1 rounded-[12px]">
-                <p className="font-['Inter'] font-bold text-[#2563eb] text-xs">Gói 6 tháng</p>
-              </div>
-            </div>
-            <div className="flex flex-col gap-3 w-full text-[13px]">
-              {[
-                ["Hội viên:", "Nguyễn Lan Anh"],
-                ["Cơ sở chính:", "Chi nhánh Q.1 - Flagship Center"],
-                ["Thời hạn tập:", "21/09/2026 → 21/03/2027"],
-              ].map(([label, val]) => (
-                <div key={label} className="flex items-start justify-between w-full">
-                  <span className="font-['Inter'] font-normal text-[#64748b]">{label}</span>
-                  <span className="font-['Inter'] font-semibold text-[#0f172a]">{val}</span>
-                </div>
-              ))}
-            </div>
-            <div className="h-0 w-full relative">
-              <div className="absolute inset-[-1px_0_0_0]">
-                <img src={`${A}/d2600.svg`} className="block w-full" alt="" />
-              </div>
-            </div>
-            <div className="flex flex-col gap-3 w-full text-sm">
-              <div className="flex items-start justify-between w-full">
-                <span className="font-['Inter'] font-normal text-[#64748b]">Giá niêm yết</span>
-                <span className="font-['Inter'] font-semibold text-[#0f172a]">12.000.000 đ</span>
-              </div>
-              <div className="flex items-start justify-between w-full">
-                <span className="font-['Inter'] font-normal text-[#64748b]">Ưu đãi gói theo năm (-20%)</span>
-                <span className="font-['Inter'] font-bold text-[#16a34a]">-1.100.000 đ</span>
-              </div>
-            </div>
-            <div className="h-0 w-full relative">
-              <div className="absolute inset-[-1px_0_0_0]">
-                <img src={`${A}/d2600.svg`} className="block w-full" alt="" />
-              </div>
-            </div>
-            <div className="flex items-baseline justify-between w-full">
-              <span className="font-['Inter'] font-semibold text-[#0f172a] text-base">Tổng thanh toán</span>
-              <span className="font-['Inter'] font-extrabold text-[#2563eb] text-2xl">10.900.000 đ</span>
-            </div>
-            <div className="flex gap-1.5 items-start justify-center w-full">
-              <img src={`${A}/5a31b.svg`} className="size-3 mt-0.5 shrink-0" alt="" />
-              <span className="font-['Inter'] font-normal text-[#64748b] text-[11px]">Giao dịch được mã hóa SSL 256-bit</span>
-            </div>
-          </div>
+          <OrderSummarySidebar pkg={pkg} period={period} screen="otp" />
         </div>
       </div>
     </div>
   )
 }
+

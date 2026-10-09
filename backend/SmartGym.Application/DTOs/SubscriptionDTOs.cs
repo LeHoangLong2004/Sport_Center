@@ -8,6 +8,7 @@ public class SubscriptionResponse
     public Guid UserId { get; set; }
     public string? PackageId { get; set; }
     public string? PackageName { get; set; }
+    public string? PackageType { get; set; }
     public string? BillingPeriod { get; set; }
     public decimal TotalAmount { get; set; }
     public SmartGym.Domain.Enums.PaymentMethod? PaymentMethod { get; set; }

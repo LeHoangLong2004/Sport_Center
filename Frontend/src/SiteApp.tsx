@@ -81,7 +81,7 @@ export default function SiteApp({
 }: {
   onOpenAdmin: () => void
   onOpenRegister: () => void
-  onOpenPayment?: (planId?: string) => void
+  onOpenPayment?: (planId?: string, periodId?: string) => void
 }) {
   const [route, setRoute] = useState<SiteRoute>(routeFromHash)
   const [notice, setNotice] = useState("")
@@ -185,6 +185,7 @@ export default function SiteApp({
       clickable?.hasAttribute("data-planid")
     ) {
       let planId: string | undefined = clickable?.dataset.planid;
+      let periodId: string | undefined = clickable?.dataset.period;
       
       if (!planId) {
         const lowerLabel = label.toLowerCase();
@@ -193,7 +194,7 @@ export default function SiteApp({
         else if (lowerLabel.includes("premium") || lowerLabel.includes("vip")) planId = "premium";
       }
 
-      if (onOpenPayment && planId) onOpenPayment(planId)
+      if (onOpenPayment && planId) onOpenPayment(planId, periodId)
       return
     }
 

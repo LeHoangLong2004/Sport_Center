@@ -7,6 +7,7 @@ import { useUserProfile } from '../../../hooks/useUserProfile';
 export function MemberProfile({ onNavigate }: { onNavigate: (page: MemberPage) => void }) {
   const { profile, loading } = useUserProfile();
   const [sub, setSub] = React.useState<any>(null);
+  const [memSub, setMemSub] = React.useState<any>(null);
   const [error, setError] = React.useState<string>("");
 
   const handleSave = async (data: any) => {
@@ -55,7 +56,10 @@ export function MemberProfile({ onNavigate }: { onNavigate: (page: MemberPage) =
   React.useEffect(() => {
     import('../services/api').then(({ MemberAPI }) => {
       MemberAPI.getMySubscriptions().then(data => {
-        if (data && data.length > 0) setSub(data[0]);
+        if (data && data.length > 0) {
+          setSub(data.find((s: any) => s.packageType === 'sport') || null);
+          setMemSub(data.find((s: any) => s.packageType === 'membership') || data[0]);
+        }
       }).catch(console.error);
     });
   }, []);
@@ -70,18 +74,18 @@ export function MemberProfile({ onNavigate }: { onNavigate: (page: MemberPage) =
         </div>
         <div className="flex justify-between items-center pb-3 border-b border-slate-100">
           <span className="text-sm font-medium text-slate-500">Ngày tham gia</span>
-          <span className="text-sm font-bold text-slate-800">{sub?.startDate ? new Date(sub.startDate).toLocaleDateString('vi-VN') : '--'}</span>
+          <span className="text-sm font-bold text-slate-800">{sub?.startDate ? sub.startDate.split('T')[0].split('-').reverse().join('/') : '--'}</span>
         </div>
         <div className="flex justify-between items-center pb-3 border-b border-slate-100">
           <span className="text-sm font-medium text-slate-500">Ngày hết hạn</span>
-          <span className="text-sm font-bold text-slate-800">{sub?.endDate ? new Date(sub.endDate).toLocaleDateString('vi-VN') : '--'}</span>
+          <span className="text-sm font-bold text-slate-800">{sub?.endDate ? sub.endDate.split('T')[0].split('-').reverse().join('/') : '--'}</span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-sm font-medium text-slate-500">Trạng thái</span>
           <span className="text-sm font-bold flex items-center gap-1">
-            <span className={`w-1.5 h-1.5 rounded-full ${(sub && new Date(sub.endDate) > new Date()) ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
-            <span className={(sub && new Date(sub.endDate) > new Date()) ? 'text-emerald-600' : 'text-slate-500'}>
-              {(sub && new Date(sub.endDate) > new Date()) ? 'Đang hoạt động' : 'Chưa có gói / Đã hết hạn'}
+            <span className={`w-1.5 h-1.5 rounded-full ${(sub && (sub.paymentStatus === 1 || sub.paymentStatus === 'Completed') && new Date(sub.endDate) > new Date()) ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
+            <span className={(sub && (sub.paymentStatus === 1 || sub.paymentStatus === 'Completed') && new Date(sub.endDate) > new Date()) ? 'text-emerald-600' : 'text-slate-500'}>
+              {(sub && (sub.paymentStatus === 1 || sub.paymentStatus === 'Completed') && new Date(sub.endDate) > new Date()) ? 'Đang hoạt động' : 'Chưa có gói / Đã hết hạn'}
             </span>
           </span>
         </div>
@@ -96,7 +100,7 @@ export function MemberProfile({ onNavigate }: { onNavigate: (page: MemberPage) =
         <div className="flex justify-between items-center pb-3 border-b border-slate-100">
           <span className="text-sm font-medium text-slate-500">Hạng thẻ</span>
           <span className="text-sm font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded-md">
-            {profile?.roleName || 'Member'}
+            {memSub?.packageName || profile?.roleName || 'Member'}
           </span>
         </div>
         <div className="flex justify-between items-center pb-3 border-b border-slate-100">
@@ -108,31 +112,41 @@ export function MemberProfile({ onNavigate }: { onNavigate: (page: MemberPage) =
         <div className="flex justify-between items-center">
           <span className="text-sm font-medium text-slate-500">Trạng thái thẻ</span>
           <span className="text-sm font-bold flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-            <span className="text-emerald-600">Hoạt động</span>
+            <span className={`w-1.5 h-1.5 rounded-full ${memSub ? ((memSub.paymentStatus === 1 || memSub.paymentStatus === 'Completed') && new Date(memSub.endDate) > new Date() ? 'bg-emerald-500' : 'bg-slate-400') : 'bg-emerald-500'}`}></span>
+            <span className={memSub ? ((memSub.paymentStatus === 1 || memSub.paymentStatus === 'Completed') && new Date(memSub.endDate) > new Date() ? 'text-emerald-600' : 'text-slate-500') : 'text-emerald-600'}>
+              {memSub ? ((memSub.paymentStatus === 1 || memSub.paymentStatus === 'Completed') && new Date(memSub.endDate) > new Date() ? 'Hoạt động' : 'Hết hạn') : 'Hoạt động'}
+            </span>
           </span>
         </div>
       </div>
     </div>
   );
 
-  return (
-    <MemberShell page="profile" onNavigate={onNavigate}>
-      <div className="w-full h-full overflow-y-auto bg-slate-50/50">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-slate-400">Đang tải thông tin...</p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {error && (
-              <div className="max-w-6xl mx-auto w-full p-4 bg-red-50 text-red-600 rounded-xl border border-red-200">
-                {error}
-              </div>
-            )}
-            <ProfileSettings
-              roleLabel={profile?.roleName || "Hội viên"}
-            initialData={profile ? {
+    let tierColor: 'blue' | 'gold' | 'black' | 'teal' = 'blue';
+    const activeRole = memSub?.packageName || profile?.roleName || "Hội viên";
+    const lowerRole = activeRole.toLowerCase();
+    if (lowerRole.includes('vip') || lowerRole.includes('black')) tierColor = 'black';
+    else if (lowerRole.includes('premium') || lowerRole.includes('gold')) tierColor = 'gold';
+    else if (lowerRole.includes('member')) tierColor = 'teal';
+
+    return (
+      <MemberShell page="profile" onNavigate={onNavigate}>
+        <div className="w-full h-full overflow-y-auto bg-slate-50/50">
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-slate-400">Đang tải thông tin...</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {error && (
+                <div className="max-w-6xl mx-auto w-full p-4 bg-red-50 text-red-600 rounded-xl border border-red-200">
+                  {error}
+                </div>
+              )}
+              <ProfileSettings
+                roleLabel={activeRole}
+                tierColor={tierColor}
+              initialData={profile ? {
               fullName: profile.fullName,
               phone: profile.phone,
               email: profile.email,

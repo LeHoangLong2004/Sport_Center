@@ -10,8 +10,12 @@ const navItems = [
   "Về chúng tôi",
 ];
 
-export function SiteHeader({ currentRoute }: { currentRoute: string }) {
+export function SiteHeader({ currentRoute, hideNav = false, forceSolidDark = false }: { currentRoute: string; hideNav?: boolean; forceSolidDark?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
+  const [user, setUser] = useState<any>(() => {
+    const userStr = localStorage.getItem("user");
+    return userStr ? JSON.parse(userStr) : null;
+  });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,6 +24,19 @@ export function SiteHeader({ currentRoute }: { currentRoute: string }) {
     window.addEventListener('scroll', handleScroll);
     handleScroll(); // init
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const handleStorage = () => {
+      const userStr = localStorage.getItem("user");
+      setUser(userStr ? JSON.parse(userStr) : null);
+    };
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('local-storage-update', handleStorage);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('local-storage-update', handleStorage);
+    };
   }, []);
 
   const getIsActive = (label: string) => {
@@ -37,9 +54,11 @@ export function SiteHeader({ currentRoute }: { currentRoute: string }) {
   return (
     <nav 
       className={`fixed top-0 left-0 right-0 h-[72px] flex items-center justify-between px-6 lg:px-[80px] z-50 transition-all duration-300 ${
-        scrolled 
-          ? 'bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm' 
-          : 'bg-transparent border-b border-transparent'
+        forceSolidDark 
+          ? 'bg-[#0f172a] border-b border-transparent' 
+          : scrolled 
+            ? 'bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm' 
+            : 'bg-transparent border-b border-transparent'
       }`}
     >
       <div className="flex gap-[10px] items-center shrink-0 cursor-pointer" data-name="logo-group">
@@ -47,12 +66,13 @@ export function SiteHeader({ currentRoute }: { currentRoute: string }) {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
         </div>
         <div className="flex flex-col gap-[2px] items-start shrink-0">
-          <p className={`font-extrabold text-[18px] leading-none tracking-tight ${scrolled ? 'text-slate-900' : 'text-slate-900 lg:text-white'}`}>SPORTCENTER</p>
+          <p className={`font-extrabold text-[18px] leading-none tracking-tight ${forceSolidDark ? 'text-white' : scrolled ? 'text-slate-900' : 'text-slate-900 lg:text-white'}`}>SPORTCENTER</p>
           <p className="font-semibold text-teal-500 text-[9px] uppercase leading-none tracking-widest">Energy Platform</p>
         </div>
       </div>
 
-      <div className="hidden lg:flex gap-[4px] h-full items-center">
+      {!hideNav && (
+        <div className="hidden lg:flex gap-[4px] h-full items-center">
         {navItems.map((label) => {
           const active = getIsActive(label);
           return (
@@ -64,8 +84,8 @@ export function SiteHeader({ currentRoute }: { currentRoute: string }) {
               <p
                 className={`text-[15px] whitespace-nowrap transition-colors ${
                   active 
-                    ? "font-bold text-teal-600" 
-                    : `font-medium ${scrolled ? 'text-slate-600 hover:text-teal-500' : 'text-slate-700 lg:text-slate-200 lg:hover:text-white'}`
+                    ? "font-bold text-teal-500" 
+                    : `font-medium ${forceSolidDark ? 'text-slate-300 hover:text-white' : scrolled ? 'text-slate-600 hover:text-teal-500' : 'text-slate-700 lg:text-slate-200 lg:hover:text-white'}`
                 }`}
               >
                 {label}
@@ -79,11 +99,11 @@ export function SiteHeader({ currentRoute }: { currentRoute: string }) {
           );
         })}
       </div>
+      )}
 
-      <div className="flex gap-[12px] items-center shrink-0">
-        {localStorage.getItem("user") ? (() => {
-          const userStr = localStorage.getItem("user");
-          const user = userStr ? JSON.parse(userStr) : null;
+      {!hideNav && (
+        <div className="flex gap-[12px] items-center shrink-0">
+        {user ? (() => {
           return (
             <div className="flex items-center gap-4">
               <button
@@ -107,15 +127,17 @@ export function SiteHeader({ currentRoute }: { currentRoute: string }) {
                   {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
                 </div>
                 <div className="flex flex-col items-start hidden sm:flex">
-                  <span className={`text-sm font-bold ${scrolled ? 'text-slate-700' : 'text-slate-800 lg:text-white'}`}>{user?.fullName || 'Người dùng'}</span>
-                  <span className={`text-[10px] font-semibold uppercase tracking-wider ${scrolled ? 'text-teal-600' : 'text-teal-600 lg:text-teal-300'}`}>Bảng điều khiển</span>
+                  <span className={`text-sm font-bold ${forceSolidDark ? 'text-white' : scrolled ? 'text-slate-700' : 'text-slate-800 lg:text-white'}`}>{user?.fullName || 'Người dùng'}</span>
+                  <span className={`text-[10px] font-semibold uppercase tracking-wider ${forceSolidDark ? 'text-teal-300' : scrolled ? 'text-teal-600' : 'text-teal-600 lg:text-teal-300'}`}>Bảng điều khiển</span>
                 </div>
               </button>
               <button 
                 className={`px-3 py-1.5 rounded-lg text-[13px] font-semibold border transition-colors ${
-                  scrolled 
-                    ? 'border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-red-500' 
-                    : 'border-transparent lg:border-white/20 text-slate-800 lg:text-white/80 lg:hover:bg-white/10 lg:hover:text-white'
+                  forceSolidDark 
+                    ? 'border-white/20 text-white/80 hover:bg-white/10 hover:text-white' 
+                    : scrolled 
+                      ? 'border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-red-500' 
+                      : 'border-transparent lg:border-white/20 text-slate-800 lg:text-white/80 lg:hover:bg-white/10 lg:hover:text-white'
                 }`}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -132,9 +154,11 @@ export function SiteHeader({ currentRoute }: { currentRoute: string }) {
           <>
             <button 
               className={`px-5 py-2.5 rounded-xl font-semibold text-[14px] transition-all ${
-                scrolled 
-                  ? 'text-slate-700 hover:bg-slate-100' 
-                  : 'text-slate-800 lg:text-white hover:bg-white/10'
+                forceSolidDark 
+                  ? 'text-white hover:bg-white/10' 
+                  : scrolled 
+                    ? 'text-slate-700 hover:bg-slate-100' 
+                    : 'text-slate-800 lg:text-white hover:bg-white/10'
               }`}
               data-name="btn-login"
             >
@@ -149,6 +173,7 @@ export function SiteHeader({ currentRoute }: { currentRoute: string }) {
           </>
         )}
       </div>
+      )}
     </nav>
   );
 }
