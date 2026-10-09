@@ -1,5 +1,5 @@
 import React from "react";
-import { A, Header } from "./shared";
+import { A } from "./shared";
 import { useApiResource } from "../../hooks/useApiResource";
 import { type InvoiceResponse } from "../../hooks/flow3Api";
 import { apiPost, formatDateTime, formatVnd } from "../../hooks/apiClient";
@@ -23,7 +23,6 @@ export function InvoiceScreen({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="bg-[#f8fafc] flex flex-col items-start w-full min-h-screen">
-      <Header />
       <div className="flex flex-col gap-6 items-center pb-20 pt-10 px-20 w-full">
         <div className="flex items-center justify-between w-[800px]">
           <button
@@ -53,7 +52,7 @@ export function InvoiceScreen({ onBack }: { onBack: () => void }) {
                   alert("Không tìm thấy mã hóa đơn!");
                 }
               }}
-              className="bg-[#2563eb] disabled:opacity-50 flex gap-2 items-center px-4 py-[10px] rounded-[6px] font-['Inter'] font-semibold text-white text-[13px] hover:bg-[#1d4ed8] transition-colors">
+              className="bg-teal-500 disabled:opacity-50 flex gap-2 items-center px-4 py-[10px] rounded-[6px] font-['Inter'] font-semibold text-white text-[13px] hover:bg-teal-600 transition-colors">
               <img src={`${A}/b30d5.svg`} className="size-[14px]" alt="" />
               Tải PDF
             </button>
@@ -163,7 +162,7 @@ export function InvoiceScreen({ onBack }: { onBack: () => void }) {
               </div>
               <div className="flex items-center justify-between w-full">
                 <span className="font-['Inter'] font-bold text-[#0f172a] text-sm">Tổng cộng thanh toán:</span>
-                <span className="font-['Inter'] font-extrabold text-[#2563eb] text-lg">{formatVnd(total)}</span>
+                <span className="font-['Inter'] font-extrabold text-teal-600 text-lg">{formatVnd(total)}</span>
               </div>
             </div>
           </div>

@@ -29,7 +29,8 @@ public static class PaymentEndpoints
                 req.Amount,
                 req.ResolvedMethod,
                 req.BillingPeriod,
-                req.AutoRenew);
+                req.AutoRenew,
+                req.StartDate);
 
             var response = new CreatePaymentResponse(result.InvoiceId, result.Message, result.IsDuplicateSuspected);
 
@@ -331,6 +332,9 @@ public class CreatePaymentRequest
 
     /// <summary>Đăng ký tự động gia hạn khi hết hạn (FR-012).</summary>
     public bool AutoRenew { get; set; }
+
+    /// <summary>Ngày bắt đầu do user chọn (nếu có)</summary>
+    public DateTime? StartDate { get; set; }
 
     /// <summary>Hình thức thanh toán sau khi hợp nhất hai tên trường tương thích.</summary>
     [System.Text.Json.Serialization.JsonIgnore]

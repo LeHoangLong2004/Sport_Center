@@ -45,7 +45,8 @@ public class PaymentService : IPaymentService
         decimal amount,
         PaymentMethod method,
         string? billingPeriod = null,
-        bool autoRenew = false)
+        bool autoRenew = false,
+        DateTime? startDate = null)
     {
         if (amount <= 0)
         {
@@ -92,8 +93,8 @@ public class PaymentService : IPaymentService
             PaymentStatus = PaymentStatus.Pending,
             BillingPeriod = period,
             AutoRenew = autoRenew,
-            StartDate = DateTime.UtcNow,
-            EndDate = AddPeriod(DateTime.UtcNow, period)
+            StartDate = startDate ?? DateTime.UtcNow,
+            EndDate = AddPeriod(startDate ?? DateTime.UtcNow, period)
         };
 
         var invoice = new Invoice
@@ -135,10 +136,13 @@ public class PaymentService : IPaymentService
                 .Select(s => (DateTime?)s.EndDate)
                 .FirstOrDefault();
 
-            subscription.StartDate = activeEndDate.HasValue && activeEndDate.Value > DateTime.UtcNow
-                ? activeEndDate.Value
-                : DateTime.UtcNow;
-            subscription.EndDate = AddPeriod(subscription.StartDate, period);
+            if (subscription.StartDate <= DateTime.UtcNow)
+            {
+                subscription.StartDate = activeEndDate.HasValue && activeEndDate.Value > DateTime.UtcNow
+                    ? activeEndDate.Value
+                    : DateTime.UtcNow;
+                subscription.EndDate = AddPeriod(subscription.StartDate, period);
+            }
 
             await _subscriptionRepository.UpdateAsync(subscription);
         }

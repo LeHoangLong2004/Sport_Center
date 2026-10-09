@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { Screen, BillingPeriod, PackageId, PaymentMethodId } from "./shared";
+import { Screen, BillingPeriod, PaymentMethodId } from "./shared";
+import { SiteHeader } from "../../components/SiteHeader";
+import { SiteFooter } from "../../components/SiteFooter";
 import { PackageScreen } from "./PackageScreen";
 import { MemberInfoScreen } from "./MemberInfoScreen";
 import { PaymentMethodScreen } from "./PaymentMethodScreen";
@@ -17,11 +19,80 @@ const PAYMENT_METHOD_IDS: Record<PaymentMethodId, number> = {
   counter: 3,
 };
 
-export default function PaymentFlow({ onExit, initialPlan }: { onExit: () => void; initialPlan?: PackageId }) {
+export default function PaymentFlow({ onExit, initialPlan, initialPeriod }: { onExit: (dest?: string) => void; initialPlan?: string; initialPeriod?: string }) {
   const [screen, setScreen] = useState<Screen>(initialPlan ? "member-info" : "package")
-  const [period, setPeriod] = useState<BillingPeriod>("yearly")
-  const [pkg, setPkg] = useState<PackageId>(initialPlan || "fitness")
+  const [period, setPeriod] = useState<BillingPeriod>((initialPeriod as BillingPeriod) || "yearly")
+  const [pkg, setPkg] = useState<string>(initialPlan || "")
   const [method, setMethod] = useState<PaymentMethodId>("qr")
+  const [allPackages, setAllPackages] = useState<Record<string, any>>({});
+  const [loading, setLoading] = useState(true);
+
+  const [formData, setFormData] = useState(() => {
+    const defaultData = {
+      fullName: "",
+      phone: "",
+      email: "",
+      dob: "",
+      gender: "Nữ",
+      emergencyContact: "",
+      startDate: new Date().toISOString().split('T')[0],
+      branch: "Chi nhánh Quận 1 - Flagship Center"
+    };
+
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        return {
+          ...defaultData,
+          fullName: u.fullName || "",
+          phone: u.phoneNumber || "",
+          email: u.email || "",
+          dob: u.dateOfBirth ? u.dateOfBirth.split('T')[0] : "",
+          gender: u.gender || "Nữ"
+        };
+      }
+    } catch (e) {}
+
+    return defaultData;
+  });
+
+  React.useEffect(() => {
+    fetch("/api/packages")
+      .then(res => res.json())
+      .then(data => {
+        const dict: Record<string, any> = {};
+        data.forEach((p: any) => {
+          dict[p.id] = {
+            id: p.id,
+            name: p.name,
+            tagline: p.packageType === "membership" ? "Gói Thành Viên" : "Gói Tập",
+            monthly: p.monthlyPrice,
+            yearly: p.yearlyPrice || (p.monthlyPrice * 10),
+            features: p.features?.map((f: any) => typeof f === 'string' ? f : f.featureText || "") || []
+          };
+        });
+        setAllPackages(dict);
+        if (!initialPlan && data.length > 0) {
+          setPkg(data[0].id);
+        } else if (initialPlan && !dict[initialPlan] && data.length > 0) {
+          setPkg(data[0].id);
+        } else if (initialPlan && dict[initialPlan]) {
+          setPkg(initialPlan);
+        }
+        setLoading(false);
+      })
+      .catch(e => {
+        console.error(e);
+        setLoading(false);
+      });
+  }, [initialPlan]);
+
+  if (loading) {
+    return <div className="flex h-screen w-full items-center justify-center bg-[#f8fafc]">Đang tải dữ liệu...</div>;
+  }
+
+  const pkgData = allPackages[pkg] || Object.values(allPackages)[0];
 
   async function goProcessing() {
     setScreen("processing");
@@ -37,12 +108,13 @@ export default function PaymentFlow({ onExit, initialPlan }: { onExit: () => voi
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId,
+          userId: userId,
           packageId: pkg,
-          amount: period === "yearly" ? 5000000 : 500000,
+          amount: period === "yearly" ? pkgData.yearly : pkgData.monthly,
           paymentMethod: PAYMENT_METHOD_IDS[method],
           billingPeriod: period,
           autoRenew: false,
+          startDate: formData.startDate ? new Date(formData.startDate).toISOString() : undefined,
         })
       });
 
@@ -69,45 +141,76 @@ export default function PaymentFlow({ onExit, initialPlan }: { onExit: () => voi
 
   if (screen === "package") {
     return (
-      <PackageScreen
-        period={period}
-        setPeriod={setPeriod}
-        selected={pkg}
-        setSelected={setPkg}
-        onNext={() => setScreen("member-info")}
-      />
+      <div className="flex flex-col min-h-screen bg-[#f8fafc]">
+        <SiteHeader currentRoute="pricing" forceSolidDark={true} />
+        <div className="flex-1 pt-[72px]">
+          <PackageScreen
+            allPackages={allPackages}
+            period={period}
+            setPeriod={setPeriod}
+            selected={pkg}
+            setSelected={setPkg}
+            onNext={() => setScreen("member-info")}
+          />
+        </div>
+        <SiteFooter />
+      </div>
     )
   }
   if (screen === "member-info") {
     return (
-      <MemberInfoScreen
-        pkg={pkg}
-        period={period}
-        onNext={() => setScreen("payment-method")}
-        onBack={() => setScreen("package")}
-      />
+      <div className="flex flex-col min-h-screen bg-[#f8fafc]">
+        <SiteHeader currentRoute="pricing" forceSolidDark={true} />
+        <div className="flex-1 pt-[72px]">
+          <MemberInfoScreen
+            pkg={pkgData}
+            period={period}
+            formData={formData}
+            setFormData={setFormData}
+            onNext={() => setScreen("payment-method")}
+            onBack={() => {
+              if (initialPlan) onExit("pricing")
+              else setScreen("package")
+            }}
+          />
+        </div>
+        <SiteFooter />
+      </div>
     )
   }
   if (screen === "payment-method") {
     return (
-      <PaymentMethodScreen
-        pkg={pkg}
-        period={period}
-        method={method}
-        setMethod={setMethod}
-        onNext={() => setScreen("otp")}
-        onBack={() => setScreen("member-info")}
-      />
+      <div className="flex flex-col min-h-screen bg-[#f8fafc]">
+        <SiteHeader currentRoute="pricing" forceSolidDark={true} />
+        <div className="flex-1 pt-[72px]">
+          <PaymentMethodScreen
+            pkg={pkgData}
+            period={period}
+            method={method}
+            setMethod={setMethod}
+            formData={formData}
+            onNext={goProcessing}
+            onBack={() => setScreen("member-info")}
+          />
+        </div>
+        <SiteFooter />
+      </div>
     )
   }
   if (screen === "otp") {
     return (
-      <OTPScreen
-        pkg={pkg}
-        period={period}
-        onConfirm={goProcessing}
-        onCancel={() => setScreen("failed")}
-      />
+      <div className="flex flex-col min-h-screen bg-[#f8fafc]">
+        <SiteHeader currentRoute="pricing" forceSolidDark={true} />
+        <div className="flex-1 pt-[72px]">
+          <OTPScreen
+            pkg={pkgData}
+            period={period}
+            onConfirm={goProcessing}
+            onCancel={() => setScreen("failed")}
+          />
+        </div>
+        <SiteFooter />
+      </div>
     )
   }
   if (screen === "processing") {
@@ -115,19 +218,34 @@ export default function PaymentFlow({ onExit, initialPlan }: { onExit: () => voi
   }
   if (screen === "success") {
     return (
-      <SuccessScreen
-        onActivate={() => setScreen("card")}
-        onHome={onExit}
-        onInvoice={() => setScreen("invoice")}
-      />
+      <div className="flex flex-col min-h-screen bg-[#f8fafc]">
+        <SiteHeader currentRoute="pricing" forceSolidDark={true} />
+        <div className="flex-1 pt-[72px]">
+          <SuccessScreen
+            pkg={pkgData}
+            period={period}
+            formData={formData}
+            onActivate={() => setScreen("card")}
+            onHome={onExit}
+            onInvoice={() => setScreen("invoice")}
+          />
+        </div>
+        <SiteFooter />
+      </div>
     )
   }
   if (screen === "failed") {
     return (
-      <FailedScreen
-        onRetry={() => setScreen("otp")}
-        onChangeMethod={() => setScreen("payment-method")}
-      />
+      <div className="flex flex-col min-h-screen bg-[#f8fafc]">
+        <SiteHeader currentRoute="pricing" forceSolidDark={true} />
+        <div className="flex-1 pt-[72px]">
+          <FailedScreen
+            onRetry={goProcessing}
+            onChangeMethod={() => setScreen("payment-method")}
+          />
+        </div>
+        <SiteFooter />
+      </div>
     )
   }
   if (screen === "invoice") {
@@ -139,3 +257,4 @@ export default function PaymentFlow({ onExit, initialPlan }: { onExit: () => voi
 
   return null
 }
+
