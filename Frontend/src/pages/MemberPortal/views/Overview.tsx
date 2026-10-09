@@ -20,7 +20,9 @@ function ScheduleList() {
         const d = new Date(item.startTime);
         return (
           <div className="mp-schedule-row" key={idx}>
-            <strong>{d.toLocaleDateString('vi-VN')} • {d.getHours()}:{String(d.getMinutes()).padStart(2, '0')}</strong>
+            <strong>
+              {d.toLocaleDateString('vi-VN')} {d.getHours()}:{String(d.getMinutes()).padStart(2, '0')}
+            </strong>
             <span>{item.className || item.sportType || 'Lớp học'}</span>
             <span>{item.coachName || 'N/A'}</span>
           </div>
@@ -47,7 +49,7 @@ function StatCards() {
   }, []);
 
   const daysLeft = sub ? Math.ceil((new Date(sub.endDate).getTime() - Date.now()) / (1000 * 3600 * 24)) : 0;
-  
+
   return (
     <div className="mp-stat-grid">
       <div className="mp-stat-card teal">
@@ -72,20 +74,35 @@ function StatCards() {
 export function Overview({
   onNavigate,
 }: {
-  onNavigate: (page: MemberPage) => void
+  onNavigate: (page: MemberPage) => void;
 }) {
   const { profile } = useUserProfile();
   const userName = profile?.fullName ? profile.fullName.split(' ').pop() : 'Hội viên';
 
-  const [message, setMessage] = useState("")
-  const [conversation, setConversation] = useState<string[]>([])
+  const [message, setMessage] = useState("");
+  const [conversation, setConversation] = useState<string[]>([]);
+  const [upcomingBookings, setUpcomingBookings] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    const token = localStorage.getItem("token");
+    fetch('/api/schedule/my', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setUpcomingBookings(data);
+        }
+      })
+      .catch(e => console.error("Error fetching overview schedule:", e));
+  }, []);
 
   function sendMessage(event: FormEvent) {
-    event.preventDefault()
-    const cleanMessage = message.trim()
-    if (!cleanMessage) return
-    setConversation((current) => [...current, cleanMessage])
-    setMessage("")
+    event.preventDefault();
+    const cleanMessage = message.trim();
+    if (!cleanMessage) return;
+    setConversation(current => [...current, cleanMessage]);
+    setMessage("");
   }
 
   return (
@@ -111,12 +128,17 @@ export function Overview({
             <StatCards />
 
             <div className="mp-card">
-              <strong className="mp-card-label">Lịch sắp tới</strong>
+              <div className="flex items-center justify-between mb-3">
+                <strong className="mp-card-label">Lịch sắp tới</strong>
+                <button onClick={() => onNavigate("classes")} className="text-xs text-teal-600 font-bold hover:underline">
+                  Quản lý đơn đặt
+                </button>
+              </div>
               <div className="mp-schedule-table">
                 <div className="mp-schedule-head">
                   <span>THỜI GIAN</span>
                   <span>LỚP</span>
-                  <span>COACH</span>
+                  <span>TRẠNG THÁI</span>
                 </div>
                 <ScheduleList />
               </div>
@@ -125,8 +147,7 @@ export function Overview({
             <div className="mp-card mp-notice-card">
               <strong className="mp-card-label">Thông báo</strong>
               <span>
-                Coach đã cập nhật kế hoạch tuần 5 • Gói Premium sẽ gia hạn sau
-                88 ngày
+                Coach đã cập nhật kế hoạch tuần 5 • Gói Premium sẽ gia hạn sau 88 ngày
               </span>
               <small>1 cập nhật mới</small>
             </div>
@@ -146,15 +167,13 @@ export function Overview({
               </div>
             </div>
             <p className="mp-ai-message">
-              Chào {userName}! Hôm nay bạn có lớp HIIT lúc 18:30. Mình đề xuất
-              khởi động gối 8 phút trước buổi tập.
+              Chào {userName}! Hôm nay bạn có lớp HIIT lúc 18:30. Mình đề xuất khởi động gối 8 phút trước buổi tập.
             </p>
             <p className="mp-user-message">
               Tôi có thể đổi sang lớp nhẹ hơn không?
             </p>
             <p className="mp-ai-message">
-              Có. Yoga Recovery lúc 19:00 còn 6 chỗ và phù hợp với tình trạng
-              đầu gối hôm nay. Bạn muốn mình giữ chỗ?
+              Có. Yoga Recovery lúc 19:00 còn 6 chỗ và phù hợp với tình trạng đầu gối hôm nay. Bạn muốn mình giữ chỗ?
             </p>
             {conversation.map((item, index) => (
               <p className="mp-user-message" key={`${item}-${index}`}>
@@ -166,7 +185,7 @@ export function Overview({
               "Lịch tập tuần này",
               "Bài tập phục hồi gối",
               "Quyền lợi gói Premium",
-            ].map((suggestion) => (
+            ].map(suggestion => (
               <button
                 className="mp-suggestion"
                 key={suggestion}
@@ -179,7 +198,7 @@ export function Overview({
             <form className="mp-message-input" onSubmit={sendMessage}>
               <input
                 aria-label="Tin nhắn cho Move AI"
-                onChange={(event) => setMessage(event.target.value)}
+                onChange={event => setMessage(event.target.value)}
                 placeholder="Hỏi về lịch, bài tập, dịch vụ..."
                 value={message}
               />
@@ -191,5 +210,5 @@ export function Overview({
         </div>
       </section>
     </MemberShell>
-  )
+  );
 }

@@ -14,8 +14,7 @@ public static class UserEndpoints
 {
     public static void MapUserEndpoints(this IEndpointRouteBuilder app)
     {
-        // Nhóm API quản lý tài khoản: CHỈ MANAGER MỚI CÓ QUYỀN TRUY CẬP
-        var managerAuth = new AuthorizeAttribute { Roles = "manager" };
+        var managerAuth = new AuthorizeAttribute { Roles = "manager,receptionist" };
 
         var group = app.MapGroup("/api/users").RequireAuthorization();
 
@@ -25,6 +24,11 @@ public static class UserEndpoints
             return Results.Ok(users);
         }).RequireAuthorization(managerAuth);
 
+        group.MapGet("/members-lookup", async (SmartGym.Application.Interfaces.IUserRepository userRepo) =>
+        {
+            var members = await userRepo.GetMembersLookupAsync();
+            return Results.Ok(members);
+        });
         group.MapGet("/{id:guid}", async (Guid id, HttpContext context, IUserService userService) =>
         {
             var role = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;

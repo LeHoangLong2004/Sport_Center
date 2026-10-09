@@ -12,4 +12,5 @@ public interface IBookingRepository
     Task<Booking?> GetFirstWaitlistAsync(Guid scheduleId);
     Task<int> CountWaitlistAsync(Guid scheduleId);
     Task<Booking?> FindByMemberAndScheduleAsync(Guid memberId, Guid scheduleId);
+    Task<IReadOnlyList<Booking>> GetAllAsync();
 }
