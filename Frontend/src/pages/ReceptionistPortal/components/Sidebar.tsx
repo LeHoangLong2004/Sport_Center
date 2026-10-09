@@ -76,7 +76,7 @@ export function Sidebar({ page, onNavigate, onLogout }: { page: Page; onNavigate
             </button>
             <button 
               type="button" 
-              onClick={(e) => { e.stopPropagation(); onLogout(); window.location.hash = "home"; window.location.reload(); }}
+              onClick={(e) => { e.stopPropagation(); onLogout(); localStorage.removeItem("user"); localStorage.removeItem("accessToken"); window.location.hash = "login"; window.location.reload(); }}
               className="p-1.5 text-[#94a3b8] hover:text-red-400 hover:bg-red-400/10 rounded-md transition-colors"
               title="Đăng xuất"
             >

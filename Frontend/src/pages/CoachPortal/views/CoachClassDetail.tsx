@@ -30,7 +30,7 @@ const ATTENDANCE_LABEL: Record<string, string> = {
   "chưa điểm danh": "Chưa điểm danh",
   attended:          "Có mặt",
   no_show:           "Vắng",
-  late:              "Đi trễ (Demo)",
+  late:              "Đi trễ",
 };
 
 export default function CoachClassDetail({ sessionId, navigateTo }: Props) {

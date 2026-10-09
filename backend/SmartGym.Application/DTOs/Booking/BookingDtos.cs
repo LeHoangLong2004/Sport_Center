@@ -31,6 +31,7 @@ public sealed record PersonalScheduleEntry(
     string ClassName,
     string SportType,
     string RoomName,
+    string CoachName,
     DateTime StartTime,
     DateTime EndTime,
     string Role,

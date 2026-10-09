@@ -12,6 +12,42 @@ namespace SmartGym.Api.Endpoints
 {
     public static class CoachEndpoints
     {
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, System.Collections.Generic.List<object>> _mockAttendance = new();
+        private static readonly System.Text.Json.Nodes.JsonArray _mockCurricula = new System.Text.Json.Nodes.JsonArray
+        {
+            new System.Text.Json.Nodes.JsonObject
+            {
+                ["id"] = "cur1",
+                ["name"] = "Yoga Cơ Bản – Tuần 1",
+                ["sport"] = "Yoga",
+                ["goal"] = "Linh hoạt",
+                ["level"] = "Cơ bản",
+                ["duration"] = 60,
+                ["status"] = "Đã giao",
+                ["updatedAt"] = "2023-10-20",
+                ["description"] = "Giáo án tuần đầu",
+                ["exercises"] = new System.Text.Json.Nodes.JsonArray
+                {
+                    new System.Text.Json.Nodes.JsonObject
+                    {
+                        ["name"] = "Khởi động",
+                        ["reps"] = "5 phút",
+                        ["rest"] = "0",
+                        ["note"] = ""
+                    }
+                },
+                ["assignedTo"] = new System.Text.Json.Nodes.JsonArray
+                {
+                    new System.Text.Json.Nodes.JsonObject
+                    {
+                        ["type"] = "class",
+                        ["id"] = "cls-yoga",
+                        ["name"] = "Yoga Cơ Bản – Lớp A"
+                    }
+                }
+            }
+        };
+
         public static void MapCoachEndpoints(this IEndpointRouteBuilder app)
         {
             var group = app.MapGroup("/api/coach");
@@ -45,69 +81,163 @@ namespace SmartGym.Api.Endpoints
             });
 
             // 4. Session Members
-            group.MapGet("/sessions/{sessionId}/members", (string sessionId) =>
+            group.MapGet("/sessions/{sessionId}/members", async (string sessionId, SmartGymDbContext db) =>
             {
-                var members = new[]
-                {
-                    new { id = "m1", name = "Nguyễn Lan Anh", code = "MB001", avatar = "https://i.pravatar.cc/80?u=lananh", goal = "Giảm cân", level = "Cơ bản", sport = "Yoga", phone = "0901234001", email = "lananh@demo.vn", classIds = new[] { "s1", "s3" } },
-                    new { id = "m3", name = "Vũ Thu Trang", code = "MB003", avatar = "https://i.pravatar.cc/80?u=thutrang", goal = "Sức khỏe", level = "Trung cấp", sport = "Bơi", phone = "0901234003", email = "thutrang@demo.vn", classIds = new[] { "s1", "s2" } }
-                };
+                var members = await db.Users
+                    .Include(u => u.Role)
+                    .Where(u => u.Role.Name == "member")
+                    .Take(2)
+                    .Select(u => new
+                    {
+                        id = u.Id.ToString(),
+                        name = u.FullName ?? (u.Email != null ? u.Email.Split('@', StringSplitOptions.None)[0] : "User"),
+                        code = "MB" + u.Id.ToString().Substring(0, 4).ToUpper(),
+                        avatar = "https://ui-avatars.com/api/?name=" + Uri.EscapeDataString(u.FullName ?? "User"),
+                        goal = "Giảm cân",
+                        level = "Cơ bản",
+                        sport = "Yoga",
+                        phone = u.PhoneNumber ?? "0900000000",
+                        email = u.Email ?? "",
+                        classIds = new string[] { sessionId }
+                    }).ToListAsync();
                 return Results.Ok(members);
             });
 
             // 4b. All Members
-            group.MapGet("/members", () =>
+            group.MapGet("/members", async (SmartGymDbContext db) =>
             {
-                var allMembers = new[]
-                {
-                    new { id = "m1", name = "Nguyễn Lan Anh", code = "MB001", avatar = "https://i.pravatar.cc/80?u=lananh", goal = "Giảm cân", level = "Cơ bản", sport = "Yoga", phone = "0901234001", email = "lananh@demo.vn", classIds = new[] { "s1", "s3" } },
-                    new { id = "m2", name = "Lê Minh Triết", code = "MB002", avatar = "https://i.pravatar.cc/80?u=minhtri", goal = "Tăng cơ", level = "Nâng cao", sport = "Gym", phone = "0901234002", email = "minhtri@demo.vn", classIds = new[] { "s2", "s4" } },
-                    new { id = "m3", name = "Vũ Thu Trang", code = "MB003", avatar = "https://i.pravatar.cc/80?u=thutrang", goal = "Sức khỏe", level = "Trung cấp", sport = "Bơi", phone = "0901234003", email = "thutrang@demo.vn", classIds = new[] { "s1", "s2" } },
-                    new { id = "m4", name = "Trần Minh Khoa", code = "MB004", avatar = "https://i.pravatar.cc/80?u=minhkhoa", goal = "CrossFit", level = "Nâng cao", sport = "CrossFit", phone = "0901234004", email = "minhkhoa@demo.vn", classIds = new[] { "s2", "s3" } },
-                    new { id = "m5", name = "Phạm Quỳnh Anh", code = "MB005", avatar = "https://i.pravatar.cc/80?u=quynhanh", goal = "Yoga", level = "Cơ bản", sport = "Yoga", phone = "0901234005", email = "quynhanh@demo.vn", classIds = new[] { "s1" } }
-                };
+                var allMembers = await db.Users
+                    .Include(u => u.Role)
+                    .Where(u => u.Role.Name == "member")
+                    .Select(u => new
+                    {
+                        id = u.Id.ToString(),
+                        name = u.FullName ?? (u.Email != null ? u.Email.Split('@', StringSplitOptions.None)[0] : "User"),
+                        code = "MB" + u.Id.ToString().Substring(0, 4).ToUpper(),
+                        avatar = "https://ui-avatars.com/api/?name=" + Uri.EscapeDataString(u.FullName ?? "User"),
+                        goal = "Sức khỏe",
+                        level = "Cơ bản",
+                        sport = "Đa môn",
+                        phone = u.PhoneNumber ?? "0900000000",
+                        email = u.Email ?? "",
+                        classIds = new string[] { }
+                    }).ToListAsync();
                 return Results.Ok(allMembers);
             });
 
             // 5. Attendance Get
-            group.MapGet("/sessions/{sessionId}/attendance", (string sessionId) =>
+            group.MapGet("/sessions/{sessionId}/attendance", async (string sessionId, SmartGymDbContext db) =>
             {
-                return Results.Ok(new[] {
-                    new { sessionId, memberId = "m1", status = "chưa điểm danh", note = "" },
-                    new { sessionId, memberId = "m3", status = "chưa điểm danh", note = "" }
-                });
+                if (_mockAttendance.TryGetValue(sessionId, out var savedAttendance))
+                {
+                    return Results.Ok(savedAttendance);
+                }
+
+                var members = await db.Users.Include(u => u.Role).Where(u => u.Role.Name == "member").Take(2).ToListAsync();
+                var attendance = members.Select(m => new { sessionId, memberId = m.Id.ToString(), status = "chưa điểm danh", note = "" }).Cast<object>().ToList();
+                return Results.Ok(attendance);
             });
 
             // 6. Attendance Draft
             group.MapPost("/sessions/{sessionId}/attendance/draft", (string sessionId, [FromBody] System.Text.Json.JsonElement request) =>
             {
+                if (request.TryGetProperty("records", out var recordsElement) && recordsElement.ValueKind == System.Text.Json.JsonValueKind.Array)
+                {
+                    var list = new System.Collections.Generic.List<object>();
+                    foreach (var record in recordsElement.EnumerateArray())
+                    {
+                        var mId = record.TryGetProperty("memberId", out var mProp) ? mProp.GetString() : "";
+                        var st = record.TryGetProperty("status", out var sProp) ? sProp.GetString() : "chưa điểm danh";
+                        var nt = record.TryGetProperty("note", out var nProp) ? nProp.GetString() : "";
+                        list.Add(new
+                        {
+                            sessionId = sessionId,
+                            memberId = mId,
+                            status = st,
+                            note = nt
+                        });
+                    }
+                    _mockAttendance[sessionId] = list;
+                }
                 return Results.Ok(new { success = true, message = "Đã lưu nháp thành công!" });
             });
 
             // 7. Attendance Finalize
             group.MapPost("/sessions/{sessionId}/attendance/finalize", (string sessionId, [FromBody] System.Text.Json.JsonElement request) =>
             {
+                if (request.TryGetProperty("records", out var recordsElement) && recordsElement.ValueKind == System.Text.Json.JsonValueKind.Array)
+                {
+                    var list = new System.Collections.Generic.List<object>();
+                    foreach (var record in recordsElement.EnumerateArray())
+                    {
+                        var mId = record.TryGetProperty("memberId", out var mProp) ? mProp.GetString() : "";
+                        var st = record.TryGetProperty("status", out var sProp) ? sProp.GetString() : "chưa điểm danh";
+                        var nt = record.TryGetProperty("note", out var nProp) ? nProp.GetString() : "";
+                        list.Add(new
+                        {
+                            sessionId = sessionId,
+                            memberId = mId,
+                            status = st,
+                            note = nt
+                        });
+                    }
+                    _mockAttendance[sessionId] = list;
+                }
                 return Results.Ok(new { success = true, message = "Đã chốt điểm danh!" });
             });
 
             // 8. Curriculum Get
             group.MapGet("/curricula", () =>
             {
-                var curricula = new[] {
-                    new { id = "cur1", name = "Yoga Cơ Bản – Tuần 1", sport = "Yoga", goal = "Linh hoạt", level = "Cơ bản", duration = 60, status = "Đã giao", updatedAt = "2023-10-20", description = "Giáo án tuần đầu", exercises = new[] { new { name = "Khởi động", reps = "5 phút", rest = "0", note = "" } }, assignedTo = new[] { new { type = "class", id = "cls-yoga", name = "Yoga Cơ Bản – Lớp A" } } }
-                };
-                return Results.Ok(curricula);
+                return Results.Ok(_mockCurricula);
             });
 
             // 9. Curriculum Save
             group.MapPost("/curricula", ([FromBody] System.Text.Json.JsonElement request) =>
             {
+                var id = request.GetProperty("id").GetString();
+                var existingIndex = -1;
+                for (int i = 0; i < _mockCurricula.Count; i++)
+                {
+                    if (_mockCurricula[i]?["id"]?.GetValue<string>() == id)
+                    {
+                        existingIndex = i;
+                        break;
+                    }
+                }
+
+                var newObj = System.Text.Json.Nodes.JsonObject.Create(request);
+                if (existingIndex >= 0)
+                {
+                    _mockCurricula[existingIndex] = newObj;
+                }
+                else
+                {
+                    _mockCurricula.Add(newObj);
+                }
+                
                 return Results.Ok(new { success = true });
             });
 
             // 10. Curriculum Assign
             group.MapPost("/curricula/{id}/assign", (string id, [FromBody] System.Text.Json.JsonElement request) =>
             {
+                for (int i = 0; i < _mockCurricula.Count; i++)
+                {
+                    if (_mockCurricula[i]?["id"]?.GetValue<string>() == id)
+                    {
+                        var target = System.Text.Json.Nodes.JsonObject.Create(request);
+                        var assignedTo = _mockCurricula[i]["assignedTo"]?.AsArray();
+                        if (assignedTo == null)
+                        {
+                            assignedTo = new System.Text.Json.Nodes.JsonArray();
+                            _mockCurricula[i]["assignedTo"] = assignedTo;
+                        }
+                        assignedTo.Add(target);
+                        _mockCurricula[i]["status"] = "Đã giao";
+                        break;
+                    }
+                }
                 return Results.Ok(new { success = true });
             });
 

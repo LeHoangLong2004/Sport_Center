@@ -125,7 +125,8 @@ public static class BookingEndpoints
         schedule.MapGet("/my", async (
             HttpContext context,
             IBookingRepository bookingRepo,
-            IClassScheduleRepository scheduleRepo) =>
+            IClassScheduleRepository scheduleRepo,
+            IUserRepository userRepo) =>
         {
             var userId = GetUserId(context);
             if (userId is null) return Results.Unauthorized();
@@ -138,7 +139,7 @@ public static class BookingEndpoints
             {
                 var coachClasses = await scheduleRepo.GetByCoachAsync(userId.Value);
                 entries = coachClasses.Select(s => new PersonalScheduleEntry(
-                    s.Id, s.ClassName, s.SportType, s.RoomName,
+                    s.Id, s.ClassName, s.SportType, s.RoomName, "Bạn",
                     s.StartTime, s.EndTime, "Coach", null
                 )).ToList();
             }
@@ -150,8 +151,10 @@ public static class BookingEndpoints
                 var entryTasks = myBookings.Select(async b =>
                 {
                     var s = await scheduleRepo.FindByIdAsync(b.ScheduleId);
-                    return s is null ? null : new PersonalScheduleEntry(
-                        s.Id, s.ClassName, s.SportType, s.RoomName,
+                    if (s is null) return null;
+                    var coach = await userRepo.FindByIdAsync(s.CoachId);
+                    return new PersonalScheduleEntry(
+                        s.Id, s.ClassName, s.SportType, s.RoomName, coach?.FullName ?? "Unknown",
                         s.StartTime, s.EndTime, "Member", b.Status.ToString()
                     );
                 });

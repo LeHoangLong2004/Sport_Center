@@ -14,6 +14,8 @@ import { PayrollPage } from './views/PayrollPage';
 import { PLReportPage } from './views/PLReportPage';
 import { MemberEditPage } from './views/MemberEditPage';
 import { MembersPage } from './views/MembersPage';
+import { StaffPage } from './views/StaffPage';
+import { FacilitiesPage } from './views/FacilitiesPage';
 import { SettingsPage } from './views/SettingsPage';
 import { ProfileSettings } from '../../components/ProfileSettings';
 
@@ -27,6 +29,8 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     packages:   ["Quản lý / Gói hội viên", "Danh sách Gói hội viên"],
     schedule:   ["Quản lý / Lịch trình", "Lịch trình & Lớp học"],
     members:    ["Quản lý / Người dùng / Hội viên", "Quản lý người dùng"],
+    staff:      ["Quản lý / Người dùng / Nhân sự", "Quản lý nhân sự"],
+    facilities: ["Quản lý / Bộ môn & phòng tập", "Danh mục Bộ môn & Phòng tập"],
     payment:    ["Quản lý / Thanh toán & Hóa đơn",  "Thanh toán & Hóa đơn"],
     reports:    ["Quản lý / Báo cáo & Thống kê",    "Báo cáo & Thống kê"],
     budget:     ["Tài chính / Ngân sách",            "Quản lý ngân sách"],
@@ -50,6 +54,8 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           {page === "packages"   && <PackagesPage />}
           {page === "schedule"   && <SchedulePage />}
           {page === "members"    && <MembersPage onEditMember={(member) => { setSelectedMember(member); setPage("member-edit"); }} />}
+          {page === "staff"      && <StaffPage />}
+          {page === "facilities" && <FacilitiesPage />}
           {page === "payment"    && <PaymentPage />}
           {page === "reports"    && <ReportsPage />}
           {page === "budget"     && <BudgetPage />}

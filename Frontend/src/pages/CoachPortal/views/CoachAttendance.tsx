@@ -12,7 +12,7 @@ const STATUS_OPTIONS: { value: AttendanceStatus; label: string; style: string }[
   { value: "chưa điểm danh", label: "Chưa điểm danh", style: "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300" },
   { value: "attended",        label: "Có mặt",         style: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
   { value: "no_show",         label: "Vắng",           style: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" },
-  { value: "late",            label: "Đi trễ (Demo)", style: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
+  { value: "late",            label: "Đi trễ",         style: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
 ];
 
 export default function CoachAttendance({ initialSessionId, navigateTo }: Props) {
