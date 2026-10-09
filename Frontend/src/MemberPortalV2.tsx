@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react"
+import { FormEvent, useState, useEffect } from "react"
 import { MemberSidebar } from "./pages/MemberPortal/components/MemberSidebar"
 
 export type NewMemberPage = "schedule" | "success" | "workout" | "ai"
@@ -106,74 +106,163 @@ function Shell({
 }
 
 const days = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"]
-const calendarEvents = [
-  { row: 1, column: 3, tone: "teal", title: "Yoga Flow", detail: "Mai Phương", meta: "Studio 1" },
-  { row: 2, column: 6, tone: "green", title: "Tự tập tự do", detail: "Không có PT", meta: "Khu Gym" },
-  { row: 3, column: 1, tone: "green", title: "Cardio tự do", detail: "Tập máy chạy" },
-  { row: 3, column: 2, tone: "teal", title: "Functional HIIT", detail: "Trần Khoa" },
-  { row: 3, column: 5, tone: "orange", title: "PT cá nhân", detail: "Trần Khoa" },
-]
+// Mock data removed in favor of dynamic fetching
 
 function Schedule({ onNavigate }: { onNavigate: Navigate }) {
+  const [allEvents, setAllEvents] = useState<any[]>([]);
+  const [currentWeekStart, setCurrentWeekStart] = useState(() => {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(d.setDate(diff));
+    monday.setHours(0, 0, 0, 0);
+    return monday;
+  });
+
+  const getWeekString = () => {
+    const end = new Date(currentWeekStart);
+    end.setDate(end.getDate() + 6);
+    const formatDate = (date: Date) => `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+    return `${formatDate(currentWeekStart)} - ${formatDate(end)}, ${end.getFullYear()}`;
+  };
+
+  const handlePrevWeek = () => {
+    const prev = new Date(currentWeekStart);
+    prev.setDate(prev.getDate() - 7);
+    setCurrentWeekStart(prev);
+  };
+
+  const handleNextWeek = () => {
+    const next = new Date(currentWeekStart);
+    next.setDate(next.getDate() + 7);
+    setCurrentWeekStart(next);
+  };
+
+  useEffect(() => {
+    const fetchSchedule = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("/api/schedule/my", {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const formatted = data.map((item: any) => {
+            const startDate = new Date(item.startTime);
+            const endDate = new Date(item.endTime);
+            const startHour = startDate.getHours() + startDate.getMinutes() / 60;
+            const endHour = endDate.getHours() + endDate.getMinutes() / 60;
+            const dayOfWeek = startDate.getDay() === 0 ? 7 : startDate.getDay(); // 1=Mon...7=Sun
+            
+            let tone = "teal";
+            if (item.sportType?.toLowerCase()?.includes("gym") || item.sportType?.toLowerCase()?.includes("cardio")) tone = "green";
+            if (item.sportType?.toLowerCase()?.includes("pt") || item.role === "Coach") tone = "orange";
+
+            return {
+              rawStart: startDate,
+              column: dayOfWeek,
+              startHour: startHour,
+              endHour: endHour,
+              tone: tone,
+              title: item.className || "Lớp học",
+              detail: item.coachName || "Coach",
+              meta: item.roomName || "Phòng tập"
+            };
+          });
+          setAllEvents(formatted);
+        }
+      } catch (err) {
+        console.error("Failed to fetch schedule", err);
+      }
+    };
+    fetchSchedule();
+  }, []);
+
+  const calendarEvents = allEvents.filter(ev => {
+    const evDate = ev.rawStart;
+    const endOfWeek = new Date(currentWeekStart);
+    endOfWeek.setDate(endOfWeek.getDate() + 7);
+    return evDate >= currentWeekStart && evDate < endOfWeek;
+  });
+
   return (
     <Shell page="schedule" onNavigate={onNavigate}>
       <section className="p-8 bg-slate-50 min-h-[calc(100vh-78px)] flex gap-6 flex-col xl:flex-row items-start">
         <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex-1 w-full">
           <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white relative z-10">
             <div>
-              <h2 className="text-xl font-bold text-slate-800 tracking-tight">Tuần học hiện tại</h2>
-              <p className="text-sm font-medium text-slate-500 mt-1 flex items-center gap-1.5">
+              <div className="flex items-center gap-3">
+                <button onClick={handlePrevWeek} className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-700 transition-colors">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                <h2 className="text-xl font-bold text-slate-800 tracking-tight">
+                  {currentWeekStart.getTime() === (() => {
+                    const d = new Date();
+                    const day = d.getDay();
+                    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+                    const monday = new Date(d.setDate(diff));
+                    monday.setHours(0, 0, 0, 0);
+                    return monday.getTime();
+                  })() ? "Tuần học hiện tại" : "Lịch học tuần"}
+                </h2>
+                <button onClick={handleNextWeek} className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-700 transition-colors">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+              </div>
+              <p className="text-sm font-medium text-slate-500 mt-1 flex items-center gap-1.5 ml-10">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                21 Th9 - 27 Th9, 2026
+                {getWeekString()}
               </p>
             </div>
             <div className="flex gap-5 bg-slate-50 px-5 py-2.5 rounded-full border border-slate-200/60">
               <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-teal-500 shadow-sm shadow-teal-500/50"></span><span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Lớp nhóm</span></div>
-              <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-orange-400 shadow-sm shadow-orange-500/50"></span><span className="text-xs font-bold text-slate-600 uppercase tracking-wider">HLV Cá nhân (PT)</span></div>
-              <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-500/50"></span><span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Tự tập luyện</span></div>
+              <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-orange-400 shadow-sm shadow-orange-500/50"></span><span className="text-xs font-bold text-slate-600 uppercase tracking-wider">PT Cá nhân</span></div>
+              <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-500/50"></span><span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Tự tập tự do</span></div>
             </div>
           </div>
           
           <div className="overflow-x-auto overflow-y-hidden">
-            <div className="min-w-[900px]">
-              <div className="grid grid-cols-[80px_repeat(7,1fr)] bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-                <div className="p-4 text-center border-r border-slate-200/50"></div>
-                {days.map(day => <div key={day} className="p-4 text-center border-r border-slate-200/50">{day}</div>)}
+            <div className="min-w-[850px]">
+              <div className="grid grid-cols-[70px_repeat(7,1fr)] bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                <div className="py-2.5 px-3 text-center border-r border-slate-200/50"></div>
+                {days.map(day => <div key={day} className="py-2.5 px-3 text-center border-r border-slate-200/50">{day}</div>)}
               </div>
-              <div className="relative bg-white" style={{ minHeight: '500px' }}>
-                {["08:00", "10:00", "17:30"].map((time, row) => (
-                  <div key={time} className="grid grid-cols-[80px_repeat(7,1fr)] border-b border-slate-100 min-h-[140px]">
-                    <div className="p-4 text-center text-xs font-bold text-slate-400 border-r border-slate-100 flex items-center justify-center bg-slate-50/30">{time}</div>
+              <div className="relative bg-white" style={{ minHeight: '608px' }}>
+                {["06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"].map((time) => (
+                  <div key={time} className="grid grid-cols-[70px_repeat(7,1fr)] border-b border-slate-100 h-[76px]">
+                    <div className="py-2 px-3 text-center text-xs font-bold text-slate-400 border-r border-slate-100 flex items-center justify-center bg-slate-50/30">{time}</div>
                     {days.map(day => <div key={day} className="border-r border-slate-100 last:border-r-0 relative hover:bg-teal-50/20 transition-colors cursor-crosshair"></div>)}
                   </div>
                 ))}
                 
                 {/* Events - positioned absolute */}
                 {calendarEvents.map((ev, i) => {
-                  const bg = ev.tone === 'teal' ? 'bg-teal-50/90 border-teal-200 text-teal-700' : 
-                             ev.tone === 'green' ? 'bg-emerald-50/90 border-emerald-200 text-emerald-700' : 
-                             'bg-orange-50/90 border-orange-200 text-orange-700';
+                  const bg = ev.tone === 'teal' ? 'bg-teal-50/95 border-teal-200 text-teal-800' : 
+                             ev.tone === 'green' ? 'bg-emerald-50/95 border-emerald-200 text-emerald-800' : 
+                             'bg-orange-50/95 border-orange-200 text-orange-800';
                   const dot = ev.tone === 'teal' ? 'bg-teal-500 shadow-teal-500/40' : 
                               ev.tone === 'green' ? 'bg-emerald-500 shadow-emerald-500/40' : 'bg-orange-500 shadow-orange-500/40';
                   
-                  // Calculate position
-                  const top = ev.row === 1 ? '16px' : ev.row === 2 ? '156px' : '296px';
+                  // 1 hour = 38px. Grid starts at 06:00
+                  const top = `calc(${(ev.startHour - 6) * 38}px + 4px)`;
+                  const durationHour = Math.max(ev.endHour - ev.startHour, 1);
+                  const height = `calc(${durationHour * 38}px - 8px)`;
                   
                   return (
-                    <button type="button" onClick={() => ev.title === "Functional HIIT" && onNavigate("workout")} key={i} className={`absolute text-left p-3.5 rounded-2xl border backdrop-blur-md ${bg} hover:shadow-lg transition-all cursor-pointer z-10 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-offset-2 ${ev.tone === 'teal' ? 'focus:ring-teal-500' : ev.tone === 'green' ? 'focus:ring-emerald-500' : 'focus:ring-orange-500'}`} style={{ top, left: `calc(80px + ${((ev.column - 1) / 7) * 100}% + 8px)`, width: `calc(${100 / 7}% - 16px)`, minHeight: '108px' }}>
-                      <div className="flex items-start justify-between gap-1 mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className={`w-2 h-2 rounded-full shadow-sm ${dot}`}></span>
-                          <strong className="text-sm font-bold leading-tight">{ev.title}</strong>
-                        </div>
+                    <button type="button" onClick={() => ev.title === "Functional HIIT" && onNavigate("workout")} key={i} className={`absolute text-left p-2.5 rounded-xl border shadow-sm backdrop-blur-md ${bg} hover:shadow-md transition-all cursor-pointer z-10 hover:scale-[1.01] focus:outline-none focus:ring-2 focus:ring-offset-1 ${ev.tone === 'teal' ? 'focus:ring-teal-500' : ev.tone === 'green' ? 'focus:ring-emerald-500' : 'focus:ring-orange-500'}`} style={{ top, left: `calc(70px + ${((ev.column - 1) / 7) * 100}% + 4px)`, width: `calc(${100 / 7}% - 8px)`, minHeight: height }}>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`}></span>
+                        <strong className="text-xs font-bold leading-tight truncate pr-0.5">{ev.title}</strong>
                       </div>
-                      <div className="text-xs font-medium opacity-90 mt-1 flex items-center gap-1.5">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      <div className="text-[11px] font-medium opacity-90 flex items-center gap-1 truncate">
+                        <svg className="shrink-0" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                         {ev.detail}
                       </div>
                       {ev.meta && (
-                        <div className="text-[11px] font-medium opacity-75 mt-1.5 flex items-center gap-1.5">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <div className="text-[10px] font-medium opacity-75 mt-0.5 flex items-center gap-1 truncate">
+                          <svg className="shrink-0" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                           {ev.meta}
                         </div>
                       )}
@@ -236,7 +325,31 @@ function Schedule({ onNavigate }: { onNavigate: Navigate }) {
   )
 }
 
-function Success({ onNavigate }: { onNavigate: Navigate }) {
+function Success({ onNavigate, selectedClass }: { onNavigate: Navigate, selectedClass?: any }) {
+  const code = selectedClass?.id ? `BK-${selectedClass.id.substring(0, 5).toUpperCase()}` : "BK-20241";
+  
+  // Extract date and time from schedule string if possible, or just show the schedule
+  let timeStr = "18:30 - 19:30";
+  let dateStr = "Thứ Ba, 24/09/2024";
+  
+  if (selectedClass?.schedule) {
+    const parts = selectedClass.schedule.split(" • ");
+    if (parts.length >= 2) {
+      dateStr = parts[0];
+      const timePart = parts[1]; // e.g. "08:00 (60 phút)"
+      const tmatch = timePart.match(/(\d{2}:\d{2})/);
+      if (tmatch) {
+        timeStr = tmatch[1];
+        // optional: calculate end time
+      } else {
+        timeStr = timePart;
+      }
+    } else {
+      dateStr = selectedClass.schedule;
+      timeStr = "";
+    }
+  }
+
   return (
     <Shell page="success" onNavigate={onNavigate}>
       <section className="m2-success-content">
@@ -247,13 +360,13 @@ function Success({ onNavigate }: { onNavigate: Navigate }) {
             <span>Mã số đặt chỗ của bạn đã được ghi nhận trên hệ thống SportCenter.</span>
           </div>
           <div className="m2-ticket">
-            <div className="m2-ticket-head"><span>Functional HIIT</span><strong>Mã: BK-20241</strong></div>
+            <div className="m2-ticket-head"><span>{selectedClass?.title || "Lớp học"}</span><strong>Mã: {code}</strong></div>
             <img className="m2-ticket-line" src={src("success", "88b99.svg")} alt="" />
             <div className="m2-ticket-grid">
-              <div><small>HUẤN LUYỆN VIÊN</small><strong>Coach Trần Khoa</strong></div>
-              <div><small>KHU VỰC</small><strong>Arena 2 (Khu A)</strong></div>
-              <div><small>THỜI GIAN</small><strong>Thứ Ba, 24/09/2024</strong></div>
-              <div><small>KHUNG GIỜ</small><strong>18:30 - 19:30</strong></div>
+              <div><small>HUẤN LUYỆN VIÊN</small><strong>{selectedClass?.coach || "Coach"}</strong></div>
+              <div><small>KHU VỰC</small><strong>{selectedClass?.room || "Phòng tập"}</strong></div>
+              <div><small>THỜI GIAN</small><strong>{dateStr}</strong></div>
+              {timeStr && <div><small>KHUNG GIỜ</small><strong>{timeStr}</strong></div>}
             </div>
             <img className="m2-ticket-line" src={src("success", "88b99.svg")} alt="" />
             <div className="m2-ticket-note">
@@ -457,9 +570,9 @@ function AiAssistant({ onNavigate }: { onNavigate: Navigate }) {
   )
 }
 
-export default function MemberPortalV2({ page, onNavigate }: { page: NewMemberPage; onNavigate: Navigate }) {
+export default function MemberPortalV2({ page, onNavigate, selectedClass }: { page: NewMemberPage; onNavigate: Navigate; selectedClass?: any }) {
   if (page === "schedule") return <Schedule onNavigate={onNavigate} />
-  if (page === "success") return <Success onNavigate={onNavigate} />
+  if (page === "success") return <Success onNavigate={onNavigate} selectedClass={selectedClass} />
   if (page === "workout") return <Workout onNavigate={onNavigate} />
   return <AiAssistant onNavigate={onNavigate} />
 }

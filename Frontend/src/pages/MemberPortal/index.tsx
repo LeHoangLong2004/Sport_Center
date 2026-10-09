@@ -24,6 +24,7 @@ export default function MemberPortal({
       <MemberPortalV2
         page={page as NewMemberPage}
         onNavigate={(nextPage) => setPage(nextPage)}
+        selectedClass={selectedClass}
       />
     )
   }

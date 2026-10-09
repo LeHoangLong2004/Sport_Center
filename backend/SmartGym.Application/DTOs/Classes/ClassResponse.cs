@@ -13,5 +13,6 @@ public sealed record ClassResponse(
     int DurationMinutes,
     int Capacity,
     int CurrentEnrolled,
-    int AvailableSpots
+    int AvailableSpots,
+    bool Status
 );

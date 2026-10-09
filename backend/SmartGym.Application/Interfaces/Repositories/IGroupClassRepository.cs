@@ -11,6 +11,7 @@ public interface IGroupClassRepository
     Task<GroupClass?> GetByIdAsync(Guid id);
     Task<ClassDetailResponse?> GetClassDetailByIdAsync(Guid id);
     Task<IEnumerable<GroupClass>> GetClassesByCoachAndDateAsync(Guid coachId, DateTime date);
+    Task<IEnumerable<ClassResponse>> GetAllClassesAsync();
     Task<IEnumerable<ClassResponse>> GetAvailableClassesAsync();
     Task AddAsync(GroupClass groupClass);
     Task UpdateAsync(GroupClass groupClass);

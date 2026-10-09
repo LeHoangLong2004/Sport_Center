@@ -252,6 +252,12 @@ app.MapGet("/api/classes/available", async (ClassService service) =>
     return Results.Ok(classes);
 });
 
+app.MapGet("/api/classes/all", async (ClassService service) =>
+{
+    var classes = await service.GetAllClassesAsync();
+    return Results.Ok(classes);
+});
+
 app.MapGet("/api/classes/{id}", async (Guid id, ClassService service) =>
 {
     var classDetail = await service.GetClassDetailAsync(id);
@@ -271,7 +277,7 @@ app.MapPost("/api/classes/{id}/book", async (Guid id, HttpContext httpContext, C
     if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
     
     return Results.Ok(new { message = "Successfully booked the class!" });
-}).RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
+}).RequireAuthorization(policy => policy.RequireRole("Member", "Admin", "Manager", "member", "admin", "manager"));
 
 // Giai đoạn D: Receptionist đặt hộ
 app.MapPost("/api/classes/{id}/book-for-member", async (Guid id, [Microsoft.AspNetCore.Mvc.FromBody] SmartGym.Application.DTOs.Classes.BookForMemberRequest request, ClassService service) =>
@@ -335,6 +341,32 @@ app.MapGet("/api/schedule/member", async (HttpContext httpContext, ClassService 
     var schedule = await service.GetMemberScheduleAsync(userId);
     return Results.Ok(schedule);
 }).RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
+
+// Endpoint lịch cá nhân dạng danh sách (MemberPortalV2)
+app.MapGet("/api/schedule/my", async (HttpContext httpContext, ClassService service) =>
+{
+    var userIdClaim = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var schedule = await service.GetMemberScheduleAsync(userId);
+    var entries = schedule.ClassBookings.Select(b => new
+    {
+        id = b.ClassId,
+        className = b.ClassName,
+        sportType = b.SportName,
+        roomName = b.FacilityName,
+        coachName = b.CoachName,
+        startTime = b.ScheduleTime,
+        endTime = b.ScheduleTime.AddMinutes(b.DurationMinutes),
+        role = "Member",
+        bookingStatus = b.Status
+    });
+
+    return Results.Ok(entries);
+}).RequireAuthorization();
 
 // Xem lịch dành cho HLV (Các lớp phụ trách + danh sách học viên)
 app.MapGet("/api/schedule/coach", async (DateTime? date, HttpContext httpContext, ClassService service) =>

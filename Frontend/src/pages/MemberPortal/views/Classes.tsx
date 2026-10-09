@@ -10,16 +10,53 @@ export function Classes({
   onNavigate: (page: MemberPage) => void
   onSelect: (item: ClassItem) => void
 }) {
-  const [category, setCategory] = useState("Yoga")
+  const [category, setCategory] = useState("Tất cả lớp")
   const [selectedDay, setSelectedDay] = useState(23)
   const [shift, setShift] = useState("Sáng (06:00 - 12:00)")
   const [coachQuery, setCoachQuery] = useState("")
+  const [classes, setClasses] = useState<ClassItem[]>([])
+
+  React.useEffect(() => {
+    fetch('/api/classes/available')
+      .then(r => r.json())
+      .then(data => {
+        const images = ["60eeb.png", "340d3.png", "b0a09.png", "25c0c.png", "5709f.png", "8b5dc.png"];
+        const dayNames = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+        
+        const mapped: ClassItem[] = data.map((d: any, i: number) => {
+          const date = new Date(d.scheduleTime);
+          const day = dayNames[date.getDay()];
+          const dd = String(date.getDate()).padStart(2, '0');
+          const mm = String(date.getMonth() + 1).padStart(2, '0');
+          const hh = String(date.getHours()).padStart(2, '0');
+          const min = String(date.getMinutes()).padStart(2, '0');
+          
+          return {
+            id: d.id,
+            sportName: d.sportName,
+            title: d.className || d.name || "Lớp học",
+            coach: d.coachName || "N/A",
+            schedule: `${day}, ${dd}/${mm} • ${hh}:${min} (${d.durationMinutes} phút)`,
+            room: `Phòng: ${d.facilityName}`,
+            spaces: `Còn ${d.availableSpots ?? (d.capacity - (d.currentEnrolled || d.currentBookings || 0))} chỗ`,
+            image: images[i % images.length]
+          };
+        });
+        setClasses(mapped);
+      })
+      .catch(e => console.error(e));
+  }, []);
+
   const visibleClasses = useMemo(
     () =>
-      classItems.filter((item) =>
-        item.coach.toLowerCase().includes(coachQuery.toLowerCase()),
-      ),
-    [coachQuery],
+      classes.filter((item) => {
+        const matchCoach = item.coach.toLowerCase().includes(coachQuery.toLowerCase());
+        const matchCategory = category === "Tất cả lớp" || 
+            (item.sportName && item.sportName.toLowerCase().includes(category.toLowerCase())) || 
+            item.title.toLowerCase().includes(category.toLowerCase());
+        return matchCoach && matchCategory;
+      }),
+    [coachQuery, category, classes],
   )
 
   return (

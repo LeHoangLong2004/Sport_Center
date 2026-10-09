@@ -107,7 +107,7 @@ export const classItems = [
   },
 ]
 
-export type ClassItem = (typeof classItems)[number]
+export type ClassItem = (typeof classItems)[number] & { id?: string; sportName?: string; }
 
 type PortalVisualPage = keyof typeof assetRoots
 
