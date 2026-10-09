@@ -3,6 +3,8 @@ import { ClassItem, classItems, MemberPage } from './shared';
 import { MemberProfile } from './views/MemberProfile';
 import { Overview } from './views/Overview';
 import { MemberSection } from './views/MemberSection';
+import { PackagesPage } from './views/PackagesPage';
+import MemberShell from './components/MemberShell';
 import { Classes } from './views/Classes';
 import { Confirm } from './views/Confirm';
 import MemberPortalV2, { NewMemberPage } from '../../MemberPortalV2';
@@ -45,7 +47,15 @@ export default function MemberPortal({
     return <Confirm selectedClass={selectedClass} onNavigate={setPage} />
   }
 
-  if (page === "users" || page === "payment" || page === "reports") {
+  if (page === "payment") {
+    return (
+      <MemberShell page="payment" onNavigate={setPage}>
+        <PackagesPage />
+      </MemberShell>
+    )
+  }
+
+  if (page === "users" || page === "reports") {
     return <MemberSection page={page} onNavigate={setPage} />
   }
 

@@ -3,11 +3,16 @@ import { MemberPage } from '../shared';
 import MemberShell from '../components/MemberShell';
 import { ProfileSettings } from '../../../components/ProfileSettings';
 import { useUserProfile } from '../../../hooks/useUserProfile';
+import { PackageAPI, getMembershipStatus, MembershipStatus, PackageOrder } from '../../../services/packageApi';
 
 export function MemberProfile({ onNavigate }: { onNavigate: (page: MemberPage) => void }) {
   const { profile, loading } = useUserProfile();
   const [sub, setSub] = React.useState<any>(null);
   const [error, setError] = React.useState<string>("");
+  const [membership, setMembership] = React.useState<MembershipStatus | null>(null);
+  const [pendingMembership, setPendingMembership] = React.useState<PackageOrder | null>(null);
+  const [membershipError, setMembershipError] = React.useState("");
+  const [membershipLoading, setMembershipLoading] = React.useState(true);
 
   const handleSave = async (data: any) => {
     setError("");
@@ -53,11 +58,44 @@ export function MemberProfile({ onNavigate }: { onNavigate: (page: MemberPage) =
   };
 
   React.useEffect(() => {
+    let mounted = true;
+    const loadMembership = async () => {
+      setMembershipLoading(true);
+      try {
+        const [catalog, orders] = await Promise.all([
+          PackageAPI.getPackages(),
+          PackageAPI.getMyOrders(),
+        ]);
+        if (!mounted) return;
+        setMembership(getMembershipStatus(orders, catalog));
+        setPendingMembership(
+          orders.find(
+            order =>
+              order.status === "pending" &&
+              order.packageSnapshot.category === "membership",
+          ) || null,
+        );
+        setMembershipError("");
+      } catch (membershipLoadError) {
+        if (mounted) {
+          setMembershipError(
+            membershipLoadError instanceof Error
+              ? membershipLoadError.message
+              : "Không thể tải thông tin hạng thành viên.",
+          );
+        }
+      } finally {
+        if (mounted) setMembershipLoading(false);
+      }
+    };
+
+    void loadMembership();
     import('../services/api').then(({ MemberAPI }) => {
       MemberAPI.getMySubscriptions().then(data => {
         if (data && data.length > 0) setSub(data[0]);
       }).catch(console.error);
     });
+    return () => { mounted = false; };
   }, []);
 
   const membershipInfo = (
@@ -96,7 +134,9 @@ export function MemberProfile({ onNavigate }: { onNavigate: (page: MemberPage) =
         <div className="flex justify-between items-center pb-3 border-b border-slate-100">
           <span className="text-sm font-medium text-slate-500">Hạng thẻ</span>
           <span className="text-sm font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded-md">
-            {profile?.roleName || 'Member'}
+            {membershipLoading
+              ? 'Đang tải...'
+              : membership?.name || 'Chưa có dữ liệu'}
           </span>
         </div>
         <div className="flex justify-between items-center pb-3 border-b border-slate-100">
@@ -108,11 +148,28 @@ export function MemberProfile({ onNavigate }: { onNavigate: (page: MemberPage) =
         <div className="flex justify-between items-center">
           <span className="text-sm font-medium text-slate-500">Trạng thái thẻ</span>
           <span className="text-sm font-bold flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-            <span className="text-emerald-600">Hoạt động</span>
+            <span className={`w-1.5 h-1.5 rounded-full ${membershipError ? 'bg-red-500' : 'bg-emerald-500'}`}></span>
+            <span className={membershipError ? 'text-red-600' : 'text-emerald-600'}>
+              {membershipError
+                ? 'Không thể kiểm tra'
+                : membershipLoading
+                  ? 'Đang kiểm tra'
+                  : membership?.tier === 'basic'
+                    ? 'Cơ bản · hoạt động'
+                    : 'Đang hoạt động'}
+            </span>
           </span>
         </div>
       </div>
+      {membershipError && (
+        <p role="alert" className="mt-3 text-sm text-red-600">{membershipError}</p>
+      )}
+      {pendingMembership && !membershipError && (
+        <p className="mt-3 text-sm text-amber-700">
+          Gói {pendingMembership.packageSnapshot.name} đang chờ trung tâm xác nhận thanh toán.
+          Hạng thẻ sẽ cập nhật sau khi đơn được xác nhận.
+        </p>
+      )}
     </div>
   );
 
@@ -154,4 +211,3 @@ export function MemberProfile({ onNavigate }: { onNavigate: (page: MemberPage) =
     </MemberShell>
   );
 }
-
