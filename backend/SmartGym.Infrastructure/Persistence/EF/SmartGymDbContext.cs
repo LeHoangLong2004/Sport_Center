@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SmartGym.Domain.Entities;
+using SmartGym.Domain.Enums;
 
 namespace SmartGym.Infrastructure.Persistence.EF;
 
@@ -10,12 +11,16 @@ public class SmartGymDbContext : DbContext
     {
     }
 
+    private static PaymentStatus ParsePaymentStatus(string value) =>
+        Enum.TryParse<PaymentStatus>(value, true, out var status) ? status : PaymentStatus.Pending;
+
     public DbSet<Role> Roles { get; set; } = null!;
     public DbSet<User> Users { get; set; } = null!;
     public DbSet<Package> Packages { get; set; } = null!;
     public DbSet<PackageFeature> PackageFeatures { get; set; } = null!;
     public DbSet<MembershipBenefit> MembershipBenefits { get; set; } = null!;
     public DbSet<Subscription> Subscriptions { get; set; } = null!;
+    public DbSet<Invoice> Invoices { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -111,8 +116,18 @@ public class SmartGymDbContext : DbContext
             entity.Property(e => e.VoucherId).HasColumnName("voucher_id");
             entity.Property(e => e.BillingPeriod).HasColumnName("billing_period");
             entity.Property(e => e.TotalAmount).HasColumnName("total_amount").IsRequired();
-            entity.Property(e => e.PaymentMethod).HasColumnName("payment_method");
-            entity.Property(e => e.PaymentStatus).HasColumnName("payment_status").HasDefaultValue("pending");
+            entity.Property(e => e.PaymentMethod)
+                            .HasColumnName("payment_method")
+                            .HasConversion(
+                                v => v.HasValue ? v.Value.ToDbValue() : null,
+                                v => string.IsNullOrWhiteSpace(v) ? (PaymentMethod?)null : PaymentMethodExtensions.ParseDbValue(v));
+                        entity.Property(e => e.PaymentStatus)
+                            .HasColumnName("payment_status")
+                            .HasConversion(
+                                v => v.ToString().ToLower(),
+                                v => ParsePaymentStatus(v)
+                            )
+                .HasDefaultValue(SmartGym.Domain.Enums.PaymentStatus.Pending);
             entity.Property(e => e.StartDate).HasColumnName("start_date").IsRequired();
             entity.Property(e => e.EndDate).HasColumnName("end_date").IsRequired();
             entity.Property(e => e.AutoRenew).HasColumnName("auto_renew").HasDefaultValue(false);
@@ -126,6 +141,35 @@ public class SmartGymDbContext : DbContext
             entity.HasOne(d => d.Package)
                 .WithMany()
                 .HasForeignKey(d => d.PackageId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<Invoice>(entity =>
+        {
+            entity.ToTable("invoices");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+            entity.Property(e => e.BranchId).HasColumnName("facility_id");
+            entity.Property(e => e.TotalAmount).HasColumnName("total_amount").IsRequired();
+            entity.Property(e => e.PaymentMethod)
+                            .HasColumnName("payment_method")
+                            .HasConversion(
+                                v => v.ToDbValue(),
+                                v => PaymentMethodExtensions.ParseDbValue(v));
+                        entity.Property(e => e.Status)
+                            .HasColumnName("payment_status")
+                            .HasConversion(
+                                v => v.ToString().ToLower(),
+                                v => ParsePaymentStatus(v)
+                            )
+                .HasDefaultValue(SmartGym.Domain.Enums.PaymentStatus.Pending);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+            entity.Property(e => e.PaidAt).HasColumnName("paid_at");
+
+            entity.HasOne(d => d.User)
+                .WithMany()
+                .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.SetNull);
         });
     }

@@ -55,7 +55,7 @@ public class SubscriptionService : ISubscriptionService
             BillingPeriod = request.BillingPeriod,
             TotalAmount = amount,
             PaymentMethod = request.PaymentMethod,
-            PaymentStatus = "pending", // Will be updated to paid via webhook/gateway
+            PaymentStatus = SmartGym.Domain.Enums.PaymentStatus.Pending, // Will be updated to paid via webhook/gateway
             StartDate = DateTime.UtcNow,
             EndDate = request.BillingPeriod == "yearly" ? DateTime.UtcNow.AddYears(1) : DateTime.UtcNow.AddMonths(1),
             AutoRenew = false,
