@@ -40,7 +40,15 @@ public static class PackageEndpoints
             return Results.Created($"/api/packages/{created.Id}", created);
         }).RequireAuthorization(managerAuth); 
 
-        // CHỈ MANAGER mới được xóa gói tập
+        // CHỈ MANAGER mới được sửa gói tập
+        group.MapPut("/{id}", async (string id, [FromBody] CreatePackageRequest request, IPackageService packageService) =>
+        {
+            var updated = await packageService.UpdatePackageAsync(id, request);
+            if (updated == null) return Results.NotFound();
+            return Results.Ok(updated);
+        }).RequireAuthorization(managerAuth); 
+
+        // CHỈ MANAGER mới được khóa gói tập
         group.MapDelete("/{id}", async (string id, IPackageService packageService) =>
         {
             var success = await packageService.DeletePackageAsync(id);

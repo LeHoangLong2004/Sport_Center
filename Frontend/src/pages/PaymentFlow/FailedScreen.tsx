@@ -1,5 +1,5 @@
 import React from "react";
-import { A, Header, Stepper } from "./shared";
+import { A, Stepper } from "./shared";
 
 export function FailedScreen({
   onRetry,
@@ -10,7 +10,6 @@ export function FailedScreen({
 }) {
   return (
     <div className="bg-[#f8fafc] flex flex-col items-start w-full min-h-screen">
-      <Header />
       <Stepper active={3} />
       <div className="flex items-start justify-center pb-20 pt-4 px-20 w-full">
         <div className="bg-white border border-[#e2e8f0] flex flex-col gap-8 items-center p-12 rounded-[24px] w-[800px]">
@@ -43,14 +42,14 @@ export function FailedScreen({
               <button
                 type="button"
                 onClick={onRetry}
-                className="bg-[#2563eb] flex flex-1 items-center justify-center py-[14px] rounded-[8px] font-['Inter'] font-bold text-white text-[15px] hover:bg-[#1d4ed8] transition-colors"
+                className="bg-teal-500 flex flex-1 items-center justify-center py-[14px] rounded-[8px] font-['Inter'] font-bold text-white text-[15px] hover:bg-teal-600 transition-colors"
               >
                 Thử lại ngay
               </button>
             </div>
             <div className="flex gap-1.5 items-start justify-center w-full text-[13px]">
               <span className="font-['Inter'] font-normal text-[#64748b]">Cần hỗ trợ kỹ thuật?</span>
-              <span className="font-['Inter'] font-bold text-[#2563eb] cursor-pointer">Liên hệ ngay 1900 1234 (Miễn phí)</span>
+              <span className="font-['Inter'] font-bold text-teal-600 cursor-pointer">Liên hệ ngay 1900 1234 (Miễn phí)</span>
             </div>
           </div>
         </div>

@@ -49,12 +49,30 @@ public class PackageService : IPackageService
         return MapToResponse(package);
     }
 
+    public async Task<PackageResponse?> UpdatePackageAsync(string id, CreatePackageRequest request)
+    {
+        var package = await _packageRepository.GetByIdAsync(id);
+        if (package == null) return null;
+
+        package.Name = request.Name;
+        package.PackageType = request.PackageType;
+        package.MonthlyPrice = request.MonthlyPrice;
+        package.YearlyPrice = request.YearlyPrice;
+        
+        // Cập nhật features
+        package.Features = request.Features.Select(f => new PackageFeature { FeatureText = f }).ToList();
+
+        await _packageRepository.UpdateAsync(package);
+        return MapToResponse(package);
+    }
+
     public async Task<bool> DeletePackageAsync(string id)
     {
         var package = await _packageRepository.GetByIdAsync(id);
         if (package == null) return false;
         
-        await _packageRepository.DeleteAsync(id);
+        package.Status = false;
+        await _packageRepository.UpdateAsync(package);
         return true;
     }
 

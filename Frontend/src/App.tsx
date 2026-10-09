@@ -147,6 +147,7 @@ export default function App() {
     () => receptionistHashes.has(window.location.hash),
   )
   const [selectedPlanId, setSelectedPlanId] = useState<string | undefined>()
+  const [selectedPeriod, setSelectedPeriod] = useState<string | undefined>()
 
   useEffect(() => {
     const sync = () => {
@@ -172,14 +173,26 @@ export default function App() {
     )
   }
 
+  useEffect(() => {
+    if (paymentOpen && !selectedPlanId) {
+      window.location.hash = "pricing";
+    }
+  }, [paymentOpen, selectedPlanId]);
+
   if (paymentOpen) {
+    if (!selectedPlanId) {
+      return null;
+    }
+
     return (
       <PaymentFlow
         initialPlan={selectedPlanId as any}
-        onExit={() => {
-          window.location.hash = "home"
+        initialPeriod={selectedPeriod as any}
+        onExit={(dest = "home") => {
+          window.location.hash = dest
           setPaymentOpen(false)
           setSelectedPlanId(undefined)
+          setSelectedPeriod(undefined)
         }}
       />
     )
@@ -244,8 +257,9 @@ export default function App() {
         window.location.hash = "register"
         setAdminOpen(true)
       }}
-      onOpenPayment={(planId) => {
+      onOpenPayment={(planId, periodId) => {
         setSelectedPlanId(planId)
+        setSelectedPeriod(periodId)
         window.location.hash = "payment"
         setPaymentOpen(true)
       }}
