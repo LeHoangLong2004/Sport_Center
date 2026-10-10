@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { A, AdminPage, avatarSidebar, avatarTopbar, iDashboard, iUsers, iPackage, iCalendar, iReceipt, iBarChart, iSettings, iSearch, iBell, iSearch2, iDownload, iPlus, iWallet, iCheckCircle, iClock, iRotateCcw, iChevron, iEye, iPrinter, iMore, mAvatar0, mAvatar1, mAvatar2, mAvatar3, mAvatar4, iBell2, iDownload2, iKpiRevenue, iKpiMembers, iKpiClasses, iKpiRetain, iSeg1, iSeg2, iSeg3, iSeg4, iDotBlue, iDotTeal, iDotOrange, iDotPurple, iActivity0, iActivity1, iActivity2, iActivity3, iLineChart, iBarFill, coachAvatar1, coachAvatar2, coachAvatar3, coachAvatar4, hrAvatar1, hrAvatar2, hrAvatar3, hrAvatar4, iBudgetIcon, iExpenseIcon, iBudgetChevron, iPLRevIcon, memberEditAvatar, transactions, reportBarData, reportMonths, members } from './shared';
 import { useUserProfile } from '../../hooks/useUserProfile';
+import { toast } from 'sonner';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { OverviewPage } from './views/OverviewPage';
@@ -61,8 +62,8 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         localStorage.setItem("user", JSON.stringify(userObj));
       }
       
-      alert("Đã cập nhật hồ sơ thành công!");
-      window.location.reload();
+      toast.success("Đã cập nhật hồ sơ thành công!");
+      setTimeout(() => window.location.reload(), 1500);
     } catch (err: any) {
       setError(err.message || "Có lỗi xảy ra khi lưu.");
     }

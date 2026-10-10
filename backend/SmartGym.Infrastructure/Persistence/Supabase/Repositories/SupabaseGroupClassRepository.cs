@@ -52,7 +52,7 @@ public sealed class SupabaseGroupClassRepository : IGroupClassRepository
         var coachUser = coach != null ? users.FirstOrDefault(u => u.Id == coach.UserId) : null;
 
         var bookings = await _dbContext.Database.SqlQueryRaw<ClassBookingRawModel>(
-            "SELECT id, user_id, class_id, status, created_at FROM class_bookings WHERE class_id = {0}", id
+            "SELECT id, user_id, class_id, status, created_at FROM class_bookings WHERE class_id = {0} AND status != 'cancelled'", id
         ).ToListAsync();
         
         var enrolledMembers = bookings.Select(b => {

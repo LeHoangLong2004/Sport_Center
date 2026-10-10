@@ -2,6 +2,7 @@ import React from 'react';
 import { MemberPage } from '../shared';
 import MemberShell from '../components/MemberShell';
 import { ProfileSettings } from '../../../components/ProfileSettings';
+import { toast } from 'sonner';
 import { useUserProfile } from '../../../hooks/useUserProfile';
 import { PackageAPI, getMembershipStatus, MembershipStatus, PackageOrder } from '../../../services/packageApi';
 
@@ -51,8 +52,8 @@ export function MemberProfile({ onNavigate }: { onNavigate: (page: MemberPage) =
         localStorage.setItem("user", JSON.stringify(userObj));
       }
       
-      alert("Đã cập nhật hồ sơ thành công!");
-      window.location.reload();
+      toast.success("Đã cập nhật hồ sơ thành công!");
+      setTimeout(() => window.location.reload(), 1500);
     } catch (err: any) {
       setError(err.message || "Có lỗi xảy ra khi lưu.");
     }
