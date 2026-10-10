@@ -71,7 +71,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const breadcrumbs: Record<AdminPage, [string, string]> = {
     overview:   ["Quản lý / Tổng quan", "Tổng quan hệ thống"],
     classes:    ["Quản lý / Lớp học", "Quản lý Lớp học"],
-    packages:   ["Quản lý / Gói hội viên", "Danh sách Gói hội viên"],
+    packages:   ["Quản lý / Gói tập", "Quản lí gói"],
     schedule:   ["Quản lý / Lịch trình", "Lịch trình & Lớp học"],
     members:    ["Quản lý / Người dùng / Hội viên", "Quản lý người dùng"],
     staff:      ["Quản lý / Người dùng / Nhân sự", "Quản lý nhân sự"],

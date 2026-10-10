@@ -21,7 +21,7 @@ export function MemberTopbar({
       "Member Portal / Lớp & Lịch / Xác nhận đặt chỗ",
       "Xác nhận đăng ký lớp",
     ],
-    payment: ["Member Portal / Thanh toán", "Gói tập & thanh toán"],
+    payment: ["Member Portal / Gói tập của tôi", "Gói tập của tôi"],
     reports: ["Member Portal / Báo cáo", "Báo cáo luyện tập"],
     profile: ["Member Portal / Hồ sơ thành viên", "Hồ sơ của tôi"],
   }

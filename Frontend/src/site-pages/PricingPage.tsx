@@ -10,7 +10,11 @@ export default function GoiTapBangGiaRedesign() {
     fetch('/api/packages')
       .then(res => res.json())
       .then(data => {
-        setPackages(data);
+        const formatted = data.map((p: any) => ({
+          ...p,
+          features: p.features?.map((f: any) => typeof f === 'string' ? f : (f.featureText || f.benefitName || "")) || []
+        }));
+        setPackages(formatted);
         setLoading(false);
       })
       .catch(err => {
@@ -270,7 +274,7 @@ export default function GoiTapBangGiaRedesign() {
                         </div>
                       ))}
                     </div>
-                    <button data-planid={pkg.id} className={`${idx === 1 ? 'bg-[#2563eb] hover:bg-[#1d4ed8]' : 'bg-[#0f172a] hover:bg-[#1e293b]'} text-white font-['Inter:Bold'] font-bold text-[14px] py-[14px] rounded-[10px] w-full transition-colors cursor-pointer`}>
+                    <button data-planid={pkg.id} data-period={billing === "annual" ? "yearly" : "monthly"} className={`${idx === 1 ? 'bg-[#2563eb] hover:bg-[#1d4ed8]' : 'bg-[#0f172a] hover:bg-[#1e293b]'} text-white font-['Inter:Bold'] font-bold text-[14px] py-[14px] rounded-[10px] w-full transition-colors cursor-pointer`}>
                       Đăng ký {pkg.name}
                     </button>
                   </div>
@@ -484,7 +488,7 @@ export default function GoiTapBangGiaRedesign() {
                         </div>
                       ))}
                     </div>
-                    <button data-planid={pkg.id} className={`${idx === 0 ? 'bg-[#10b981] hover:bg-[#059669]' : 'bg-[#0f172a] hover:bg-[#1e293b]'} text-white font-['Inter:Bold'] font-bold text-[14px] py-[14px] rounded-[10px] w-full transition-colors cursor-pointer`}>
+                    <button data-planid={pkg.id} data-period={billing === "annual" ? "yearly" : "monthly"} className={`${idx === 0 ? 'bg-[#10b981] hover:bg-[#059669]' : 'bg-[#0f172a] hover:bg-[#1e293b]'} text-white font-['Inter:Bold'] font-bold text-[14px] py-[14px] rounded-[10px] w-full transition-colors cursor-pointer`}>
                       Đăng ký {pkg.name}
                     </button>
                   </div>

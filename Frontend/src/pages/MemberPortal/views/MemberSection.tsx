@@ -35,13 +35,13 @@ export function MemberSection({
         ...base,
         stats: [
           ["Gói hiện tại", sub?.packageName || "Chưa đăng ký", sub ? "Có hiệu lực" : ""],
-          ["Ngày hết hạn", sub?.endDate ? new Date(sub.endDate).toLocaleDateString('vi-VN') : "--", daysLeft > 0 ? `Còn ${daysLeft} ngày` : "Đã hết hạn"],
-          ["Trạng thái", sub?.status === 'active' ? 'Đang hoạt động' : 'Không hoạt động', ''],
+          ["Ngày hết hạn", sub?.endDate ? sub.endDate.split('T')[0].split('-').reverse().join('/') : "--", daysLeft > 0 ? `Còn ${daysLeft} ngày` : "Đã hết hạn"],
+          ["Trạng thái", (sub?.paymentStatus === 1 || sub?.paymentStatus === 'Completed') && daysLeft > 0 ? 'Đang hoạt động' : 'Không hoạt động', ''],
         ],
         rows: invoices.map(inv => [
           inv.invoiceCode || `HD-${inv.id.substring(0,6)}`,
           inv.description || "Thanh toán gói tập",
-          `${inv.amount.toLocaleString('vi-VN')} đ`
+          `${(inv.amount || 0).toLocaleString('vi-VN')} đ`
         ])
       };
     }

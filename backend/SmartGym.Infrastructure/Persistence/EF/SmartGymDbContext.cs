@@ -93,6 +93,7 @@ public class SmartGymDbContext : DbContext
             entity.Property(e => e.YearlyPrice).HasColumnName("yearly_price");
             entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.Status).HasColumnName("status").HasDefaultValue(true);
+            entity.Property(e => e.CatalogJson).HasColumnName("catalog_json").HasColumnType("jsonb");
         });
 
         modelBuilder.Entity<PackageFeature>(entity =>
@@ -137,7 +138,11 @@ public class SmartGymDbContext : DbContext
             entity.Property(e => e.FacilityId).HasColumnName("facility_id");
             entity.Property(e => e.VoucherId).HasColumnName("voucher_id");
             entity.Property(e => e.BillingPeriod).HasColumnName("billing_period");
+            entity.Property(e => e.DurationMonths).HasColumnName("duration_months");
             entity.Property(e => e.TotalAmount).HasColumnName("total_amount").IsRequired();
+            entity.Property(e => e.DiscountPct).HasColumnName("discount_pct").HasDefaultValue(0m);
+            entity.Property(e => e.DiscountAmount).HasColumnName("discount_amount").HasDefaultValue(0m);
+            entity.Property(e => e.PackageSnapshotJson).HasColumnName("package_snapshot_json").HasColumnType("jsonb");
             entity.Property(e => e.PaymentMethod)
                             .HasColumnName("payment_method")
                             .HasConversion(
@@ -150,10 +155,11 @@ public class SmartGymDbContext : DbContext
                                 v => ParsePaymentStatus(v)
                             )
                 .HasDefaultValue(SmartGym.Domain.Enums.PaymentStatus.Pending);
-            entity.Property(e => e.StartDate).HasColumnName("start_date").IsRequired();
-            entity.Property(e => e.EndDate).HasColumnName("end_date").IsRequired();
+            entity.Property(e => e.StartDate).HasColumnName("start_date").HasColumnType("date").IsRequired();
+            entity.Property(e => e.EndDate).HasColumnName("end_date").HasColumnType("date").IsRequired();
             entity.Property(e => e.AutoRenew).HasColumnName("auto_renew").HasDefaultValue(false);
             entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+            entity.Property(e => e.PaidAt).HasColumnName("paid_at");
 
             entity.HasOne(d => d.User)
                 .WithMany()
