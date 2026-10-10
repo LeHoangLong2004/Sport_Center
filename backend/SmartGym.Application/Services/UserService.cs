@@ -98,7 +98,7 @@ public class UserService : IUserService
         if (request.PhoneNumber != null) user.PhoneNumber = request.PhoneNumber;
         if (request.Email != null) user.Email = request.Email;
         if (request.AvatarUrl != null) user.AvatarUrl = request.AvatarUrl;
-        if (request.DateOfBirth != null) user.DateOfBirth = request.DateOfBirth;
+        if (request.DateOfBirth != null) user.DateOfBirth = DateTime.SpecifyKind(request.DateOfBirth.Value, DateTimeKind.Utc);
         if (request.Gender != null) user.Gender = request.Gender;
         if (request.EmergencyContact != null) user.EmergencyContact = request.EmergencyContact;
 

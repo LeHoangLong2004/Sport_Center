@@ -105,7 +105,6 @@ public class UserRepository : IUserRepository
 
     public async Task UpdateAsync(User user)
     {
-        _dbContext.Users.Update(user);
         await _dbContext.SaveChangesAsync();
     }
 }

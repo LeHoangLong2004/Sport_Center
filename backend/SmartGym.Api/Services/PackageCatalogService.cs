@@ -233,7 +233,7 @@ public sealed class PackageCatalogService(SmartGymDbContext db)
         var discountAmount = decimal.Round(subtotal * discountPct / 100m, 0, MidpointRounding.AwayFromZero);
         var total = subtotal - discountAmount;
         var now = DateTime.UtcNow;
-        var (start, end) = await GetProjectedPeriodAsync(userId, snapshot, request.DurationMonths, now, cancellationToken);
+        var (start, end) = await GetProjectedPeriodAsync(userId, snapshot, request.DurationMonths, now, request.StartDate, cancellationToken);
 
         var subscription = new Subscription
         {
@@ -291,6 +291,7 @@ public sealed class PackageCatalogService(SmartGymDbContext db)
             snapshot,
             subscription.DurationMonths ?? ParseDuration(subscription.BillingPeriod),
             DateTime.UtcNow,
+            subscription.StartDate,
             cancellationToken);
         subscription.StartDate = start;
         subscription.EndDate = end;
@@ -330,7 +331,8 @@ public sealed class PackageCatalogService(SmartGymDbContext db)
         var order = await CreateOrderAsync(userId, new CreatePackageOrderRequest
         {
             PackageId = request.PackageId,
-            DurationMonths = request.DurationMonths
+            DurationMonths = request.DurationMonths,
+            StartDate = request.StartDate
         }, cancellationToken);
 
         var subscription = await db.Subscriptions.SingleAsync(item => item.Id == order.Id, cancellationToken);
@@ -421,23 +423,32 @@ public sealed class PackageCatalogService(SmartGymDbContext db)
         CatalogPackageDto snapshot,
         int durationMonths,
         DateTime now,
+        DateTime? requestedStartDate,
         CancellationToken cancellationToken)
     {
         var today = now.Date;
-        var subscriptions = await db.Subscriptions.AsNoTracking()
-            .Where(item => item.UserId == userId &&
-                item.PaymentStatus == PaymentStatus.Completed &&
-                item.PackageSnapshotJson != null)
-            .Select(item => new { item.PackageSnapshotJson, item.EndDate })
-            .ToListAsync(cancellationToken);
+        DateTime start;
+        if (requestedStartDate.HasValue)
+        {
+            start = requestedStartDate.Value.Date;
+        }
+        else
+        {
+            var subscriptions = await db.Subscriptions.AsNoTracking()
+                .Where(item => item.UserId == userId &&
+                    item.PaymentStatus == PaymentStatus.Completed &&
+                    item.PackageSnapshotJson != null)
+                .Select(item => new { item.PackageSnapshotJson, item.EndDate })
+                .ToListAsync(cancellationToken);
 
-        var matchingEnds = subscriptions
-            .Select(item => new { Package = DeserializeCatalog(item.PackageSnapshotJson!), item.EndDate })
-            .Where(item => item.Package.Category == snapshot.Category &&
-                (snapshot.Category == "membership" || string.Equals(item.Package.Sport, snapshot.Sport, StringComparison.OrdinalIgnoreCase)))
-            .Select(item => item.EndDate.Date);
-        var latestEnd = matchingEnds.DefaultIfEmpty(today.AddDays(-1)).Max();
-        var start = latestEnd >= today ? latestEnd.AddDays(1) : today;
+            var matchingEnds = subscriptions
+                .Select(item => new { Package = DeserializeCatalog(item.PackageSnapshotJson!), item.EndDate })
+                .Where(item => item.Package.Category == snapshot.Category &&
+                    (snapshot.Category == "membership" || string.Equals(item.Package.Sport, snapshot.Sport, StringComparison.OrdinalIgnoreCase)))
+                .Select(item => item.EndDate.Date);
+            var latestEnd = matchingEnds.DefaultIfEmpty(today.AddDays(-1)).Max();
+            start = latestEnd >= today ? latestEnd.AddDays(1) : today;
+        }
         var end = start.AddMonths(durationMonths).AddDays(-1);
         return (DateTime.SpecifyKind(start, DateTimeKind.Utc), DateTime.SpecifyKind(end, DateTimeKind.Utc).AddHours(23).AddMinutes(59).AddSeconds(59));
     }

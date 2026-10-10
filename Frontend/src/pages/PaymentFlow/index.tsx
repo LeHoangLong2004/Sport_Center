@@ -258,7 +258,7 @@ export default function PaymentFlow({
             method={method}
             setMethod={setMethod}
             formData={formData}
-            onNext={goProcessing}
+            onNext={() => setScreen("otp")}
             onBack={() => setScreen("member-info")}
           />
         </div>
