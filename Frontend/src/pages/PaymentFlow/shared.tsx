@@ -16,6 +16,38 @@ export type Screen =
 export type BillingPeriod = "monthly" | "yearly"
 export type PaymentMethodId = "qr" | "card" | "wallet" | "counter"
 
+export type FlowPackage = {
+  id: string
+  category?: "membership" | "sport"
+  name: string
+  tagline: string
+  monthly: number
+  yearly: number
+  features: string[]
+  description?: string
+  details?: { label: string; value: string }[]
+  terms?: string[]
+  orderId?: string
+  startDate?: string
+  checkoutTotal?: number
+  checkoutListPrice?: number
+  checkoutDiscount?: number
+  periodLabel?: string
+}
+
+export function getPaymentSummary(pkg: FlowPackage, period: BillingPeriod) {
+  const total = pkg.checkoutTotal ?? (period === "yearly" ? pkg.yearly : pkg.monthly)
+  const listPrice = pkg.checkoutListPrice ??
+    (period === "yearly" ? Math.round(pkg.yearly * 1.2) : Math.round(pkg.monthly * 1.15))
+
+  return {
+    total,
+    listPrice,
+    discount: pkg.checkoutDiscount ?? listPrice - total,
+    periodLabel: pkg.periodLabel ?? (period === "yearly" ? "Gói 12 tháng" : "Gói 1 tháng"),
+  }
+}
+
 
 export function fmt(n: number) {
   return n.toLocaleString("vi-VN") + " đ"

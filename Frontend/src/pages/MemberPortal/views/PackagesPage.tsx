@@ -7,7 +7,11 @@ import {
   ConfirmOrderModal, dateLabel, formatLabel, getProjectedDates, MembershipSummary, money, OrderList, PackageCard, periods,
 } from "../components/PackageMemberComponents"
 
-export function PackagesPage() {
+export function PackagesPage({
+  onCheckout,
+}: {
+  onCheckout: (item: CatalogPackage, duration: PackagePeriod, discountPct: number) => void
+}) {
   const [catalog, setCatalog] = useState<CatalogPackage[]>([])
   const [orders, setOrders] = useState<PackageOrder[]>([])
   const [membership, setMembership] = useState<MembershipStatus | null>(null)
@@ -18,7 +22,6 @@ export function PackagesPage() {
   const [selected, setSelected] = useState<CatalogPackage | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
-  const [notice, setNotice] = useState("")
 
   const loadData = useCallback(async () => {
     try {
@@ -77,19 +80,6 @@ export function PackagesPage() {
   const selectedDuration = selected ? periodsByPackage[selected.id] || 1 : 1
   const projectedDates = selected ? getProjectedDates(selected, selectedDuration, orders) : null
 
-  const createOrder = async () => {
-    if (!selected) return
-    try {
-      const duration = periodsByPackage[selected.id] || 1
-      const order = await PackageAPI.createOrder(selected.id, duration)
-      setSelected(null)
-      setNotice(`Đã tạo đơn ${order.id}. Quyền lợi chỉ được kích hoạt sau khi trung tâm xác nhận thanh toán.`)
-      await loadData()
-    } catch (createError) {
-      setError(createError instanceof Error ? createError.message : "Không thể tạo đơn gói tập.")
-    }
-  }
-
   if (loading) {
     return (
       <section className="mp-overview-content">
@@ -130,8 +120,6 @@ export function PackagesPage() {
       </div>
 
       {error && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>}
-      {notice && <div role="status" className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</div>}
-
       {!category ? (
         <>
           <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -234,7 +222,13 @@ export function PackagesPage() {
           selectedDuration={selectedDuration as PackagePeriod}
           projectedDates={projectedDates}
           onClose={() => setSelected(null)}
-          onConfirm={() => void createOrder()}
+          onConfirm={() => {
+            const discountPct = selected.category === "sport"
+              ? selected.format === "coach" ? membership?.coachDiscountPct ?? 0 : membership?.groupDiscountPct ?? 0
+              : 0
+            onCheckout(selected, selectedDuration as PackagePeriod, discountPct)
+            setSelected(null)
+          }}
         />
       )}
     </section>

@@ -6,6 +6,8 @@ export type SportFormat = "self" | "group" | "coach"
 
 export type PackagePeriod = 1 | 3 | 6 | 12
 
+export type PackagePaymentMethod = "qr" | "card" | "wallet" | "counter"
+
 export type PackagePrices = Record<PackagePeriod, number>
 
 export interface CatalogPackage {
@@ -48,6 +50,11 @@ export interface PackageOrder {
   paidAt?: string
   startDate?: string
   endDate?: string
+}
+
+export interface PackageCheckout {
+  order: PackageOrder
+  invoiceId: string
 }
 
 export interface MembershipStatus {
@@ -179,6 +186,17 @@ export const PackageAPI = {
     request<PackageOrder>("/package-orders", {
       method: "POST",
       body: JSON.stringify({ packageId, durationMonths }),
+    }),
+
+  checkout: (
+    packageId: string,
+    durationMonths: PackagePeriod,
+    paymentMethod: PackagePaymentMethod,
+    startDate?: string,
+  ) =>
+    request<PackageCheckout>("/package-orders/checkout", {
+      method: "POST",
+      body: JSON.stringify({ packageId, durationMonths, paymentMethod, startDate }),
     }),
 
   confirmPayment: (orderId: string) =>

@@ -4,9 +4,11 @@ import { A, Stepper } from "./shared";
 export function FailedScreen({
   onRetry,
   onChangeMethod,
+  error,
 }: {
   onRetry: () => void
   onChangeMethod: () => void
+  error?: string
 }) {
   return (
     <div className="bg-[#f8fafc] flex flex-col items-start w-full min-h-screen">
@@ -26,7 +28,7 @@ export function FailedScreen({
           <div className="bg-[#fef2f2] border border-[#dc2626] border-[0.5px] flex flex-col gap-2.5 items-start p-5 rounded-[12px] w-full">
             <p className="font-['Inter'] font-bold text-[#dc2626] text-[15px]">Lý do lỗi thanh toán:</p>
             <p className="font-['Inter'] font-normal text-[#0f172a] text-sm leading-[20px]">
-              Tài khoản không đủ số dư khả dụng (Error Code: bank_9921) hoặc quá thời hạn giao dịch chuyển khoản cho phép từ cổng thanh toán QR.
+              {error || "Hệ thống không thể xác nhận giao dịch. Vui lòng kiểm tra thông tin thanh toán hoặc thử lại."}
             </p>
           </div>
 
