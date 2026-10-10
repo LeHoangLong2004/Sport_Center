@@ -45,8 +45,7 @@ builder.Services.AddScoped<SmartGym.Application.Interfaces.IBodyMetricRepository
 builder.Services.AddScoped<SmartGym.Application.Interfaces.IWorkoutPlanRepository, SmartGym.Infrastructure.Persistence.EF.Repositories.WorkoutPlanRepository>();
 builder.Services.AddScoped<SmartGym.Application.Interfaces.IHomeworkProgressRepository, SmartGym.Infrastructure.Persistence.EF.Repositories.HomeworkProgressRepository>();
 builder.Services.AddScoped<SmartGym.Application.Interfaces.IReviewRepository, SmartGym.Infrastructure.Persistence.EF.Repositories.ReviewRepository>();
-builder.Services.AddScoped<SmartGym.Application.Interfaces.Repositories.IProductRepository, SmartGym.Infrastructure.Persistence.Supabase.Repositories.SupabaseProductRepository>();
-builder.Services.AddScoped<SmartGym.Application.Interfaces.Repositories.IAppointmentRepository, SmartGym.Infrastructure.Persistence.Supabase.Repositories.SupabaseAppointmentRepository>();
+
 builder.Services.AddSingleton<ITokenService, TokenService>();
 // Note: Keeping IJwtTokenGenerator for the custom middleware backward compatibility
 builder.Services.AddSingleton<SmartGym.Application.Interfaces.Services.IJwtTokenGenerator, JwtTokenGenerator>();
@@ -333,8 +332,7 @@ app.MapBodyMetricEndpoints();
 app.MapWorkoutPlanEndpoints();
 app.MapHomeworkEndpoints();
 app.MapReviewEndpoints();
-app.MapProductEndpoints();
-app.MapAppointmentEndpoints();
+
 
 app.MapGet("/api/sports", async (Supabase.Client client) =>
 {

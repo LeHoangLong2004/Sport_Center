@@ -91,14 +91,46 @@ public sealed class PackageCatalogService(SmartGymDbContext db)
     public async Task<IReadOnlyList<CatalogPackageDto>> GetCatalogAsync(bool includeInactive, CancellationToken cancellationToken)
     {
         await EnsureDefaultsAsync(cancellationToken);
-        var query = db.Packages.AsNoTracking().Where(package => package.CatalogJson != null);
+        var query = db.Packages.Include(p => p.Features).Include(p => p.Benefits).AsNoTracking();
         if (!includeInactive)
             query = query.Where(package => package.Status);
 
         var packages = await query.OrderBy(package => package.PackageType).ThenBy(package => package.Id)
-            .Select(package => package.CatalogJson!)
             .ToListAsync(cancellationToken);
-        return packages.Select(DeserializeCatalog).ToArray();
+            
+        return packages.Select(package => 
+        {
+            if (!string.IsNullOrEmpty(package.CatalogJson))
+            {
+                return DeserializeCatalog(package.CatalogJson);
+            }
+            
+            // Map legacy package or package added without CatalogJson
+            return new CatalogPackageDto
+            {
+                Id = package.Id,
+                Category = package.PackageType,
+                Name = package.Name,
+                Tier = package.PackageType == "membership" ? package.Tagline : null,
+                Format = package.PackageType == "sport" ? package.Tagline : null,
+                Description = package.Description ?? "",
+                IsActive = package.Status,
+                Prices = new Dictionary<int, decimal>
+                {
+                    [1] = package.MonthlyPrice ?? 0,
+                    [3] = (package.MonthlyPrice ?? 0) * 3 * 0.95m, // Guess discount
+                    [6] = (package.MonthlyPrice ?? 0) * 6 * 0.9m,
+                    [12] = package.YearlyPrice ?? (package.MonthlyPrice ?? 0) * 12 * 0.85m
+                },
+                Benefits = package.Features.Select(f => f.FeatureText).Concat(package.Benefits.Select(b => b.Description)).ToList(),
+                Terms = new List<string> { "Gói tập được áp dụng theo quy định của trung tâm." },
+                GroupDiscountPct = 0,
+                CoachDiscountPct = 0,
+                BookingAdvanceHours = 24,
+                LockerTerms = "Sử dụng tủ theo quy định.",
+                Sport = package.PackageType == "sport" ? package.Name : null
+            };
+        }).ToArray();
     }
 
     public async Task<CatalogPackageDto> SaveCatalogPackageAsync(
@@ -226,10 +258,9 @@ public sealed class PackageCatalogService(SmartGymDbContext db)
 
     public async Task<IReadOnlyList<PackageOrderResponse>> GetOrdersAsync(Guid? memberId, CancellationToken cancellationToken)
     {
-        var query = db.Subscriptions.AsNoTracking()
+        IQueryable<Subscription> query = db.Subscriptions.AsNoTracking()
             .Include(subscription => subscription.User)
-            .Include(subscription => subscription.Package)
-            .Where(subscription => subscription.PackageSnapshotJson != null);
+            .Include(subscription => subscription.Package);
         if (memberId.HasValue)
             query = query.Where(subscription => subscription.UserId == memberId.Value);
 
@@ -325,16 +356,16 @@ public sealed class PackageCatalogService(SmartGymDbContext db)
 
     private async Task<CatalogPackageDto?> GetActiveMembershipAsync(Guid userId, DateTime now, CancellationToken cancellationToken)
     {
-        var snapshots = await db.Subscriptions.AsNoTracking()
+        var subscriptions = await db.Subscriptions.AsNoTracking()
+            .Include(s => s.Package)
             .Where(subscription => subscription.UserId == userId &&
                 subscription.PaymentStatus == PaymentStatus.Completed &&
-                subscription.PackageSnapshotJson != null &&
                 subscription.StartDate <= now &&
                 subscription.EndDate >= now)
             .OrderByDescending(subscription => subscription.StartDate)
-            .Select(subscription => subscription.PackageSnapshotJson!)
             .ToListAsync(cancellationToken);
-        return snapshots.Select(DeserializeCatalog).FirstOrDefault(package => package.Category == "membership" && package.Tier is "plus" or "premium");
+            
+        return subscriptions.Select(DeserializeSnapshot).FirstOrDefault(package => package.Category == "membership" && package.Tier is "plus" or "premium");
     }
 
     private async Task<(DateTime Start, DateTime End)> GetProjectedPeriodAsync(
@@ -405,7 +436,40 @@ public sealed class PackageCatalogService(SmartGymDbContext db)
     {
         if (!string.IsNullOrWhiteSpace(subscription.PackageSnapshotJson))
             return DeserializeCatalog(subscription.PackageSnapshotJson);
-        throw new PackageCatalogException(StatusCodes.Status500InternalServerError, "Đơn này thiếu snapshot danh mục.");
+            
+        var package = subscription.Package;
+        if (package == null) 
+        {
+            return new CatalogPackageDto
+            {
+                Id = subscription.PackageId ?? "unknown",
+                Category = "unknown",
+                Name = "Gói đã xóa hoặc không xác định",
+                Description = "Thông tin gói tập không còn tồn tại trong hệ thống.",
+                Prices = new Dictionary<int, decimal> { [1] = subscription.TotalAmount },
+                Benefits = new List<string>(),
+                Terms = new List<string>()
+            };
+        }
+            
+        return new CatalogPackageDto
+        {
+            Id = package.Id,
+            Category = package.PackageType,
+            Name = package.Name,
+            Tier = package.PackageType == "membership" ? package.Tagline : null,
+            Format = package.PackageType == "sport" ? package.Tagline : null,
+            Description = package.Description ?? "",
+            IsActive = package.Status,
+            Prices = new Dictionary<int, decimal>
+            {
+                [1] = package.MonthlyPrice ?? 0,
+                [12] = package.YearlyPrice ?? (package.MonthlyPrice ?? 0) * 12 * 0.85m
+            },
+            Benefits = package.Features?.Select(f => f.FeatureText).ToList() ?? new List<string>(),
+            Terms = new List<string> { "Gói tập được áp dụng theo quy định của trung tâm." },
+            Sport = package.PackageType == "sport" ? package.Name : null
+        };
     }
 
     private static CatalogPackageDto DeserializeCatalog(string json) =>

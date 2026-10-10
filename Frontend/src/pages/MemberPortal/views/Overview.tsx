@@ -33,13 +33,17 @@ function ScheduleList() {
 }
 
 function StatCards() {
-  const [sub, setSub] = useState<any>(null);
+  const [sportSub, setSportSub] = useState<any>(null);
+  const [memSub, setMemSub] = useState<any>(null);
   const [metric, setMetric] = useState<any>(null);
 
   useEffect(() => {
     import('../services/api').then(({ MemberAPI }) => {
       MemberAPI.getMySubscriptions().then(data => {
-        if (data && data.length > 0) setSub(data[0]);
+        if (data && data.length > 0) {
+          setSportSub(data.find((s: any) => s.packageType === 'sport') || null);
+          setMemSub(data.find((s: any) => s.packageType === 'membership') || null);
+        }
       }).catch(console.error);
 
       MemberAPI.getBodyMetricsHistory().then(data => {
@@ -48,14 +52,20 @@ function StatCards() {
     });
   }, []);
 
-  const daysLeft = sub ? Math.ceil((new Date(sub.endDate).getTime() - Date.now()) / (1000 * 3600 * 24)) : 0;
+  const sportDaysLeft = sportSub ? Math.ceil((new Date(sportSub.endDate).getTime() - Date.now()) / (1000 * 3600 * 24)) : 0;
+  const memDaysLeft = memSub ? Math.ceil((new Date(memSub.endDate).getTime() - Date.now()) / (1000 * 3600 * 24)) : 0;
 
   return (
     <div className="mp-stat-grid">
       <div className="mp-stat-card teal">
-        <span>Gói hiện tại</span>
-        <strong>{sub?.packageName || 'Chưa đăng ký'}</strong>
-        <small>{daysLeft > 0 ? `Còn ${daysLeft} ngày` : 'Đã hết hạn'}</small>
+        <span>Thẻ thành viên</span>
+        <strong>{memSub?.packageName || 'Chưa đăng ký'}</strong>
+        <small>{memDaysLeft > 0 ? `Còn ${memDaysLeft} ngày` : 'Đã hết hạn'}</small>
+      </div>
+      <div className="mp-stat-card blue">
+        <span>Gói môn tập</span>
+        <strong>{sportSub?.packageName || 'Chưa đăng ký'}</strong>
+        <small>{sportDaysLeft > 0 ? `Còn ${sportDaysLeft} ngày` : 'Đã hết hạn'}</small>
       </div>
       <div className="mp-stat-card green">
         <span>Chuỗi tập</span>

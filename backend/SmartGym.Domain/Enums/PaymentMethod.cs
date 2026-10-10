@@ -30,7 +30,7 @@ public static class PaymentMethodExtensions
     public static PaymentMethod ParseDbValue(string value) => value.Trim().ToLowerInvariant() switch
     {
         "qr" or "qrcode" => PaymentMethod.QRCode,
-        "card" or "creditcard" => PaymentMethod.CreditCard,
+        "card" or "creditcard" or "credit_card" => PaymentMethod.CreditCard,
         "wallet" or "ewallet" => PaymentMethod.EWallet,
         "counter" or "cashatcounter" => PaymentMethod.CashAtCounter,
         "bank_transfer" or "banktransfer" => PaymentMethod.BankTransfer,
