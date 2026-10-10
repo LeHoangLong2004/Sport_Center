@@ -11,24 +11,18 @@ import { SuccessScreen } from "./SuccessScreen";
 import { FailedScreen } from "./FailedScreen";
 import { InvoiceScreen } from "./InvoiceScreen";
 import { MembershipCardScreen } from "./MembershipCardScreen";
-import { PackageAPI, CatalogPackage, PackageCheckout, PackageOrder, PackagePaymentMethod, PackagePeriod } from "../../services/packageApi";
+import { PackageAPI, CatalogPackage, PackageCheckout, PackageOrder, PackagePeriod } from "../../services/packageApi";
 import { FlowPackage } from "./shared";
-
-const PAYMENT_METHOD_IDS: Record<PaymentMethodId, number> = {
-  qr: 0,
-  card: 1,
-  wallet: 2,
-  counter: 3,
-};
 
 function toFlowPackage(
   item: CatalogPackage,
   duration: PackagePeriod,
   discountPct: number,
   order?: PackageOrder,
+  selectionQuote = false,
 ): FlowPackage {
-  const listPrice = order?.subtotal ?? item.prices[duration]
-  const discount = order?.discountAmount ?? Math.round((listPrice * discountPct) / 100)
+  const listPrice = item.prices[duration]
+  const discount = Math.round((listPrice * discountPct) / 100)
   const details = [
     { label: "Loại gói", value: item.category === "membership" ? "Gói thành viên" : "Gói môn tập" },
     { label: "Thời hạn", value: `${order?.durationMonths ?? duration} tháng` },
@@ -53,18 +47,19 @@ function toFlowPackage(
     tagline: item.category === "membership"
       ? `Gói thành viên${item.tier ? ` · ${item.tier}` : ""}`
       : `Gói môn tập${item.sport ? ` · ${item.sport}` : ""}`,
-    monthly: order?.total ?? listPrice - discount,
-    yearly: order?.total ?? listPrice - discount,
+    monthly: order?.total ?? item.prices[1],
+    yearly: order?.total ?? item.prices[12],
     features: item.benefits,
     description: item.description,
     details,
     terms: item.terms,
     orderId: order?.id,
+    orderStatus: order?.status,
     startDate: order?.startDate,
-    checkoutTotal: order?.total ?? listPrice - discount,
-    checkoutListPrice: listPrice,
-    checkoutDiscount: discount,
-    periodLabel: `${order?.durationMonths ?? duration} tháng`,
+    checkoutTotal: order?.total ?? (selectionQuote ? listPrice - discount : undefined),
+    checkoutListPrice: order?.subtotal ?? (selectionQuote ? listPrice : undefined),
+    checkoutDiscount: order?.discountAmount ?? (selectionQuote ? discount : undefined),
+    periodLabel: order ? `${order.durationMonths} tháng` : selectionQuote ? `${duration} tháng` : undefined,
   }
 }
 
@@ -89,7 +84,7 @@ export default function PaymentFlow({
   const [method, setMethod] = useState<PaymentMethodId>("qr")
   const [allPackages, setAllPackages] = useState<Record<string, FlowPackage>>(() =>
     initialPackage
-      ? { [initialPackage.id]: toFlowPackage(initialPackage, initialDuration || 1, initialDiscountPct) }
+      ? { [initialPackage.id]: toFlowPackage(initialPackage, initialDuration || 1, initialDiscountPct, undefined, true) }
       : {},
   )
   const [loading, setLoading] = useState(!initialPackage)
@@ -134,7 +129,7 @@ export default function PaymentFlow({
   React.useEffect(() => {
     if (initialPackage) {
       setAllPackages({
-        [initialPackage.id]: toFlowPackage(initialPackage, initialDuration || 1, initialDiscountPct),
+        [initialPackage.id]: toFlowPackage(initialPackage, initialDuration || 1, initialDiscountPct, undefined, true),
       })
       setPkg(initialPackage.id)
       setLoading(false)
@@ -145,20 +140,10 @@ export default function PaymentFlow({
     const loadPackages = async () => {
       setLoading(true)
       try {
-        const response = await fetch("/api/packages")
-        if (!response.ok) throw new Error(`Không tải được danh mục gói (${response.status}).`)
-        const data = await response.json()
+        const data = await PackageAPI.getPackages()
         const dict: Record<string, FlowPackage> = {}
-        data.forEach((item: any) => {
-          const monthly = Number(item.monthlyPrice || 0)
-          dict[item.id] = {
-            id: item.id,
-            name: item.name,
-            tagline: item.packageType === "membership" ? "Gói thành viên" : "Gói tập",
-            monthly,
-            yearly: Number(item.yearlyPrice || monthly * 10),
-            features: item.features?.map((feature: any) => typeof feature === "string" ? feature : feature.featureText || "") || [],
-          }
+        data.filter((item) => item.isActive).forEach((item) => {
+          dict[item.id] = toFlowPackage(item, 1, 0)
         })
         if (cancelled) return
         setAllPackages(dict)
@@ -195,60 +180,25 @@ export default function PaymentFlow({
   async function goProcessing() {
     setScreen("processing");
     try {
-      if (initialPackage) {
-        const checkout: PackageCheckout = await PackageAPI.checkout(
-          initialPackage.id,
-          initialDuration || 1,
-          method as PackagePaymentMethod,
-          formData.startDate || undefined,
-        )
-        window.localStorage.setItem("latestInvoiceId", checkout.invoiceId)
-        setAllPackages({
-          [checkout.order.packageId]: toFlowPackage(
-            checkout.order.packageSnapshot,
-            checkout.order.durationMonths,
-            checkout.order.discountPct,
-            checkout.order,
-          ),
-        })
-        setPkg(checkout.order.packageId)
-        setPaymentError("")
-        setScreen("success")
-        return
-      }
-
-      const storedUser = window.localStorage.getItem("user");
-      const userId = storedUser ? JSON.parse(storedUser)?.id : null;
-      if (!userId) throw new Error("Không xác định được tài khoản hội viên. Vui lòng đăng nhập lại.")
-
-      const createRes = await fetch("/api/payments/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: userId,
-          packageId: pkg,
-          amount: period === "yearly" ? pkgData.yearly : pkgData.monthly,
-          paymentMethod: PAYMENT_METHOD_IDS[method],
-          billingPeriod: period,
-          autoRenew: false,
-          startDate: formData.startDate ? new Date(formData.startDate).toISOString() : undefined,
-        })
-      });
-
-      if (!createRes.ok) throw new Error("Không thể tạo hóa đơn thanh toán.")
-      const { invoiceId } = await createRes.json();
-
-      // Thanh toán tiền mặt tại quầy: ghi nhận thu tiền rồi hoàn tất hóa đơn.
-      const processUrl = method === "counter"
-        ? `/api/payments/${invoiceId}/record-cash`
-        : `/api/payments/${invoiceId}/process`;
-
-      const processRes = await fetch(processUrl, { method: "POST" });
-
-      if (!processRes.ok) throw new Error("Không thể xử lý thanh toán.")
-
-      window.localStorage.setItem("latestInvoiceId", invoiceId);
-
+      const duration: PackagePeriod = initialPackage
+        ? initialDuration || 1
+        : period === "yearly" ? 12 : 1
+      const checkout: PackageCheckout = await PackageAPI.checkout(
+        pkgData.id,
+        duration,
+        method,
+        formData.startDate || undefined,
+      )
+      window.localStorage.setItem("latestInvoiceId", checkout.invoiceId)
+      const checkedPackage = toFlowPackage(
+        checkout.order.packageSnapshot,
+        checkout.order.durationMonths,
+        checkout.order.discountPct,
+        checkout.order,
+      )
+      setAllPackages({ [checkout.order.packageId]: checkedPackage })
+      setPkg(checkout.order.packageId)
+      setPaymentError("")
       setScreen("success");
     } catch (e) {
       console.error(e);

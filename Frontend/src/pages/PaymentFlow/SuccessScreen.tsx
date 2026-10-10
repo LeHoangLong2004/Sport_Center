@@ -28,9 +28,13 @@ export function SuccessScreen({
             <img src={`${A}/48b1a.svg`} className="absolute block inset-0 size-full" alt="" />
           </div>
           <div className="flex flex-col gap-2 items-center text-center">
-            <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[28px]">Thanh toán thành công!</p>
+            <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[28px]">
+              {pkg.orderStatus === "paid" ? "Thanh toán thành công!" : "Đơn hàng đã được ghi nhận"}
+            </p>
             <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-sm">
-              Chào mừng hội viên <span className="font-['Inter:Bold'] font-bold text-[#0f172a]">{formData.fullName || "Khách hàng mới"}</span> gia nhập câu lạc bộ SportCenter
+              {pkg.orderStatus === "paid"
+                ? <>Chào mừng hội viên <span className="font-['Inter:Bold'] font-bold text-[#0f172a]">{formData.fullName || "Khách hàng mới"}</span> gia nhập câu lạc bộ SportCenter</>
+                : <>Đơn của <span className="font-['Inter:Bold'] font-bold text-[#0f172a]">{formData.fullName || "hội viên"}</span> đang chờ trung tâm xác nhận thanh toán.</>}
             </p>
           </div>
 
@@ -38,7 +42,7 @@ export function SuccessScreen({
             {[
               ["Mã đơn đăng ký", pkg.orderId || "#SC-" + new Date().getTime().toString().slice(-6)],
               ["Gói đã chọn", `${pkg.name} - ${periodLabel}`],
-              ["Ngày hiệu lực", pkg.startDate ? new Date(pkg.startDate).toLocaleDateString("vi-VN") : formData.startDate ? formData.startDate.split('-').reverse().join('/') : '...'],
+              [pkg.orderStatus === "paid" ? "Ngày hiệu lực" : "Ngày hiệu lực dự kiến", pkg.startDate ? new Date(pkg.startDate).toLocaleDateString("vi-VN") : formData.startDate ? formData.startDate.split('-').reverse().join('/') : '...'],
               ["Cơ sở kích hoạt", formData.branch],
             ].map(([label, val]) => (
               <div key={label} className="flex items-start justify-between w-full">
@@ -75,7 +79,9 @@ export function SuccessScreen({
               </div>
             </div>
             <div className="flex items-center justify-between w-full">
-              <span className="font-['Inter:Semi_Bold'] font-semibold text-[#0f172a] text-sm">Tổng tiền đã thanh toán</span>
+              <span className="font-['Inter:Semi_Bold'] font-semibold text-[#0f172a] text-sm">
+                {pkg.orderStatus === "paid" ? "Tổng tiền đã thanh toán" : "Tổng tiền đơn hàng"}
+              </span>
               <span className="font-['Inter:Extra_Bold'] font-extrabold text-[#10b981] text-xl">{fmt(total)}</span>
             </div>
           </div>
@@ -83,7 +89,9 @@ export function SuccessScreen({
           <div className="bg-teal-50 flex gap-2.5 items-center p-[16px] rounded-[12px] w-full border border-teal-200">
             <svg className="w-[20px] h-[20px] text-teal-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             <p className="font-['Inter:Medium'] font-medium text-teal-800 text-[13px] flex-1 leading-[18px]">
-              Gói tập đã được ghi nhận và quyền lợi sẽ được áp dụng theo thời hạn hiển thị trong đơn hàng.
+              {pkg.orderStatus === "paid"
+                ? "Gói tập đã được ghi nhận và quyền lợi sẽ được áp dụng theo thời hạn hiển thị trong đơn hàng."
+                : "Quyền lợi chỉ được kích hoạt sau khi trung tâm xác nhận đã nhận thanh toán. Bạn có thể theo dõi trạng thái trong mục Gói tập của tôi."}
             </p>
           </div>
 
@@ -105,7 +113,7 @@ export function SuccessScreen({
             >
               Về trang chủ
             </button>
-            {pkg.category !== "sport" && (
+            {pkg.category !== "sport" && pkg.orderStatus === "paid" && (
               <button
                 type="button"
                 onClick={onActivate}

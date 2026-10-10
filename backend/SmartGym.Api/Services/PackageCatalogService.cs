@@ -296,10 +296,58 @@ public sealed class PackageCatalogService(SmartGymDbContext db)
         subscription.EndDate = end;
         subscription.PaymentStatus = PaymentStatus.Completed;
         subscription.PaidAt = DateTime.UtcNow;
+        var invoice = await db.Invoices.FirstOrDefaultAsync(item => item.Id == orderId, cancellationToken);
+        if (invoice is not null)
+        {
+            invoice.Status = PaymentStatus.Completed;
+            invoice.PaidAt = subscription.PaidAt;
+        }
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
         return MapOrder(subscription, subscription.User?.FullName ?? string.Empty, subscription.User?.Email ?? string.Empty, snapshot);
+    }
+
+    public async Task<PackageCheckoutResponse> CheckoutAsync(
+        Guid userId,
+        CreatePackageCheckoutRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.PaymentMethod))
+            throw new PackageCatalogException(StatusCodes.Status400BadRequest, "Hình thức thanh toán không hợp lệ.");
+
+        PaymentMethod paymentMethod;
+        try
+        {
+            paymentMethod = PaymentMethodExtensions.ParseDbValue(request.PaymentMethod);
+        }
+        catch (ArgumentException)
+        {
+            throw new PackageCatalogException(StatusCodes.Status400BadRequest, "Hình thức thanh toán không hợp lệ.");
+        }
+
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        var order = await CreateOrderAsync(userId, new CreatePackageOrderRequest
+        {
+            PackageId = request.PackageId,
+            DurationMonths = request.DurationMonths
+        }, cancellationToken);
+
+        var subscription = await db.Subscriptions.SingleAsync(item => item.Id == order.Id, cancellationToken);
+        subscription.PaymentMethod = paymentMethod;
+        db.Invoices.Add(new Invoice
+        {
+            // Reuse the order ID so the invoice and subscription stay linked without a schema change.
+            Id = subscription.Id,
+            UserId = userId,
+            TotalAmount = order.Total,
+            PaymentMethod = paymentMethod,
+            Status = PaymentStatus.Pending
+        });
+        await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        return new PackageCheckoutResponse { Order = order, InvoiceId = subscription.Id };
     }
 
     public async Task<bool> HasActiveSportAccessAsync(Guid userId, string sport, CancellationToken cancellationToken)

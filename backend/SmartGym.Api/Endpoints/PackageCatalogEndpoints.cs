@@ -104,6 +104,25 @@ public static class PackageCatalogEndpoints
             }
         }).RequireAuthorization(policy => policy.RequireRole(MemberRoles));
 
+        orders.MapPost("/checkout", async (
+            HttpContext context,
+            [FromBody] CreatePackageCheckoutRequest request,
+            PackageCatalogService service,
+            CancellationToken cancellationToken) =>
+        {
+            if (!TryGetUserId(context, out var userId))
+                return Results.Unauthorized();
+            try
+            {
+                var checkout = await service.CheckoutAsync(userId, request, cancellationToken);
+                return Results.Created($"/api/package-orders/{checkout.Order.Id}", checkout);
+            }
+            catch (PackageCatalogException exception)
+            {
+                return Results.Json(new { message = exception.Message }, statusCode: exception.StatusCode);
+            }
+        }).RequireAuthorization(policy => policy.RequireRole(MemberRoles));
+
         orders.MapGet("/", async (
             PackageCatalogService service,
             CancellationToken cancellationToken) =>

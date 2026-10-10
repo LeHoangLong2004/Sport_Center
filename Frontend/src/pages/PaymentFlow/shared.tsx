@@ -28,6 +28,7 @@ export type FlowPackage = {
   details?: { label: string; value: string }[]
   terms?: string[]
   orderId?: string
+  orderStatus?: "pending" | "paid" | "failed"
   startDate?: string
   checkoutTotal?: number
   checkoutListPrice?: number
