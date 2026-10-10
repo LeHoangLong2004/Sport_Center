@@ -439,7 +439,18 @@ public sealed class PackageCatalogService(SmartGymDbContext db)
             
         var package = subscription.Package;
         if (package == null) 
-            throw new PackageCatalogException(StatusCodes.Status500InternalServerError, "Đơn này thiếu snapshot danh mục và không load được thông tin gói.");
+        {
+            return new CatalogPackageDto
+            {
+                Id = subscription.PackageId ?? "unknown",
+                Category = "unknown",
+                Name = "Gói đã xóa hoặc không xác định",
+                Description = "Thông tin gói tập không còn tồn tại trong hệ thống.",
+                Prices = new Dictionary<int, decimal> { [1] = subscription.TotalAmount },
+                Benefits = new List<string>(),
+                Terms = new List<string>()
+            };
+        }
             
         return new CatalogPackageDto
         {

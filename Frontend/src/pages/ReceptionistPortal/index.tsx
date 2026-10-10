@@ -11,6 +11,7 @@ import { LookupPage } from './views/LookupPage';
 import { DetailPage } from './views/DetailPage';
 import { ProfileSettings } from '../../components/ProfileSettings';
 import { useUserProfile } from '../../hooks/useUserProfile';
+import { toast } from 'sonner';
 
 export default function ReceptionistPortal({ onExit }: { onExit: () => void }) {
   const [page, setPage] = useState<Page>("checkin")
@@ -53,8 +54,8 @@ export default function ReceptionistPortal({ onExit }: { onExit: () => void }) {
         localStorage.setItem("user", JSON.stringify(userObj));
       }
       
-      alert("Đã cập nhật hồ sơ thành công!");
-      window.location.reload();
+      toast.success("Đã cập nhật hồ sơ thành công!");
+      setTimeout(() => window.location.reload(), 1500);
     } catch (err: any) {
       setError(err.message || "Có lỗi xảy ra khi lưu.");
     }

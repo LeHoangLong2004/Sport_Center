@@ -146,7 +146,7 @@ export const CoachAPI = {
     },
 
     // 6. Giáo án
-    getCurricula: async () => {
+    getCurricula: async (): Promise<MockCurriculum[]> => {
         try {
             const plans = await fetchApi('/workout-plans/coach');
             if (!Array.isArray(plans)) return [];
@@ -157,7 +157,7 @@ export const CoachAPI = {
                 goal: p.goal || "",
                 level: p.level || "",
                 duration: p.durationMinutes || 60,
-                status: "Đã giao", // or derive from assignment status
+                status: "Đã giao" as const,
                 updatedAt: new Date().toISOString().split("T")[0],
                 description: p.description || "",
                 exercises: p.exercises?.map((e: any) => ({ 

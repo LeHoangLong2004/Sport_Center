@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ProfileSettings } from "../../../components/ProfileSettings";
 import { useUserProfile } from "../../../hooks/useUserProfile";
+import { toast } from 'sonner';
 
 export default function CoachSettings() {
   const { profile, loading } = useUserProfile();
@@ -66,8 +67,8 @@ export default function CoachSettings() {
         localStorage.setItem("user", JSON.stringify(userObj));
       }
       
-      alert("Đã cập nhật hồ sơ thành công!");
-      window.location.reload(); // Hoặc dùng state thay vì reload nếu được thiết lập context
+      toast.success("Đã cập nhật hồ sơ thành công!");
+      setTimeout(() => window.location.reload(), 1500);
     } catch (err: any) {
       setError(err.message || "Có lỗi xảy ra khi lưu.");
     }
