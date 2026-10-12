@@ -1,5 +1,5 @@
-using SmartGym.Domain.Entities;
 using System.Threading.Tasks;
+using SmartGym.Domain.Entities;
 
 namespace SmartGym.Application.Interfaces;
 

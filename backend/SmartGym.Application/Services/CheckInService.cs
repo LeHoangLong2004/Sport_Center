@@ -10,13 +10,17 @@ public sealed class CheckInService
 
     public CheckInService(
         IMemberPackageRepository packageRepository,
-        ICheckInRepository checkInRepository)
+        ICheckInRepository checkInRepository
+    )
     {
         _packageRepository = packageRepository;
         _checkInRepository = checkInRepository;
     }
 
-    public async Task<(bool Allowed, string Reason, string? PackageName)> ValidateAndCheckInAsync(Guid memberId, DateTime checkInTime)
+    public async Task<(bool Allowed, string Reason, string? PackageName)> ValidateAndCheckInAsync(
+        Guid memberId,
+        DateTime checkInTime
+    )
     {
         var package = await _packageRepository.FindActivePackageAsync(memberId);
         if (package is null)
@@ -43,15 +47,28 @@ public sealed class CheckInService
             var checkInHour = checkInTime.Hour;
             if (checkInHour >= 16)
             {
-                await _checkInRepository.AddAsync(memberId, null, checkInTime, CheckInResult.Denied);
-                return (false, "Gói Off-Peak chỉ được check-in trước 16:00. Vui lòng nâng cấp gói All-Access.", plan.PlanName);
+                await _checkInRepository.AddAsync(
+                    memberId,
+                    null,
+                    checkInTime,
+                    CheckInResult.Denied
+                );
+                return (
+                    false,
+                    "Gói Off-Peak chỉ được check-in trước 16:00. Vui lòng nâng cấp gói All-Access.",
+                    plan.PlanName
+                );
             }
         }
 
         if (package.RemainingSessions.HasValue && package.RemainingSessions <= 0)
         {
             await _checkInRepository.AddAsync(memberId, null, checkInTime, CheckInResult.Denied);
-            return (false, "Gói tập đã hết số buổi. Vui lòng gia hạn hoặc mua gói mới.", plan.PlanName);
+            return (
+                false,
+                "Gói tập đã hết số buổi. Vui lòng gia hạn hoặc mua gói mới.",
+                plan.PlanName
+            );
         }
 
         await _checkInRepository.AddAsync(memberId, null, checkInTime, CheckInResult.Approved);

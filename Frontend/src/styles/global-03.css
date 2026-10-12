@@ -1,0 +1,240 @@
+@reference ../index.css;
+
+
+.register-copy {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.register-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.register-field input {
+  font-size: 14px;
+}
+
+.register-field input::placeholder {
+  color: var(--faint);
+  opacity: 1;
+}
+
+.register-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.demo-accounts {
+  background: color-mix(in srgb, var(--navy-button) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--navy-button) 14%, transparent);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.demo-accounts-label {
+  font-size: 11px;
+  font-family: var(--font-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--navy-button);
+  opacity: 0.6;
+  margin: 0;
+}
+
+.demo-accounts-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.demo-account-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--navy-button) 20%, transparent);
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  flex: 1;
+  min-width: 0;
+}
+
+.demo-account-chip:hover {
+  border-color: var(--navy-button);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--navy-button) 10%, transparent);
+}
+
+.demo-chip-role {
+  font-size: 10px;
+  font-family: var(--font-bold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--orange);
+}
+
+.demo-chip-name {
+  font-size: 12px;
+  font-family: var(--font-bold);
+  color: var(--navy-button);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.login-error {
+  font-size: 13px;
+  color: #e04040;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 0;
+}
+
+.forgot-password-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -8px;
+}
+
+.forgot-password-row button {
+  padding: 0;
+  border: 0;
+  color: var(--navy-button);
+  background: transparent;
+  font-size: 13px;
+  font-family: var(--font-bold);
+  cursor: pointer;
+}
+
+.forgot-password-row button:hover {
+  text-decoration: underline;
+}
+
+.login-switch {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.login-switch button {
+  padding: 0;
+  border: 0;
+  color: var(--navy-button);
+  background: transparent;
+  font-family: var(--font-bold);
+}
+
+.verify-panel {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 100dvh;
+  align-items: center;
+  justify-content: center;
+  padding: 80px clamp(48px, 8vw, 110px);
+  background: var(--canvas);
+}
+
+.verify-content {
+  display: flex;
+  width: 100%;
+  max-width: 600px;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.verify-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.verify-title {
+  margin: 0;
+  font-family: var(--font-extrabold);
+  font-size: 34px;
+}
+
+.verify-copy {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.email-display {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: #334155;
+  background: rgb(226 232 240 / 30%);
+  font-family: var(--font-semibold);
+  font-size: 14px;
+}
+
+.email-display img {
+  width: 16px;
+  height: 16px;
+}
+
+.email-display small {
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #065f46;
+  background: #d1fae5;
+  font-family: var(--font-bold);
+  font-size: 10px;
+}
+
+.otp-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.otp-inputs {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  gap: 12px;
+}
+
+.otp-input {
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  outline: 0;
+  color: var(--ink);
+  background: var(--white);
+  font-family: var(--font-bold);
+  font-size: 24px;
+  text-align: center;
+}
+
+.otp-input::placeholder {
+  color: var(--faint);
+  font-family: var(--font-medium);
+  font-size: 20px;
+}

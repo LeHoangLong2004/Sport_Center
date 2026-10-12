@@ -18,7 +18,8 @@ public sealed class RoleAuthorizationFilter : IEndpointFilter
 
     public async ValueTask<object?> InvokeAsync(
         EndpointFilterInvocationContext context,
-        EndpointFilterDelegate next)
+        EndpointFilterDelegate next
+    )
     {
         var httpContext = context.HttpContext;
 
@@ -26,17 +27,25 @@ public sealed class RoleAuthorizationFilter : IEndpointFilter
         {
             return Results.Json(
                 new { message = "Vui lòng đăng nhập để truy cập tài nguyên này." },
-                statusCode: 401);
+                statusCode: 401
+            );
         }
 
         var roleClaim = httpContext.User.FindFirstValue(ClaimTypes.Role);
-        if (string.IsNullOrEmpty(roleClaim) ||
-            !Enum.TryParse<UserRole>(roleClaim, ignoreCase: true, out var userRole) ||
-            !_allowedRoles.Contains(userRole))
+        if (
+            string.IsNullOrEmpty(roleClaim)
+            || !Enum.TryParse<UserRole>(roleClaim, ignoreCase: true, out var userRole)
+            || !_allowedRoles.Contains(userRole)
+        )
         {
             return Results.Json(
-                new { message = "Bạn không có quyền truy cập chức năng này.", requiredRoles = _allowedRoles.Select(r => r.ToString()) },
-                statusCode: 403);
+                new
+                {
+                    message = "Bạn không có quyền truy cập chức năng này.",
+                    requiredRoles = _allowedRoles.Select(r => r.ToString()),
+                },
+                statusCode: 403
+            );
         }
 
         return await next(context);

@@ -13,13 +13,17 @@ public sealed class SupabasePtSessionRepository : IPtSessionRepository
         _client = client;
     }
 
-    public async Task<IEnumerable<PtSession>> GetSessionsByCoachAndDateAsync(Guid coachId, DateTime date)
+    public async Task<IEnumerable<PtSession>> GetSessionsByCoachAndDateAsync(
+        Guid coachId,
+        DateTime date
+    )
     {
         var startOfDay = date.Date;
         var endOfDay = startOfDay.AddDays(1);
 
         // 1. Get enrollments for this coach
-        var enrollmentsResponse = await _client.From<PtEnrollmentModel>()
+        var enrollmentsResponse = await _client
+            .From<PtEnrollmentModel>()
             .Where(x => x.CoachId == coachId)
             .Get();
 
@@ -32,7 +36,8 @@ public sealed class SupabasePtSessionRepository : IPtSessionRepository
 
         // 2. Get sessions for those enrollments on the specific date
         // Note: Postgrest-csharp might not support 'in' queries on large arrays gracefully, but for small sets it's fine.
-        var sessionsResponse = await _client.From<PtSessionModel>()
+        var sessionsResponse = await _client
+            .From<PtSessionModel>()
             .Filter(x => x.EnrollmentId, Postgrest.Constants.Operator.In, enrollmentIds)
             .Where(x => x.ScheduleTime >= startOfDay)
             .Where(x => x.ScheduleTime < endOfDay)

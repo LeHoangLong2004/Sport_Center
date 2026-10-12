@@ -65,7 +65,8 @@ export interface MembershipStatus {
 const API_BASE_URL = `${(import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/$/, "")}/api`
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = localStorage.getItem("accessToken") || localStorage.getItem("token")
+  const token =
+    localStorage.getItem("accessToken") || localStorage.getItem("token")
   const headers = new Headers(options.headers)
   if (options.body !== undefined && !headers.has("Content-Type"))
     headers.set("Content-Type", "application/json")
@@ -111,10 +112,7 @@ export function getMembershipStatus(
         order.startDate.slice(0, 10) <= today &&
         order.endDate.slice(0, 10) >= today,
     )
-    .sort(
-      (a, b) =>
-        b.startDate!.localeCompare(a.startDate!),
-    )[0]
+    .sort((a, b) => b.startDate!.localeCompare(a.startDate!))[0]
 
   if (active) {
     const membership = active.packageSnapshot
@@ -149,7 +147,9 @@ export const PackageAPI = {
 
   savePackage: (input: CatalogPackage, isNew: boolean) => {
     return request<CatalogPackage>(
-      isNew ? "/package-catalog" : `/package-catalog/${encodeURIComponent(input.id)}`,
+      isNew
+        ? "/package-catalog"
+        : `/package-catalog/${encodeURIComponent(input.id)}`,
       {
         method: isNew ? "POST" : "PUT",
         body: JSON.stringify(input),
@@ -182,7 +182,10 @@ export const PackageAPI = {
     }),
 
   confirmPayment: (orderId: string) =>
-    request<PackageOrder>(`/package-orders/${encodeURIComponent(orderId)}/confirm-payment`, {
-      method: "PUT",
-    }),
+    request<PackageOrder>(
+      `/package-orders/${encodeURIComponent(orderId)}/confirm-payment`,
+      {
+        method: "PUT",
+      },
+    ),
 }
