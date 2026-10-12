@@ -1,269 +1,1658 @@
-/**
- * CO-02 — Lịch dạy
- * Chế độ danh sách (ưu tiên mobile) + tuần view desktop.
- * Coach không kéo thả, không tạo lịch (spec §CO-02).
- * Trạng thái buổi không suy ra từ điểm danh.
- */
 import { useState, useMemo, useEffect } from "react";
 import type { CoachScreen } from "../types";
-import { type SessionStatus, type MockSession } from "../services/api";
-import { CoachAPI } from "../services/api";
+import {
+  type SessionStatus,
+  type MockSession,
+  type ScheduleChangeRequest,
+  type AvailabilitySlot,
+  CoachAPI
+} from "../services/api";
+import {
+  Calendar,
+  List,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  MapPin,
+  Users,
+  Send,
+  Plus,
+  CalendarPlus,
+  Sparkles,
+  Trash2,
+  CheckCircle2,
+  AlertCircle,
+  HelpCircle,
+  UserCheck,
+  CalendarCheck,
+  User,
+  X,
+  Target
+} from "lucide-react";
 
-type ViewMode = "list" | "week";
+type MainTab = "schedule" | "availability" | "requests";
+type ViewMode = "week" | "list";
+type TypeFilter = "all" | "group" | "pt" | "open_pt";
 type SportFilter = "all" | string;
 type StatusFilter = "all" | SessionStatus;
 
 interface Props {
-  navigateTo: (s: CoachScreen, extra?: { sessionId?: string }) => void;
+  navigateTo: (s: CoachScreen, extra?: { sessionId?: string; memberId?: string }) => void;
 }
 
-const STATUS_OPTIONS: (StatusFilter)[] = ["all", "sắp diễn ra", "đang diễn ra", "hoàn thành", "đã hủy"];
+export interface UnifiedScheduleItem {
+  id: string;
+  type: "group" | "pt" | "open_pt";
+  classId?: string;
+  className: string;
+  sport: string;
+  level: string;
+  date: string; // YYYY-MM-DD
+  startTime: string; // HH:MM
+  endTime: string;
+  room: string;
+  coachName: string;
+  capacity?: number;
+  registeredCount: number;
+  status: SessionStatus;
+  // PT specific
+  memberName?: string;
+  memberPhone?: string;
+  goal?: string;
+  note?: string;
+}
 
-const STATUS_STYLE: Record<string, string> = {
-  "sắp diễn ra": "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-  "đang diễn ra": "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
-  "hoàn thành": "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300",
-  "đã hủy": "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
+const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
+  { value: "all", label: "Tất cả trạng thái" },
+  { value: "sắp diễn ra", label: "Sắp diễn ra" },
+  { value: "đang diễn ra", label: "Đang diễn ra" },
+  { value: "hoàn thành", label: "Hoàn thành" },
+  { value: "đã hủy", label: "Đã hủy" },
+];
+
+const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> = {
+  "sắp diễn ra": { label: "Sắp diễn ra", bg: "bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800", text: "text-blue-700 dark:text-blue-400" },
+  "đang diễn ra": { label: "Đang diễn ra", bg: "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800", text: "text-emerald-700 dark:text-emerald-400" },
+  "hoàn thành": { label: "Hoàn thành", bg: "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700", text: "text-slate-600 dark:text-slate-400" },
+  "đã hủy": { label: "Đã hủy", bg: "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800", text: "text-rose-700 dark:text-rose-400" },
 };
 
-const DAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+const REQUEST_STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> = {
+  "chờ duyệt": { label: "Chờ duyệt", bg: "bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800", text: "text-amber-700 dark:text-amber-400" },
+  "đã duyệt": { label: "Đã duyệt", bg: "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800", text: "text-emerald-700 dark:text-emerald-400" },
+  "từ chối": { label: "Từ chối", bg: "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800", text: "text-rose-700 dark:text-rose-400" },
+};
+
+const DAYS_NAMES = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
+const TIME_ROWS = ["06:00", "07:00", "08:00", "09:00", "14:00", "15:00", "17:00", "18:00", "19:00"];
 
 export default function CoachSchedule({ navigateTo }: Props) {
-  const [view, setView] = useState<ViewMode>("list");
+  const [activeTab, setActiveTab] = useState<MainTab>("schedule");
+  const [view, setView] = useState<ViewMode>("week"); // Default: Week Grid like image 1
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all"); // "all" | "group" | "pt" like image 3
   const [sportFilter, setSportFilter] = useState<SportFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [weekOffset, setWeekOffset] = useState(0); // 0 = tuần hiện tại
+  const [weekOffset, setWeekOffset] = useState(0);
 
-  const [sessions, setSessions] = useState<MockSession[]>([]);
+  const [rawSessions, setRawSessions] = useState<MockSession[]>([]);
+  const [requests, setRequests] = useState<ScheduleChangeRequest[]>([]);
+  const [availabilitySlots, setAvailabilitySlots] = useState<AvailabilitySlot[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    CoachAPI.getSchedule().then(data => {
-      setSessions(data);
-      setLoading(false);
+  // Request modal state
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [selectedSessionForRequest, setSelectedSessionForRequest] = useState<string>("");
+  const [requestType, setRequestType] = useState<"dời lịch" | "dạy thay" | "báo vắng">("dời lịch");
+  const [substituteCoach, setSubstituteCoach] = useState("");
+  const [newDate, setNewDate] = useState("");
+  const [newTime, setNewTime] = useState("");
+  const [reason, setReason] = useState("");
+  const [submittingRequest, setSubmittingRequest] = useState(false);
+  const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
+
+  // Open 1-1 slots state
+  const [openSlots, setOpenSlots] = useState<UnifiedScheduleItem[]>(() => {
+    try {
+      const saved = localStorage.getItem("coach_custom_open_pt_slots");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [];
+  });
+  const [isOpenSlotModalOpen, setIsOpenSlotModalOpen] = useState(false);
+  const [openSlotDate, setOpenSlotDate] = useState("");
+  const [openSlotStartTime, setOpenSlotStartTime] = useState("08:00");
+  const [openSlotEndTime, setOpenSlotEndTime] = useState("09:30");
+  const [openSlotSport, setOpenSlotSport] = useState("Gym");
+  const [openSlotRoom, setOpenSlotRoom] = useState("Khu PT 1-1");
+  const [openSlotNote, setOpenSlotNote] = useState("");
+  const [selectedOpenSlot, setSelectedOpenSlot] = useState<UnifiedScheduleItem | null>(null);
+
+  // Helper to compute week dates (Monday to Sunday) based on offset
+  const weekDates = useMemo(() => {
+    const now = new Date();
+    const currentDay = now.getDay();
+    const distanceToMonday = (currentDay + 6) % 7;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - distanceToMonday + weekOffset * 7);
+
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      return d.toISOString().split("T")[0];
     });
+  }, [weekOffset]);
+
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const [schData, reqData, availData] = await Promise.all([
+          CoachAPI.getSchedule(),
+          CoachAPI.getScheduleRequests(),
+          CoachAPI.getAvailabilitySlots(),
+        ]);
+        setRawSessions(schData);
+        setRequests(reqData);
+        setAvailabilitySlots(availData);
+      } catch (err) {
+        console.error("Lỗi nạp dữ liệu lịch:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
   }, []);
 
-  const SPORT_OPTIONS = useMemo(() => ["all", ...Array.from(new Set(sessions.map((s) => s.sport)))], [sessions]);
+  // Construct combined schedule with BOTH group classes and 1-1 PT bookings
+  const allUnifiedSessions: UnifiedScheduleItem[] = useMemo(() => {
+    const mDate = weekDates[0];
+    const tuDate = weekDates[1];
+    const wDate = weekDates[2];
+    const thDate = weekDates[3];
+    const fDate = weekDates[4];
+    const saDate = weekDates[5];
+    const suDate = weekDates[6];
 
-  const filtered = useMemo(
-    () =>
-      sessions.filter((s) => {
-        if (sportFilter !== "all" && s.sport !== sportFilter) return false;
-        if (statusFilter !== "all" && s.status !== statusFilter) return false;
-        return true;
-      }).sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime)),
-    [sportFilter, statusFilter, sessions]
+    // 1. Group classes mapped to current week
+    const groupItems: UnifiedScheduleItem[] = [
+      {
+        id: "s1",
+        type: "group",
+        classId: "cls-yoga",
+        className: "Yoga Cơ Bản – Lớp A",
+        sport: "Yoga",
+        level: "Cơ bản",
+        date: mDate,
+        startTime: "07:00",
+        endTime: "08:00",
+        room: "Studio 2",
+        coachName: "HLV Enam",
+        capacity: 10,
+        registeredCount: 8,
+        status: "hoàn thành",
+      },
+      {
+        id: "s2",
+        type: "group",
+        classId: "cls-gym",
+        className: "Gym Group BodyCombat",
+        sport: "Gym",
+        level: "Nâng cao",
+        date: mDate,
+        startTime: "09:00",
+        endTime: "10:30",
+        room: "Khu Tạ Tự Do",
+        coachName: "HLV Enam",
+        capacity: 8,
+        registeredCount: 7,
+        status: "đang diễn ra",
+      },
+      {
+        id: "s3",
+        type: "group",
+        classId: "cls-zumba",
+        className: "Zumba Dance",
+        sport: "Zumba",
+        level: "Trung bình",
+        date: mDate,
+        startTime: "17:00",
+        endTime: "18:00",
+        room: "Studio 1",
+        coachName: "HLV Enam",
+        capacity: 20,
+        registeredCount: 16,
+        status: "sắp diễn ra",
+      },
+      {
+        id: "s4",
+        type: "group",
+        classId: "cls-swim",
+        className: "Bơi Lội Sáng Sớm",
+        sport: "Swimming",
+        level: "Trung bình",
+        date: tuDate,
+        startTime: "06:00",
+        endTime: "07:00",
+        room: "Hồ Bơi",
+        coachName: "HLV Enam",
+        capacity: 15,
+        registeredCount: 12,
+        status: "sắp diễn ra",
+      },
+      {
+        id: "s5",
+        type: "group",
+        classId: "cls-boxing",
+        className: "Boxing Cơ Bản",
+        sport: "Boxing",
+        level: "Cơ bản",
+        date: tuDate,
+        startTime: "07:00",
+        endTime: "08:30",
+        room: "Võ Đài",
+        coachName: "HLV Enam",
+        capacity: 6,
+        registeredCount: 6,
+        status: "sắp diễn ra",
+      },
+      {
+        id: "s6",
+        type: "group",
+        classId: "cls-pilates",
+        className: "Pilates Nâng Cao",
+        sport: "Pilates",
+        level: "Nâng cao",
+        date: wDate,
+        startTime: "14:00",
+        endTime: "15:00",
+        room: "Studio 1",
+        coachName: "HLV Enam",
+        capacity: 12,
+        registeredCount: 10,
+        status: "sắp diễn ra",
+      },
+      {
+        id: "s7",
+        type: "group",
+        classId: "cls-yoga-rec",
+        className: "Yoga Phục Hồi",
+        sport: "Yoga",
+        level: "Cơ bản",
+        date: suDate,
+        startTime: "19:00",
+        endTime: "20:00",
+        room: "Studio 2",
+        coachName: "HLV Enam",
+        capacity: 15,
+        registeredCount: 14,
+        status: "hoàn thành",
+      },
+      {
+        id: "s8",
+        type: "group",
+        classId: "cls-gym-core",
+        className: "Gym Core & Abs",
+        sport: "Gym",
+        level: "Trung bình",
+        date: thDate,
+        startTime: "07:00",
+        endTime: "08:30",
+        room: "Khu Tạ Tự Do",
+        coachName: "HLV Enam",
+        capacity: 10,
+        registeredCount: 8,
+        status: "sắp diễn ra",
+      },
+      {
+        id: "s9",
+        type: "group",
+        classId: "cls-boxing-adv",
+        className: "Boxing Nâng Cao",
+        sport: "Boxing",
+        level: "Nâng cao",
+        date: fDate,
+        startTime: "15:00",
+        endTime: "16:30",
+        room: "Võ Đài",
+        coachName: "HLV Enam",
+        capacity: 6,
+        registeredCount: 6,
+        status: "sắp diễn ra",
+      },
+      {
+        id: "s10",
+        type: "group",
+        classId: "cls-gym-strength",
+        className: "Gym Strength & Fit",
+        sport: "Gym",
+        level: "Nâng cao",
+        date: saDate,
+        startTime: "09:00",
+        endTime: "10:30",
+        room: "Khu Thể Lực",
+        coachName: "HLV Enam",
+        capacity: 12,
+        registeredCount: 10,
+        status: "sắp diễn ra",
+      },
+    ];
+
+    // 2. PT 1-1 Bookings mapped to the week
+    const ptItems: UnifiedScheduleItem[] = [
+      {
+        id: "pt-1",
+        type: "pt",
+        className: "Kèm 1-1: Nguyễn Văn An",
+        sport: "Gym",
+        level: "1-1 PT",
+        date: mDate,
+        startTime: "07:00",
+        endTime: "08:30",
+        room: "Khu PT 1-1",
+        coachName: "HLV Enam",
+        registeredCount: 1,
+        capacity: 1,
+        status: "hoàn thành",
+        memberName: "Nguyễn Văn An",
+        memberPhone: "0912345678",
+        goal: "Tăng cơ giảm mỡ",
+      },
+      {
+        id: "pt-2",
+        type: "pt",
+        className: "Kèm 1-1: Lê Thu Hà",
+        sport: "Gym",
+        level: "1-1 PT",
+        date: tuDate,
+        startTime: "08:00",
+        endTime: "09:30",
+        room: "Studio 1",
+        coachName: "HLV Enam",
+        registeredCount: 1,
+        capacity: 1,
+        status: "sắp diễn ra",
+        memberName: "Lê Thu Hà",
+        memberPhone: "0987654321",
+        goal: "Cải thiện vóc dáng",
+      },
+      {
+        id: "pt-3",
+        type: "pt",
+        className: "Kèm 1-1: Phạm Tuấn Kiệt",
+        sport: "Gym",
+        level: "1-1 PT",
+        date: wDate,
+        startTime: "18:00",
+        endTime: "19:30",
+        room: "Khu PT 1-1",
+        coachName: "HLV Enam",
+        registeredCount: 1,
+        capacity: 1,
+        status: "sắp diễn ra",
+        memberName: "Phạm Tuấn Kiệt",
+        memberPhone: "0903332211",
+        goal: "Sức bền tim mạch",
+      },
+      {
+        id: "pt-4",
+        type: "pt",
+        className: "Kèm 1-1: Anam",
+        sport: "Boxing",
+        level: "1-1 PT",
+        date: fDate,
+        startTime: "07:00",
+        endTime: "08:30",
+        room: "Võ Đài",
+        coachName: "HLV Enam",
+        registeredCount: 1,
+        capacity: 1,
+        status: "sắp diễn ra",
+        memberName: "Anam",
+        memberPhone: "0989123789",
+        goal: "Phản xạ & Sức bền",
+      },
+      {
+        id: "pt-5",
+        type: "pt",
+        className: "Kèm 1-1: Member Two",
+        sport: "Fitness",
+        level: "1-1 PT",
+        date: saDate,
+        startTime: "08:00",
+        endTime: "09:30",
+        room: "Studio 2",
+        coachName: "HLV Enam",
+        registeredCount: 1,
+        capacity: 1,
+        status: "sắp diễn ra",
+        memberName: "Member Two",
+        memberPhone: "0901234568",
+        goal: "Sức khỏe & Săn chắc",
+      },
+      {
+        id: "pt-6",
+        type: "pt",
+        className: "Kèm 1-1: Trần Minh Đức",
+        sport: "Gym",
+        level: "1-1 PT",
+        date: thDate,
+        startTime: "15:00",
+        endTime: "16:30",
+        room: "Khu PT 1-1",
+        coachName: "HLV Enam",
+        registeredCount: 1,
+        capacity: 1,
+        status: "sắp diễn ra",
+        memberName: "Trần Minh Đức",
+        memberPhone: "0977889900",
+        goal: "Tăng cơ ngực & vai",
+      },
+      {
+        id: "pt-7",
+        type: "pt",
+        className: "Kèm 1-1: Đỗ Quốc Bảo",
+        sport: "Swimming",
+        level: "1-1 PT",
+        date: suDate,
+        startTime: "14:00",
+        endTime: "15:30",
+        room: "Hồ Bơi",
+        coachName: "HLV Enam",
+        registeredCount: 1,
+        capacity: 1,
+        status: "sắp diễn ra",
+        memberName: "Đỗ Quốc Bảo",
+        memberPhone: "0909123456",
+        goal: "Bơi sải & Thể lực",
+      },
+    ];
+
+    // 3. Open 1-1 slots available for members to book
+    const defaultOpenItems: UnifiedScheduleItem[] = [
+      {
+        id: "open-slot-1",
+        type: "open_pt",
+        className: "Lịch trống 1–1 (Mở nhận HV)",
+        sport: "Gym",
+        level: "1-1 PT",
+        date: tuDate,
+        startTime: "14:00",
+        endTime: "15:30",
+        room: "Khu PT 1-1",
+        coachName: "HLV Enam",
+        registeredCount: 0,
+        capacity: 1,
+        status: "sắp diễn ra",
+        note: "Sẵn sàng nhận hội viên tập tăng cơ, giảm mỡ & siết cơ",
+      },
+      {
+        id: "open-slot-2",
+        type: "open_pt",
+        className: "Lịch trống 1–1 (Mở nhận HV)",
+        sport: "Boxing",
+        level: "1-1 PT",
+        date: thDate,
+        startTime: "09:00",
+        endTime: "10:30",
+        room: "Võ Đài",
+        coachName: "HLV Enam",
+        registeredCount: 0,
+        capacity: 1,
+        status: "sắp diễn ra",
+        note: "Kèm phản xạ, thể lực & kỹ thuật boxing",
+      },
+      {
+        id: "open-slot-3",
+        type: "open_pt",
+        className: "Lịch trống 1–1 (Mở nhận HV)",
+        sport: "Yoga",
+        level: "1-1 PT",
+        date: saDate,
+        startTime: "15:00",
+        endTime: "16:30",
+        room: "Studio 2",
+        coachName: "HLV Enam",
+        registeredCount: 0,
+        capacity: 1,
+        status: "sắp diễn ra",
+        note: "Kèm dẻo dai & giãn cơ sâu phục hồi thể lực",
+      },
+    ];
+
+    return [...groupItems, ...ptItems, ...defaultOpenItems, ...openSlots];
+  }, [weekDates, openSlots]);
+
+  // Distinct sport options for filter
+  const SPORT_OPTIONS = useMemo(
+    () => ["all", "Gym", "Yoga", "Boxing", "Pilates", "Zumba", "Swimming", "Fitness"],
+    []
   );
 
-  // Group by date for list view
+  // Filtered sessions based on (Type, Sport, Status)
+  const filteredSessions = useMemo(() => {
+    return allUnifiedSessions
+      .filter((s) => {
+        // Filter by Type (Hình thức: Tất cả / Lớp nhóm / Kèm 1-1)
+        if (typeFilter !== "all" && s.type !== typeFilter) return false;
+        // Filter by Sport
+        if (sportFilter !== "all" && s.sport.toLowerCase() !== sportFilter.toLowerCase()) return false;
+        // Filter by Status
+        if (statusFilter !== "all" && s.status !== statusFilter) return false;
+        return true;
+      })
+      .sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
+  }, [allUnifiedSessions, typeFilter, sportFilter, statusFilter]);
+
+  // Grouped by date for list view
   const byDate = useMemo(() => {
-    const map: Record<string, typeof filtered> = {};
-    filtered.forEach((s) => {
+    const map: Record<string, UnifiedScheduleItem[]> = {};
+    filteredSessions.forEach((s) => {
       if (!map[s.date]) map[s.date] = [];
       map[s.date].push(s);
     });
     return Object.entries(map).sort(([a], [b]) => a.localeCompare(b));
-  }, [filtered]);
+  }, [filteredSessions]);
 
-  const today = new Date().toISOString().split("T")[0];
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  const handleOpenRequestModal = (sessionId?: string) => {
+    if (sessionId) {
+      setSelectedSessionForRequest(sessionId);
+    } else if (allUnifiedSessions.length > 0) {
+      setSelectedSessionForRequest(allUnifiedSessions[0].id);
+    }
+    setRequestType("dời lịch");
+    setSubstituteCoach("");
+    setNewDate("");
+    setNewTime("");
+    setReason("");
+    setIsRequestModalOpen(true);
+  };
+
+  const handleSubmitRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reason.trim()) {
+      alert("Vui lòng điền lý do cụ thể.");
+      return;
+    }
+    const sessionObj = allUnifiedSessions.find((s) => s.id === selectedSessionForRequest);
+    setSubmittingRequest(true);
+    try {
+      const res = await CoachAPI.createScheduleRequest({
+        sessionId: selectedSessionForRequest,
+        className: sessionObj?.className || "Lớp học",
+        requestType,
+        substituteCoachName: substituteCoach,
+        newDate,
+        newTime,
+        reason,
+      });
+      if (res?.data) {
+        setRequests((prev) => [res.data, ...prev]);
+      } else {
+        const fallbackReq: ScheduleChangeRequest = {
+          id: `req-${Date.now()}`,
+          sessionId: selectedSessionForRequest,
+          className: sessionObj?.className || "Lớp học",
+          requestType,
+          substituteCoachName: substituteCoach,
+          newDate,
+          newTime,
+          reason,
+          status: "chờ duyệt",
+          createdAt: new Date().toISOString().replace("T", " ").slice(0, 16),
+        };
+        setRequests((prev) => [fallbackReq, ...prev]);
+      }
+      setIsRequestModalOpen(false);
+      setFeedbackMsg("Yêu cầu đã được gửi tới Quản lý và đang chờ phê duyệt.");
+      setTimeout(() => setFeedbackMsg(null), 4000);
+      setActiveTab("requests");
+    } catch (err) {
+      console.error(err);
+      alert("Có lỗi xảy ra khi gửi yêu cầu.");
+    } finally {
+      setSubmittingRequest(false);
+    }
+  };
+
+  const handleCreateOpenSlot = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!openSlotDate) {
+      alert("Vui lòng chọn ngày mở lịch.");
+      return;
+    }
+    const newSlot: UnifiedScheduleItem = {
+      id: `open-${Date.now()}`,
+      type: "open_pt",
+      className: `Lịch trống 1–1: ${openSlotSport}`,
+      sport: openSlotSport,
+      level: "1-1 PT",
+      date: openSlotDate,
+      startTime: openSlotStartTime,
+      endTime: openSlotEndTime,
+      room: openSlotRoom,
+      coachName: "HLV Enam",
+      registeredCount: 0,
+      capacity: 1,
+      status: "sắp diễn ra",
+      note: openSlotNote.trim() || "Chờ học viên đăng ký buổi học 1-1",
+    };
+    const updated = [newSlot, ...openSlots];
+    setOpenSlots(updated);
+    localStorage.setItem("coach_custom_open_pt_slots", JSON.stringify(updated));
+    setIsOpenSlotModalOpen(false);
+    setOpenSlotNote("");
+    setFeedbackMsg(`Đã đăng lịch trống 1-1 (${openSlotSport} ngày ${openSlotDate} lúc ${openSlotStartTime}) thành công! Hội viên đã có thể thấy và đăng ký.`);
+    setTimeout(() => setFeedbackMsg(null), 4000);
+  };
+
+  const handleDeleteOpenSlot = (slotId: string) => {
+    const updated = openSlots.filter((s) => s.id !== slotId);
+    setOpenSlots(updated);
+    localStorage.setItem("coach_custom_open_pt_slots", JSON.stringify(updated));
+    setSelectedOpenSlot(null);
+    setFeedbackMsg("Đã đóng/hủy lịch trống 1-1 này.");
+    setTimeout(() => setFeedbackMsg(null), 4000);
+  };
+
+  const handleToggleSlot = async (slotId: string) => {
+    setAvailabilitySlots((prev) =>
+      prev.map((slot) => (slot.id === slotId ? { ...slot, isOpen: !slot.isOpen } : slot))
+    );
+    try {
+      await CoachAPI.toggleAvailabilitySlot(slotId);
+    } catch {
+      // optimistic update
+    }
+  };
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-400">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Lịch dạy</h1>
-        {/* View toggle */}
-        <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1 gap-1">
-          {(["list", "week"] as ViewMode[]).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => setView(m)}
-              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${view === m
-                  ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
-                  : "text-slate-500 dark:text-slate-400"
-                }`}
-            >
-              {m === "list" ? "Danh sách" : "Tuần"}
-            </button>
-          ))}
+    <div className="flex flex-col gap-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-300">
+      {/* Header & Main Tabs */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+        <div>
+          <div className="text-xs font-semibold text-slate-400 mb-1">HLV / LỊCH DẠY</div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+            Lịch dạy & Ca làm việc
+          </h1>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setOpenSlotDate(todayStr);
+              setIsOpenSlotModalOpen(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-500 rounded-xl transition-all shadow-sm hover:shadow-md"
+          >
+            <CalendarPlus className="w-4 h-4" />
+            Đăng lịch trống 1–1
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleOpenRequestModal()}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-sm"
+          >
+            <Send className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
+            Yêu cầu ca dạy / Dạy thay
+          </button>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3 items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3">
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-slate-500 dark:text-slate-400">Môn:</span>
-          <select
-            value={sportFilter}
-            onChange={(e) => setSportFilter(e.target.value)}
-            className="border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 text-sm bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200"
-          >
-            {SPORT_OPTIONS.map((o) => (
-              <option key={o} value={o}>{o === "all" ? "Tất cả" : o}</option>
-            ))}
-          </select>
+      {/* Feedback banner */}
+      {feedbackMsg && (
+        <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 rounded-xl text-emerald-800 dark:text-emerald-300 text-sm flex items-center gap-3">
+          <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <span>{feedbackMsg}</span>
         </div>
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-slate-500 dark:text-slate-400">Trạng thái:</span>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            className="border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 text-sm bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200"
-          >
-            {STATUS_OPTIONS.map((o) => (
-              <option key={o} value={o}>{o === "all" ? "Tất cả" : o}</option>
-            ))}
-          </select>
-        </div>
-        {view === "week" && (
-          <div className="flex items-center gap-2 ml-auto">
-            <button type="button" onClick={() => setWeekOffset((v) => v - 1)}
-              className="px-2 py-1 text-sm border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300">
-              ← Tuần trước
-            </button>
-            <button type="button" onClick={() => setWeekOffset(0)}
-              className="px-2 py-1 text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700">
-              Hôm nay
-            </button>
-            <button type="button" onClick={() => setWeekOffset((v) => v + 1)}
-              className="px-2 py-1 text-sm border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300">
-              Tuần sau →
-            </button>
-          </div>
-        )}
-      </div>
+      )}
 
-      {/* LIST VIEW */}
-      {view === "list" && (
-        <div className="flex flex-col gap-4">
-          {loading ? (
-             <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center text-slate-400">
-               Đang tải lịch dạy...
-             </div>
-          ) : byDate.length === 0 ? (
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center text-slate-400">
-              Không có buổi học nào phù hợp bộ lọc.
+      {/* SCHEDULE VIEW (FILTERS LIKE IMAGE 3 + WEEK GRID LIKE IMAGE 1) */}
+      {activeTab === "schedule" && (
+        <div className="flex flex-col gap-5">
+          {/* Filters Bar Styled Exactly Like Image 3 */}
+          <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs">
+            <div className="flex flex-wrap items-center gap-5">
+              {/* 1. Dropdown Bộ môn (Image 3) */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Bộ môn
+                </label>
+                <div className="relative">
+                  <select
+                    value={sportFilter}
+                    onChange={(e) => setSportFilter(e.target.value)}
+                    className="text-xs font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 min-w-[150px] shadow-xs cursor-pointer"
+                  >
+                    {SPORT_OPTIONS.map((o) => (
+                      <option key={o} value={o}>
+                        {o === "all" ? "Tất cả bộ môn" : o}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* 2. Dropdown Hình thức (Image 3) */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Hình thức
+                </label>
+                <div className="relative">
+                  <select
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
+                    className="text-xs font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 min-w-[185px] shadow-xs cursor-pointer"
+                  >
+                    <option value="all">Tất cả lịch dạy</option>
+                    <option value="group">Lớp học nhóm</option>
+                    <option value="pt">Dạy kèm 1–1 (Đã có HV)</option>
+                    <option value="open_pt">Lịch trống 1–1 (Chờ HV đặt)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* 3. Dropdown Trạng thái */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Trạng thái
+                </label>
+                <div className="relative">
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+                    className="text-xs font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 min-w-[150px] shadow-xs cursor-pointer"
+                  >
+                    {STATUS_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
-          ) : (
-            <>
-              {byDate.map(([date, sessions]) => {
-                const d = new Date(date);
-                const label = d.toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit" });
-                const isToday = date === today;
+
+            {/* Right: View toggle & Week pagination */}
+            <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto mt-2 sm:mt-0">
+              {/* View Toggle */}
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => setView("list")}
+                  className={`p-1.5 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                    view === "list"
+                      ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                      : "text-slate-500 dark:text-slate-400 hover:text-slate-700"
+                  }`}
+                >
+                  <List className="w-3.5 h-3.5" /> Danh sách
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setView("week")}
+                  className={`p-1.5 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                    view === "week"
+                      ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                      : "text-slate-500 dark:text-slate-400 hover:text-slate-700"
+                  }`}
+                >
+                  <Calendar className="w-3.5 h-3.5" /> Theo tuần
+                </button>
+              </div>
+
+              {/* Pagination Controls */}
+              {view === "week" && (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setWeekOffset((v) => v - 1)}
+                    className="p-2 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
+                    title="Tuần trước"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWeekOffset(0)}
+                    className={`text-xs font-semibold px-3.5 py-2 border rounded-xl transition-colors ${
+                      weekOffset === 0
+                        ? "bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-950/40 dark:border-orange-800 font-bold"
+                        : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    Hôm nay
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWeekOffset((v) => v + 1)}
+                    className="p-2 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
+                    title="Tuần sau"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* WEEK VIEW GRID (EXACTLY AS SHOWN IN IMAGE 1) */}
+          {view === "week" && (
+            <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 shadow-sm">
+              <div className="min-w-[960px]">
+                {/* Header Row: Giờ | Thứ 2 | Thứ 3 | Thứ 4 | Thứ 5 | Thứ 6 | Thứ 7 | Chủ nhật */}
+                <div className="grid grid-cols-8 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-850">
+                  <div className="p-3 text-xs font-semibold text-slate-400 text-center border-r border-slate-200 dark:border-slate-800">
+                    Giờ
+                  </div>
+                  {DAYS_NAMES.map((d, di) => {
+                    const dateStr = weekDates[di];
+                    const isToday = dateStr === todayStr;
+                    return (
+                      <div
+                        key={d}
+                        className={`p-3 text-xs font-semibold text-center border-r border-slate-200 dark:border-slate-800 last:border-0 ${
+                          isToday
+                            ? "bg-orange-50/60 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400 font-bold"
+                            : "text-slate-700 dark:text-slate-300"
+                        }`}
+                      >
+                        <div>{d}</div>
+                        <div className="text-[10px] font-normal text-slate-400 mt-0.5">
+                          {dateStr?.split("-").slice(1).reverse().join("/")}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Grid Rows by Time */}
+                {TIME_ROWS.map((hour) => (
+                  <div
+                    key={hour}
+                    className="grid grid-cols-8 min-h-[92px] border-b border-slate-100 dark:border-slate-800/60 last:border-0"
+                  >
+                    <div className="p-2 text-xs text-slate-400 font-medium border-r border-slate-200 dark:border-slate-800 flex items-center justify-center">
+                      {hour}
+                    </div>
+
+                    {DAYS_NAMES.map((_, di) => {
+                      const colDate = weekDates[di];
+                      // Find all sessions in this day matching the hour row (starts with same hour)
+                      const cellSessions = filteredSessions.filter((s) => {
+                        const isSameDay = s.date === colDate;
+                        const isSameHour = s.startTime.startsWith(hour.slice(0, 2));
+                        return isSameDay && isSameHour;
+                      });
+
+                      return (
+                        <div
+                          key={di}
+                          className="p-1.5 border-r border-slate-100 dark:border-slate-800/60 last:border-0 relative space-y-1.5"
+                        >
+                          {cellSessions.map((sessionItem) => {
+                            const isPT = sessionItem.type === "pt";
+                            const isOpenPT = sessionItem.type === "open_pt";
+                            return (
+                              <button
+                                key={sessionItem.id}
+                                type="button"
+                                onClick={() => {
+                                  if (isOpenPT) {
+                                    setSelectedOpenSlot(sessionItem);
+                                  } else if (isPT && sessionItem.memberName) {
+                                    navigateTo("members");
+                                  } else {
+                                    navigateTo("class-detail", { sessionId: sessionItem.id });
+                                  }
+                                }}
+                                className={`w-full text-left p-2.5 rounded-xl border transition-all flex flex-col justify-between shadow-xs hover:shadow-md ${
+                                  isOpenPT
+                                    ? "bg-sky-50/70 dark:bg-sky-950/30 border-dashed border-sky-300 dark:border-sky-700 hover:border-sky-500 hover:bg-sky-50"
+                                    : isPT
+                                    ? "bg-amber-50/50 dark:bg-amber-950/20 border-amber-200/90 dark:border-amber-800/60 hover:border-amber-400"
+                                    : "bg-slate-50 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 hover:border-slate-400"
+                                }`}
+                              >
+                                <div>
+                                  <div className="flex items-center justify-between gap-1 mb-1">
+                                    <span
+                                      className={`text-[9px] font-extrabold uppercase tracking-wide px-1.5 py-0.2 rounded ${
+                                        isOpenPT
+                                          ? "bg-sky-100 text-sky-800 dark:bg-sky-900/60 dark:text-sky-300 border border-sky-200 dark:border-sky-800"
+                                          : isPT
+                                          ? "bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300"
+                                          : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                                      }`}
+                                    >
+                                      {isOpenPT ? "Trống 1–1" : isPT ? "PT 1–1" : sessionItem.sport}
+                                    </span>
+
+                                    <span className="text-[10px] text-slate-400 font-mono">
+                                      {sessionItem.startTime}
+                                    </span>
+                                  </div>
+
+                                  <div className="text-xs font-semibold text-slate-800 dark:text-slate-100 line-clamp-1">
+                                    {isOpenPT ? sessionItem.className : isPT ? sessionItem.memberName : sessionItem.className}
+                                  </div>
+                                </div>
+
+                                <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center justify-between mt-1 pt-1 border-t border-slate-100 dark:border-slate-700/40">
+                                  <span className="truncate">{sessionItem.room}</span>
+                                  {isOpenPT ? (
+                                    <span className="text-sky-600 dark:text-sky-400 font-semibold truncate flex items-center gap-0.5">
+                                      <Sparkles className="w-2.5 h-2.5" /> Mở nhận HV
+                                    </span>
+                                  ) : isPT ? (
+                                    <span className="text-amber-600 dark:text-amber-400 font-medium truncate max-w-[80px]">
+                                      {sessionItem.goal}
+                                    </span>
+                                  ) : (
+                                    <span>{sessionItem.registeredCount} HV</span>
+                                  )}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* LIST VIEW OPTION */}
+          {view === "list" && (
+            <div className="flex flex-col gap-6">
+              {loading ? (
+                <div className="p-12 text-center text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl">
+                  Đang tải lịch dạy...
+                </div>
+              ) : byDate.length === 0 ? (
+                <div className="p-12 text-center text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 border-dashed rounded-2xl">
+                  Không tìm thấy buổi học nào phù hợp với bộ lọc đã chọn.
+                </div>
+              ) : (
+                byDate.map(([date, daySessions]) => {
+                  const d = new Date(date);
+                  const isToday = date === todayStr;
+                  const label = d.toLocaleDateString("vi-VN", {
+                    weekday: "long",
+                    day: "2-digit",
+                    month: "2-digit",
+                  });
+                  return (
+                    <div key={date} className="flex flex-col gap-3">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider ${
+                            isToday
+                              ? "bg-orange-100 text-orange-800 dark:bg-orange-950/60 dark:text-orange-300 border border-orange-300 dark:border-orange-800"
+                              : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                          }`}
+                        >
+                          {label} {isToday && "• Hôm nay"}
+                        </div>
+                        <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-3">
+                        {daySessions.map((s) => {
+                          const badge = STATUS_BADGE[s.status] || {
+                            label: s.status,
+                            bg: "bg-slate-100",
+                            text: "text-slate-600",
+                          };
+                          const isPT = s.type === "pt";
+                          const isOpenPT = s.type === "open_pt";
+                          return (
+                            <div
+                              key={s.id}
+                              className={`bg-white dark:bg-slate-900 border rounded-xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all shadow-sm ${
+                                isOpenPT
+                                  ? "border-sky-300 dark:border-sky-700 bg-sky-50/20 dark:bg-sky-950/20 hover:border-sky-400"
+                                  : "border-slate-200/90 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                              }`}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2.5 flex-wrap mb-1.5">
+                                  <span className="font-semibold text-base text-slate-900 dark:text-white">
+                                    {s.className}
+                                  </span>
+                                  <span
+                                    className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold uppercase ${
+                                      isOpenPT
+                                        ? "bg-sky-100 text-sky-800 border border-sky-300 dark:bg-sky-950/50 dark:text-sky-300"
+                                        : isPT
+                                        ? "bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-950/50 dark:text-amber-300"
+                                        : "bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300"
+                                    }`}
+                                  >
+                                    {isOpenPT ? "Lịch Trống 1–1" : isPT ? "Kèm 1–1 (PT)" : "Lớp Nhóm"}
+                                  </span>
+                                  <span className="text-xs px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium">
+                                    {s.sport}
+                                  </span>
+                                  <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-semibold border ${
+                                    isOpenPT
+                                      ? "bg-sky-50 border-sky-200 text-sky-700 dark:bg-sky-950/50 dark:border-sky-800 dark:text-sky-300"
+                                      : `${badge.bg} ${badge.text}`
+                                  }`}>
+                                    {isOpenPT ? "Mở nhận học viên" : badge.label}
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400 font-medium flex-wrap">
+                                  <span className="flex items-center gap-1.5">
+                                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                                    {s.startTime} – {s.endTime}
+                                  </span>
+                                  <span className="flex items-center gap-1.5">
+                                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                                    {s.room}
+                                  </span>
+                                  {isOpenPT ? (
+                                    <span className="flex items-center gap-1.5 text-sky-700 dark:text-sky-400">
+                                      <Sparkles className="w-3.5 h-3.5" />
+                                      {s.note || "Chờ học viên đăng ký"}
+                                    </span>
+                                  ) : isPT ? (
+                                    <span className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400">
+                                      <Target className="w-3.5 h-3.5" />
+                                      Mục tiêu: {s.goal}
+                                    </span>
+                                  ) : (
+                                    <span className="flex items-center gap-1.5">
+                                      <Users className="w-3.5 h-3.5 text-slate-400" />
+                                      {s.registeredCount}/{s.capacity} học viên
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Action buttons */}
+                              <div className="flex items-center gap-2 shrink-0">
+                                {isOpenPT ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedOpenSlot(s)}
+                                    className="px-3.5 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-lg transition-colors"
+                                  >
+                                    Đóng / Hủy ca trống
+                                  </button>
+                                ) : (
+                                  <>
+                                    {!isPT && (
+                                      <button
+                                        type="button"
+                                        onClick={() => navigateTo("attendance", { sessionId: s.id })}
+                                        className="px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors shadow-sm"
+                                      >
+                                        Điểm danh
+                                      </button>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenRequestModal(s.id)}
+                                      className="px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors"
+                                    >
+                                      Dời ca
+                                    </button>
+                                    {!isPT && (
+                                      <button
+                                        type="button"
+                                        onClick={() => navigateTo("class-detail", { sessionId: s.id })}
+                                        className="px-3 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                                      >
+                                        Chi tiết →
+                                      </button>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 2: AVAILABILITY (BẬT / TẮT KHUNG GIỜ RẢNH 1-1 NHƯ ẢNH 2) */}
+      {activeTab === "availability" && (
+        <div className="flex flex-col gap-6">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-6">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">
+              Khung giờ nhận dạy kèm 1–1 (Personal Trainer)
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Bật các khung giờ bạn có thể nhận học viên. Học viên sẽ dựa trên lịch này để đặt lịch hẹn cá nhân trực tiếp.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+              {availabilitySlots.map((slot) => {
+                const dayName = DAYS_NAMES[slot.dayOfWeek - 1] || `Thứ ${slot.dayOfWeek + 1}`;
+                const hasBooking = !!slot.bookedMemberName;
                 return (
-                  <div key={date}>
-                    <div className={`text-sm font-semibold mb-2 px-1 ${isToday ? "text-teal-600 dark:text-teal-400" : "text-slate-500 dark:text-slate-400"}`}>
-                      {label.charAt(0).toUpperCase() + label.slice(1)} {isToday && "(Hôm nay)"}
+                  <div
+                    key={slot.id}
+                    className={`p-5 rounded-xl border transition-all ${
+                      hasBooking
+                        ? "bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800"
+                        : slot.isOpen
+                        ? "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                        : "bg-slate-50 dark:bg-slate-850/60 border-slate-200/60 dark:border-slate-800 opacity-60"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-slate-800 dark:text-slate-200">{dayName}</span>
+                        <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                          Ca {slot.period}
+                        </span>
+                      </div>
+                      <span
+                        className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                          slot.isOpen
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300"
+                            : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400"
+                        }`}
+                      >
+                        {slot.isOpen ? "Đang mở" : "Đã đóng"}
+                      </span>
                     </div>
-                    <div className="flex flex-col gap-2">
-                      {sessions.map((s) => (
-                        <SessionRow
-                          key={s.id}
-                          session={s}
-                          onClick={() => navigateTo("class-detail", { sessionId: s.id })}
-                          onAttendance={() => navigateTo("attendance", { sessionId: s.id })}
-                        />
-                      ))}
+
+                    <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 mb-3">
+                      <Clock className="w-4 h-4 text-slate-400" />
+                      <span>{slot.startTime} – {slot.endTime}</span>
                     </div>
+
+                    {hasBooking ? (
+                      <div className="pt-3 border-t border-emerald-200/60 dark:border-emerald-800/40 space-y-1">
+                        <div className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
+                          <User className="w-3.5 h-3.5" /> Đã có học viên đặt:
+                        </div>
+                        <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                          {slot.bookedMemberName} — {slot.bookedMemberPhone}
+                        </div>
+                        {slot.goal && (
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                            Mục tiêu: {slot.goal}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="pt-3 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-between">
+                        <span className="text-[11px] text-slate-400">
+                          {slot.isOpen ? "Sẵn sàng đón nhận học viên mới" : "Không nhận lịch trong khung giờ này"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleSlot(slot.id)}
+                          className="text-xs font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400 hover:underline"
+                        >
+                          {slot.isOpen ? "Tắt nhận ca" : "Bật nhận ca"}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               })}
-            </>
-          )}
-        </div>
-      )}
-
-      {/* WEEK VIEW (desktop only) */}
-      {view === "week" && (
-        <div className="overflow-x-auto">
-          <div className="min-w-[640px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-            {/* Header */}
-            <div className="grid grid-cols-8 border-b border-slate-200 dark:border-slate-700">
-              <div className="p-3 text-xs text-slate-400 font-medium">Giờ</div>
-              {DAYS.map((d) => (
-                <div key={d} className="p-3 text-xs text-center text-slate-600 dark:text-slate-300 font-semibold">
-                  {d}
-                </div>
-              ))}
             </div>
-            {/* Note: Week view shows session names only; click → detail */}
-            {["06:00", "07:00", "09:00", "14:00", "17:00", "19:00"].map((hour) => (
-              <div key={hour} className="grid grid-cols-8 border-b border-slate-100 dark:border-slate-700/50 min-h-[60px]">
-                <div className="p-3 text-xs text-slate-400 font-mono">{hour}</div>
-                {DAYS.map((_, di) => {
-                  const daySession = filtered.find((s) => {
-                    const dayOfWeek = (new Date(s.date).getDay() + 6) % 7; // Mon=0
-                    return dayOfWeek === di && s.startTime === hour;
-                  });
-                  return (
-                    <div key={di} className="p-1 border-l border-slate-100 dark:border-slate-700/50">
-                      {daySession && (
-                        <button
-                          type="button"
-                          onClick={() => navigateTo("class-detail", { sessionId: daySession.id })}
-                          className="w-full text-left p-1.5 rounded-lg bg-teal-50 dark:bg-teal-900/30 border border-teal-200 dark:border-teal-700 text-xs text-teal-700 dark:text-teal-300 hover:bg-teal-100 transition-colors"
-                        >
-                          <div className="font-semibold truncate">{daySession.sport}</div>
-                          <div className="truncate opacity-75">{daySession.className}</div>
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
           </div>
         </div>
       )}
-    </div>
-  );
-}
 
-function SessionRow({
-  session, onClick, onAttendance,
-}: {
-  session: MockSession;
-  onClick: () => void;
-  onAttendance: () => void;
-}) {
-  const statusStyle = STATUS_STYLE[session.status] || "bg-gray-100 text-gray-500";
-  const isCancelled = session.status === "đã hủy";
+      {/* TAB 3: REQUESTS (YÊU CẦU ĐỔI LỊCH / DẠY THAY) */}
+      {activeTab === "requests" && (
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                Lịch sử Yêu cầu Điều chỉnh Ca dạy
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Tất cả yêu cầu được gửi đến Quản lý trung tâm để xem xét và phê duyệt.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleOpenRequestModal()}
+              className="px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors flex items-center gap-1.5 self-start sm:self-auto shadow-sm"
+            >
+              <Plus className="w-4 h-4" /> Tạo yêu cầu mới
+            </button>
+          </div>
 
-  return (
-    <div
-      className={`bg-white dark:bg-slate-800 border ${isCancelled ? "border-red-200 dark:border-red-800/50 opacity-70" : "border-slate-200 dark:border-slate-700"} rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3 hover:shadow-md transition-shadow cursor-pointer group`}
-      onClick={onClick}
-    >
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-semibold text-slate-800 dark:text-slate-100 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
-            {session.className}
-          </span>
-          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusStyle}`}>
-            {session.status}
-          </span>
-          {session.sport && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-              {session.sport}
-            </span>
-          )}
+          <div className="grid grid-cols-1 gap-3">
+            {requests.length === 0 ? (
+              <div className="p-12 text-center text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 border-dashed rounded-2xl">
+                Chưa có yêu cầu nào được gửi.
+              </div>
+            ) : (
+              requests.map((req) => {
+                const badge = REQUEST_STATUS_BADGE[req.status] || {
+                  label: req.status,
+                  bg: "bg-slate-100",
+                  text: "text-slate-600",
+                };
+                return (
+                  <div
+                    key={req.id}
+                    className="p-5 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl flex flex-col md:flex-row md:items-start justify-between gap-4 shadow-xs"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2.5 flex-wrap mb-2">
+                        <span className="font-semibold text-slate-900 dark:text-white text-sm">
+                          {req.className}
+                        </span>
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 uppercase">
+                          {req.requestType}
+                        </span>
+                        <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-semibold border ${badge.bg} ${badge.text}`}>
+                          {badge.label}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1 text-xs text-slate-600 dark:text-slate-300">
+                        {req.requestType === "dạy thay" && req.substituteCoachName && (
+                          <div>
+                            HLV thay thế đề xuất: <strong className="text-slate-800 dark:text-slate-100">{req.substituteCoachName}</strong>
+                          </div>
+                        )}
+                        {req.newDate && (
+                          <div>
+                            Thời gian mới đề xuất: <strong className="text-slate-800 dark:text-slate-100">{req.newDate} {req.newTime}</strong>
+                          </div>
+                        )}
+                        <div>
+                          Lý do: <span className="italic text-slate-500">"{req.reason}"</span>
+                        </div>
+                        {req.managerNote && (
+                          <div className="text-emerald-700 dark:text-emerald-400 font-medium">
+                            Phản hồi quản lý: {req.managerNote}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="text-[11px] text-slate-400 shrink-0">
+                      Gửi lúc: {req.createdAt}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
-        <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          {session.startTime}–{session.endTime} · {session.room} · {session.registeredMemberIds.length}/{session.capacity} người
+      )}
+
+      {/* REQUEST MODAL */}
+      {isRequestModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                Gửi Yêu cầu Điều chỉnh Ca dạy
+              </h2>
+              <button
+                type="button"
+                onClick={() => setIsRequestModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitRequest} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Chọn ca dạy cần điều chỉnh:
+                </label>
+                <select
+                  value={selectedSessionForRequest}
+                  onChange={(e) => setSelectedSessionForRequest(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none"
+                >
+                  {allUnifiedSessions.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.date} ({s.startTime} - {s.endTime}) • {s.className}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Loại yêu cầu:
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(["dời lịch", "dạy thay", "báo vắng"] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setRequestType(t)}
+                      className={`p-2.5 rounded-xl border text-center font-semibold capitalize transition-all ${
+                        requestType === t
+                          ? "bg-orange-50 dark:bg-orange-950/40 border-orange-500 text-orange-700 dark:text-orange-400"
+                          : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {requestType === "dạy thay" && (
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Huấn luyện viên thay thế đề xuất:
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="VD: HLV Trần Minh Tuấn..."
+                    value={substituteCoach}
+                    onChange={(e) => setSubstituteCoach(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none"
+                  />
+                </div>
+              )}
+
+              {requestType === "dời lịch" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Ngày mới đề xuất:
+                    </label>
+                    <input
+                      type="date"
+                      value={newDate}
+                      onChange={(e) => setNewDate(e.target.value)}
+                      className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Khung giờ mới:
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="VD: 08:00 - 09:30"
+                      value={newTime}
+                      onChange={(e) => setNewTime(e.target.value)}
+                      className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Lý do cụ thể:
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Điền lý do cụ thể gửi tới ban quản lý..."
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsRequestModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingRequest}
+                  className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold shadow-sm transition-colors disabled:opacity-50"
+                >
+                  {submittingRequest ? "Đang gửi..." : "Gửi yêu cầu"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
-      <div className="flex gap-2 shrink-0">
-        {!isCancelled && (
-          <button
-            type="button"
-            className="px-3 py-1.5 text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
-            onClick={(e) => { e.stopPropagation(); onAttendance(); }}
-          >
-            Điểm danh
-          </button>
-        )}
-      </div>
+      )}
+
+      {/* MODAL 1: ĐĂNG LỊCH TRỐNG 1-1 CHO HỘI VIÊN ĐĂNG KÝ */}
+      {isOpenSlotModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center">
+                  <CalendarPlus className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                    Đăng lịch trống 1–1 (Mở nhận HV)
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Hội viên sẽ thấy lịch này trên app/web để đặt lịch học kèm 1-1 với bạn.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsOpenSlotModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateOpenSlot} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Ngày mở ca trống:
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={openSlotDate}
+                  onChange={(e) => setOpenSlotDate(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Giờ bắt đầu:
+                  </label>
+                  <select
+                    value={openSlotStartTime}
+                    onChange={(e) => setOpenSlotStartTime(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                  >
+                    {TIME_ROWS.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Giờ kết thúc:
+                  </label>
+                  <select
+                    value={openSlotEndTime}
+                    onChange={(e) => setOpenSlotEndTime(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                  >
+                    {["07:30", "08:30", "09:30", "10:30", "15:30", "16:30", "18:30", "19:30", "20:30"].map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Bộ môn nhận dạy:
+                  </label>
+                  <select
+                    value={openSlotSport}
+                    onChange={(e) => setOpenSlotSport(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                  >
+                    {["Gym", "Boxing", "Yoga", "Swimming", "Pilates", "Zumba", "Fitness"].map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Phòng / Khu vực:
+                  </label>
+                  <select
+                    value={openSlotRoom}
+                    onChange={(e) => setOpenSlotRoom(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                  >
+                    {["Khu PT 1-1", "Võ Đài", "Studio 1", "Studio 2", "Hồ Bơi", "Khu Thể Lực", "Khu Tạ Tự Do"].map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Ghi chú / Thông điệp gửi học viên (tùy chọn):
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="VD: Nhận kèm cá nhân tập trung siết cơ, giảm mỡ nhanh hoặc cải thiện thể lực..."
+                  value={openSlotNote}
+                  onChange={(e) => setOpenSlotNote(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsOpenSlotModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-sm transition-all flex items-center gap-2"
+                >
+                  <CalendarPlus className="w-4 h-4" />
+                  Đăng lịch trống ngay
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: CHI TIẾT & HỦY / ĐÓNG LỊCH TRỐNG 1-1 */}
+      {selectedOpenSlot && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <span className="p-2 rounded-xl bg-sky-100 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400">
+                  <Sparkles className="w-4 h-4" />
+                </span>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    Lịch trống 1–1 (Đang mở nhận HV)
+                  </h3>
+                  <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Sẵn sàng cho hội viên đặt lịch
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedOpenSlot(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-2.5 text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 font-medium">Bộ môn:</span>
+                <span className="font-bold text-slate-900 dark:text-white">{selectedOpenSlot.sport} (1–1)</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 font-medium">Ngày dạy:</span>
+                <span className="font-semibold text-slate-900 dark:text-white">{selectedOpenSlot.date}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 font-medium">Khung giờ:</span>
+                <span className="font-semibold text-slate-900 dark:text-white">{selectedOpenSlot.startTime} – {selectedOpenSlot.endTime}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 font-medium">Phòng / Khu vực:</span>
+                <span className="font-semibold text-slate-900 dark:text-white">{selectedOpenSlot.room}</span>
+              </div>
+              {selectedOpenSlot.note && (
+                <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                  <span className="text-slate-400 font-medium block mb-1">Ghi chú cho hội viên:</span>
+                  <p className="italic text-slate-600 dark:text-slate-300">"{selectedOpenSlot.note}"</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => handleDeleteOpenSlot(selectedOpenSlot.id)}
+                className="px-4 py-2.5 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl transition-colors flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Hủy / Đóng ca trống này
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedOpenSlot(null)}
+                className="px-5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl transition-colors"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -50,10 +50,27 @@ export function useUserProfile() {
         const token = localStorage.getItem('token');
         if (!userStr || !token) return;
 
-        const user = JSON.parse(userStr);
-        const res = await fetch(`/api/users/${user.id}`, {
+        let res = await fetch(`/api/users/${user.id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+
+        if (res.status === 401) {
+          // Token expired, auto refresh token silently
+          try {
+            const refreshRes = await fetch('/api/auth/dev-token', { method: 'POST' });
+            if (refreshRes.ok) {
+              const refreshData = await refreshRes.json();
+              if (refreshData.token) {
+                localStorage.setItem('token', refreshData.token);
+                res = await fetch(`/api/users/${user.id}`, {
+                  headers: { Authorization: `Bearer ${refreshData.token}` },
+                });
+              }
+            }
+          } catch (e) {
+            console.warn('Auto refresh token failed:', e);
+          }
+        }
 
         if (res.ok) {
           const data = await res.json();

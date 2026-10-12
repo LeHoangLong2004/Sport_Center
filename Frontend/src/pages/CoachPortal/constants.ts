@@ -2,49 +2,46 @@ import type { ReactNode } from "react";
 import type { CoachScreen } from "./types";
 import {
   IconGrid, IconCalendar, IconBook, IconClipboard,
-  IconPerson, IconSparkle, IconUserCheck, IconUsers, IconBell,
+  IconPerson, IconSparkle, IconUserCheck, IconUsers, IconBell, IconStar, IconMessage,
 } from "./Icons";
 
 export const A = "/assets";
 
 export const navItems: { key: CoachScreen; label: string; Icon: () => ReactNode }[] = [
-  { key: "dashboard",     label: "Tổng quan",          Icon: IconGrid },
-  { key: "schedule",      label: "Lịch dạy",           Icon: IconCalendar },
-  { key: "members",       label: "Học viên",           Icon: IconUsers },
-  { key: "curriculum",    label: "Giáo án",            Icon: IconBook },
-  { key: "attendance",    label: "Điểm danh",          Icon: IconUserCheck },
-  { key: "assessment",    label: "Tiến độ & đánh giá", Icon: IconClipboard },
-  { key: "notifications", label: "Thông báo",          Icon: IconBell },
-  { key: "ai",            label: "AI gợi ý",           Icon: IconSparkle },
-  { key: "profile",       label: "Hồ sơ cá nhân",     Icon: IconPerson },
+  { key: "dashboard",     label: "Tổng quan",              Icon: IconGrid },
+  { key: "schedule",      label: "Lịch dạy",               Icon: IconCalendar },
+  { key: "attendance",    label: "Điểm danh lớp",          Icon: IconUserCheck },
+  { key: "members",       label: "Học viên phụ trách",     Icon: IconUsers },
+  { key: "curriculum",    label: "Giáo án & Bài tập",      Icon: IconBook },
+  { key: "chat",          label: "Tin nhắn (Chat)",        Icon: IconMessage },
+  { key: "reviews",       label: "Đánh giá từ học viên",  Icon: IconStar },
+  { key: "profile",       label: "Hồ sơ cá nhân",          Icon: IconPerson },
 ];
 
 export const breadcrumbs: Partial<Record<CoachScreen, string>> = {
   dashboard:        "HLV / Tổng quan",
   schedule:         "HLV / Lịch dạy",
   "class-detail":   "HLV / Lịch dạy / Chi tiết buổi",
-  attendance:       "HLV / Điểm danh",
-  members:          "HLV / Học viên",
+  attendance:       "HLV / Điểm danh lớp",
+  members:          "HLV / Học viên phụ trách",
   "member-profile": "HLV / Học viên / Hồ sơ",
-  curriculum:       "HLV / Giáo án",
-  assessment:       "HLV / Tiến độ & đánh giá",
-  notifications:    "HLV / Thông báo",
-  ai:               "HLV / AI gợi ý",
+  curriculum:       "HLV / Giáo án & Bài tập",
+  chat:             "HLV / Tin nhắn trao đổi",
+  reviews:          "HLV / Đánh giá từ học viên",
   profile:          "HLV / Hồ sơ cá nhân",
   settings:         "HLV / Cài đặt",
 };
 
 export const pageTitles: Partial<Record<CoachScreen, string>> = {
   dashboard:        "Tổng quan hôm nay",
-  schedule:         "Lịch dạy",
+  schedule:         "Lịch dạy & Ca làm việc",
   "class-detail":   "Chi tiết buổi học",
-  attendance:       "Điểm danh",
-  members:          "Học viên",
+  attendance:       "Điểm danh lớp học",
+  members:          "Học viên phụ trách",
   "member-profile": "Hồ sơ học viên",
-  curriculum:       "Giáo án",
-  assessment:       "Tiến độ & Đánh giá",
-  notifications:    "Thông báo",
-  ai:               "AI gợi ý bài tập",
-  profile:          "Hồ sơ Coach",
+  curriculum:       "Giáo án & Bài tập",
+  chat:             "Tin nhắn trao đổi với học viên",
+  reviews:          "Đánh giá & Nhận xét từ học viên",
+  profile:          "Hồ sơ Huấn luyện viên",
   settings:         "Cài đặt",
 };

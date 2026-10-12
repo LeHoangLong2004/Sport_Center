@@ -43,22 +43,18 @@ export default function CoachSidebar({
           return (
             <button
               key={key}
-              className={`flex gap-[12px] items-center px-[16px] py-[10px] rounded-[8px] shrink-0 w-full text-left transition-colors duration-200 ${
+              className={`flex gap-[12px] items-center px-[16px] py-[11px] rounded-[10px] shrink-0 w-full text-left transition-all duration-200 ${
                 isActive
-                  ? "bg-[#f97316] shadow-md shadow-orange-500/20"
-                  : "bg-transparent hover:bg-white/5"
+                  ? "bg-[#f97316] text-white shadow-md shadow-orange-500/25 font-bold"
+                  : "bg-transparent text-[#94a3b8] hover:bg-white/5 hover:text-white font-medium"
               }`}
               onClick={() => onNavigate(key)}
               type="button"
             >
-              <div className={isActive ? "text-white" : "text-[#94a3b8]"}>
+              <div className="shrink-0 size-5 flex items-center justify-center">
                 <Icon />
               </div>
-              <span
-                className={`flex-1 font-${isActive ? "bold" : "medium"} ${
-                  isActive ? "text-white" : "text-[#94a3b8]"
-                } text-[13px] leading-normal`}
-              >
+              <span className="flex-1 text-[13px] leading-normal tracking-wide">
                 {label}
               </span>
             </button>

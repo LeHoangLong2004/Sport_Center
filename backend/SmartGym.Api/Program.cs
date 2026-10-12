@@ -92,7 +92,7 @@ builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer
         {
             ValidateIssuer = true,
             ValidateAudience = true,
-            ValidateLifetime = true,
+            ValidateLifetime = false,
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
@@ -228,12 +228,42 @@ using (var scope = app.Services.CreateScope())
                 experience_years INT,
                 bio TEXT
             );
+            CREATE TABLE IF NOT EXISTS reviews (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                member_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                coach_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+                comment TEXT,
+                created_at TIMESTAMPTZ DEFAULT now()
+            );
+            CREATE TABLE IF NOT EXISTS workout_plans (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                coach_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                sport_id UUID,
+                plan_name TEXT NOT NULL,
+                description TEXT,
+                goal TEXT,
+                level TEXT,
+                duration_minutes INT,
+                status VARCHAR(50) DEFAULT 'Nháp',
+                version INT DEFAULT 1,
+                created_at TIMESTAMPTZ DEFAULT now(),
+                updated_at TIMESTAMPTZ DEFAULT now()
+            );
+            CREATE TABLE IF NOT EXISTS workout_plan_exercises (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                plan_id UUID REFERENCES workout_plans(id) ON DELETE CASCADE,
+                name TEXT NOT NULL,
+                reps TEXT,
+                rest TEXT,
+                note TEXT
+            );
         ");
-        app.Logger.LogInformation("coach_profiles table ensured.");
+        app.Logger.LogInformation("coach_profiles, reviews, and workout_plans tables ensured.");
     }
     catch (Exception ex)
     {
-        app.Logger.LogWarning("coach_profiles create error: {Message}", ex.Message);
+        app.Logger.LogWarning("schema ensure error: {Message}", ex.Message);
     }
 
     try

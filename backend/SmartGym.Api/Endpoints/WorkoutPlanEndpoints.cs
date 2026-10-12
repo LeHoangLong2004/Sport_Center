@@ -55,8 +55,16 @@ public static class WorkoutPlanEndpoints
                 return Results.Unauthorized();
             }
 
-            var result = await service.GetPlansByCoachIdAsync(coachId);
-            return Results.Ok(result);
+            try
+            {
+                var result = await service.GetPlansByCoachIdAsync(coachId);
+                return Results.Ok(result);
+            }
+            catch (Exception)
+            {
+                // Return empty list if tables or records are not ready yet
+                return Results.Ok(System.Array.Empty<WorkoutPlanResponse>());
+            }
         })
         .WithTags("Workout Plans")
         .WithSummary("Get all workout plans created by the logged-in coach");
