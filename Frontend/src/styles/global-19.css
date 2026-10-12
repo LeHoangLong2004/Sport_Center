@@ -1,0 +1,236 @@
+@reference ../index.css;
+
+
+.cp-schedule-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cp-week-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--white);
+  font-family: var(--font-semibold);
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+  user-select: none;
+}
+
+.cp-filter-tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.cp-filter-tab {
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--white);
+  font-family: var(--font-medium);
+  font-size: 12.5px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.cp-filter-tab.active {
+  border-color: #2563eb;
+  color: #2563eb;
+  background: #EEF5FF;
+}
+
+.cp-week-total {
+  flex: 1;
+  text-align: right;
+  color: var(--muted);
+  font-size: 13px;
+  font-family: var(--font-medium);
+}
+
+.cp-week-grid-wrap {
+  border-radius: 12px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  background: var(--white);
+}
+
+.cp-week-grid {
+  min-width: 680px;
+}
+
+.cp-week-header {
+  display: grid;
+  grid-template-columns: 64px repeat(7, 1fr);
+  border-bottom: 1px solid var(--line);
+}
+
+.cp-week-corner {
+  border-right: 1px solid var(--line);
+}
+
+.cp-week-day-head {
+  padding: 10px 6px;
+  text-align: center;
+  font-family: var(--font-bold);
+  font-size: 12px;
+  color: var(--muted);
+  border-right: 1px solid var(--line);
+}
+
+.cp-week-row {
+  display: grid;
+  grid-template-columns: 64px repeat(7, 1fr);
+  border-bottom: 1px solid var(--line);
+  min-height: 72px;
+}
+
+.cp-week-row:last-child {
+  border-bottom: none;
+}
+
+.cp-week-time {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-family: var(--font-semibold);
+  border-right: 1px solid var(--line);
+}
+
+.cp-week-cell {
+  padding: 6px;
+  border-right: 1px solid var(--line);
+}
+
+.cp-week-cell:last-child {
+  border-right: none;
+}
+
+.cp-week-block {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border-left: 3px solid;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.cp-week-block:hover {
+  opacity: 0.8;
+}
+
+.cp-week-block-type {
+  display: block;
+  font-family: var(--font-bold);
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.cp-week-block-name {
+  display: block;
+  font-family: var(--font-semibold);
+  font-size: 11.5px;
+}
+
+/* ── Curriculum Screen ── */
+.cp-curriculum-screen {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 16px;
+  align-items: start;
+}
+
+.cp-curriculum-left {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+
+.cp-curriculum-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cp-curriculum-table-wrap {
+  overflow-x: auto;
+}
+
+.cp-curriculum-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.cp-curriculum-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-family: var(--font-extrabold);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--line);
+  background: var(--canvas);
+  white-space: nowrap;
+}
+
+.cp-curriculum-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  vertical-align: middle;
+}
+
+.cp-curriculum-table tbody tr {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.cp-curriculum-table tbody tr:hover {
+  background: var(--canvas);
+}
+
+.cp-curriculum-table tbody tr.selected {
+  background: #EEF5FF;
+}
+
+.cp-curriculum-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.cp-curriculum-cat {
+  color: var(--muted);
+}
+
+.cp-level-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-family: var(--font-semibold);
+  font-size: 11.5px;
+}
+
+.cp-curriculum-right {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: sticky;
+  top: 24px;
+}

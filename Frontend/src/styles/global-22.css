@@ -1,0 +1,197 @@
+@reference ../index.css;
+
+
+.cp-ai-badge {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #EDE9FE;
+  color: #8B5CF6;
+  font-family: var(--font-bold);
+  font-size: 11.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.cp-ai-plan-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cp-ai-plan-title {
+  margin: 0;
+  font-family: var(--font-bold);
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.cp-ai-plan-desc {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.cp-ai-exercise-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.cp-ai-exercise-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.cp-ai-exercise-item:last-child {
+  border-bottom: none;
+}
+
+.cp-ai-ex-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.cp-ai-ex-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cp-ai-ex-info strong {
+  font-family: var(--font-semibold);
+  font-size: 13.5px;
+  color: var(--ink);
+}
+
+.cp-ai-ex-sub {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.cp-ai-ex-level {
+  font-family: var(--font-bold);
+  font-size: 12.5px;
+}
+
+.cp-ai-plan-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cp-ai-analysis {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cp-ai-analysis-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cp-bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cp-bar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.cp-bar-track {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.cp-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s;
+}
+
+.cp-ai-kcal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #ECFDF5;
+  font-size: 13px;
+}
+
+.cp-ai-kcal-label {
+  margin: 0 0 2px;
+  color: #065F46;
+  font-size: 9px;
+  font-family: var(--font-bold);
+  letter-spacing: 0.05em;
+}
+
+.cp-ai-kcal-val {
+  margin: 0;
+  font-family: var(--font-bold);
+  font-size: 14px;
+  color: #065F46;
+}
+
+.cp-ai-trend {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.cp-chart-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.cp-ai-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+
+.cp-ai-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border: 1px solid #2563eb;
+  border-radius: 6px;
+  background: transparent;
+  color: #2563eb;
+  font-family: var(--font-semibold);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.cp-ai-action-btn:hover {
+  background: #EEF5FF;
+}

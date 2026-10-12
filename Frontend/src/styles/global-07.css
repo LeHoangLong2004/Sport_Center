@@ -1,0 +1,238 @@
+@reference ../index.css;
+
+
+@media (max-width: 680px) {
+  .login-page {
+    flex-direction: column;
+  }
+
+  .login-visual {
+    width: 100%;
+    min-height: 360px;
+    padding: 28px;
+  }
+
+  .brand-mark {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    font-size: 17px;
+  }
+
+  .brand-name {
+    font-size: 14px;
+  }
+
+  .login-slogan {
+    font-size: 36px;
+  }
+
+  .copyright {
+    display: none;
+  }
+
+  .login-panel {
+    min-height: auto;
+    padding: 42px 24px 56px;
+  }
+
+  .register-panel {
+    min-height: auto;
+    padding: 42px 24px 56px;
+  }
+
+  .verify-panel {
+    min-height: auto;
+    padding: 42px 24px 56px;
+  }
+
+  .login-title {
+    font-size: 28px;
+  }
+
+  .register-title {
+    font-size: 28px;
+  }
+
+  .verify-title {
+    font-size: 28px;
+  }
+
+  .otp-inputs {
+    gap: 7px;
+  }
+
+  .otp-input {
+    width: min(13vw, 48px);
+    height: min(13vw, 48px);
+    font-size: 20px;
+  }
+
+  .email-display {
+    overflow: hidden;
+  }
+
+  .email-display span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .topbar {
+    height: 68px;
+    padding: 0 18px;
+  }
+
+  .breadcrumb {
+    display: none;
+  }
+
+  .topbar-title {
+    font-size: 17px;
+  }
+
+  .top-actions {
+    gap: 9px;
+  }
+
+  .top-actions .icon-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .content {
+    gap: 20px;
+    padding: 24px 16px;
+  }
+
+  .content-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .page-title {
+    font-size: 24px;
+  }
+
+  .header-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .tabs {
+    gap: 20px;
+    overflow-x: auto;
+  }
+
+  .tab {
+    flex: 0 0 auto;
+  }
+
+  .select-control {
+    flex: 1;
+    min-width: 145px;
+  }
+
+  .selected-count {
+    width: 100%;
+  }
+
+  .pagination {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .modal-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-wide {
+    grid-column: auto;
+  }
+}
+
+.mp-shell {
+  display: flex;
+  width: 100%;
+  min-height: 100dvh;
+  color: var(--ink);
+  background: #f8fafc;
+  font-family: var(--font-regular);
+}
+
+.mp-sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  width: 230px;
+  height: 100dvh;
+  flex: 0 0 230px;
+  flex-direction: column;
+  gap: 24px;
+  padding: 26px 18px 22px;
+  overflow: hidden;
+  color: var(--white);
+  background: var(--navy);
+}
+
+.mp-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mp-brand-mark {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--navy);
+  background: var(--mint);
+  font-family: var(--font-extrabold);
+  font-size: 18px;
+}
+
+.mp-brand-copy,
+.mp-account span,
+.mp-ai-heading div {
+  display: flex;
+  flex-direction: column;
+}
+
+.mp-brand-copy strong {
+  font-family: var(--font-extrabold);
+  font-size: 14px;
+}
+
+.mp-brand-copy small {
+  color: var(--mint);
+  font-size: 10px;
+}
+
+.mp-navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.mp-nav-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border: 0;
+  border-radius: var(--radius);
+  color: #94a3b8;
+  background: transparent;
+  font-family: var(--font-medium);
+  font-size: 13px;
+  text-align: left;
+}
+
+.mp-nav-item.active {
+  color: var(--white);
+  background: var(--blue);
+  font-family: var(--font-bold);
+}

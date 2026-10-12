@@ -1,0 +1,239 @@
+@reference ../index.css;
+
+
+.cp-btn-ghost-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-semibold);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.cp-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--ink);
+  font-family: var(--font-semibold);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cp-btn-outline:hover {
+  background: var(--canvas);
+}
+
+.cp-btn-sm {
+  padding: 6px 14px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+
+.cp-btn-full {
+  width: 100%;
+  justify-content: center;
+}
+
+/* ── Dashboard ── */
+.cp-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cp-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.cp-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 12px;
+  background: var(--white);
+  border: 1px solid var(--line);
+}
+
+.cp-stat-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 10px;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.cp-stat-label {
+  margin: 0 0 3px;
+  color: var(--muted);
+  font-size: 11px;
+  font-family: var(--font-medium);
+}
+
+.cp-stat-value {
+  margin: 0;
+  font-family: var(--font-extrabold);
+  font-size: 20px;
+  color: var(--ink);
+}
+
+.cp-dashboard-body {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 16px;
+}
+
+.cp-schedule-panel,
+.cp-notif-panel {
+  padding: 18px 20px;
+  border-radius: 12px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cp-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cp-date-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-family: var(--font-medium);
+}
+
+.cp-schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.cp-schedule-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  border-left: 3px solid transparent;
+  padding-left: 12px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.cp-schedule-item:last-child {
+  border-bottom: none;
+}
+
+.cp-schedule-item:hover {
+  background: var(--canvas);
+}
+
+.cp-schedule-time {
+  color: var(--muted);
+  font-family: var(--font-medium);
+  font-size: 12.5px;
+  min-width: 108px;
+  flex-shrink: 0;
+}
+
+.cp-schedule-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 2px;
+}
+
+.cp-schedule-name {
+  font-family: var(--font-semibold);
+  font-size: 13.5px;
+  color: var(--ink);
+}
+
+.cp-schedule-loc {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.cp-type-badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-family: var(--font-semibold);
+  font-size: 11.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.cp-notif-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cp-notif-card {
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cp-notif-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cp-notif-tag {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: var(--font-bold);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+.cp-notif-time {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.cp-notif-content {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.cp-notif-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ── Weekly Schedule Screen ── */
+.cp-schedule-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

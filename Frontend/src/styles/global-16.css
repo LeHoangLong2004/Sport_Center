@@ -1,0 +1,241 @@
+@reference ../index.css;
+
+
+.mp-profile-status-active {
+  color: #12a05c;
+  font-family: var(--font-bold);
+}
+
+.mp-profile-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.mp-profile-action-btn {
+  border-radius: 10px;
+  padding: 12px 28px;
+  font-size: 14px;
+  font-family: var(--font-bold);
+  cursor: pointer;
+  border: 0;
+}
+
+.mp-profile-action-primary {
+  background: var(--navy, #0d1b4b);
+  color: #fff;
+}
+
+.mp-profile-action-primary:hover {
+  opacity: 0.88;
+}
+
+.mp-profile-action-secondary {
+  background: transparent;
+  border: 1px solid #d0d4e4;
+  color: var(--navy, #0d1b4b);
+}
+
+.mp-profile-action-secondary:hover {
+  background: #f4f6fb;
+}
+
+/* ── Admin Profile ─────────────────────────────────── */
+.admin-profile-page {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  max-width: 640px;
+}
+
+.admin-profile-hero {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background: #fff;
+  border: 1px solid #e8eaf0;
+  border-radius: 16px;
+  padding: 28px 32px;
+}
+
+.admin-profile-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.admin-profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #e8eaf0;
+}
+
+.admin-profile-avatar-edit {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--navy, #0d1b4b);
+  border: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.admin-profile-name {
+  font-family: var(--font-bold);
+  font-size: 22px;
+  color: var(--navy, #0d1b4b);
+  margin: 0 0 6px;
+}
+
+.admin-profile-badge {
+  display: inline-block;
+  background: #fff3e0;
+  color: #e65100;
+  font-size: 12px;
+  font-family: var(--font-bold);
+  padding: 3px 12px;
+  border-radius: 20px;
+  margin-bottom: 6px;
+}
+
+.admin-profile-id {
+  font-size: 13px;
+  color: #7a8099;
+  margin: 0;
+}
+
+.admin-profile-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.admin-profile-card {
+  background: #fff;
+  border: 1px solid #e8eaf0;
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.admin-profile-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.admin-profile-card-header h3 {
+  font-family: var(--font-bold);
+  font-size: 15px;
+  color: var(--navy, #0d1b4b);
+  margin: 0;
+}
+
+.admin-profile-edit-btn {
+  background: transparent;
+  border: 1px solid #d0d4e4;
+  border-radius: 8px;
+  padding: 4px 14px;
+  font-size: 13px;
+  color: var(--navy, #0d1b4b);
+  cursor: pointer;
+}
+
+.admin-profile-edit-btn:hover {
+  background: #f4f6fb;
+}
+
+.admin-profile-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.admin-profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-profile-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9aa0b8;
+  font-family: var(--font-bold);
+}
+
+.admin-profile-value {
+  font-size: 14px;
+  color: #1a2248;
+}
+
+.admin-profile-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.admin-profile-action-btn {
+  border-radius: 10px;
+  padding: 12px 28px;
+  font-size: 14px;
+  font-family: var(--font-bold);
+  cursor: pointer;
+  border: 0;
+}
+
+.admin-profile-action-primary {
+  background: var(--navy, #0d1b4b);
+  color: #fff;
+}
+
+.admin-profile-action-primary:hover {
+  opacity: 0.88;
+}
+
+.admin-profile-action-secondary {
+  background: transparent;
+  border: 1px solid #d0d4e4;
+  color: var(--navy, #0d1b4b);
+}
+
+.admin-profile-action-secondary:hover {
+  background: #f4f6fb;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   COACH PORTAL  (.cp-*)
+   ═══════════════════════════════════════════════════════════ */
+
+.cp-shell {
+  display: flex;
+  width: 100%;
+  min-height: 100dvh;
+  background: var(--canvas);
+}
+
+/* ── Sidebar ── */
+.cp-sidebar {
+  display: flex;
+  width: 196px;
+  flex-shrink: 0;
+  flex-direction: column;
+  background: #0d1b2e;
+  padding: 20px 0 0;
+  gap: 4px;
+}
+
+.cp-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px 20px;
+  border-bottom: 1px solid rgba(255 255 255 / 0.08);
+  margin-bottom: 8px;
+}

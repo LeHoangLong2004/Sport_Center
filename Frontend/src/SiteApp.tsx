@@ -17,22 +17,7 @@ import ClassDetailPage from "./site-pages/ClassDetailPage"
 import { SiteHeader } from "./components/SiteHeader"
 import { SiteFooter } from "./components/SiteFooter"
 
-export type SiteRoute =
-  | "home"
-  | "bomon"
-  | "chitietbomon"
-  | "coach"
-  | "pricing"
-  | "about"
-  | "contact"
-  | "news"
-  | "article"
-  | "offers"
-  | "gallery"
-  | "faq"
-  | "policy"
-  | "lophoc"
-  | "chitietlophoc"
+export type SiteRoute = "home" | "bomon" | "chitietbomon" | "coach" | "pricing" | "about" | "contact" | "news" | "article" | "offers" | "gallery" | "faq" | "policy" | "lophoc" | "chitietlophoc"
 
 const pages: Record<SiteRoute, () => React.JSX.Element> = {
   home: HomePage,
@@ -57,7 +42,7 @@ const labelRoutes: Record<string, SiteRoute | "admin" | "register"> = {
   "Bộ môn": "bomon",
   "Lớp học": "lophoc",
   "Huấn luyện viên": "coach",
-  "Gói": "pricing",
+  Gói: "pricing",
   "Về chúng tôi": "about",
   "Liên hệ": "contact",
   "Hỗ trợ": "faq",
@@ -115,9 +100,17 @@ export default function SiteApp({
     const clickable = target.closest<HTMLElement>(
       'button, a, [data-name^="menu-item"], [data-name^="btn-"], [data-name="logo-group"], [data-name="logo-group-footer"], [data-name="policy-links"]',
     )
-    
-    const isLayoutContainer = ["SECTION", "MAIN", "NAV", "HEADER", "FOOTER", "BODY", "HTML"].includes(target.tagName);
-    if (!clickable && isLayoutContainer) return;
+
+    const isLayoutContainer = [
+      "SECTION",
+      "MAIN",
+      "NAV",
+      "HEADER",
+      "FOOTER",
+      "BODY",
+      "HTML",
+    ].includes(target.tagName)
+    if (!clickable && isLayoutContainer) return
 
     const label = (clickable ?? target).textContent?.trim() ?? ""
 
@@ -153,7 +146,10 @@ export default function SiteApp({
       return
     }
 
-    if (label.includes("Xem lịch tập & Chi tiết môn") || label.includes("Xem lịch tập")) {
+    if (
+      label.includes("Xem lịch tập & Chi tiết môn") ||
+      label.includes("Xem lịch tập")
+    ) {
       navigate("chitietbomon")
       return
     }
@@ -184,14 +180,16 @@ export default function SiteApp({
       label.includes("Đăng ký") ||
       clickable?.hasAttribute("data-planid")
     ) {
-      let planId: string | undefined = clickable?.dataset.planid;
-      let periodId: string | undefined = clickable?.dataset.period;
-      
+      let planId: string | undefined = clickable?.dataset.planid
+      let periodId: string | undefined = clickable?.dataset.period
+
       if (!planId) {
-        const lowerLabel = label.toLowerCase();
-        if (lowerLabel.includes("starter") || lowerLabel.includes("swim")) planId = "swim";
-        else if (lowerLabel.includes("fitness")) planId = "fitness";
-        else if (lowerLabel.includes("premium") || lowerLabel.includes("vip")) planId = "premium";
+        const lowerLabel = label.toLowerCase()
+        if (lowerLabel.includes("starter") || lowerLabel.includes("swim"))
+          planId = "swim"
+        else if (lowerLabel.includes("fitness")) planId = "fitness"
+        else if (lowerLabel.includes("premium") || lowerLabel.includes("vip"))
+          planId = "premium"
       }
 
       if (onOpenPayment && planId) onOpenPayment(planId, periodId)
@@ -218,7 +216,7 @@ export default function SiteApp({
       data-current-route={route}
     >
       <SiteHeader currentRoute={route} />
-      
+
       <div className="min-h-screen">
         <Page />
       </div>
@@ -227,7 +225,9 @@ export default function SiteApp({
 
       {notice && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-full shadow-2xl shadow-slate-900/20 flex items-center gap-3 z-50 animate-[fadeUp_0.3s_ease-out]">
-          <span className="bg-teal-500 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shrink-0">✓</span>
+          <span className="bg-teal-500 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shrink-0">
+            ✓
+          </span>
           <span className="text-sm font-medium">{notice}</span>
         </div>
       )}

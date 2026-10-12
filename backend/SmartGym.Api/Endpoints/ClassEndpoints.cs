@@ -1,11 +1,11 @@
+using System;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using SmartGym.Application.Services;
+using Microsoft.AspNetCore.Routing;
 using SmartGym.Application.DTOs.Classes;
-using System.Security.Claims;
+using SmartGym.Application.Services;
 
 namespace SmartGym.Api.Endpoints;
 
@@ -15,12 +15,18 @@ public static class ClassEndpoints
     {
         var classGroup = app.MapGroup("/api/classes").WithTags("Classes");
 
-        classGroup.MapPost("/", async ([FromBody] CreateClassRequest request, ClassService service) =>
-        {
-            var (isSuccess, errorMessage) = await service.CreateClassAsync(request);
-            if (!isSuccess) return Results.BadRequest(new { message = errorMessage });
-            return Results.Ok(new { message = "Class created successfully" });
-        }).RequireAuthorization(policy => policy.RequireRole("manager"));
+        classGroup
+            .MapPost(
+                "/",
+                async ([FromBody] CreateClassRequest request, ClassService service) =>
+                {
+                    var (isSuccess, errorMessage) = await service.CreateClassAsync(request);
+                    if (!isSuccess)
+                        return Results.BadRequest(new { message = errorMessage });
+                    return Results.Ok(new { message = "Class created successfully" });
+                }
+            )
+            .RequireAuthorization(policy => policy.RequireRole("manager"));
 
         /* classGroup.MapGet("/all", async (ClassService service) =>
         {
@@ -28,11 +34,14 @@ public static class ClassEndpoints
             return Results.Ok(classes);
         }); */
 
-        classGroup.MapGet("/available", async (ClassService service) =>
-        {
-            var classes = await service.GetAvailableClassesAsync();
-            return Results.Ok(classes);
-        });
+        classGroup.MapGet(
+            "/available",
+            async (ClassService service) =>
+            {
+                var classes = await service.GetAvailableClassesAsync();
+                return Results.Ok(classes);
+            }
+        );
 
         /* classGroup.MapGet("/{id:guid}", async (Guid id, ClassService service) =>
         {
@@ -94,7 +103,6 @@ public static class ClassEndpoints
             return Results.Ok(new { message = "Attendance updated successfully" });
         }).RequireAuthorization(policy => policy.RequireRole("coach", "receptionist", "manager", "admin")); */
 
-
         var scheduleGroup = app.MapGroup("/api/schedule").WithTags("Schedules");
 
         /* scheduleGroup.MapGet("/member", async (HttpContext httpContext, ClassService service) =>
@@ -106,8 +114,6 @@ public static class ClassEndpoints
             var schedule = await service.GetMemberScheduleAsync(userId);
             return Results.Ok(schedule);
         }).RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager")); */
-
-
 
         /* scheduleGroup.MapGet("/coach", async (DateTime? date, HttpContext httpContext, ClassService service) =>
         {
