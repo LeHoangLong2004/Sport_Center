@@ -1,358 +1,343 @@
-import React, { useState, useEffect } from 'react';
-import { iCalendar, iSearch2, iChevron, coachAvatar1, coachAvatar2, hrAvatar1 } from '../shared';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { iSearch2, iChevron } from '../shared';
 import { CreateClassModal } from '../components/CreateClassModal';
 import { ClassDetailModal } from '../components/ClassDetailModal';
 import { BookingRow } from '../components/BookingRow';
 
-export function SchedulePage() {
-  const days = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
-  const hours = ["06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"];
+// ─── Constants ────────────────────────────────────────────────────────────────
+const DAYS        = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'];
+const START_HOUR  = 6;
+const END_HOUR    = 21;
+const ROW_PX      = 60;   // px per 1 hour
+const TIME_COL_PX = 56;   // px for time-label column
+const FACILITIES  = ['Studio 1 (Yoga/Pilates)', 'Studio 2 (Dance)', 'Studio 3 (Cycling)', 'Gym Area'];
+const PALETTE     = [
+  { bg: '#EFF6FF', border: '#BFDBFE', accent: '#2563EB', text: '#1E40AF' },
+  { bg: '#ECFDF5', border: '#A7F3D0', accent: '#059669', text: '#064E3B' },
+  { bg: '#F5F3FF', border: '#DDD6FE', accent: '#7C3AED', text: '#4C1D95' },
+  { bg: '#FFF7ED', border: '#FED7AA', accent: '#EA580C', text: '#7C2D12' },
+  { bg: '#FFF1F2', border: '#FECDD3', accent: '#E11D48', text: '#881337' },
+];
+const CANCELLED_COLOR = { bg: '#F8FAFC', border: '#CBD5E1', accent: '#94A3B8', text: '#64748B' };
 
-  const [classes, setClasses] = useState<any[]>([]);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
-  const [editClassData, setEditClassData] = useState<any>(null);
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface CalEvent {
+  id: string; name: string; room: string; coach: string; enrolled: string;
+  day: number; startHour: number; endHour: number;
+  color: typeof PALETTE[0]; rawStart: Date; isCancelled: boolean;
+  // layout
+  col: number; totalCols: number;
+}
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<'calendar' | 'bookings'>('calendar');
-  const [bookings, setBookings] = useState<any[]>([]);
-  const facilities = ["Studio 1 (Yoga/Pilates)", "Studio 2 (Dance)", "Studio 3 (Cycling)", "Gym Area"];
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function getMonday(d: Date): Date {
+  const day  = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const m    = new Date(d); m.setDate(diff); m.setHours(0, 0, 0, 0); return m;
+}
+function fmtDay(d: Date) { return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`; }
 
-  const handleRoomChange = (room: string) => {
-    if (room === 'Tất cả') {
-      setSelectedRooms([]);
-    } else {
-      setSelectedRooms(prev => 
-        prev.includes(room) ? prev.filter(r => r !== room) : [...prev, room]
-      );
-    }
-  };
-
-  // Lấy ngày bắt đầu của tuần hiện tại (Thứ 2)
-  const [currentWeekStart, setCurrentWeekStart] = useState(() => {
-    const d = new Date();
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(d.setDate(diff));
-    monday.setHours(0, 0, 0, 0);
-    return monday;
+// Greedy overlap layout – returns events with col/totalCols assigned
+function layout(events: CalEvent[]): CalEvent[] {
+  if (!events.length) return [];
+  const sorted = [...events].sort((a, b) => a.startHour - b.startHour);
+  const colEnd: number[] = [];
+  const withCol = sorted.map(ev => {
+    let c = colEnd.findIndex(e => e <= ev.startHour);
+    if (c === -1) { c = colEnd.length; colEnd.push(ev.endHour); }
+    else colEnd[c] = ev.endHour;
+    return { ...ev, col: c, totalCols: 0 };
   });
+  // assign totalCols per event = max col among overlapping events +1
+  withCol.forEach(ev => {
+    let maxC = ev.col;
+    withCol.forEach(o => {
+      if (o.startHour < ev.endHour && o.endHour > ev.startHour) maxC = Math.max(maxC, o.col);
+    });
+    ev.totalCols = maxC + 1;
+  });
+  return withCol;
+}
 
-  const getWeekString = () => {
-    const end = new Date(currentWeekStart);
-    end.setDate(end.getDate() + 6);
-    
-    const formatDate = (date: Date) => {
-      return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-    };
-    return `${formatDate(currentWeekStart)} - ${formatDate(end)}, ${end.getFullYear()}`;
-  };
+// ─── DayColumn ────────────────────────────────────────────────────────────────
+function DayColumn({ events, onSelect }: { events: CalEvent[]; onSelect: (id: string) => void }) {
+  return (
+    <div style={{ position: 'relative', height: '100%' }}>
+      {events.map(ev => {
+        const top  = (ev.startHour - START_HOUR) * ROW_PX + 1;
+        const h    = Math.max((ev.endHour - ev.startHour) * ROW_PX - 3, 18);
+        const w    = `calc(${100 / ev.totalCols}% - 3px)`;
+        const left = `calc(${(ev.col / ev.totalCols) * 100}% + 1px)`;
+        return (
+          <div
+            key={ev.id}
+            onClick={() => onSelect(String(ev.id))}
+            style={{
+              position: 'absolute', top, left, width: w, height: h,
+              background: ev.color.bg, borderRadius: 7,
+              border: `1px solid ${ev.color.border}`,
+              borderLeft: `3px solid ${ev.color.accent}`,
+              padding: '4px 6px', boxSizing: 'border-box',
+              cursor: 'pointer', zIndex: 5, overflow: 'hidden',
+              display: 'flex', flexDirection: 'column', gap: 2,
+              opacity: ev.isCancelled ? 0.6 : 1,
+              transition: 'transform .15s, box-shadow .15s',
+            }}
+            onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.transform='translateY(-1px)'; el.style.boxShadow='0 4px 14px rgba(0,0,0,.12)'; el.style.zIndex='15'; }}
+            onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.transform=''; el.style.boxShadow=''; el.style.zIndex='5'; }}
+          >
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:3 }}>
+              <p style={{ margin:0, fontWeight:700, fontSize:10.5, lineHeight:'13px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1, color: ev.color.text, textDecoration: ev.isCancelled ? 'line-through' : 'none' }}>{ev.name}</p>
+              <span style={{ background:'rgba(255,255,255,.85)', border:'1px solid rgba(0,0,0,.07)', borderRadius:3, padding:'1px 3px', fontSize:8.5, fontWeight:700, color:'#475569', flexShrink:0, lineHeight:'11px' }}>{ev.enrolled}</span>
+            </div>
+            {h > 34 && <span style={{ fontSize:9, color: ev.color.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', opacity:.85 }}>📍 {ev.room}</span>}
+            {h > 50 && <span style={{ fontSize:9, color: ev.color.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', opacity:.85 }}>👤 {ev.coach}</span>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
-  const fetchClasses = async () => {
+// ─── SchedulePage ─────────────────────────────────────────────────────────────
+export function SchedulePage() {
+  const [rawClasses,       setRawClasses]       = useState<any[]>([]);
+  const [showCreate,       setShowCreate]       = useState(false);
+  const [selectedClassId,  setSelectedClassId]  = useState<string | null>(null);
+  const [editData,         setEditData]         = useState<any>(null);
+  const [searchQuery,      setSearchQuery]      = useState('');
+  const [selectedRooms,    setSelectedRooms]    = useState<string[]>([]);
+  const [activeTab,        setActiveTab]        = useState<'calendar'|'bookings'>('calendar');
+  const [bookings,         setBookings]         = useState<any[]>([]);
+  const [weekStart,        setWeekStart]        = useState(() => getMonday(new Date()));
+
+  // ── Fetch ──────────────────────────────────────────────────────────────────
+  const fetchClasses = useCallback(async () => {
     try {
-      const res = await fetch("/api/classes/all");
-      if (res.ok) {
-        const data = await res.json();
-        const formattedClasses = data.map((c: any, i: number) => {
-          const start = new Date(c.scheduleTime);
-          const end = new Date(start.getTime() + (c.durationMinutes || 60) * 60000);
-          
-          const day = start.getDay() === 0 ? 6 : start.getDay() - 1; 
-          const startHour = start.getHours() + start.getMinutes() / 60;
-          const endHour = end.getHours() + end.getMinutes() / 60;
-          const hourIndex = (startHour - 6) / 2; 
-          const durationIndex = (endHour - startHour) / 2;
-
-          let colorBg = '';
-          let colorText = '';
-
-          if (c.status === false) {
-            colorBg = 'bg-gray-100 border-gray-300 border-l-gray-400 opacity-60';
-            colorText = 'text-gray-500 line-through';
-          } else {
-            const colorOptions = [
-              { bg: 'bg-blue-50 border-blue-200 border-l-blue-500', text: 'text-blue-700' },
-              { bg: 'bg-emerald-50 border-emerald-200 border-l-emerald-500', text: 'text-emerald-700' },
-              { bg: 'bg-violet-50 border-violet-200 border-l-violet-500', text: 'text-violet-700' },
-              { bg: 'bg-orange-50 border-orange-200 border-l-orange-500', text: 'text-orange-700' },
-              { bg: 'bg-rose-50 border-rose-200 border-l-rose-500', text: 'text-rose-700' },
-            ];
-            const color = colorOptions[i % colorOptions.length];
-            colorBg = color.bg;
-            colorText = color.text;
-          }
-
-          return {
-            id: c.id,
-            name: c.className,
-            room: c.facilityName || 'Studio',
-            coach: c.coachName,
-            enrolled: `${c.currentEnrolled || 0}/${c.capacity || 0}`,
-            day: day,
-            hour: hourIndex,
-            duration: durationIndex,
-            color: colorBg,
-            text: colorText,
-            rawStart: start,
-            isCancelled: c.status === false
-          };
-        });
-        setClasses(formattedClasses);
-      }
-    } catch (error) {
-      console.error("Failed to fetch classes:", error);
-    }
-  };
-
-  const fetchBookings = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("/api/bookings/all", {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      if (res.ok) {
-        setBookings(await res.json());
-      }
-    } catch (error) {
-      console.error("Failed to fetch bookings:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchClasses();
-    fetchBookings();
+      const res = await fetch('/api/classes/all');
+      if (!res.ok) return;
+      const data: any[] = await res.json();
+      setRawClasses(data.map((c, i) => {
+        const start     = new Date(c.scheduleTime);
+        const end       = new Date(start.getTime() + (c.durationMinutes || 60) * 60000);
+        const day       = start.getDay() === 0 ? 6 : start.getDay() - 1;
+        const startHour = start.getHours() + start.getMinutes() / 60;
+        const endHour   = end.getHours()   + end.getMinutes()   / 60;
+        const color     = c.status === false ? CANCELLED_COLOR : PALETTE[i % PALETTE.length];
+        return { id: c.id, name: c.className, room: c.facilityName || 'Studio',
+          coach: c.coachName || '—', enrolled: `${c.currentEnrolled||0}/${c.capacity||0}`,
+          day, startHour, endHour, color, rawStart: start, isCancelled: c.status === false,
+          col: 0, totalCols: 1 };
+      }));
+    } catch (e) { console.error(e); }
   }, []);
 
-  const handlePrevWeek = () => {
-    const prev = new Date(currentWeekStart);
-    prev.setDate(prev.getDate() - 7);
-    setCurrentWeekStart(prev);
-  };
-
-  const handleNextWeek = () => {
-    const next = new Date(currentWeekStart);
-    next.setDate(next.getDate() + 7);
-    setCurrentWeekStart(next);
-  };
-
-  // Lọc các lớp trong tuần đang chọn
-  const weekEnd = new Date(currentWeekStart);
-  weekEnd.setDate(weekEnd.getDate() + 6);
-  weekEnd.setHours(23, 59, 59, 999);
-  
-  let classesThisWeek = classes.filter(c => c.rawStart >= currentWeekStart && c.rawStart <= weekEnd);
-
-  if (searchQuery.trim()) {
-    const q = searchQuery.toLowerCase();
-    classesThisWeek = classesThisWeek.filter(c => 
-      c.name.toLowerCase().includes(q) || 
-      (c.coach && c.coach.toLowerCase().includes(q))
-    );
-  }
-
-  if (selectedRooms.length > 0) {
-    // Chỉ lấy phần tên chính của phòng (ví dụ: "Studio 1 (Yoga/Pilates)" -> "Studio 1") để lọc chính xác
-    classesThisWeek = classesThisWeek.filter(c => 
-      selectedRooms.some(r => c.room.includes(r.split(" (")[0]))
-    );
-  }
-
-  const handleApprove = async (id: string) => {
+  const fetchBookings = useCallback(async () => {
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`/api/bookings/${id}/approve`, {
-        method: 'PUT',
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      if (res.ok) {
-        fetchBookings();
-      }
-    } catch (error) {
-      console.error("Approve failed:", error);
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/bookings/all', { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) setBookings(await res.json());
+    } catch (e) { console.error(e); }
+  }, []);
+
+  useEffect(() => { fetchClasses(); fetchBookings(); }, [fetchClasses, fetchBookings]);
+
+  // ── Derived values ─────────────────────────────────────────────────────────
+  const weekEnd = useMemo(() => {
+    const d = new Date(weekStart); d.setDate(d.getDate()+6); d.setHours(23,59,59,999); return d;
+  }, [weekStart]);
+
+  const weekLabel = useMemo(() => {
+    const e = new Date(weekStart); e.setDate(e.getDate()+6);
+    return `${fmtDay(weekStart)} – ${fmtDay(e)}, ${e.getFullYear()}`;
+  }, [weekStart]);
+
+  const filtered = useMemo(() => {
+    let list = rawClasses.filter(c => c.rawStart >= weekStart && c.rawStart <= weekEnd);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(c => c.name.toLowerCase().includes(q) || c.coach.toLowerCase().includes(q));
     }
+    if (selectedRooms.length) {
+      list = list.filter(c => selectedRooms.some(r => c.room.includes(r.split(' (')[0])));
+    }
+    return list;
+  }, [rawClasses, weekStart, weekEnd, searchQuery, selectedRooms]);
+
+  const columnEvents = useMemo(() =>
+    DAYS.map((_, di) => layout(filtered.filter(c => c.day === di) as CalEvent[])),
+  [filtered]);
+
+  const totalH = (END_HOUR - START_HOUR) * ROW_PX;
+
+  const coaches = useMemo(() =>
+    [...new Set(rawClasses.map(c => c.coach).filter(Boolean))].slice(0, 8),
+  [rawClasses]);
+
+  const toggleRoom = (r: string) => {
+    if (r === 'Tất cả') { setSelectedRooms([]); return; }
+    setSelectedRooms(p => p.includes(r) ? p.filter(x => x !== r) : [...p, r]);
   };
 
-  const handleReject = async (id: string) => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`/api/bookings/${id}/reject`, {
-        method: 'PUT',
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      if (res.ok) {
-        fetchBookings();
-      }
-    } catch (error) {
-      console.error("Reject failed:", error);
-    }
-  };
+  const handleApprove = async (id: string) => { try { const t = localStorage.getItem('token'); await fetch(`/api/bookings/${id}/approve`, { method:'PUT', headers:{ Authorization:`Bearer ${t}` } }); fetchBookings(); } catch(e){ console.error(e); }};
+  const handleReject  = async (id: string) => { try { const t = localStorage.getItem('token'); await fetch(`/api/bookings/${id}/reject`,  { method:'PUT', headers:{ Authorization:`Bearer ${t}` } }); fetchBookings(); } catch(e){ console.error(e); }};
 
+  // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
-      <div className="flex items-center justify-between border-b border-[#e2e8f0] pb-4">
+    <div style={{ display:'flex', flexDirection:'column', flex:1, minHeight:0, padding:'24px 28px', gap:18, overflowY:'auto', background:'#F8FAFC' }}>
+
+      {/* ── Header ── */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:'1px solid #E2E8F0', paddingBottom:16 }}>
         <div>
-          <p className="font-bold text-[#0f172a] text-[28px]">Lịch trình & Lớp học</p>
-          <p className="text-[#64748b] text-sm mt-1">Sắp xếp thời khóa biểu và phân công HLV cho các lớp Group-X.</p>
+          <h1 style={{ margin:0, fontWeight:800, fontSize:26, color:'#0F172A' }}>Lịch trình &amp; Lớp học</h1>
+          <p style={{ margin:'4px 0 0', fontSize:13, color:'#64748B' }}>Sắp xếp thời khóa biểu và phân công HLV cho các lớp Group-X.</p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="bg-[#f1f5f9] p-1 rounded-lg flex items-center shrink-0">
-            <button 
-              onClick={() => setActiveTab('calendar')}
-              className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${activeTab === 'calendar' ? 'bg-white text-[#0f172a] shadow-sm' : 'text-[#64748b] hover:text-[#0f172a]'}`}
-            >
-              Lịch trình
-            </button>
-            <button 
-              onClick={() => setActiveTab('bookings')}
-              className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${activeTab === 'bookings' ? 'bg-white text-[#0f172a] shadow-sm' : 'text-[#64748b] hover:text-[#0f172a]'}`}
-            >
-              Danh sách đặt chỗ
-            </button>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <div style={{ display:'flex', background:'#F1F5F9', padding:3, borderRadius:10 }}>
+            {(['calendar','bookings'] as const).map(tab => (
+              <button key={tab} onClick={() => setActiveTab(tab)} style={{ padding:'7px 18px', borderRadius:8, fontSize:13, fontWeight:600, border:'none', cursor:'pointer', background: activeTab===tab ? '#FFF' : 'transparent', color: activeTab===tab ? '#0F172A' : '#64748B', boxShadow: activeTab===tab ? '0 1px 4px rgba(0,0,0,.1)' : 'none', transition:'all .15s' }}>
+                {tab === 'calendar' ? 'Lịch trình' : 'Đặt chỗ'}
+              </button>
+            ))}
           </div>
           {activeTab === 'calendar' && (
-            <button 
-              onClick={() => setShowCreateModal(true)}
-              className="bg-[#2563eb] flex gap-2 items-center px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors"
+            <button onClick={() => setShowCreate(true)}
+              style={{ display:'flex', alignItems:'center', gap:7, background:'#2563EB', color:'#FFF', border:'none', borderRadius:9, padding:'9px 18px', fontSize:13, fontWeight:700, cursor:'pointer', boxShadow:'0 2px 8px rgba(37,99,235,.35)', transition:'background .15s' }}
+              onMouseEnter={e => (e.currentTarget.style.background='#1D4ED8')}
+              onMouseLeave={e => (e.currentTarget.style.background='#2563EB')}
             >
-              <span className="font-semibold text-white text-sm">+ Tạo lớp mới</span>
+              <span style={{ fontSize:16, lineHeight:1 }}>＋</span> Thêm lớp học mới
             </button>
           )}
         </div>
       </div>
 
-      {showCreateModal && <CreateClassModal onClose={() => { setShowCreateModal(false); fetchClasses(); }} />}
-      {editClassData && <CreateClassModal editData={editClassData} onClose={() => { setEditClassData(null); fetchClasses(); }} />}
-      {selectedClassId && <ClassDetailModal 
-        classId={selectedClassId} 
-        onClose={() => { setSelectedClassId(null); fetchClasses(); }} 
-        onEdit={(data) => { setEditClassData(data); setSelectedClassId(null); }}
-      />}
+      {/* ── Modals ── */}
+      {showCreate       && <CreateClassModal onClose={() => { setShowCreate(false); fetchClasses(); }} />}
+      {editData         && <CreateClassModal editData={editData} onClose={() => { setEditData(null); fetchClasses(); }} />}
+      {selectedClassId  && <ClassDetailModal classId={selectedClassId} onClose={() => { setSelectedClassId(null); fetchClasses(); }} onEdit={(d:any) => { setEditData(d); setSelectedClassId(null); }} />}
 
       {activeTab === 'calendar' ? (
-        <div className="flex gap-4 pt-2">
-          {/* Sidebar Filters */}
-        <div className="w-[240px] shrink-0 flex flex-col gap-4">
-          <div className="bg-white border border-[#cbd5e1] flex gap-2 items-center px-3 py-2.5 rounded-lg">
-            <img src={iSearch2} alt="" className="size-4 shrink-0" />
-            <input 
-              placeholder="Tìm lớp, HLV..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 text-sm outline-none" 
-            />
-          </div>
-          
-          <div className="bg-white border border-[#e2e8f0] rounded-xl p-4 drop-shadow-sm">
-            <p className="font-bold text-[#0f172a] text-sm mb-3">Bộ lọc Phòng tập</p>
-            <div className="flex flex-col gap-2">
-              <label className="flex gap-2 items-center cursor-pointer group">
-                <input 
-                  type="checkbox" 
-                  checked={selectedRooms.length === 0}
-                  onChange={() => handleRoomChange('Tất cả')}
-                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
-                />
-                <span className="text-[#475569] text-sm group-hover:text-[#0f172a]">Tất cả</span>
-              </label>
-              {facilities.map((r, i) => (
-                <label key={i} className="flex gap-2 items-center cursor-pointer group">
-                  <input 
-                    type="checkbox" 
-                    checked={selectedRooms.includes(r)}
-                    onChange={() => handleRoomChange(r)}
-                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
-                  />
-                  <span className="text-[#475569] text-sm group-hover:text-[#0f172a]">{r}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-          
-          <div className="bg-white border border-[#e2e8f0] rounded-xl p-4 drop-shadow-sm">
-            <p className="font-bold text-[#0f172a] text-sm mb-3">Huấn luyện viên (Workload)</p>
-            <div className="flex flex-col gap-3">
-              <p className="text-xs text-gray-500 italic">Đang cập nhật...</p>
-            </div>
-          </div>
-        </div>
+        <div style={{ display:'flex', gap:16, flex:1, minHeight:0 }}>
 
-        {/* Calendar View */}
-        <div className="flex-1 bg-white border border-[#e2e8f0] rounded-xl drop-shadow-sm flex flex-col min-w-0">
-          <div className="flex items-center justify-between p-4 border-b border-[#e2e8f0]">
-            <div className="flex items-center gap-4">
-              <button onClick={handlePrevWeek} className="p-1 hover:bg-slate-100 rounded">
-                <img src={iChevron} alt="" className="size-5 rotate-90 opacity-60" />
-              </button>
-              <p className="font-bold text-[#0f172a] text-base">{getWeekString()}</p>
-              <button onClick={handleNextWeek} className="p-1 hover:bg-slate-100 rounded">
-                <img src={iChevron} alt="" className="size-5 -rotate-90 opacity-60" />
-              </button>
+          {/* ─── Filter Sidebar ─── */}
+          <div style={{ width:220, flexShrink:0, display:'flex', flexDirection:'column', gap:12 }}>
+            {/* Search */}
+            <div style={{ display:'flex', alignItems:'center', gap:8, background:'#FFF', border:'1px solid #CBD5E1', borderRadius:10, padding:'9px 12px' }}>
+              <img src={iSearch2} alt="" style={{ width:15, height:15, flexShrink:0, opacity:.6 }} />
+              <input placeholder="Tìm lớp, HLV..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                style={{ flex:1, border:'none', outline:'none', fontSize:13, color:'#0F172A', background:'transparent' }} />
             </div>
-            <div className="flex bg-slate-100 p-1 rounded-lg">
-              <button className="bg-white drop-shadow-sm px-4 py-1.5 rounded-md text-sm font-semibold text-[#0f172a]">Tuần</button>
-              <button className="px-4 py-1.5 text-sm font-medium text-[#64748b] hover:text-[#0f172a]">Tháng</button>
-            </div>
-          </div>
 
-          <div className="flex-1 flex overflow-auto relative p-4">
-            {/* simple grid calendar */}
-            <div className="flex flex-col w-full min-w-[800px]">
-              <div className="grid grid-cols-[4rem_repeat(7,1fr)] gap-2 mb-2">
-                <div className="w-16"></div>
-                {days.map(d => (
-                  <div key={d} className="text-center pb-2 border-b border-slate-200">
-                    <p className="text-[#64748b] text-xs font-semibold uppercase">{d}</p>
-                  </div>
+            {/* Room filter */}
+            <div style={{ background:'#FFF', border:'1px solid #E2E8F0', borderRadius:12, padding:16, boxShadow:'0 1px 3px rgba(0,0,0,.04)' }}>
+              <p style={{ margin:'0 0 12px', fontWeight:700, fontSize:13, color:'#0F172A' }}>Bộ lọc Phòng tập</p>
+              <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                {['Tất cả', ...FACILITIES].map(r => (
+                  <label key={r} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer' }}>
+                    <input type="checkbox"
+                      checked={r === 'Tất cả' ? selectedRooms.length === 0 : selectedRooms.includes(r)}
+                      onChange={() => toggleRoom(r)}
+                      style={{ width:14, height:14, accentColor:'#2563EB', cursor:'pointer' }}
+                    />
+                    <span style={{ fontSize:13, color:'#475569' }}>{r}</span>
+                  </label>
                 ))}
               </div>
-              <div className="flex-1 relative">
-                {hours.map((h, i) => (
-                  <div key={h} className="grid grid-cols-[4rem_repeat(7,1fr)] gap-2 relative h-24 group">
-                    <div className="w-16 flex justify-end pr-3">
-                      <span className="text-[#94a3b8] text-[11px] font-medium -mt-2">{h}</span>
-                    </div>
-                    {days.map((_, col) => (
-                      <div key={col} className="border-t border-slate-200 group-hover:bg-slate-50/50 transition-colors relative">
-                        {/* Đường kẻ lằn ranh đứt quãng cho giữa giờ (lẻ) */}
-                        <div className="absolute top-1/2 left-0 w-full border-t border-dashed border-slate-200/60 pointer-events-none"></div>
-                      </div>
-                    ))}
-                  </div>
-                ))}
+            </div>
 
-                {/* Render classes directly over the grid */}
-                <div className="absolute top-0 left-0 w-full h-full pointer-events-none grid grid-cols-[4rem_repeat(7,1fr)] gap-2">
-                  <div className="w-16"></div>
-                  {days.map((_, colIdx) => (
-                    <div key={colIdx} className="relative h-full">
-                      {classesThisWeek.filter(c => c.day === colIdx).map((c, i) => (
-                        <div 
-                          key={i} 
-                          onClick={() => setSelectedClassId(c.id)}
-                          className={`absolute w-full rounded-md border border-l-4 p-1 flex flex-col justify-between pointer-events-auto cursor-pointer hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 overflow-hidden ${c.color}`}
-                          style={{ 
-                            top: `calc(${c.hour * 6}rem + 1px)`, 
-                            height: `calc(${c.duration * 6}rem - 1px)`, 
-                            zIndex: 10
-                          }}
-                        >
-                          <div className="flex justify-between items-start gap-1">
-                            <p className={`font-bold text-[10px] leading-tight truncate ${c.text}`}>{c.name}</p>
-                            <span className="bg-white/90 px-1 py-0.5 rounded text-[8px] font-bold shrink-0 shadow-sm border border-black/5 leading-none">{c.enrolled}</span>
-                          </div>
-                          <div className={`flex items-center justify-between opacity-80 mt-auto ${c.text}`}>
-                            <div className="flex items-center gap-0.5 truncate min-w-0 pr-1">
-                              <svg className="w-2.5 h-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                              <p className="text-[8px] font-medium truncate">{c.room}</p>
-                            </div>
-                            <div className="flex items-center gap-0.5 truncate shrink-0">
-                              <svg className="w-2.5 h-2.5 shrink-0 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                              <p className={`text-[8px] font-medium truncate ${c.text}`}>{c.coach}</p>
-                            </div>
-                          </div>
+            {/* Coach workload */}
+            <div style={{ background:'#FFF', border:'1px solid #E2E8F0', borderRadius:12, padding:16, boxShadow:'0 1px 3px rgba(0,0,0,.04)' }}>
+              <p style={{ margin:'0 0 10px', fontWeight:700, fontSize:13, color:'#0F172A' }}>Huấn luyện viên</p>
+              {coaches.length > 0 ? (
+                <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                  {coaches.map(coach => (
+                    <div key={coach} style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      <div style={{ width:28, height:28, borderRadius:'50%', flexShrink:0, background:'#EFF6FF', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#2563EB' }}>
+                        {String(coach).split(' ').pop()?.charAt(0).toUpperCase()}
+                      </div>
+                      <span style={{ fontSize:12, color:'#475569', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{coach}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ height:52, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:8, background:'#F8FAFC', border:'1px dashed #E2E8F0' }}>
+                  <span style={{ fontSize:12, color:'#94A3B8' }}>Chưa có dữ liệu</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ─── Calendar Panel ─── */}
+          <div style={{ flex:1, minWidth:0, background:'#FFF', border:'1px solid #E2E8F0', borderRadius:14, display:'flex', flexDirection:'column', overflow:'hidden', boxShadow:'0 1px 6px rgba(0,0,0,.06)' }}>
+
+            {/* Top bar */}
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', borderBottom:'1px solid #E2E8F0', flexShrink:0 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                <button onClick={() => setWeekStart(p => { const d=new Date(p); d.setDate(d.getDate()-7); return d; })}
+                  style={{ width:32, height:32, borderRadius:'50%', border:'1px solid #E2E8F0', background:'#FFF', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  <img src={iChevron} alt="" style={{ width:16, height:16, transform:'rotate(90deg)', opacity:.55 }} />
+                </button>
+                <span style={{ fontWeight:700, fontSize:14, color:'#0F172A', minWidth:170, textAlign:'center' }}>{weekLabel}</span>
+                <button onClick={() => setWeekStart(p => { const d=new Date(p); d.setDate(d.getDate()+7); return d; })}
+                  style={{ width:32, height:32, borderRadius:'50%', border:'1px solid #E2E8F0', background:'#FFF', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  <img src={iChevron} alt="" style={{ width:16, height:16, transform:'rotate(-90deg)', opacity:.55 }} />
+                </button>
+              </div>
+              <div style={{ display:'flex', background:'#F1F5F9', padding:3, borderRadius:8 }}>
+                <button style={{ padding:'5px 16px', borderRadius:6, background:'#FFF', border:'none', fontSize:12, fontWeight:600, color:'#0F172A', cursor:'pointer', boxShadow:'0 1px 3px rgba(0,0,0,.09)' }}>Tuần</button>
+                <button style={{ padding:'5px 16px', border:'none', background:'transparent', fontSize:12, fontWeight:500, color:'#64748B', cursor:'pointer' }}>Tháng</button>
+              </div>
+            </div>
+
+            {/* Day header row */}
+            <div style={{ display:'grid', gridTemplateColumns:`${TIME_COL_PX}px repeat(7,1fr)`, borderBottom:'2px solid #E2E8F0', flexShrink:0, background:'#FAFBFD' }}>
+              <div />
+              {DAYS.map((d, i) => {
+                const date = new Date(weekStart); date.setDate(date.getDate() + i);
+                const isToday = date.toDateString() === new Date().toDateString();
+                return (
+                  <div key={d} style={{ textAlign:'center', padding:'10px 4px', borderLeft:'1px solid #E2E8F0' }}>
+                    <p style={{ margin:0, fontSize:10.5, fontWeight:700, color:'#94A3B8', textTransform:'uppercase', letterSpacing:.5 }}>{d}</p>
+                    <div style={{ width:28, height:28, borderRadius:'50%', background: isToday ? '#2563EB' : 'transparent', display:'flex', alignItems:'center', justifyContent:'center', margin:'4px auto 0' }}>
+                      <span style={{ fontSize:13, fontWeight:700, color: isToday ? '#FFF' : '#334155' }}>{date.getDate()}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Scrollable grid body */}
+            <div style={{ flex:1, overflowY:'auto' }}>
+              <div style={{ display:'grid', gridTemplateColumns:`${TIME_COL_PX}px repeat(7,1fr)`, height: totalH, position:'relative', minWidth:620 }}>
+
+                {/* Time labels + horizontal lines */}
+                <div style={{ gridColumn:'1 / -1', gridRow:'1', position:'absolute', top:0, left:0, right:0, bottom:0, pointerEvents:'none' }}>
+                  {Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => {
+                    const hour = START_HOUR + i;
+                    return (
+                      <React.Fragment key={hour}>
+                        {/* full hour line */}
+                        <div style={{ position:'absolute', top: i * ROW_PX, left:0, right:0, display:'flex', alignItems:'flex-start' }}>
+                          <span style={{ width: TIME_COL_PX, textAlign:'right', paddingRight:10, fontSize:10.5, color:'#94A3B8', fontWeight:500, lineHeight:'1', marginTop:-6, flexShrink:0 }}>
+                            {hour < END_HOUR ? `${String(hour).padStart(2,'0')}:00` : ''}
+                          </span>
+                          {hour < END_HOUR && <div style={{ flex:1, borderTop:'1px solid #E2E8F0' }} />}
                         </div>
-                      ))}
+                        {/* half-hour dashed */}
+                        {hour < END_HOUR && (
+                          <div style={{ position:'absolute', top: i * ROW_PX + ROW_PX / 2, left: TIME_COL_PX, right:0, borderTop:'1px dashed #F1F5F9' }} />
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+
+                {/* Day columns with events */}
+                <div style={{ position:'absolute', top:0, left:TIME_COL_PX, right:0, bottom:0, display:'grid', gridTemplateColumns:'repeat(7,1fr)' }}>
+                  {DAYS.map((_, di) => (
+                    <div key={di} style={{ position:'relative', borderLeft:'1px solid #E2E8F0', height:'100%' }}>
+                      <DayColumn events={columnEvents[di]} onSelect={setSelectedClassId} />
                     </div>
                   ))}
                 </div>
@@ -361,31 +346,20 @@ export function SchedulePage() {
             </div>
           </div>
         </div>
-        </div>
       ) : (
-        <div className="bg-white border border-[#e2e8f0] flex flex-col items-start overflow-hidden rounded-[12px] shrink-0 w-full flex-1 min-h-0">
-          <div className="flex flex-col w-full h-full overflow-hidden">
-            <div className="bg-[#f1f5f9] flex font-['Manrope:ExtraBold'] font-extrabold items-center px-[24px] py-[14px] text-[#64748b] text-[13px] w-full border-b border-[#e2e8f0] shrink-0">
-              <span className="flex-1 min-w-0">HỘI VIÊN</span>
-              <span className="w-[180px] shrink-0">LỚP HỌC</span>
-              <span className="w-[160px] shrink-0">THỜI GIAN</span>
-              <span className="w-[160px] shrink-0">ĐẶT LÚC</span>
-              <span className="w-[120px] shrink-0">TRẠNG THÁI</span>
-              <span className="w-[80px] shrink-0 text-right">THAO TÁC</span>
-            </div>
-            <div className="flex flex-col flex-1 w-full overflow-y-auto">
-              {bookings.map((b) => (
-                <BookingRow 
-                  key={b.id} 
-                  booking={b} 
-                  handleApprove={handleApprove} 
-                  handleReject={handleReject} 
-                />
-              ))}
-              {bookings.length === 0 && (
-                <div className="p-12 text-center text-gray-500 text-sm">Chưa có dữ liệu đặt chỗ</div>
-              )}
-            </div>
+        /* ── Bookings Tab ── */
+        <div style={{ background:'#FFF', border:'1px solid #E2E8F0', borderRadius:14, flex:1, minHeight:0, display:'flex', flexDirection:'column', overflow:'hidden', boxShadow:'0 1px 4px rgba(0,0,0,.05)' }}>
+          <div style={{ display:'flex', fontWeight:700, fontSize:12, color:'#64748B', padding:'14px 24px', background:'#F8FAFC', borderBottom:'1px solid #E2E8F0', flexShrink:0 }}>
+            <span style={{ flex:1 }}>HỘI VIÊN</span>
+            <span style={{ width:180 }}>LỚP HỌC</span>
+            <span style={{ width:160 }}>THỜI GIAN</span>
+            <span style={{ width:160 }}>ĐẶT LÚC</span>
+            <span style={{ width:120 }}>TRẠNG THÁI</span>
+            <span style={{ width:80, textAlign:'right' }}>THAO TÁC</span>
+          </div>
+          <div style={{ flex:1, overflowY:'auto' }}>
+            {bookings.map(b => <BookingRow key={b.id} booking={b} handleApprove={handleApprove} handleReject={handleReject} />)}
+            {bookings.length === 0 && <div style={{ padding:48, textAlign:'center', color:'#94A3B8', fontSize:14 }}>Chưa có dữ liệu đặt chỗ</div>}
           </div>
         </div>
       )}
