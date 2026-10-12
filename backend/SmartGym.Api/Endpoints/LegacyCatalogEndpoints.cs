@@ -20,6 +20,7 @@ app.MapSubscriptionEndpoints();
 app.MapPackageCatalogEndpoints();
 app.MapPaymentEndpoints();
 app.MapCoachEndpoints();
+app.MapMemberEndpoints();
 
 app.MapClassEndpoints();
 app.MapBookingEndpoints();
