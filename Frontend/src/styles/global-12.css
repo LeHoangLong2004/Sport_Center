@@ -1,0 +1,237 @@
+@reference ../index.css;
+
+
+@media (max-width: 560px) {
+  .mp-sidebar {
+    display: none;
+  }
+
+  .mp-topbar {
+    height: auto;
+    min-height: 70px;
+    padding: 14px 18px;
+  }
+
+  .mp-topbar-title strong {
+    font-size: 17px;
+  }
+
+  .mp-overview-content,
+  .mp-classes-content,
+  .mp-confirm-content {
+    padding: 20px 16px;
+  }
+
+  .mp-page-heading p {
+    font-size: 24px;
+  }
+
+  .mp-schedule-table {
+    overflow-x: auto;
+  }
+
+  .mp-schedule-head,
+  .mp-schedule-row {
+    min-width: 540px;
+  }
+
+  .mp-confirm-card {
+    gap: 22px;
+    padding: 24px 18px;
+  }
+
+  .mp-selected-class {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mp-confirm-actions {
+    flex-direction: column-reverse;
+  }
+
+  .mp-confirm-actions button {
+    width: 100%;
+  }
+
+  .mp-progress {
+    max-width: 100%;
+    gap: 6px;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
+
+/* Figma member portal flows: schedule, booking success, workout result and Move AI */
+.m2-shell {
+  display: flex;
+  width: 100%;
+  min-height: 100dvh;
+  background: #f8fafc;
+  font-family: var(--font-regular);
+}
+
+.m2-sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  width: 230px;
+  height: 100dvh;
+  flex: 0 0 230px;
+  flex-direction: column;
+  gap: 24px;
+  padding: 26px 18px 22px;
+  overflow: hidden;
+  color: var(--white);
+  background: var(--navy);
+}
+
+.m2-brand,
+.m2-account,
+.m2-brand div,
+.m2-account span {
+  display: flex;
+}
+
+.m2-brand,
+.m2-account {
+  align-items: center;
+  gap: 10px;
+}
+
+.m2-brand > span {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--navy);
+  background: var(--mint);
+  font-family: var(--font-extrabold);
+  font-size: 18px;
+}
+
+.m2-brand div,
+.m2-account span {
+  min-width: 0;
+  flex-direction: column;
+}
+
+.m2-brand strong {
+  font-family: var(--font-extrabold);
+  font-size: 14px;
+}
+
+.m2-brand small {
+  color: var(--mint);
+  font-size: 10px;
+}
+
+.m2-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.m2-nav button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border: 0;
+  border-radius: 8px;
+  color: #cbd5e1;
+  background: transparent;
+  font-family: var(--font-medium);
+  font-size: 12px;
+  text-align: left;
+}
+
+.m2-schedule .m2-nav button {
+  color: var(--faint);
+  font-size: 13px;
+}
+
+.m2-nav button.active {
+  color: var(--white);
+  background: var(--blue);
+  font-family: var(--font-bold);
+}
+
+.m2-nav img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.m2-support {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #12345b;
+}
+
+.m2-support strong {
+  font-family: var(--font-bold);
+  font-size: 12px;
+}
+
+.m2-support span {
+  color: #cbd5e1;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.m2-sidebar-spacer {
+  flex: 1;
+}
+
+.m2-account img {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+}
+
+.m2-account strong {
+  font-family: var(--font-bold);
+  font-size: 12px;
+}
+
+.m2-account small {
+  color: var(--faint);
+  font-size: 10px;
+}
+
+.m2-workspace {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.m2-topbar {
+  display: flex;
+  height: 78px;
+  flex: 0 0 78px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 30px;
+  border-bottom: 1px solid var(--line);
+  background: var(--white);
+}
+
+.m2-topbar > div:first-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.m2-topbar > div:first-child span {
+  color: var(--faint);
+  font-size: 10px;
+}

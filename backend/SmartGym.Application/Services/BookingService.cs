@@ -14,14 +14,18 @@ public sealed class BookingService
     public BookingService(
         IBookingRepository bookingRepository,
         IClassScheduleRepository scheduleRepository,
-        IMemberPackageRepository packageRepository)
+        IMemberPackageRepository packageRepository
+    )
     {
         _bookingRepository = bookingRepository;
         _scheduleRepository = scheduleRepository;
         _packageRepository = packageRepository;
     }
 
-    public async Task<(Booking? Booking, string? Error)> CreateBookingAsync(Guid memberId, Guid scheduleId)
+    public async Task<(Booking? Booking, string? Error)> CreateBookingAsync(
+        Guid memberId,
+        Guid scheduleId
+    )
     {
         var schedule = await _scheduleRepository.FindByIdAsync(scheduleId);
         if (schedule is null)
@@ -34,7 +38,10 @@ public sealed class BookingService
 
         if (timeUntilClass.TotalMinutes < 30)
         {
-            return (null, "Không thể đặt chỗ. Lớp học sẽ bắt đầu trong vòng 30 phút hoặc đã diễn ra.");
+            return (
+                null,
+                "Không thể đặt chỗ. Lớp học sẽ bắt đầu trong vòng 30 phút hoặc đã diễn ra."
+            );
         }
 
         if (timeUntilClass.TotalDays > 7)
@@ -62,22 +69,48 @@ public sealed class BookingService
                 return (null, "Lớp đã đầy và danh sách chờ cũng đã đạt tối đa (5 người).");
             }
 
-            var waitlistBooking = new Booking(Guid.NewGuid(), scheduleId, memberId, activePackage.Id, BookingStatus.Waitlist, waitlistCount + 1, 0, null, DateTime.UtcNow, null);
+            var waitlistBooking = new Booking(
+                Guid.NewGuid(),
+                scheduleId,
+                memberId,
+                activePackage.Id,
+                BookingStatus.Waitlist,
+                waitlistCount + 1,
+                0,
+                null,
+                DateTime.UtcNow,
+                null
+            );
             await _bookingRepository.AddAsync(waitlistBooking);
             return (waitlistBooking, null);
         }
 
-        var booking = new Booking(Guid.NewGuid(), scheduleId, memberId, activePackage.Id, BookingStatus.Confirmed, null, 0, null, DateTime.UtcNow, null);
+        var booking = new Booking(
+            Guid.NewGuid(),
+            scheduleId,
+            memberId,
+            activePackage.Id,
+            BookingStatus.Confirmed,
+            null,
+            0,
+            null,
+            DateTime.UtcNow,
+            null
+        );
         await _bookingRepository.AddAsync(booking);
-        
+
         schedule.IncrementBookings();
         // Missing update schedule repo, but Supabase will handle this in a real DB or we'll update it later
-        
+
         return (booking, null);
     }
 
-    public async Task<(bool Success, bool IsLateCancellation, Booking? PromotedBooking, string? Error)> CancelBookingAsync(
-        Guid bookingId, Guid memberId)
+    public async Task<(
+        bool Success,
+        bool IsLateCancellation,
+        Booking? PromotedBooking,
+        string? Error
+    )> CancelBookingAsync(Guid bookingId, Guid memberId)
     {
         var booking = await _bookingRepository.FindByIdAsync(bookingId);
         if (booking is null)

@@ -9,7 +9,7 @@ using SmartGym.Domain.Entities;
 
 namespace SmartGym.Application.Services;
 
-public sealed class ClassService
+public sealed partial class ClassService
 {
     private readonly IGroupClassRepository _classRepository;
     private readonly IPtSessionRepository _ptSessionRepository;
@@ -17,10 +17,11 @@ public sealed class ClassService
     private readonly SmartGym.Application.Interfaces.IUserRepository _userRepository;
 
     public ClassService(
-        IGroupClassRepository classRepository, 
+        IGroupClassRepository classRepository,
         IPtSessionRepository ptSessionRepository,
         ISubscriptionRepository subscriptionRepository,
-        SmartGym.Application.Interfaces.IUserRepository userRepository)
+        SmartGym.Application.Interfaces.IUserRepository userRepository
+    )
     {
         _classRepository = classRepository;
         _ptSessionRepository = ptSessionRepository;
@@ -28,7 +29,9 @@ public sealed class ClassService
         _userRepository = userRepository;
     }
 
-    public async Task<(bool IsSuccess, string? ErrorMessage)> CreateClassAsync(CreateClassRequest request)
+    public async Task<(bool IsSuccess, string? ErrorMessage)> CreateClassAsync(
+        CreateClassRequest request
+    )
     {
         if (request.Capacity <= 0)
         {
@@ -43,8 +46,14 @@ public sealed class ClassService
         var newStart = request.ScheduleTime;
         var newEnd = newStart.AddMinutes(request.DurationMinutes);
 
-        var existingClasses = await _classRepository.GetClassesByCoachAndDateAsync(request.CoachId, request.ScheduleTime);
-        var existingPtSessions = await _ptSessionRepository.GetSessionsByCoachAndDateAsync(request.CoachId, request.ScheduleTime);
+        var existingClasses = await _classRepository.GetClassesByCoachAndDateAsync(
+            request.CoachId,
+            request.ScheduleTime
+        );
+        var existingPtSessions = await _ptSessionRepository.GetSessionsByCoachAndDateAsync(
+            request.CoachId,
+            request.ScheduleTime
+        );
 
         foreach (var c in existingClasses)
         {
@@ -52,7 +61,10 @@ public sealed class ClassService
             var existingEnd = existingStart.AddMinutes(c.DurationMinutes);
             if (newStart < existingEnd && existingStart < newEnd)
             {
-                return (false, $"Coach is already scheduled for class '{c.ClassName}' at this time.");
+                return (
+                    false,
+                    $"Coach is already scheduled for class '{c.ClassName}' at this time."
+                );
             }
         }
 
@@ -99,7 +111,10 @@ public sealed class ClassService
         return await _classRepository.GetClassDetailByIdAsync(classId);
     }
 
-    public async Task<(bool IsSuccess, string? ErrorMessage)> BookClassAsync(Guid userId, Guid classId)
+    public async Task<(bool IsSuccess, string? ErrorMessage)> BookClassAsync(
+        Guid userId,
+        Guid classId
+    )
     {
         // 1. Kiểm tra tồn tại lớp học
         var targetClass = await _classRepository.GetByIdAsync(classId);
@@ -121,11 +136,12 @@ public sealed class ClassService
 
         // 3. Lấy danh sách subscription của User và kiểm tra còn hạn tại thời điểm diễn ra lớp học
         var userSubs = await _subscriptionRepository.GetByUserIdAsync(userId);
-        
-        var validSub = userSubs.FirstOrDefault(s => 
-            s.PaymentStatus == SmartGym.Domain.Enums.PaymentStatus.Completed &&
-            s.StartDate <= targetClass.ScheduleTime &&
-            targetClass.ScheduleTime <= s.EndDate);
+
+        var validSub = userSubs.FirstOrDefault(s =>
+            s.PaymentStatus == SmartGym.Domain.Enums.PaymentStatus.Completed
+            && s.StartDate <= targetClass.ScheduleTime
+            && targetClass.ScheduleTime <= s.EndDate
+        );
 
         if (validSub == null)
         {
@@ -136,7 +152,10 @@ public sealed class ClassService
         return await _classRepository.BookClassTransactionAsync(userId, classId, validSub.Id);
     }
 
-    public async Task<(bool IsSuccess, string? ErrorMessage)> CancelBookingAsync(Guid userId, Guid classId)
+    public async Task<(bool IsSuccess, string? ErrorMessage)> CancelBookingAsync(
+        Guid userId,
+        Guid classId
+    )
     {
         var targetClass = await _classRepository.GetByIdAsync(classId);
         if (targetClass == null)
@@ -164,7 +183,11 @@ public sealed class ClassService
         var result = await _classRepository.CancelClassTransactionAsync(classId);
         if (result.IsSuccess)
         {
-            await _classRepository.NotifyAffectedMembersAsync(classId, "Lớp học đã bị hủy", $"Lớp học {targetClass.ClassName} đã bị hủy.");
+            await _classRepository.NotifyAffectedMembersAsync(
+                classId,
+                "Lớp học đã bị hủy",
+                $"Lớp học {targetClass.ClassName} đã bị hủy."
+            );
         }
         return result;
     }
@@ -179,7 +202,10 @@ public sealed class ClassService
         return await _classRepository.RejectBookingAsync(bookingId);
     }
 
-    public async Task<(bool IsSuccess, string? ErrorMessage)> UpdateClassAsync(Guid classId, CreateClassRequest request)
+    public async Task<(bool IsSuccess, string? ErrorMessage)> UpdateClassAsync(
+        Guid classId,
+        CreateClassRequest request
+    )
     {
         try
         {
@@ -200,22 +226,36 @@ public sealed class ClassService
             }
 
             // Check overlap if schedule or coach changed
-            if (targetClass.ScheduleTime != request.ScheduleTime || targetClass.CoachId != request.CoachId || targetClass.DurationMinutes != request.DurationMinutes)
+            if (
+                targetClass.ScheduleTime != request.ScheduleTime
+                || targetClass.CoachId != request.CoachId
+                || targetClass.DurationMinutes != request.DurationMinutes
+            )
             {
                 var newStart = request.ScheduleTime;
                 var newEnd = newStart.AddMinutes(request.DurationMinutes);
 
-                var existingClasses = await _classRepository.GetClassesByCoachAndDateAsync(request.CoachId, request.ScheduleTime);
-                var existingPtSessions = await _ptSessionRepository.GetSessionsByCoachAndDateAsync(request.CoachId, request.ScheduleTime);
+                var existingClasses = await _classRepository.GetClassesByCoachAndDateAsync(
+                    request.CoachId,
+                    request.ScheduleTime
+                );
+                var existingPtSessions = await _ptSessionRepository.GetSessionsByCoachAndDateAsync(
+                    request.CoachId,
+                    request.ScheduleTime
+                );
 
                 foreach (var c in existingClasses)
                 {
-                    if (c.Id == classId) continue;
+                    if (c.Id == classId)
+                        continue;
                     var existingStart = c.ScheduleTime;
                     var existingEnd = existingStart.AddMinutes(c.DurationMinutes);
                     if (newStart < existingEnd && existingStart < newEnd)
                     {
-                        return (false, $"Coach is already scheduled for class '{c.ClassName}' at this time.");
+                        return (
+                            false,
+                            $"Coach is already scheduled for class '{c.ClassName}' at this time."
+                        );
                     }
                 }
 
@@ -245,51 +285,23 @@ public sealed class ClassService
 
             await _classRepository.UpdateAsync(updatedClass);
 
-            await _classRepository.NotifyAffectedMembersAsync(classId, "Thông tin lớp học thay đổi", $"Lớp học {targetClass.ClassName} đã được cập nhật thông tin.");
+            await _classRepository.NotifyAffectedMembersAsync(
+                classId,
+                "Thông tin lớp học thay đổi",
+                $"Lớp học {targetClass.ClassName} đã được cập nhật thông tin."
+            );
 
             return (true, null);
         }
         catch (Exception ex)
         {
-            return (false, "System Error: " + ex.Message + (ex.InnerException != null ? " - " + ex.InnerException.Message : ""));
+            return (
+                false,
+                "System Error: "
+                    + ex.Message
+                    + (ex.InnerException != null ? " - " + ex.InnerException.Message : "")
+            );
         }
     }
 
-    // ── GIAI ĐOẠN G: ĐIỂM DANH & XEM LỊCH ──
-
-    public async Task<(bool IsSuccess, string? ErrorMessage)> UpdateAttendanceAsync(Guid classId, UpdateAttendanceRequest request)
-    {
-        var targetClass = await _classRepository.GetByIdAsync(classId);
-        if (targetClass == null)
-        {
-            return (false, "Class not found.");
-        }
-
-        if (request.AttendanceList == null || !request.AttendanceList.Any())
-        {
-            return (false, "Attendance list cannot be empty.");
-        }
-
-        return await _classRepository.UpdateAttendanceAsync(classId, request.AttendanceList);
-    }
-
-    public async Task<MemberScheduleResponse> GetMemberScheduleAsync(Guid userId)
-    {
-        return await _classRepository.GetMemberScheduleAsync(userId);
-    }
-
-    public async Task<IEnumerable<CoachClassScheduleDto>> GetCoachScheduleAsync(Guid coachUserId, DateTime? date)
-    {
-        return await _classRepository.GetCoachScheduleAsync(coachUserId, date);
-    }
-
-    public async Task<IEnumerable<ClassResponse>> GetManagerScheduleAsync(Guid? facilityId, Guid? coachId, Guid? sportId, DateTime? date)
-    {
-        return await _classRepository.GetManagerScheduleAsync(facilityId, coachId, sportId, date);
-    }
-
-    public async Task<IEnumerable<BookingManagerResponse>> GetAllBookingsForManagerAsync()
-    {
-        return await _classRepository.GetAllBookingsForManagerAsync();
-    }
 }

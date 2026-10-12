@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Search } from 'lucide-react';
-import { A } from '../shared';
-import StatusBadge from '../components/StatusBadge';
+import React, { useState } from "react"
+import { Search } from "lucide-react"
+import { A } from "../shared"
+import StatusBadge from "../components/StatusBadge"
 
 export function LookupPage({ onDetail }: { onDetail: () => void }) {
   const [query, setQuery] = useState("")
@@ -12,28 +12,36 @@ export function LookupPage({ onDetail }: { onDetail: () => void }) {
   React.useEffect(() => {
     const fetchMembers = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("token")
         const res = await fetch("/api/users/members-lookup", {
           headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        });
+            Authorization: `Bearer ${token}`,
+          },
+        })
         if (res.ok) {
-          const data = await res.json();
-          setMembers(data);
+          const data = await res.json()
+          setMembers(data)
         }
       } catch (err) {
-        console.error(err);
+        console.error(err)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-    fetchMembers();
-  }, []);
+    }
+    fetchMembers()
+  }, [])
 
   const filtered = members.filter((m) => {
-    const matchQ = query === "" || `${m.fullName} ${m.phoneNumber} ${m.memberCode}`.toLowerCase().includes(query.toLowerCase())
-    const matchF = filter === "Tất cả" || (filter === "Premium" && m.packageName.includes("Premium")) || (filter === "Fitness" && m.packageName.includes("Fitness")) || (filter === "Hết hạn" && m.status !== "Đang hoạt động")
+    const matchQ =
+      query === "" ||
+      `${m.fullName} ${m.phoneNumber} ${m.memberCode}`
+        .toLowerCase()
+        .includes(query.toLowerCase())
+    const matchF =
+      filter === "Tất cả" ||
+      (filter === "Premium" && m.packageName.includes("Premium")) ||
+      (filter === "Fitness" && m.packageName.includes("Fitness")) ||
+      (filter === "Hết hạn" && m.status !== "Đang hoạt động")
     return matchQ && matchF
   })
 
@@ -49,7 +57,9 @@ export function LookupPage({ onDetail }: { onDetail: () => void }) {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Tìm theo tên, SĐT, mã thẻ..."
           />
-          <span className="bg-white border border-[#e2e8f0] font-['Manrope:SemiBold'] font-semibold px-[6px] py-[2px] rounded-[4px] text-[#64748b] text-[11px] shrink-0">F3</span>
+          <span className="bg-white border border-[#e2e8f0] font-['Manrope:SemiBold'] font-semibold px-[6px] py-[2px] rounded-[4px] text-[#64748b] text-[11px] shrink-0">
+            F3
+          </span>
         </div>
         <div className="flex items-center justify-between shrink-0 w-full">
           <div className="flex gap-[8px] items-start shrink-0">
@@ -58,14 +68,21 @@ export function LookupPage({ onDetail }: { onDetail: () => void }) {
                 key={chip}
                 type="button"
                 onClick={() => setFilter(chip)}
-                className={`flex items-start px-[14px] py-[8px] rounded-[6px] shrink-0 transition-colors ${filter === chip ? "bg-[#3b82f6] text-white font-['Manrope:Bold'] font-bold" : "bg-[#f1f5f9] text-[#64748b] font-['Manrope:Medium'] font-medium"} text-[13px]`}
+                className={`flex items-start px-[14px] py-[8px] rounded-[6px] shrink-0 transition-colors ${
+                  filter === chip
+                    ? "bg-[#3b82f6] text-white font-['Manrope:Bold'] font-bold"
+                    : "bg-[#f1f5f9] text-[#64748b] font-['Manrope:Medium'] font-medium"
+                } text-[13px]`}
               >
                 {chip}
               </button>
             ))}
           </div>
           <span className="font-['Manrope:SemiBold'] font-semibold text-[#64748b] text-[14px]">
-            Tổng số kết quả: <span className="font-['Manrope:Bold'] font-bold text-[#0f172a]">1,247 hội viên</span>
+            Tổng số kết quả:{" "}
+            <span className="font-['Manrope:Bold'] font-bold text-[#0f172a]">
+              1,247 hội viên
+            </span>
           </span>
         </div>
       </div>
@@ -83,23 +100,46 @@ export function LookupPage({ onDetail }: { onDetail: () => void }) {
         </div>
         <div className="flex flex-col items-start w-full">
           {filtered.map((m) => (
-            <div key={m.memberCode} className="border-[#e2e8f0] border-b border-solid flex items-center px-[24px] py-[12px] shrink-0 w-full">
-              <span className="font-['Manrope:Bold'] font-bold text-[#3b82f6] text-[13px] w-[120px] shrink-0">{m.memberCode}</span>
+            <div
+              key={m.memberCode}
+              className="border-[#e2e8f0] border-b border-solid flex items-center px-[24px] py-[12px] shrink-0 w-full"
+            >
+              <span className="font-['Manrope:Bold'] font-bold text-[#3b82f6] text-[13px] w-[120px] shrink-0">
+                {m.memberCode}
+              </span>
               <div className="flex flex-1 gap-[10px] items-center min-w-0">
-                <img src={m.avatarUrl} alt="" className="shrink-0 size-[28px] rounded-full object-cover" />
-                <span className="font-['Manrope:Bold'] font-bold text-[#0f172a] text-[13px] whitespace-nowrap">{m.fullName}</span>
+                <img
+                  src={m.avatarUrl}
+                  alt=""
+                  className="shrink-0 size-[28px] rounded-full object-cover"
+                />
+                <span className="font-['Manrope:Bold'] font-bold text-[#0f172a] text-[13px] whitespace-nowrap">
+                  {m.fullName}
+                </span>
               </div>
-              <span className="font-['Manrope:Regular'] font-normal text-[#64748b] text-[13px] w-[180px] shrink-0">{m.phoneNumber}</span>
-              <span className="font-['Manrope:SemiBold'] font-semibold text-[#0f172a] text-[13px] w-[200px] shrink-0">{m.packageName}</span>
+              <span className="font-['Manrope:Regular'] font-normal text-[#64748b] text-[13px] w-[180px] shrink-0">
+                {m.phoneNumber}
+              </span>
+              <span className="font-['Manrope:SemiBold'] font-semibold text-[#0f172a] text-[13px] w-[200px] shrink-0">
+                {m.packageName}
+              </span>
               <span className="font-['Manrope:Regular'] font-normal text-[#64748b] text-[13px] w-[160px] shrink-0">
-                {m.expiryDate ? new Date(m.expiryDate).toLocaleDateString('vi-VN') : "N/A"}
+                {m.expiryDate
+                  ? new Date(m.expiryDate).toLocaleDateString("vi-VN")
+                  : "N/A"}
               </span>
               <div className="flex items-start w-[150px] shrink-0">
                 <StatusBadge text={m.status} color={m.statusColor} />
               </div>
               <div className="flex items-start justify-end w-[100px] shrink-0">
-                <button type="button" onClick={onDetail} className="border border-[#e2e8f0] border-solid flex items-start px-[12px] py-[6px] rounded-[6px] shrink-0">
-                  <span className="font-['Manrope:Bold'] font-bold text-[#0f172a] text-[12px]">Chi tiết</span>
+                <button
+                  type="button"
+                  onClick={onDetail}
+                  className="border border-[#e2e8f0] border-solid flex items-start px-[12px] py-[6px] rounded-[6px] shrink-0"
+                >
+                  <span className="font-['Manrope:Bold'] font-bold text-[#0f172a] text-[12px]">
+                    Chi tiết
+                  </span>
                 </button>
               </div>
             </div>

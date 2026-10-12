@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -12,292 +11,98 @@ using ClosedXML.Excel;
 
 namespace SmartGym.Infrastructure.Services;
 
-public class ReportService : IReportService
+public class ReportService(SmartGymDbContext db, Supabase.Client supabase) : IReportService
 {
-    /// <summary>Cửa sổ dùng để tính tỷ lệ gia hạn hội viên.</summary>
-    private static readonly TimeSpan RetentionWindow = TimeSpan.FromDays(90);
+    private static readonly TimeSpan RetentionWindow   = TimeSpan.FromDays(90);
+    private const int AttendanceLookbackDays           = 7;
 
-    /// <summary>Số ngày gần nhất lấy số liệu điểm danh cổng.</summary>
-    private const int AttendanceLookbackDays = 7;
-
-    private readonly SmartGymDbContext _dbContext;
-    private readonly Supabase.Client _supabase;
-
-    public ReportService(SmartGymDbContext dbContext, Supabase.Client supabase)
-    {
-        _dbContext = dbContext;
-        _supabase = supabase;
-    }
+    // ── Truy vấn đơn giản ────────────────────────────────────────────────────
 
     public async Task<decimal> GetTotalRevenueAsync(DateTime? startDate, DateTime? endDate)
     {
-        var query = _dbContext.Invoices.Where(i => i.Status == PaymentStatus.Completed);
-
-        if (startDate.HasValue)
-        {
-            query = query.Where(i => i.CreatedAt >= startDate.Value.ToUniversalTime());
-        }
-
-        if (endDate.HasValue)
-        {
-            query = query.Where(i => i.CreatedAt <= endDate.Value.ToUniversalTime());
-        }
-
-        return await query.SumAsync(i => i.TotalAmount);
+        var q = db.Invoices.Where(i => i.Status == PaymentStatus.Completed);
+        if (startDate.HasValue) q = q.Where(i => i.CreatedAt >= startDate.Value.ToUniversalTime());
+        if (endDate.HasValue)   q = q.Where(i => i.CreatedAt <= endDate.Value.ToUniversalTime());
+        return await q.SumAsync(i => i.TotalAmount);
     }
 
     public async Task<int> GetNewMembersCountAsync(DateTime month)
     {
-        var startOfMonth = new DateTime(month.Year, month.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-        var endOfMonth = startOfMonth.AddMonths(1).AddTicks(-1);
-
-        return await _dbContext.Users
-            .Where(u => u.Role.Name == "member" && u.CreatedAt >= startOfMonth && u.CreatedAt <= endOfMonth)
+        var start = new DateTime(month.Year, month.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var end   = start.AddMonths(1).AddTicks(-1);
+        return await db.Users
+            .Where(u => u.Role.Name == "member" && u.CreatedAt >= start && u.CreatedAt <= end)
             .CountAsync();
     }
 
     public async Task<double> GetAverageClassOccupancyAsync(DateTime month)
     {
         var classes = await GetClassesInMonthAsync(month);
-
-        var totalCapacity = classes.Sum(c => c.Capacity);
-        if (totalCapacity <= 0) return 0;
-
-        var totalEnrolled = classes.Sum(c => Math.Min(c.CurrentEnrolled, c.Capacity));
-        return Math.Round(totalEnrolled * 100.0 / totalCapacity, 2);
+        var capacity = classes.Sum(c => c.Capacity);
+        if (capacity <= 0) return 0;
+        return Math.Round(classes.Sum(c => Math.Min(c.CurrentEnrolled, c.Capacity)) * 100.0 / capacity, 2);
     }
 
     public async Task<DashboardMetricsResponse> GetDashboardMetricsAsync()
     {
-        var today = DateTime.UtcNow.Date;
+        var today      = DateTime.UtcNow.Date;
         var monthStart = new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        var todayRevenue = await _dbContext.Invoices
-            .Where(i => i.Status == PaymentStatus.Completed && i.CreatedAt >= today)
-            .SumAsync(i => i.TotalAmount);
-
-        var monthRevenue = await _dbContext.Invoices
-            .Where(i => i.Status == PaymentStatus.Completed && i.CreatedAt >= monthStart)
-            .SumAsync(i => i.TotalAmount);
-
-        var newMembersThisMonth = await _dbContext.Users
-            .Where(u => u.Role.Name == "member" && u.CreatedAt >= monthStart)
-            .CountAsync();
-
-        var totalMembers = await _dbContext.Users
-            .Where(u => u.Role.Name == "member")
-            .CountAsync();
-
-        var activeSubscriptions = await _dbContext.Subscriptions
-            .CountAsync(s => s.PaymentStatus == PaymentStatus.Completed && s.EndDate >= today);
-
-        var pendingInvoices = await _dbContext.Invoices
-            .Where(i => i.Status == PaymentStatus.Pending)
-            .Select(i => i.TotalAmount)
-            .ToListAsync();
-
-        var classes = await GetClassesAsync();
-        var upcomingClasses = classes.Count(c => c.Status && c.ScheduleTime >= DateTime.UtcNow);
-        var occupancyRate = await GetAverageClassOccupancyAsync(DateTime.UtcNow);
+        var todayRev   = await db.Invoices.Where(i => i.Status == PaymentStatus.Completed && i.CreatedAt >= today).SumAsync(i => i.TotalAmount);
+        var monthRev   = await db.Invoices.Where(i => i.Status == PaymentStatus.Completed && i.CreatedAt >= monthStart).SumAsync(i => i.TotalAmount);
+        var newMembers = await db.Users.Where(u => u.Role.Name == "member" && u.CreatedAt >= monthStart).CountAsync();
+        var total      = await db.Users.Where(u => u.Role.Name == "member").CountAsync();
+        var activeSubs = await db.Subscriptions.CountAsync(s => s.PaymentStatus == PaymentStatus.Completed && s.EndDate >= today);
+        var pending    = await db.Invoices.Where(i => i.Status == PaymentStatus.Pending).Select(i => i.TotalAmount).ToListAsync();
+        var classes    = await GetClassesAsync();
+        var occupancy  = await GetAverageClassOccupancyAsync(DateTime.UtcNow);
 
         return new DashboardMetricsResponse(
-            todayRevenue,
-            monthRevenue,
-            newMembersThisMonth,
-            totalMembers,
-            activeSubscriptions,
-            pendingInvoices.Count,
-            pendingInvoices.Sum(),
-            upcomingClasses,
-            $"{occupancyRate}%",
-            DateTime.UtcNow);
+            todayRev, monthRev, newMembers, total, activeSubs,
+            pending.Count, pending.Sum(),
+            classes.Count(c => c.Status && c.ScheduleTime >= DateTime.UtcNow),
+            $"{occupancy}%", DateTime.UtcNow);
     }
+
+    // ── Báo cáo doanh thu ────────────────────────────────────────────────────
 
     public async Task<IEnumerable<RevenueByPackageResponse>> GetRevenueByPackageAsync()
     {
-        var grouped = await _dbContext.Subscriptions
+        var grouped = await db.Subscriptions
             .Where(s => s.PaymentStatus == PaymentStatus.Completed && s.PackageId != null)
             .GroupBy(s => s.PackageId!)
-            .Select(g => new { PackageId = g.Key, Revenue = g.Sum(s => s.TotalAmount), Subscriptions = g.Count() })
+            .Select(g => new { PackageId = g.Key, Revenue = g.Sum(s => s.TotalAmount), Subs = g.Count() })
             .ToListAsync();
 
-        var packageNames = await _dbContext.Packages.ToDictionaryAsync(p => p.Id, p => p.Name);
+        var names = await db.Packages.ToDictionaryAsync(p => p.Id, p => p.Name);
 
-        return grouped
-            .OrderByDescending(g => g.Revenue)
+        return grouped.OrderByDescending(g => g.Revenue)
             .Select(g => new RevenueByPackageResponse(
                 g.PackageId,
-                packageNames.TryGetValue(g.PackageId, out var name) ? name : g.PackageId,
-                g.Revenue,
-                g.Subscriptions))
-            .ToList();
+                names.TryGetValue(g.PackageId, out var n) ? n : g.PackageId,
+                g.Revenue, g.Subs));
     }
 
     public async Task<IEnumerable<RevenueByPaymentMethodResponse>> GetRevenueByPaymentMethodAsync()
     {
-        var grouped = await _dbContext.Invoices
+        var grouped = await db.Invoices
             .Where(i => i.Status == PaymentStatus.Completed)
             .GroupBy(i => i.PaymentMethod)
-            .Select(g => new { Method = g.Key, Revenue = g.Sum(i => i.TotalAmount), Invoices = g.Count() })
+            .Select(g => new { Method = g.Key, Revenue = g.Sum(i => i.TotalAmount), Count = g.Count() })
             .ToListAsync();
 
-        return grouped
-            .OrderByDescending(g => g.Revenue)
-            .Select(g => new RevenueByPaymentMethodResponse(
-                g.Method.ToDbValue(),
-                g.Method.ToDisplayName(),
-                g.Revenue,
-                g.Invoices))
-            .ToList();
-    }
-
-    public async Task<IEnumerable<ExpiringMemberResponse>> GetExpiringMembersAsync()
-    {
-        var now = DateTime.UtcNow;
-        var targetDate = now.AddDays(7);
-
-        var expiring = await _dbContext.Subscriptions
-            .Include(s => s.User)
-            .Include(s => s.Package)
-            .Where(s => s.PaymentStatus == PaymentStatus.Completed && s.EndDate >= now && s.EndDate <= targetDate)
-            .OrderBy(s => s.EndDate)
-            .ToListAsync();
-
-        return expiring.Select(s => new ExpiringMemberResponse(
-            s.Id,
-            s.UserId,
-            s.User?.FullName,
-            s.User?.Email,
-            s.PackageId,
-            s.Package?.Name,
-            s.EndDate.ToString("yyyy-MM-dd"),
-            (int)Math.Ceiling((s.EndDate.Date - now.Date).TotalDays),
-            s.AutoRenew))
-            .ToList();
-    }
-
-    public async Task<MemberRetentionResponse> GetMemberRetentionRateAsync()
-    {
-        var now = DateTime.UtcNow;
-        var windowStart = now - RetentionWindow;
-
-        var completed = await _dbContext.Subscriptions
-            .Where(s => s.PaymentStatus == PaymentStatus.Completed)
-            .Select(s => new { s.UserId, s.StartDate, s.EndDate })
-            .ToListAsync();
-
-        var expiring = completed
-            .Where(s => s.EndDate >= windowStart && s.EndDate <= now)
-            .ToList();
-
-        var expiringMembers = expiring.Select(s => s.UserId).Distinct().Count();
-        var renewedMembers = expiring
-            .Where(s => completed.Any(other => other.UserId == s.UserId && other.StartDate >= s.EndDate))
-            .Select(s => s.UserId)
-            .Distinct()
-            .Count();
-
-        var rate = expiringMembers == 0 ? 0 : Math.Round(renewedMembers * 100.0 / expiringMembers, 2);
-
-        return new MemberRetentionResponse(
-            windowStart.ToString("yyyy-MM-dd"),
-            now.ToString("yyyy-MM-dd"),
-            expiringMembers,
-            renewedMembers,
-            $"{rate}%",
-            rate);
-    }
-
-    public async Task<IEnumerable<AttendanceStatResponse>> GetAttendanceStatsAsync()
-    {
-        var since = DateTime.UtcNow.Date.AddDays(-AttendanceLookbackDays);
-
-        var checkIns = await GetCheckInLogsAsync();
-
-        return checkIns
-            .Where(c => c.CheckInTime >= since)
-            .GroupBy(c => c.CheckInTime.Hour)
-            .OrderBy(g => g.Key)
-            .Select(g => new AttendanceStatResponse($"{g.Key:00}:00", g.Count()))
-            .ToList();
-    }
-
-    public async Task<IEnumerable<TrainerPerformanceResponse>> GetTrainerPerformanceAsync()
-    {
-        var classes = await GetClassesAsync();
-        var coachNames = await GetCoachNamesAsync();
-
-        return classes
-            .Where(c => c.CoachId.HasValue)
-            .GroupBy(c => c.CoachId!.Value)
-            .Select(g => new TrainerPerformanceResponse(
-                g.Key,
-                coachNames.TryGetValue(g.Key, out var name) ? name : "Chưa xác định",
-                g.Count(),
-                g.Sum(c => c.CurrentEnrolled),
-                g.Count(c => c.Status && c.ScheduleTime >= DateTime.UtcNow),
-                FormatFillRate(g)))
-            .OrderByDescending(x => x.Sessions)
-            .ToList();
-    }
-
-    private static string FormatFillRate(IEnumerable<GroupClassModel> classes)
-    {
-        var capacity = classes.Sum(c => c.Capacity);
-        if (capacity == 0) return "0%";
-
-        var enrolled = classes.Sum(c => Math.Min(c.CurrentEnrolled, c.Capacity));
-        return $"{(int)Math.Round(enrolled * 100.0 / capacity)}%";
-    }
-
-    private static string ToFillRate(int enrolled, int capacity) =>
-        capacity <= 0 ? "0%" : $"{(int)Math.Round(Math.Min(enrolled, capacity) * 100.0 / capacity)}%";
-
-    private async Task<Dictionary<Guid, string>> GetSportNamesAsync()
-    {
-        try
-        {
-            var sports = (await _supabase.From<SportModel>().Get()).Models;
-            return sports.ToDictionary(s => s.Id, s => s.Name);
-        }
-        catch (Exception)
-        {
-            return new Dictionary<Guid, string>();
-        }
-    }
-
-    public async Task<IEnumerable<OutstandingInvoiceResponse>> GetOutstandingInvoicesAsync()
-    {
-        var outstanding = await _dbContext.Invoices
-            .Include(i => i.User)
-            .Where(i => i.Status == PaymentStatus.Pending)
-            .OrderBy(i => i.CreatedAt)
-            .ToListAsync();
-
-        var now = DateTime.UtcNow;
-
-        return outstanding.Select(i => new OutstandingInvoiceResponse(
-            i.Id,
-            i.InvoiceNumber,
-            i.UserId,
-            i.User?.FullName,
-            i.TotalAmount,
-            i.PaymentMethod.ToDisplayName(),
-            i.CreatedAt,
-            (int)Math.Max(0, (now - i.CreatedAt).TotalDays)))
-            .ToList();
+        return grouped.OrderByDescending(g => g.Revenue)
+            .Select(g => new RevenueByPaymentMethodResponse(g.Method.ToDbValue(), g.Method.ToDisplayName(), g.Revenue, g.Count));
     }
 
     public async Task<IEnumerable<MonthlyRevenueResponse>> GetMonthlyRevenueAsync(int months)
     {
-        var safeMonths = Math.Clamp(months, 1, 24);
+        var n      = Math.Clamp(months, 1, 24);
+        var now    = DateTime.UtcNow;
+        var first  = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(-(n - 1));
 
-        var now = DateTime.UtcNow;
-        var firstMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc)
-            .AddMonths(-(safeMonths - 1));
-
-        var invoices = await _dbContext.Invoices
-            .Where(i => i.Status == PaymentStatus.Completed && i.CreatedAt >= firstMonth)
+        var invoices = await db.Invoices
+            .Where(i => i.Status == PaymentStatus.Completed && i.CreatedAt >= first)
             .Select(i => new { i.CreatedAt, i.TotalAmount })
             .ToListAsync();
 
@@ -305,173 +110,221 @@ public class ReportService : IReportService
             .GroupBy(i => new DateTime(i.CreatedAt.Year, i.CreatedAt.Month, 1, 0, 0, 0, DateTimeKind.Utc))
             .ToDictionary(g => g.Key, g => new { Revenue = g.Sum(x => x.TotalAmount), Count = g.Count() });
 
-        // Tháng không có giao dịch vẫn trả về doanh thu 0 để biểu đồ không bị lệch trục.
-        return Enumerable.Range(0, safeMonths)
-            .Select(offset => firstMonth.AddMonths(offset))
-            .Select(month => grouped.TryGetValue(month, out var data)
-                ? new MonthlyRevenueResponse(month.ToString("yyyy-MM"), data.Revenue, data.Count)
-                : new MonthlyRevenueResponse(month.ToString("yyyy-MM"), 0, 0))
-            .ToList();
+        // Tháng không có giao dịch vẫn trả về 0 để biểu đồ không bị lệch trục.
+        return Enumerable.Range(0, n)
+            .Select(i => first.AddMonths(i))
+            .Select(m => grouped.TryGetValue(m, out var d)
+                ? new MonthlyRevenueResponse(m.ToString("yyyy-MM"), d.Revenue, d.Count)
+                : new MonthlyRevenueResponse(m.ToString("yyyy-MM"), 0, 0));
     }
+
+    // ── Báo cáo hội viên ─────────────────────────────────────────────────────
+
+    public async Task<IEnumerable<ExpiringMemberResponse>> GetExpiringMembersAsync()
+    {
+        var now    = DateTime.UtcNow;
+        var target = now.AddDays(7);
+
+        return (await db.Subscriptions
+            .Include(s => s.User).Include(s => s.Package)
+            .Where(s => s.PaymentStatus == PaymentStatus.Completed && s.EndDate >= now && s.EndDate <= target)
+            .OrderBy(s => s.EndDate)
+            .ToListAsync())
+            .Select(s => new ExpiringMemberResponse(
+                s.Id, s.UserId, s.User?.FullName, s.User?.Email,
+                s.PackageId, s.Package?.Name,
+                s.EndDate.ToString("yyyy-MM-dd"),
+                (int)Math.Ceiling((s.EndDate.Date - now.Date).TotalDays),
+                s.AutoRenew));
+    }
+
+    public async Task<MemberRetentionResponse> GetMemberRetentionRateAsync()
+    {
+        var now    = DateTime.UtcNow;
+        var winStart = now - RetentionWindow;
+
+        var completed = await db.Subscriptions
+            .Where(s => s.PaymentStatus == PaymentStatus.Completed)
+            .Select(s => new { s.UserId, s.StartDate, s.EndDate })
+            .ToListAsync();
+
+        var expiring       = completed.Where(s => s.EndDate >= winStart && s.EndDate <= now).ToList();
+        var expiringCount  = expiring.Select(s => s.UserId).Distinct().Count();
+        var renewedCount   = expiring
+            .Where(s => completed.Any(o => o.UserId == s.UserId && o.StartDate >= s.EndDate))
+            .Select(s => s.UserId).Distinct().Count();
+        var rate           = expiringCount == 0 ? 0 : Math.Round(renewedCount * 100.0 / expiringCount, 2);
+
+        return new MemberRetentionResponse(
+            winStart.ToString("yyyy-MM-dd"), now.ToString("yyyy-MM-dd"),
+            expiringCount, renewedCount, $"{rate}%", rate);
+    }
+
+    // ── Báo cáo lớp học & HLV ────────────────────────────────────────────────
 
     public async Task<IEnumerable<ClassOccupancyResponse>> GetClassOccupancyByClassAsync(DateTime month)
     {
-        var classes = await GetClassesInMonthAsync(month);
+        var classes    = await GetClassesInMonthAsync(month);
         var sportNames = await GetSportNamesAsync();
 
-        return classes
-            .OrderByDescending(c => c.Capacity == 0 ? 0 : (double)c.CurrentEnrolled / c.Capacity)
+        return classes.OrderByDescending(c => c.Capacity == 0 ? 0 : (double)c.CurrentEnrolled / c.Capacity)
             .Select(c => new ClassOccupancyResponse(
-                c.Id,
-                c.ClassName,
-                sportNames.TryGetValue(c.SportId, out var sportName) ? sportName : null,
-                c.Capacity,
-                c.CurrentEnrolled,
-                ToFillRate(c.CurrentEnrolled, c.Capacity)))
-            .ToList();
+                c.Id, c.ClassName,
+                sportNames.TryGetValue(c.SportId, out var sn) ? sn : null,
+                c.Capacity, c.CurrentEnrolled,
+                ToFillRate(c.CurrentEnrolled, c.Capacity)));
     }
 
     public async Task<IEnumerable<PopularClassResponse>> GetPopularClassesAsync(DateTime month, int top)
     {
-        var safeTop = Math.Clamp(top, 1, 20);
-
-        var classes = await GetClassesInMonthAsync(month);
-        var coachNames = await GetCoachNamesAsync();
+        var classes    = await GetClassesInMonthAsync(month);
+        var coaches    = await GetCoachNamesAsync();
         var sportNames = await GetSportNamesAsync();
 
-        return classes
-            .OrderByDescending(c => c.CurrentEnrolled)
-            .ThenByDescending(c => c.Capacity)
-            .Take(safeTop)
-            .Select((c, index) => new PopularClassResponse(
-                index + 1,
-                c.Id,
-                c.ClassName,
-                c.CoachId.HasValue && coachNames.TryGetValue(c.CoachId.Value, out var coachName) ? coachName : null,
-                sportNames.TryGetValue(c.SportId, out var sportName) ? sportName : null,
-                c.Capacity,
-                c.CurrentEnrolled,
-                ToFillRate(c.CurrentEnrolled, c.Capacity)))
-            .ToList();
+        return classes.OrderByDescending(c => c.CurrentEnrolled).ThenByDescending(c => c.Capacity)
+            .Take(Math.Clamp(top, 1, 20))
+            .Select((c, i) => new PopularClassResponse(
+                i + 1, c.Id, c.ClassName,
+                c.CoachId.HasValue && coaches.TryGetValue(c.CoachId.Value, out var cn) ? cn : null,
+                sportNames.TryGetValue(c.SportId, out var sn) ? sn : null,
+                c.Capacity, c.CurrentEnrolled,
+                ToFillRate(c.CurrentEnrolled, c.Capacity)));
+    }
+
+    public async Task<IEnumerable<TrainerPerformanceResponse>> GetTrainerPerformanceAsync()
+    {
+        var classes = await GetClassesAsync();
+        var coaches = await GetCoachNamesAsync();
+
+        return classes.Where(c => c.CoachId.HasValue)
+            .GroupBy(c => c.CoachId!.Value)
+            .Select(g => new TrainerPerformanceResponse(
+                g.Key,
+                coaches.TryGetValue(g.Key, out var n) ? n : "Chưa xác định",
+                g.Count(),
+                g.Sum(c => c.CurrentEnrolled),
+                g.Count(c => c.Status && c.ScheduleTime >= DateTime.UtcNow),
+                FormatFillRate(g)))
+            .OrderByDescending(x => x.Sessions);
+    }
+
+    // ── Điểm danh & xuất Excel ───────────────────────────────────────────────
+
+    public async Task<IEnumerable<AttendanceStatResponse>> GetAttendanceStatsAsync()
+    {
+        var since   = DateTime.UtcNow.Date.AddDays(-AttendanceLookbackDays);
+        var checkIns = await GetCheckInLogsAsync();
+
+        return checkIns.Where(c => c.CheckInTime >= since)
+            .GroupBy(c => c.CheckInTime.Hour)
+            .OrderBy(g => g.Key)
+            .Select(g => new AttendanceStatResponse($"{g.Key:00}:00", g.Count()));
+    }
+
+    public async Task<IEnumerable<OutstandingInvoiceResponse>> GetOutstandingInvoicesAsync()
+    {
+        var now  = DateTime.UtcNow;
+        var list = await db.Invoices.Include(i => i.User)
+            .Where(i => i.Status == PaymentStatus.Pending)
+            .OrderBy(i => i.CreatedAt)
+            .ToListAsync();
+
+        return list.Select(i => new OutstandingInvoiceResponse(
+            i.Id, i.InvoiceNumber, i.UserId, i.User?.FullName,
+            i.TotalAmount, i.PaymentMethod.ToDisplayName(),
+            i.CreatedAt, (int)Math.Max(0, (now - i.CreatedAt).TotalDays)));
     }
 
     public async Task<byte[]> ExportRevenueReportAsync(DateTime? startDate, DateTime? endDate)
     {
-        var query = _dbContext.Invoices.Where(i => i.Status == PaymentStatus.Completed);
+        var q = db.Invoices.Where(i => i.Status == PaymentStatus.Completed);
+        if (startDate.HasValue) q = q.Where(i => i.CreatedAt >= startDate.Value.ToUniversalTime());
+        if (endDate.HasValue)   q = q.Where(i => i.CreatedAt <= endDate.Value.ToUniversalTime());
 
-        if (startDate.HasValue)
-        {
-            query = query.Where(i => i.CreatedAt >= startDate.Value.ToUniversalTime());
-        }
+        var invoices = await q.Include(i => i.User).OrderBy(i => i.CreatedAt).ToListAsync();
 
-        if (endDate.HasValue)
-        {
-            query = query.Where(i => i.CreatedAt <= endDate.Value.ToUniversalTime());
-        }
+        using var wb = new XLWorkbook();
+        var ws = wb.Worksheets.Add("Revenue Report");
 
-        var invoices = await query
-            .Include(i => i.User)
-            .OrderBy(i => i.CreatedAt)
-            .ToListAsync();
-
-        using var workbook = new XLWorkbook();
-
-        var worksheet = workbook.Worksheets.Add("Revenue Report");
-        worksheet.Cell(1, 1).Value = "Mã hóa đơn";
-        worksheet.Cell(1, 2).Value = "Hội viên";
-        worksheet.Cell(1, 3).Value = "Số tiền";
-        worksheet.Cell(1, 4).Value = "Hình thức";
-        worksheet.Cell(1, 5).Value = "Trạng thái";
-        worksheet.Cell(1, 6).Value = "Ngày thanh toán";
-        worksheet.Row(1).Style.Font.Bold = true;
+        string[] headers = ["Mã hóa đơn", "Hội viên", "Số tiền", "Hình thức", "Trạng thái", "Ngày thanh toán"];
+        for (int col = 0; col < headers.Length; col++) ws.Cell(1, col + 1).Value = headers[col];
+        ws.Row(1).Style.Font.Bold = true;
 
         int row = 2;
-        foreach (var invoice in invoices)
+        foreach (var inv in invoices)
         {
-            worksheet.Cell(row, 1).Value = invoice.InvoiceNumber;
-            worksheet.Cell(row, 2).Value = invoice.User?.FullName ?? invoice.UserId.ToString();
-            worksheet.Cell(row, 3).Value = invoice.TotalAmount;
-            worksheet.Cell(row, 4).Value = invoice.PaymentMethod.ToDisplayName();
-            worksheet.Cell(row, 5).Value = invoice.Status.ToDisplayName();
-            worksheet.Cell(row, 6).Value = (invoice.PaidAt ?? invoice.CreatedAt).ToString("yyyy-MM-dd HH:mm");
+            ws.Cell(row, 1).Value = inv.InvoiceNumber;
+            ws.Cell(row, 2).Value = inv.User?.FullName ?? inv.UserId.ToString();
+            ws.Cell(row, 3).Value = inv.TotalAmount;
+            ws.Cell(row, 4).Value = inv.PaymentMethod.ToDisplayName();
+            ws.Cell(row, 5).Value = inv.Status.ToDisplayName();
+            ws.Cell(row, 6).Value = (inv.PaidAt ?? inv.CreatedAt).ToString("yyyy-MM-dd HH:mm");
             row++;
         }
 
-        worksheet.Cell(row, 2).Value = "Tổng cộng";
-        worksheet.Cell(row, 2).Style.Font.Bold = true;
-        worksheet.Cell(row, 3).Value = invoices.Sum(i => i.TotalAmount);
-        worksheet.Cell(row, 3).Style.Font.Bold = true;
-        worksheet.Cell(row, 3).Style.NumberFormat.Format = "#,##0";
-        worksheet.Columns().AdjustToContents();
+        ws.Cell(row, 2).Value = "Tổng cộng";
+        ws.Cell(row, 2).Style.Font.Bold = true;
+        ws.Cell(row, 3).Value = invoices.Sum(i => i.TotalAmount);
+        ws.Cell(row, 3).Style.Font.Bold = true;
+        ws.Cell(row, 3).Style.NumberFormat.Format = "#,##0";
+        ws.Columns().AdjustToContents();
 
-        using var summaryStream = new System.IO.MemoryStream();
-        workbook.SaveAs(summaryStream);
-        return summaryStream.ToArray();
+        using var ms = new System.IO.MemoryStream();
+        wb.SaveAs(ms);
+        return ms.ToArray();
     }
+
+    // ── Supabase helpers ─────────────────────────────────────────────────────
 
     private async Task<List<GroupClassModel>> GetClassesAsync()
     {
-        try
-        {
-            var response = await _supabase.From<GroupClassModel>().Get();
-            return response.Models.ToList();
-        }
-        catch (Exception)
-        {
-            // Bảng classes không truy cập được: báo cáo vẫn chạy với dữ liệu rỗng.
-            return new List<GroupClassModel>();
-        }
+        try { return (await supabase.From<GroupClassModel>().Get()).Models.ToList(); }
+        catch { return []; }
     }
 
     private async Task<List<GroupClassModel>> GetClassesInMonthAsync(DateTime month)
     {
-        var startOfMonth = new DateTime(month.Year, month.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-        var endOfMonth = startOfMonth.AddMonths(1);
-
-        var classes = await GetClassesAsync();
-
-        return classes
-            .Where(c => c.ScheduleTime >= startOfMonth && c.ScheduleTime < endOfMonth)
-            .ToList();
+        var start = new DateTime(month.Year, month.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var end   = start.AddMonths(1);
+        var all   = await GetClassesAsync();
+        return all.Where(c => c.ScheduleTime >= start && c.ScheduleTime < end).ToList();
     }
 
     private async Task<List<CheckInLogModel>> GetCheckInLogsAsync()
     {
-        try
-        {
-            var response = await _supabase.From<CheckInLogModel>().Get();
-            return response.Models.ToList();
-        }
-        catch (Exception)
-        {
-            // Không đọc được bảng check_in_logs: báo cáo vẫn trả về danh sách rỗng.
-            return new List<CheckInLogModel>();
-        }
+        try { return (await supabase.From<CheckInLogModel>().Get()).Models.ToList(); }
+        catch { return []; }
+    }
+
+    private async Task<Dictionary<Guid, string>> GetSportNamesAsync()
+    {
+        try { return (await supabase.From<SportModel>().Get()).Models.ToDictionary(s => s.Id, s => s.Name); }
+        catch { return []; }
     }
 
     private async Task<Dictionary<Guid, string>> GetCoachNamesAsync()
     {
-        var coachNames = new Dictionary<Guid, string>();
-
         try
         {
-            var coaches = (await _supabase.From<CoachModel>().Get()).Models;
-            var users = (await _supabase.From<SupabaseUserModel>().Get()).Models
+            var coaches = (await supabase.From<CoachModel>().Get()).Models;
+            var users   = (await supabase.From<SupabaseUserModel>().Get()).Models
                 .ToDictionary(u => u.Id, u => u.FullName);
 
-            foreach (var coach in coaches)
-            {
-                if (users.TryGetValue(coach.UserId, out var fullName))
-                {
-                    coachNames[coach.Id] = fullName;
-                }
-            }
+            return coaches
+                .Where(c => users.ContainsKey(c.UserId))
+                .ToDictionary(c => c.Id, c => users[c.UserId]);
         }
-        catch (Exception)
-        {
-            // Không lấy được tên HLV thì trả về danh sách rỗng.
-        }
-
-        return coachNames;
+        catch { return []; }
     }
+
+    // ── Static helpers ───────────────────────────────────────────────────────
+
+    private static string FormatFillRate(IEnumerable<GroupClassModel> classes)
+    {
+        var cap = classes.Sum(c => c.Capacity);
+        return cap == 0 ? "0%" : $"{(int)Math.Round(classes.Sum(c => Math.Min(c.CurrentEnrolled, c.Capacity)) * 100.0 / cap)}%";
+    }
+
+    private static string ToFillRate(int enrolled, int capacity) =>
+        capacity <= 0 ? "0%" : $"{(int)Math.Round(Math.Min(enrolled, capacity) * 100.0 / capacity)}%";
 }

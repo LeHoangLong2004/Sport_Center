@@ -1,0 +1,237 @@
+@reference ../index.css;
+
+
+.cp-detail-eyebrow {
+  margin: 0;
+  color: #2563eb;
+  font-family: var(--font-bold);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.cp-detail-title {
+  margin: 0;
+  font-family: var(--font-extrabold);
+  font-size: 17px;
+  color: var(--ink);
+}
+
+.cp-detail-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.cp-detail-phases {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cp-phase-head {
+  margin: 0 0 5px;
+  font-family: var(--font-bold);
+  font-size: 11.5px;
+  letter-spacing: 0.03em;
+}
+
+.cp-phase-body {
+  margin: 0;
+  color: var(--ink);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+/* ── Assessment Screen ── */
+.cp-assessment-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cp-assessment-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.cp-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--muted);
+  width: 240px;
+  cursor: text;
+}
+
+.cp-search-box input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  color: var(--ink);
+  width: 100%;
+}
+
+.cp-student-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.cp-student-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cp-student-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cp-student-id {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cp-student-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.cp-student-name {
+  display: block;
+  font-family: var(--font-bold);
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.cp-student-type {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.cp-progress-badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-family: var(--font-bold);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.cp-student-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.cp-student-stat-label {
+  margin: 0 0 2px;
+  color: var(--muted);
+  font-size: 10px;
+  font-family: var(--font-bold);
+  letter-spacing: 0.04em;
+}
+
+.cp-student-stat-val {
+  margin: 0;
+  font-family: var(--font-bold);
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.cp-student-note-wrap {
+  background: var(--canvas);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.cp-student-note-label {
+  margin: 0 0 5px;
+  color: var(--muted);
+  font-size: 10px;
+  font-family: var(--font-bold);
+  letter-spacing: 0.03em;
+}
+
+.cp-student-note {
+  margin: 0;
+  color: var(--ink);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.cp-student-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ── Profile Screen ── */
+.cp-profile-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cp-profile-hero-card {
+  display: flex;
+  gap: 24px;
+  padding: 24px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  align-items: flex-start;
+}
+
+.cp-profile-photo {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.cp-profile-hero-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cp-profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cp-profile-name {
+  margin: 0;
+  font-family: var(--font-extrabold);
+  font-size: 20px;
+  color: var(--ink);
+}
+
+.cp-master-badge {
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: #FFF1E8;
+  color: #F97316;
+  font-family: var(--font-bold);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+}
