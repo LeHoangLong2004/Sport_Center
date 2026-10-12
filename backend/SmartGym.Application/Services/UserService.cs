@@ -102,7 +102,14 @@ public class UserService : IUserService
         if (request.Gender != null) user.Gender = request.Gender;
         if (request.EmergencyContact != null) user.EmergencyContact = request.EmergencyContact;
 
-        if (user.Role?.Name == "coach")
+        var isCoach = string.Equals(user.Role?.Name, "coach", StringComparison.OrdinalIgnoreCase)
+            || user.CoachProfile != null
+            || request.Specialties != null
+            || request.Certifications != null
+            || request.Bio != null
+            || request.ExperienceYears.HasValue;
+
+        if (isCoach)
         {
             if (user.CoachProfile == null)
             {

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import type { CoachScreen } from "../types";
 import {
   type SessionStatus,
@@ -127,6 +128,18 @@ export default function CoachSchedule({ navigateTo }: Props) {
   const [openSlotRoom, setOpenSlotRoom] = useState("Khu PT 1-1");
   const [openSlotNote, setOpenSlotNote] = useState("");
   const [selectedOpenSlot, setSelectedOpenSlot] = useState<UnifiedScheduleItem | null>(null);
+
+  // Lock body scroll when any modal is open to eliminate double scrollbars
+  useEffect(() => {
+    if (isRequestModalOpen || isOpenSlotModalOpen || selectedOpenSlot) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isRequestModalOpen, isOpenSlotModalOpen, selectedOpenSlot]);
 
   // Helper to compute week dates (Monday to Sunday) based on offset
   const weekDates = useMemo(() => {
@@ -1300,359 +1313,349 @@ export default function CoachSchedule({ navigateTo }: Props) {
         </div>
       )}
 
-      {/* REQUEST MODAL */}
-      {isRequestModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                Gửi Yêu cầu Điều chỉnh Ca dạy
-              </h2>
-              <button
-                type="button"
-                onClick={() => setIsRequestModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitRequest} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Chọn ca dạy cần điều chỉnh:
-                </label>
-                <select
-                  value={selectedSessionForRequest}
-                  onChange={(e) => setSelectedSessionForRequest(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none"
-                >
-                  {allUnifiedSessions.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.date} ({s.startTime} - {s.endTime}) • {s.className}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Loại yêu cầu:
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(["dời lịch", "dạy thay", "báo vắng"] as const).map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setRequestType(t)}
-                      className={`p-2.5 rounded-xl border text-center font-semibold capitalize transition-all ${
-                        requestType === t
-                          ? "bg-orange-50 dark:bg-orange-950/40 border-orange-500 text-orange-700 dark:text-orange-400"
-                          : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"
-                      }`}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {requestType === "dạy thay" && (
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Huấn luyện viên thay thế đề xuất:
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="VD: HLV Trần Minh Tuấn..."
-                    value={substituteCoach}
-                    onChange={(e) => setSubstituteCoach(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none"
-                  />
-                </div>
-              )}
-
-              {requestType === "dời lịch" && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Ngày mới đề xuất:
-                    </label>
-                    <input
-                      type="date"
-                      value={newDate}
-                      onChange={(e) => setNewDate(e.target.value)}
-                      className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Khung giờ mới:
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="VD: 08:00 - 09:30"
-                      value={newTime}
-                      onChange={(e) => setNewTime(e.target.value)}
-                      className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none"
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Lý do cụ thể:
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Điền lý do cụ thể gửi tới ban quản lý..."
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+      {/* REQUEST MODAL - CHUẨN GIỐNG 'TẠO GIÁO ÁN MỚI' */}
+      {isRequestModalOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
+                <h3 className="font-bold text-slate-900 dark:text-white text-base">
+                  Gửi yêu cầu điều chỉnh ca dạy
+                </h3>
                 <button
                   type="button"
                   onClick={() => setIsRequestModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold"
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                 >
-                  Hủy bỏ
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingRequest}
-                  className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold shadow-sm transition-colors disabled:opacity-50"
-                >
-                  {submittingRequest ? "Đang gửi..." : "Gửi yêu cầu"}
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
 
-      {/* MODAL 1: ĐĂNG LỊCH TRỐNG 1-1 CHO HỘI VIÊN ĐĂNG KÝ */}
-      {isOpenSlotModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center">
-                  <CalendarPlus className="w-4 h-4" />
+              <form onSubmit={handleSubmitRequest} className="flex-1 flex flex-col overflow-hidden">
+                <div className="p-5 overflow-y-auto flex flex-col gap-4 text-xs">
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+                      Chọn ca dạy cần điều chỉnh: <span className="text-rose-500">*</span>
+                    </label>
+                    <select
+                      value={selectedSessionForRequest}
+                      onChange={(e) => setSelectedSessionForRequest(e.target.value)}
+                      className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                    >
+                      {allUnifiedSessions.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.date} ({s.startTime} - {s.endTime}) • {s.className}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+                      Loại yêu cầu:
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {(["dời lịch", "dạy thay", "báo vắng"] as const).map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setRequestType(t)}
+                          className={`p-2.5 rounded-lg border text-center font-semibold capitalize transition-all ${
+                            requestType === t
+                              ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900"
+                              : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50"
+                          }`}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {requestType === "dạy thay" && (
+                    <div>
+                      <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+                        Huấn luyện viên thay thế đề xuất:
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="VD: HLV Trần Minh Tuấn..."
+                        value={substituteCoach}
+                        onChange={(e) => setSubstituteCoach(e.target.value)}
+                        className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400 font-medium"
+                      />
+                    </div>
+                  )}
+
+                  {requestType === "dời lịch" && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+                          Ngày mới đề xuất:
+                        </label>
+                        <input
+                          type="date"
+                          value={newDate}
+                          onChange={(e) => setNewDate(e.target.value)}
+                          className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+                          Khung giờ mới:
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="VD: 08:00 - 09:30"
+                          value={newTime}
+                          onChange={(e) => setNewTime(e.target.value)}
+                          className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+                      Lý do cụ thể: <span className="text-rose-500">*</span>
+                    </label>
+                    <textarea
+                      rows={3}
+                      placeholder="Điền lý do cụ thể gửi tới ban quản lý..."
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                    Đăng lịch trống 1–1 (Mở nhận HV)
-                  </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Hội viên sẽ thấy lịch này trên app/web để đặt lịch học kèm 1-1 với bạn.
-                  </p>
+
+                <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2.5 shrink-0 bg-slate-50/50 dark:bg-slate-850">
+                  <button
+                    type="button"
+                    onClick={() => setIsRequestModalOpen(false)}
+                    className="px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingRequest}
+                    className="px-5 py-2 font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 rounded-lg shadow-sm transition-colors disabled:opacity-50"
+                  >
+                    {submittingRequest ? "Đang gửi..." : "Gửi yêu cầu"}
+                  </button>
                 </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsOpenSlotModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              </form>
             </div>
+          </div>,
+          document.body
+        )}
 
-            <form onSubmit={handleCreateOpenSlot} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Ngày mở ca trống:
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={openSlotDate}
-                  onChange={(e) => setOpenSlotDate(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Giờ bắt đầu:
-                  </label>
-                  <select
-                    value={openSlotStartTime}
-                    onChange={(e) => setOpenSlotStartTime(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-                  >
-                    {TIME_ROWS.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Giờ kết thúc:
-                  </label>
-                  <select
-                    value={openSlotEndTime}
-                    onChange={(e) => setOpenSlotEndTime(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-                  >
-                    {["07:30", "08:30", "09:30", "10:30", "15:30", "16:30", "18:30", "19:30", "20:30"].map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Bộ môn nhận dạy:
-                  </label>
-                  <select
-                    value={openSlotSport}
-                    onChange={(e) => setOpenSlotSport(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-                  >
-                    {["Gym", "Boxing", "Yoga", "Swimming", "Pilates", "Zumba", "Fitness"].map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Phòng / Khu vực:
-                  </label>
-                  <select
-                    value={openSlotRoom}
-                    onChange={(e) => setOpenSlotRoom(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-                  >
-                    {["Khu PT 1-1", "Võ Đài", "Studio 1", "Studio 2", "Hồ Bơi", "Khu Thể Lực", "Khu Tạ Tự Do"].map((r) => (
-                      <option key={r} value={r}>
-                        {r}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Ghi chú / Thông điệp gửi học viên (tùy chọn):
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="VD: Nhận kèm cá nhân tập trung siết cơ, giảm mỡ nhanh hoặc cải thiện thể lực..."
-                  value={openSlotNote}
-                  onChange={(e) => setOpenSlotNote(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+      {/* MODAL 1: ĐĂNG LỊCH TRỐNG 1-1 - CHUẨN GIỐNG 'TẠO GIÁO ÁN MỚI' */}
+      {isOpenSlotModalOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
+                <h3 className="font-bold text-slate-900 dark:text-white text-base">
+                  Đăng lịch trống 1–1 (Mở nhận HV)
+                </h3>
                 <button
                   type="button"
                   onClick={() => setIsOpenSlotModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold"
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                 >
-                  Hủy bỏ
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-sm transition-all flex items-center gap-2"
-                >
-                  <CalendarPlus className="w-4 h-4" />
-                  Đăng lịch trống ngay
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+
+              <form onSubmit={handleCreateOpenSlot} className="flex-1 flex flex-col overflow-hidden">
+                <div className="p-5 overflow-y-auto flex flex-col gap-4 text-xs">
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+                      Ngày mở ca trống: <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={openSlotDate}
+                      onChange={(e) => setOpenSlotDate(e.target.value)}
+                      className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400 font-medium"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+                        Giờ bắt đầu:
+                      </label>
+                      <select
+                        value={openSlotStartTime}
+                        onChange={(e) => setOpenSlotStartTime(e.target.value)}
+                        className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                      >
+                        {TIME_ROWS.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+                        Giờ kết thúc:
+                      </label>
+                      <select
+                        value={openSlotEndTime}
+                        onChange={(e) => setOpenSlotEndTime(e.target.value)}
+                        className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                      >
+                        {["07:30", "08:30", "09:30", "10:30", "15:30", "16:30", "18:30", "19:30", "20:30"].map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+                        Bộ môn nhận dạy:
+                      </label>
+                      <select
+                        value={openSlotSport}
+                        onChange={(e) => setOpenSlotSport(e.target.value)}
+                        className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                      >
+                        {["Gym", "Boxing", "Yoga", "Swimming", "Pilates", "Zumba", "Fitness"].map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+                        Phòng / Khu vực:
+                      </label>
+                      <select
+                        value={openSlotRoom}
+                        onChange={(e) => setOpenSlotRoom(e.target.value)}
+                        className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                      >
+                        {["Khu PT 1-1", "Võ Đài", "Studio 1", "Studio 2", "Hồ Bơi", "Khu Thể Lực", "Khu Tạ Tự Do"].map((r) => (
+                          <option key={r} value={r}>
+                            {r}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+                      Ghi chú / Thông điệp gửi học viên:
+                    </label>
+                    <textarea
+                      rows={3}
+                      placeholder="VD: Nhận kèm cá nhân tập trung siết cơ, giảm mỡ nhanh hoặc cải thiện thể lực..."
+                      value={openSlotNote}
+                      onChange={(e) => setOpenSlotNote(e.target.value)}
+                      className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2.5 shrink-0 bg-slate-50/50 dark:bg-slate-850">
+                  <button
+                    type="button"
+                    onClick={() => setIsOpenSlotModalOpen(false)}
+                    className="px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 rounded-lg shadow-sm transition-colors"
+                  >
+                    Đăng lịch trống
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body
+        )}
 
       {/* MODAL 2: CHI TIẾT & HỦY / ĐÓNG LỊCH TRỐNG 1-1 */}
-      {selectedOpenSlot && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2">
-                <span className="p-2 rounded-xl bg-sky-100 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400">
-                  <Sparkles className="w-4 h-4" />
-                </span>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                    Lịch trống 1–1 (Đang mở nhận HV)
-                  </h3>
-                  <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    Sẵn sàng cho hội viên đặt lịch
-                  </span>
+      {selectedOpenSlot &&
+        createPortal(
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
+                <h3 className="font-bold text-slate-900 dark:text-white text-base">
+                  Lịch trống 1–1 (Đang mở nhận HV)
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setSelectedOpenSlot(null)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-5 flex flex-col gap-3 text-xs">
+                <div className="space-y-2.5 text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400 font-medium">Bộ môn:</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{selectedOpenSlot.sport} (1–1)</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400 font-medium">Ngày dạy:</span>
+                    <span className="font-semibold text-slate-900 dark:text-white">{selectedOpenSlot.date}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400 font-medium">Khung giờ:</span>
+                    <span className="font-semibold text-slate-900 dark:text-white">{selectedOpenSlot.startTime} – {selectedOpenSlot.endTime}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400 font-medium">Phòng / Khu vực:</span>
+                    <span className="font-semibold text-slate-900 dark:text-white">{selectedOpenSlot.room}</span>
+                  </div>
+                  {selectedOpenSlot.note && (
+                    <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                      <span className="text-slate-400 font-medium block mb-1">Ghi chú cho hội viên:</span>
+                      <p className="italic text-slate-600 dark:text-slate-300">"{selectedOpenSlot.note}"</p>
+                    </div>
+                  )}
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectedOpenSlot(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            <div className="space-y-2.5 text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400 font-medium">Bộ môn:</span>
-                <span className="font-bold text-slate-900 dark:text-white">{selectedOpenSlot.sport} (1–1)</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400 font-medium">Ngày dạy:</span>
-                <span className="font-semibold text-slate-900 dark:text-white">{selectedOpenSlot.date}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400 font-medium">Khung giờ:</span>
-                <span className="font-semibold text-slate-900 dark:text-white">{selectedOpenSlot.startTime} – {selectedOpenSlot.endTime}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400 font-medium">Phòng / Khu vực:</span>
-                <span className="font-semibold text-slate-900 dark:text-white">{selectedOpenSlot.room}</span>
-              </div>
-              {selectedOpenSlot.note && (
-                <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
-                  <span className="text-slate-400 font-medium block mb-1">Ghi chú cho hội viên:</span>
-                  <p className="italic text-slate-600 dark:text-slate-300">"{selectedOpenSlot.note}"</p>
-                </div>
-              )}
-            </div>
+              <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex justify-between gap-2.5 shrink-0 bg-slate-50/50 dark:bg-slate-850">
+                <button
+                  type="button"
+                  onClick={() => handleDeleteOpenSlot(selectedOpenSlot.id)}
+                  className="px-4 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-lg transition-colors flex items-center gap-1.5"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Hủy ca trống này
+                </button>
 
-            <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => handleDeleteOpenSlot(selectedOpenSlot.id)}
-                className="px-4 py-2.5 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl transition-colors flex items-center gap-1.5"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                Hủy / Đóng ca trống này
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSelectedOpenSlot(null)}
-                className="px-5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl transition-colors"
-              >
-                Đóng
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedOpenSlot(null)}
+                  className="px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium"
+                >
+                  Đóng
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
