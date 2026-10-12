@@ -297,7 +297,7 @@ export function SchedulePage() {
           <div className="flex-1 flex overflow-auto relative p-4">
             {/* simple grid calendar */}
             <div className="flex flex-col w-full min-w-[800px]">
-              <div className="grid grid-cols-8 gap-2 mb-2">
+              <div className="grid grid-cols-[4rem_repeat(7,1fr)] gap-2 mb-2">
                 <div className="w-16"></div>
                 {days.map(d => (
                   <div key={d} className="text-center pb-2 border-b border-slate-200">
@@ -307,7 +307,7 @@ export function SchedulePage() {
               </div>
               <div className="flex-1 relative">
                 {hours.map((h, i) => (
-                  <div key={h} className="grid grid-cols-8 gap-2 relative h-24 group">
+                  <div key={h} className="grid grid-cols-[4rem_repeat(7,1fr)] gap-2 relative h-24 group">
                     <div className="w-16 flex justify-end pr-3">
                       <span className="text-[#94a3b8] text-[11px] font-medium -mt-2">{h}</span>
                     </div>
@@ -321,7 +321,8 @@ export function SchedulePage() {
                 ))}
 
                 {/* Render classes directly over the grid */}
-                <div className="absolute top-0 left-0 w-full h-full pointer-events-none grid grid-cols-8 gap-2 pl-[4.5rem]">
+                <div className="absolute top-0 left-0 w-full h-full pointer-events-none grid grid-cols-[4rem_repeat(7,1fr)] gap-2">
+                  <div className="w-16"></div>
                   {days.map((_, colIdx) => (
                     <div key={colIdx} className="relative h-full">
                       {classesThisWeek.filter(c => c.day === colIdx).map((c, i) => (
@@ -330,9 +331,8 @@ export function SchedulePage() {
                           onClick={() => setSelectedClassId(c.id)}
                           className={`absolute w-full rounded-md border border-l-4 p-1 flex flex-col justify-between pointer-events-auto cursor-pointer hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 overflow-hidden ${c.color}`}
                           style={{ 
-                            top: `${c.hour * 6}rem`, 
-                            height: `calc(${c.duration * 6}rem - 2px)`, 
-                            marginTop: '1px',
+                            top: `calc(${c.hour * 6}rem + 1px)`, 
+                            height: `calc(${c.duration * 6}rem - 1px)`, 
                             zIndex: 10
                           }}
                         >
