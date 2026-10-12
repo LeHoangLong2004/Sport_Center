@@ -41,16 +41,20 @@ export function Registration({
       const data = await res.json().catch(() => ({}))
       
       if (!res.ok) {
-        let msg = data.message || "Đăng ký thất bại.";
+        let msg = data.message || data.error || data.title || "Đăng ký thất bại.";
+        if (data.errors && typeof data.errors === 'object') {
+          const firstErr = Object.values(data.errors).flat()[0];
+          if (firstErr) msg = String(firstErr);
+        }
         if (msg === "Email already exists") {
           msg = "Email này đã được đăng ký. Vui lòng chọn email khác.";
         } else if (msg === "Phone number already exists") {
           msg = "Số điện thoại này đã được đăng ký. Vui lòng chọn số khác.";
-        } else if (msg.includes("An error occurred while saving")) {
-          msg = "Số điện thoại hoặc thông tin của bạn đã bị trùng lặp trong hệ thống.";
+        } else if (typeof msg === 'string' && msg.includes("An error occurred while saving")) {
+          msg = "Số điện thoại hoặc email của bạn đã tồn tại trong hệ thống.";
         }
         setErrorMsg(msg);
-        return
+        return;
       }
       
       // Note: intentionally skipping token/user save if we force them to login again,

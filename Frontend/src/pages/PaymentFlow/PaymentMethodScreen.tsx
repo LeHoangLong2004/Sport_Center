@@ -1,5 +1,5 @@
 import React from "react";
-import { A, BillingPeriod, PaymentMethodId, Stepper } from "./shared";
+import { A, BillingPeriod, FlowPackage, getPaymentSummary, PaymentMethodId, Stepper } from "./shared";
 
 export function PaymentMethodScreen({
   pkg,
@@ -10,7 +10,7 @@ export function PaymentMethodScreen({
   onNext,
   onBack,
 }: {
-  pkg: any
+  pkg: FlowPackage
   period: BillingPeriod
   method: PaymentMethodId
   setMethod: (m: PaymentMethodId) => void
@@ -18,10 +18,7 @@ export function PaymentMethodScreen({
   onNext: () => void
   onBack: () => void
 }) {
-  const listPrice = period === "yearly" ? Math.round(pkg.yearly * 1.2) : Math.round(pkg.monthly * 1.15)
-  const discount = listPrice - (period === "yearly" ? pkg.yearly : pkg.monthly)
-  const total = period === "yearly" ? pkg.yearly : pkg.monthly
-  const periodLabel = period === "yearly" ? "Gói 12 tháng" : "Gói 1 tháng"
+  const { listPrice, discount, total, periodLabel } = getPaymentSummary(pkg, period)
   const fmt = (n: number) => n.toLocaleString("vi-VN") + " đ"
 
   const methods: { id: PaymentMethodId; icon: string; label: string; sub: string }[] = [
@@ -130,11 +127,35 @@ export function PaymentMethodScreen({
             <div className="bg-white border border-[#e2e8f0] flex flex-col gap-[20px] items-start p-[32px] rounded-[16px] w-full shadow-lg shadow-blue-900/5">
               <p className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[20px] w-full">Tóm tắt đơn hàng</p>
               <div className="flex items-center justify-between w-full bg-[#f8fafc] p-[16px] rounded-[12px] border border-[#e2e8f0]">
-                <p className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[18px]">{pkg.name}</p>
+                <div>
+                  <p className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[18px]">{pkg.name}</p>
+                  <p className="mt-1 text-xs text-slate-500">{pkg.tagline}</p>
+                </div>
                 <div className="bg-teal-50 flex items-start px-3 py-1 rounded-[12px] border border-teal-200">
                   <p className="font-['Inter:Bold'] font-bold text-teal-600 text-xs">{periodLabel}</p>
                 </div>
               </div>
+              {pkg.description && <p className="w-full text-sm leading-6 text-slate-600">{pkg.description}</p>}
+              {pkg.details && pkg.details.length > 0 && (
+                <dl className="grid w-full grid-cols-1 gap-2 rounded-xl bg-slate-50 p-4 text-sm sm:grid-cols-2">
+                  {pkg.details.map(({ label, value }) => (
+                    <div key={label} className="flex justify-between gap-3">
+                      <dt className="text-slate-500">{label}</dt>
+                      <dd className="text-right font-semibold text-slate-800">{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+              {pkg.features.length > 0 && (
+                <ul className="w-full space-y-2 text-sm text-slate-700">
+                  {pkg.features.map((feature, index) => <li key={`${feature}-${index}`}>✓ {feature}</li>)}
+                </ul>
+              )}
+              {pkg.terms && pkg.terms.length > 0 && (
+                <ul className="w-full list-disc space-y-1 pl-5 text-xs leading-5 text-slate-500">
+                  {pkg.terms.map((term, index) => <li key={`${term}-${index}`}>{term}</li>)}
+                </ul>
+              )}
               <div className="flex flex-col gap-3 w-full text-[13px]">
                 {[
                   ["Hội viên:", formData.fullName || "Khách hàng mới"],
@@ -195,4 +216,3 @@ export function PaymentMethodScreen({
     </div>
   )
 }
-

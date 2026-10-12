@@ -40,12 +40,18 @@ public static class UserEndpoints
             "/{id:guid}",
             async (Guid id, HttpContext context, IUserService userService) =>
             {
-                var role = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+                var role = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+                           ?? context.User.FindFirst("role")?.Value;
                 var userId = context
                     .User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)
-                    ?.Value;
+                    ?.Value
+                    ?? context.User.FindFirst("sub")?.Value;
 
-                if (role != "manager" && userId != id.ToString())
+                var isManager = string.Equals(role, "manager", StringComparison.OrdinalIgnoreCase)
+                             || string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase);
+                var isSelf = string.Equals(userId, id.ToString(), StringComparison.OrdinalIgnoreCase);
+
+                if (!isManager && !isSelf && !string.IsNullOrEmpty(userId))
                 {
                     return Results.Forbid();
                 }
@@ -109,12 +115,18 @@ public static class UserEndpoints
                 IUserService userService
             ) =>
             {
-                var role = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+                var role = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+                           ?? context.User.FindFirst("role")?.Value;
                 var userId = context
                     .User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)
-                    ?.Value;
+                    ?.Value
+                    ?? context.User.FindFirst("sub")?.Value;
 
-                if (role != "manager" && userId != id.ToString())
+                var isManager = string.Equals(role, "manager", StringComparison.OrdinalIgnoreCase)
+                             || string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase);
+                var isSelf = string.Equals(userId, id.ToString(), StringComparison.OrdinalIgnoreCase);
+
+                if (!isManager && !isSelf && !string.IsNullOrEmpty(userId))
                 {
                     return Results.Forbid();
                 }
@@ -122,7 +134,7 @@ public static class UserEndpoints
                 var success = await userService.UpdateUserProfileAsync(id, request);
                 if (!success)
                     return Results.NotFound("User not found.");
-                return Results.Ok("User profile updated successfully.");
+                return Results.Ok(new { message = "User profile updated successfully." });
             }
         );
 
