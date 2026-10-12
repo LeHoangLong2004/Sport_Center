@@ -60,17 +60,21 @@ namespace SmartGym.Api.Endpoints
                 {
                     for (int i = 0; i < _mockCurricula.Count; i++)
                     {
-                        if (_mockCurricula[i]?["id"]?.GetValue<string>() == id)
+                        var curr = _mockCurricula[i];
+                        if (curr != null && curr["id"]?.GetValue<string>() == id)
                         {
                             var target = System.Text.Json.Nodes.JsonObject.Create(request);
-                            var assignedTo = _mockCurricula[i]["assignedTo"]?.AsArray();
+                            var assignedTo = curr["assignedTo"]?.AsArray();
                             if (assignedTo == null)
                             {
                                 assignedTo = new System.Text.Json.Nodes.JsonArray();
-                                _mockCurricula[i]["assignedTo"] = assignedTo;
+                                curr["assignedTo"] = assignedTo;
                             }
-                            assignedTo.Add(target);
-                            _mockCurricula[i]["status"] = "Đã giao";
+                            if (target != null)
+                            {
+                                assignedTo.Add(target);
+                            }
+                            curr["status"] = "Đã giao";
                             break;
                         }
                     }

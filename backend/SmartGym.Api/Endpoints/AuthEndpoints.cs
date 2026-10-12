@@ -46,8 +46,8 @@ public static class AuthEndpoints
             var coach = await userRepo.GetByIdAsync(Guid.Parse("25f50fba-506a-4edf-9db7-43f77f6741a4"));
             if (coach == null)
             {
-                var coaches = await userRepo.GetCoachesAsync();
-                coach = System.Linq.Enumerable.FirstOrDefault(coaches);
+                var allUsers = await userRepo.GetAllUsersAsync();
+                coach = System.Linq.Enumerable.FirstOrDefault(allUsers, u => u.Role != null && u.Role.Name.ToLower() == "coach");
             }
 
             if (coach == null)
