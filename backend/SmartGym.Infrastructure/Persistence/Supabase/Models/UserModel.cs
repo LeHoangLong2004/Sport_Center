@@ -44,7 +44,8 @@ public class UserModel : BaseModel
     [Column("is_mfa_enabled")]
     public bool IsMfaEnabled { get; set; }
 
-    [Column("is_active")]
+    // Supabase schema stores the account status in `status`.
+    [Column("status")]
     public bool IsActive { get; set; }
 
     public AppUser ToDomain()
@@ -56,7 +57,7 @@ public class UserModel : BaseModel
             PasswordHash,
             FullName,
             PhoneNumber,
-            Enum.Parse<UserRole>(Role, true),
+            ParseRole(Role),
             MemberCode,
             QrSecretToken,
             ReferralCode,
@@ -64,5 +65,22 @@ public class UserModel : BaseModel
             IsMfaEnabled,
             IsActive
         );
+    }
+
+    private static UserRole ParseRole(string? value)
+    {
+        var normalized = value?.Trim().ToLowerInvariant()
+            .Replace("-", "_")
+            .Replace(" ", "_");
+
+        return normalized switch
+        {
+            "manager" or "admin" or "center_manager" or "centermanager" => UserRole.CenterManager,
+            "receptionist" or "staff" => UserRole.Receptionist,
+            "coach" or "trainer" => UserRole.Coach,
+            "member" or "user" => UserRole.Member,
+            _ when Enum.TryParse<UserRole>(value, true, out var parsed) => parsed,
+            _ => UserRole.Member
+        };
     }
 }

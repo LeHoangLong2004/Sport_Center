@@ -33,28 +33,50 @@ public sealed class SupabaseCheckInRepository : ICheckInRepository
         if (result == CheckInResult.Approved)
         {
             // Lấy subscription đang ACTIVE của member
-            var activePkg = await _client
-                .From<MemberPackageModel>()
-                .Where(p => p.MemberId == memberId && p.Status == "ACTIVE")
-                .Get();
-            var pkgId = activePkg.Models.FirstOrDefault()?.Id;
-
             var model = new GateCheckinModel
             {
                 Id = record.Id,
                 MemberId = memberId,
                 BranchId = null,       // facility_id — để null nếu không xác định được
-                MemberPackageId = pkgId,
+                MemberPackageId = null,
                 CheckInTime = checkInTime,
                 Method = "manual",
             };
 
             await _client.From<GateCheckinModel>().Insert(model);
 
-            record = new CheckInRecord(record.Id, memberId, Guid.Empty, pkgId ?? Guid.Empty, checkInTime, null);
+            record = new CheckInRecord(record.Id, memberId, Guid.Empty, Guid.Empty, checkInTime, null);
         }
 
         return record;
+    }
+
+    public async Task<CheckInRecord?> FindOpenByMemberAsync(Guid memberId)
+    {
+        var response = await _client
+            .From<GateCheckinModel>()
+            .Where(x => x.MemberId == memberId)
+            .Get();
+
+        return response.Models
+            .Where(x => x.CheckOutTime is null)
+            .OrderByDescending(x => x.CheckInTime)
+            .FirstOrDefault()?.ToDomain();
+    }
+
+    public async Task<CheckInRecord?> CheckOutAsync(Guid recordId, DateTime checkOutTime)
+    {
+        var response = await _client
+            .From<GateCheckinModel>()
+            .Where(x => x.Id == recordId)
+            .Get();
+        var model = response.Models.FirstOrDefault();
+        if (model is null || model.CheckOutTime is not null)
+            return null;
+
+        model.CheckOutTime = checkOutTime;
+        await _client.From<GateCheckinModel>().Update(model);
+        return model.ToDomain();
     }
 
     public async Task<IReadOnlyList<CheckInRecord>> GetByMemberAsync(Guid memberId)

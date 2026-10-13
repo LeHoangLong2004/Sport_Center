@@ -34,6 +34,9 @@ public class CoachModel : BaseModel
 
     [Column("user_id")]
     public Guid UserId { get; set; }
+
+    [Column("status")]
+    public bool IsActive { get; set; }
 }
 
 [Table("users")]

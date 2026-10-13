@@ -19,6 +19,8 @@ using SmartGym.Infrastructure.Authentication;
 using SmartGym.Infrastructure.Persistence.EF;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
 
 // ΓöÇΓöÇ Database Configuration ΓöÇΓöÇ
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
