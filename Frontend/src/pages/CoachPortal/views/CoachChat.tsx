@@ -14,14 +14,13 @@ import {
 } from "lucide-react";
 import { coachApi } from "../services/api";
 import { useUserProfile } from "../../../hooks/useUserProfile";
-
+import { INITIAL_CONVERSATIONS } from "./coachChatData";
 interface Message {
   id: string;
   sender: "coach" | "member";
   text: string;
   timestamp: string;
 }
-
 interface Conversation {
   id: string;
   type: "class" | "direct";
@@ -34,82 +33,14 @@ interface Conversation {
   online?: boolean;
   messages: Message[];
 }
-
-const INITIAL_CONVERSATIONS: Conversation[] = [
-  {
-    id: "conv-1",
-    type: "direct",
-    title: "Nguyễn Văn An",
-    subtitle: "Học viên PT 1-1 (Mục tiêu: Tăng cơ)",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
-    lastMessage: "Thầy ơi, buổi tập sáng mai 7h em đến sớm 10 phút khởi động trước nhé ạ!",
-    lastTime: "14:20",
-    unreadCount: 1,
-    online: true,
-    messages: [
-      { id: "m1", sender: "coach", text: "Chào An, tuần này em cảm thấy cơ bắp phục hồi thế nào rồi?", timestamp: "09:15" },
-      { id: "m2", sender: "member", text: "Dạ cơ đùi sau hôm tập chân hơi mỏi nhưng đỡ nhiều rồi thầy ạ.", timestamp: "09:30" },
-      { id: "m3", sender: "coach", text: "Tốt lắm, nhớ bổ sung đủ 2 lít nước và ăn đủ đạm sau buổi tập nhé.", timestamp: "09:35" },
-      { id: "m4", sender: "member", text: "Thầy ơi, buổi tập sáng mai 7h em đến sớm 10 phút khởi động trước nhé ạ!", timestamp: "14:20" },
-    ],
-  },
-  {
-    id: "conv-2",
-    type: "class",
-    title: "Lớp Yoga Cơ Bản – Lớp A",
-    subtitle: "Nhóm lớp • 10 học viên",
-    lastMessage: "Coach: Nhắc cả lớp chiều nay mang theo thảm cá nhân nhé!",
-    lastTime: "11:45",
-    unreadCount: 0,
-    online: true,
-    messages: [
-      { id: "m20", sender: "member", text: "Em chào thầy và cả lớp ạ!", timestamp: "08:00" },
-      { id: "m21", sender: "coach", text: "Chào cả lớp, chiều nay chúng ta sẽ học kỹ thuật thở bụng sâu và tư thế chiến binh.", timestamp: "11:40" },
-      { id: "m22", sender: "coach", text: "Nhắc cả lớp chiều nay mang theo thảm cá nhân và khăn lau nhé!", timestamp: "11:45" },
-    ],
-  },
-  {
-    id: "conv-3",
-    type: "direct",
-    title: "Lê Thu Hà",
-    subtitle: "Học viên kèm 1-1 (Mục tiêu: Giảm mỡ)",
-    avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80",
-    lastMessage: "Em đã hoàn thành bài tập về nhà hôm qua rồi ạ.",
-    lastTime: "Hôm qua",
-    unreadCount: 0,
-    online: false,
-    messages: [
-      { id: "m30", sender: "coach", text: "Chào Hà, giáo án tuần 2 thầy đã giao trên hệ thống rồi nhé.", timestamp: "Hôm qua 10:00" },
-      { id: "m31", sender: "member", text: "Em đã hoàn thành bài tập về nhà hôm qua rồi ạ. Cảm giác rất khỏe!", timestamp: "Hôm qua 17:30" },
-      { id: "m32", sender: "coach", text: "Tuyệt vời, tiếp tục duy trì phong độ nhé!", timestamp: "Hôm qua 18:00" },
-    ],
-  },
-  {
-    id: "conv-4",
-    type: "class",
-    title: "Gym Group BodyCombat",
-    subtitle: "Nhóm lớp • 8 học viên",
-    lastMessage: "Phạm Kiệt: Ca hôm nay tập sung quá mọi người!",
-    lastTime: "Hôm qua",
-    unreadCount: 0,
-    online: true,
-    messages: [
-      { id: "m40", sender: "coach", text: "Hôm nay cả lớp tập rất tốt, nhịp độ cardio rất đều.", timestamp: "Hôm qua 10:45" },
-      { id: "m41", sender: "member", text: "Ca hôm nay tập sung quá mọi người! Cảm ơn Coach nhiều ạ.", timestamp: "Hôm qua 11:00" },
-    ],
-  },
-];
-
 export default function CoachChat() {
   const { profile } = useUserProfile();
   const [conversations, setConversations] = useState<Conversation[]>(INITIAL_CONVERSATIONS);
-  const [activeId, setActiveId] = useState<string>("conv-1");
+  const [activeId, setActiveId] = useState("conv-1");
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<"all" | "class" | "direct">("all");
   const [inputText, setInputText] = useState("");
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     async function loadConversations() {
       try {
@@ -119,17 +50,14 @@ export default function CoachChat() {
           setConversations(res);
         }
       } catch (err) {
-        // Keeps initial conversations
       }
     }
     loadConversations();
   }, [profile?.id]);
-
   const activeConv = useMemo(
     () => conversations.find((c) => c.id === activeId) || conversations[0],
     [conversations, activeId]
   );
-
   const filteredConversations = useMemo(() => {
     return conversations.filter((c) => {
       const matchSearch =
@@ -139,27 +67,22 @@ export default function CoachChat() {
       return matchSearch && matchType;
     });
   }, [conversations, search, filterType]);
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
-
   useEffect(() => {
     scrollToBottom();
   }, [activeConv?.messages]);
-
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const textToSend = inputText.trim();
     if (!textToSend) return;
-
     const newMsg: Message = {
       id: `msg-${Date.now()}`,
       sender: "coach",
       text: textToSend,
       timestamp: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
     };
-
     setConversations((prev) =>
       prev.map((c) => {
         if (c.id === activeConv.id) {
@@ -173,9 +96,7 @@ export default function CoachChat() {
         return c;
       })
     );
-
     setInputText("");
-
     try {
       await coachApi.sendCoachMessage({
         conversationId: activeConv.id,
@@ -186,7 +107,6 @@ export default function CoachChat() {
       console.warn("Lưu tin nhắn lên backend thất bại, đã lưu tạm trên trình duyệt:", err);
     }
   };
-
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-4 pb-8 animate-in fade-in duration-300">
       {/* Header */}
@@ -201,13 +121,10 @@ export default function CoachChat() {
           </p>
         </div>
       </div>
-
       {/* Main Chat Box */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden flex flex-col md:flex-row h-[calc(100vh-220px)] min-h-[550px]">
-        
         {/* Left pane: Conversation List */}
         <div className="w-full md:w-80 lg:w-96 border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0">
-          
           {/* Search bar */}
           <div className="p-3 border-b border-slate-100 dark:border-slate-800/80">
             <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700 text-xs">
@@ -220,7 +137,6 @@ export default function CoachChat() {
                 className="w-full bg-transparent text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none"
               />
             </div>
-
             {/* Filter pills */}
             <div className="flex gap-1.5 mt-2.5">
               {(["all", "direct", "class"] as const).map((type) => (
@@ -239,7 +155,6 @@ export default function CoachChat() {
               ))}
             </div>
           </div>
-
           {/* Conversations scroll area */}
           <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
             {filteredConversations.map((conv) => {
@@ -271,7 +186,6 @@ export default function CoachChat() {
                       <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 absolute bottom-0 right-0"></span>
                     )}
                   </div>
-
                   {/* Conv details */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-1 mb-1">
@@ -282,11 +196,9 @@ export default function CoachChat() {
                         {conv.lastTime}
                       </span>
                     </div>
-
                     <p className="text-xs text-slate-500 dark:text-slate-400 truncate leading-snug">
                       {conv.lastMessage}
                     </p>
-
                     <div className="flex items-center justify-between mt-1">
                       <span className="text-[10px] text-slate-400 truncate">
                         {conv.subtitle}
@@ -303,10 +215,8 @@ export default function CoachChat() {
             })}
           </div>
         </div>
-
         {/* Right pane: Chat Area */}
         <div className="flex-1 flex flex-col min-w-0 bg-slate-50/40 dark:bg-slate-900/60">
-          
           {/* Active conversation header */}
           <div className="p-3.5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -335,14 +245,12 @@ export default function CoachChat() {
                 </span>
               </div>
             </div>
-
             <div className="flex items-center gap-2">
               <span className="text-xs px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium">
                 {activeConv.type === "class" ? "Hội thoại lớp" : "Kèm 1–1"}
               </span>
             </div>
           </div>
-
           {/* Messages list */}
           <div className="flex-1 p-4 overflow-y-auto space-y-3">
             {activeConv.messages.map((m) => {
@@ -369,7 +277,6 @@ export default function CoachChat() {
             })}
             <div ref={messagesEndRef} />
           </div>
-
           {/* Input message form */}
           <form
             onSubmit={handleSendMessage}
@@ -392,7 +299,6 @@ export default function CoachChat() {
             </button>
           </form>
         </div>
-
       </div>
     </div>
   );

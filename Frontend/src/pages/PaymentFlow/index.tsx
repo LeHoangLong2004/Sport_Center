@@ -14,54 +14,7 @@ import { MembershipCardScreen } from "./MembershipCardScreen";
 import { PackageAPI, CatalogPackage, PackageCheckout, PackageOrder, PackagePeriod } from "../../services/packageApi";
 import { FlowPackage } from "./shared";
 
-function toFlowPackage(
-  item: CatalogPackage,
-  duration: PackagePeriod,
-  discountPct: number,
-  order?: PackageOrder,
-  selectionQuote = false,
-): FlowPackage {
-  const listPrice = item.prices[duration]
-  const discount = Math.round((listPrice * discountPct) / 100)
-  const details = [
-    { label: "Loại gói", value: item.category === "membership" ? "Gói thành viên" : "Gói môn tập" },
-    { label: "Thời hạn", value: `${order?.durationMonths ?? duration} tháng` },
-    ...(item.tier ? [{ label: "Hạng", value: item.tier }] : []),
-    ...(item.sport ? [{ label: "Môn tập", value: item.sport }] : []),
-    ...(item.area ? [{ label: "Khu vực", value: item.area }] : []),
-    ...(item.format ? [{ label: "Hình thức", value: ({ self: "Tự tập", group: "Lớp nhóm", coach: "Coach 1–1" } as const)[item.format] }] : []),
-    ...(item.sessionsPerMonth ? [{ label: "Số buổi", value: `${item.sessionsPerMonth} buổi/tháng` }] : []),
-    ...(item.minutesPerSession ? [{ label: "Thời lượng", value: `${item.minutesPerSession} phút/buổi` }] : []),
-    ...(item.maxClassSize ? [{ label: "Sĩ số tối đa", value: `${item.maxClassSize} người` }] : []),
-    ...(item.accessHours ? [{ label: "Khung giờ", value: item.accessHours }] : []),
-    ...(item.bookingAdvanceHours ? [{ label: "Đặt lớp trước", value: `${item.bookingAdvanceHours} giờ` }] : []),
-    ...(item.lockerTerms ? [{ label: "Điều kiện tủ đồ", value: item.lockerTerms }] : []),
-    ...(order?.startDate ? [{ label: "Ngày bắt đầu", value: new Date(order.startDate).toLocaleDateString("vi-VN") }] : []),
-    ...(order?.endDate ? [{ label: "Ngày kết thúc", value: new Date(order.endDate).toLocaleDateString("vi-VN") }] : []),
-  ]
 
-  return {
-    id: item.id,
-    category: item.category,
-    name: item.name,
-    tagline: item.category === "membership"
-      ? `Gói thành viên${item.tier ? ` · ${item.tier}` : ""}`
-      : `Gói môn tập${item.sport ? ` · ${item.sport}` : ""}`,
-    monthly: order?.total ?? item.prices[1],
-    yearly: order?.total ?? item.prices[12],
-    features: item.benefits,
-    description: item.description,
-    details,
-    terms: item.terms,
-    orderId: order?.id,
-    orderStatus: order?.status,
-    startDate: order?.startDate,
-    checkoutTotal: order?.total ?? (selectionQuote ? listPrice - discount : undefined),
-    checkoutListPrice: order?.subtotal ?? (selectionQuote ? listPrice : undefined),
-    checkoutDiscount: order?.discountAmount ?? (selectionQuote ? discount : undefined),
-    periodLabel: order ? `${order.durationMonths} tháng` : selectionQuote ? `${duration} tháng` : undefined,
-  }
-}
 
 export default function PaymentFlow({
   onExit,
@@ -97,7 +50,7 @@ export default function PaymentFlow({
       phone: "",
       email: "",
       dob: "",
-      gender: "Nữ",
+      gender: "Ná»¯",
       emergencyContact: "",
       startDate: (() => {
         const today = new Date()
@@ -105,7 +58,7 @@ export default function PaymentFlow({
         const day = String(today.getDate()).padStart(2, "0")
         return `${today.getFullYear()}-${month}-${day}`
       })(),
-      branch: "Chi nhánh Quận 1 - Flagship Center"
+      branch: "Chi nhÃ¡nh Quáº­n 1 - Flagship Center"
     };
 
     try {
@@ -118,7 +71,7 @@ export default function PaymentFlow({
           phone: u.phoneNumber || "",
           email: u.email || "",
           dob: u.dateOfBirth ? u.dateOfBirth.split('T')[0] : "",
-          gender: u.gender || "Nữ"
+          gender: u.gender || "Ná»¯"
         };
       }
     } catch (e) {}
@@ -150,7 +103,7 @@ export default function PaymentFlow({
         setPkg((current) => initialPlan && dict[initialPlan] ? initialPlan : current && dict[current] ? current : Object.keys(dict)[0] || "")
         setLoadError("")
       } catch (error) {
-        if (!cancelled) setLoadError(error instanceof Error ? error.message : "Không thể tải danh mục gói.")
+        if (!cancelled) setLoadError(error instanceof Error ? error.message : "KhÃ´ng thá»ƒ táº£i danh má»¥c gÃ³i.")
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -161,7 +114,7 @@ export default function PaymentFlow({
   }, [initialPlan, initialPackage, initialDuration, initialDiscountPct])
 
   if (loading) {
-    return <div className="flex h-screen w-full items-center justify-center bg-[#f8fafc]">Đang tải dữ liệu...</div>;
+    return <div className="flex h-screen w-full items-center justify-center bg-[#f8fafc]">Äang táº£i dá»¯ liá»‡u...</div>;
   }
 
   const pkgData = allPackages[pkg] || Object.values(allPackages)[0]
@@ -169,9 +122,9 @@ export default function PaymentFlow({
   if (!loading && !pkgData) {
     return (
       <div role="alert" className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#f8fafc] p-6 text-center">
-        <p className="text-sm text-red-700">{loadError || "Không tìm thấy thông tin gói tập."}</p>
+        <p className="text-sm text-red-700">{loadError || "KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin gÃ³i táº­p."}</p>
         <button type="button" onClick={() => onExit("member")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white">
-          Quay lại
+          Quay láº¡i
         </button>
       </div>
     )
@@ -202,7 +155,7 @@ export default function PaymentFlow({
       setScreen("success");
     } catch (e) {
       console.error(e);
-      setPaymentError(e instanceof Error ? e.message : "Thanh toán không thành công.")
+      setPaymentError(e instanceof Error ? e.message : "Thanh toÃ¡n khÃ´ng thÃ nh cÃ´ng.")
       setScreen("failed");
     }
   }
@@ -327,3 +280,5 @@ export default function PaymentFlow({
 
   return null
 }
+
+

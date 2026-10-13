@@ -13,7 +13,6 @@ import {
   trainers,
 } from "./homePageData";
 import { FadeUp, FadeIn } from "../components/Motion";
-
 export default function HomePage() {
   return (
     <div
@@ -32,7 +31,6 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-slate-900/60 mix-blend-multiply" />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent" />
         </FadeIn>
-
         <FadeUp
           delay={0.2}
           className="relative z-10 flex flex-col items-center gap-[24px] max-w-[860px] text-center"
@@ -42,18 +40,15 @@ export default function HomePage() {
               TRANG CHỦ — SPORTCENTER ENERGY PLATFORM
             </p>
           </div>
-
           <h1 className="font-['Inter:Extra_Bold'] font-extrabold text-white text-[56px] leading-[1.1] m-0">
             Năng lượng cho mọi
             <br />
             chuyển động.
           </h1>
-
           <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[18px] leading-[1.6] max-w-[600px] m-0">
             Hệ sinh thái thể thao đa bộ môn chuẩn quốc tế — nơi công nghệ luyện
             tập, huấn luyện viên đẳng cấp và không gian sang trọng hội tụ.
           </p>
-
           <div className="flex gap-[14px] items-center mt-[4px]">
             <div
               className="bg-[#10b981] flex items-center gap-[8px] px-[28px] py-[14px] rounded-[10px] cursor-pointer shrink-0"
@@ -73,12 +68,9 @@ export default function HomePage() {
             </div>
           </div>
         </FadeUp>
-
         <HomePageStatsInline />
       </section>
-
       <HomePageFeatures />
-
       {/* ── About / Facility ── */}
       <section className="bg-[#f8fafc] flex gap-[60px] items-center px-[80px] py-[80px] w-full shrink-0">
         <FadeUp
@@ -141,7 +133,6 @@ export default function HomePage() {
           </div>
         </FadeUp>
       </section>
-
       {/* ── Sport categories ── */}
       <section className="bg-white w-full px-[80px] py-[80px] shrink-0">
         <FadeUp className="flex flex-col gap-[12px] items-center text-center mb-[48px]">
@@ -158,7 +149,6 @@ export default function HomePage() {
             mọi đam mê thể thao đều có chỗ tại đây.
           </p>
         </FadeUp>
-
         <div className="grid grid-cols-3 gap-[20px]">
           {sports.map(({ img, label }, index) => (
             <FadeUp
@@ -184,7 +174,6 @@ export default function HomePage() {
           ))}
         </div>
       </section>
-
       {/* ── Featured Classes ── */}
       <section className="bg-[#f8fafc] w-full px-[80px] py-[80px] shrink-0">
         <FadeUp className="flex items-end justify-between mb-[40px]">
@@ -207,7 +196,6 @@ export default function HomePage() {
             </p>
           </div>
         </FadeUp>
-
         <div className="grid grid-cols-4 gap-[20px]">
           {classes.map(({ img, name, coach, time, slots, tag }, index) => (
             <FadeUp
@@ -257,9 +245,7 @@ export default function HomePage() {
           ))}
         </div>
       </section>
-
       <HomePageStatsStrip />
-
       {/* ── Trainers ── */}
       <section className="bg-white w-full px-[80px] py-[80px] shrink-0">
         <FadeUp className="flex flex-col gap-[12px] items-center text-center mb-[48px]">
@@ -276,7 +262,6 @@ export default function HomePage() {
             kinh nghiệm từ 5 đến 15 năm.
           </p>
         </FadeUp>
-
         <div className="grid grid-cols-4 gap-[24px]">
           {trainers.map(({ img, name, specialty, exp, rating }, index) => (
             <FadeUp
@@ -310,7 +295,6 @@ export default function HomePage() {
           ))}
         </div>
       </section>
-
       <CTABanner />
     </div>
   );

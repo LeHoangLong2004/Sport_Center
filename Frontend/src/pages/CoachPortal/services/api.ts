@@ -1,6 +1,5 @@
 export type SessionStatus = "sắp diễn ra" | "đang diễn ra" | "hoàn thành" | "đã hủy";
 export type AttendanceStatus = "chưa điểm danh" | "attended" | "no_show" | "late" | "excused";
-
 export interface MockMember {
   id: string;
   name: string;
@@ -13,7 +12,6 @@ export interface MockMember {
   email: string;
   classIds: string[];
 }
-
 export interface MockSession {
   id: string;
   classId: string;
@@ -29,14 +27,12 @@ export interface MockSession {
   registeredMemberIds: string[];
   status: SessionStatus;
 }
-
 export interface AttendanceRecord {
   sessionId: string;
   memberId: string;
   status: AttendanceStatus;
   note: string;
 }
-
 export interface MockCurriculum {
   id: string;
   name: string;
@@ -50,7 +46,6 @@ export interface MockCurriculum {
   exercises: { name: string; reps: string; rest: string; note: string }[];
   assignedTo: { type: "class" | "member"; id: string; name: string }[];
 }
-
 export interface MockNotification {
   id: string;
   title: string;
@@ -62,7 +57,6 @@ export interface MockNotification {
   targetName: string;
   deadline?: string;
 }
-
 export interface AssessmentRecord {
   id: string;
   sessionId: string;
@@ -73,9 +67,7 @@ export interface AssessmentRecord {
   nextStep: string;
   createdAt: string;
 }
-
 const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api';
-
 async function fetchApi(endpoint: string, options: RequestInit = {}) {
     let token = localStorage.getItem('token');
     const headers: Record<string, string> = {
@@ -85,14 +77,11 @@ async function fetchApi(endpoint: string, options: RequestInit = {}) {
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
     }
-
     let response = await fetch(`${BASE_URL}${endpoint}`, {
         ...options,
         headers
     });
-    
     if (response.status === 401) {
-        // Token expired, attempt silent recovery with dev-token
         try {
             const refRes = await fetch(`${BASE_URL}/auth/dev-token`, { method: 'POST' });
             if (refRes.ok) {
@@ -108,21 +97,15 @@ async function fetchApi(endpoint: string, options: RequestInit = {}) {
             }
         } catch {}
     }
-
     if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
     }
-    
     return response.json();
 }
-
 export const CoachAPI = {
-    // 1. Dashboard
     getDashboardStats: async () => {
         return fetchApi('/coach/dashboard');
     },
-
-    // 2. Lịch dạy
     getSchedule: async (startDate?: string, endDate?: string): Promise<MockSession[]> => {
         try {
             const query = new URLSearchParams();
@@ -142,8 +125,6 @@ export const CoachAPI = {
             { id: "s6", classId: "cls-pilates", className: "Pilates Nâng Cao", sport: "Pilates", level: "Nâng cao", date: today, startTime: "14:00", endTime: "15:00", room: "Studio 1", coachName: "HLV Enam", capacity: 12, registeredMemberIds: ["m2", "m5", "m7", "m9"], status: "sắp diễn ra" },
         ];
     },
-
-    // 3. Chi tiết lớp
     getSessionDetail: async (sessionId: string): Promise<MockSession> => {
         try {
             return await fetchApi(`/coach/sessions/${sessionId}`);
@@ -165,8 +146,6 @@ export const CoachAPI = {
             };
         }
     },
-
-    // 4. Lấy học viên của lớp
     getSessionMembers: async (sessionId: string): Promise<MockMember[]> => {
         try {
             const res = await fetchApi(`/coach/sessions/${sessionId}/members`);
@@ -185,8 +164,6 @@ export const CoachAPI = {
             { id: "m10", name: "Ngô Gia Huy", code: "MB010", avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=120&auto=format&fit=crop&q=80", goal: "Thể lực tổng hợp", level: "Trung bình", sport: "Gym", phone: "0944556677", email: "huy.ngo@gmail.com", classIds: ["s2", "s3", "s5"] }
         ];
     },
-    
-    // 4b. Lấy toàn bộ học viên
     getMembers: async (): Promise<MockMember[]> => {
         try {
             const res = await fetchApi('/coach/members');
@@ -205,8 +182,6 @@ export const CoachAPI = {
             { id: "m10", name: "Ngô Gia Huy", code: "MB010", avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=120&auto=format&fit=crop&q=80", goal: "Thể lực tổng hợp", level: "Trung bình", sport: "Gym", phone: "0944556677", email: "huy.ngo@gmail.com", classIds: ["s2", "s3", "s5"] }
         ];
     },
-
-    // 5. Điểm danh
     getAttendance: async (sessionId: string): Promise<AttendanceRecord[]> => {
         try {
             const res = await fetchApi(`/coach/sessions/${sessionId}/attendance`);
@@ -226,8 +201,6 @@ export const CoachAPI = {
             body: JSON.stringify({ records })
         });
     },
-
-    // 6. Giáo án
     getCurricula: async (): Promise<MockCurriculum[]> => {
         try {
             const plans = await fetchApi('/workout-plans/coach');
@@ -252,7 +225,6 @@ export const CoachAPI = {
         }
     },
     saveCurriculum: async (curriculum: any) => {
-        // Map frontend structure to backend CreateWorkoutPlanRequest
         const payload = {
             planName: curriculum.name,
             description: curriculum.description,
@@ -272,7 +244,6 @@ export const CoachAPI = {
         });
     },
     assignCurriculum: async (id: string, target: any) => {
-        // Giao bài tập về nhà
         const payload = {
             memberId: target.id,
             planId: id,
@@ -283,8 +254,6 @@ export const CoachAPI = {
             body: JSON.stringify(payload)
         });
     },
-
-    // 7. Thông báo
     getNotifications: async () => {
         return fetchApi('/coach/notifications');
     },
@@ -294,8 +263,6 @@ export const CoachAPI = {
             body: JSON.stringify(notification)
         });
     },
-
-    // 8. Đánh giá (Assessments)
     getAssessments: async () => {
         return fetchApi('/coach/assessments');
     },
@@ -305,8 +272,6 @@ export const CoachAPI = {
             body: JSON.stringify(assessment)
         });
     },
-
-    // 9. Schedule Change Requests (Yêu cầu đổi lịch / Dạy thay / Báo vắng)
     getScheduleRequests: async (): Promise<ScheduleChangeRequest[]> => {
         try {
             return await fetchApi('/coach/schedule-requests');
@@ -320,8 +285,6 @@ export const CoachAPI = {
             body: JSON.stringify(data)
         });
     },
-
-    // 10. PT 1-1 Availability Slots
     getAvailabilitySlots: async (): Promise<AvailabilitySlot[]> => {
         try {
             return await fetchApi('/coach/availability');
@@ -334,13 +297,9 @@ export const CoachAPI = {
             method: 'POST'
         });
     },
-
-    // 11. Đánh giá từ học viên (Anonymous Reviews)
     getCoachReviews: async (coachId: string = '25F50FBA') => {
         return fetchApi(`/reviews/coach/${coachId}`);
     },
-
-    // 12. Tin nhắn trao đổi (Chat)
     getCoachConversations: async (coachId: string = '25F50FBA') => {
         return fetchApi(`/coach/chat/conversations?coachId=${encodeURIComponent(coachId)}`);
     },
@@ -354,9 +313,7 @@ export const CoachAPI = {
         });
     }
 };
-
 export const coachApi = CoachAPI;
-
 export interface ScheduleChangeRequest {
     id: string;
     sessionId: string;
@@ -370,7 +327,6 @@ export interface ScheduleChangeRequest {
     createdAt: string;
     managerNote?: string;
 }
-
 export interface AvailabilitySlot {
     id: string;
     dayOfWeek: number; // 1: T2, 2: T3, ... 7: CN

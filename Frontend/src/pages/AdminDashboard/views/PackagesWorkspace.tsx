@@ -4,7 +4,6 @@ import { CatalogPackage, PackageOrder, PackageAPI, SportFormat } from "../../../
 import {
   blankPackage, formatLabels, MembershipCard, PackageDraft, PackageEditor, periods, SportCard, Category, money,
 } from "../components/PackageComponents"
-
 export function PackagesWorkspace() {
   const [catalog, setCatalog] = useState<CatalogPackage[]>([])
   const [orders, setOrders] = useState<PackageOrder[]>([])
@@ -19,7 +18,6 @@ export function PackagesWorkspace() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
   const [notice, setNotice] = useState("")
-
   const loadData = useCallback(async () => {
     try {
       const [nextCatalog, nextOrders] = await Promise.all([PackageAPI.getPackages(), PackageAPI.getOrders()])
@@ -32,7 +30,6 @@ export function PackagesWorkspace() {
       setLoading(false)
     }
   }, [])
-
   useEffect(() => { void loadData() }, [loadData])
 
   const membership = useMemo(() => catalog.filter((item) => item.category === "membership"), [catalog])

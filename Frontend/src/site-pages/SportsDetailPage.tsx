@@ -8,7 +8,6 @@ import {
   schedule,
   testimonials,
 } from "./sportsDetailData";
-
 function StarRow() {
   return (
     <div className="flex gap-[4px] items-center">
@@ -20,7 +19,6 @@ function StarRow() {
     </div>
   );
 }
-
 export default function ChiTietBoMonPage() {
   return (
     <div className="bg-[#f8fafc] flex flex-col items-start w-full min-h-screen">
@@ -62,7 +60,6 @@ export default function ChiTietBoMonPage() {
           hồi chức năng thể chất và nâng cao hiệu suất tim mạch dưới nước.
         </p>
       </div>
-
       {/* Overview */}
       <div className="bg-white flex gap-[64px] items-center p-[80px] w-full shrink-0">
         <div className="relative h-[400px] rounded-[16px] shrink-0 w-[600px] overflow-hidden">
@@ -103,7 +100,6 @@ export default function ChiTietBoMonPage() {
           </div>
         </div>
       </div>
-
       {/* Schedule */}
       <div className="bg-[#f8fafc] flex flex-col gap-[32px] items-start p-[80px] w-full shrink-0">
         <div className="flex flex-col gap-[8px] items-start w-full">
@@ -173,7 +169,6 @@ export default function ChiTietBoMonPage() {
           ))}
         </div>
       </div>
-
       {/* Coaches */}
       <div className="bg-white flex flex-col gap-[32px] items-start p-[80px] w-full shrink-0">
         <div className="flex flex-col gap-[8px] items-start w-full">
@@ -213,7 +208,6 @@ export default function ChiTietBoMonPage() {
           ))}
         </div>
       </div>
-
       {/* Roadmap */}
       <div className="bg-[#f8fafc] flex flex-col gap-[32px] items-start p-[80px] w-full shrink-0">
         <div className="flex flex-col gap-[8px] items-start w-full">
@@ -251,7 +245,6 @@ export default function ChiTietBoMonPage() {
           ))}
         </div>
       </div>
-
       {/* Testimonials */}
       <div className="bg-white flex flex-col gap-[32px] items-start p-[80px] w-full shrink-0">
         <div className="flex flex-col gap-[8px] items-start w-full">
@@ -291,7 +284,6 @@ export default function ChiTietBoMonPage() {
           ))}
         </div>
       </div>
-
       {/* CTA */}
       <div className="bg-[#0f172a] flex flex-col gap-[24px] items-center p-[80px] w-full shrink-0">
         <p className="font-['Inter:Extra_Bold'] font-extrabold text-white text-[32px] text-center whitespace-nowrap">

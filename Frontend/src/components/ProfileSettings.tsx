@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ProfileSummary } from "./ProfileSummary";
 import type { ProfileData } from "./profileTypes";
-
 export function ProfileSettings({
   initialData,
   roleLabel,
@@ -25,7 +24,6 @@ export function ProfileSettings({
     address: initialData?.address || "",
   });
   const [showToast, setShowToast] = useState(false);
-
   useEffect(() => {
     if (initialData) {
       setData((prev) => ({
@@ -34,20 +32,17 @@ export function ProfileSettings({
       }));
     }
   }, [initialData]);
-
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     setData({ ...data, [e.target.name]: e.target.value });
   };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (onSave) onSave(data);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
   };
-
   return (
     <>
       {showToast && (
@@ -78,7 +73,6 @@ export function ProfileSettings({
             tierColor={tierColor}
             extraInfo={extraInfo}
           />
-
           {/* Right Column: Form */}
           <div className="flex-1">
             <form
@@ -93,7 +87,6 @@ export function ProfileSettings({
                   Cập nhật thông tin cá nhân và cách liên hệ với bạn.
                 </p>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -108,7 +101,6 @@ export function ProfileSettings({
                     required
                   />
                 </div>
-
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Số điện thoại
@@ -122,7 +114,6 @@ export function ProfileSettings({
                     required
                   />
                 </div>
-
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Email
@@ -136,7 +127,6 @@ export function ProfileSettings({
                     required
                   />
                 </div>
-
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Ngày sinh
@@ -149,7 +139,6 @@ export function ProfileSettings({
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium [&::-webkit-calendar-picker-indicator]:dark:invert"
                   />
                 </div>
-
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Giới tính
