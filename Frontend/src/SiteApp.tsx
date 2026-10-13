@@ -42,6 +42,7 @@ const labelRoutes: Record<string, SiteRoute | "admin" | "register"> = {
   "Bộ môn": "bomon",
   "Lớp học": "lophoc",
   "Huấn luyện viên": "coach",
+  "Gói tập": "pricing",
   Gói: "pricing",
   "Về chúng tôi": "about",
   "Liên hệ": "contact",

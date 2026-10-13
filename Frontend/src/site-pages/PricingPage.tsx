@@ -27,13 +27,15 @@ export default function GoiTapBangGiaRedesign() {
 
   useEffect(() => {
     fetch('/api/packages')
-      .then(res => res.json())
+      .then(res => (res.ok ? res.json() : []))
       .then(data => {
-        const formatted = data.map((p: any) => ({
-          ...p,
-          features: p.features?.map((f: any) => typeof f === 'string' ? f : (f.featureText || f.benefitName || "")) || []
-        }));
-        setPackages(formatted);
+        if (Array.isArray(data)) {
+          const formatted = data.map((p: any) => ({
+            ...p,
+            features: p.features?.map((f: any) => typeof f === 'string' ? f : (f.featureText || f.benefitName || "")) || []
+          }));
+          setPackages(formatted);
+        }
         setLoading(false);
       })
       .catch(err => {

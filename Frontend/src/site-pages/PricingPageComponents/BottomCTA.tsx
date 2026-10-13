@@ -1,9 +1,6 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { MoveRight } from 'lucide-react';
 
 export default function BottomCTA() {
-  const navigate = useNavigate();
   return (
     <>
       {/* Bottom CTA */}
