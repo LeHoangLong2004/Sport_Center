@@ -166,9 +166,14 @@ namespace SmartGym.Api.Endpoints
                 "/sessions/{sessionId}/members",
                 async (string sessionId, SmartGymDbContext db) =>
                 {
+                    if (!Guid.TryParse(sessionId, out _))
+                        return Results.Ok(Array.Empty<object>());
+
+                    var memberIds = await LoadSessionMemberIdsAsync(db, sessionId);
                     var users = await db
                         .Users.Include(u => u.Role)
                         .Where(u => u.Role != null && u.Role.Name == "member")
+                        .Where(u => memberIds.Contains(u.Id))
                         .ToListAsync();
 
                     var members = users

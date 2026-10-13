@@ -277,6 +277,11 @@ erDiagram
         varchar payment_status
         uuid facility_id FK
         timestamptz paid_at
+        varchar fulfillment_method
+        varchar fulfillment_status
+        text delivery_location
+        uuid assigned_to FK
+        timestamptz fulfilled_at
     }
 
     invoice_items {
@@ -285,6 +290,14 @@ erDiagram
         uuid product_id FK
         integer quantity
         numeric unit_price
+    }
+
+    product_order_messages {
+        uuid id PK
+        uuid invoice_id FK
+        uuid sender_id FK
+        text message
+        timestamptz created_at
     }
 
     article_categories {
@@ -462,6 +475,8 @@ erDiagram
     users ||--o{ diet_plans : user_id
     users ||--o{ invoices : user_id
     users ||--o{ invoices : created_by
+    users ||--o{ invoices : assigned_to
+    users ||--o{ product_order_messages : sender_id
     users ||--o{ articles : author_id
     users ||--o{ class_attendance_sheets : finalized_by
     users ||--o{ class_attendance_records : member_id
@@ -518,10 +533,11 @@ erDiagram
 
     products ||--o{ invoice_items : product_id
     invoices ||--o{ invoice_items : invoice_id
+    invoices ||--o{ product_order_messages : invoice_id
 
     article_categories ||--o{ articles : category_id
 
     communications ||--o{ homework_progress : communication_id
 
     chat_conversations ||--o{ chat_messages : conversation_id
-    
+

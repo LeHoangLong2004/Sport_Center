@@ -49,6 +49,20 @@ using (var scope = app.Services.CreateScope())
             @"
             ALTER TABLE invoices ADD COLUMN IF NOT EXISTS facility_id UUID REFERENCES facilities(id) ON DELETE SET NULL;
             ALTER TABLE invoices ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ;
+            ALTER TABLE invoices ADD COLUMN IF NOT EXISTS fulfillment_method VARCHAR(50) NOT NULL DEFAULT 'counter_pickup';
+            ALTER TABLE invoices ADD COLUMN IF NOT EXISTS fulfillment_status VARCHAR(50) NOT NULL DEFAULT 'pending';
+            ALTER TABLE invoices ADD COLUMN IF NOT EXISTS delivery_location TEXT;
+            ALTER TABLE invoices ADD COLUMN IF NOT EXISTS assigned_to UUID REFERENCES users(id) ON DELETE SET NULL;
+            ALTER TABLE invoices ADD COLUMN IF NOT EXISTS fulfilled_at TIMESTAMPTZ;
+            CREATE TABLE IF NOT EXISTS product_order_messages (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                invoice_id UUID NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+                sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                message TEXT NOT NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_product_order_messages_invoice
+                ON product_order_messages(invoice_id, created_at);
             CREATE INDEX IF NOT EXISTS idx_invoices_payment_status_created_at ON invoices(payment_status, created_at);
             CREATE INDEX IF NOT EXISTS idx_invoices_user_id ON invoices(user_id);
         "

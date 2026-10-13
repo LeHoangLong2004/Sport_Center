@@ -15,7 +15,8 @@ public class PaymentService(
     IPackageRepository packageRepo,
     IPdfService pdfService,
     IEmailService emailService,
-    IVnPayGateway vnPayGateway) : IPaymentService
+    IVnPayGateway vnPayGateway,
+    IProductOrderPaymentService productOrderPaymentService) : IPaymentService
 {
     /// <summary>Cửa sổ coi là trùng lặp khi 2 giao dịch cùng số tiền được tạo quá gần nhau.</summary>
     private static readonly TimeSpan DuplicateWindow = TimeSpan.FromMinutes(10);
@@ -80,6 +81,9 @@ public class PaymentService(
     {
         var invoice = await invoiceRepo.GetByIdAsync(invoiceId);
         if (invoice == null || invoice.Status != PaymentStatus.Pending) return false;
+
+        if (!await productOrderPaymentService.FinalizeAsync(invoiceId))
+            return false;
 
         invoice.Status = PaymentStatus.Completed;
         invoice.PaidAt = DateTime.UtcNow;

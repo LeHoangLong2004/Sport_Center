@@ -102,6 +102,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPackageService, PackageService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IProductOrderPaymentService, SmartGym.Infrastructure.Services.ProductOrderPaymentService>();
 builder.Services.AddScoped<IReportService, SmartGym.Infrastructure.Services.ReportService>();
 builder.Services.AddScoped<IPdfService, SmartGym.Infrastructure.Services.InvoicePdfService>();
 builder.Services.AddScoped<ClassService>();
@@ -251,6 +252,7 @@ app.MapLegacyCatalogEndpoints();
 app.MapLegacyClassEndpoints();
 app.MapLegacyScheduleEndpoints();
 app.MapProductEndpoints();
+app.MapProductOrderEndpoints();
 app.MapAppointmentEndpoints();
 
 app.MapGet("/", () => Results.Redirect("/swagger"));
