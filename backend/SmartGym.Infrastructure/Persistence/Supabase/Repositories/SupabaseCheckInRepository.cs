@@ -69,39 +69,60 @@ public sealed class SupabaseCheckInRepository : ICheckInRepository
 
     public async Task<IReadOnlyList<CheckInRecord>> GetByMemberAsync(Guid memberId)
     {
-        var response = await _client
-            .From<GateCheckinModel>()
-            .Where(x => x.MemberId == memberId)
-            .Get();
+        try
+        {
+            var response = await _client
+                .From<GateCheckinModel>()
+                .Where(x => x.MemberId == memberId)
+                .Get();
 
-        return response
-            .Models.Select(m => m.ToDomain())
-            .OrderByDescending(r => r.CheckInTime)
-            .ToList();
+            return response
+                .Models.Select(m => m.ToDomain())
+                .OrderByDescending(r => r.CheckInTime)
+                .ToList();
+        }
+        catch
+        {
+            return Array.Empty<CheckInRecord>();
+        }
     }
 
     public async Task<IReadOnlyList<CheckInRecord>> GetAllAsync()
     {
-        var response = await _client.From<GateCheckinModel>().Get();
-        return response
-            .Models.Select(m => m.ToDomain())
-            .OrderByDescending(r => r.CheckInTime)
-            .ToList();
+        try
+        {
+            var response = await _client.From<GateCheckinModel>().Get();
+            return response
+                .Models.Select(m => m.ToDomain())
+                .OrderByDescending(r => r.CheckInTime)
+                .ToList();
+        }
+        catch
+        {
+            return Array.Empty<CheckInRecord>();
+        }
     }
 
     public async Task<IReadOnlyList<CheckInRecord>> GetTodayAsync()
     {
-        var today = DateTime.UtcNow.Date;
-        var endOfToday = today.AddDays(1);
+        try
+        {
+            var today = DateTime.UtcNow.Date;
+            var endOfToday = today.AddDays(1);
 
-        var response = await _client
-            .From<GateCheckinModel>()
-            .Where(x => x.CheckInTime >= today && x.CheckInTime < endOfToday)
-            .Get();
+            var response = await _client
+                .From<GateCheckinModel>()
+                .Where(x => x.CheckInTime >= today && x.CheckInTime < endOfToday)
+                .Get();
 
-        return response
-            .Models.Select(m => m.ToDomain())
-            .OrderByDescending(r => r.CheckInTime)
-            .ToList();
+            return response
+                .Models.Select(m => m.ToDomain())
+                .OrderByDescending(r => r.CheckInTime)
+                .ToList();
+        }
+        catch
+        {
+            return Array.Empty<CheckInRecord>();
+        }
     }
 }
