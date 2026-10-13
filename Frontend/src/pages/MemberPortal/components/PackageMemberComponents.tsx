@@ -230,8 +230,8 @@ export function ConfirmOrderModal({
       <div role="dialog" aria-modal="true" aria-labelledby="package-confirm-title"
         className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
         <span className="inline-flex rounded-lg bg-teal-50 p-2 text-teal-700"><TicketCheck size={20} /></span>
-        <h2 id="package-confirm-title" className="mt-3 text-xl font-bold text-slate-900">Xác nhận tạo đơn</h2>
-        <p className="mt-1 text-sm text-slate-500">Kiểm tra thông tin và điều kiện trước khi tiếp tục.</p>
+        <h2 id="package-confirm-title" className="mt-3 text-xl font-bold text-slate-900">Xác nhận gói tập</h2>
+        <p className="mt-1 text-sm text-slate-500">Kiểm tra thông tin và điều kiện trước khi chuyển đến các bước thanh toán.</p>
         <div className="mt-5 space-y-3 rounded-xl bg-slate-50 p-4 text-sm">
           <div className="flex justify-between gap-3"><span className="text-slate-500">Gói</span><strong className="text-right text-slate-900">{selected.name}</strong></div>
           <div className="flex justify-between gap-3"><span className="text-slate-500">Kỳ hạn</span><strong className="text-slate-900">{selectedDuration} tháng</strong></div>
@@ -258,11 +258,11 @@ export function ConfirmOrderModal({
           </ul>
         )}
         <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
-          Khi tạo đơn, gói chưa được kích hoạt. Trung tâm cần xác nhận đã nhận thanh toán; đơn đã tạo sẽ giữ nguyên giá và quyền lợi tại thời điểm này.
+          Đơn hàng sẽ được tạo với giá và quyền lợi do hệ thống xác nhận khi bạn hoàn tất bước thanh toán.
         </p>
         <label className="mt-4 flex cursor-pointer items-start gap-2 text-sm text-slate-700">
           <input type="checkbox" required className="mt-1 accent-teal-700" id="terms-accepted" />
-          Tôi đã đọc quyền lợi, điều kiện và xác nhận tạo đơn chờ thanh toán.
+          Tôi đã đọc quyền lợi, điều kiện và muốn tiếp tục thanh toán gói này.
         </label>
         <div className="mt-5 flex gap-3">
           <button type="button" onClick={onClose}
@@ -271,7 +271,7 @@ export function ConfirmOrderModal({
             const checkbox = document.getElementById("terms-accepted") as HTMLInputElement | null
             if (checkbox?.checked) onConfirm()
           }} className="flex-1 rounded-xl bg-teal-700 px-4 py-3 text-sm font-semibold text-white hover:bg-teal-800">
-            Tạo đơn chờ thanh toán
+            Tiếp tục thanh toán
           </button>
         </div>
       </div>

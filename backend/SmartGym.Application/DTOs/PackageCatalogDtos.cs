@@ -28,6 +28,15 @@ public sealed class CreatePackageOrderRequest
 {
     public string PackageId { get; set; } = string.Empty;
     public int DurationMonths { get; set; }
+    public DateTime? StartDate { get; set; }
+}
+
+public sealed class CreatePackageCheckoutRequest
+{
+    public string PackageId { get; set; } = string.Empty;
+    public int DurationMonths { get; set; }
+    public string PaymentMethod { get; set; } = string.Empty;
+    public DateTime? StartDate { get; set; }
 }
 
 public sealed class PackageOrderResponse
@@ -48,4 +57,10 @@ public sealed class PackageOrderResponse
     public DateTime? PaidAt { get; set; }
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
+}
+
+public sealed class PackageCheckoutResponse
+{
+    public PackageOrderResponse Order { get; set; } = new();
+    public Guid InvoiceId { get; set; }
 }

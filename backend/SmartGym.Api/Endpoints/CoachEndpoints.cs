@@ -60,6 +60,7 @@ namespace SmartGym.Api.Endpoints
             MapAttendanceEndpoints(group);
             MapCurriculumEndpoints(group);
             MapNotificationAndAssessmentEndpoints(group);
+            MapInteractiveCoachFeatures(group);
         }
     }
 }

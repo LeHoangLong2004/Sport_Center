@@ -106,6 +106,8 @@ const coachHashes = new Set([
   "#coach-profile",
   "#coach-settings",
   "#coach-ai",
+  "#coach-chat",
+  "#coach-reviews",
 ])
 
 const adminHashes = new Set([
@@ -130,7 +132,7 @@ function isAdminHash(hash: string) {
 }
 
 function isCoachHash(hash: string) {
-  return coachHashes.has(hash)
+  return hash.startsWith("#coach-") || coachHashes.has(hash)
 }
 
 export default function App() {
