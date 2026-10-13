@@ -10,6 +10,8 @@ using SmartGym.Application.DTOs.Reports;
 using SmartGym.Application.Interfaces;
 using SmartGym.Domain.Entities;
 using SmartGym.Domain.Enums;
+using Microsoft.Extensions.Options;
+using SmartGym.Infrastructure.Services;
 
 namespace SmartGym.Api.Endpoints;
 
@@ -131,16 +133,13 @@ public static partial class PaymentEndpoints
         group
             .MapGet(
                 "/vnpay/return",
-                async (HttpContext ctx, IPaymentService paymentService) =>
+                async (HttpContext ctx, IPaymentService paymentService, IOptions<VnPayOptions> options) =>
                 {
-                    var result = await paymentService.HandleVnPayCallbackAsync(ReadQuery(ctx));
-                    return result.Success
-                        ? Results.Ok(new PaymentStatusResponse(true, result.Message))
-                        : Results.BadRequest(new PaymentStatusResponse(false, result.Message));
+                    _ = await paymentService.HandleVnPayCallbackAsync(ReadQuery(ctx));
+                    return Results.Redirect(options.Value.FrontendReturnUrl);
                 }
             )
-            .Produces<PaymentStatusResponse>(StatusCodes.Status200OK)
-            .Produces<PaymentStatusResponse>(StatusCodes.Status400BadRequest);
+            .Produces(StatusCodes.Status302Found);
 
         group.MapGet(
             "/vnpay/ipn",

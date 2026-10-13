@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using SmartGym.Infrastructure.Persistence.EF;
+using SmartGym.Infrastructure.Persistence.Supabase.Repositories;
 
 namespace SmartGym.Api.Endpoints
 {
@@ -24,9 +25,11 @@ namespace SmartGym.Api.Endpoints
                         return Results.Ok(savedAttendance);
                     }
 
+                    var memberIds = await LoadSessionMemberIdsAsync(db, sessionId);
                     var members = await db
                         .Users.Include(u => u.Role)
                         .Where(u => u.Role != null && u.Role.Name == "member")
+                        .Where(u => memberIds.Contains(u.Id))
                         .ToListAsync();
                     var attendance = members
                         .Select(m => new
@@ -118,6 +121,22 @@ namespace SmartGym.Api.Endpoints
                 }
             );
 
+        }
+
+        private static async Task<HashSet<Guid>> LoadSessionMemberIdsAsync(
+            SmartGymDbContext db,
+            string sessionId)
+        {
+            if (!Guid.TryParse(sessionId, out var classId))
+                return [];
+
+            var bookings = await db.Database
+                .SqlQueryRaw<ClassBookingRawModel>(
+                    "SELECT id, user_id, class_id, status, created_at FROM class_bookings WHERE class_id = {0} AND status NOT IN ('cancelled', 'rejected', 'class_cancelled')",
+                    classId)
+                .ToListAsync();
+
+            return bookings.Select(booking => booking.UserId).ToHashSet();
         }
     }
 }

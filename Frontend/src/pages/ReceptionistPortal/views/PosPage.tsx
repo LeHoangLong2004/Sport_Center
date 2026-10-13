@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { A } from "../shared"
 
-type CartItem = { name: string; unitPrice: number; qty: number }
+type CartItem = { id: string; name: string; unitPrice: number; stockQuantity: number; qty: number }
 
 export function PosPage() {
   const [activeTab, setActiveTab] = useState("Tất cả sản phẩm")
@@ -27,21 +27,22 @@ export function PosPage() {
       ? allProducts
       : allProducts.filter((p) => p.category === activeTab)
 
-  function addToCart(name: string, price: number) {
+  function addToCart(product: any) {
+    if (!product?.id || product.stockQuantity <= 0) return
     setCart((prev) => {
-      const existing = prev.find((i) => i.name === name)
+      const existing = prev.find((i) => i.id === product.id)
       if (existing)
-        return prev.map((i) => (i.name === name ? { ...i, qty: i.qty + 1 } : i))
-      return [...prev, { name, unitPrice: price, qty: 1 }]
+        return prev.map((i) => i.id === product.id ? { ...i, qty: Math.min(i.qty + 1, i.stockQuantity) } : i)
+      return [...prev, { id: product.id, name: product.name, unitPrice: product.price, stockQuantity: product.stockQuantity, qty: 1 }]
     })
     setPaid(false)
   }
 
-  function changeQty(name: string, delta: number) {
+  function changeQty(id: string, delta: number) {
     setCart((prev) => {
       const updated = prev
         .map((i) =>
-          i.name === name ? { ...i, qty: Math.max(0, i.qty + delta) } : i,
+          i.id === id ? { ...i, qty: Math.min(i.stockQuantity, Math.max(0, i.qty + delta)) } : i,
         )
         .filter((i) => i.qty > 0)
       return updated
@@ -50,8 +51,8 @@ export function PosPage() {
   }
 
   const subtotal = cart.reduce((s, i) => s + i.unitPrice * i.qty, 0)
-  const discount = 10000
-  const total = subtotal - discount
+  const discount = subtotal > 0 ? Math.min(10000, subtotal) : 0
+  const total = Math.max(0, subtotal - discount)
 
   return (
     <div className="flex flex-1 gap-[24px] items-start min-h-0 p-[32px] w-full">
@@ -81,9 +82,9 @@ export function PosPage() {
             <div key={start} className="flex gap-[16px] items-start w-full">
               {products.slice(start, start + 3).map((p) => (
                 <button
-                  key={p.name}
+                  key={p.id}
                   type="button"
-                  onClick={() => addToCart(p.name, p.price)}
+                  onClick={() => addToCart(p)}
                   className="bg-white border border-[#e2e8f0] flex flex-1 flex-col items-start min-w-0 overflow-hidden rounded-[12px] text-left hover:border-[#3b82f6] transition-colors"
                 >
                   <div className="h-[100px] relative shrink-0 w-full overflow-hidden bg-gray-100 flex items-center justify-center">
@@ -138,7 +139,7 @@ export function PosPage() {
           )}
           {cart.map((item) => (
             <div
-              key={item.name}
+              key={item.id}
               className="border-[#e2e8f0] border-b border-solid flex gap-[12px] items-center py-[12px] shrink-0 w-full"
             >
               <div className="flex flex-1 flex-col gap-[2px] items-start min-w-0">
@@ -152,7 +153,7 @@ export function PosPage() {
               <div className="flex gap-[8px] items-center shrink-0">
                 <button
                   type="button"
-                  onClick={() => changeQty(item.name, -1)}
+                  onClick={() => changeQty(item.id, -1)}
                   className="border border-[#e2e8f0] flex flex-col items-center justify-center rounded-[4px] shrink-0 size-[24px]"
                 >
                   <span className="font-['Manrope:Bold'] font-bold text-[#64748b] text-[14px]">
@@ -164,7 +165,7 @@ export function PosPage() {
                 </span>
                 <button
                   type="button"
-                  onClick={() => changeQty(item.name, +1)}
+                  onClick={() => changeQty(item.id, +1)}
                   className="border border-[#e2e8f0] flex flex-col items-center justify-center rounded-[4px] shrink-0 size-[24px]"
                 >
                   <span className="font-['Manrope:Bold'] font-bold text-[#64748b] text-[14px]">
@@ -208,10 +209,11 @@ export function PosPage() {
         </div>
         <button
           type="button"
+          disabled={cart.length === 0 || paid}
           onClick={() => setPaid(true)}
           className={`flex gap-[8px] items-center justify-center p-[16px] rounded-[8px] shrink-0 w-full transition-colors ${
             paid ? "bg-[#16a34a]" : "bg-[#22c55e]"
-          }`}
+          } disabled:cursor-not-allowed disabled:opacity-50`}
         >
           <img src={`${A}/43093.svg`} alt="" className="size-[18px] shrink-0" />
           <span className="font-['Manrope:ExtraBold'] font-extrabold text-[16px] text-white">

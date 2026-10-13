@@ -9,6 +9,7 @@ import { Classes } from './views/Classes';
 import { Confirm } from './views/Confirm';
 import MemberPortalV2, { NewMemberPage } from '../../MemberPortalV2';
 import PaymentFlow from '../PaymentFlow';
+import { ProductShopPage } from './views/ProductShopPage';
 import { CatalogPackage, PackagePeriod } from '../../services/packageApi';
 
 type CheckoutSelection = {
@@ -75,6 +76,10 @@ export default function MemberPortal({
         />
       </MemberShell>
     )
+  }
+
+  if (page === "shop") {
+    return <ProductShopPage onNavigate={setPage} />
   }
 
   if (page === "users" || page === "reports") {
