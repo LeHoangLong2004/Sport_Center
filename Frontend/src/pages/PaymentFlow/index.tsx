@@ -258,7 +258,13 @@ export default function PaymentFlow({
             method={method}
             setMethod={setMethod}
             formData={formData}
-            onNext={() => setScreen("otp")}
+            onNext={() => {
+              if (method === "card") {
+                setScreen("otp")
+              } else {
+                void goProcessing()
+              }
+            }}
             onBack={() => setScreen("member-info")}
           />
         </div>
@@ -274,6 +280,8 @@ export default function PaymentFlow({
           <OTPScreen
             pkg={pkgData}
             period={period}
+            phone={formData.phone}
+            email={formData.email}
             onConfirm={goProcessing}
             onCancel={() => setScreen("failed")}
           />

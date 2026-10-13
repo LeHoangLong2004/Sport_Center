@@ -4,11 +4,15 @@ import { A, BillingPeriod, Stepper, OrderSummarySidebar } from "./shared";
 export function OTPScreen({
   pkg,
   period,
+  phone,
+  email,
   onConfirm,
   onCancel,
 }: {
   pkg: any
   period: BillingPeriod
+  phone?: string
+  email?: string
   onConfirm: () => void
   onCancel: () => void
 }) {
@@ -43,8 +47,12 @@ export function OTPScreen({
                 <p className="font-['Inter'] font-bold text-[#0b1f3a] text-[24px]">Xác minh mã giao dịch OTP</p>
                 <p className="font-['Inter'] font-normal text-[#64748b] text-sm leading-[20px]">
                   Chúng tôi đã gửi mã xác thực giao dịch OTP gồm 6 chữ số đến số điện thoại{" "}
-                  <strong className="text-[#0f172a]">0901 234 567</strong> và email{" "}
-                  <strong className="text-[#0f172a]">lananh.nguyen@email.com</strong>
+                  <strong className="text-[#0f172a]">{phone || "số điện thoại của bạn"}</strong>
+                  {email ? (
+                    <>
+                      {" "}và email <strong className="text-[#0f172a]">{email}</strong>
+                    </>
+                  ) : null}
                 </p>
               </div>
 

@@ -201,4 +201,114 @@ public sealed partial class PackageCatalogService
             );
     }
 
+    public async Task<PackageCheckoutResponse> CheckoutAsync(
+        Guid userId,
+        CreatePackageCheckoutRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        if (request.DurationMonths is not (1 or 3 or 6 or 12))
+            throw new PackageCatalogException(
+                StatusCodes.Status400BadRequest,
+                "Kỳ hạn chỉ được là 1, 3, 6 hoặc 12 tháng."
+            );
+
+        var user = await db
+            .Users.AsNoTracking()
+            .FirstOrDefaultAsync(item => item.Id == userId && item.Status, cancellationToken);
+        if (user is null)
+            throw new PackageCatalogException(
+                StatusCodes.Status401Unauthorized,
+                "Không tìm thấy hội viên đang đăng nhập."
+            );
+
+        var package = await db
+            .Packages.AsNoTracking()
+            .FirstOrDefaultAsync(item => item.Id == request.PackageId, cancellationToken);
+        if (package?.CatalogJson is null || !package.Status)
+            throw new PackageCatalogException(
+                StatusCodes.Status404NotFound,
+                "Gói này không tồn tại hoặc đã ngừng bán."
+            );
+
+        var snapshot = DeserializeCatalog(package.CatalogJson);
+        if (snapshot.Category == "membership" && snapshot.Tier == "basic")
+            throw new PackageCatalogException(
+                StatusCodes.Status400BadRequest,
+                "Hạng Cơ bản miễn phí, không cần thanh toán."
+            );
+
+        var subtotal = snapshot.Prices.GetValueOrDefault(request.DurationMonths);
+        if (subtotal <= 0)
+            throw new PackageCatalogException(
+                StatusCodes.Status400BadRequest,
+                "Gói chưa cấu hình giá cho kỳ hạn này."
+            );
+
+        var membership = await GetActiveMembershipAsync(userId, DateTime.UtcNow, cancellationToken);
+        var discountPct =
+            snapshot.Category == "sport"
+                ? snapshot.Format == "coach"
+                    ? membership?.CoachDiscountPct ?? 0
+                    : membership?.GroupDiscountPct ?? 0
+                : 0;
+        var discountAmount = decimal.Round(
+            subtotal * discountPct / 100m,
+            0,
+            MidpointRounding.AwayFromZero
+        );
+        var total = subtotal - discountAmount;
+        var now = DateTime.UtcNow;
+        var (start, end) = await GetProjectedPeriodAsync(
+            userId,
+            snapshot,
+            request.DurationMonths,
+            request.StartDate ?? now,
+            cancellationToken
+        );
+
+        var method = PaymentMethodExtensions.ParseDbValue(request.PaymentMethod ?? "counter");
+        var isCounter = method == PaymentMethod.CashAtCounter;
+        var paymentStatus = isCounter ? PaymentStatus.Pending : PaymentStatus.Completed;
+        var paidAt = isCounter ? (DateTime?)null : now;
+
+        var subscription = new Subscription
+        {
+            UserId = userId,
+            PackageId = package.Id,
+            BillingPeriod = $"months:{request.DurationMonths}",
+            DurationMonths = request.DurationMonths,
+            TotalAmount = total,
+            DiscountPct = discountPct,
+            DiscountAmount = discountAmount,
+            PackageSnapshotJson = JsonSerializer.Serialize(snapshot, JsonOptions),
+            PaymentStatus = paymentStatus,
+            PaymentMethod = method,
+            StartDate = start,
+            EndDate = end,
+            CreatedAt = now,
+            PaidAt = paidAt,
+            AutoRenew = false,
+        };
+        db.Subscriptions.Add(subscription);
+
+        var invoice = new Invoice
+        {
+            UserId = userId,
+            TotalAmount = total,
+            PaymentMethod = method,
+            Status = paymentStatus,
+            CreatedAt = now,
+            PaidAt = paidAt,
+        };
+        db.Invoices.Add(invoice);
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return new PackageCheckoutResponse
+        {
+            Order = MapOrder(subscription, user.FullName, user.Email, snapshot),
+            InvoiceId = invoice.Id,
+        };
+    }
 }

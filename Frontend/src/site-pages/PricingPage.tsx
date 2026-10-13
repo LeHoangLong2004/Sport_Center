@@ -143,7 +143,7 @@ export default function GoiTapBangGiaRedesign() {
                     </div>
                   ))}
                 </div>
-                <button className="bg-[#10b981] text-white font-['Inter:Bold'] font-bold text-[14px] py-[14px] rounded-[10px] w-full hover:bg-[#059669] transition-colors cursor-pointer">
+                <button data-planid="sport-boxing-coach" data-period="monthly" className="bg-[#10b981] text-white font-['Inter:Bold'] font-bold text-[14px] py-[14px] rounded-[10px] w-full hover:bg-[#059669] transition-colors cursor-pointer">
                   Đăng ký tập PT
                 </button>
               </div>
@@ -173,7 +173,7 @@ export default function GoiTapBangGiaRedesign() {
                     </div>
                   ))}
                 </div>
-                <button className="bg-[#0f172a] text-white font-['Inter:Bold'] font-bold text-[14px] py-[14px] rounded-[10px] w-full hover:bg-[#1e293b] transition-colors cursor-pointer">
+                <button data-planid="sport-yoga-group" data-period="monthly" className="bg-[#0f172a] text-white font-['Inter:Bold'] font-bold text-[14px] py-[14px] rounded-[10px] w-full hover:bg-[#1e293b] transition-colors cursor-pointer">
                   Đăng ký Yoga
                 </button>
               </div>
@@ -203,7 +203,7 @@ export default function GoiTapBangGiaRedesign() {
                     </div>
                   ))}
                 </div>
-                <button className="bg-[#0f172a] text-white font-['Inter:Bold'] font-bold text-[14px] py-[14px] rounded-[10px] w-full hover:bg-[#1e293b] transition-colors cursor-pointer">
+                <button data-planid="sport-gym-self" data-period="monthly" className="bg-[#0f172a] text-white font-['Inter:Bold'] font-bold text-[14px] py-[14px] rounded-[10px] w-full hover:bg-[#1e293b] transition-colors cursor-pointer">
                   Đăng ký Kickfit
                 </button>
               </div>
