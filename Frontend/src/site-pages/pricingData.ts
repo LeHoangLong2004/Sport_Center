@@ -1,7 +1,8 @@
-export const billingTabs: { key: "monthly" | "6month" | "annual"; label: string }[] = [
-  { key: "monthly", label: "Thanh toán Tháng" },
-  { key: "6month", label: "6 Tháng (-15%)" },
-  { key: "annual", label: "12 Tháng (-30%)" },
+export const billingTabs: { key: "monthly" | "3month" | "6month" | "annual"; period: 1 | 3 | 6 | 12; label: string }[] = [
+  { key: "monthly", period: 1, label: "Thanh toán Tháng" },
+  { key: "3month", period: 3, label: "3 Tháng" },
+  { key: "6month", period: 6, label: "6 Tháng" },
+  { key: "annual", period: 12, label: "12 Tháng" },
 ];
 
 export const starterFeatures = [

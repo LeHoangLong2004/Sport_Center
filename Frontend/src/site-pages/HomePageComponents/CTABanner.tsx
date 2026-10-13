@@ -18,15 +18,23 @@ export default function CTABanner() {
           </div>
 
           <div className="flex gap-[12px] items-stretch w-full">
-            <div className="bg-[#1e293b] border border-[#334155] flex flex-1 items-start min-w-0 px-[16px] py-[14px] rounded-[8px]">
-              <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[14px]">Họ và tên của bạn</p>
-            </div>
-            <div className="bg-[#1e293b] border border-[#334155] flex flex-1 items-start min-w-0 px-[16px] py-[14px] rounded-[8px]">
-              <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[14px]">Số điện thoại liên hệ</p>
-            </div>
-            <div className="bg-[#10b981] flex flex-1 items-center justify-center min-w-0 px-[24px] py-[14px] rounded-[8px] cursor-pointer" data-name="btn-submit">
+            <input
+              type="text"
+              placeholder="Họ và tên của bạn"
+              className="bg-[#1e293b] border border-[#334155] focus:border-[#10b981] outline-none text-white flex flex-1 items-start min-w-0 px-[16px] py-[14px] rounded-[8px] font-['Inter:Regular'] text-[14px] placeholder:text-[#94a3b8]"
+            />
+            <input
+              type="tel"
+              placeholder="Số điện thoại liên hệ"
+              className="bg-[#1e293b] border border-[#334155] focus:border-[#10b981] outline-none text-white flex flex-1 items-start min-w-0 px-[16px] py-[14px] rounded-[8px] font-['Inter:Regular'] text-[14px] placeholder:text-[#94a3b8]"
+            />
+            <button
+              type="button"
+              className="bg-[#10b981] hover:bg-[#059669] transition-colors flex flex-1 items-center justify-center min-w-0 px-[24px] py-[14px] rounded-[8px] cursor-pointer border-0"
+              data-name="btn-submit"
+            >
               <p className="font-['Inter:Extra_Bold'] font-extrabold text-white text-[14px] whitespace-nowrap">Đăng ký tham quan ngay</p>
-            </div>
+            </button>
           </div>
 
           <div className="flex gap-[32px] items-center w-full border-t border-[#1e293b] pt-[24px] relative z-10">

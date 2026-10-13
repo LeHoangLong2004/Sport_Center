@@ -26,8 +26,7 @@ namespace SmartGym.Api.Endpoints
 
                     var members = await db
                         .Users.Include(u => u.Role)
-                        .Where(u => u.Role.Name == "member")
-                        .Take(2)
+                        .Where(u => u.Role != null && u.Role.Name == "member")
                         .ToListAsync();
                     var attendance = members
                         .Select(m => new

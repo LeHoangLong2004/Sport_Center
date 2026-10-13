@@ -29,12 +29,12 @@ export const imgYoutube = `${a4642}/89fdc.svg`
 export const imgLinkedin = `${a4642}/8582f.svg`
 
 export const sports = [
-  { img: imgSport1, label: "Gym & Fitness" },
-  { img: imgSport2, label: "Bơi lội Aqua" },
-  { img: imgSport3, label: "Yoga & Pilates" },
-  { img: imgSport4, label: "Boxing Kickfit" },
-  { img: imgSport5, label: "Bóng rổ" },
-  { img: imgSport6, label: "Thể dục nhịp điệu" },
+  { id: "gym", img: imgSport1, label: "Gym & Fitness" },
+  { id: "boi-loi", img: imgSport2, label: "Bơi lội Aqua" },
+  { id: "yoga", img: imgSport3, label: "Yoga & Pilates" },
+  { id: "boxing", img: imgSport4, label: "Boxing Kickfit" },
+  { id: "bong-ro", img: imgSport5, label: "Bóng rổ" },
+  { id: "aerobic", img: imgSport6, label: "Thể dục nhịp điệu" },
 ]
 
 export const classes = [

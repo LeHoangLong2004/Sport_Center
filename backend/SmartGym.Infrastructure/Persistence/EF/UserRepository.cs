@@ -56,6 +56,10 @@ public class UserRepository : IUserRepository
                 u.Id,
                 u.FullName,
                 u.PhoneNumber,
+                u.Email,
+                u.Gender,
+                u.DateOfBirth,
+                u.EmergencyContact,
                 u.AvatarUrl,
                 u.Status,
                 Subscription = _dbContext
@@ -63,7 +67,9 @@ public class UserRepository : IUserRepository
                     .OrderByDescending(s => s.EndDate)
                     .Select(s => new
                     {
+                        s.StartDate,
                         s.EndDate,
+                        s.TotalAmount,
                         PackageName = s.Package != null ? s.Package.Name : null,
                     })
                     .FirstOrDefault(),
@@ -94,12 +100,18 @@ public class UserRepository : IUserRepository
                 MemberCode = $"MB-{m.Id.ToString().Substring(0, 4).ToUpper()}",
                 FullName = m.FullName,
                 PhoneNumber = m.PhoneNumber,
+                Email = m.Email,
+                Gender = m.Gender ?? "Chưa cập nhật",
+                DateOfBirth = m.DateOfBirth,
+                EmergencyContact = m.EmergencyContact ?? "Chưa cập nhật",
                 AvatarUrl =
                     m.AvatarUrl
                     ?? "https://ui-avatars.com/api/?name="
                         + System.Uri.EscapeDataString(m.FullName),
                 PackageName = m.Subscription?.PackageName ?? "Chưa đăng ký",
+                StartDate = m.Subscription?.StartDate,
                 ExpiryDate = m.Subscription?.EndDate,
+                TotalAmount = m.Subscription?.TotalAmount,
                 Status = status,
                 StatusColor = color,
             };

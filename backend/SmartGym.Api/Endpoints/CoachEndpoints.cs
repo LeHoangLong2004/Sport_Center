@@ -16,6 +16,10 @@ namespace SmartGym.Api.Endpoints
             string,
             System.Collections.Generic.List<object>
         > _mockAttendance = new();
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<
+            string,
+            object
+        > _mockAssessments = new();
         private static readonly System.Text.Json.Nodes.JsonArray _mockCurricula =
             new System.Text.Json.Nodes.JsonArray
             {
