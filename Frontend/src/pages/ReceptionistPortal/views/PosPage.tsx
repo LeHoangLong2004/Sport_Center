@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { A } from "../shared"
 
-type CartItem = { name: string unitPrice: number qty: number }
+type CartItem = { name: string; unitPrice: number; qty: number }
 
 export function PosPage() {
   const [activeTab, setActiveTab] = useState("Tất cả sản phẩm")

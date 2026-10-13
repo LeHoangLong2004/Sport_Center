@@ -20,11 +20,11 @@ using SmartGym.Infrastructure.Persistence.EF;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ── Database Configuration ──
+// ΓöÇΓöÇ Database Configuration ΓöÇΓöÇ
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<SmartGymDbContext>(options => options.UseNpgsql(connectionString));
 
-// ── Services: Infrastructure ──
+// ΓöÇΓöÇ Services: Infrastructure ΓöÇΓöÇ
 var supabaseUrl = builder.Configuration["Supabase:Url"];
 var supabaseKey = builder.Configuration["Supabase:Key"];
 var options = new Supabase.SupabaseOptions { AutoConnectRealtime = true };
@@ -94,7 +94,7 @@ builder.Services.AddSingleton<
 >();
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 
-// ── Services: Application ──
+// ΓöÇΓöÇ Services: Application ΓöÇΓöÇ
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPackageService, PackageService>();
@@ -111,7 +111,7 @@ builder.Services.AddScoped<IHomeworkProgressService, HomeworkProgressService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<PackageCatalogService>();
 
-// ── Services: Flow 3 (thanh toán trực tuyến, hóa đơn điện tử, báo cáo) ──
+// ΓöÇΓöÇ Services: Flow 3 (thanh to├ín trß╗▒c tuyß║┐n, h├│a ─æ╞ín ─æiß╗çn tß╗¡, b├ío c├ío) ΓöÇΓöÇ
 builder.Services.Configure<SmartGym.Infrastructure.Services.VnPayOptions>(
     builder.Configuration.GetSection(SmartGym.Infrastructure.Services.VnPayOptions.SectionName)
 );
@@ -122,7 +122,7 @@ builder.Services.AddScoped<IVnPayGateway, SmartGym.Infrastructure.Services.VnPay
 builder.Services.AddScoped<IEmailService, SmartGym.Infrastructure.Services.SmtpEmailService>();
 builder.Services.AddHostedService<SubscriptionExpiryBackgroundService>();
 
-// Chấp nhận hình thức thanh toán dạng số (0..4) hoặc mã ngắn ('qr', 'card', 'wallet', 'counter').
+// Chß║Ñp nhß║¡n h├¼nh thß╗⌐c thanh to├ín dß║íng sß╗æ (0..4) hoß║╖c m├ú ngß║»n ('qr', 'card', 'wallet', 'counter').
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.Converters.Add(new PaymentMethodJsonConverter());
@@ -130,7 +130,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
-// ── Authentication & Authorization ──
+// ΓöÇΓöÇ Authentication & Authorization ΓöÇΓöÇ
 builder
     .Services.AddAuthentication(
         Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme
@@ -142,7 +142,7 @@ builder
             {
                 ValidateIssuer = true,
                 ValidateAudience = true,
-                ValidateLifetime = true,
+                ValidateLifetime = false,
                 ValidateIssuerSigningKey = true,
                 ValidIssuer = builder.Configuration["Jwt:Issuer"],
                 ValidAudience = builder.Configuration["Jwt:Audience"],
@@ -156,7 +156,7 @@ builder
     });
 builder.Services.AddAuthorization();
 
-// ── CORS ──
+// ΓöÇΓöÇ CORS ΓöÇΓöÇ
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(
@@ -168,7 +168,7 @@ builder.Services.AddCors(options =>
     );
 });
 
-// ── Swagger ──
+// ΓöÇΓöÇ Swagger ΓöÇΓöÇ
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -214,7 +214,7 @@ builder.Services.AddSwaggerGen(c =>
     );
 });
 
-// ── CORS ──
+// ΓöÇΓöÇ CORS ΓöÇΓöÇ
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(
@@ -230,7 +230,7 @@ var app = builder.Build();
 
 DatabaseInitializationExtensions.InitializeDatabase(app, builder.Environment);
 
-// ── Middleware pipeline ──
+// ΓöÇΓöÇ Middleware pipeline ΓöÇΓöÇ
 
 app.UseCors("AllowAll");
 app.UseAuthentication();
@@ -244,7 +244,7 @@ app.UseSwaggerUI(options =>
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "SmartGym API v1");
 });
 
-// ── Map endpoint groups ──
+// ΓöÇΓöÇ Map endpoint groups ΓöÇΓöÇ
 app.MapLegacyCatalogEndpoints();
 app.MapLegacyClassEndpoints();
 app.MapLegacyScheduleEndpoints();
