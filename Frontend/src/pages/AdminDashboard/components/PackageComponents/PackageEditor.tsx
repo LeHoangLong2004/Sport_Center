@@ -1,7 +1,8 @@
 import React from "react";
 import { ShieldCheck, X, Plus, Check } from "lucide-react";
 import { PackageDraft, periods, formatLabels, linesToText, textToLines } from "./utils";
-import { SportFormat } from "../../../../services/packageApi";
+import { SportFormat, PackagePeriod } from "../../../../services/packageApi";
+import { PackagePricingFields } from "./PackagePricingFields";
 
 export function PackageEditor({
   draft,

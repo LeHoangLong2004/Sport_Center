@@ -3,6 +3,7 @@ import { MemberPage, ClassItem, asset } from '../shared';
 import MemberShell from '../components/MemberShell';
 import { CancelBookingModal, NotificationModal } from '../components/ClassesModals';
 import { ClassCard } from '../components/ClassCard';
+import { MyBookingsPanel } from './MyBookingsPanel';
 
 
 export function Classes({
