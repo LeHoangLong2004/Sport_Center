@@ -7,16 +7,11 @@ import {
   Calendar,
   Users,
   CheckCircle2,
-  Clock,
   Star,
-  MapPin,
-  ArrowRight,
-  AlertCircle,
-  PlusCircle,
   CalendarDays,
-  MessageSquare
 } from "lucide-react";
-import CoachDashboardView from "./CoachDashboardView";
+import { TodaySessionsList } from "./dashboard/TodaySessionsList";
+import { DashboardSidebar } from "./dashboard/DashboardSidebar";
 
 interface Props {
   navigateTo: (s: CoachScreen, extra?: { sessionId?: string }) => void;
@@ -29,13 +24,6 @@ const dateLabel = today.toLocaleDateString("vi-VN", {
   month: "2-digit",
   year: "numeric",
 });
-
-const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> = {
-  "sắp diễn ra": { label: "Sắp diễn ra", bg: "bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800", text: "text-blue-700 dark:text-blue-400" },
-  "đang diễn ra": { label: "Đang diễn ra", bg: "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800", text: "text-emerald-700 dark:text-emerald-400" },
-  "hoàn thành": { label: "Hoàn thành", bg: "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700", text: "text-slate-600 dark:text-slate-400" },
-  "đã hủy": { label: "Đã hủy", bg: "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800", text: "text-rose-700 dark:text-rose-400" },
-};
 
 export default function CoachDashboard({ navigateTo }: Props) {
   const { profile } = useUserProfile();
@@ -51,9 +39,7 @@ export default function CoachDashboard({ navigateTo }: Props) {
       try {
         const allSessions = await CoachAPI.getSchedule();
         const todayStr = new Date().toISOString().split("T")[0];
-        const todays = (Array.isArray(allSessions) ? allSessions : [])
-          .filter((s: MockSession | null | undefined): s is MockSession => Boolean(s) && s.date === todayStr)
-          .map((s) => ({ ...s, registeredMemberIds: Array.isArray(s.registeredMemberIds) ? s.registeredMemberIds : [] }));
+        const todays = allSessions.filter((s: MockSession) => s.date === todayStr);
         setTodaySessions(todays);
 
         const atts: Record<string, AttendanceRecord[]> = {};
@@ -71,7 +57,7 @@ export default function CoachDashboard({ navigateTo }: Props) {
   }, []);
 
   const totalRegistrations = useMemo(
-    () => todaySessions.reduce((s, c) => s + (c.registeredMemberIds?.length ?? 0), 0),
+    () => todaySessions.reduce((s, c) => s + c.registeredMemberIds.length, 0),
     [todaySessions]
   );
 
@@ -101,16 +87,112 @@ export default function CoachDashboard({ navigateTo }: Props) {
     });
   }, [todaySessions, attendances]);
 
-  return <CoachDashboardView
-    navigateTo={navigateTo}
-    userName={userName}
-    totalRegistrations={totalRegistrations}
-    pendingAttendanceCount={pendingAttendanceCount}
-    nextSession={nextSession}
-    pendingSessions={pendingSessions}
-    attendances={attendances}
-    dateLabel={dateLabel}
-    loading={loading}
-    todaySessions={todaySessions}
-  />;
+  return (
+    <div className="flex flex-col gap-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-300">
+      {/* Executive Welcome Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+            Xin chào, {userName}! 👋
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 capitalize">
+            {dateLabel} • Trung tâm Thể thao Sport Center
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => navigateTo("schedule")}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-sm"
+          >
+            <CalendarDays className="w-4 h-4 text-slate-500" />
+            Lịch dạy đầy đủ
+          </button>
+        </div>
+      </div>
+
+      {/* Modern SaaS Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          icon={<Calendar className="w-5 h-5 text-slate-700 dark:text-slate-300" />}
+          label="Buổi dạy hôm nay"
+          value={todaySessions.length}
+          sub="buổi học trong ngày"
+        />
+        <StatCard
+          icon={<Users className="w-5 h-5 text-slate-700 dark:text-slate-300" />}
+          label="Lượt học viên"
+          value={totalRegistrations}
+          sub="đã đăng ký tham gia"
+        />
+        <StatCard
+          icon={<CheckCircle2 className="w-5 h-5 text-slate-700 dark:text-slate-300" />}
+          label="Cần điểm danh"
+          value={pendingAttendanceCount}
+          sub={pendingAttendanceCount > 0 ? "buổi chưa hoàn tất" : "đã xong toàn bộ"}
+          highlight={pendingAttendanceCount > 0}
+        />
+        <StatCard
+          icon={<Star className="w-5 h-5 text-amber-500 fill-amber-500" />}
+          label="Đánh giá trung bình"
+          value="4.9"
+          sub="Dựa trên 142 lượt nhận xét"
+          onClick={() => navigateTo("reviews")}
+        />
+      </div>
+
+      {/* Main Content Layout */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <TodaySessionsList
+          loading={loading}
+          todaySessions={todaySessions}
+          attendances={attendances}
+          navigateTo={navigateTo}
+        />
+
+        <DashboardSidebar
+          nextSession={nextSession}
+          pendingSessions={pendingSessions}
+          navigateTo={navigateTo}
+        />
+      </div>
+    </div>
+  );
+}
+
+function StatCard({
+  icon,
+  label,
+  value,
+  sub,
+  highlight,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number | string;
+  sub: string;
+  highlight?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <div
+      onClick={onClick}
+      className={`p-5 rounded-2xl border bg-white dark:bg-slate-900 transition-all ${
+        highlight
+          ? "border-amber-300 dark:border-amber-700/60 shadow-sm"
+          : "border-slate-200/90 dark:border-slate-800 shadow-sm"
+      } ${onClick ? "cursor-pointer hover:border-slate-400" : ""}`}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</span>
+        <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800">{icon}</div>
+      </div>
+      <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+        {value}
+      </div>
+      <div className="text-xs text-slate-400 mt-1">{sub}</div>
+    </div>
+  );
 }

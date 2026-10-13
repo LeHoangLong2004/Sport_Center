@@ -37,9 +37,12 @@ export default function CoachAssessment() {
   const eligibleSessions = useMemo(() => {
     if (!selectedMemberId) return [];
     return sessions.filter((s) => {
-      if (!s.registeredMemberIds.includes(selectedMemberId)) return false;
       if (s.status === "đã hủy") return false;
-      return true; // Bỏ qua check attendance (vắng) để tránh gọi API N+1
+      // If backend has registeredMemberIds populated, filter by it; otherwise allow coach to assess any active session
+      if (Array.isArray(s.registeredMemberIds) && s.registeredMemberIds.length > 0) {
+        return s.registeredMemberIds.includes(selectedMemberId);
+      }
+      return true;
     });
   }, [selectedMemberId, sessions]);
 

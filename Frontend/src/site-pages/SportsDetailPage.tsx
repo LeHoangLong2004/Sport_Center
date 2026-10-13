@@ -1,25 +1,26 @@
-import {
-  coaches,
-  imgCheck,
-  imgHero,
-  imgPool,
-  imgStar,
-  roadmap,
-  schedule,
-  testimonials,
-} from "./sportsDetailData";
-function StarRow() {
-  return (
-    <div className="flex gap-[4px] items-center">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <div key={i} className="flex items-center justify-center size-[16px]">
-          <img alt="" src={imgStar} style={{ width: 13, height: 13 }} />
-        </div>
-      ))}
-    </div>
-  );
+import React, { useState, useEffect } from "react";
+import { imgCheck } from "./sportsDetailData";
+import { SportCoachesSection } from "./sports-detail/SportCoachesSection";
+import { SportScheduleSection } from "./sports-detail/SportScheduleSection";
+import { SportRoadmapSection } from "./sports-detail/SportRoadmapSection";
+import { SPORTS_DIRECTORY, type SportInfo } from "./sportsDirectoryData";
+
+function getSportFromHash(): SportInfo {
+  const hash = window.location.hash;
+  const match = hash.match(/sport=([a-zA-Z0-9_-]+)/);
+  const sportId = match ? match[1] : "boi-loi";
+  return SPORTS_DIRECTORY[sportId] || SPORTS_DIRECTORY["boi-loi"];
 }
+
 export default function ChiTietBoMonPage() {
+  const [sport, setSport] = useState<SportInfo>(getSportFromHash);
+
+  useEffect(() => {
+    const handleHash = () => setSport(getSportFromHash());
+    window.addEventListener("hashchange", handleHash);
+    return () => window.removeEventListener("hashchange", handleHash);
+  }, []);
+
   return (
     <div className="bg-[#f8fafc] flex flex-col items-start w-full min-h-screen">
       {/* Hero */}
@@ -28,22 +29,16 @@ export default function ChiTietBoMonPage() {
           <img
             alt=""
             className="absolute inset-0 object-cover size-full max-w-none"
-            src={imgHero}
+            src={sport.heroImg}
           />
           <div className="absolute inset-0 bg-[rgba(15,23,42,0.85)]" />
         </div>
         <div className="relative flex gap-[8px] items-center text-[14px]">
-          <p className="font-['Inter:Medium'] font-medium text-[#94a3b8]">
-            Trang chủ
-          </p>
+          <a href="#home" className="font-['Inter:Medium'] font-medium text-[#94a3b8] hover:text-white transition-colors">Trang chủ</a>
           <p className="font-['Inter:Medium'] font-medium text-[#94a3b8]">{`>`}</p>
-          <p className="font-['Inter:Medium'] font-medium text-[#94a3b8]">
-            Bộ môn
-          </p>
+          <a href="#bomon" className="font-['Inter:Medium'] font-medium text-[#94a3b8] hover:text-white transition-colors">Bộ môn</a>
           <p className="font-['Inter:Medium'] font-medium text-[#94a3b8]">{`>`}</p>
-          <p className="font-['Inter:Semi_Bold'] font-semibold text-white">
-            Bơi lội & Aqua Fitness
-          </p>
+          <p className="font-['Inter:Semi_Bold'] font-semibold text-white">{sport.name}</p>
         </div>
         <div className="relative flex items-center">
           <div className="bg-[#10b981] flex items-center px-[14px] py-[6px] rounded-[100px]">
@@ -52,47 +47,37 @@ export default function ChiTietBoMonPage() {
             </p>
           </div>
         </div>
-        <p className="relative font-['Inter:Extra_Bold'] font-extrabold text-white text-[48px] leading-normal whitespace-nowrap">
-          Bơi lội & Aqua Fitness
-        </p>
-        <p className="relative font-['Inter:Regular'] font-normal text-[#94a3b8] text-[18px] leading-[1.6] max-w-[680px]">
-          Hệ sinh thái bơi lội tiêu chuẩn Olympic, kết hợp các phương pháp phục
-          hồi chức năng thể chất và nâng cao hiệu suất tim mạch dưới nước.
+        <h1 className="relative font-['Inter:Extra_Bold'] font-extrabold text-white text-[44px] leading-tight">
+          {sport.name}
+        </h1>
+        <p className="relative font-['Inter:Regular'] font-normal text-[#94a3b8] text-[17px] leading-[1.6] max-w-[680px]">
+          {sport.tagline}
         </p>
       </div>
-      {/* Overview */}
+
+      {/* Overview & Facility */}
       <div className="bg-white flex gap-[64px] items-center p-[80px] w-full shrink-0">
-        <div className="relative h-[400px] rounded-[16px] shrink-0 w-[600px] overflow-hidden">
+        <div className="relative h-[380px] rounded-[16px] shrink-0 w-[560px] overflow-hidden shadow-lg">
           <img
-            alt="Hồ bơi SportCenter"
+            alt={sport.facilityTitle}
             className="absolute inset-0 object-cover size-full max-w-none rounded-[16px]"
-            src={imgPool}
+            src={sport.facilityImg}
           />
         </div>
-        <div className="flex flex-1 flex-col gap-[24px] items-start min-w-0">
-          <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[32px] w-full">
-            Tại sao nên chọn Bơi lội tại SportCenter?
+        <div className="flex flex-1 flex-col gap-[20px] items-start min-w-0">
+          <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[30px] w-full">
+            {sport.facilityTitle}
           </p>
-          <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[16px] leading-[1.6] w-full">
-            Sở hữu hồ bơi vô cực rộng 50m tiêu chuẩn quốc tế, trang bị hệ thống
-            lọc nước ozone không sử dụng hóa chất độc hại, thân thiện tuyệt đối
-            với làn da và hệ hô hấp của học viên.
+          <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[15px] leading-[1.6] w-full">
+            {sport.facilityDesc}
           </p>
-          <div className="flex flex-col gap-[16px] items-start w-full">
-            {[
-              "Nâng cao thể lực tim mạch vượt trội",
-              "Phương pháp an toàn không gây tổn thương xương khớp",
-              "Giáo án cá nhân hóa theo mục tiêu từng học viên",
-            ].map((point) => (
+          <div className="flex flex-col gap-[14px] items-start w-full">
+            {sport.features.map((point) => (
               <div key={point} className="flex gap-[12px] items-center w-full">
                 <div className="bg-[rgba(37,99,235,0.1)] flex items-center justify-center rounded-[12px] size-[24px] shrink-0">
-                  <img
-                    alt=""
-                    src={imgCheck}
-                    style={{ width: 11, height: 11 }}
-                  />
+                  <img alt="" src={imgCheck} style={{ width: 11, height: 11 }} />
                 </div>
-                <p className="font-['Inter:Semi_Bold'] font-semibold text-[#1e293b] text-[15px] whitespace-nowrap">
+                <p className="font-['Inter:Semi_Bold'] font-semibold text-[#1e293b] text-[14px]">
                   {point}
                 </p>
               </div>
@@ -100,206 +85,34 @@ export default function ChiTietBoMonPage() {
           </div>
         </div>
       </div>
-      {/* Schedule */}
-      <div className="bg-[#f8fafc] flex flex-col gap-[32px] items-start p-[80px] w-full shrink-0">
-        <div className="flex flex-col gap-[8px] items-start w-full">
-          <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[28px]">
-            Lịch lớp bơi lội tuần này
-          </p>
-          <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[15px]">
-            Vui lòng xem và đăng ký suất tập sớm để đảm bảo vị trí lớp học.
-          </p>
-        </div>
-        <div className="bg-white border border-[#e2e8f0] flex flex-col items-start overflow-clip rounded-[12px] w-full">
-          {/* Header */}
-          <div className="bg-[#1e293b] flex gap-[20px] items-start p-[18px] w-full">
-            <p className="font-['Inter:Bold'] font-bold text-white text-[14px] w-[180px]">
-              Thời gian
-            </p>
-            <p className="font-['Inter:Bold'] font-bold text-white text-[14px] w-[220px]">
-              Lớp học
-            </p>
-            <p className="font-['Inter:Bold'] font-bold text-white text-[14px] w-[200px]">
-              Huấn luyện viên
-            </p>
-            <p className="font-['Inter:Bold'] font-bold text-white text-[14px] w-[180px]">
-              Phòng tập / Hồ
-            </p>
-            <p className="font-['Inter:Bold'] font-bold text-white text-[14px] w-[150px]">
-              Suất trống
-            </p>
-            <p className="font-['Inter:Bold'] font-bold text-white text-[14px] flex-1 text-right">
-              Đăng ký
-            </p>
-          </div>
-          {/* Rows */}
-          {schedule.map((row, i) => (
-            <div
-              key={i}
-              className={`flex gap-[20px] items-center p-[18px] w-full ${i < schedule.length - 1 ? "border-b border-[#e2e8f0]" : ""}`}
-            >
-              <p className="font-['Inter:Semi_Bold'] font-semibold text-[#1e293b] text-[14px] w-[180px]">
-                {row.time}
-              </p>
-              <p className="font-['Inter:Bold'] font-bold text-[#2563eb] text-[14px] w-[220px]">
-                {row.name}
-              </p>
-              <p className="font-['Inter:Regular'] font-normal text-[#1e293b] text-[14px] w-[200px]">
-                {row.coach}
-              </p>
-              <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px] w-[180px]">
-                {row.room}
-              </p>
-              <p
-                className={`font-['Inter:Semi_Bold'] font-semibold text-[14px] w-[150px] ${row.full ? "text-[#64748b]" : "text-[#059669]"}`}
-              >
-                {row.slots}
-              </p>
-              <div className="flex flex-1 items-start justify-end">
-                <div
-                  className={`flex items-center px-[16px] py-[8px] rounded-[6px] cursor-pointer ${row.full ? "bg-[#94a3b8]" : "bg-[#10b981]"}`}
-                  data-name={row.full ? "" : "btn-register-class"}
-                >
-                  <p className="font-['Inter:Bold'] font-bold text-white text-[13px] whitespace-nowrap">
-                    {row.full ? "Đầy chỗ" : "Đăng ký ngay"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      {/* Coaches */}
-      <div className="bg-white flex flex-col gap-[32px] items-start p-[80px] w-full shrink-0">
-        <div className="flex flex-col gap-[8px] items-start w-full">
-          <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[28px]">
-            Chuyên gia dẫn dắt lớp bơi lội
-          </p>
-          <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[15px]">
-            Đội ngũ HLV chuyên môn cao với bằng cấp sư phạm thể chất và chứng
-            nhận cứu hộ quốc tế.
-          </p>
-        </div>
-        <div className="flex gap-[24px] items-start w-full">
-          {coaches.map((c) => (
-            <div
-              key={c.name}
-              className="bg-white border border-[#e2e8f0] flex flex-1 flex-col items-start min-w-0 overflow-clip rounded-[16px]"
-            >
-              <div className="relative h-[260px] w-full shrink-0">
-                <img
-                  alt={c.name}
-                  className="absolute inset-0 object-cover size-full max-w-none"
-                  src={c.img}
-                />
-              </div>
-              <div className="flex flex-col gap-[12px] items-start p-[20px] w-full">
-                <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[18px] whitespace-nowrap">
-                  {c.name}
-                </p>
-                <p className="font-['Inter:Semi_Bold'] font-semibold text-[#2563eb] text-[14px] whitespace-nowrap">
-                  {c.spec}
-                </p>
-                <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[13px] leading-[1.4] w-full">
-                  {c.desc}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      {/* Roadmap */}
-      <div className="bg-[#f8fafc] flex flex-col gap-[32px] items-start p-[80px] w-full shrink-0">
-        <div className="flex flex-col gap-[8px] items-start w-full">
-          <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[28px]">
-            Lộ trình rèn luyện bơi lội bài bản
-          </p>
-          <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[15px]">
-            Các bài học được cấu trúc khoa học từ dễ đến khó để bạn yên tâm tiến
-            bộ.
-          </p>
-        </div>
-        <div className="flex gap-[24px] items-start w-full">
-          {roadmap.map((r) => (
-            <div
-              key={r.level}
-              className="bg-white border border-[#e2e8f0] flex flex-1 flex-col gap-[20px] items-start min-w-0 p-[32px] rounded-[16px]"
-            >
-              <div className="flex gap-[12px] items-center">
-                <div className="bg-[rgba(37,99,235,0.1)] flex items-center px-[12px] py-[4px] rounded-[100px]">
-                  <p className="font-['Inter:Bold'] font-bold text-[#2563eb] text-[12px] whitespace-nowrap">
-                    {r.level}
-                  </p>
-                </div>
-                <p className="font-['Inter:Medium'] font-medium text-[#64748b] text-[14px] whitespace-nowrap">
-                  {r.period}
-                </p>
-              </div>
-              <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[20px] w-full">
-                {r.title}
-              </p>
-              <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px] leading-[1.6] w-full">
-                {r.desc}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-      {/* Testimonials */}
-      <div className="bg-white flex flex-col gap-[32px] items-start p-[80px] w-full shrink-0">
-        <div className="flex flex-col gap-[8px] items-start w-full">
-          <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[28px]">
-            Đánh giá thực tế từ học viên
-          </p>
-          <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[15px]">
-            Cùng nghe câu chuyện thành công của các hội viên bơi lội tại trung
-            tâm.
-          </p>
-        </div>
-        <div className="flex gap-[24px] items-start w-full">
-          {testimonials.map((t) => (
-            <div
-              key={t.name}
-              className="bg-white border border-[#e2e8f0] flex flex-1 flex-col gap-[20px] items-start min-w-0 p-[32px] rounded-[16px] shadow-[0px_4px_6px_rgba(0,0,0,0.02)]"
-            >
-              <StarRow />
-              <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[15px] leading-[1.6] w-full">
-                {t.text}
-              </p>
-              <div className="flex gap-[12px] items-center">
-                <div className="relative size-[40px] shrink-0">
-                  <img
-                    alt={t.name}
-                    className="absolute inset-0 size-full max-w-none rounded-full object-cover"
-                    src={t.avatar}
-                    width="40"
-                    height="40"
-                  />
-                </div>
-                <p className="font-['Inter:Bold'] font-bold text-[#1e293b] text-[15px] whitespace-nowrap">
-                  {t.name}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+
+      {/* Schedule Table Component */}
+      <SportScheduleSection sport={sport} />
+
+      {/* Coaches Component */}
+      <SportCoachesSection />
+
+      {/* Roadmap & Testimonials Component */}
+      <SportRoadmapSection sport={sport} />
+
       {/* CTA */}
-      <div className="bg-[#0f172a] flex flex-col gap-[24px] items-center p-[80px] w-full shrink-0">
-        <p className="font-['Inter:Extra_Bold'] font-extrabold text-white text-[32px] text-center whitespace-nowrap">
-          Trải nghiệm tập thử Bơi lội miễn phí 01 buổi hôm nay!
+      <div className="bg-[#0f172a] flex flex-col gap-[20px] items-center p-[80px] w-full shrink-0">
+        <p className="font-extrabold text-white text-[30px] text-center">
+          Trải nghiệm tập thử {sport.name} miễn phí hôm nay!
         </p>
-        <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[16px] text-center whitespace-nowrap">
-          Đăng ký để nhận tư vấn lịch hẹn và kiểm tra thể trạng miễn phí từ HLV.
+        <p className="text-[#94a3b8] text-[15px] text-center max-w-[600px]">
+          Nhận ngay 01 buổi tập trải nghiệm cùng HLV chuyên nghiệp và đo chỉ số InBody miễn phí.
         </p>
-        <div
-          className="bg-[#10b981] flex items-center px-[32px] py-[14px] rounded-[8px] cursor-pointer"
-          data-name="btn-submit"
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            window.location.hash = "#pricing";
+          }}
+          className="bg-[#10b981] hover:bg-[#059669] text-white font-bold text-[14px] px-[32px] py-[14px] rounded-[8px] transition-colors cursor-pointer"
         >
-          <p className="font-['Inter:Bold'] font-bold text-white text-[15px] whitespace-nowrap">
-            Nhận vé tập thử ngay
-          </p>
-        </div>
+          Nhận vé tập thử ngay
+        </button>
       </div>
     </div>
   );

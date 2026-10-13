@@ -2,6 +2,7 @@ import { FadeUp } from "../components/Motion"
 import { imgFlame } from "./sportsPageData"
 
 export function SportCard({
+  id = "boi-loi",
   img,
   badge,
   icon,
@@ -11,6 +12,7 @@ export function SportCard({
   tall,
   delay = 0,
 }: {
+  id?: string
   img: string
   badge: string
   icon: string
@@ -23,6 +25,10 @@ export function SportCard({
   return (
     <FadeUp
       delay={delay}
+      onClick={(e) => {
+        e.stopPropagation();
+        window.location.hash = `#chitietbomon?sport=${id}`;
+      }}
       className="bg-white border border-[#e2e8f0] flex flex-1 flex-col items-start min-w-0 overflow-clip rounded-[16px] shadow-[0px_4px_12px_0px_rgba(0,0,0,0.02)] hover:shadow-xl hover:-translate-y-1 hover:border-[#10b981] transition-all duration-300 cursor-pointer group"
     >
       <div

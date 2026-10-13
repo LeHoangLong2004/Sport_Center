@@ -11,6 +11,8 @@ const STATUS_STYLE: Record<string, string> = {
   expired: "bg-[#f1f5f9] text-[#475569]",
 };
 
+const PAGE_SIZE = 8;
+
 interface InvoiceTableProps {
   loading: boolean;
   error: string | null;

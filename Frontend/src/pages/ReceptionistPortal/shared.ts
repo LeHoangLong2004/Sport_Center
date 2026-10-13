@@ -34,7 +34,7 @@ export const breadcrumbs: Record<Page, { bc: string; title: string; shift?: stri
   classes: { bc: "Lễ tân / Lịch Lớp học", title: "Quản lý Lớp học & Đặt hộ" },
   schedule: { bc: "Lễ tân / Lịch Coach & Tư vấn", title: "Quản lý lịch hẹn của khách" },
   pos: { bc: "Lễ tân / Nghiệp vụ POS", title: "Bán hàng tại quầy", shift: "Ca làm việc" },
-  lookup: { bc: "Lễ tân / Danh sách hệ thống", title: "Tra cứu thông tin hội viên", shift: "Ca làm việc" },
-  detail: { bc: "Lễ tân / Tra cứu hội viên / Chi tiết", title: "Chi tiết hội viên", shift: "Ca làm việc" },
+  lookup: { bc: "Lễ tân / Danh sách hệ thống", title: "Tra cứu thông tin thành viên", shift: "Ca làm việc" },
+  detail: { bc: "Lễ tân / Tra cứu thành viên / Chi tiết", title: "Chi tiết thành viên", shift: "Ca làm việc" },
   profile: { bc: "Lễ tân / Hồ sơ cá nhân", title: "Hồ sơ Lễ tân", shift: "Ca làm việc" },
 }

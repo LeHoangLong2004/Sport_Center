@@ -11,10 +11,9 @@ import { SuccessScreen } from "./SuccessScreen";
 import { FailedScreen } from "./FailedScreen";
 import { InvoiceScreen } from "./InvoiceScreen";
 import { MembershipCardScreen } from "./MembershipCardScreen";
-import { PackageAPI, CatalogPackage, PackageCheckout, PackageOrder, PackagePeriod } from "../../services/packageApi";
+import { PackageAPI, CatalogPackage, PackageCheckout, PackagePeriod } from "../../services/packageApi";
 import { FlowPackage } from "./shared";
-
-
+import { toFlowPackage } from "./packageMapper";
 
 export default function PaymentFlow({
   onExit,
@@ -24,25 +23,25 @@ export default function PaymentFlow({
   initialDuration,
   initialDiscountPct = 0,
 }: {
-  onExit: (dest?: string) => void
-  initialPlan?: string
-  initialPeriod?: string
-  initialPackage?: CatalogPackage
-  initialDuration?: PackagePeriod
-  initialDiscountPct?: number
+  onExit: (dest?: string) => void;
+  initialPlan?: string;
+  initialPeriod?: string;
+  initialPackage?: CatalogPackage;
+  initialDuration?: PackagePeriod;
+  initialDiscountPct?: number;
 }) {
-  const [screen, setScreen] = useState<Screen>(initialPackage || initialPlan ? "member-info" : "package")
-  const [period, setPeriod] = useState<BillingPeriod>((initialPeriod as BillingPeriod) || "yearly")
-  const [pkg, setPkg] = useState<string>(initialPackage?.id || initialPlan || "")
-  const [method, setMethod] = useState<PaymentMethodId>("qr")
+  const [screen, setScreen] = useState<Screen>(initialPackage || initialPlan ? "member-info" : "package");
+  const [period, setPeriod] = useState<BillingPeriod>((initialPeriod as BillingPeriod) || "yearly");
+  const [pkg, setPkg] = useState<string>(initialPackage?.id || initialPlan || "");
+  const [method, setMethod] = useState<PaymentMethodId>("qr");
   const [allPackages, setAllPackages] = useState<Record<string, FlowPackage>>(() =>
     initialPackage
       ? { [initialPackage.id]: toFlowPackage(initialPackage, initialDuration || 1, initialDiscountPct, undefined, true) }
       : {},
-  )
-  const [loading, setLoading] = useState(!initialPackage)
-  const [loadError, setLoadError] = useState("")
-  const [paymentError, setPaymentError] = useState("")
+  );
+  const [loading, setLoading] = useState(!initialPackage);
+  const [loadError, setLoadError] = useState("");
+  const [paymentError, setPaymentError] = useState("");
 
   const [formData, setFormData] = useState(() => {
     const defaultData = {
@@ -50,15 +49,15 @@ export default function PaymentFlow({
       phone: "",
       email: "",
       dob: "",
-      gender: "Ná»¯",
+      gender: "Nữ",
       emergencyContact: "",
       startDate: (() => {
-        const today = new Date()
-        const month = String(today.getMonth() + 1).padStart(2, "0")
-        const day = String(today.getDate()).padStart(2, "0")
-        return `${today.getFullYear()}-${month}-${day}`
+        const today = new Date();
+        const month = String(today.getMonth() + 1).padStart(2, "0");
+        const day = String(today.getDate()).padStart(2, "0");
+        return `${today.getFullYear()}-${month}-${day}`;
       })(),
-      branch: "Chi nhÃ¡nh Quáº­n 1 - Flagship Center"
+      branch: "Chi nhánh Quận 1 - Flagship Center"
     };
 
     try {
@@ -71,10 +70,10 @@ export default function PaymentFlow({
           phone: u.phoneNumber || "",
           email: u.email || "",
           dob: u.dateOfBirth ? u.dateOfBirth.split('T')[0] : "",
-          gender: u.gender || "Ná»¯"
+          gender: u.gender || "Nữ"
         };
       }
-    } catch (e) {}
+    } catch {}
 
     return defaultData;
   });
@@ -83,51 +82,51 @@ export default function PaymentFlow({
     if (initialPackage) {
       setAllPackages({
         [initialPackage.id]: toFlowPackage(initialPackage, initialDuration || 1, initialDiscountPct, undefined, true),
-      })
-      setPkg(initialPackage.id)
-      setLoading(false)
-      return
+      });
+      setPkg(initialPackage.id);
+      setLoading(false);
+      return;
     }
 
-    let cancelled = false
+    let cancelled = false;
     const loadPackages = async () => {
-      setLoading(true)
+      setLoading(true);
       try {
-        const data = await PackageAPI.getPackages()
-        const dict: Record<string, FlowPackage> = {}
+        const data = await PackageAPI.getPackages();
+        const dict: Record<string, FlowPackage> = {};
         data.filter((item) => item.isActive).forEach((item) => {
-          dict[item.id] = toFlowPackage(item, 1, 0)
-        })
-        if (cancelled) return
-        setAllPackages(dict)
-        setPkg((current) => initialPlan && dict[initialPlan] ? initialPlan : current && dict[current] ? current : Object.keys(dict)[0] || "")
-        setLoadError("")
+          dict[item.id] = toFlowPackage(item, 1, 0);
+        });
+        if (cancelled) return;
+        setAllPackages(dict);
+        setPkg((current) => initialPlan && dict[initialPlan] ? initialPlan : current && dict[current] ? current : Object.keys(dict)[0] || "");
+        setLoadError("");
       } catch (error) {
-        if (!cancelled) setLoadError(error instanceof Error ? error.message : "KhÃ´ng thá»ƒ táº£i danh má»¥c gÃ³i.")
+        if (!cancelled) setLoadError(error instanceof Error ? error.message : "Không thể tải danh mục gói.");
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) setLoading(false);
       }
-    }
+    };
 
-    void loadPackages()
-    return () => { cancelled = true }
-  }, [initialPlan, initialPackage, initialDuration, initialDiscountPct])
+    void loadPackages();
+    return () => { cancelled = true; };
+  }, [initialPlan, initialPackage, initialDuration, initialDiscountPct]);
 
   if (loading) {
-    return <div className="flex h-screen w-full items-center justify-center bg-[#f8fafc]">Äang táº£i dá»¯ liá»‡u...</div>;
+    return <div className="flex h-screen w-full items-center justify-center bg-[#f8fafc]">Đang tải dữ liệu...</div>;
   }
 
-  const pkgData = allPackages[pkg] || Object.values(allPackages)[0]
+  const pkgData = allPackages[pkg] || Object.values(allPackages)[0];
 
   if (!loading && !pkgData) {
     return (
       <div role="alert" className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#f8fafc] p-6 text-center">
-        <p className="text-sm text-red-700">{loadError || "KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin gÃ³i táº­p."}</p>
+        <p className="text-sm text-red-700">{loadError || "Không tìm thấy thông tin gói tập."}</p>
         <button type="button" onClick={() => onExit("member")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white">
-          Quay láº¡i
+          Quay lại
         </button>
       </div>
-    )
+    );
   }
 
   async function goProcessing() {
@@ -135,27 +134,27 @@ export default function PaymentFlow({
     try {
       const duration: PackagePeriod = initialPackage
         ? initialDuration || 1
-        : period === "yearly" ? 12 : 1
+        : period === "yearly" ? 12 : 1;
       const checkout: PackageCheckout = await PackageAPI.checkout(
         pkgData.id,
         duration,
         method,
         formData.startDate || undefined,
-      )
-      window.localStorage.setItem("latestInvoiceId", checkout.invoiceId)
+      );
+      window.localStorage.setItem("latestInvoiceId", checkout.invoiceId);
       const checkedPackage = toFlowPackage(
         checkout.order.packageSnapshot,
         checkout.order.durationMonths,
         checkout.order.discountPct,
         checkout.order,
-      )
-      setAllPackages({ [checkout.order.packageId]: checkedPackage })
-      setPkg(checkout.order.packageId)
-      setPaymentError("")
+      );
+      setAllPackages({ [checkout.order.packageId]: checkedPackage });
+      setPkg(checkout.order.packageId);
+      setPaymentError("");
       setScreen("success");
     } catch (e) {
       console.error(e);
-      setPaymentError(e instanceof Error ? e.message : "Thanh toÃ¡n khÃ´ng thÃ nh cÃ´ng.")
+      setPaymentError(e instanceof Error ? e.message : "Thanh toán không thành công.");
       setScreen("failed");
     }
   }
@@ -176,7 +175,7 @@ export default function PaymentFlow({
         </div>
         <SiteFooter />
       </div>
-    )
+    );
   }
   if (screen === "member-info") {
     return (
@@ -190,15 +189,15 @@ export default function PaymentFlow({
             setFormData={setFormData}
             onNext={() => setScreen("payment-method")}
             onBack={() => {
-              if (initialPackage) onExit("member")
-              else if (initialPlan) onExit("pricing")
-              else setScreen("package")
+              if (initialPackage) onExit("member");
+              else if (initialPlan) onExit("pricing");
+              else setScreen("package");
             }}
           />
         </div>
         <SiteFooter />
       </div>
-    )
+    );
   }
   if (screen === "payment-method") {
     return (
@@ -217,7 +216,7 @@ export default function PaymentFlow({
         </div>
         <SiteFooter />
       </div>
-    )
+    );
   }
   if (screen === "otp") {
     return (
@@ -233,10 +232,10 @@ export default function PaymentFlow({
         </div>
         <SiteFooter />
       </div>
-    )
+    );
   }
   if (screen === "processing") {
-    return <ProcessingScreen />
+    return <ProcessingScreen />;
   }
   if (screen === "success") {
     return (
@@ -254,7 +253,7 @@ export default function PaymentFlow({
         </div>
         <SiteFooter />
       </div>
-    )
+    );
   }
   if (screen === "failed") {
     return (
@@ -269,16 +268,14 @@ export default function PaymentFlow({
         </div>
         <SiteFooter />
       </div>
-    )
+    );
   }
   if (screen === "invoice") {
-    return <InvoiceScreen onBack={() => setScreen("success")} />
+    return <InvoiceScreen onBack={() => setScreen("success")} />;
   }
   if (screen === "card") {
-    return <MembershipCardScreen onHome={onExit} />
+    return <MembershipCardScreen onHome={onExit} />;
   }
 
-  return null
+  return null;
 }
-
-

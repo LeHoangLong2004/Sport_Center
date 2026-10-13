@@ -2,17 +2,13 @@ import CTABanner from "./HomePageComponents/CTABanner";
 import HomePageFeatures from "./HomePageComponents/HomePageFeatures";
 import { HomePageStatsInline } from "./HomePageComponents/HomePageStatsInline";
 import { HomePageStatsStrip } from "./HomePageComponents/HomePageStatsStrip";
-import { StarRow } from "./HomePageComponents/StarRow";
-import {
-  classes,
-  imgAboutPhoto,
-  imgFlame,
-  imgHeroBg,
-  sports,
-  stats,
-  trainers,
-} from "./homePageData";
+import { HomePageAboutSection } from "./HomePageComponents/HomePageAboutSection";
+import HomePageSportsGrid from "./HomePageComponents/HomePageSportsGrid";
+import HomePageClassesSection from "./HomePageComponents/HomePageClassesSection";
+import HomePageTrainersSection from "./HomePageComponents/HomePageTrainersSection";
+import { imgHeroBg } from "./homePageData";
 import { FadeUp, FadeIn } from "../components/Motion";
+
 export default function HomePage() {
   return (
     <div
@@ -31,6 +27,7 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-slate-900/60 mix-blend-multiply" />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent" />
         </FadeIn>
+
         <FadeUp
           delay={0.2}
           className="relative z-10 flex flex-col items-center gap-[24px] max-w-[860px] text-center"
@@ -40,261 +37,65 @@ export default function HomePage() {
               TRANG CHỦ — SPORTCENTER ENERGY PLATFORM
             </p>
           </div>
+
           <h1 className="font-['Inter:Extra_Bold'] font-extrabold text-white text-[56px] leading-[1.1] m-0">
             Năng lượng cho mọi
             <br />
             chuyển động.
           </h1>
+
           <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[18px] leading-[1.6] max-w-[600px] m-0">
             Hệ sinh thái thể thao đa bộ môn chuẩn quốc tế — nơi công nghệ luyện
             tập, huấn luyện viên đẳng cấp và không gian sang trọng hội tụ.
           </p>
+
           <div className="flex gap-[14px] items-center mt-[4px]">
-            <div
-              className="bg-[#10b981] flex items-center gap-[8px] px-[28px] py-[14px] rounded-[10px] cursor-pointer shrink-0"
+            <button
+              type="button"
+              onClick={() => {
+                window.location.hash = "#pricing";
+              }}
+              className="bg-[#10b981] hover:bg-[#059669] flex items-center gap-[8px] px-[28px] py-[14px] rounded-[10px] cursor-pointer shrink-0 transition-colors border-0"
               data-name="btn-register"
             >
               <p className="font-['Inter:Extra_Bold'] font-extrabold text-white text-[15px] whitespace-nowrap">
                 Đăng ký tham quan miễn phí
               </p>
-            </div>
-            <div
-              className="border border-white border-opacity-40 flex items-center gap-[8px] px-[28px] py-[14px] rounded-[10px] cursor-pointer shrink-0"
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                window.location.hash = "#lophoc";
+              }}
+              className="border border-white/60 hover:bg-white/10 flex items-center gap-[8px] px-[28px] py-[14px] rounded-[10px] cursor-pointer shrink-0 transition-colors bg-transparent"
               data-name="btn-classes"
             >
               <p className="font-['Inter:Semi_Bold'] font-semibold text-white text-[15px] whitespace-nowrap">
                 Xem lớp học ngay →
               </p>
-            </div>
+            </button>
           </div>
         </FadeUp>
+
         <HomePageStatsInline />
       </section>
+
       <HomePageFeatures />
+
       {/* ── About / Facility ── */}
-      <section className="bg-[#f8fafc] flex gap-[60px] items-center px-[80px] py-[80px] w-full shrink-0">
-        <FadeUp
-          className="flex-1 min-w-0 rounded-[20px] overflow-hidden h-[420px] relative shrink-0 shadow-2xl"
-          style={{ maxWidth: "520px" }}
-        >
-          <img
-            alt="Không gian SportCenter"
-            className="absolute inset-0 w-full h-full object-cover max-w-none hover:scale-105 transition-transform duration-700"
-            src={imgAboutPhoto}
-          />
-        </FadeUp>
-        <FadeUp
-          delay={0.2}
-          className="flex-1 min-w-0 flex flex-col gap-[24px] items-start"
-        >
-          <div className="bg-[rgba(16,185,129,0.1)] border border-[#10b981] flex items-center px-[12px] py-[6px] rounded-[100px] shrink-0">
-            <p className="font-['Inter:Bold'] font-bold text-[#10b981] text-[11px] uppercase tracking-wider">
-              HỆ SINH THÁI THỂ THAO
-            </p>
-          </div>
-          <div className="flex flex-col gap-[4px]">
-            <h2 className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[34px] leading-[1.2] m-0">
-              Không gian luyện tập
-              <br />
-              chuẩn quốc tế
-            </h2>
-            <div className="bg-[#2563eb] h-[4px] rounded-[2px] w-[80px] mt-[10px]" />
-          </div>
-          <p className="font-['Inter:Regular'] font-normal text-[#1e293b] text-[16px] leading-[1.7] m-0">
-            Được thành lập từ năm 2018, SportCenter sở hữu hơn 5.000 m² không
-            gian luyện tập chuyên biệt với thiết bị Technogym thế hệ mới nhất,
-            hồ bơi trị liệu tiêu chuẩn Olympic và đội ngũ hơn 48 huấn luyện viên
-            được chứng nhận quốc tế.
-          </p>
-          <p className="font-['Inter:Regular'] font-normal text-[#1e293b] text-[16px] leading-[1.7] m-0">
-            Mỗi hội viên được tiếp cận giáo án cá nhân hoá qua nền tảng Move AI
-            — từ phân tích InBody, lập kế hoạch dinh dưỡng đến theo dõi tiến
-            trình theo thời gian thực.
-          </p>
-          <div className="grid grid-cols-2 gap-[16px] w-full mt-[4px]">
-            {[
-              ["5.000 m²", "Tổng diện tích"],
-              ["48+", "HLV chứng chỉ quốc tế"],
-              ["5 khu vực", "Không gian chuyên biệt"],
-              ["24/7", "Hỗ trợ trực tuyến"],
-            ].map(([val, lbl]) => (
-              <div
-                key={lbl}
-                className="bg-white border border-[#e2e8f0] flex flex-col gap-[4px] p-[16px] rounded-[12px]"
-              >
-                <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#10b981] text-[22px] leading-none m-0">
-                  {val}
-                </p>
-                <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[13px] m-0">
-                  {lbl}
-                </p>
-              </div>
-            ))}
-          </div>
-        </FadeUp>
-      </section>
+      <HomePageAboutSection />
+
       {/* ── Sport categories ── */}
-      <section className="bg-white w-full px-[80px] py-[80px] shrink-0">
-        <FadeUp className="flex flex-col gap-[12px] items-center text-center mb-[48px]">
-          <div className="bg-[rgba(37,99,235,0.08)] border border-[#2563eb] flex items-center px-[12px] py-[6px] rounded-[100px] shrink-0">
-            <p className="font-['Inter:Bold'] font-bold text-[#2563eb] text-[11px] uppercase tracking-wider">
-              12 BỘ MÔN
-            </p>
-          </div>
-          <h2 className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[36px] m-0 leading-[1.2]">
-            Khám phá bộ môn tại SportCenter
-          </h2>
-          <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[16px] max-w-[520px] m-0">
-            Từ gym chuẩn quốc tế, hồ bơi trị liệu đến yoga, boxing và bóng rổ —
-            mọi đam mê thể thao đều có chỗ tại đây.
-          </p>
-        </FadeUp>
-        <div className="grid grid-cols-3 gap-[20px]">
-          {sports.map(({ img, label }, index) => (
-            <FadeUp
-              delay={index * 0.1}
-              key={label}
-              className="relative rounded-[16px] overflow-hidden h-[220px] cursor-pointer group shadow-sm hover:shadow-xl transition-all duration-300"
-            >
-              <img
-                alt={label}
-                className="absolute inset-0 w-full h-full object-cover max-w-none transition-transform duration-500 group-hover:scale-105"
-                src={img}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[rgba(11,31,58,0.9)] via-[rgba(11,31,58,0.3)] to-transparent" />
-              <div className="absolute bottom-0 left-0 p-[20px] transform transition-transform duration-300 group-hover:-translate-y-2">
-                <p className="font-['Inter:Bold'] font-bold text-white text-[17px] leading-none">
-                  {label}
-                </p>
-                <p className="font-['Inter:Regular'] font-normal text-[#10b981] text-[13px] mt-[4px] opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  Khám phá →
-                </p>
-              </div>
-            </FadeUp>
-          ))}
-        </div>
-      </section>
+      <HomePageSportsGrid />
+
       {/* ── Featured Classes ── */}
-      <section className="bg-[#f8fafc] w-full px-[80px] py-[80px] shrink-0">
-        <FadeUp className="flex items-end justify-between mb-[40px]">
-          <div className="flex flex-col gap-[12px]">
-            <div className="bg-[rgba(16,185,129,0.1)] border border-[#10b981] flex items-center px-[12px] py-[6px] rounded-[100px] shrink-0 w-fit">
-              <p className="font-['Inter:Bold'] font-bold text-[#10b981] text-[11px] uppercase tracking-wider">
-                LỊCH HÔM NAY
-              </p>
-            </div>
-            <h2 className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[36px] m-0 leading-[1.2]">
-              Lớp nổi bật
-            </h2>
-          </div>
-          <div
-            className="border border-[#e2e8f0] flex items-center px-[18px] py-[10px] rounded-[8px] cursor-pointer shrink-0 whitespace-nowrap bg-white hover:bg-slate-50 transition-colors"
-            data-name="btn-classes"
-          >
-            <p className="font-['Inter:Semi_Bold'] font-semibold text-[#1e293b] text-[14px]">
-              Xem tất cả lớp học →
-            </p>
-          </div>
-        </FadeUp>
-        <div className="grid grid-cols-4 gap-[20px]">
-          {classes.map(({ img, name, coach, time, slots, tag }, index) => (
-            <FadeUp
-              delay={index * 0.1}
-              key={name}
-              className="bg-white border border-[#e2e8f0] rounded-[16px] overflow-hidden flex flex-col hover:border-[#10b981] hover:-translate-y-1 hover:shadow-lg transition-all duration-300"
-            >
-              <div className="relative h-[180px]">
-                <img
-                  alt={name}
-                  className="absolute inset-0 w-full h-full object-cover max-w-none"
-                  src={img}
-                />
-                {tag && (
-                  <div
-                    className={`absolute top-[12px] left-[12px] px-[8px] py-[4px] rounded-[6px] ${
-                      tag === "HOT"
-                        ? "bg-[#f97316]"
-                        : tag === "SẮP ĐẦY"
-                          ? "bg-[#dc2626]"
-                          : "bg-[#10b981]"
-                    }`}
-                  >
-                    <p className="font-['Inter:Bold'] font-bold text-white text-[11px]">
-                      {tag}
-                    </p>
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-col gap-[10px] p-[18px]">
-                <p className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[15px] leading-[1.3] m-0">
-                  {name}
-                </p>
-                <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[13px] m-0">
-                  {coach}
-                </p>
-                <div className="flex items-center justify-between pt-[4px] border-t border-[#f1f5f9]">
-                  <p className="font-['Inter:Semi_Bold'] font-semibold text-[#0f172a] text-[13px] m-0">
-                    {time}
-                  </p>
-                  <p className="font-['Inter:Regular'] font-normal text-[#10b981] text-[12px] m-0">
-                    {slots}
-                  </p>
-                </div>
-              </div>
-            </FadeUp>
-          ))}
-        </div>
-      </section>
+      <HomePageClassesSection />
+
       <HomePageStatsStrip />
+
       {/* ── Trainers ── */}
-      <section className="bg-white w-full px-[80px] py-[80px] shrink-0">
-        <FadeUp className="flex flex-col gap-[12px] items-center text-center mb-[48px]">
-          <div className="bg-[rgba(37,99,235,0.08)] border border-[#2563eb] flex items-center px-[12px] py-[6px] rounded-[100px] shrink-0">
-            <p className="font-['Inter:Bold'] font-bold text-[#2563eb] text-[11px] uppercase tracking-wider">
-              ĐỘI NGŨ CHUYÊN GIA
-            </p>
-          </div>
-          <h2 className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[36px] m-0 leading-[1.2]">
-            Chứng nhận huấn luyện viên
-          </h2>
-          <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[16px] max-w-[520px] m-0">
-            Đội ngũ hơn 48 HLV được chứng nhận quốc tế — ACE, ISSA, ACSM — với
-            kinh nghiệm từ 5 đến 15 năm.
-          </p>
-        </FadeUp>
-        <div className="grid grid-cols-4 gap-[24px]">
-          {trainers.map(({ img, name, specialty, exp, rating }, index) => (
-            <FadeUp
-              delay={index * 0.1}
-              key={name}
-              className="border border-[#e2e8f0] flex flex-col gap-[16px] p-[24px] rounded-[20px] items-center text-center hover:border-[#10b981] hover:-translate-y-1 hover:shadow-lg transition-all duration-300"
-            >
-              <div className="size-[96px] rounded-full overflow-hidden shrink-0 shadow-md">
-                <img
-                  alt={name}
-                  className="w-full h-full object-cover"
-                  src={img}
-                />
-              </div>
-              <div className="flex flex-col gap-[4px] items-center">
-                <p className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[16px] m-0">
-                  {name}
-                </p>
-                <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[13px] m-0">
-                  {specialty}
-                </p>
-              </div>
-              <StarRow rating={rating} />
-              <div className="flex gap-[8px] items-center">
-                <img alt="" src={imgFlame} style={{ width: 14, height: 14 }} />
-                <p className="font-['Inter:Semi_Bold'] font-semibold text-[#1e293b] text-[13px] m-0">
-                  {exp} kinh nghiệm
-                </p>
-              </div>
-            </FadeUp>
-          ))}
-        </div>
-      </section>
+      <HomePageTrainersSection />
+
       <CTABanner />
     </div>
   );

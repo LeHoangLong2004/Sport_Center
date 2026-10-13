@@ -120,6 +120,16 @@ using (var scope = app.Services.CreateScope())
             );
             GRANT ALL ON public.appointments TO anon, authenticated;
 
+            CREATE TABLE IF NOT EXISTS gate_checkins (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                member_id UUID NOT NULL,
+                branch_id UUID,
+                member_package_id UUID,
+                check_in_time TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                receptionist_id UUID
+            );
+            GRANT ALL ON public.gate_checkins TO anon, authenticated;
+
             INSERT INTO sports (id, name, description) VALUES 
             ('11111111-1111-1111-1111-111111111111', 'Yoga', 'Lớp học Yoga thư giãn'),
             ('22222222-2222-2222-2222-222222222222', 'Bơi lội', 'Lớp học bơi căn bản')
