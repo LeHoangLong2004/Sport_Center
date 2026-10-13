@@ -1,7 +1,6 @@
 const assetPathPrefix = "/assets/site/5218";
 const imgRectangle = `${assetPathPrefix}/de597.png`;
 const imgRectangle1 = `${assetPathPrefix}/6b20b.png`;
-
 export default function ChiTietTinTucRedesign() {
   return (
     <div className="bg-[#f8fafc] flex flex-col items-start w-full min-h-screen">
@@ -23,7 +22,6 @@ export default function ChiTietTinTucRedesign() {
           Chi tiết sự kiện bơi lội 2025
         </p>
       </div>
-
       {/* Article Layout */}
       <div className="flex gap-[48px] items-start pb-[64px] px-[80px] w-full">
         {/* Main Article */}
@@ -32,13 +30,11 @@ export default function ChiTietTinTucRedesign() {
           <span className="bg-[#fef2f2] font-['Inter:Bold'] font-bold text-[#ef4444] text-[12px] px-[10px] py-[4px] rounded-full">
             GIẢI ĐẤU THƯỜNG NIÊN
           </span>
-
           {/* Title */}
           <h1 className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[32px] leading-[1.3] w-full">
             Giải Bơi Lội Mùa Hè 2025 tại SportCenter — Cơ hội khẳng định tài
             năng bứt phá
           </h1>
-
           {/* Meta: author, date, reading time */}
           <div className="flex gap-[24px] items-center w-full">
             <div className="flex gap-[6px] items-center">
@@ -60,7 +56,6 @@ export default function ChiTietTinTucRedesign() {
               </p>
             </div>
           </div>
-
           {/* Hero image */}
           <div className="h-[400px] w-full overflow-hidden rounded-[12px]">
             <img
@@ -69,7 +64,6 @@ export default function ChiTietTinTucRedesign() {
               src={imgRectangle}
             />
           </div>
-
           {/* Lead paragraph */}
           <p className="font-['Inter:Semi_Bold'] font-semibold text-[#1e293b] text-[16px] leading-[1.6] w-full">
             Chào đón mùa hè rực lửa, giải bơi lội thường niên SportCenter
@@ -77,7 +71,6 @@ export default function ChiTietTinTucRedesign() {
             thể thao chuyên nghiệp được mong chờ nhất trong năm của toàn bộ hệ
             sinh thái của chúng tôi.
           </p>
-
           {/* Body paragraph */}
           <p className="font-['Inter:Regular'] font-normal text-[#334155] text-[15px] leading-[1.6] w-full">
             Với sứ mệnh truyền cảm hứng về lối sống tích cực, bứt phá mọi giới
@@ -85,7 +78,6 @@ export default function ChiTietTinTucRedesign() {
             màn tranh tài nghẹt thở, những cú chạm đích ấn tượng và năng lượng
             rực cháy từ các vận động viên phong trào tại toàn bộ các chi nhánh.
           </p>
-
           {/* Section: race categories */}
           <div className="flex flex-col gap-[12px] items-start w-full">
             <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[20px]">
@@ -97,7 +89,6 @@ export default function ChiTietTinTucRedesign() {
               tính cạnh tranh lành mạnh và an toàn cao:
             </p>
           </div>
-
           {/* Race categories list */}
           <div className="bg-[#f8fafc] flex flex-col gap-[12px] items-start p-[20px] rounded-[8px] w-full text-[15px]">
             <p className="text-[#0f172a]">
@@ -126,7 +117,6 @@ export default function ChiTietTinTucRedesign() {
               </span>
             </p>
           </div>
-
           {/* Secondary image */}
           <div className="h-[260px] w-full overflow-hidden rounded-[8px]">
             <img
@@ -135,7 +125,6 @@ export default function ChiTietTinTucRedesign() {
               src={imgRectangle1}
             />
           </div>
-
           {/* Pull quote */}
           <blockquote className="border-l-4 border-[#2563eb] pl-[20px] w-full">
             <p className="font-['Inter:Semi_Bold'] font-semibold text-[#1e293b] text-[16px] leading-[1.6]">
@@ -145,10 +134,8 @@ export default function ChiTietTinTucRedesign() {
               bậc của học viên qua giải đấu này." — HLV. Alexander Trần chia sẻ.
             </p>
           </blockquote>
-
           {/* Divider */}
           <div className="border-t border-[#e2e8f0] w-full" />
-
           {/* Share */}
           <div className="flex gap-[12px] items-center w-full">
             <p className="font-['Inter:Semi_Bold'] font-semibold text-[#94a3b8] text-[14px]">
@@ -164,7 +151,6 @@ export default function ChiTietTinTucRedesign() {
             ))}
           </div>
         </article>
-
         {/* Sidebar */}
         <aside className="flex flex-col gap-[32px] items-start flex-1 min-w-0 pt-0">
           {/* Related articles */}
@@ -201,7 +187,6 @@ export default function ChiTietTinTucRedesign() {
               ))}
             </div>
           </div>
-
           {/* Upcoming events */}
           <div className="bg-white flex flex-col gap-[20px] items-start p-[24px] rounded-[16px] shadow-[0px_4px_6px_rgba(0,0,0,0.03)] w-full">
             <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[18px]">
@@ -239,7 +224,6 @@ export default function ChiTietTinTucRedesign() {
               ))}
             </div>
           </div>
-
           {/* CTA card */}
           <div className="bg-[#0f172a] flex flex-col gap-[24px] items-center overflow-hidden p-[32px] rounded-[16px] w-full">
             <div className="flex flex-col gap-[8px] items-center text-center w-full">
@@ -259,13 +243,11 @@ export default function ChiTietTinTucRedesign() {
           </div>
         </aside>
       </div>
-
       {/* Comment Section */}
       <section className="bg-white flex flex-col gap-[32px] items-start pb-[80px] pt-[64px] px-[80px] w-full">
         <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[24px]">
           Bình luận &amp; Phản hồi (12)
         </p>
-
         {/* Comment form */}
         <div className="flex flex-col gap-[16px] items-start w-full">
           <textarea

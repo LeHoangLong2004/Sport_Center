@@ -75,11 +75,12 @@ function AdminPortal({
         if (role === "admin") {
           window.location.hash = "dashboard"
           setStep("dashboard")
-        }
-        else if (role === "coach") {
+        } else if (role === "coach") {
           window.location.hash = "coach-portal"
+          window.location.reload()
         } else if (role === "receptionist") {
           window.location.hash = "receptionist"
+          window.location.reload()
         } else {
           window.location.hash = "member"
           setStep("member")
