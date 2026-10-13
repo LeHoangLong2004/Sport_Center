@@ -1,21 +1,18 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import type { CoachScreen } from "../types";
 import { CoachAPI } from "../services/api";
-import type { MockSession, MockMember, AttendanceRecord, MockCurriculum, AssessmentRecord } from "../services/api";
+import type { MockSession, MockMember, AttendanceRecord, MockCurriculum } from "../services/api";
 import {
   ArrowLeft,
   Calendar,
   Clock,
   MapPin,
   Users,
-  CheckCircle2,
-  AlertCircle,
-  Dumbbell,
-  BookOpen,
-  Send,
   UserCheck,
-  ChevronRight
+  BookOpen,
 } from "lucide-react";
+import { ClassRosterList } from "./class-detail/ClassRosterList";
+import { ClassCurriculumCard } from "./class-detail/ClassCurriculumCard";
 
 interface Props {
   sessionId: string | null;
@@ -27,22 +24,6 @@ const STATUS_STYLE: Record<string, string> = {
   "đang diễn ra": "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800",
   "hoàn thành":   "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700",
   "đã hủy":       "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300 border border-red-200 dark:border-red-800",
-};
-
-const ATTENDANCE_STYLE: Record<string, string> = {
-  "chưa điểm danh": "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
-  attended:          "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800",
-  no_show:           "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300 border border-red-200 dark:border-red-800",
-  late:              "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800",
-  excused:           "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800",
-};
-
-const ATTENDANCE_LABEL: Record<string, string> = {
-  "chưa điểm danh": "Chưa điểm danh",
-  attended:          "Có mặt",
-  no_show:           "Vắng",
-  late:              "Đi trễ",
-  excused:           "Có phép",
 };
 
 export default function CoachClassDetail({ sessionId, navigateTo }: Props) {
@@ -66,7 +47,6 @@ export default function CoachClassDetail({ sessionId, navigateTo }: Props) {
       .then(([s, sessionMems, att, cur, allMems]) => {
         setSession(s);
 
-        // Ensure realistic roster of members
         if (sessionMems && sessionMems.length >= 4) {
           setMembers(sessionMems);
         } else if (allMems && allMems.length > 0) {
@@ -81,7 +61,6 @@ export default function CoachClassDetail({ sessionId, navigateTo }: Props) {
         if (matchedCur.length > 0) {
           setCurricula(matchedCur);
         } else {
-          // Provide default realistic curriculum
           setCurricula([
             {
               id: "cur-default",
@@ -139,7 +118,7 @@ export default function CoachClassDetail({ sessionId, navigateTo }: Props) {
 
   return (
     <div className="flex flex-col gap-6 max-w-6xl mx-auto pb-16 animate-in fade-in duration-300">
-      {/* Top Breadcrumb */}
+      {/* Top back navigation */}
       <div className="flex items-center justify-between">
         <button
           type="button"
@@ -147,7 +126,7 @@ export default function CoachClassDetail({ sessionId, navigateTo }: Props) {
           onClick={() => navigateTo("schedule")}
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Quay lại lịch dạy</span>
+          <span>Quay lại Lịch dạy</span>
         </button>
 
         <span className="text-xs text-slate-400">
@@ -155,40 +134,23 @@ export default function CoachClassDetail({ sessionId, navigateTo }: Props) {
         </span>
       </div>
 
-      {/* Warning banner if cancelled */}
-      {isCancelled && (
-        <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-700 dark:text-red-300 font-semibold flex items-center gap-3 text-sm">
-          <AlertCircle className="w-5 h-5 shrink-0" />
-          <span>Buổi học này đã bị hủy. Toàn bộ lịch sử điểm danh và giáo án đã được khóa thao tác.</span>
-        </div>
-      )}
-
-      {/* Hero Class Detail Header Card */}
+      {/* Hero Class Detail Card */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
                 {session.className}
               </h1>
-              <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${STATUS_STYLE[session.status]}`}>
-                {session.status}
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${STATUS_STYLE[session.status] || ""}`}>
+                {session.status.toUpperCase()}
               </span>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                {session.sport}
+                {session.sport} • {session.level}
               </span>
-              {session.level && (
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
-                  {session.level}
-                </span>
-              )}
             </div>
 
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Huấn luyện viên phụ trách: <strong className="text-slate-700 dark:text-slate-200">{session.coachName || "HLV Enam"}</strong>
-            </p>
-
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-2 text-xs text-slate-600 dark:text-slate-300">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-slate-500 dark:text-slate-400">
               <span className="flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
                 {session.date}
@@ -208,7 +170,6 @@ export default function CoachClassDetail({ sessionId, navigateTo }: Props) {
             </div>
           </div>
 
-          {/* Quick Actions */}
           {!isCancelled && (
             <div className="flex items-center gap-2.5 self-start md:self-auto flex-wrap">
               <button
@@ -234,104 +195,17 @@ export default function CoachClassDetail({ sessionId, navigateTo }: Props) {
 
       {/* Main Grid: Left = Registered Roster | Right = Workout Plan */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Học viên trong ca dạy */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-xs">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-slate-500" />
-                <h2 className="font-bold text-sm text-slate-900 dark:text-white">Danh sách học viên ca dạy</h2>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 font-semibold text-slate-600 dark:text-slate-300">
-                  {members.length} học viên
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => navigateTo("attendance", { sessionId: session.id })}
-                className="text-xs font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400"
-              >
-                Vào bảng điểm danh →
-              </button>
-            </div>
-
-            <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
-              {members.map((m, index) => {
-                const att = attendanceRecords.find((r) => r.memberId === m.id);
-                const attStatus = att?.status || (index === 0 ? "attended" : index === 1 ? "late" : index === 2 ? "attended" : "chưa điểm danh");
-                return (
-                  <div
-                    key={m.id}
-                    onClick={() => navigateTo("member-profile", { memberId: m.id })}
-                    className="p-4 flex items-center justify-between gap-4 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 cursor-pointer transition-colors group"
-                  >
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      <img
-                        src={m.avatar}
-                        alt={m.name}
-                        className="w-10 h-10 rounded-full object-cover shrink-0 border border-slate-200 dark:border-slate-700"
-                      />
-                      <div className="min-w-0">
-                        <h3 className="font-semibold text-xs text-slate-900 dark:text-white group-hover:text-orange-600 transition-colors truncate">
-                          {m.name}
-                        </h3>
-                        <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-400">
-                          <span className="font-mono text-slate-600 dark:text-slate-300 font-medium">{m.code}</span>
-                          <span>•</span>
-                          <span>{m.phone || "0901234568"}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-medium ${ATTENDANCE_STYLE[attStatus]}`}>
-                        {ATTENDANCE_LABEL[attStatus]}
-                      </span>
-                      <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-600 dark:group-hover:text-slate-200 transition-colors" />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <ClassRosterList
+            sessionId={session.id}
+            members={members}
+            attendanceRecords={attendanceRecords}
+            navigateTo={navigateTo}
+          />
         </div>
 
-        {/* Right Column: Giáo án chi tiết của ca này */}
         <div className="space-y-6">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-xs">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2">
-                <Dumbbell className="w-4 h-4 text-orange-500" />
-                <h2 className="font-bold text-sm text-slate-900 dark:text-white">Giáo án của ca dạy</h2>
-              </div>
-              <span className="text-xs font-semibold text-emerald-600">Đã giao</span>
-            </div>
-
-            {curricula.map((cur) => (
-              <div key={cur.id} className="mt-4 space-y-3">
-                <div>
-                  <h3 className="font-bold text-xs text-slate-800 dark:text-slate-200">{cur.name}</h3>
-                  <p className="text-[11px] text-slate-400 mt-0.5">{cur.description || "Tập trung chuẩn form và sức bền tim mạch."}</p>
-                </div>
-
-                <div className="space-y-2 pt-2">
-                  {cur.exercises.map((ex, idx) => (
-                    <div key={idx} className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-xs">
-                      <div className="font-semibold text-slate-800 dark:text-slate-200">{idx + 1}. {ex.name}</div>
-                      <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                        <span>Khối lượng: <strong className="text-slate-700 dark:text-slate-300">{ex.reps}</strong></span>
-                        <span className="text-orange-600 dark:text-orange-400 font-medium">Nghỉ: {ex.rest}</span>
-                      </div>
-                      {ex.note && (
-                        <div className="text-[10px] text-slate-400 italic mt-1 pt-1 border-t border-slate-200/40 dark:border-slate-700/40">
-                          * {ex.note}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+          <ClassCurriculumCard curricula={curricula} />
         </div>
       </div>
     </div>

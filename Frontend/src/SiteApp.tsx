@@ -56,8 +56,9 @@ const labelRoutes: Record<string, SiteRoute | "admin" | "register"> = {
 }
 
 function routeFromHash(): SiteRoute {
-  const hash = window.location.hash.replace(/^#\/?/, "")
-  return (hash in pages ? hash : "home") as SiteRoute
+  const rawHash = window.location.hash.replace(/^#\/?/, "")
+  const path = rawHash.split("?")[0]
+  return (path in pages ? path : "home") as SiteRoute
 }
 
 export default function SiteApp({

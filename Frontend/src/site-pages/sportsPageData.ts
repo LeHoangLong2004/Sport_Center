@@ -46,6 +46,7 @@ export const filterTags = [
 
 export const sportsTop = [
   {
+    id: "boi-loi",
     img: imgSportSwim,
     badge: "12 lớp tuần này",
     icon: imgDroplets,
@@ -54,6 +55,7 @@ export const sportsTop = [
     stat: "Đốt 500-750 kcal/buổi • Mọi trình độ",
   },
   {
+    id: "yoga",
     img: imgSportYoga,
     badge: "16 lớp tuần này",
     icon: imgCircleX,
@@ -62,6 +64,7 @@ export const sportsTop = [
     stat: "Đốt 300-500 kcal/buổi • Mọi trình độ",
   },
   {
+    id: "gym",
     img: imgSportHiit,
     badge: "20 lớp tuần này",
     icon: imgDumbbell,
@@ -73,6 +76,7 @@ export const sportsTop = [
 
 export const sportsBottom = [
   {
+    id: "boxing",
     img: imgSportBoxing,
     badge: "15 lớp tuần này",
     icon: imgCircleX,
@@ -81,6 +85,7 @@ export const sportsBottom = [
     stat: "Đốt 700-1000 kcal/buổi • Có lớp cơ bản",
   },
   {
+    id: "bong-ro",
     img: imgSportBasket,
     badge: "8 lớp tuần này",
     icon: imgCircleX,

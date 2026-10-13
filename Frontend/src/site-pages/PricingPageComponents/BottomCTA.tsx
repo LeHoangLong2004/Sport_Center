@@ -26,6 +26,7 @@ export default function BottomCTA() {
               className="bg-[#1e293b] text-white placeholder-[#64748b] font-['Inter:Regular'] font-normal text-[14px] px-[18px] py-[14px] rounded-[10px] flex-1 outline-none border border-[#1e293b] focus:border-[#2563eb] transition-colors"
             />
             <button
+              type="button"
               data-name="btn-submit"
               className="bg-[#10b981] text-white font-['Inter:Bold'] font-bold text-[14px] px-[24px] py-[14px] rounded-[10px] whitespace-nowrap hover:bg-[#059669] transition-colors cursor-pointer shrink-0"
             >

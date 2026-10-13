@@ -5,7 +5,7 @@ using SmartGym.Domain.Enums;
 
 namespace SmartGym.Infrastructure.Persistence.Supabase.Models;
 
-[Table("package_plans")]
+[Table("package_sports")]
 public class PackagePlanModel : BaseModel
 {
     [PrimaryKey("id", false)]

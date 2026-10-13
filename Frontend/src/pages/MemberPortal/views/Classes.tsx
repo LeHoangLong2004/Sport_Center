@@ -5,7 +5,6 @@ import { CancelBookingModal, NotificationModal } from '../components/ClassesModa
 import { ClassCard } from '../components/ClassCard';
 import { MyBookingsPanel } from './MyBookingsPanel';
 
-
 export function Classes({
   onNavigate,
   onSelect,
@@ -23,7 +22,6 @@ export function Classes({
   const [myBookings, setMyBookings] = useState<any[]>([]);
   const [loadingMyBookings, setLoadingMyBookings] = useState(false);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
-
   const fetchMyBookings = () => {
     setLoadingMyBookings(true);
     const token = localStorage.getItem("token");
@@ -39,7 +37,6 @@ export function Classes({
       .catch(e => console.error("Error fetching my bookings:", e))
       .finally(() => setLoadingMyBookings(false));
   };
-
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [classToCancel, setClassToCancel] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ show: boolean; type: 'success' | 'error'; message: string }>({

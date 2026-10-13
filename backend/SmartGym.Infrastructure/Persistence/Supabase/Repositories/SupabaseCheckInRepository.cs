@@ -21,15 +21,10 @@ public sealed class SupabaseCheckInRepository : ICheckInRepository
         CheckInResult result
     )
     {
-        // Currently, CheckInResult is not stored in DB based on the new schema, it just inserts if successful.
-        // We will insert anyway for logging, assuming only Approved checkins get recorded in gate_checkins table.
-        // If Denied, we just return the object but don't insert.
-
         var record = new CheckInRecord(
             Guid.NewGuid(),
             memberId,
-            Guid.Empty /* BranchId handled elsewhere normally, fake for now */
-            ,
+            Guid.Empty,
             Guid.Empty,
             checkInTime,
             null
@@ -37,31 +32,26 @@ public sealed class SupabaseCheckInRepository : ICheckInRepository
 
         if (result == CheckInResult.Approved)
         {
-            // We need to fetch an active member package for the member to fill the member_package_id.
+            // Lấy subscription đang ACTIVE của member
             var activePkg = await _client
                 .From<MemberPackageModel>()
                 .Where(p => p.MemberId == memberId && p.Status == "ACTIVE")
                 .Get();
-            var pkgId = activePkg.Models.FirstOrDefault()?.Id ?? Guid.Empty;
-
-            // Fetch a branch id (fake it with the user's branch id)
-            var user = await _client.From<UserModel>().Where(u => u.Id == memberId).Single();
-            var branchId = user?.BranchId ?? Guid.Empty;
+            var pkgId = activePkg.Models.FirstOrDefault()?.Id;
 
             var model = new GateCheckinModel
             {
                 Id = record.Id,
                 MemberId = memberId,
-                BranchId = branchId,
+                BranchId = null,       // facility_id — để null nếu không xác định được
                 MemberPackageId = pkgId,
                 CheckInTime = checkInTime,
-                ReceptionistId = null, // Could be populated from current user Context
+                Method = "manual",
             };
 
             await _client.From<GateCheckinModel>().Insert(model);
 
-            // Re-create with correct IDs to return
-            record = new CheckInRecord(record.Id, memberId, branchId, pkgId, checkInTime, null);
+            record = new CheckInRecord(record.Id, memberId, Guid.Empty, pkgId ?? Guid.Empty, checkInTime, null);
         }
 
         return record;
@@ -69,39 +59,60 @@ public sealed class SupabaseCheckInRepository : ICheckInRepository
 
     public async Task<IReadOnlyList<CheckInRecord>> GetByMemberAsync(Guid memberId)
     {
-        var response = await _client
-            .From<GateCheckinModel>()
-            .Where(x => x.MemberId == memberId)
-            .Get();
+        try
+        {
+            var response = await _client
+                .From<GateCheckinModel>()
+                .Where(x => x.MemberId == memberId)
+                .Get();
 
-        return response
-            .Models.Select(m => m.ToDomain())
-            .OrderByDescending(r => r.CheckInTime)
-            .ToList();
+            return response
+                .Models.Select(m => m.ToDomain())
+                .OrderByDescending(r => r.CheckInTime)
+                .ToList();
+        }
+        catch
+        {
+            return Array.Empty<CheckInRecord>();
+        }
     }
 
     public async Task<IReadOnlyList<CheckInRecord>> GetAllAsync()
     {
-        var response = await _client.From<GateCheckinModel>().Get();
-        return response
-            .Models.Select(m => m.ToDomain())
-            .OrderByDescending(r => r.CheckInTime)
-            .ToList();
+        try
+        {
+            var response = await _client.From<GateCheckinModel>().Get();
+            return response
+                .Models.Select(m => m.ToDomain())
+                .OrderByDescending(r => r.CheckInTime)
+                .ToList();
+        }
+        catch
+        {
+            return Array.Empty<CheckInRecord>();
+        }
     }
 
     public async Task<IReadOnlyList<CheckInRecord>> GetTodayAsync()
     {
-        var today = DateTime.UtcNow.Date;
-        var endOfToday = today.AddDays(1);
+        try
+        {
+            var today = DateTime.UtcNow.Date;
+            var endOfToday = today.AddDays(1);
 
-        var response = await _client
-            .From<GateCheckinModel>()
-            .Where(x => x.CheckInTime >= today && x.CheckInTime < endOfToday)
-            .Get();
+            var response = await _client
+                .From<GateCheckinModel>()
+                .Where(x => x.CheckInTime >= today && x.CheckInTime < endOfToday)
+                .Get();
 
-        return response
-            .Models.Select(m => m.ToDomain())
-            .OrderByDescending(r => r.CheckInTime)
-            .ToList();
+            return response
+                .Models.Select(m => m.ToDomain())
+                .OrderByDescending(r => r.CheckInTime)
+                .ToList();
+        }
+        catch
+        {
+            return Array.Empty<CheckInRecord>();
+        }
     }
 }

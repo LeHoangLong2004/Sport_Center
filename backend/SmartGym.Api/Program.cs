@@ -248,6 +248,8 @@ app.UseSwaggerUI(options =>
 app.MapLegacyCatalogEndpoints();
 app.MapLegacyClassEndpoints();
 app.MapLegacyScheduleEndpoints();
+app.MapProductEndpoints();
+app.MapAppointmentEndpoints();
 
 app.MapGet("/", () => Results.Redirect("/swagger"));
 

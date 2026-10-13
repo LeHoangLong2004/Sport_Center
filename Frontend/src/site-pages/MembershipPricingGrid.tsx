@@ -6,15 +6,23 @@ import {
 
 interface MembershipPricingGridProps {
   packages: any[];
-  billing: "monthly" | "6month" | "annual";
-  formatPrice: (base: number) => string;
+  billing: "monthly" | "3month" | "6month" | "annual";
+  formatMonthlyPrice: (pkg: any) => string;
+  formatTotalPrice: (pkg: any) => string;
 }
 
 export function MembershipPricingGrid({
   packages,
   billing,
-  formatPrice,
+  formatMonthlyPrice,
+  formatTotalPrice,
 }: MembershipPricingGridProps) {
+  const isMultipleMonths = billing !== "monthly";
+  const periodText = 
+    billing === "annual" ? "12 tháng" :
+    billing === "6month" ? "6 tháng" :
+    billing === "3month" ? "3 tháng" : "1 tháng";
+
   return (
     <>
       {/* Pricing Grid */}
@@ -36,7 +44,11 @@ export function MembershipPricingGrid({
               .map((pkg, idx) => (
                 <div
                   key={pkg.id}
-                  className={`bg-white ${idx === 1 ? "border-2 border-[#2563eb] shadow-lg relative" : "border border-[#e2e8f0]"} rounded-[16px] flex flex-col gap-[24px] p-[32px] flex-1 min-w-[300px]`}
+                  className={`bg-white ${
+                    idx === 1
+                      ? "border-2 border-[#2563eb] shadow-lg relative"
+                      : "border border-[#e2e8f0]"
+                  } rounded-[16px] flex flex-col gap-[24px] p-[32px] flex-1 min-w-[300px]`}
                 >
                   {idx === 1 && (
                     <div className="absolute -top-[14px] left-1/2 -translate-x-1/2">
@@ -53,19 +65,35 @@ export function MembershipPricingGrid({
                       {pkg.tagline || pkg.description || "Gói hội viên cao cấp"}
                     </p>
                   </div>
-                  <div className="flex flex-col gap-[4px]">
-                    <p
-                      className={`font-['Inter:Extra_Bold'] font-extrabold ${idx === 1 ? "text-[#2563eb]" : "text-[#0f172a]"} text-[36px] leading-none`}
-                    >
-                      {formatPrice(
-                        billing === "annual"
-                          ? pkg.yearlyPrice || pkg.monthlyPrice * 12
-                          : pkg.monthlyPrice || 0,
-                      )}
-                    </p>
-                    <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[13px]">
-                      /{billing === "annual" ? "năm" : "tháng"}
-                    </p>
+                  <div className="flex flex-col gap-[10px]">
+                    <div className="flex items-baseline gap-[6px]">
+                      <p
+                        className={`font-['Inter:Extra_Bold'] font-extrabold ${
+                          idx === 1 ? "text-[#2563eb]" : "text-[#0f172a]"
+                        } text-[36px] leading-none`}
+                      >
+                        {formatMonthlyPrice(pkg)}
+                      </p>
+                      <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[13px]">
+                        /tháng
+                      </p>
+                    </div>
+
+                    {isMultipleMonths && (
+                      <div className="bg-emerald-50 border border-emerald-200/80 rounded-[10px] p-[10px] flex flex-col gap-[2px]">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[12px] font-semibold text-emerald-800">
+                            Tổng thanh toán ({periodText}):
+                          </span>
+                          <span className="bg-emerald-600 text-white text-[10px] font-bold px-[8px] py-[2px] rounded-full uppercase tracking-wider">
+                            Gói {periodText}
+                          </span>
+                        </div>
+                        <p className="text-[16px] font-bold text-emerald-700">
+                          {formatTotalPrice(pkg)}
+                        </p>
+                      </div>
+                    )}
                   </div>
                   <div className="border-t border-[#e2e8f0]" />
                   <div className="flex flex-col gap-[12px] flex-1">
@@ -88,8 +116,12 @@ export function MembershipPricingGrid({
                   </div>
                   <button
                     data-planid={pkg.id}
-                    data-period={billing === "annual" ? "yearly" : "monthly"}
-                    className={`${idx === 1 ? "bg-[#2563eb] hover:bg-[#1d4ed8]" : "bg-[#0f172a] hover:bg-[#1e293b]"} text-white font-['Inter:Bold'] font-bold text-[14px] py-[14px] rounded-[10px] w-full transition-colors cursor-pointer`}
+                    data-period={billing === "annual" ? "yearly" : billing === "6month" ? "6month" : billing === "3month" ? "3month" : "monthly"}
+                    className={`${
+                      idx === 1
+                        ? "bg-[#2563eb] hover:bg-[#1d4ed8]"
+                        : "bg-[#0f172a] hover:bg-[#1e293b]"
+                    } text-white font-['Inter:Bold'] font-bold text-[14px] py-[14px] rounded-[10px] w-full transition-colors cursor-pointer`}
                   >
                     Đăng ký {pkg.name}
                   </button>
@@ -107,13 +139,30 @@ export function MembershipPricingGrid({
                     Thích hợp cho nhu cầu rèn luyện cơ bản
                   </p>
                 </div>
-                <div className="flex flex-col gap-[4px]">
-                  <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[36px] leading-none">
-                    {formatPrice(590000)}
-                  </p>
-                  <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[13px]">
-                    /tháng
-                  </p>
+                <div className="flex flex-col gap-[10px]">
+                  <div className="flex items-baseline gap-[6px]">
+                    <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[36px] leading-none">
+                      {formatMonthlyPrice({ monthlyPrice: 590000 })}
+                    </p>
+                    <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[13px]">
+                      /tháng
+                    </p>
+                  </div>
+                  {isMultipleMonths && (
+                    <div className="bg-emerald-50 border border-emerald-200/80 rounded-[10px] p-[10px] flex flex-col gap-[2px]">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[12px] font-semibold text-emerald-800">
+                          Tổng thanh toán ({periodText}):
+                        </span>
+                        <span className="bg-emerald-600 text-white text-[10px] font-bold px-[8px] py-[2px] rounded-full uppercase tracking-wider">
+                          Gói {periodText}
+                        </span>
+                      </div>
+                      <p className="text-[16px] font-bold text-emerald-700">
+                        {formatTotalPrice({ monthlyPrice: 590000 })}
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <div className="border-t border-[#e2e8f0]" />
                 <div className="flex flex-col gap-[12px] flex-1">
@@ -156,13 +205,30 @@ export function MembershipPricingGrid({
                     Hội viên tối ưu mọi không gian luyện tập
                   </p>
                 </div>
-                <div className="flex flex-col gap-[4px]">
-                  <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#2563eb] text-[36px] leading-none">
-                    {formatPrice(990000)}
-                  </p>
-                  <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[13px]">
-                    /tháng
-                  </p>
+                <div className="flex flex-col gap-[10px]">
+                  <div className="flex items-baseline gap-[6px]">
+                    <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#2563eb] text-[36px] leading-none">
+                      {formatMonthlyPrice({ monthlyPrice: 990000 })}
+                    </p>
+                    <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[13px]">
+                      /tháng
+                    </p>
+                  </div>
+                  {isMultipleMonths && (
+                    <div className="bg-emerald-50 border border-emerald-200/80 rounded-[10px] p-[10px] flex flex-col gap-[2px]">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[12px] font-semibold text-emerald-800">
+                          Tổng thanh toán ({periodText}):
+                        </span>
+                        <span className="bg-emerald-600 text-white text-[10px] font-bold px-[8px] py-[2px] rounded-full uppercase tracking-wider">
+                          Gói {periodText}
+                        </span>
+                      </div>
+                      <p className="text-[16px] font-bold text-emerald-700">
+                        {formatTotalPrice({ monthlyPrice: 990000 })}
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <div className="border-t border-[#e2e8f0]" />
                 <div className="flex flex-col gap-[12px] flex-1">
@@ -200,13 +266,30 @@ export function MembershipPricingGrid({
                     Trải nghiệm đặc quyền đẳng cấp vượt trội
                   </p>
                 </div>
-                <div className="flex flex-col gap-[4px]">
-                  <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[36px] leading-none">
-                    {formatPrice(1490000)}
-                  </p>
-                  <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[13px]">
-                    /tháng
-                  </p>
+                <div className="flex flex-col gap-[10px]">
+                  <div className="flex items-baseline gap-[6px]">
+                    <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[36px] leading-none">
+                      {formatMonthlyPrice({ monthlyPrice: 1490000 })}
+                    </p>
+                    <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[13px]">
+                      /tháng
+                    </p>
+                  </div>
+                  {isMultipleMonths && (
+                    <div className="bg-emerald-50 border border-emerald-200/80 rounded-[10px] p-[10px] flex flex-col gap-[2px]">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[12px] font-semibold text-emerald-800">
+                          Tổng thanh toán ({periodText}):
+                        </span>
+                        <span className="bg-emerald-600 text-white text-[10px] font-bold px-[8px] py-[2px] rounded-full uppercase tracking-wider">
+                          Gói {periodText}
+                        </span>
+                      </div>
+                      <p className="text-[16px] font-bold text-emerald-700">
+                        {formatTotalPrice({ monthlyPrice: 1490000 })}
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <div className="border-t border-[#e2e8f0]" />
                 <div className="flex flex-col gap-[12px] flex-1">
