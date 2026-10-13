@@ -1,12 +1,12 @@
+using System;
+using System.Security.Claims;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using SmartGym.Application.DTOs;
 using SmartGym.Application.Interfaces;
-using System;
-using System.Security.Claims;
-using System.Threading.Tasks;
 
 namespace SmartGym.Api.Endpoints;
 
@@ -16,31 +16,50 @@ public static class SubscriptionEndpoints
     {
         var group = app.MapGroup("/api/subscriptions").RequireAuthorization();
 
-        group.MapGet("/me", async (HttpContext context, ISubscriptionService subscriptionService) =>
-        {
-            var userIdString = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
-                return Results.Unauthorized();
-
-            var subscriptions = await subscriptionService.GetMySubscriptionsAsync(userId);
-            return Results.Ok(subscriptions);
-        });
-
-        group.MapPost("/", async (HttpContext context, [FromBody] CreateSubscriptionRequest request, ISubscriptionService subscriptionService) =>
-        {
-            try
+        group.MapGet(
+            "/me",
+            async (HttpContext context, ISubscriptionService subscriptionService) =>
             {
                 var userIdString = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                if (
+                    string.IsNullOrEmpty(userIdString)
+                    || !Guid.TryParse(userIdString, out var userId)
+                )
                     return Results.Unauthorized();
 
-                var subscription = await subscriptionService.SubscribeToPackageAsync(userId, request);
-                return Results.Created($"/api/subscriptions/{subscription.Id}", subscription);
+                var subscriptions = await subscriptionService.GetMySubscriptionsAsync(userId);
+                return Results.Ok(subscriptions);
             }
-            catch (Exception ex)
+        );
+
+        group.MapPost(
+            "/",
+            async (
+                HttpContext context,
+                [FromBody] CreateSubscriptionRequest request,
+                ISubscriptionService subscriptionService
+            ) =>
             {
-                return Results.BadRequest(ex.Message);
+                try
+                {
+                    var userIdString = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                    if (
+                        string.IsNullOrEmpty(userIdString)
+                        || !Guid.TryParse(userIdString, out var userId)
+                    )
+                        return Results.Unauthorized();
+
+                    var subscription = await subscriptionService.SubscribeToPackageAsync(
+                        userId,
+                        request
+                    );
+                    return Results.Created($"/api/subscriptions/{subscription.Id}", subscription);
+                }
+                catch (Exception ex)
+                {
+                    return Results.BadRequest(ex.Message);
+                }
             }
-        });
+        );
     }
 }

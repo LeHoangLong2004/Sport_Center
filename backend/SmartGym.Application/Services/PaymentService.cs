@@ -8,201 +8,156 @@ using SmartGym.Domain.Entities;
 
 namespace SmartGym.Application.Services;
 
-public class PaymentService : IPaymentService
+public class PaymentService(
+    ISubscriptionRepository subscriptionRepo,
+    IInvoiceRepository invoiceRepo,
+    IUserRepository userRepo,
+    IPackageRepository packageRepo,
+    IPdfService pdfService,
+    IEmailService emailService,
+    IVnPayGateway vnPayGateway) : IPaymentService
 {
-    /// <summary>Cửa sổ coi là trùng lặp khi 2 giao dịch cùng số tiền được tạo/thanh toán quá gần nhau.</summary>
+    /// <summary>Cửa sổ coi là trùng lặp khi 2 giao dịch cùng số tiền được tạo quá gần nhau.</summary>
     private static readonly TimeSpan DuplicateWindow = TimeSpan.FromMinutes(10);
 
-    private readonly ISubscriptionRepository _subscriptionRepository;
-    private readonly IInvoiceRepository _invoiceRepository;
-    private readonly IUserRepository _userRepository;
-    private readonly IPackageRepository _packageRepository;
-    private readonly IPdfService _pdfService;
-    private readonly IEmailService _emailService;
-    private readonly IVnPayGateway _vnPayGateway;
-
-    public PaymentService(
-        ISubscriptionRepository subscriptionRepository,
-        IInvoiceRepository invoiceRepository,
-        IUserRepository userRepository,
-        IPackageRepository packageRepository,
-        IPdfService pdfService,
-        IEmailService emailService,
-        IVnPayGateway vnPayGateway)
-    {
-        _subscriptionRepository = subscriptionRepository;
-        _invoiceRepository = invoiceRepository;
-        _userRepository = userRepository;
-        _packageRepository = packageRepository;
-        _pdfService = pdfService;
-        _emailService = emailService;
-        _vnPayGateway = vnPayGateway;
-    }
-
     public async Task<PaymentCreationResult> CreatePaymentAsync(
-        Guid userId,
-        string packageId,
-        decimal amount,
-        PaymentMethod method,
-        string? billingPeriod = null,
-        bool autoRenew = false,
-        DateTime? startDate = null)
+        Guid userId, string packageId, decimal amount, PaymentMethod method,
+        string? billingPeriod = null, bool autoRenew = false, DateTime? startDate = null)
     {
         if (amount <= 0)
-        {
             return new PaymentCreationResult(Guid.Empty, false, "Số tiền thanh toán phải lớn hơn 0.");
-        }
 
-        var user = await _userRepository.GetByIdAsync(userId);
-        if (user == null)
-        {
+        if (await userRepo.GetByIdAsync(userId) == null)
             return new PaymentCreationResult(Guid.Empty, false, "Không tìm thấy hội viên.");
-        }
 
-        if (!string.IsNullOrWhiteSpace(packageId) && await _packageRepository.GetByIdAsync(packageId) == null)
-        {
+        if (!string.IsNullOrWhiteSpace(packageId) && await packageRepo.GetByIdAsync(packageId) == null)
             return new PaymentCreationResult(Guid.Empty, false, $"Không tìm thấy gói tập '{packageId}'.");
-        }
 
         // Bấm thanh toán nhiều lần không tạo thêm hóa đơn chờ trùng.
-        var existing = await _invoiceRepository.GetByUserIdAsync(userId);
-        var pendingDuplicate = existing
+        var existing = await invoiceRepo.GetByUserIdAsync(userId);
+        var pendingDupe = existing
             .Where(i => i.Status == PaymentStatus.Pending
-                        && i.TotalAmount == amount
-                        && DateTime.UtcNow - i.CreatedAt <= DuplicateWindow)
+                     && i.TotalAmount == amount
+                     && DateTime.UtcNow - i.CreatedAt <= DuplicateWindow)
             .OrderByDescending(i => i.CreatedAt)
             .FirstOrDefault();
 
-        if (pendingDuplicate != null)
-        {
-            return new PaymentCreationResult(
-                pendingDuplicate.Id,
-                true,
-                "Giao dịch đang chờ thanh toán (dùng lại hóa đơn vừa tạo).",
-                true);
-        }
+        if (pendingDupe != null)
+            return new PaymentCreationResult(pendingDupe.Id, true,
+                "Giao dịch đang chờ thanh toán (dùng lại hóa đơn vừa tạo).", true);
 
         var period = NormalizeBillingPeriod(billingPeriod);
+        var start  = startDate ?? DateTime.UtcNow;
 
         var subscription = new Subscription
         {
-            UserId = userId,
-            PackageId = packageId,
-            TotalAmount = amount,
+            UserId        = userId,
+            PackageId     = packageId,
+            TotalAmount   = amount,
             PaymentMethod = method,
             PaymentStatus = PaymentStatus.Pending,
             BillingPeriod = period,
-            AutoRenew = autoRenew,
-            StartDate = startDate ?? DateTime.UtcNow,
-            EndDate = AddPeriod(startDate ?? DateTime.UtcNow, period)
+            AutoRenew     = autoRenew,
+            StartDate     = start,
+            EndDate       = AddPeriod(start, period)
         };
 
         var invoice = new Invoice
         {
-            UserId = userId,
-            TotalAmount = amount,
+            UserId        = userId,
+            TotalAmount   = amount,
             PaymentMethod = method,
-            Status = PaymentStatus.Pending
+            Status        = PaymentStatus.Pending
         };
 
-        await _subscriptionRepository.AddAsync(subscription);
-        await _invoiceRepository.AddAsync(invoice);
+        await subscriptionRepo.AddAsync(subscription);
+        await invoiceRepo.AddAsync(invoice);
 
         return new PaymentCreationResult(invoice.Id, true, "Giao dịch đang chờ thanh toán");
     }
 
     public async Task<bool> ProcessPaymentAsync(Guid invoiceId)
     {
-        var invoice = await _invoiceRepository.GetByIdAsync(invoiceId);
+        var invoice = await invoiceRepo.GetByIdAsync(invoiceId);
         if (invoice == null || invoice.Status != PaymentStatus.Pending) return false;
 
         invoice.Status = PaymentStatus.Completed;
         invoice.PaidAt = DateTime.UtcNow;
 
-        var subscription = await FindPendingSubscriptionAsync(invoice);
-        if (subscription != null)
+        var sub = await FindPendingSubscriptionAsync(invoice);
+        if (sub != null)
         {
-            subscription.PaymentStatus = PaymentStatus.Completed;
+            sub.PaymentStatus = PaymentStatus.Completed;
+            var period = NormalizeBillingPeriod(sub.BillingPeriod);
 
-            var period = NormalizeBillingPeriod(subscription.BillingPeriod);
-
-            // Gia hạn nối tiếp nếu gói cũ cùng loại còn hiệu lực, tránh chồng lấn thời gian.
-            var activeEndDate = (await _subscriptionRepository.GetByUserIdAsync(invoice.UserId))
-                .Where(s => s.Id != subscription.Id
-                            && s.PaymentStatus == PaymentStatus.Completed
-                            && s.PackageId == subscription.PackageId
-                            && s.EndDate >= DateTime.UtcNow)
+            // Gia hạn nối tiếp nếu gói cũ cùng loại còn hiệu lực, tránh chồng lấn.
+            var activeEnd = (await subscriptionRepo.GetByUserIdAsync(invoice.UserId))
+                .Where(s => s.Id != sub.Id
+                         && s.PaymentStatus == PaymentStatus.Completed
+                         && s.PackageId == sub.PackageId
+                         && s.EndDate >= DateTime.UtcNow)
                 .OrderByDescending(s => s.EndDate)
                 .Select(s => (DateTime?)s.EndDate)
                 .FirstOrDefault();
 
-            if (subscription.StartDate <= DateTime.UtcNow)
+            if (sub.StartDate <= DateTime.UtcNow)
             {
-                subscription.StartDate = activeEndDate.HasValue && activeEndDate.Value > DateTime.UtcNow
-                    ? activeEndDate.Value
-                    : DateTime.UtcNow;
-                subscription.EndDate = AddPeriod(subscription.StartDate, period);
+                sub.StartDate = activeEnd.HasValue && activeEnd.Value > DateTime.UtcNow
+                    ? activeEnd.Value : DateTime.UtcNow;
+                sub.EndDate = AddPeriod(sub.StartDate, period);
             }
 
-            await _subscriptionRepository.UpdateAsync(subscription);
+            await subscriptionRepo.UpdateAsync(sub);
         }
 
-        await _invoiceRepository.UpdateAsync(invoice);
+        await invoiceRepo.UpdateAsync(invoice);
         return true;
     }
 
     public async Task<bool> CancelPaymentAsync(Guid invoiceId)
     {
-        var invoice = await _invoiceRepository.GetByIdAsync(invoiceId);
+        var invoice = await invoiceRepo.GetByIdAsync(invoiceId);
         if (invoice == null || invoice.Status != PaymentStatus.Pending) return false;
 
         invoice.Status = PaymentStatus.Failed;
 
-        var subscription = await FindPendingSubscriptionAsync(invoice);
-        if (subscription != null)
+        var sub = await FindPendingSubscriptionAsync(invoice);
+        if (sub != null)
         {
-            subscription.PaymentStatus = PaymentStatus.Failed;
-            await _subscriptionRepository.UpdateAsync(subscription);
+            sub.PaymentStatus = PaymentStatus.Failed;
+            await subscriptionRepo.UpdateAsync(sub);
         }
 
-        await _invoiceRepository.UpdateAsync(invoice);
+        await invoiceRepo.UpdateAsync(invoice);
         return true;
     }
 
     public async Task<RefundResult> RefundPaymentAsync(Guid invoiceId, bool force = false, string? reason = null)
     {
-        var invoice = await _invoiceRepository.GetByIdAsync(invoiceId);
+        var invoice = await invoiceRepo.GetByIdAsync(invoiceId);
         if (invoice == null)
-        {
             return new RefundResult(false, "Không tìm thấy hóa đơn.");
-        }
 
         if (invoice.Status != PaymentStatus.Completed)
-        {
             return new RefundResult(false, "Chỉ hoàn tiền được cho hóa đơn đã thanh toán.");
-        }
 
         if (!force && await HasDuplicatedTransactionAsync(invoice))
-        {
-            return new RefundResult(
-                false,
-                "Phát hiện giao dịch trùng lặp cùng số tiền. Cần xác nhận trước khi hoàn tiền.",
-                true);
-        }
+            return new RefundResult(false,
+                "Phát hiện giao dịch trùng lặp cùng số tiền. Cần xác nhận trước khi hoàn tiền.", true);
 
         invoice.Status = PaymentStatus.Refunded;
 
-        var subscriptions = await _subscriptionRepository.GetByUserIdAsync(invoice.UserId);
-        var subscription = subscriptions.FirstOrDefault(s =>
-            s.PaymentStatus == PaymentStatus.Completed && s.TotalAmount == invoice.TotalAmount);
+        var sub = (await subscriptionRepo.GetByUserIdAsync(invoice.UserId))
+            .FirstOrDefault(s => s.PaymentStatus == PaymentStatus.Completed
+                              && s.TotalAmount == invoice.TotalAmount);
 
-        if (subscription != null)
+        if (sub != null)
         {
-            subscription.PaymentStatus = PaymentStatus.Refunded;
-            await _subscriptionRepository.UpdateAsync(subscription);
+            sub.PaymentStatus = PaymentStatus.Refunded;
+            await subscriptionRepo.UpdateAsync(sub);
         }
 
-        await _invoiceRepository.UpdateAsync(invoice);
+        await invoiceRepo.UpdateAsync(invoice);
 
         return new RefundResult(true, string.IsNullOrWhiteSpace(reason)
             ? "Đã hoàn tiền"
@@ -211,75 +166,52 @@ public class PaymentService : IPaymentService
 
     public async Task<string> GenerateVnPayUrlAsync(Guid invoiceId, string? clientIp = null)
     {
-        var invoice = await _invoiceRepository.GetByIdAsync(invoiceId);
-        if (invoice == null)
-        {
-            throw new InvalidOperationException("Không tìm thấy hóa đơn.");
-        }
+        var invoice = await invoiceRepo.GetByIdAsync(invoiceId)
+            ?? throw new InvalidOperationException("Không tìm thấy hóa đơn.");
 
         if (invoice.Status != PaymentStatus.Pending)
-        {
             throw new InvalidOperationException("Hóa đơn không ở trạng thái chờ thanh toán.");
-        }
 
-        return _vnPayGateway.CreatePaymentUrl(
-            invoice.Id,
-            invoice.TotalAmount,
-            $"Thanh toan hoa don {invoice.InvoiceNumber}",
-            clientIp);
+        return vnPayGateway.CreatePaymentUrl(
+            invoice.Id, invoice.TotalAmount,
+            $"Thanh toan hoa don {invoice.InvoiceNumber}", clientIp);
     }
 
     public async Task<VnPayCallbackHandling> HandleVnPayCallbackAsync(IReadOnlyDictionary<string, string> query)
     {
-        var callback = _vnPayGateway.ValidateCallback(query);
-        if (!callback.IsValid || callback.InvoiceId == null)
+        var cb = vnPayGateway.ValidateCallback(query);
+        if (!cb.IsValid || cb.InvoiceId == null)
+            return new VnPayCallbackHandling(false, cb.Message, cb.InvoiceId);
+
+        var invoiceId = cb.InvoiceId.Value;
+        if (!cb.IsSuccess)
         {
-            return new VnPayCallbackHandling(false, callback.Message, callback.InvoiceId);
+            await CancelPaymentAsync(invoiceId);
+            return new VnPayCallbackHandling(false, $"VNPay trả về mã lỗi {cb.ResponseCode}", invoiceId);
         }
 
-        var invoiceId = callback.InvoiceId.Value;
-
-        if (callback.IsSuccess)
-        {
-            var processed = await ProcessPaymentAsync(invoiceId);
-            return new VnPayCallbackHandling(
-                processed,
-                processed ? "Thanh toán VNPay thành công" : "Hóa đơn đã được xử lý trước đó",
-                invoiceId);
-        }
-
-        await CancelPaymentAsync(invoiceId);
-        return new VnPayCallbackHandling(false, $"VNPay trả về mã lỗi {callback.ResponseCode}", invoiceId);
+        var processed = await ProcessPaymentAsync(invoiceId);
+        return new VnPayCallbackHandling(
+            processed,
+            processed ? "Thanh toán VNPay thành công" : "Hóa đơn đã được xử lý trước đó",
+            invoiceId);
     }
 
     public async Task<EmailSendResult> SendInvoiceEmailAsync(Guid invoiceId)
     {
-        var invoice = await _invoiceRepository.GetByIdAsync(invoiceId);
-        if (invoice == null)
-        {
-            return new EmailSendResult(false, "Không tìm thấy hóa đơn.");
-        }
+        var invoice = await invoiceRepo.GetByIdAsync(invoiceId);
+        if (invoice == null) return new EmailSendResult(false, "Không tìm thấy hóa đơn.");
 
-        var user = await _userRepository.GetByIdAsync(invoice.UserId);
+        var user = await userRepo.GetByIdAsync(invoice.UserId);
         if (user == null || string.IsNullOrWhiteSpace(user.Email))
-        {
             return new EmailSendResult(false, "Hội viên chưa có địa chỉ email.");
-        }
 
-        if (!_emailService.IsConfigured)
-        {
+        if (!emailService.IsConfigured)
             return new EmailSendResult(false, "SMTP chưa được cấu hình (Smtp:Host, Smtp:From) nên không thể gửi email.");
-        }
 
         byte[]? pdf = null;
-        try
-        {
-            pdf = await _pdfService.GenerateInvoicePdfAsync(invoiceId);
-        }
-        catch (Exception)
-        {
-            // Vẫn gửi email tóm tắt hóa đơn nếu bước sinh PDF thất bại.
-        }
+        try { pdf = await pdfService.GenerateInvoicePdfAsync(invoiceId); }
+        catch { /* Vẫn gửi email tóm tắt nếu sinh PDF thất bại. */ }
 
         var body = $"""
             <h2>Xin chào {user.FullName},</h2>
@@ -294,12 +226,9 @@ public class PaymentService : IPaymentService
             <p>Hóa đơn PDF được đính kèm trong email này.</p>
             """;
 
-        var sent = await _emailService.SendAsync(
-            user.Email,
+        var sent = await emailService.SendAsync(user.Email,
             $"Hóa đơn {invoice.InvoiceNumber} - SmartGym Center",
-            body,
-            pdf,
-            $"{invoice.InvoiceNumber}.pdf");
+            body, pdf, $"{invoice.InvoiceNumber}.pdf");
 
         return sent
             ? new EmailSendResult(true, "Đã gửi email hóa đơn")
@@ -308,44 +237,37 @@ public class PaymentService : IPaymentService
 
     public async Task<bool> RecordCashPaymentAsync(Guid invoiceId)
     {
-        var invoice = await _invoiceRepository.GetByIdAsync(invoiceId);
+        var invoice = await invoiceRepo.GetByIdAsync(invoiceId);
         if (invoice == null || invoice.Status != PaymentStatus.Pending) return false;
 
         invoice.PaymentMethod = PaymentMethod.CashAtCounter;
-        await _invoiceRepository.UpdateAsync(invoice);
-
+        await invoiceRepo.UpdateAsync(invoice);
         return await ProcessPaymentAsync(invoiceId);
     }
 
-    private async Task<Subscription?> FindPendingSubscriptionAsync(Invoice invoice)
-    {
-        var subscriptions = await _subscriptionRepository.GetByUserIdAsync(invoice.UserId);
+    // ── Private helpers ───────────────────────────────────────────────────────
 
-        return subscriptions
+    private async Task<Subscription?> FindPendingSubscriptionAsync(Invoice invoice) =>
+        (await subscriptionRepo.GetByUserIdAsync(invoice.UserId))
             .Where(s => s.PaymentStatus == PaymentStatus.Pending)
             .OrderByDescending(s => s.TotalAmount == invoice.TotalAmount)
             .ThenByDescending(s => s.CreatedAt)
             .FirstOrDefault();
-    }
 
     private async Task<bool> HasDuplicatedTransactionAsync(Invoice invoice)
     {
-        var paidAt = invoice.PaidAt ?? invoice.CreatedAt;
-        var invoices = await _invoiceRepository.GetByUserIdAsync(invoice.UserId);
+        var paidAt   = invoice.PaidAt ?? invoice.CreatedAt;
+        var invoices = await invoiceRepo.GetByUserIdAsync(invoice.UserId);
 
         return invoices.Any(i =>
-        {
-            if (i.Id == invoice.Id) return false;
-            if (i.Status != PaymentStatus.Completed) return false;
-            if (i.TotalAmount != invoice.TotalAmount) return false;
-
-            var otherPaidAt = i.PaidAt ?? i.CreatedAt;
-            return Math.Abs((otherPaidAt - paidAt).TotalMinutes) <= DuplicateWindow.TotalMinutes;
-        });
+            i.Id != invoice.Id
+            && i.Status == PaymentStatus.Completed
+            && i.TotalAmount == invoice.TotalAmount
+            && Math.Abs(((i.PaidAt ?? i.CreatedAt) - paidAt).TotalMinutes) <= DuplicateWindow.TotalMinutes);
     }
 
-    private static string NormalizeBillingPeriod(string? billingPeriod) =>
-        string.Equals(billingPeriod, "yearly", StringComparison.OrdinalIgnoreCase) ? "yearly" : "monthly";
+    private static string NormalizeBillingPeriod(string? p) =>
+        string.Equals(p, "yearly", StringComparison.OrdinalIgnoreCase) ? "yearly" : "monthly";
 
     private static DateTime AddPeriod(DateTime start, string period) =>
         period == "yearly" ? start.AddYears(1) : start.AddMonths(1);

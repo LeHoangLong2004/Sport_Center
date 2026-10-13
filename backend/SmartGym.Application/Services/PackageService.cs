@@ -1,9 +1,9 @@
-using SmartGym.Application.DTOs;
-using SmartGym.Application.Interfaces;
-using SmartGym.Domain.Entities;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SmartGym.Application.DTOs;
+using SmartGym.Application.Interfaces;
+using SmartGym.Domain.Entities;
 
 namespace SmartGym.Application.Services;
 
@@ -25,7 +25,8 @@ public class PackageService : IPackageService
     public async Task<PackageResponse?> GetPackageByIdAsync(string id)
     {
         var package = await _packageRepository.GetByIdAsync(id);
-        if (package == null) return null;
+        if (package == null)
+            return null;
         return MapToResponse(package);
     }
 
@@ -41,8 +42,16 @@ public class PackageService : IPackageService
             YearlyPrice = request.YearlyPrice,
             Description = request.Description,
             Status = true,
-            Features = request.Features.Select(f => new PackageFeature { FeatureText = f }).ToList(),
-            Benefits = request.Benefits.Select(b => new MembershipBenefit { BenefitType = "general", Description = b }).ToList()
+            Features = request
+                .Features.Select(f => new PackageFeature { FeatureText = f })
+                .ToList(),
+            Benefits = request
+                .Benefits.Select(b => new MembershipBenefit
+                {
+                    BenefitType = "general",
+                    Description = b,
+                })
+                .ToList(),
         };
 
         await _packageRepository.AddAsync(package);
@@ -52,15 +61,18 @@ public class PackageService : IPackageService
     public async Task<PackageResponse?> UpdatePackageAsync(string id, CreatePackageRequest request)
     {
         var package = await _packageRepository.GetByIdAsync(id);
-        if (package == null) return null;
+        if (package == null)
+            return null;
 
         package.Name = request.Name;
         package.PackageType = request.PackageType;
         package.MonthlyPrice = request.MonthlyPrice;
         package.YearlyPrice = request.YearlyPrice;
-        
+
         // Cập nhật features
-        package.Features = request.Features.Select(f => new PackageFeature { FeatureText = f }).ToList();
+        package.Features = request
+            .Features.Select(f => new PackageFeature { FeatureText = f })
+            .ToList();
 
         await _packageRepository.UpdateAsync(package);
         return MapToResponse(package);
@@ -69,8 +81,9 @@ public class PackageService : IPackageService
     public async Task<bool> DeletePackageAsync(string id)
     {
         var package = await _packageRepository.GetByIdAsync(id);
-        if (package == null) return false;
-        
+        if (package == null)
+            return false;
+
         package.Status = false;
         await _packageRepository.UpdateAsync(package);
         return true;
@@ -89,7 +102,7 @@ public class PackageService : IPackageService
             Description = p.Description,
             Status = p.Status,
             Features = p.Features.Select(f => f.FeatureText),
-            Benefits = p.Benefits.Select(b => b.Description)
+            Benefits = p.Benefits.Select(b => b.Description),
         };
     }
 }

@@ -1,12 +1,11 @@
+using System;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using SmartGym.Application.DTOs;
 using SmartGym.Application.Interfaces;
-using System;
-
-using Microsoft.AspNetCore.Authorization;
 
 namespace SmartGym.Api.Endpoints;
 
@@ -18,74 +17,124 @@ public static class UserEndpoints
 
         var group = app.MapGroup("/api/users").RequireAuthorization();
 
-        group.MapGet("/", async (IUserService userService) =>
-        {
-            var users = await userService.GetAllUsersAsync();
-            return Results.Ok(users);
-        }).RequireAuthorization(managerAuth);
+        group
+            .MapGet(
+                "/",
+                async (IUserService userService) =>
+                {
+                    var users = await userService.GetAllUsersAsync();
+                    return Results.Ok(users);
+                }
+            )
+            .RequireAuthorization(managerAuth);
 
-        group.MapGet("/members-lookup", async (SmartGym.Application.Interfaces.IUserRepository userRepo) =>
-        {
-            var members = await userRepo.GetMembersLookupAsync();
-            return Results.Ok(members);
-        });
-        group.MapGet("/{id:guid}", async (Guid id, HttpContext context, IUserService userService) =>
-        {
-            var role = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-            var userId = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            
-            if (role != "manager" && userId != id.ToString()) 
+        group.MapGet(
+            "/members-lookup",
+            async (SmartGym.Application.Interfaces.IUserRepository userRepo) =>
             {
-                return Results.Forbid();
+                var members = await userRepo.GetMembersLookupAsync();
+                return Results.Ok(members);
             }
-
-            var user = await userService.GetUserByIdAsync(id);
-            if (user == null) return Results.NotFound();
-            return Results.Ok(user);
-        });
-
-        group.MapPut("/{id:guid}/role", async (Guid id, [FromBody] UpdateUserRoleRequest request, IUserService userService) =>
-        {
-            try
+        );
+        group.MapGet(
+            "/{id:guid}",
+            async (Guid id, HttpContext context, IUserService userService) =>
             {
-                var success = await userService.UpdateUserRoleAsync(id, request.RoleId);
-                if (!success) return Results.NotFound("User not found.");
-                return Results.Ok("User role updated successfully.");
+                var role = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+                var userId = context
+                    .User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)
+                    ?.Value;
+
+                if (role != "manager" && userId != id.ToString())
+                {
+                    return Results.Forbid();
+                }
+
+                var user = await userService.GetUserByIdAsync(id);
+                if (user == null)
+                    return Results.NotFound();
+                return Results.Ok(user);
             }
-            catch (Exception ex)
+        );
+
+        group
+            .MapPut(
+                "/{id:guid}/role",
+                async (
+                    Guid id,
+                    [FromBody] UpdateUserRoleRequest request,
+                    IUserService userService
+                ) =>
+                {
+                    try
+                    {
+                        var success = await userService.UpdateUserRoleAsync(id, request.RoleId);
+                        if (!success)
+                            return Results.NotFound("User not found.");
+                        return Results.Ok("User role updated successfully.");
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.BadRequest(ex.Message);
+                    }
+                }
+            )
+            .RequireAuthorization(managerAuth);
+
+        group
+            .MapPut(
+                "/{id:guid}/status",
+                async (
+                    Guid id,
+                    [FromBody] UpdateUserStatusRequest request,
+                    IUserService userService
+                ) =>
+                {
+                    var success = await userService.UpdateUserStatusAsync(id, request.Status);
+                    if (!success)
+                        return Results.NotFound("User not found.");
+                    return Results.Ok(
+                        $"User status updated to {(request.Status ? "Active" : "Inactive")}."
+                    );
+                }
+            )
+            .RequireAuthorization(managerAuth);
+
+        group.MapPut(
+            "/{id:guid}/profile",
+            async (
+                Guid id,
+                HttpContext context,
+                [FromBody] UpdateUserProfileRequest request,
+                IUserService userService
+            ) =>
             {
-                return Results.BadRequest(ex.Message);
+                var role = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+                var userId = context
+                    .User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)
+                    ?.Value;
+
+                if (role != "manager" && userId != id.ToString())
+                {
+                    return Results.Forbid();
+                }
+
+                var success = await userService.UpdateUserProfileAsync(id, request);
+                if (!success)
+                    return Results.NotFound("User not found.");
+                return Results.Ok("User profile updated successfully.");
             }
-        }).RequireAuthorization(managerAuth);
-
-        group.MapPut("/{id:guid}/status", async (Guid id, [FromBody] UpdateUserStatusRequest request, IUserService userService) =>
-        {
-            var success = await userService.UpdateUserStatusAsync(id, request.Status);
-            if (!success) return Results.NotFound("User not found.");
-            return Results.Ok($"User status updated to {(request.Status ? "Active" : "Inactive")}.");
-        }).RequireAuthorization(managerAuth);
-
-        group.MapPut("/{id:guid}/profile", async (Guid id, HttpContext context, [FromBody] UpdateUserProfileRequest request, IUserService userService) =>
-        {
-            var role = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-            var userId = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            
-            if (role != "manager" && userId != id.ToString()) 
-            {
-                return Results.Forbid();
-            }
-
-            var success = await userService.UpdateUserProfileAsync(id, request);
-            if (!success) return Results.NotFound("User not found.");
-            return Results.Ok("User profile updated successfully.");
-        });
+        );
 
         var roleGroup = app.MapGroup("/api/roles").RequireAuthorization(managerAuth);
 
-        roleGroup.MapGet("/", async (IUserService userService) =>
-        {
-            var roles = await userService.GetAllRolesAsync();
-            return Results.Ok(roles);
-        });
+        roleGroup.MapGet(
+            "/",
+            async (IUserService userService) =>
+            {
+                var roles = await userService.GetAllRolesAsync();
+                return Results.Ok(roles);
+            }
+        );
     }
 }

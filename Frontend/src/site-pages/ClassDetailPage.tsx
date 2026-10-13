@@ -30,11 +30,28 @@ const navItems = [
 ]
 
 const classInfo = [
-  { icon: imgCalendar, label: "Thời gian diễn ra", value: "18:30 - Thứ Năm hàng tuần" },
-  { icon: imgUser, label: "Huấn luyện viên phụ trách", value: "HLV. Marcus Đặng" },
+  {
+    icon: imgCalendar,
+    label: "Thời gian diễn ra",
+    value: "18:30 - Thứ Năm hàng tuần",
+  },
+  {
+    icon: imgUser,
+    label: "Huấn luyện viên phụ trách",
+    value: "HLV. Marcus Đặng",
+  },
   { icon: imgClock, label: "Thời lượng buổi tập", value: "60 phút hoạt động" },
-  { icon: imgTrendingUp, label: "Độ khó bài tập", value: "Trung cấp - Nâng cao" },
-  { icon: imgUsers, label: "Số chỗ trống còn lại", value: "13 / 15 suất tập", green: true },
+  {
+    icon: imgTrendingUp,
+    label: "Độ khó bài tập",
+    value: "Trung cấp - Nâng cao",
+  },
+  {
+    icon: imgUsers,
+    label: "Số chỗ trống còn lại",
+    value: "13 / 15 suất tập",
+    green: true,
+  },
 ]
 
 const notes = [
@@ -44,56 +61,117 @@ const notes = [
 ]
 
 const similarClasses = [
-  { img: imgSimilar1, title: "Kettlebell Burn Class", meta: "Thứ Ba - 18:30 • Phòng Studio B" },
-  { img: imgSimilar2, title: "Kickboxing Core Intensity", meta: "Thứ Sáu - 19:30 • Khu Boxing" },
-  { img: imgSimilar3, title: "Athletic Sprint Conditioning", meta: "Thứ Bảy - 08:30 • Sân Đa Năng" },
+  {
+    img: imgSimilar1,
+    title: "Kettlebell Burn Class",
+    meta: "Thứ Ba - 18:30 • Phòng Studio B",
+  },
+  {
+    img: imgSimilar2,
+    title: "Kickboxing Core Intensity",
+    meta: "Thứ Sáu - 19:30 • Khu Boxing",
+  },
+  {
+    img: imgSimilar3,
+    title: "Athletic Sprint Conditioning",
+    meta: "Thứ Bảy - 08:30 • Sân Đa Năng",
+  },
 ]
 
 export default function ClassDetailPage() {
   return (
-    <div className="bg-[#f8fafc] flex flex-col items-start w-full min-h-screen" data-node-id="2263:3795">
-      
-
+    <div
+      className="bg-[#f8fafc] flex flex-col items-start w-full min-h-screen"
+      data-node-id="2263:3795"
+    >
       {/* Content body */}
-      <div className="flex flex-col gap-8 py-10 px-[80px] w-full" data-node-id="2263:3826" data-name="content-body">
+      <div
+        className="flex flex-col gap-8 py-10 px-[80px] w-full"
+        data-node-id="2263:3826"
+        data-name="content-body"
+      >
         {/* Breadcrumb */}
-        <div className="flex gap-2 items-center text-[14px]" data-node-id="2263:3827">
-          <span className="font-['Inter:Medium'] font-medium text-[#64748b] cursor-pointer hover:text-[#1e293b] transition-colors" data-name="breadcrumb-home">Trang chủ</span>
-          <span className="font-['Inter:Medium'] font-medium text-[#64748b]">&gt;</span>
-          <span className="font-['Inter:Medium'] font-medium text-[#64748b] cursor-pointer hover:text-[#1e293b] transition-colors" data-name="breadcrumb-lophoc">Lớp học</span>
-          <span className="font-['Inter:Medium'] font-medium text-[#64748b]">&gt;</span>
-          <span className="font-['Inter:Semi_Bold'] font-semibold text-[#1e293b]">Functional HIIT</span>
+        <div
+          className="flex gap-2 items-center text-[14px]"
+          data-node-id="2263:3827"
+        >
+          <span
+            className="font-['Inter:Medium'] font-medium text-[#64748b] cursor-pointer hover:text-[#1e293b] transition-colors"
+            data-name="breadcrumb-home"
+          >
+            Trang chủ
+          </span>
+          <span className="font-['Inter:Medium'] font-medium text-[#64748b]">
+            &gt;
+          </span>
+          <span
+            className="font-['Inter:Medium'] font-medium text-[#64748b] cursor-pointer hover:text-[#1e293b] transition-colors"
+            data-name="breadcrumb-lophoc"
+          >
+            Lớp học
+          </span>
+          <span className="font-['Inter:Medium'] font-medium text-[#64748b]">
+            &gt;
+          </span>
+          <span className="font-['Inter:Semi_Bold'] font-semibold text-[#1e293b]">
+            Functional HIIT
+          </span>
         </div>
 
         {/* Main two-column layout */}
-        <div className="flex gap-12 items-start w-full" data-node-id="2263:3833">
+        <div
+          className="flex gap-12 items-start w-full"
+          data-node-id="2263:3833"
+        >
           {/* Left column */}
-          <div className="flex-1 min-w-0 flex flex-col gap-8" data-node-id="2263:3834">
+          <div
+            className="flex-1 min-w-0 flex flex-col gap-8"
+            data-node-id="2263:3834"
+          >
             {/* Hero image */}
             <div className="w-full h-[420px] rounded-2xl overflow-hidden shrink-0">
-              <img src={imgHero} alt="Functional HIIT Performance" className="w-full h-full object-cover" />
+              <img
+                src={imgHero}
+                alt="Functional HIIT Performance"
+                className="w-full h-full object-cover"
+              />
             </div>
 
             {/* Title + description */}
-            <div className="flex flex-col gap-4 w-full" data-node-id="2263:3836">
+            <div
+              className="flex flex-col gap-4 w-full"
+              data-node-id="2263:3836"
+            >
               <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[36px] leading-normal">
                 Functional HIIT Performance
               </p>
               <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[16px] leading-[1.6]">
-                Lớp tập cường độ cao luân phiên sử dụng tạ tay, dây kháng lực và bóng y học. Đây là giáo án tối ưu nhất giúp đẩy nhịp tim lên vùng đốt mỡ tối đa, tăng hiệu suất hoạt động phổi và phục hồi năng lượng thể lực hiệu quả.
+                Lớp tập cường độ cao luân phiên sử dụng tạ tay, dây kháng lực và
+                bóng y học. Đây là giáo án tối ưu nhất giúp đẩy nhịp tim lên
+                vùng đốt mỡ tối đa, tăng hiệu suất hoạt động phổi và phục hồi
+                năng lượng thể lực hiệu quả.
               </p>
             </div>
 
             {/* Notes card */}
-            <div className="bg-white border border-[#e2e8f0] rounded-2xl p-8 flex flex-col gap-5 w-full" data-node-id="2263:3839">
+            <div
+              className="bg-white border border-[#e2e8f0] rounded-2xl p-8 flex flex-col gap-5 w-full"
+              data-node-id="2263:3839"
+            >
               <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[18px] leading-normal">
                 Lưu ý &amp; Chuẩn bị trước buổi tập
               </p>
               <div className="flex flex-col gap-3 w-full">
                 {notes.map((note, i) => (
                   <div key={i} className="flex gap-2.5 items-center">
-                    <img src={imgInfo} alt="" className="w-[13px] h-[13px] shrink-0" />
-                    <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px] leading-normal">{note}</p>
+                    <img
+                      src={imgInfo}
+                      alt=""
+                      className="w-[13px] h-[13px] shrink-0"
+                    />
+                    <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px] leading-normal">
+                      {note}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -114,8 +192,16 @@ export default function ClassDetailPage() {
                       <img src={info.icon} alt="" className="w-4 h-4" />
                     </div>
                     <div className="flex flex-col gap-0.5">
-                      <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[12px] leading-normal">{info.label}</p>
-                      <p className={`font-['Inter:Bold'] font-bold text-[15px] leading-normal ${(info as { green?: boolean }).green ? "text-[#059669]" : "text-[#1e293b]"}`}>
+                      <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[12px] leading-normal">
+                        {info.label}
+                      </p>
+                      <p
+                        className={`font-['Inter:Bold'] font-bold text-[15px] leading-normal ${
+                          (info as { green?: boolean }).green
+                            ? "text-[#059669]"
+                            : "text-[#1e293b]"
+                        }`}
+                      >
                         {info.value}
                       </p>
                     </div>
@@ -127,21 +213,33 @@ export default function ClassDetailPage() {
                 type="button"
                 data-name="btn-register-class"
               >
-                <span className="font-['Inter:Bold'] font-bold text-white text-[15px] whitespace-nowrap">Đăng ký lớp này ngay</span>
+                <span className="font-['Inter:Bold'] font-bold text-white text-[15px] whitespace-nowrap">
+                  Đăng ký lớp này ngay
+                </span>
               </button>
             </div>
           </div>
         </div>
 
         {/* Coach profile */}
-        <div className="bg-white border border-[#e2e8f0] rounded-2xl p-8 flex flex-col gap-6 w-full" data-node-id="2263:3899" data-name="coach-profile">
+        <div
+          className="bg-white border border-[#e2e8f0] rounded-2xl p-8 flex flex-col gap-6 w-full"
+          data-node-id="2263:3899"
+          data-name="coach-profile"
+        >
           <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[20px] leading-normal">
             Thông tin Huấn luyện viên của bạn
           </p>
           <div className="w-full h-px bg-[#e2e8f0]" />
           <div className="flex gap-6 items-center w-full">
             <div className="shrink-0 size-[120px] rounded-full overflow-hidden">
-              <img src={imgCoach} alt="HLV. Marcus Đặng" className="w-full h-full object-cover" width="120" height="120" />
+              <img
+                src={imgCoach}
+                alt="HLV. Marcus Đặng"
+                className="w-full h-full object-cover"
+                width="120"
+                height="120"
+              />
             </div>
             <div className="flex-1 min-w-0 flex flex-col gap-3">
               <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[20px] leading-normal whitespace-nowrap">
@@ -151,14 +249,21 @@ export default function ClassDetailPage() {
                 Strength &amp; HIIT Performance Coach
               </p>
               <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px] leading-[1.6]">
-                Marcus có hơn 8 năm giảng dạy các phương pháp rèn luyện thể chất toàn diện tại các câu lạc bộ thể thao cao cấp. Sở hữu chứng nhận huấn luyện viên cá nhân uy tín từ NASM-CPT Hoa Kỳ và bằng cử nhân giáo dục thể chất.
+                Marcus có hơn 8 năm giảng dạy các phương pháp rèn luyện thể chất
+                toàn diện tại các câu lạc bộ thể thao cao cấp. Sở hữu chứng nhận
+                huấn luyện viên cá nhân uy tín từ NASM-CPT Hoa Kỳ và bằng cử
+                nhân giáo dục thể chất.
               </p>
             </div>
           </div>
         </div>
 
         {/* Similar classes */}
-        <div className="flex flex-col gap-6 w-full" data-node-id="2263:3908" data-name="similar-classes">
+        <div
+          className="flex flex-col gap-6 w-full"
+          data-node-id="2263:3908"
+          data-name="similar-classes"
+        >
           <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[24px] leading-normal">
             Các lớp học tương tự gợi ý
           </p>
@@ -170,7 +275,11 @@ export default function ClassDetailPage() {
                 data-name="similar-class-card"
               >
                 <div className="w-full h-[160px] overflow-hidden">
-                  <img src={sc.img} alt={sc.title} className="w-full h-full object-cover" />
+                  <img
+                    src={sc.img}
+                    alt={sc.title}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div className="flex flex-col gap-3 p-5">
                   <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[16px] leading-normal whitespace-nowrap">
@@ -180,8 +289,12 @@ export default function ClassDetailPage() {
                     {sc.meta}
                   </p>
                   <div className="flex gap-1 items-center">
-                    <span className="font-['Inter:Bold'] font-bold text-[#2563eb] text-[13px]">Xem chi tiết</span>
-                    <span className="font-['Inter:Bold'] font-bold text-[#2563eb] text-[13px]">→</span>
+                    <span className="font-['Inter:Bold'] font-bold text-[#2563eb] text-[13px]">
+                      Xem chi tiết
+                    </span>
+                    <span className="font-['Inter:Bold'] font-bold text-[#2563eb] text-[13px]">
+                      →
+                    </span>
                   </div>
                 </div>
               </div>
@@ -189,8 +302,6 @@ export default function ClassDetailPage() {
           </div>
         </div>
       </div>
-
-      
     </div>
   )
 }

@@ -28,16 +28,19 @@ public sealed class SupabaseClassScheduleRepository : IClassScheduleRepository
     public async Task<IReadOnlyList<ClassSchedule>> SearchAsync(string? sportType, DateTime? date)
     {
         var query = _client.From<ClassScheduleModel>();
-        
-        // This requires complex joins for program/sportType. 
+
+        // This requires complex joins for program/sportType.
         // For now, we fetch all and filter in memory since we don't have joined models yet.
         var schedules = await query.Get();
         var domainSchedules = schedules.Models.Select(m => m.ToDomain()).ToList();
-        
+
         // Mocking the joined properties for backward compatibility
         foreach (var s in domainSchedules)
         {
-            var program = await _client.From<ClassProgramModel>().Where(p => p.Id == s.ProgramId).Single();
+            var program = await _client
+                .From<ClassProgramModel>()
+                .Where(p => p.Id == s.ProgramId)
+                .Single();
             var room = await _client.From<RoomModel>().Where(r => r.Id == s.RoomId).Single();
             if (program != null)
             {
@@ -53,7 +56,9 @@ public sealed class SupabaseClassScheduleRepository : IClassScheduleRepository
         IEnumerable<ClassSchedule> result = domainSchedules;
         if (!string.IsNullOrWhiteSpace(sportType))
         {
-            result = result.Where(s => s.SportType.Contains(sportType, StringComparison.OrdinalIgnoreCase));
+            result = result.Where(s =>
+                s.SportType.Contains(sportType, StringComparison.OrdinalIgnoreCase)
+            );
         }
 
         if (date.HasValue)
@@ -66,12 +71,18 @@ public sealed class SupabaseClassScheduleRepository : IClassScheduleRepository
 
     public async Task<IReadOnlyList<ClassSchedule>> GetByCoachAsync(Guid coachId)
     {
-        var response = await _client.From<ClassScheduleModel>().Where(x => x.CoachId == coachId).Get();
+        var response = await _client
+            .From<ClassScheduleModel>()
+            .Where(x => x.CoachId == coachId)
+            .Get();
         var domainSchedules = response.Models.Select(m => m.ToDomain()).ToList();
-        
+
         foreach (var s in domainSchedules)
         {
-            var program = await _client.From<ClassProgramModel>().Where(p => p.Id == s.ProgramId).Single();
+            var program = await _client
+                .From<ClassProgramModel>()
+                .Where(p => p.Id == s.ProgramId)
+                .Single();
             var room = await _client.From<RoomModel>().Where(r => r.Id == s.RoomId).Single();
             if (program != null)
             {
@@ -83,28 +94,45 @@ public sealed class SupabaseClassScheduleRepository : IClassScheduleRepository
                 s.RoomName = room.RoomName;
             }
         }
-        
+
         return domainSchedules.OrderBy(s => s.StartTime).ToList();
     }
 
-    public async Task<bool> HasCoachConflictAsync(Guid coachId, DateTime start, DateTime end, Guid? excludeScheduleId = null)
+    public async Task<bool> HasCoachConflictAsync(
+        Guid coachId,
+        DateTime start,
+        DateTime end,
+        Guid? excludeScheduleId = null
+    )
     {
-        var response = await _client.From<ClassScheduleModel>()
+        var response = await _client
+            .From<ClassScheduleModel>()
             .Where(x => x.CoachId == coachId && x.IsCancelled == false)
             .Get();
 
-        return response.Models.Any(s => s.Id != excludeScheduleId && s.StartTime < end && s.EndTime > start);
+        return response.Models.Any(s =>
+            s.Id != excludeScheduleId && s.StartTime < end && s.EndTime > start
+        );
     }
 
-    public async Task<bool> HasRoomConflictAsync(string roomName, DateTime start, DateTime end, Guid? excludeScheduleId = null)
+    public async Task<bool> HasRoomConflictAsync(
+        string roomName,
+        DateTime start,
+        DateTime end,
+        Guid? excludeScheduleId = null
+    )
     {
         var room = await _client.From<RoomModel>().Where(r => r.RoomName == roomName).Single();
-        if (room == null) return false;
+        if (room == null)
+            return false;
 
-        var response = await _client.From<ClassScheduleModel>()
+        var response = await _client
+            .From<ClassScheduleModel>()
             .Where(x => x.RoomId == room.Id && x.IsCancelled == false)
             .Get();
 
-        return response.Models.Any(s => s.Id != excludeScheduleId && s.StartTime < end && s.EndTime > start);
+        return response.Models.Any(s =>
+            s.Id != excludeScheduleId && s.StartTime < end && s.EndTime > start
+        );
     }
 }

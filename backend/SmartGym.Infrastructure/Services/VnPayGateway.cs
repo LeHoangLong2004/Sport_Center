@@ -23,15 +23,23 @@ public class VnPayGateway : IVnPayGateway
     }
 
     public bool IsConfigured =>
-        !string.IsNullOrWhiteSpace(_options.Url) &&
-        !string.IsNullOrWhiteSpace(_options.TmnCode) &&
-        !string.IsNullOrWhiteSpace(_options.HashSecret);
+        !string.IsNullOrWhiteSpace(_options.Url)
+        && !string.IsNullOrWhiteSpace(_options.TmnCode)
+        && !string.IsNullOrWhiteSpace(_options.HashSecret);
 
-    public string CreatePaymentUrl(Guid invoiceId, decimal amount, string orderInfo, string? clientIp, DateTime? createdAt = null)
+    public string CreatePaymentUrl(
+        Guid invoiceId,
+        decimal amount,
+        string orderInfo,
+        string? clientIp,
+        DateTime? createdAt = null
+    )
     {
         if (!IsConfigured)
         {
-            throw new InvalidOperationException("VNPay chưa được cấu hình (VnPay:TmnCode, VnPay:HashSecret, VnPay:Url).");
+            throw new InvalidOperationException(
+                "VNPay chưa được cấu hình (VnPay:TmnCode, VnPay:HashSecret, VnPay:Url)."
+            );
         }
 
         var now = createdAt ?? DateTime.UtcNow.AddHours(7); // VNPay dùng giờ Việt Nam
@@ -46,11 +54,14 @@ public class VnPayGateway : IVnPayGateway
             ["vnp_TxnRef"] = invoiceId.ToString("N"),
             ["vnp_OrderInfo"] = orderInfo,
             ["vnp_OrderType"] = _options.OrderType,
-            ["vnp_Amount"] = ((long)Math.Round(amount * 100m, MidpointRounding.AwayFromZero)).ToString(CultureInfo.InvariantCulture),
+            ["vnp_Amount"] = (
+                (long)Math.Round(amount * 100m, MidpointRounding.AwayFromZero)
+            ).ToString(CultureInfo.InvariantCulture),
             ["vnp_ReturnUrl"] = _options.ReturnUrl,
             ["vnp_IpAddr"] = string.IsNullOrWhiteSpace(clientIp) ? "127.0.0.1" : clientIp,
             ["vnp_CreateDate"] = now.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture),
-            ["vnp_ExpireDate"] = now.AddMinutes(15).ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture)
+            ["vnp_ExpireDate"] = now.AddMinutes(15)
+                .ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture),
         };
 
         var query = BuildQuery(parameters);
@@ -66,7 +77,10 @@ public class VnPayGateway : IVnPayGateway
             return new VnPayCallbackResult(false, null, null, null, "VNPay chưa được cấu hình.");
         }
 
-        if (!query.TryGetValue("vnp_SecureHash", out var receivedHash) || string.IsNullOrWhiteSpace(receivedHash))
+        if (
+            !query.TryGetValue("vnp_SecureHash", out var receivedHash)
+            || string.IsNullOrWhiteSpace(receivedHash)
+        )
         {
             return new VnPayCallbackResult(false, null, null, null, "Thiếu chữ ký vnp_SecureHash.");
         }
@@ -74,8 +88,10 @@ public class VnPayGateway : IVnPayGateway
         var parameters = new SortedDictionary<string, string>(StringComparer.Ordinal);
         foreach (var pair in query)
         {
-            if (string.IsNullOrEmpty(pair.Value)) continue;
-            if (pair.Key is "vnp_SecureHash" or "vnp_SecureHashType") continue;
+            if (string.IsNullOrEmpty(pair.Value))
+                continue;
+            if (pair.Key is "vnp_SecureHash" or "vnp_SecureHashType")
+                continue;
             parameters[pair.Key] = pair.Value;
         }
 
@@ -89,17 +105,28 @@ public class VnPayGateway : IVnPayGateway
         query.TryGetValue("vnp_TransactionNo", out var transactionId);
 
         Guid? invoiceId = null;
-        if (query.TryGetValue("vnp_TxnRef", out var txnRef) && Guid.TryParseExact(txnRef, "N", out var parsed))
+        if (
+            query.TryGetValue("vnp_TxnRef", out var txnRef)
+            && Guid.TryParseExact(txnRef, "N", out var parsed)
+        )
         {
             invoiceId = parsed;
         }
 
-        return new VnPayCallbackResult(true, invoiceId, responseCode, transactionId, "Chữ ký hợp lệ.");
+        return new VnPayCallbackResult(
+            true,
+            invoiceId,
+            responseCode,
+            transactionId,
+            "Chữ ký hợp lệ."
+        );
     }
 
     private static string BuildQuery(IEnumerable<KeyValuePair<string, string>> parameters) =>
-        string.Join("&", parameters.Select(p =>
-            $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value)}"));
+        string.Join(
+            "&",
+            parameters.Select(p => $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value)}")
+        );
 
     private static string HmacSha512(string key, string data)
     {

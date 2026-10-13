@@ -40,7 +40,10 @@ public class BookingModel : BaseModel
 
     public Booking ToDomain()
     {
-        var statusEnum = BookingStatus == "NO_SHOW" ? Domain.Enums.BookingStatus.NoShow : Enum.Parse<BookingStatus>(BookingStatus, true);
+        var statusEnum =
+            BookingStatus == "NO_SHOW"
+                ? Domain.Enums.BookingStatus.NoShow
+                : Enum.Parse<BookingStatus>(BookingStatus, true);
 
         return new Booking(
             Id,
@@ -58,7 +61,10 @@ public class BookingModel : BaseModel
 
     public static BookingModel FromDomain(Booking booking)
     {
-        var statusStr = booking.Status == Domain.Enums.BookingStatus.NoShow ? "NO_SHOW" : booking.Status.ToString().ToUpper();
+        var statusStr =
+            booking.Status == Domain.Enums.BookingStatus.NoShow
+                ? "NO_SHOW"
+                : booking.Status.ToString().ToUpper();
 
         return new BookingModel
         {
@@ -71,7 +77,7 @@ public class BookingModel : BaseModel
             SwapCountInWeek = booking.SwapCountInWeek,
             SwappedFromScheduleId = booking.SwappedFromScheduleId,
             BookedAt = booking.BookedAt,
-            CancelledAt = booking.CancelledAt
+            CancelledAt = booking.CancelledAt,
         };
     }
 }

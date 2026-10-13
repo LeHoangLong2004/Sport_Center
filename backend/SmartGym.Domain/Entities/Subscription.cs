@@ -18,8 +18,9 @@ public class Subscription
     public decimal DiscountAmount { get; set; }
     public string? PackageSnapshotJson { get; set; }
     public SmartGym.Domain.Enums.PaymentMethod? PaymentMethod { get; set; }
-    public SmartGym.Domain.Enums.PaymentStatus PaymentStatus { get; set; } = SmartGym.Domain.Enums.PaymentStatus.Pending;
-    
+    public SmartGym.Domain.Enums.PaymentStatus PaymentStatus { get; set; } =
+        SmartGym.Domain.Enums.PaymentStatus.Pending;
+
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public bool AutoRenew { get; set; } = false;

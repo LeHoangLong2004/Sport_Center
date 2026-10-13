@@ -1,0 +1,241 @@
+@reference ../index.css;
+
+
+.m2-topbar > div:first-child strong {
+  overflow: hidden;
+  font-family: var(--font-extrabold);
+  font-size: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m2-tools {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.m2-tools label {
+  display: flex;
+  width: 220px;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.m2-tools label img,
+.m2-tools > button:first-of-type img {
+  width: 18px;
+  height: 18px;
+}
+
+.m2-tools input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  color: var(--ink);
+  background: transparent;
+  font-size: 11px;
+}
+
+.m2-tools input::placeholder {
+  color: var(--faint);
+}
+
+.m2-tools button {
+  display: grid;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  background: transparent;
+}
+
+.m2-tools > button:last-child,
+.m2-tools > button:last-child img {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+}
+
+.m2-schedule-content {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  grid-template-columns: minmax(0, 1fr) 350px;
+  gap: 24px;
+  padding: 30px;
+  overflow: auto;
+}
+
+.m2-calendar-card {
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--white);
+}
+
+.m2-calendar-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.m2-calendar-title > div:first-child {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+
+.m2-calendar-title strong {
+  font-family: var(--font-extrabold);
+  font-size: 18px;
+}
+
+.m2-calendar-title span {
+  color: var(--faint);
+  font-size: 11px;
+}
+
+.m2-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.m2-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.m2-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.m2-legend .blue { background: var(--blue); }
+.m2-legend .orange { background: var(--orange); }
+.m2-legend .green { background: #10b981; }
+
+.m2-calendar {
+  margin-top: 22px;
+  overflow: hidden;
+  border-radius: 7px 7px 12px 12px;
+}
+
+.m2-calendar-days,
+.m2-calendar-row {
+  display: grid;
+  grid-template-columns: 60px repeat(7, minmax(70px, 1fr));
+  gap: 1px;
+  background: var(--line);
+}
+
+.m2-calendar-days {
+  height: 44px;
+}
+
+.m2-calendar-days > * {
+  display: grid;
+  place-items: center;
+  background: #f8fafc;
+  font-family: var(--font-bold);
+  font-size: 11px;
+}
+
+.m2-calendar-row {
+  position: relative;
+  height: 110px;
+}
+
+.m2-calendar-row > span,
+.m2-calendar-row > div {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  background: var(--white);
+  font-size: 10px;
+}
+
+.m2-calendar-event {
+  z-index: 1;
+  display: flex;
+  height: calc(100% - 12px);
+  margin: 6px;
+  grid-row: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px;
+  overflow: hidden;
+  border: 0;
+  border-left: 3px solid;
+  border-radius: 6px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.m2-calendar-event.blue {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: #eff6ff;
+}
+
+.m2-calendar-event.green {
+  border-color: #10b981;
+  color: #059669;
+  background: #ecfdf5;
+}
+
+.m2-calendar-event.orange {
+  border-color: var(--orange);
+  color: #ea580c;
+  background: #fff7ed;
+}
+
+.m2-calendar-event.column-1 { grid-column: 2; }
+.m2-calendar-event.column-2 { grid-column: 3; }
+.m2-calendar-event.column-3 { grid-column: 4; }
+.m2-calendar-event.column-5 { grid-column: 6; }
+.m2-calendar-event.column-6 { grid-column: 7; }
+
+.m2-calendar-event strong { font-family: var(--font-bold); font-size: 10px; }
+.m2-calendar-event span, .m2-calendar-event small { color: var(--muted); font-size: 8px; }
+
+.m2-calendar-blank {
+  height: min(38vh, 370px);
+  background: #e2e8f0;
+}
+
+.m2-schedule-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.m2-book-button {
+  width: 100%;
+  min-height: 58px;
+  border: 0;
+  border-radius: 12px;
+  color: var(--white);
+  background: var(--blue);
+  font-family: var(--font-extrabold);
+  font-size: 16px;
+}
+
+.m2-side-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--white);
+}
