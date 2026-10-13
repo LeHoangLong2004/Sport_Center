@@ -41,6 +41,36 @@ public static class CheckInEndpoints
         })
         .AddEndpointFilter(Authorize.Roles(UserRole.CenterManager, UserRole.Receptionist, UserRole.Member));
 
+        checkin.MapPost("/checkout", async (
+            CheckOutRequest request,
+            CheckInService checkInService,
+            IUserRepository userRepo) =>
+        {
+            var member = await userRepo.FindByIdAsync(request.MemberId);
+            if (member is null)
+                return Results.NotFound(new { message = "Không tìm thấy hội viên." });
+
+            var (allowed, message, record) = await checkInService.CheckOutAsync(
+                request.MemberId,
+                DateTime.UtcNow);
+
+            if (!allowed || record is null)
+                return Results.BadRequest(new { allowed, message });
+
+            var durationMinutes = Math.Max(
+                0,
+                (int)Math.Round((record.CheckOutTime!.Value - record.CheckInTime).TotalMinutes));
+
+            return Results.Ok(new CheckOutResponse(
+                true,
+                message,
+                member.FullName,
+                record.CheckInTime,
+                record.CheckOutTime.Value,
+                durationMinutes));
+        })
+        .AddEndpointFilter(Authorize.Roles(UserRole.CenterManager, UserRole.Receptionist, UserRole.Member));
+
         checkin.MapGet("/history", async (
             HttpContext context,
             ICheckInRepository checkInRepo,
@@ -69,7 +99,17 @@ public static class CheckInEndpoints
             {
                 var member = await userRepo.FindByIdAsync(r.MemberId);
                 var memberName = member?.FullName ?? "Unknown";
-                return new CheckInHistoryEntry(r.Id, memberName, r.CheckInTime, "APPROVED");
+                int? duration = r.CheckOutTime.HasValue
+                    ? Math.Max(0, (int)Math.Round((r.CheckOutTime.Value - r.CheckInTime).TotalMinutes))
+                    : null;
+                return new CheckInHistoryEntry(
+                    r.Id,
+                    r.MemberId,
+                    memberName,
+                    r.CheckInTime,
+                    r.CheckOutTime,
+                    duration,
+                    r.CheckOutTime.HasValue ? "CHECKED_OUT" : "APPROVED");
             });
 
             var response = await Task.WhenAll(responseTasks);

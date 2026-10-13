@@ -39,7 +39,7 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        app.Logger.LogWarning("DB init error: {Message}", ex.Message);
+        Console.WriteLine($"DB init error: {ex.Message}");
     }
 
     // ── Flow 3: đồng bộ cột bảng invoices với EF Core (an toàn khi chạy lại) ──
@@ -57,7 +57,7 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        app.Logger.LogWarning("Flow 3 schema sync error: {Message}", ex.Message);
+        Console.WriteLine($"Flow 3 schema sync error: {ex.Message}");
     }
 
     try
@@ -76,7 +76,7 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        app.Logger.LogWarning("Package catalog schema sync error: {Message}", ex.Message);
+        Console.WriteLine($"Package catalog schema sync error: {ex.Message}");
     }
 
     try
@@ -96,7 +96,7 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        app.Logger.LogWarning("coach_profiles create error: {Message}", ex.Message);
+        Console.WriteLine($"coach_profiles create error: {ex.Message}");
     }
 
     try
@@ -179,7 +179,7 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        app.Logger.LogWarning("DB grant/seed error: {Message}", ex.Message);
+        Console.WriteLine($"DB grant/seed error: {ex.Message}");
     }
 }
 
