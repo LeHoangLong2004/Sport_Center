@@ -100,7 +100,6 @@ export default function CoachChat() {
         conversationId: activeConv.id,
         text: textToSend,
         coachId: profile?.id || "25F50FBA",
-        coachName: profile?.fullName || "HLV Nam"
       });
       if (res && res.data) {
         // Refresh to ensure exact sync

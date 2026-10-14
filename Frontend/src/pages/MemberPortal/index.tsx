@@ -127,6 +127,14 @@ export default function MemberPortal({
     reviews: <MemberReviews onNavigate={navigateTo} />,
     chat: <MemberChat onNavigate={navigateTo} />,
     support: <MemberSupport onNavigate={navigateTo} />,
+    shop: (
+      <ProductShopPage
+        onNavigate={() => {
+          navigateTo("dashboard");
+          window.location.hash = "#member-dashboard";
+        }}
+      />
+    ),
     profile: <MemberProfileModern onNavigate={navigateTo} />,
   };
 

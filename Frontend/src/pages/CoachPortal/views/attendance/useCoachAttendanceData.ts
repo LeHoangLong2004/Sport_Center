@@ -66,6 +66,15 @@ export function useCoachAttendanceData(initialSessionId: string | null) {
         setRecords(initialized);
         setSavedRecords(initialized);
         setMembers(usableMembers);
+
+        // Đồng bộ lại registeredMemberIds cho buổi học đang chọn để sĩ số trên Header luôn chuẩn xác
+        setActiveSessions((prev) =>
+          prev.map((s) =>
+            s.id === selectedSessionId
+              ? { ...s, registeredMemberIds: usableMembers.map((m) => m.id) }
+              : s
+          )
+        );
       } catch (err) {
         console.error("Lỗi nạp điểm danh:", err);
       }

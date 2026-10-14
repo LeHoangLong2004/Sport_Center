@@ -29,59 +29,7 @@ app.MapWorkoutPlanEndpoints();
 app.MapHomeworkEndpoints();
 app.MapReviewEndpoints();
 
-app.MapGet(
-    "/api/sports",
-    async (Supabase.Client client) =>
-    {
-        var response = await client
-            .From<SmartGym.Infrastructure.Persistence.Supabase.Models.SportModel>()
-            .Get();
-        return Results.Ok(response.Models.Select(s => new { id = s.Id, name = s.Name }));
-    }
-);
-
-app.MapPost(
-        "/api/sports",
-        async (
-            SmartGym.Infrastructure.Persistence.Supabase.Models.SportModel request,
-            Supabase.Client client
-        ) =>
-        {
-            request.Id = Guid.NewGuid();
-            await client
-                .From<SmartGym.Infrastructure.Persistence.Supabase.Models.SportModel>()
-                .Insert(request);
-            return Results.Ok(new { id = request.Id, name = request.Name });
-        }
-    )
-    .RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
-
-app.MapGet(
-    "/api/facilities",
-    async (Supabase.Client client) =>
-    {
-        var response = await client
-            .From<SmartGym.Infrastructure.Persistence.Supabase.Models.FacilityModel>()
-            .Get();
-        return Results.Ok(response.Models.Select(f => new { id = f.Id, name = f.Name }));
-    }
-);
-
-app.MapPost(
-        "/api/facilities",
-        async (
-            SmartGym.Infrastructure.Persistence.Supabase.Models.FacilityModel request,
-            Supabase.Client client
-        ) =>
-        {
-            request.Id = Guid.NewGuid();
-            await client
-                .From<SmartGym.Infrastructure.Persistence.Supabase.Models.FacilityModel>()
-                .Insert(request);
-            return Results.Ok(new { id = request.Id, name = request.Name });
-        }
-    )
-    .RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
+app.MapSportFacilityEndpoints();
 
 app.MapGet(
     "/api/coaches",

@@ -2,6 +2,20 @@ import React from "react";
 import { A } from "./shared";
 
 export function MembershipCardScreen({ onHome }: { onHome: () => void }) {
+  let user: any = null;
+  try {
+    const userStr = localStorage.getItem("user");
+    if (userStr) user = JSON.parse(userStr);
+  } catch {}
+
+  const memberName = user?.fullName || "Hội viên SportCenter";
+  const memberCode = user?.memberCode || `SC-${new Date().getFullYear()}-${(user?.id || "001").slice(0, 6).toUpperCase()}`;
+  const expiryDate = (() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + 12);
+    return d.toLocaleDateString("vi-VN");
+  })();
+
   return (
     <div className="bg-[#f8fafc] flex flex-col items-start w-full min-h-screen">
       <div className="flex flex-col gap-8 items-center pb-20 pt-10 px-20 w-full">
@@ -27,18 +41,18 @@ export function MembershipCardScreen({ onHome }: { onHome: () => void }) {
                 <span className="font-['Manrope'] font-extrabold text-white text-[14px]">SPORTCENTER</span>
               </div>
               <div className="bg-teal-500 flex items-start px-3 py-1 rounded-[12px]">
-                <span className="font-['Inter'] font-bold text-white text-[11px] uppercase">Fitness Plus</span>
+                <span className="font-['Inter'] font-bold text-white text-[11px] uppercase">Thành viên VIP</span>
               </div>
             </div>
 
             <div className="flex gap-5 items-center w-full">
-              <div className="bg-white flex flex-col items-start overflow-hidden rounded-[36px] size-[72px] shrink-0">
-                <img src={`${A}/dd66b.png`} className="size-full object-cover" alt="Hội viên" />
+              <div className="bg-white flex flex-col items-start overflow-hidden rounded-[36px] size-[72px] shrink-0 border border-slate-200">
+                <img src={user?.avatarUrl || `${A}/dd66b.png`} className="size-full object-cover" alt="Hội viên" />
               </div>
               <div className="flex flex-col gap-1 items-start">
-                <p className="font-['Inter'] font-extrabold text-white text-lg">Nguyễn Lan Anh</p>
+                <p className="font-['Inter'] font-extrabold text-white text-lg">{memberName}</p>
                 <p className="font-['Inter'] font-normal text-[#64748b] text-[13px]">
-                  Mã hội viên: <span className="font-['Inter'] font-bold text-[#10b981]">SC-2026-001234</span>
+                  Mã hội viên: <span className="font-['Inter'] font-bold text-[#10b981]">{memberCode}</span>
                 </p>
               </div>
             </div>
@@ -46,11 +60,11 @@ export function MembershipCardScreen({ onHome }: { onHome: () => void }) {
             <div className="flex gap-10 items-start w-full">
               <div className="flex flex-col gap-1 items-start">
                 <p className="font-['Inter'] font-normal text-[#64748b] text-[11px] uppercase">Cơ sở kích hoạt</p>
-                <p className="font-['Inter'] font-semibold text-white text-[13px]">Flagship Center Q.1</p>
+                <p className="font-['Inter'] font-semibold text-white text-[13px]">{user?.branch || "Chi nhánh Quận 1 - Flagship Center"}</p>
               </div>
               <div className="flex flex-col gap-1 items-start">
                 <p className="font-['Inter'] font-normal text-[#64748b] text-[11px] uppercase">Ngày hết hạn</p>
-                <p className="font-['Inter'] font-semibold text-white text-[13px]">21/03/2027</p>
+                <p className="font-['Inter'] font-semibold text-white text-[13px]">{expiryDate}</p>
               </div>
             </div>
           </div>

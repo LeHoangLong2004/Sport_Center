@@ -7,7 +7,7 @@ interface Props {
   handleSubmitRequest: any;
   selectedSessionForRequest: any;
   setSelectedSessionForRequest: any;
-  allUnifiedSessions: any;
+  allUnifiedSessions: Array<{ id: string; date: string; startTime: string; endTime: string; className: string }>;
   requestType: any;
   setRequestType: any;
   substituteCoach: any;

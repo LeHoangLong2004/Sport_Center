@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { FadeUp, FadeIn } from "../components/Motion";
 import { ClassCard } from "./ClassListComponents";
-import type { ClassItem } from "./ClassListComponents";
+import type { ClassItem, ClassStatus } from "./ClassListComponents";
 
 const A = "/assets";
 

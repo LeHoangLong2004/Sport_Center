@@ -75,6 +75,11 @@ public sealed partial class PackageCatalogService
             now,
             cancellationToken
         );
+        if (request.StartDate.HasValue && request.StartDate.Value.Date >= DateTime.UtcNow.Date)
+        {
+            start = DateTime.SpecifyKind(request.StartDate.Value.Date, DateTimeKind.Utc);
+            end = DateTime.SpecifyKind(start.AddMonths(request.DurationMonths).AddDays(-1), DateTimeKind.Utc).AddHours(23).AddMinutes(59).AddSeconds(59);
+        }
 
         var subscription = new Subscription
         {
@@ -95,6 +100,58 @@ public sealed partial class PackageCatalogService
         db.Subscriptions.Add(subscription);
         await db.SaveChangesAsync(cancellationToken);
         return MapOrder(subscription, user.FullName, user.Email, snapshot);
+    }
+
+    public async Task<PackageCheckoutResponse> CheckoutAsync(
+        Guid userId,
+        CreatePackageCheckoutRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        var orderRequest = new CreatePackageOrderRequest
+        {
+            PackageId = request.PackageId,
+            DurationMonths = request.DurationMonths,
+            StartDate = request.StartDate,
+        };
+
+        var order = await CreateOrderAsync(userId, orderRequest, cancellationToken);
+        var paymentMethod = PaymentMethodExtensions.ParseDbValue(request.PaymentMethod ?? "qr");
+
+        // Chuyển khoản QR, thẻ hoặc ví điện tử: cập nhật hoàn tất thanh toán (paid)
+        // Tiền mặt tại quầy (counter): giữ trạng thái chờ thanh toán
+        var isOnlinePaid = paymentMethod != PaymentMethod.CashAtCounter;
+        var paymentStatus = isOnlinePaid ? PaymentStatus.Completed : PaymentStatus.Pending;
+        var paidAt = isOnlinePaid ? DateTime.UtcNow : (DateTime?)null;
+
+        var subscription = await db.Subscriptions.FirstOrDefaultAsync(s => s.Id == order.Id, cancellationToken);
+        if (subscription != null && isOnlinePaid)
+        {
+            subscription.PaymentStatus = paymentStatus;
+            subscription.PaidAt = paidAt;
+            order.Status = "paid";
+            order.PaidAt = paidAt;
+        }
+
+        var invoice = new Invoice
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            TotalAmount = order.Total,
+            PaymentMethod = paymentMethod,
+            Status = paymentStatus,
+            CreatedAt = DateTime.UtcNow,
+            PaidAt = paidAt,
+        };
+
+        db.Invoices.Add(invoice);
+        await db.SaveChangesAsync(cancellationToken);
+
+        return new PackageCheckoutResponse
+        {
+            Order = order,
+            InvoiceId = invoice.Id,
+        };
     }
 
     public async Task<IReadOnlyList<PackageOrderResponse>> GetOrdersAsync(

@@ -12,7 +12,7 @@ export default function CoachSidebar({
   onNavigate: (s: CoachScreen) => void
 }) {
   const { profile } = useUserProfile('coach');
-  const userStr = localStorage.getItem("user");
+  const userStr = typeof window !== 'undefined' ? localStorage.getItem("user") : null;
   let storedUser: { avatarUrl?: string; fullName?: string; name?: string; email?: string; role?: string; roleName?: string } | null = null;
   let userName = profile?.fullName;
   let avatarUrl = profile?.avatarUrl;

@@ -235,10 +235,12 @@ using (var scope = app.Services.CreateScope())
             VALUES 
                 ('25f50fba-506a-4edf-9db7-43f77f6741a4', (SELECT id FROM roles WHERE LOWER(name) = 'coach' LIMIT 1), 'Ho Xuan Anh Nam', 'hoxuananhnam1@gmail.com', '0989123789', '$2a$11$e/r08VbM70tWp6Z97lC4wO9Fh0Zz7XhO3aW8u8/r08VbM70tWp6Z9', true),
                 ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', (SELECT id FROM roles WHERE LOWER(name) = 'member' LIMIT 1), 'Ho Xuan Anh Nam', 'hoxuananhnam@gmail.com', '0989123788', '$2a$11$e/r08VbM70tWp6Z97lC4wO9Fh0Zz7XhO3aW8u8/r08VbM70tWp6Z9', true)
-            ON CONFLICT (id) DO NOTHING;
+            ON CONFLICT (email) DO NOTHING;
 
             INSERT INTO coach_profiles (user_id, specialties, certifications, experience_years, bio)
-            VALUES ('25f50fba-506a-4edf-9db7-43f77f6741a4', 'Gym Fitness, Yoga, BodyCombat', 'Chứng chỉ Huấn luyện viên Thể hình Quốc tế (ACE / NASM)', 3, 'Huấn luyện viên thể hình chuyên sâu.')
+            SELECT u.id, 'Gym Fitness, Yoga, BodyCombat', 'Chứng chỉ Huấn luyện viên Thể hình Quốc tế (ACE / NASM)', 3, 'Huấn luyện viên thể hình chuyên sâu.'
+            FROM users u
+            WHERE u.email = 'hoxuananhnam1@gmail.com'
             ON CONFLICT (user_id) DO NOTHING;
         "
         );
