@@ -184,6 +184,7 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
         activeSessions={activeSessions}
         session={session}
         isFinalized={isFinalized}
+        enrolledCount={members.length}
       />
 
       <div className="grid grid-cols-3 gap-3.5">
