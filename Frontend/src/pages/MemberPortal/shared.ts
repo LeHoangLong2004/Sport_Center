@@ -7,6 +7,7 @@ export type MemberPage =
   | "classes"
   | "confirm"
   | "payment"
+  | "shop"
   | "reports"
   | "profile"
   | NewMemberPage

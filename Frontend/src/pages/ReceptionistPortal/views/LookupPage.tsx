@@ -3,7 +3,7 @@ import { Search } from "lucide-react"
 import { A } from "../shared"
 import StatusBadge from "../components/StatusBadge"
 
-export function LookupPage({ onDetail }: { onDetail: () => void }) {
+export function LookupPage({ onDetail }: { onDetail: (member: any) => void }) {
   const [query, setQuery] = useState("")
   const [filter, setFilter] = useState("Tất cả")
   const [members, setMembers] = useState<any[]>([])
@@ -81,7 +81,7 @@ export function LookupPage({ onDetail }: { onDetail: () => void }) {
           <span className="font-['Manrope:SemiBold'] font-semibold text-[#64748b] text-[14px]">
             Tổng số kết quả:{" "}
             <span className="font-['Manrope:Bold'] font-bold text-[#0f172a]">
-              1,247 hội viên
+              {filtered.length} thành viên
             </span>
           </span>
         </div>
@@ -90,7 +90,7 @@ export function LookupPage({ onDetail }: { onDetail: () => void }) {
       {/* Table */}
       <div className="bg-white border border-[#e2e8f0] flex flex-col items-start overflow-hidden rounded-[12px] shrink-0 w-full">
         <div className="bg-[#f1f5f9] flex font-['Manrope:ExtraBold'] font-extrabold items-center px-[24px] py-[14px] text-[#64748b] text-[13px] w-full">
-          <span className="w-[120px] shrink-0">MÃ HỘI VIÊN</span>
+          <span className="w-[120px] shrink-0">MÃ THÀNH VIÊN</span>
           <span className="flex-1 min-w-0">HỌ VÀ TÊN</span>
           <span className="w-[180px] shrink-0">SỐ ĐIỆN THOẠI</span>
           <span className="w-[200px] shrink-0">GÓI ĐĂNG KÝ</span>
@@ -134,8 +134,8 @@ export function LookupPage({ onDetail }: { onDetail: () => void }) {
               <div className="flex items-start justify-end w-[100px] shrink-0">
                 <button
                   type="button"
-                  onClick={onDetail}
-                  className="border border-[#e2e8f0] border-solid flex items-start px-[12px] py-[6px] rounded-[6px] shrink-0"
+                  onClick={() => onDetail(m)}
+                  className="border border-[#e2e8f0] border-solid flex items-start px-[12px] py-[6px] rounded-[6px] shrink-0 hover:bg-slate-50 transition-colors"
                 >
                   <span className="font-['Manrope:Bold'] font-bold text-[#0f172a] text-[12px]">
                     Chi tiết

@@ -31,6 +31,7 @@ import {
   Crown,
   KeyRound,
   FileText,
+  ShoppingBag,
 } from "lucide-react";
 
 interface Props {
@@ -156,6 +157,7 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
     reviews: "HỘI VIÊN / ĐÁNH GIÁ HLV",
     chat: "HỘI VIÊN / TIN NHẮN TRAO ĐỔI",
     support: "HỘI VIÊN / TRỢ LÝ AI & HỖ TRỢ",
+    shop: "HỘI VIÊN / CỬA HÀNG SẢN PHẨM",
     profile: "HỘI VIÊN / HỒ SƠ CÁ NHÂN",
   };
 
@@ -169,6 +171,7 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
     reviews: "Đánh giá Huấn luyện viên",
     chat: "Tin nhắn & Trao đổi",
     support: "Trợ lý AI & Hỗ trợ",
+    shop: "Cửa hàng sản phẩm & Đồ tập",
     profile: "Hồ sơ cá nhân",
   };
 

@@ -7,6 +7,7 @@ import { RegisterPage } from './views/RegisterPage';
 import { ClassesPage } from './views/ClassesPage';
 import { SchedulePage } from './views/SchedulePage';
 import { PosPage } from './views/PosPage';
+import { ProductOrdersPage } from './views/ProductOrdersPage';
 import { LookupPage } from './views/LookupPage';
 import { DetailPage } from './views/DetailPage';
 import { ProfileSettings } from '../../components/ProfileSettings';
@@ -15,6 +16,7 @@ import { toast } from 'sonner';
 
 export default function ReceptionistPortal({ onExit }: { onExit: () => void }) {
   const [page, setPage] = useState<Page>("checkin")
+  const [selectedMember, setSelectedMember] = useState<any>(null)
   const { profile, loading } = useUserProfile()
   const [error, setError] = useState<string>("");
 
@@ -74,8 +76,21 @@ export default function ReceptionistPortal({ onExit }: { onExit: () => void }) {
           {page === "classes" && <ClassesPage />}
           {page === "schedule" && <SchedulePage />}
           {page === "pos" && <PosPage />}
-          {page === "lookup" && <LookupPage onDetail={() => setPage("detail")} />}
-          {page === "detail" && <DetailPage onBack={() => setPage("lookup")} />}
+          {page === "orders" && <ProductOrdersPage />}
+          {page === "lookup" && (
+            <LookupPage
+              onDetail={(m) => {
+                setSelectedMember(m)
+                setPage("detail")
+              }}
+            />
+          )}
+          {page === "detail" && (
+            <DetailPage
+              member={selectedMember}
+              onBack={() => setPage("lookup")}
+            />
+          )}
           {page === "profile" && (
             loading ? (
               <div className="flex items-center justify-center h-full">

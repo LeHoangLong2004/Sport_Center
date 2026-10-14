@@ -15,6 +15,7 @@ import CoachAI from "./views/CoachAI";
 import CoachProfile from "./views/CoachProfile";
 import CoachSettings from "./views/CoachSettings";
 
+
 export default function CoachPortal() {
   const getInitialScreen = (): CoachScreen => {
     const hash = window.location.hash.replace("#coach-", "");

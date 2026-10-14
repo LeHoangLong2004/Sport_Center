@@ -12,16 +12,17 @@ export default function CoachSidebar({
   onNavigate: (s: CoachScreen) => void
 }) {
   const { profile } = useUserProfile('coach');
-  const userStr = localStorage.getItem("user");
+  let storedUser: { avatarUrl?: string; fullName?: string; name?: string; email?: string; role?: string; roleName?: string } | null = null;
   let userName = profile?.fullName;
   let avatarUrl = profile?.avatarUrl;
-  if (!userName && userStr) {
+  if (userStr) {
     try {
       const user = JSON.parse(userStr);
-      if (user.role?.toLowerCase() === 'coach' || user.roleName?.toLowerCase() === 'coach') {
+      storedUser = user;
+      if (!userName) {
         userName = user.fullName || user.name || user.email?.split("@")[0];
-        avatarUrl = avatarUrl || user.avatarUrl;
       }
+      avatarUrl = avatarUrl || user.avatarUrl;
     } catch (e) {}
   }
   userName = userName || "Huấn luyện viên";
@@ -78,7 +79,7 @@ export default function CoachSidebar({
           onClick={() => onNavigate("profile")}
         >
           <UserAvatar
-            src={avatarUrl || undefined}
+            src={avatarUrl || storedUser?.avatarUrl || undefined}
             name={userName}
             className="rounded-full size-10 shrink-0 object-cover border-2 border-[#1e293b] group-hover:border-[#f97316] transition-colors"
           />

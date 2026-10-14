@@ -11,6 +11,7 @@ import MemberReviews from "./views/MemberReviews";
 import MemberChat from "./views/MemberChat";
 import MemberSupport from "./views/MemberSupport";
 import MemberProfileModern from "./views/MemberProfileModern";
+import { ProductShopPage } from "./views/ProductShopPage";
 import { CatalogPackage, PackagePeriod } from "../../services/packageApi";
 import PaymentFlow from "../PaymentFlow";
 
@@ -47,6 +48,7 @@ export default function MemberPortal({
       message: "chat",
       ai: "support",
       support: "support",
+      shop: "dashboard",
       profile: "profile",
     };
     if (map[raw]) return map[raw];
@@ -81,6 +83,7 @@ export default function MemberPortal({
         message: "chat",
         ai: "support",
         support: "support",
+        shop: "dashboard",
         profile: "profile",
       };
       if (map[raw]) {
@@ -127,10 +130,20 @@ export default function MemberPortal({
     profile: <MemberProfileModern onNavigate={navigateTo} />,
   };
 
+  if ((window.location.hash || "").includes("shop")) {
+    return (
+      <ProductShopPage
+        onNavigate={() => {
+          window.location.hash = "#member-dashboard";
+          navigateTo("dashboard");
+        }}
+      />
+    );
+  }
+
   return (
     <MemberShellModern currentScreen={screen} onNavigate={navigateTo}>
       {screenNodes[screen] || <MemberDashboard onNavigate={navigateTo} />}
     </MemberShellModern>
   );
 }
-

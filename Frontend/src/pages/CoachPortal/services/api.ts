@@ -1,126 +1,76 @@
-export type SessionStatus = "sắp diễn ra" | "đang diễn ra" | "hoàn thành" | "đã hủy";
-export type AttendanceStatus = "chưa điểm danh" | "attended" | "no_show" | "late" | "excused";
+import type {
+  SessionStatus,
+  AttendanceStatus,
+  MockMember,
+  MockSession,
+  AttendanceRecord,
+  MockCurriculum,
+  MockNotification,
+  AssessmentRecord,
+  ScheduleChangeRequest,
+  AvailabilitySlot,
+} from "./types";
 
-export interface MockMember {
-  id: string;
-  name: string;
-  code: string;
-  avatar: string;
-  goal: string;
-  level: string;
-  sport: string;
-  phone: string;
-  email: string;
-  classIds: string[];
-}
-
-export interface MockSession {
-  id: string;
-  classId: string;
-  className: string;
-  sport: string;
-  level: string;
-  date: string; // YYYY-MM-DD
-  startTime: string; // HH:MM
-  endTime: string;
-  room: string;
-  coachName: string;
-  capacity: number;
-  registeredMemberIds: string[];
-  status: SessionStatus;
-}
-
-export interface AttendanceRecord {
-  sessionId: string;
-  memberId: string;
-  status: AttendanceStatus;
-  note: string;
-}
-
-export interface MockCurriculum {
-  id: string;
-  name: string;
-  sport: string;
-  goal: string;
-  level: string;
-  duration: number; // phút
-  status: "Nháp" | "Đã giao" | "Lưu trữ";
-  updatedAt: string;
-  description: string;
-  exercises: { name: string; reps: string; rest: string; note: string }[];
-  assignedTo: { type: "class" | "member"; id: string; name: string }[];
-}
-
-export interface MockNotification {
-  id: string;
-  title: string;
-  content: string;
-  type: "Thông báo" | "Bài tập về nhà";
-  sentAt: string;
-  targetType: "class" | "member";
-  targetId: string;
-  targetName: string;
-  deadline?: string;
-}
-
-export interface AssessmentRecord {
-  id: string;
-  sessionId: string;
-  memberId: string;
-  completion: number; // 0-100
-  metrics: { label: string; value: string; unit: string }[];
-  comment: string;
-  nextStep: string;
-  createdAt: string;
-}
+export type {
+  SessionStatus,
+  AttendanceStatus,
+  MockMember,
+  MockSession,
+  AttendanceRecord,
+  MockCurriculum,
+  MockNotification,
+  AssessmentRecord,
+  ScheduleChangeRequest,
+  AvailabilitySlot,
+};
 
 const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api';
 
 async function fetchApi(endpoint: string, options: RequestInit = {}) {
-    let token = localStorage.getItem('token');
-    const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        ...(options.headers as Record<string, string> || {})
-    };
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
+  let token = localStorage.getItem('token');
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> || {})
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
 
-    let response = await fetch(`${BASE_URL}${endpoint}`, {
-        ...options,
-        headers
-    });
-    
-    if (response.status === 401) {
-        // Token expired, attempt silent recovery with dev-token
-        try {
-            const refRes = await fetch(`${BASE_URL}/auth/dev-token`, { method: 'POST' });
-            if (refRes.ok) {
-                const refData = await refRes.json();
-                if (refData.token) {
-                    localStorage.setItem('token', refData.token);
-                    headers['Authorization'] = `Bearer ${refData.token}`;
-                    response = await fetch(`${BASE_URL}${endpoint}`, {
-                        ...options,
-                        headers
-                    });
-                }
-            }
-        } catch {}
-    }
+  let response = await fetch(`${BASE_URL}${endpoint}`, {
+    ...options,
+    headers
+  });
+  
+  if (response.status === 401) {
+    // Token expired, attempt silent recovery with dev-token
+    try {
+      const refRes = await fetch(`${BASE_URL}/auth/dev-token`, { method: 'POST' });
+      if (refRes.ok) {
+        const refData = await refRes.json();
+        if (refData.token) {
+          localStorage.setItem('token', refData.token);
+          headers['Authorization'] = `Bearer ${refData.token}`;
+          response = await fetch(`${BASE_URL}${endpoint}`, {
+            ...options,
+            headers
+          });
+        }
+      }
+    } catch {}
+  }
 
-    if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-    }
-    
-    return response.json();
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`);
+  }
+  
+  return response.json();
 }
 
 export const CoachAPI = {
-    // 1. Dashboard
-    getDashboardStats: async () => {
-        return fetchApi('/coach/dashboard');
-    },
+  // 1. Dashboard
+  getDashboardStats: async () => {
+    return fetchApi('/coach/dashboard');
+  },
 
     // 2. Lịch dạy
     getSchedule: async (startDate?: string, endDate?: string): Promise<MockSession[]> => {
@@ -374,29 +324,3 @@ export const CoachAPI = {
 };
 
 export const coachApi = CoachAPI;
-
-export interface ScheduleChangeRequest {
-    id: string;
-    sessionId: string;
-    className: string;
-    requestType: "dời lịch" | "dạy thay" | "báo vắng";
-    substituteCoachName?: string;
-    newDate?: string;
-    newTime?: string;
-    reason: string;
-    status: "chờ duyệt" | "đã duyệt" | "từ chối";
-    createdAt: string;
-    managerNote?: string;
-}
-
-export interface AvailabilitySlot {
-    id: string;
-    dayOfWeek: number; // 1: T2, 2: T3, ... 7: CN
-    period: "Sáng" | "Chiều" | "Tối";
-    startTime: string;
-    endTime: string;
-    isOpen: boolean;
-    bookedMemberName?: string;
-    bookedMemberPhone?: string;
-    goal?: string;
-}

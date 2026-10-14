@@ -22,6 +22,7 @@ export function MemberTopbar({
       "Xác nhận đăng ký lớp",
     ],
     payment: ["Member Portal / Gói tập của tôi", "Gói tập của tôi"],
+    shop: ["Member Portal / Cửa hàng", "Cửa hàng sản phẩm"],
     reports: ["Member Portal / Báo cáo", "Báo cáo luyện tập"],
     profile: ["Member Portal / Hồ sơ thành viên", "Hồ sơ của tôi"],
   }
