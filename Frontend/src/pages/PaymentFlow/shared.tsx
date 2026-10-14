@@ -182,26 +182,62 @@ export function Stepper({ active }: { active: 1 | 2 | 3 | 4 }) {
   )
 }
 
-export function OrderSummarySidebar({ pkg, period, screen }: { pkg: any; period: BillingPeriod; screen?: string }) {
-  const p = pkg;
-  const listPrice = period === "yearly" ? Math.round(p.yearly * 1.2) : Math.round(p.monthly * 1.15)
-  const discount = listPrice - (period === "yearly" ? p.yearly : p.monthly)
-  const total = period === "yearly" ? p.yearly : p.monthly
-  const periodLabel = period === "yearly" ? "Gói 6 tháng" : "Gói 1 tháng"
-  const title = screen === "otp" ? "Tóm tắt đơn hàng" : "Tóm tắt gói tập đã chọn"
+export function OrderSummarySidebar({
+  pkg,
+  period,
+  formData,
+  screen,
+}: {
+  pkg: any;
+  period: BillingPeriod;
+  formData?: any;
+  screen?: string;
+}) {
+  const { listPrice, discount, total, periodLabel } = getPaymentSummary(pkg, period);
+  const title = screen === "otp" ? "Tóm tắt đơn hàng" : "Tóm tắt gói tập đã chọn";
+
+  let memberName = formData?.fullName;
+  let branchName = formData?.branch;
+  let startDate = formData?.startDate;
+
+  if (!memberName || !branchName) {
+    try {
+      const uStr = localStorage.getItem("user");
+      if (uStr) {
+        const u = JSON.parse(uStr);
+        if (!memberName) memberName = u.fullName || u.email;
+      }
+    } catch {}
+  }
+
+  const getEndDateStr = () => {
+    if (!startDate) return "";
+    try {
+      const d = new Date(startDate);
+      const months = period === "yearly" ? 12 : 1;
+      d.setMonth(d.getMonth() + months);
+      return d.toLocaleDateString("vi-VN");
+    } catch {
+      return "";
+    }
+  };
+
+  const startStr = startDate ? startDate.split("-").reverse().join("/") : "...";
+  const endStr = getEndDateStr();
+  const dateRange = endStr ? `${startStr} → ${endStr}` : startStr;
 
   return (
     <div className="bg-white border border-[#e2e8f0] flex flex-col gap-5 items-start p-6 rounded-[16px] w-[416px] shrink-0">
       <p className="font-['Inter'] font-bold text-[#0f172a] text-lg w-full">{title}</p>
       <div className="flex items-center justify-between w-full">
-        <p className="font-['Inter'] font-extrabold text-[#0f172a] text-xl">{p.name}</p>
+        <p className="font-['Inter'] font-extrabold text-[#0f172a] text-xl">{pkg.name}</p>
         <div className="bg-teal-50 flex items-start px-3 py-1 rounded-[12px] border border-teal-200">
           <p className="font-['Inter'] font-bold text-teal-600 text-xs">{periodLabel}</p>
         </div>
       </div>
-      {screen !== "otp" && (
+      {screen !== "otp" && pkg.features && (
         <div className="flex flex-col gap-3 w-full">
-          {p.features.map((f: string) => (
+          {pkg.features.map((f: string) => (
             <div key={f} className="flex gap-2 items-center w-full">
               <img src={`${A}/6b931.svg`} className="size-[14px] shrink-0" alt="" />
               <p className="font-['Inter'] font-normal text-[#334155] text-[13px] flex-1">{f}</p>
@@ -209,16 +245,16 @@ export function OrderSummarySidebar({ pkg, period, screen }: { pkg: any; period:
           ))}
         </div>
       )}
-      {screen === "otp" && (
+      {(memberName || branchName) && (
         <div className="flex flex-col gap-3 w-full text-[13px]">
           {[
-            ["Hội viên:", "Nguyễn Lan Anh"],
-            ["Cơ sở chính:", "Chi nhánh Q.1 - Flagship Center"],
-            ["Thời hạn tập:", "21/09/2026 → 21/03/2027"],
+            ["Hội viên:", memberName || "Hội viên SportCenter"],
+            ["Cơ sở chính:", branchName || "Chi nhánh Quận 1 - Flagship Center"],
+            ["Thời hạn tập:", dateRange],
           ].map(([label, val]) => (
             <div key={label} className="flex items-start justify-between w-full">
               <span className="font-['Inter'] font-normal text-[#64748b]">{label}</span>
-              <span className="font-['Inter'] font-semibold text-[#0f172a]">{val}</span>
+              <span className="font-['Inter'] font-semibold text-[#0f172a] text-right truncate max-w-[220px]">{val}</span>
             </div>
           ))}
         </div>
@@ -233,10 +269,12 @@ export function OrderSummarySidebar({ pkg, period, screen }: { pkg: any; period:
           <span className="font-['Inter'] font-normal text-[#64748b]">Giá niêm yết</span>
           <span className="font-['Inter'] font-semibold text-[#0f172a]">{fmt(listPrice)}</span>
         </div>
-        <div className="flex items-start justify-between w-full">
-          <span className="font-['Inter'] font-normal text-[#64748b]">Ưu đãi gói theo năm (-20%)</span>
-          <span className="font-['Inter'] font-bold text-[#16a34a]">-{fmt(discount)}</span>
-        </div>
+        {discount > 0 && (
+          <div className="flex items-start justify-between w-full">
+            <span className="font-['Inter'] font-normal text-[#64748b]">Ưu đãi giảm giá</span>
+            <span className="font-['Inter'] font-bold text-[#16a34a]">-{fmt(discount)}</span>
+          </div>
+        )}
       </div>
       <div className="h-0 w-full relative">
         <div className="absolute inset-[-1px_0_0_0]">
@@ -252,5 +290,5 @@ export function OrderSummarySidebar({ pkg, period, screen }: { pkg: any; period:
         <span className="font-['Inter'] font-normal text-[#64748b] text-[11px]">Thanh toán bảo mật và kích hoạt ngay lập tức</span>
       </div>
     </div>
-  )
+  );
 }

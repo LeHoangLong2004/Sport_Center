@@ -1,178 +1,214 @@
-import React, { useState } from 'react';
-import { iSearch2, iPlus } from '../shared';
+import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+import { SportsTableCard, FacilitiesTableCard, SportItem, FacilityItem } from './FacilitiesCards';
+import { FacilityFormModal, FacilityDeleteModal } from './FacilitiesModals';
 
 export function FacilitiesPage() {
-  const [sports, setSports] = useState<any[]>([])
-  const [facilities, setFacilities] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [sports, setSports] = useState<SportItem[]>([]);
+  const [facilities, setFacilities] = useState<FacilityItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Modal states
-  const [showModal, setShowModal] = useState<"sport" | "facility" | null>(null);
-  const [newItemName, setNewItemName] = useState("");
+  // Form modal state
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  const [activeType, setActiveType] = useState<'sport' | 'facility' | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [name, setName] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [address, setAddress] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
-  React.useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [sportsRes, facilitiesRes] = await Promise.all([
-          fetch("/api/sports"),
-          fetch("/api/facilities")
-        ]);
-        
-        if (sportsRes.ok) setSports(await sportsRes.json());
-        if (facilitiesRes.ok) setFacilities(await facilitiesRes.json());
-      } catch (err) {
-        console.error("Failed to fetch sports/facilities:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+  // Delete modal state
+  const [deleteTarget, setDeleteTarget] = useState<{ type: 'sport' | 'facility'; id: string; name: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    Promise.all([fetch('/api/sports'), fetch('/api/facilities')])
+      .then(async ([sRes, fRes]) => {
+        if (sRes.ok) setSports(await sRes.json());
+        if (fRes.ok) setFacilities(await fRes.json());
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error('Không thể tải dữ liệu danh mục.');
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  const handleSubmitItem = async () => {
-    if (!newItemName.trim() || !showModal) return;
-    setIsSubmitting(true);
-    
+  const openCreateModal = (type: 'sport' | 'facility') => {
+    setModalMode('create');
+    setActiveType(type);
+    setEditingId(null);
+    setName('');
+    setImageUrl('');
+    setAddress('');
+  };
+
+  const openEditModal = (type: 'sport' | 'facility', item: any) => {
+    setModalMode('edit');
+    setActiveType(type);
+    setEditingId(item.id);
+    setName(item.name || '');
+    setImageUrl(item.imageUrl || '');
+    setAddress(item.address || '');
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
     try {
-      const token = localStorage.getItem("token");
-      const endpoint = showModal === "sport" ? "/api/sports" : "/api/facilities";
-      
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-        body: JSON.stringify({ name: newItemName.trim() })
+      const formData = new FormData();
+      formData.append('file', file);
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/upload/image', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
       });
-      
       if (res.ok) {
-        const newItem = await res.json();
-        if (showModal === "sport") {
-          setSports(prev => [...prev, newItem]);
-        } else {
-          setFacilities(prev => [...prev, newItem]);
-        }
-        setShowModal(null);
-        setNewItemName("");
+        const data = await res.json();
+        setImageUrl(data.url);
+        toast.success('Đã tải ảnh thành công! Bấm "Lưu thay đổi" (hoặc "Xác nhận thêm") để lưu.');
       } else {
-        alert(`Thêm ${showModal === "sport" ? "bộ môn" : "phòng tập"} thất bại.`);
+        toast.error('Tải ảnh thất bại.');
       }
-    } catch (err) {
-      alert("Lỗi kết nối.");
+    } catch {
+      toast.error('Lỗi khi tải ảnh lên server.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!name.trim() || !activeType) return;
+    setIsSubmitting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const isSport = activeType === 'sport';
+      const isEdit = modalMode === 'edit';
+      const endpoint = isSport ? `/api/sports${isEdit ? `/${editingId}` : ''}` : `/api/facilities${isEdit ? `/${editingId}` : ''}`;
+      const method = isEdit ? 'PUT' : 'POST';
+
+      const body = isSport
+        ? { name: name.trim(), imageUrl: imageUrl.trim() }
+        : { name: name.trim(), address: address.trim() };
+
+      const res = await fetch(endpoint, {
+        method,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        const savedItem = await res.json();
+        if (isSport) {
+          setSports((prev) =>
+            isEdit
+              ? prev.map((s) => (s.id.toLowerCase() === editingId?.toLowerCase() ? { ...s, ...savedItem } : s))
+              : [...prev, savedItem]
+          );
+        } else {
+          setFacilities((prev) =>
+            isEdit
+              ? prev.map((f) => (f.id.toLowerCase() === editingId?.toLowerCase() ? { ...f, ...savedItem } : f))
+              : [...prev, savedItem]
+          );
+        }
+        toast.success(isEdit ? 'Cập nhật thành công!' : 'Thêm mới thành công!');
+        setActiveType(null);
+      } else {
+        const errData = await res.json().catch(() => null);
+        toast.error(errData?.message || 'Thao tác thất bại.');
+      }
+    } catch {
+      toast.error('Lỗi kết nối máy chủ.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const endpoint = deleteTarget.type === 'sport' ? `/api/sports/${deleteTarget.id}` : `/api/facilities/${deleteTarget.id}`;
+      const res = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        if (deleteTarget.type === 'sport') {
+          setSports((prev) => prev.filter((s) => s.id !== deleteTarget.id));
+        } else {
+          setFacilities((prev) => prev.filter((f) => f.id !== deleteTarget.id));
+        }
+        toast.success(`Đã xóa ${deleteTarget.type === 'sport' ? 'bộ môn' : 'phòng tập'} thành công!`);
+        setDeleteTarget(null);
+      } else {
+        const errData = await res.json().catch(() => null);
+        toast.error(errData?.message || 'Không thể xóa mục này.');
+      }
+    } catch {
+      toast.error('Lỗi kết nối khi xóa.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="font-bold text-[#0f172a] text-[28px]">Bộ môn & Phòng tập</p>
-          <p className="text-[#64748b] text-sm mt-1">-- quản lý các môn thể thao và phòng tập của trung tâm.</p>
-        </div>
+    <div className="flex flex-col gap-6 p-6 lg:p-8 flex-1 min-h-0 overflow-y-auto">
+      <div>
+        <h1 className="font-bold text-[#0f172a] dark:text-white text-2xl lg:text-3xl">Bộ môn & Phòng tập</h1>
+        <p className="text-[#64748b] text-sm mt-1">Quản lý danh mục thể thao và phòng tập của trung tâm thể thao.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-2">
-        {/* Bộ môn */}
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-lg text-[#0f172a]">Bộ môn (Sports)</h3>
-            <button onClick={() => { setShowModal("sport"); setNewItemName(""); }} className="bg-white border border-[#cbd5e1] hover:bg-slate-50 flex gap-1.5 items-center px-3 py-1.5 rounded-md transition-colors">
-              <img src={iPlus} alt="" className="size-3.5 opacity-70" />
-              <span className="font-semibold text-[#0f172a] text-xs">Thêm bộ môn</span>
-            </button>
-          </div>
-          <div className="bg-white border border-[#e2e8f0] overflow-hidden rounded-xl shadow-sm">
-            <div className="bg-[#f1f5f9] flex font-semibold items-center px-5 py-3 text-[#475569] text-[12px]">
-              <div className="flex-1">TÊN BỘ MÔN</div>
-              <div className="w-[100px]">ID RÚT GỌN</div>
-            </div>
-            {loading ? (
-              <div className="p-5 text-center text-sm text-slate-500">Đang tải...</div>
-            ) : sports.length === 0 ? (
-              <div className="p-5 text-center text-sm text-slate-500">Chưa có dữ liệu bộ môn.</div>
-            ) : sports.map(s => (
-              <div key={s.id} className="border-b border-[#f1f5f9] flex items-center px-5 py-3">
-                <div className="flex-1 font-semibold text-sm text-[#0f172a]">{s.name}</div>
-                <div className="w-[100px] text-xs text-slate-400 font-mono">{s.id.substring(0, 8)}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-2">
+        <SportsTableCard
+          sports={sports}
+          loading={loading}
+          onOpenCreate={() => openCreateModal('sport')}
+          onOpenEdit={(s) => openEditModal('sport', s)}
+          onOpenDelete={(s) => setDeleteTarget({ type: 'sport', id: s.id, name: s.name })}
+        />
 
-        {/* Phòng tập */}
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-lg text-[#0f172a]">Phòng tập (Facilities)</h3>
-            <button onClick={() => { setShowModal("facility"); setNewItemName(""); }} className="bg-white border border-[#cbd5e1] hover:bg-slate-50 flex gap-1.5 items-center px-3 py-1.5 rounded-md transition-colors">
-              <img src={iPlus} alt="" className="size-3.5 opacity-70" />
-              <span className="font-semibold text-[#0f172a] text-xs">Thêm phòng tập</span>
-            </button>
-          </div>
-          <div className="bg-white border border-[#e2e8f0] overflow-hidden rounded-xl shadow-sm">
-            <div className="bg-[#f1f5f9] flex font-semibold items-center px-5 py-3 text-[#475569] text-[12px]">
-              <div className="flex-1">TÊN PHÒNG TẬP</div>
-              <div className="w-[100px]">ID RÚT GỌN</div>
-            </div>
-            {loading ? (
-              <div className="p-5 text-center text-sm text-slate-500">Đang tải...</div>
-            ) : facilities.length === 0 ? (
-              <div className="p-5 text-center text-sm text-slate-500">Chưa có dữ liệu phòng tập.</div>
-            ) : facilities.map(f => (
-              <div key={f.id} className="border-b border-[#f1f5f9] flex items-center px-5 py-3">
-                <div className="flex-1 font-semibold text-sm text-[#0f172a]">{f.name}</div>
-                <div className="w-[100px] text-xs text-slate-400 font-mono">{f.id.substring(0, 8)}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <FacilitiesTableCard
+          facilities={facilities}
+          loading={loading}
+          onOpenCreate={() => openCreateModal('facility')}
+          onOpenEdit={(f) => openEditModal('facility', f)}
+          onOpenDelete={(f) => setDeleteTarget({ type: 'facility', id: f.id, name: f.name })}
+        />
       </div>
 
-      {/* Custom Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 animate-fade-in-up">
-            <h2 className="text-xl font-bold text-slate-800 mb-2">
-              {showModal === "sport" ? "Thêm bộ môn mới" : "Thêm phòng tập mới"}
-            </h2>
-            <p className="text-sm text-slate-500 mb-6">
-              Vui lòng nhập tên {showModal === "sport" ? "bộ môn" : "phòng tập"} để tạo danh mục mới trong hệ thống.
-            </p>
-            
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Tên {showModal === "sport" ? "bộ môn" : "phòng tập"} <span className="text-red-500">*</span>
-              </label>
-              <input 
-                type="text" 
-                value={newItemName}
-                onChange={(e) => setNewItemName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleSubmitItem(); }}
-                autoFocus
-                placeholder={showModal === "sport" ? "VD: Bơi lội, Yoga, v.v." : "VD: Studio 1, Gym Area, v.v."}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
-              />
-            </div>
-            
-            <div className="flex justify-end gap-3">
-              <button 
-                onClick={() => setShowModal(null)} 
-                disabled={isSubmitting}
-                className="px-4 py-2 font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors"
-              >
-                Hủy bỏ
-              </button>
-              <button 
-                onClick={handleSubmitItem}
-                disabled={!newItemName.trim() || isSubmitting}
-                className="px-4 py-2 font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isSubmitting ? "Đang lưu..." : "Xác nhận thêm"}
-              </button>
-            </div>
-          </div>
-        </div>
+      {activeType && (
+        <FacilityFormModal
+          activeType={activeType}
+          modalMode={modalMode}
+          name={name}
+          setName={setName}
+          imageUrl={imageUrl}
+          setImageUrl={setImageUrl}
+          address={address}
+          setAddress={setAddress}
+          isSubmitting={isSubmitting}
+          isUploading={isUploading}
+          onFileUpload={handleFileUpload}
+          onClose={() => setActiveType(null)}
+          onSave={handleSave}
+        />
+      )}
+
+      {deleteTarget && (
+        <FacilityDeleteModal
+          deleteTarget={deleteTarget}
+          isDeleting={isDeleting}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={handleDelete}
+        />
       )}
     </div>
-  )
+  );
 }

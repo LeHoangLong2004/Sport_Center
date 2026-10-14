@@ -28,7 +28,7 @@ interface Props {
   setOpenSlotStartTime: any;
   openSlotEndTime: any;
   setOpenSlotEndTime: any;
-  TIME_ROWS: any;
+  TIME_ROWS: string[];
   openSlotSport: any;
   setOpenSlotSport: any;
   openSlotRoom: any;

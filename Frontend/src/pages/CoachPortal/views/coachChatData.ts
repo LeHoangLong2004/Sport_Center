@@ -1,3 +1,5 @@
+import type { Conversation } from "./chat/types";
+
 export const INITIAL_CONVERSATIONS: Conversation[] = [
   {
     id: "conv-1",

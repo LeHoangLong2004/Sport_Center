@@ -127,7 +127,7 @@ export function useCoachScheduleData(weekDates: string[]) {
       status: s.status as any,
       memberName: s.memberName,
       memberPhone: s.memberPhone,
-      note: s.note,
+      note: s.userNote || s.coachNote,
     }));
 
     const combined = [...groupItems, ...ptItems, ...openItems, ...openSlots, ...syncedItems];

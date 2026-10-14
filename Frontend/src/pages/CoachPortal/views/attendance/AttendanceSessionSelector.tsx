@@ -47,7 +47,9 @@ export default function AttendanceSessionSelector({
         <div>
           <span className="text-xs text-slate-400 block font-medium">Sĩ số</span>
           <span className="font-semibold text-slate-800 dark:text-slate-200">
-            {session.registeredMemberIds.length}/{session.capacity} học viên
+            {Array.isArray(session.registeredMemberIds) && session.registeredMemberIds.length > 0
+              ? session.registeredMemberIds.length
+              : (session as any).registeredCount ?? 0}/{session.capacity} học viên
           </span>
         </div>
         <div>

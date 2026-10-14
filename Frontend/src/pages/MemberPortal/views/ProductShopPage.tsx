@@ -44,7 +44,7 @@ const fulfillmentLabels: Record<FulfillmentStatus, string> = {
   cancelled: "Đã hủy",
 }
 
-function authHeaders() {
+function authHeaders(): Record<string, string> {
   const token = localStorage.getItem("token") || localStorage.getItem("accessToken")
   return token ? { Authorization: `Bearer ${token}` } : {}
 }

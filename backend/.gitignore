@@ -59,8 +59,10 @@ nuget.config
 # -------------------------------------------------------
 # ASP.NET Core
 # -------------------------------------------------------
-# Bundled static files
+# Bundled static files & local uploads (using Cloudinary)
 wwwroot/dist/
+wwwroot/uploads/*
+!wwwroot/uploads/.gitkeep
 
 # -------------------------------------------------------
 # Entity Framework Core migrations (keep tracked)

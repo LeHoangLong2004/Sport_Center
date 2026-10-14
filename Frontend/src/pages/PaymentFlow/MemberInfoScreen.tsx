@@ -248,7 +248,7 @@ export function MemberInfoScreen({
                 disabled={!agreed}
                 className={`bg-teal-500 flex items-center justify-center py-[16px] rounded-[12px] w-full font-['Inter:Bold'] font-bold text-white text-[16px] transition-all ${agreed ? 'hover:bg-teal-600' : 'opacity-50 cursor-not-allowed grayscale'}`}
               >
-                Tiến hành thanh toán →
+                Tiếp tục đến thanh toán →
               </button>
               
               <div className="flex gap-[8px] items-center justify-center w-full bg-[#f8fafc] py-[8px] rounded-[8px] border border-[#e2e8f0]">

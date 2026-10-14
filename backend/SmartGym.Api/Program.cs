@@ -121,6 +121,7 @@ builder.Services.Configure<SmartGym.Infrastructure.Services.SmtpOptions>(
 );
 builder.Services.AddScoped<IVnPayGateway, SmartGym.Infrastructure.Services.VnPayGateway>();
 builder.Services.AddScoped<IEmailService, SmartGym.Infrastructure.Services.SmtpEmailService>();
+builder.Services.AddScoped<SmartGym.Application.Interfaces.IPhotoService, SmartGym.Infrastructure.Services.CloudinaryPhotoService>();
 builder.Services.AddHostedService<SubscriptionExpiryBackgroundService>();
 
 // Chß║Ñp nhß║¡n h├¼nh thß╗⌐c thanh to├ín dß║íng sß╗æ (0..4) hoß║╖c m├ú ngß║»n ('qr', 'card', 'wallet', 'counter').
@@ -234,6 +235,7 @@ DatabaseInitializationExtensions.InitializeDatabase(app, builder.Environment);
 // ΓöÇΓöÇ Middleware pipeline ΓöÇΓöÇ
 
 app.UseCors("AllowAll");
+app.UseStaticFiles();
 app.UseAuthentication();
 
 app.UseAuthorization();

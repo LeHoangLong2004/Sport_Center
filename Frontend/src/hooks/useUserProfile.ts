@@ -265,7 +265,7 @@ export function useUserProfile(portalRoleHint?: 'coach' | 'member') {
         dob: '1998-08-15',
         gender: 'Nam',
         avatarUrl: '',
-        roleName: role,
+        roleName: activeRole,
         emergencyContact: isCoach ? '' : '0912 345 678 (Người thân)',
         specialties: isCoach ? 'Gym Fitness, Yoga, BodyCombat' : undefined,
         certifications: isCoach ? 'Chứng chỉ Huấn luyện viên Thể hình Quốc tế (ACE / NASM), Sơ cấp cứu & Hồi sức tim phổi (CPR / AED Certified), Chứng chỉ Dinh dưỡng Thể thao Cơ bản' : undefined,

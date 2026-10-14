@@ -84,6 +84,16 @@ export default function CoachSchedule({ navigateTo }: Props) {
     });
   }, [allUnifiedSessions, sportFilter, typeFilter, statusFilter]);
 
+  const byDate = useMemo(() => {
+    const map = new Map<string, UnifiedScheduleItem[]>();
+    for (const s of filteredSessions) {
+      const arr = map.get(s.date) || [];
+      arr.push(s);
+      map.set(s.date, arr);
+    }
+    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b)) as [string, UnifiedScheduleItem[]][];
+  }, [filteredSessions]);
+
   const handleSubmitRequest = async (data: any) => {
     try {
       const res = await CoachAPI.createScheduleRequest(data);
@@ -219,9 +229,15 @@ export default function CoachSchedule({ navigateTo }: Props) {
 
           {view === "list" && (
             <ScheduleListView
-              filteredSessions={filteredSessions}
+              byDate={byDate}
+              todayStr={todayStr}
+              loading={loading}
               onSelectOpenSlot={setSelectedOpenSlot}
               onSelectPtSession={setSelectedPtSession}
+              onOpenRequestModal={(sessionId) => {
+                setSelectedSessionForRequest(sessionId || allUnifiedSessions[0]?.id || "");
+                setIsRequestModalOpen(true);
+              }}
               navigateTo={navigateTo}
             />
           )}
@@ -238,7 +254,7 @@ export default function CoachSchedule({ navigateTo }: Props) {
       {activeTab === "requests" && (
         <CoachRequestsTab
           requests={requests}
-          onOpenNewRequest={() => {
+          onOpenCreateRequest={() => {
             setSelectedSessionForRequest(allUnifiedSessions[0]?.id || "");
             setIsRequestModalOpen(true);
           }}
@@ -250,8 +266,7 @@ export default function CoachSchedule({ navigateTo }: Props) {
         isOpen={isRequestModalOpen}
         onClose={() => setIsRequestModalOpen(false)}
         sessions={allUnifiedSessions}
-        selectedSessionId={selectedSessionForRequest}
-        setSelectedSessionId={setSelectedSessionForRequest}
+        initialSessionId={selectedSessionForRequest}
         onSubmit={handleSubmitRequest}
       />
 

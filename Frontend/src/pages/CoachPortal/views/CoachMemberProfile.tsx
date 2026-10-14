@@ -6,6 +6,7 @@ import { curriculumSync } from "../../MemberPortal/services/curriculumSync";
 import {
   MOCK_ATTENDANCE_HISTORY,
   MOCK_ASSIGNED_WORKOUTS,
+  type MemberWorkoutItem,
 } from "./member-profile/types";
 import { MemberHeroCard } from "./member-profile/MemberHeroCard";
 import { MemberStatsCards } from "./member-profile/MemberStatsCards";

@@ -21,6 +21,11 @@ export function PaymentMethodScreen({
   const { listPrice, discount, total, periodLabel } = getPaymentSummary(pkg, period)
   const fmt = (n: number) => n.toLocaleString("vi-VN") + " đ"
 
+  const phoneDigits = formData?.phone ? formData.phone.replace(/\D/g, '').slice(-4) : 'GYM';
+  const pkgCode = (pkg.id || 'PKG').replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).toUpperCase();
+  const transferMemo = `SC ${phoneDigits} ${pkgCode}`.toUpperCase();
+  const vietQrUrl = `https://api.vietqr.io/image/970436-1234567890123-compact2.jpg?amount=${total}&addInfo=${encodeURIComponent(transferMemo)}&accountName=SPORTCENTER%20VIET%20NAM`;
+
   const methods: { id: PaymentMethodId; icon: string; label: string; sub: string }[] = [
     { id: "qr", icon: `${A}/66769.svg`, label: "Chuyển khoản QR (Vietcombank)", sub: "Quét mã QR ngân hàng — Nhận ngay xác nhận" },
     { id: "card", icon: `${A}/b41b0.svg`, label: "Thẻ tín dụng / ghi nợ", sub: "Visa, MasterCard, JCB — Thanh toán nhanh 3D Secure" },
@@ -69,8 +74,8 @@ export function PaymentMethodScreen({
             {method === "qr" && (
               <div className="bg-white border border-[#e2e8f0] flex flex-col gap-[20px] items-start p-[24px] rounded-[16px] w-full shadow-sm">
                 <p className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[18px]">Thông tin chuyển khoản</p>
-                <div className="flex gap-8 items-start w-full">
-                  <div className="flex flex-col gap-4 flex-1 min-w-0">
+                <div className="flex flex-col md:flex-row gap-8 items-start w-full">
+                  <div className="flex flex-col gap-4 flex-1 min-w-0 w-full">
                     <div className="bg-[#f8fafc] rounded-[12px] p-5 flex flex-col gap-3">
                       {[
                         ["Ngân hàng", "Vietcombank (VCB)"],
@@ -85,7 +90,7 @@ export function PaymentMethodScreen({
                       ))}
                       <div className="flex items-center justify-between">
                         <span className="font-['Inter:Regular'] font-normal text-[#64748b] text-sm">Nội dung chuyển khoản</span>
-                        <span className="font-['Inter:Bold'] font-bold text-teal-600 text-sm">SC LA 2026 FIT6</span>
+                        <span className="font-['Inter:Bold'] font-bold text-teal-600 text-sm font-mono">{transferMemo}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="font-['Inter:Regular'] font-normal text-[#64748b] text-sm">Số tiền</span>
@@ -93,9 +98,14 @@ export function PaymentMethodScreen({
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-3 items-center shrink-0">
-                    <div className="bg-[#f8fafc] border border-[#cbd5e1] flex items-center justify-center rounded-[12px] size-[200px]">
-                      <img src={`${A}/cfa8b.svg`} className="size-[160px]" alt="QR Code" />
+                  <div className="flex flex-col gap-3 items-center shrink-0 self-center md:self-start">
+                    <div className="bg-[#f8fafc] border border-[#cbd5e1] flex items-center justify-center rounded-[12px] size-[200px] overflow-hidden p-2">
+                      <img
+                        src={vietQrUrl}
+                        onError={(e) => { (e.target as HTMLImageElement).src = `${A}/cfa8b.svg`; }}
+                        className="size-[180px] object-contain rounded-lg"
+                        alt="QR Code"
+                      />
                     </div>
                     <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[11px] text-center w-[200px]">
                       Quét mã QR bằng app ngân hàng để chuyển tiền tự động
@@ -105,10 +115,45 @@ export function PaymentMethodScreen({
               </div>
             )}
 
+            {method === "card" && (
+              <div className="bg-white border border-[#e2e8f0] flex flex-col gap-4 p-6 rounded-[16px] w-full shadow-sm">
+                <p className="font-['Inter:Bold'] font-bold text-[#0f172a] text-lg">Cổng thanh toán thẻ (Visa / Master / ATM)</p>
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 text-sm text-slate-600 flex flex-col gap-2">
+                  <p>Hệ thống tự động liên kết đến cổng thanh toán trực tuyến bảo mật 3D-Secure.</p>
+                  <p className="font-semibold text-slate-800">Số tiền thanh toán: <span className="text-teal-600 font-bold">{fmt(total)}</span></p>
+                  <p className="text-xs text-slate-400">Bấm nút "Xác nhận thanh toán" bên dưới để hoàn tất giao dịch.</p>
+                </div>
+              </div>
+            )}
+
+            {method === "wallet" && (
+              <div className="bg-white border border-[#e2e8f0] flex flex-col gap-4 p-6 rounded-[16px] w-full shadow-sm">
+                <p className="font-['Inter:Bold'] font-bold text-[#0f172a] text-lg">Ví điện tử (MoMo / ZaloPay)</p>
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 text-sm text-slate-600 flex flex-col gap-2">
+                  <p>Thanh toán bảo mật tức thì qua ứng dụng ví điện tử MoMo hoặc ZaloPay.</p>
+                  <p className="font-semibold text-slate-800">Số tiền: <span className="text-teal-600 font-bold">{fmt(total)}</span></p>
+                  <p className="text-xs text-slate-400">Ưu đãi hoàn tiền (nếu có) sẽ được áp dụng trực tiếp trong ứng dụng ví.</p>
+                </div>
+              </div>
+            )}
+
+            {method === "counter" && (
+              <div className="bg-white border border-[#e2e8f0] flex flex-col gap-4 p-6 rounded-[16px] w-full shadow-sm">
+                <p className="font-['Inter:Bold'] font-bold text-[#0f172a] text-lg">Thanh toán trực tiếp tại quầy lễ tân</p>
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 text-sm text-slate-600 flex flex-col gap-2.5">
+                  <p>Bạn đã chọn thanh toán trực tiếp tại cơ sở: <strong className="text-slate-800">{formData.branch}</strong>.</p>
+                  <p>Số tiền cần thanh toán tại quầy: <strong className="text-teal-600 font-bold">{fmt(total)}</strong>.</p>
+                  <p className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+                    Đơn hàng sẽ được lưu tạm ở trạng thái chờ thanh toán trong <strong>24 giờ</strong>. Lễ tân sẽ kích hoạt ngay khi nhận thanh toán tại quầy.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="bg-[#fffbeb] border border-[#fcd34d] flex gap-3 items-start p-4 rounded-[12px] w-full shadow-sm">
               <span className="text-[#d97706] text-lg">⏳</span>
               <p className="font-['Inter:Medium'] font-medium text-[#92400e] text-sm leading-[20px] flex-1">
-                <strong>Lưu ý:</strong> Mã QR và thông tin thanh toán có hiệu lực trong <strong>15 phút</strong>. Vui lòng hoàn tất giao dịch trước khi hết hạn.
+                <strong>Lưu ý:</strong> Thông tin thanh toán có hiệu lực trong <strong>15 phút</strong>. Vui lòng hoàn tất giao dịch trước khi hết hạn.
               </p>
             </div>
 
@@ -201,9 +246,9 @@ export function PaymentMethodScreen({
               <button
                 type="button"
                 onClick={onNext}
-                className="bg-teal-500 flex items-center justify-center py-[16px] rounded-[12px] w-full font-['Inter:Bold'] font-bold text-white text-[16px] hover:bg-teal-600 transition-colors"
+                className="bg-teal-500 flex items-center justify-center py-[16px] rounded-[12px] w-full font-['Inter:Bold'] font-bold text-white text-[16px] hover:bg-teal-600 transition-colors cursor-pointer"
               >
-                Xác nhận thanh toán →
+                {method === "counter" ? "Xác nhận đăng ký tại quầy →" : "Tiến hành thanh toán →"}
               </button>
               <div className="flex gap-[8px] items-center justify-center w-full">
                 <img src={`${A}/ce483.svg`} className="size-3 mt-0.5 shrink-0" alt="" />
