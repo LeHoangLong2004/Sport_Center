@@ -5,18 +5,22 @@ export function FacilitiesPage() {
   const [sports, setSports] = useState<any[]>([])
   const [facilities, setFacilities] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [sportQuery, setSportQuery] = useState("")
+  const [facilityQuery, setFacilityQuery] = useState("")
 
   // Modal states
   const [showModal, setShowModal] = useState<"sport" | "facility" | null>(null);
   const [newItemName, setNewItemName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   React.useEffect(() => {
     const fetchData = async () => {
       try {
+        const token = localStorage.getItem("token");
         const [sportsRes, facilitiesRes] = await Promise.all([
-          fetch("/api/sports"),
-          fetch("/api/facilities")
+          fetch("/api/sports", { headers: { "Authorization": `Bearer ${token}` } }),
+          fetch("/api/facilities", { headers: { "Authorization": `Bearer ${token}` } })
         ]);
         
         if (sportsRes.ok) setSports(await sportsRes.json());
@@ -32,6 +36,7 @@ export function FacilitiesPage() {
 
   const handleSubmitItem = async () => {
     if (!newItemName.trim() || !showModal) return;
+    setSubmitError("");
     setIsSubmitting(true);
     
     try {
@@ -54,14 +59,24 @@ export function FacilitiesPage() {
         setShowModal(null);
         setNewItemName("");
       } else {
-        alert(`Thêm ${showModal === "sport" ? "bộ môn" : "phòng tập"} thất bại.`);
+        const body = await res.text();
+        let message = body;
+        try {
+          const parsed = JSON.parse(body);
+          message = parsed?.message || parsed?.detail || parsed?.title || body;
+        } catch { }
+        setSubmitError(message || `Thêm ${showModal === "sport" ? "bộ môn" : "phòng tập"} thất bại.`);
       }
     } catch (err) {
-      alert("Lỗi kết nối.");
+      setSubmitError("Không thể kết nối đến máy chủ. Vui lòng thử lại.");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const filteredSports = sports.filter(s => s.name.toLowerCase().includes(sportQuery.toLowerCase()));
+  const filteredFacilities = facilities.filter(f => f.name.toLowerCase().includes(facilityQuery.toLowerCase()));
+  const shortId = (id: string) => id ? id.substring(0, 8).toUpperCase() : "—";
 
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
@@ -82,6 +97,14 @@ export function FacilitiesPage() {
               <span className="font-semibold text-[#0f172a] text-xs">Thêm bộ môn</span>
             </button>
           </div>
+          <div className="flex items-center gap-2 rounded-lg border border-[#cbd5e1] bg-white px-3 py-2">
+            <img src={iSearch2} alt="" className="size-4" />
+            <input value={sportQuery} onChange={e => setSportQuery(e.target.value)} placeholder="Tìm bộ môn..." className="w-full text-sm outline-none" />
+          </div>
+          <div className="flex items-center gap-2 rounded-lg border border-[#cbd5e1] bg-white px-3 py-2">
+            <img src={iSearch2} alt="" className="size-4" />
+            <input value={facilityQuery} onChange={e => setFacilityQuery(e.target.value)} placeholder="Tìm phòng tập..." className="w-full text-sm outline-none" />
+          </div>
           <div className="bg-white border border-[#e2e8f0] overflow-hidden rounded-xl shadow-sm">
             <div className="bg-[#f1f5f9] flex font-semibold items-center px-5 py-3 text-[#475569] text-[12px]">
               <div className="flex-1">TÊN BỘ MÔN</div>
@@ -91,10 +114,12 @@ export function FacilitiesPage() {
               <div className="p-5 text-center text-sm text-slate-500">Đang tải...</div>
             ) : sports.length === 0 ? (
               <div className="p-5 text-center text-sm text-slate-500">Chưa có dữ liệu bộ môn.</div>
-            ) : sports.map(s => (
+            ) : filteredSports.length === 0 ? (
+              <div className="p-5 text-center text-sm text-slate-500">Không tìm thấy bộ môn phù hợp.</div>
+            ) : filteredSports.map(s => (
               <div key={s.id} className="border-b border-[#f1f5f9] flex items-center px-5 py-3">
                 <div className="flex-1 font-semibold text-sm text-[#0f172a]">{s.name}</div>
-                <div className="w-[100px] text-xs text-slate-400 font-mono">{s.id.substring(0, 8)}</div>
+                <div className="w-[100px] text-xs text-slate-400 font-mono">{shortId(s.id)}</div>
               </div>
             ))}
           </div>
@@ -118,10 +143,12 @@ export function FacilitiesPage() {
               <div className="p-5 text-center text-sm text-slate-500">Đang tải...</div>
             ) : facilities.length === 0 ? (
               <div className="p-5 text-center text-sm text-slate-500">Chưa có dữ liệu phòng tập.</div>
-            ) : facilities.map(f => (
+            ) : filteredFacilities.length === 0 ? (
+              <div className="p-5 text-center text-sm text-slate-500">Không tìm thấy phòng tập phù hợp.</div>
+            ) : filteredFacilities.map(f => (
               <div key={f.id} className="border-b border-[#f1f5f9] flex items-center px-5 py-3">
                 <div className="flex-1 font-semibold text-sm text-[#0f172a]">{f.name}</div>
-                <div className="w-[100px] text-xs text-slate-400 font-mono">{f.id.substring(0, 8)}</div>
+                <div className="w-[100px] text-xs text-slate-400 font-mono">{shortId(f.id)}</div>
               </div>
             ))}
           </div>
@@ -136,8 +163,9 @@ export function FacilitiesPage() {
               {showModal === "sport" ? "Thêm bộ môn mới" : "Thêm phòng tập mới"}
             </h2>
             <p className="text-sm text-slate-500 mb-6">
-              Vui lòng nhập tên {showModal === "sport" ? "bộ môn" : "phòng tập"} để tạo danh mục mới trong hệ thống.
+              Nhập tên {showModal === "sport" ? "bộ môn" : "phòng tập"} để sử dụng trong lịch và lớp học.
             </p>
+            {submitError && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{submitError}</div>}
             
             <div className="mb-6">
               <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -146,10 +174,10 @@ export function FacilitiesPage() {
               <input 
                 type="text" 
                 value={newItemName}
-                onChange={(e) => setNewItemName(e.target.value)}
+                onChange={(e) => { setNewItemName(e.target.value); setSubmitError(""); }}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleSubmitItem(); }}
                 autoFocus
-                placeholder={showModal === "sport" ? "VD: Bơi lội, Yoga, v.v." : "VD: Studio 1, Gym Area, v.v."}
+                placeholder={showModal === "sport" ? "Ví dụ: Bơi lội, Yoga" : "Ví dụ: Studio 1, Gym Area"}
                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
               />
             </div>

@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Star,
   CalendarDays,
+  Sparkles,
 } from "lucide-react";
 import { TodaySessionsList } from "./dashboard/TodaySessionsList";
 import { DashboardSidebar } from "./dashboard/DashboardSidebar";
