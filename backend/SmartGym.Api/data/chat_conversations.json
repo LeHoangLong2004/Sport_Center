@@ -1,0 +1,497 @@
+[
+  {
+    "Id": "conv-member-an",
+    "Type": "direct",
+    "Category": "member",
+    "RoleTag": "H\u1ED8I VI\u00CAN",
+    "BadgeColor": "emerald",
+    "CoachTitle": "H\u1ED3 Xu\u00E2n \u00C1nh Nam",
+    "CoachSubtitle": "H\u1ECDc vi\u00EAn b\u1EA1n t\u1EADp",
+    "MemberTitle": "Nguy\u1EC5n V\u0103n An",
+    "MemberSubtitle": "H\u1ED9i vi\u00EAn Th\u1EC3 thao \u00B7 B\u1EA1n t\u1EADp Gym",
+    "Avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100\u0026auto=format\u0026fit=crop\u0026q=80",
+    "CoachAvatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100\u0026auto=format\u0026fit=crop\u0026q=80",
+    "LastMessage": "Chi\u1EC1u nay t\u1EA7m 17h30 b\u1EA1n c\u00F3 qua ph\u00F2ng gym t\u1EADp ng\u1EF1c kh\u00F4ng, t\u1EADp chung \u0111\u1ED5i t\u1EA1 cho vui nh\u00E9!",
+    "LastTime": "09:30",
+    "UnreadCount": 0,
+    "Online": true,
+    "CoachId": "m-01",
+    "CoachName": "Nguy\u1EC5n V\u0103n An",
+    "MemberId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+    "MemberName": "H\u1ED3 Xu\u00E2n \u00C1nh Nam",
+    "Messages": [
+      {
+        "Id": "an-1",
+        "Sender": "other_member",
+        "SenderName": "Nguy\u1EC5n V\u0103n An",
+        "Text": "Ch\u00E0o b\u1EA1n Nam! Chi\u1EC1u nay t\u1EA7m 17h30 b\u1EA1n c\u00F3 qua ph\u00F2ng gym t\u1EADp b\u00E0i ng\u1EF1c kh\u00F4ng, t\u1EADp chung \u0111\u1ED5i t\u1EA1 cho vui nh\u00E9!",
+        "Timestamp": "09:30",
+        "CreatedAt": "2026-10-13T10:50:00.8733904Z"
+      }
+    ]
+  },
+  {
+    "Id": "conv-reception",
+    "Type": "direct",
+    "Category": "manager",
+    "RoleTag": "L\u1EC4 T\u00C2N",
+    "BadgeColor": "blue",
+    "CoachTitle": "H\u1ED3 Xu\u00E2n \u00C1nh Nam (Member)",
+    "CoachSubtitle": "H\u1ECFi th\u00F4ng tin check-in",
+    "MemberTitle": "Qu\u1EA7y L\u1EC5 T\u00E2n \u0026 D\u1ECBch V\u1EE5 H\u1ED9i Vi\u00EAn",
+    "MemberSubtitle": "Check-in th\u1EBB, Kh\u00F3a t\u1EE7 \u0026 Gia h\u1EA1n g\u00F3i",
+    "Avatar": "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100\u0026auto=format\u0026fit=crop\u0026q=80",
+    "CoachAvatar": "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100\u0026auto=format\u0026fit=crop\u0026q=80",
+    "LastMessage": "Qu\u1EA7y L\u1EC5 t\u00E2n m\u1EDF c\u1EEDa t\u1EEB 06:00 \u0111\u1EBFn 22:00 h\u00E0ng ng\u00E0y.",
+    "LastTime": "08:15",
+    "UnreadCount": 0,
+    "Online": true,
+    "CoachId": "rec-01",
+    "CoachName": "Qu\u1EA7y L\u1EC5 T\u00E2n",
+    "MemberId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+    "MemberName": "H\u1ED3 Xu\u00E2n \u00C1nh Nam",
+    "Messages": [
+      {
+        "Id": "rec-1",
+        "Sender": "manager",
+        "SenderName": "Qu\u1EA7y L\u1EC5 T\u00E2n",
+        "Text": "D\u1EA1 ch\u00E0o anh Nam, qu\u1EA7y L\u1EC5 t\u00E2n m\u1EDF c\u1EEDa h\u1ED7 tr\u1EE3 t\u1EEB 06:00 - 22:00 h\u00E0ng ng\u00E0y. Anh c\u1EA7n h\u1ED7 tr\u1EE3 ki\u1EC3m tra th\u1EDDi h\u1EA1n g\u00F3i t\u1EADp hay d\u1ECBch v\u1EE5 t\u1EE7 \u0111\u1ED3 c\u00E1 nh\u00E2n kh\u00F4ng \u1EA1?",
+        "Timestamp": "08:15",
+        "CreatedAt": "2026-10-13T10:50:00.8732528Z"
+      }
+    ]
+  },
+  {
+    "Id": "conv-manager",
+    "Type": "direct",
+    "Category": "manager",
+    "RoleTag": "QU\u1EA2N L\u00DD",
+    "BadgeColor": "blue",
+    "CoachTitle": "H\u1ED3 Xu\u00E2n \u00C1nh Nam (Member)",
+    "CoachSubtitle": "H\u1ED9i vi\u00EAn c\u1EA7n h\u1ED7 tr\u1EE3",
+    "MemberTitle": "Qu\u1EA3n l\u00FD Trung t\u00E2m SportCenter",
+    "MemberSubtitle": "Ban Qu\u1EA3n l\u00FD \u0026 Ti\u1EBFp nh\u1EADn ph\u1EA3n \u00E1nh d\u1ECBch v\u1EE5",
+    "Avatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100\u0026auto=format\u0026fit=crop\u0026q=80",
+    "CoachAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100\u0026auto=format\u0026fit=crop\u0026q=80",
+    "LastMessage": "Ban qu\u1EA3n l\u00FD SportCenter lu\u00F4n s\u1EB5n s\u00E0ng h\u1ED7 tr\u1EE3 gi\u1EA3i \u0111\u00E1p m\u1ECDi th\u1EAFc m\u1EAFc c\u1EE7a b\u1EA1n.",
+    "LastTime": "08:00",
+    "UnreadCount": 0,
+    "Online": true,
+    "CoachId": "mgr-01",
+    "CoachName": "Qu\u1EA3n l\u00FD Trung t\u00E2m",
+    "MemberId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+    "MemberName": "H\u1ED3 Xu\u00E2n \u00C1nh Nam",
+    "Messages": [
+      {
+        "Id": "mgr-1",
+        "Sender": "manager",
+        "SenderName": "Qu\u1EA3n l\u00FD Trung t\u00E2m",
+        "Text": "Ch\u00E0o b\u1EA1n H\u1ED3 Xu\u00E2n \u00C1nh Nam! Ban qu\u1EA3n l\u00FD SportCenter lu\u00F4n s\u1EB5n s\u00E0ng ti\u1EBFp nh\u1EADn \u00FD ki\u1EBFn v\u00E0 gi\u1EA3i quy\u1EBFt th\u1EAFc m\u1EAFc v\u1EC1 h\u1EE3p \u0111\u1ED3ng, c\u01A1 s\u1EDF v\u1EADt ch\u1EA5t hay \u0111\u1ED5i g\u00F3i t\u1EADp.",
+        "Timestamp": "08:00",
+        "CreatedAt": "2026-10-13T10:50:00.8731079Z"
+      }
+    ]
+  },
+  {
+    "Id": "conv-nam",
+    "Type": "direct",
+    "Category": "coach",
+    "RoleTag": "HLV",
+    "BadgeColor": "orange",
+    "CoachTitle": "H\u1ED3 Xu\u00E2n \u00C1nh Nam",
+    "CoachSubtitle": "H\u1ECDc vi\u00EAn PT K\u00E8m 1-1 (T\u00E0i kho\u1EA3n Member)",
+    "MemberTitle": "HLV Nam (PT Th\u1EC3 H\u00ECnh)",
+    "MemberSubtitle": "HLV Hu\u1EA5n luy\u1EC7n vi\u00EAn c\u00E1 nh\u00E2n 1-1",
+    "Avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100\u0026auto=format\u0026fit=crop\u0026q=80",
+    "CoachAvatar": "https://images.unsplash.com/photo-1567013127542-490d757e51fc?w=100\u0026auto=format\u0026fit=crop\u0026q=80",
+    "LastMessage": "Anam2: Th\u1EA7y \u01A1i cho em h\u1ECFi v\u1EC1 b\u00E0i t\u1EADp h\u00F4m nay v\u1EDBi \u1EA1!",
+    "LastTime": "08:55",
+    "UnreadCount": 0,
+    "Online": true,
+    "CoachId": "25F50FBA",
+    "CoachName": "HLV Nam",
+    "MemberId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+    "MemberName": "H\u1ED3 Xu\u00E2n \u00C1nh Nam",
+    "Messages": [
+      {
+        "Id": "nam1",
+        "Sender": "coach",
+        "SenderName": "HLV Nam",
+        "Text": "Ch\u00E0o Nam! Tu\u1EA7n n\u00E0y c\u01A1 b\u1EAFp c\u1EE7a b\u1EA1n sau bu\u1ED5i t\u1EADp ch\u00E2n h\u1ED3i ph\u1EE5c th\u1EBF n\u00E0o r\u1ED3i?",
+        "Timestamp": "09:15",
+        "CreatedAt": "2026-10-13T06:48:10.7099262Z"
+      },
+      {
+        "Id": "nam2",
+        "Sender": "member",
+        "SenderName": "H\u1ED3 Xu\u00E2n \u00C1nh Nam",
+        "Text": "D\u1EA1 \u0111\u1EE1 m\u1ECFi \u0111\u00F9i r\u1ED3i th\u1EA7y \u01A1i, form Squat b\u00E0i tr\u01B0\u1EDBc em l\u00E0m th\u1EA5y v\u00E0o m\u00F4ng \u0111\u00F9i r\u1EA5t t\u1ED1t \u1EA1.",
+        "Timestamp": "09:30",
+        "CreatedAt": "2026-10-13T06:48:10.7101798Z"
+      },
+      {
+        "Id": "nam3",
+        "Sender": "coach",
+        "SenderName": "HLV Nam",
+        "Text": "T\u1ED1t l\u1EAFm! Nh\u1EDB n\u1EA1p \u0111\u1EE7 120g protein/ng\u00E0y v\u00E0 u\u1ED1ng t\u1ED1i thi\u1EC3u 2.5 l\u00EDt n\u01B0\u1EDBc nh\u00E9.",
+        "Timestamp": "09:35",
+        "CreatedAt": "2026-10-13T06:48:10.7101802Z"
+      },
+      {
+        "Id": "nam4",
+        "Sender": "member",
+        "SenderName": "H\u1ED3 Xu\u00E2n \u00C1nh Nam",
+        "Text": "Th\u1EA7y \u01A1i, bu\u1ED5i t\u1EADp s\u00E1ng mai 7h em \u0111\u1EBFn s\u1EDBm 10 ph\u00FAt kh\u1EDFi \u0111\u1ED9ng tr\u01B0\u1EDBc nh\u00E9 \u1EA1!",
+        "Timestamp": "14:20",
+        "CreatedAt": "2026-10-13T06:48:10.7101804Z"
+      },
+      {
+        "Id": "msg-1791874242509",
+        "Sender": "member",
+        "SenderName": "kkasam",
+        "Text": "Th\u1EA7y \u01A1i cho em h\u1ECFi v\u1EC1 b\u00E0i t\u1EADp h\u00F4m nay v\u1EDBi \u1EA1!",
+        "Timestamp": "13:50",
+        "CreatedAt": "2026-10-13T06:50:42.5090319Z"
+      },
+      {
+        "Id": "msg-1791874243528",
+        "Sender": "member",
+        "SenderName": "kkasam",
+        "Text": "Em mu\u1ED1n d\u1EDDi l\u1ECBch t\u1EADp ng\u00E0y mai sang bu\u1ED5i t\u1ED1i \u0111\u01B0\u1EE3c kh\u00F4ng \u1EA1?",
+        "Timestamp": "13:50",
+        "CreatedAt": "2026-10-13T06:50:43.5286402Z"
+      },
+      {
+        "Id": "msg-1791883124188",
+        "Sender": "member",
+        "SenderName": "a",
+        "Text": "Th\u1EA7y \u01A1i cho em h\u1ECFi v\u1EC1 b\u00E0i t\u1EADp h\u00F4m nay v\u1EDBi \u1EA1!",
+        "Timestamp": "16:18",
+        "CreatedAt": "2026-10-13T09:18:44.1895288Z"
+      },
+      {
+        "Id": "msg-1791887514137",
+        "Sender": "member",
+        "SenderName": "Ho Xuan Anh Nam",
+        "Text": "ChChao HLV Nam! Em kiem tra nhan tin thuc te tu tai khoan Member qua Backend ne!",
+        "Timestamp": "17:31",
+        "CreatedAt": "2026-10-13T10:31:54.1374739Z"
+      },
+      {
+        "Id": "msg-1791887547430",
+        "Sender": "coach",
+        "SenderName": "HLV Nam",
+        "Text": "Chao Nam! Thay da nhan duoc tin nhan tu Backend roi nhe, chieu nay tap dung gio nha!",
+        "Timestamp": "17:32",
+        "CreatedAt": "2026-10-13T10:32:27.4309632Z"
+      },
+      {
+        "Id": "msg-1791888632625",
+        "Sender": "coach",
+        "SenderName": "a",
+        "Text": "alo",
+        "Timestamp": "17:50",
+        "CreatedAt": "2026-10-13T10:50:32.6254224Z"
+      },
+      {
+        "Id": "msg-1791888638969",
+        "Sender": "member",
+        "SenderName": "Ho Xuan Anh Nam",
+        "Text": "Th\u1EA7y \u01A1i cho em h\u1ECFi v\u1EC1 b\u00E0i t\u1EADp h\u00F4m nay v\u1EDBi \u1EA1!",
+        "Timestamp": "17:50",
+        "CreatedAt": "2026-10-13T10:50:38.9693211Z"
+      },
+      {
+        "Id": "msg-1791906099011",
+        "Sender": "member",
+        "SenderName": "Anam2",
+        "Text": "Th\u1EA7y \u01A1i cho em h\u1ECFi v\u1EC1 b\u00E0i t\u1EADp h\u00F4m nay v\u1EDBi \u1EA1!",
+        "Timestamp": "22:41",
+        "CreatedAt": "2026-10-13T15:41:39.0115498Z"
+      },
+      {
+        "Id": "msg-1791906101062",
+        "Sender": "member",
+        "SenderName": "Anam2",
+        "Text": "Em mu\u1ED1n d\u1EDDi l\u1ECBch t\u1EADp ng\u00E0y mai sang bu\u1ED5i t\u1ED1i \u0111\u01B0\u1EE3c kh\u00F4ng \u1EA1?",
+        "Timestamp": "22:41",
+        "CreatedAt": "2026-10-13T15:41:41.0629088Z"
+      },
+      {
+        "Id": "msg-1791906101560",
+        "Sender": "member",
+        "SenderName": "Anam2",
+        "Text": "Em mu\u1ED1n d\u1EDDi l\u1ECBch t\u1EADp ng\u00E0y mai sang bu\u1ED5i t\u1ED1i \u0111\u01B0\u1EE3c kh\u00F4ng \u1EA1?",
+        "Timestamp": "22:41",
+        "CreatedAt": "2026-10-13T15:41:41.5602414Z"
+      },
+      {
+        "Id": "msg-1791906111799",
+        "Sender": "member",
+        "SenderName": "Anam2",
+        "Text": "Th\u1EA7y \u01A1i cho em h\u1ECFi v\u1EC1 b\u00E0i t\u1EADp h\u00F4m nay v\u1EDBi \u1EA1!",
+        "Timestamp": "22:41",
+        "CreatedAt": "2026-10-13T15:41:51.7999207Z"
+      },
+      {
+        "Id": "msg-1791906112599",
+        "Sender": "member",
+        "SenderName": "Anam2",
+        "Text": "Em mu\u1ED1n d\u1EDDi l\u1ECBch t\u1EADp ng\u00E0y mai sang bu\u1ED5i t\u1ED1i \u0111\u01B0\u1EE3c kh\u00F4ng \u1EA1?",
+        "Timestamp": "22:41",
+        "CreatedAt": "2026-10-13T15:41:52.5990322Z"
+      },
+      {
+        "Id": "msg-1791942921412",
+        "Sender": "coach",
+        "SenderName": "Anam2",
+        "Text": "LO",
+        "Timestamp": "08:55",
+        "CreatedAt": "2026-10-14T01:55:21.4125723Z"
+      },
+      {
+        "Id": "msg-1791942926102",
+        "Sender": "member",
+        "SenderName": "Anam2",
+        "Text": "Th\u1EA7y \u01A1i cho em h\u1ECFi v\u1EC1 b\u00E0i t\u1EADp h\u00F4m nay v\u1EDBi \u1EA1!",
+        "Timestamp": "08:55",
+        "CreatedAt": "2026-10-14T01:55:26.1020154Z"
+      }
+    ]
+  },
+  {
+    "Id": "conv-1",
+    "Type": "direct",
+    "Category": "coach",
+    "RoleTag": "HLV",
+    "BadgeColor": "orange",
+    "CoachTitle": "Nguy\u1EC5n V\u0103n An",
+    "CoachSubtitle": "H\u1ECDc vi\u00EAn PT 1-1 (M\u1EE5c ti\u00EAu: T\u0103ng c\u01A1)",
+    "MemberTitle": "HLV Enam (Master PT)",
+    "MemberSubtitle": "HLV Th\u1EC3 h\u00ECnh \u0026 PT C\u00E1 nh\u00E2n 1-1",
+    "Avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100\u0026auto=format\u0026fit=crop\u0026q=80",
+    "CoachAvatar": "https://images.unsplash.com/photo-1567013127542-490d757e51fc?w=100\u0026auto=format\u0026fit=crop\u0026q=80",
+    "LastMessage": "kkasam: Th\u1EA7y \u01A1i cho em h\u1ECFi v\u1EC1 b\u00E0i t\u1EADp h\u00F4m nay v\u1EDBi \u1EA1!",
+    "LastTime": "13:50",
+    "UnreadCount": 1,
+    "Online": true,
+    "CoachId": "25F50FBA",
+    "CoachName": "HLV Enam",
+    "MemberId": "m-01",
+    "MemberName": "Nguy\u1EC5n V\u0103n An",
+    "Messages": [
+      {
+        "Id": "m1",
+        "Sender": "coach",
+        "SenderName": "HLV Enam",
+        "Text": "Ch\u00E0o An, tu\u1EA7n n\u00E0y em c\u1EA3m th\u1EA5y c\u01A1 b\u1EAFp ph\u1EE5c h\u1ED3i th\u1EBF n\u00E0o r\u1ED3i?",
+        "Timestamp": "09:15",
+        "CreatedAt": "2026-10-13T06:48:10.710237Z"
+      },
+      {
+        "Id": "m2",
+        "Sender": "member",
+        "SenderName": "Nguy\u1EC5n V\u0103n An",
+        "Text": "D\u1EA1 \u0111\u1EE1 m\u1ECFi \u0111\u00F9i r\u1ED3i th\u1EA7y, form Squat b\u00E0i tr\u01B0\u1EDBc em l\u00E0m th\u1EA5y v\u00E0o m\u00F4ng \u0111\u00F9i r\u1EA5t t\u1ED1t \u1EA1.",
+        "Timestamp": "09:30",
+        "CreatedAt": "2026-10-13T06:48:10.7102374Z"
+      },
+      {
+        "Id": "m3",
+        "Sender": "coach",
+        "SenderName": "HLV Enam",
+        "Text": "T\u1ED1t l\u1EAFm! Nh\u1EDB n\u1EA1p \u0111\u1EE7 120g protein/ng\u00E0y v\u00E0 u\u1ED1ng t\u1ED1i thi\u1EC3u 2.5 l\u00EDt n\u01B0\u1EDBc nh\u00E9.",
+        "Timestamp": "09:35",
+        "CreatedAt": "2026-10-13T06:48:10.7102376Z"
+      },
+      {
+        "Id": "m4",
+        "Sender": "member",
+        "SenderName": "Nguy\u1EC5n V\u0103n An",
+        "Text": "Th\u1EA7y \u01A1i, bu\u1ED5i t\u1EADp s\u00E1ng mai 7h em \u0111\u1EBFn s\u1EDBm 10 ph\u00FAt kh\u1EDFi \u0111\u1ED9ng tr\u01B0\u1EDBc nh\u00E9 \u1EA1!",
+        "Timestamp": "14:20",
+        "CreatedAt": "2026-10-13T06:48:10.7102377Z"
+      },
+      {
+        "Id": "msg-1791874252323",
+        "Sender": "member",
+        "SenderName": "kkasam",
+        "Text": "Th\u1EA7y \u01A1i cho em h\u1ECFi v\u1EC1 b\u00E0i t\u1EADp h\u00F4m nay v\u1EDBi \u1EA1!",
+        "Timestamp": "13:50",
+        "CreatedAt": "2026-10-13T06:50:52.3232326Z"
+      }
+    ]
+  },
+  {
+    "Id": "conv-lananh",
+    "Type": "direct",
+    "Category": "coach",
+    "RoleTag": "HLV",
+    "BadgeColor": "orange",
+    "CoachTitle": "Nguy\u1EC5n Lan Anh",
+    "CoachSubtitle": "H\u1ECDc vi\u00EAn H\u1ED9i vi\u00EAn Th\u00E2n thi\u1EBFt (Gym \u0026 Yoga)",
+    "MemberTitle": "HLV Enam (Master PT)",
+    "MemberSubtitle": "HLV Th\u1EC3 h\u00ECnh \u0026 PT C\u00E1 nh\u00E2n 1-1",
+    "Avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100\u0026auto=format\u0026fit=crop\u0026q=80",
+    "CoachAvatar": "https://images.unsplash.com/photo-1567013127542-490d757e51fc?w=100\u0026auto=format\u0026fit=crop\u0026q=80",
+    "LastMessage": "R\u1EA5t t\u1ED1t! Nh\u1EDB b\u1ED5 sung n\u01B0\u1EDBc \u0111i\u1EC7n gi\u1EA3i v\u00E0 gi\u00E3n c\u01A1 k\u0129 tr\u01B0\u1EDBc v\u00E0 sau b\u00E0i t\u1EADp nha.",
+    "LastTime": "09:00",
+    "UnreadCount": 0,
+    "Online": true,
+    "CoachId": "25F50FBA",
+    "CoachName": "HLV Enam",
+    "MemberId": "m-lananh",
+    "MemberName": "Nguy\u1EC5n Lan Anh",
+    "Messages": [
+      {
+        "Id": "la1",
+        "Sender": "coach",
+        "SenderName": "HLV Enam",
+        "Text": "Ch\u00E0o Lan Anh! Gi\u00E1o \u00E1n t\u1EADp tu\u1EA7n n\u00E0y th\u1EA7y \u0111\u00E3 c\u1EADp nh\u1EADt trong m\u1EE5c Gi\u00E1o \u00E1n \u0026 B\u00E0i t\u1EADp r\u1ED3i nh\u00E9.",
+        "Timestamp": "08:30",
+        "CreatedAt": "2026-10-13T06:48:10.7102385Z"
+      },
+      {
+        "Id": "la2",
+        "Sender": "member",
+        "SenderName": "Nguy\u1EC5n Lan Anh",
+        "Text": "D\u1EA1 em c\u1EA3m \u01A1n HLV Enam \u1EA1! Chi\u1EC1u nay em s\u1EBD d\u00E0nh 45 ph\u00FAt ch\u1EA1y b\u1ED9 theo b\u00E0i t\u1EADp th\u1EA7y giao.",
+        "Timestamp": "08:45",
+        "CreatedAt": "2026-10-13T06:48:10.7102387Z"
+      },
+      {
+        "Id": "la3",
+        "Sender": "coach",
+        "SenderName": "HLV Enam",
+        "Text": "R\u1EA5t t\u1ED1t! Nh\u1EDB b\u1ED5 sung n\u01B0\u1EDBc \u0111i\u1EC7n gi\u1EA3i v\u00E0 gi\u00E3n c\u01A1 k\u0129 tr\u01B0\u1EDBc v\u00E0 sau b\u00E0i t\u1EADp nha.",
+        "Timestamp": "09:00",
+        "CreatedAt": "2026-10-13T06:48:10.7102389Z"
+      }
+    ]
+  },
+  {
+    "Id": "conv-2",
+    "Type": "class",
+    "Category": "coach",
+    "RoleTag": "HLV",
+    "BadgeColor": "orange",
+    "CoachTitle": "L\u1EDBp Yoga C\u01A1 B\u1EA3n \u2013 S\u00E1ng 3-5-7",
+    "CoachSubtitle": "Nh\u00F3m 12 h\u1ECDc vi\u00EAn \u2022 Studio 2",
+    "MemberTitle": "L\u1EDBp Yoga C\u01A1 B\u1EA3n \u2013 S\u00E1ng 3-5-7",
+    "MemberSubtitle": "Nh\u00F3m l\u1EDBp h\u1ECDc \u2022 HLV Minh Tuy\u1EBFt",
+    "Avatar": "https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=100\u0026auto=format\u0026fit=crop\u0026q=80",
+    "CoachAvatar": "https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=100\u0026auto=format\u0026fit=crop\u0026q=80",
+    "LastMessage": "Bu\u1ED5i mai l\u1EDBp m\u00ECnh t\u1EADp b\u00E0i th\u1EDF Pranayama n\u00E2ng cao nh\u00E9!",
+    "LastTime": "11:05",
+    "UnreadCount": 0,
+    "Online": true,
+    "CoachId": "coach-02",
+    "CoachName": "HLV Minh Tuy\u1EBFt",
+    "MemberId": "cls-yoga-01",
+    "MemberName": "L\u1EDBp Yoga C\u01A1 B\u1EA3n \u2013 S\u00E1ng 3-5-7",
+    "Messages": [
+      {
+        "Id": "c1",
+        "Sender": "coach",
+        "SenderName": "HLV Minh Tuy\u1EBFt",
+        "Text": "Ch\u00E0o c\u1EA3 l\u1EDBp, m\u1ECDi ng\u01B0\u1EDDi nh\u1EDB mang theo kh\u0103n ri\u00EAng v\u00E0 th\u1EA3m c\u00E1 nh\u00E2n nh\u00E9.",
+        "Timestamp": "H\u00F4m qua",
+        "CreatedAt": "2026-10-13T06:48:10.7102406Z"
+      },
+      {
+        "Id": "c2",
+        "Sender": "coach",
+        "SenderName": "HLV Minh Tuy\u1EBFt",
+        "Text": "Bu\u1ED5i mai l\u1EDBp m\u00ECnh t\u1EADp b\u00E0i th\u1EDF Pranayama n\u00E2ng cao nh\u00E9!",
+        "Timestamp": "11:05",
+        "CreatedAt": "2026-10-13T06:48:10.7102409Z"
+      },
+      {
+        "Id": "c3",
+        "Sender": "member",
+        "SenderName": "Lan Anh",
+        "Text": "D\u1EA1 v\u00E2ng HLV \u1EA1, s\u00E1ng mai em s\u1EBD \u0111\u1EBFn s\u1EDBm 10 ph\u00FAt \u1EA1!",
+        "Timestamp": "11:15",
+        "CreatedAt": "2026-10-13T06:48:10.710241Z"
+      }
+    ]
+  },
+  {
+    "Id": "conv-3",
+    "Type": "direct",
+    "Category": "coach",
+    "RoleTag": "HLV",
+    "BadgeColor": "orange",
+    "CoachTitle": "L\u00EA Thu H\u00E0",
+    "CoachSubtitle": "H\u1ECDc vi\u00EAn Yoga tr\u1ECB li\u1EC7u",
+    "MemberTitle": "HLV Minh Tu\u1EA5n (Yoga Specialist)",
+    "MemberSubtitle": "Chuy\u00EAn gia Yoga \u0026 Ph\u1EE5c h\u1ED3i c\u1ED9t s\u1ED1ng",
+    "Avatar": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100\u0026auto=format\u0026fit=crop\u0026q=80",
+    "CoachAvatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100\u0026auto=format\u0026fit=crop\u0026q=80",
+    "LastMessage": "D\u1EA1 c\u1EA3m \u01A1n th\u1EA7y, l\u01B0ng em nay kh\u00F4ng c\u00F2n \u0111au khi ng\u1ED3i l\u00E2u n\u1EEFa.",
+    "LastTime": "H\u00F4m qua",
+    "UnreadCount": 0,
+    "Online": false,
+    "CoachId": "coach-01",
+    "CoachName": "HLV Minh Tu\u1EA5n",
+    "MemberId": "m-ha",
+    "MemberName": "L\u00EA Thu H\u00E0",
+    "Messages": [
+      {
+        "Id": "h1",
+        "Sender": "coach",
+        "SenderName": "HLV Minh Tu\u1EA5n",
+        "Text": "Ch\u00E0o H\u00E0, \u0111\u1ED9ng t\u00E1c r\u1EAFn h\u1ED5 mang h\u00F4m qua c\u00F3 l\u00E0m c\u0103ng th\u1EAFt l\u01B0ng qu\u00E1 kh\u00F4ng em?",
+        "Timestamp": "H\u00F4m qua",
+        "CreatedAt": "2026-10-13T06:48:10.7102415Z"
+      },
+      {
+        "Id": "h2",
+        "Sender": "member",
+        "SenderName": "L\u00EA Thu H\u00E0",
+        "Text": "D\u1EA1 c\u1EA3m \u01A1n th\u1EA7y, l\u01B0ng em nay kh\u00F4ng c\u00F2n \u0111au khi ng\u1ED3i l\u00E2u n\u1EEFa.",
+        "Timestamp": "H\u00F4m qua",
+        "CreatedAt": "2026-10-13T06:48:10.7102417Z"
+      }
+    ]
+  },
+  {
+    "Id": "conv-4",
+    "Type": "class",
+    "Category": "coach",
+    "RoleTag": "HLV",
+    "BadgeColor": "orange",
+    "CoachTitle": "Gym Group BodyCombat",
+    "CoachSubtitle": "Nh\u00F3m l\u1EDBp \u2022 8 h\u1ECDc vi\u00EAn",
+    "MemberTitle": "Gym Group BodyCombat",
+    "MemberSubtitle": "Nh\u00F3m cardio \u0026 kickfit \u2022 HLV Ho\u00E0ng Long",
+    "Avatar": "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=100\u0026auto=format\u0026fit=crop\u0026q=80",
+    "CoachAvatar": "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=100\u0026auto=format\u0026fit=crop\u0026q=80",
+    "LastMessage": "Ca h\u00F4m nay t\u1EADp sung qu\u00E1 m\u1ECDi ng\u01B0\u1EDDi! C\u1EA3m \u01A1n Coach nhi\u1EC1u \u1EA1.",
+    "LastTime": "H\u00F4m qua",
+    "UnreadCount": 0,
+    "Online": true,
+    "CoachId": "coach-03",
+    "CoachName": "HLV Ho\u00E0ng Long",
+    "MemberId": "cls-combat",
+    "MemberName": "Gym Group BodyCombat",
+    "Messages": [
+      {
+        "Id": "m40",
+        "Sender": "coach",
+        "SenderName": "HLV Ho\u00E0ng Long",
+        "Text": "H\u00F4m nay c\u1EA3 l\u1EDBp t\u1EADp r\u1EA5t t\u1ED1t, nh\u1ECBp \u0111\u1ED9 cardio r\u1EA5t \u0111\u1EC1u.",
+        "Timestamp": "H\u00F4m qua 10:45",
+        "CreatedAt": "2026-10-13T06:48:10.7102431Z"
+      },
+      {
+        "Id": "m41",
+        "Sender": "member",
+        "SenderName": "Ph\u1EA1m Ki\u1EC7t",
+        "Text": "Ca h\u00F4m nay t\u1EADp sung qu\u00E1 m\u1ECDi ng\u01B0\u1EDDi! C\u1EA3m \u01A1n Coach nhi\u1EC1u \u1EA1.",
+        "Timestamp": "H\u00F4m qua 11:00",
+        "CreatedAt": "2026-10-13T06:48:10.7102433Z"
+      }
+    ]
+  }
+]

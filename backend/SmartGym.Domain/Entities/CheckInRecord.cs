@@ -8,7 +8,8 @@ public sealed class CheckInRecord
         Guid branchId,
         Guid memberPackageId,
         DateTime checkInTime,
-        Guid? receptionistId)
+        Guid? receptionistId,
+        DateTime? checkOutTime = null)
     {
         Id = id;
         MemberId = memberId;
@@ -16,6 +17,7 @@ public sealed class CheckInRecord
         MemberPackageId = memberPackageId;
         CheckInTime = checkInTime;
         ReceptionistId = receptionistId;
+        CheckOutTime = checkOutTime;
     }
 
     public Guid Id { get; }
@@ -24,4 +26,5 @@ public sealed class CheckInRecord
     public Guid MemberPackageId { get; }
     public DateTime CheckInTime { get; }
     public Guid? ReceptionistId { get; }
+    public DateTime? CheckOutTime { get; }
 }

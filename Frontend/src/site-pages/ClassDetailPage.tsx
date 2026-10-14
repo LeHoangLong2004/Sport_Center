@@ -1,5 +1,4 @@
 const A = "/assets"
-
 const imgHero = `${A}/dff04.png`
 const imgCoach = `${A}/b76c1.png`
 const imgSimilar1 = `${A}/cc0af.png`
@@ -18,7 +17,6 @@ const imgFacebook = `${A}/6efbf.svg`
 const imgInstagram = `${A}/520a2.svg`
 const imgYoutube = `${A}/27371.svg`
 const imgLinkedin = `${A}/d1c41.svg`
-
 const navItems = [
   { label: "Trang chủ", active: false },
   { label: "Bộ môn", active: false },
@@ -28,7 +26,6 @@ const navItems = [
   { label: "Về chúng tôi", active: false },
   { label: "Liên hệ", active: false },
 ]
-
 const classInfo = [
   {
     icon: imgCalendar,
@@ -53,13 +50,11 @@ const classInfo = [
     green: true,
   },
 ]
-
 const notes = [
   "Vui lòng mang theo nước cá nhân và khăn lau mồ hôi sạch.",
   "Có mặt trước giờ bắt đầu tập 10-15 phút để khởi động khớp.",
   "Mặc trang phục thể thao co giãn thoải mái, giày thể thao chuyên dụng.",
 ]
-
 const similarClasses = [
   {
     img: imgSimilar1,
@@ -77,7 +72,6 @@ const similarClasses = [
     meta: "Thứ Bảy - 08:30 • Sân Đa Năng",
   },
 ]
-
 export default function ClassDetailPage() {
   return (
     <div
@@ -117,7 +111,6 @@ export default function ClassDetailPage() {
             Functional HIIT
           </span>
         </div>
-
         {/* Main two-column layout */}
         <div
           className="flex gap-12 items-start w-full"
@@ -136,7 +129,6 @@ export default function ClassDetailPage() {
                 className="w-full h-full object-cover"
               />
             </div>
-
             {/* Title + description */}
             <div
               className="flex flex-col gap-4 w-full"

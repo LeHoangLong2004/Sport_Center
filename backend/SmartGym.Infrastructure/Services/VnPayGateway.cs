@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Options;
@@ -125,7 +126,7 @@ public class VnPayGateway : IVnPayGateway
     private static string BuildQuery(IEnumerable<KeyValuePair<string, string>> parameters) =>
         string.Join(
             "&",
-            parameters.Select(p => $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value)}")
+            parameters.Select(p => $"{WebUtility.UrlEncode(p.Key)}={WebUtility.UrlEncode(p.Value)}")
         );
 
     private static string HmacSha512(string key, string data)

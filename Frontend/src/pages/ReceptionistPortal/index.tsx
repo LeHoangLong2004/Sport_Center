@@ -7,6 +7,7 @@ import { RegisterPage } from './views/RegisterPage';
 import { ClassesPage } from './views/ClassesPage';
 import { SchedulePage } from './views/SchedulePage';
 import { PosPage } from './views/PosPage';
+import { ProductOrdersPage } from './views/ProductOrdersPage';
 import { LookupPage } from './views/LookupPage';
 import { DetailPage } from './views/DetailPage';
 import { ProfileSettings } from '../../components/ProfileSettings';
@@ -75,6 +76,7 @@ export default function ReceptionistPortal({ onExit }: { onExit: () => void }) {
           {page === "classes" && <ClassesPage />}
           {page === "schedule" && <SchedulePage />}
           {page === "pos" && <PosPage />}
+          {page === "orders" && <ProductOrdersPage />}
           {page === "lookup" && (
             <LookupPage
               onDetail={(m) => {

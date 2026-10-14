@@ -35,7 +35,6 @@ function ScheduleList() {
 function StatCards() {
   const [sportSub, setSportSub] = useState<any>(null);
   const [memSub, setMemSub] = useState<any>(null);
-  const [metric, setMetric] = useState<any>(null);
 
   useEffect(() => {
     import('../services/api').then(({ MemberAPI }) => {
@@ -44,10 +43,6 @@ function StatCards() {
           setSportSub(data.find((s: any) => s.packageType === 'sport') || null);
           setMemSub(data.find((s: any) => s.packageType === 'membership') || null);
         }
-      }).catch(console.error);
-
-      MemberAPI.getBodyMetricsHistory().then(data => {
-        if (data && data.length > 0) setMetric(data[0]);
       }).catch(console.error);
     });
   }, []);
@@ -73,9 +68,9 @@ function StatCards() {
         <small>Kỷ lục -- ngày</small>
       </div>
       <div className="mp-stat-card">
-        <span>Cân nặng gần nhất</span>
-        <strong>{metric?.weightKg ? `${metric.weightKg} kg` : '--'}</strong>
-        <small>{metric?.heightCm ? `${metric.heightCm} cm` : 'Chưa cập nhật'}</small>
+        <span>Trạng thái tài khoản</span>
+        <strong className="text-emerald-600">Đang hoạt động</strong>
+        <small>Hội viên Thể thao</small>
       </div>
     </div>
   );

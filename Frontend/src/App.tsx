@@ -75,11 +75,12 @@ function AdminPortal({
         if (role === "admin") {
           window.location.hash = "dashboard"
           setStep("dashboard")
-        }
-        else if (role === "coach") {
+        } else if (role === "coach") {
           window.location.hash = "coach-portal"
+          window.location.reload()
         } else if (role === "receptionist") {
           window.location.hash = "receptionist"
+          window.location.reload()
         } else {
           window.location.hash = "member"
           setStep("member")
@@ -128,11 +129,11 @@ const paymentHashes = new Set(["#payment"])
 const receptionistHashes = new Set(["#receptionist"])
 
 function isAdminHash(hash: string) {
-  return adminHashes.has(hash)
+  return hash.startsWith("#member") || adminHashes.has(hash)
 }
 
 function isCoachHash(hash: string) {
-  return hash.startsWith("#coach-") || coachHashes.has(hash)
+  return hash.startsWith("#coach") || coachHashes.has(hash)
 }
 
 export default function App() {
@@ -212,15 +213,17 @@ export default function App() {
             ? "dashboard"
             : (window.location.hash === "#admin" || window.location.hash === "#login")
               ? "login"
-              : [
-                "#member",
-                "#classes",
-                "#booking-confirm",
-                "#schedule",
-                "#booking-success",
-                "#workout-detail",
-                "#move-ai",
-              ].includes(window.location.hash)
+              : (
+                window.location.hash.startsWith("#member") ||
+                [
+                  "#classes",
+                  "#booking-confirm",
+                  "#schedule",
+                  "#booking-success",
+                  "#workout-detail",
+                  "#move-ai",
+                ].includes(window.location.hash)
+              )
                 ? "member"
                 : "register"
         }

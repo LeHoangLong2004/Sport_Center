@@ -1,429 +1,543 @@
 ```mermaid
 erDiagram
     roles {
-        UUID id PK
-        VARCHAR(50) name 
-        TEXT description 
+        uuid id PK
+        varchar name UK
+        text description
     }
 
     users {
-        UUID id PK
-        UUID role_id FK
-        VARCHAR(50) member_code 
-        TEXT full_name 
-        VARCHAR(20) phone_number 
-        VARCHAR(100) email 
-        TEXT password_hash 
-        TEXT avatar_url 
-        DATE date_of_birth D
-        VARCHAR(20) gender 
-        TEXT emergency_contact 
-        TEXT training_goal 
-        VARCHAR(50) training_level 
-        BOOLEAN status 
-        TIMESTAMPTZ created_at 
+        uuid id PK
+        uuid role_id FK
+        text full_name
+        varchar phone_number UK
+        varchar email UK
+        text password_hash
+        text avatar_url
+        date date_of_birth
+        varchar gender
+        text emergency_contact
+        boolean status
+        timestamptz created_at
+        varchar member_code UK
+        text training_goal
+        varchar training_level
+        text address
     }
 
     facilities {
-        UUID id PK
-        TEXT name 
-        TEXT address 
-        VARCHAR(20) hotline 
-        BOOLEAN status 
+        uuid id PK
+        text name
+        text address
+        varchar hotline
+        boolean status
     }
 
     sports {
-        UUID id PK
-        TEXT name 
-        TEXT description 
-        TEXT image_url 
-        BOOLEAN status 
+        uuid id PK
+        text name
+        text description
+        text image_url
+        boolean status
     }
 
     packages {
-        VARCHAR(50) id PK
-        TEXT name 
-        TEXT tagline 
-        VARCHAR(20) package_type 
-        DECIMAL(182) monthly_price 
-        DECIMAL(182) yearly_price 
-        TEXT description 
-        BOOLEAN status 
+        varchar id PK
+        text name
+        text tagline
+        varchar package_type
+        numeric monthly_price
+        numeric yearly_price
+        text description
+        boolean status
+        jsonb catalog_json
     }
 
     package_features {
-        UUID id PK
-        VARCHAR(50) package_id FK
-        TEXT feature_text 
-        BOOLEAN is_highlighted 
+        uuid id PK
+        varchar package_id FK
+        text feature_text
+        boolean is_highlighted
     }
 
     package_sports {
-        UUID id PK
-        VARCHAR(50) package_id FK
-        UUID sport_id FK
+        uuid id PK
+        varchar package_id FK
+        uuid sport_id FK
     }
 
     membership_benefits {
-        UUID id PK
-        VARCHAR(50) package_id FK
-        VARCHAR(50) benefit_type 
-        TEXT benefit_value 
-        TEXT description 
+        uuid id PK
+        varchar package_id FK
+        varchar benefit_type
+        text benefit_value
+        text description
     }
 
     vouchers {
-        UUID id PK
-        VARCHAR(50) code 
-        DECIMAL(52) discount_percent 
-        DECIMAL(182) max_discount 
-        TIMESTAMPTZ valid_from 
-        TIMESTAMPTZ valid_to 
-        INT usage_limit 
-        INT used_count 
-        BOOLEAN status 
+        uuid id PK
+        varchar code UK
+        numeric discount_percent
+        numeric max_discount
+        timestamptz valid_from
+        timestamptz valid_to
+        integer usage_limit
+        integer used_count
+        boolean status
     }
 
     subscriptions {
-        UUID id PK
-        UUID user_id FK
-        VARCHAR(50) package_id FK
-        UUID sport_id FK
-        UUID facility_id FK
-        UUID voucher_id FK
-        VARCHAR(20) billing_period 
-        DECIMAL(182) total_amount 
-        VARCHAR(50) payment_method 
-        VARCHAR(50) payment_status 
-        DATE start_date 
-        DATE end_date 
-        BOOLEAN auto_renew 
-        TIMESTAMPTZ created_at 
+        uuid id PK
+        uuid user_id FK
+        varchar package_id FK
+        uuid sport_id FK
+        uuid facility_id FK
+        uuid voucher_id FK
+        varchar billing_period
+        numeric total_amount
+        varchar payment_method
+        varchar payment_status
+        date start_date
+        date end_date
+        boolean auto_renew
+        timestamptz created_at
+        integer duration_months
+        numeric discount_pct
+        numeric discount_amount
+        jsonb package_snapshot_json
+        timestamptz paid_at
     }
 
-    notifications {
-        UUID id PK
-        UUID sender_id FK
-        UUID user_id FK
-        VARCHAR(20) target_type 
-        UUID target_id 
-        VARCHAR(50) type 
-        VARCHAR(20) state 
-        TEXT title 
-        TEXT message 
-        TIMESTAMPTZ deadline 
-        BOOLEAN is_read 
-        TIMESTAMPTZ created_at 
+    communications {
+        uuid id PK
+        uuid user_id FK
+        text title
+        text message
+        boolean is_read
+        timestamptz created_at
+        varchar type
+        varchar target_type
+        uuid target_id
+        timestamptz deadline
+        uuid coach_id FK
+        varchar state
+        timestamptz published_at
     }
 
     check_in_logs {
-        UUID id PK
-        UUID user_id FK
-        UUID facility_id FK
-        UUID subscription_id FK
-        TIMESTAMPTZ check_in_time 
-        TIMESTAMPTZ check_out_time 
-        VARCHAR(50) method 
+        uuid id PK
+        uuid user_id FK
+        uuid facility_id FK
+        uuid subscription_id FK
+        timestamptz check_in_time
+        timestamptz check_out_time
+        varchar method
     }
 
     coaches {
-        UUID id PK
-        UUID user_id FK
-        TEXT specialty 
-        TEXT bio 
-        INT experience_years 
-        DECIMAL(32) rating 
-        BOOLEAN status 
+        uuid id PK
+        uuid user_id FK, UK
+        text specialty
+        text bio
+        integer experience_years
+        numeric rating
+        boolean status
     }
 
     coach_sports {
-        UUID id PK
-        UUID coach_id FK
-        UUID sport_id FK
+        uuid id PK
+        uuid coach_id FK
+        uuid sport_id FK
     }
 
     pt_packages {
-        UUID id PK
-        TEXT name 
-        INT session_count 
-        DECIMAL(182) price 
-        INT validity_days 
-        BOOLEAN status 
+        uuid id PK
+        text name
+        integer session_count
+        numeric price
+        integer validity_days
+        boolean status
     }
 
     pt_enrollments {
-        UUID id PK
-        UUID user_id FK
-        UUID coach_id FK
-        UUID pt_package_id FK
-        UUID voucher_id FK
-        INT total_sessions 
-        INT used_sessions 
-        VARCHAR(50) payment_method 
-        VARCHAR(50) payment_status 
-        DECIMAL(182) total_amount 
-        DECIMAL(182) discount_amount 
-        DATE start_date 
-        DATE end_date 
-        TIMESTAMPTZ created_at 
+        uuid id PK
+        uuid user_id FK
+        uuid coach_id FK
+        uuid pt_package_id FK
+        uuid voucher_id FK
+        integer total_sessions
+        integer used_sessions
+        varchar payment_method
+        varchar payment_status
+        numeric total_amount
+        numeric discount_amount
+        date start_date
+        date end_date
+        timestamptz created_at
     }
 
     pt_sessions {
-        UUID id PK
-        UUID enrollment_id FK
-        TIMESTAMPTZ schedule_time 
-        INT duration_minutes 
-        VARCHAR(50) status 
-        TEXT notes 
-        TIMESTAMPTZ created_at 
+        uuid id PK
+        uuid enrollment_id FK
+        timestamptz schedule_time
+        integer duration_minutes
+        varchar status
+        text notes
+        timestamptz created_at
     }
 
     reviews {
-        UUID id PK
-        UUID user_id FK
-        UUID coach_id FK
-        INT rating 
-        TEXT comment 
-        TIMESTAMPTZ created_at 
+        uuid id PK
+        uuid user_id FK
+        uuid coach_id FK
+        integer rating
+        text comment
+        timestamptz created_at
     }
 
     classes {
-        UUID id PK
-        UUID sport_id FK
-        UUID coach_id FK
-        UUID facility_id FK
-        TEXT class_name 
-        VARCHAR(50) level 
-        VARCHAR(100) room 
-        TIMESTAMPTZ schedule_time 
-        INT duration_minutes 
-        INT capacity 
-        INT current_enrolled 
-        BOOLEAN status 
-        TIMESTAMPTZ created_at 
+        uuid id PK
+        uuid sport_id FK
+        uuid coach_id FK
+        uuid facility_id FK
+        text class_name
+        timestamptz schedule_time
+        integer duration_minutes
+        integer capacity
+        integer current_enrolled
+        boolean status
+        timestamptz created_at
+        varchar level
+        varchar room
     }
 
     class_bookings {
-        UUID id PK
-        UUID user_id FK
-        UUID class_id FK
-        UUID subscription_id FK
-        VARCHAR(50) status 
-        TIMESTAMPTZ created_at 
+        uuid id PK
+        uuid user_id FK
+        uuid class_id FK
+        uuid subscription_id FK
+        varchar status
+        timestamptz created_at
     }
 
     body_metrics {
-        UUID id PK
-        UUID user_id FK
-        DECIMAL(52) weight 
-        DECIMAL(52) height 
-        DECIMAL(52) body_fat 
-        DECIMAL(52) muscle_mass 
-        DECIMAL(52) bmi 
-        TIMESTAMPTZ recorded_at 
+        uuid id PK
+        uuid user_id FK
+        numeric weight
+        numeric height
+        numeric body_fat
+        numeric muscle_mass
+        numeric bmi
+        timestamptz recorded_at
     }
 
     workout_plans {
-        UUID id PK
-        UUID coach_id FK
-        UUID sport_id FK
-        TEXT plan_name 
-        TEXT description 
-        TEXT goal 
-        VARCHAR(50) level 
-        INT duration_minutes 
-        VARCHAR(50) status 
-        INT version 
-        TIMESTAMPTZ created_at 
-        TIMESTAMPTZ updated_at 
-    }
-
-    workout_plan_exercises {
-        UUID id PK
-        UUID plan_id FK
-        TEXT name 
-        TEXT reps 
-        TEXT rest 
-        TEXT note 
-    }
-
-    workout_plan_assignments {
-        UUID id PK
-        UUID plan_id FK
-        VARCHAR(20) target_type 
-        UUID target_id 
-        TIMESTAMPTZ assigned_at 
+        uuid id PK
+        uuid user_id FK
+        uuid coach_id FK
+        text plan_name
+        text description
+        date start_date
+        date end_date
+        uuid sport_id FK
+        text goal
+        varchar level
+        integer duration_minutes
+        varchar status
+        timestamptz updated_at
+        integer version
     }
 
     diet_plans {
-        UUID id PK
-        UUID user_id FK
-        UUID coach_id FK
-        INT calories_target 
-        TEXT meals_description 
-        TIMESTAMPTZ created_at 
+        uuid id PK
+        uuid user_id FK
+        uuid coach_id FK
+        integer calories_target
+        text meals_description
+        timestamptz created_at
     }
 
     products {
-        UUID id PK
-        TEXT name 
-        VARCHAR(100) category 
-        DECIMAL(182) price 
-        INT stock_quantity 
-        TEXT image_url 
-        BOOLEAN status 
+        uuid id PK
+        text name
+        varchar category
+        numeric price
+        integer stock_quantity
+        text image_url
+        boolean status
     }
 
     invoices {
-        UUID id PK
-        UUID user_id FK
-        UUID created_by FK
-        UUID facility_id FK
-        DECIMAL(182) total_amount 
-        VARCHAR(50) payment_method 
-        VARCHAR(50) payment_status 
-        TIMESTAMPTZ created_at 
-        TIMESTAMPTZ paid_at 
+        uuid id PK
+        uuid user_id FK
+        uuid created_by FK
+        numeric total_amount
+        varchar payment_method
+        timestamptz created_at
+        varchar payment_status
+        uuid facility_id FK
+        timestamptz paid_at
+        varchar fulfillment_method
+        varchar fulfillment_status
+        text delivery_location
+        uuid assigned_to FK
+        timestamptz fulfilled_at
     }
 
     invoice_items {
-        UUID id PK
-        UUID invoice_id FK
-        UUID product_id FK
-        INT quantity 
-        DECIMAL(182) unit_price 
+        uuid id PK
+        uuid invoice_id FK
+        uuid product_id FK
+        integer quantity
+        numeric unit_price
+    }
+
+    product_order_messages {
+        uuid id PK
+        uuid invoice_id FK
+        uuid sender_id FK
+        text message
+        timestamptz created_at
     }
 
     article_categories {
-        UUID id PK
-        TEXT name 
-        TEXT description 
+        uuid id PK
+        text name
+        text description
     }
 
     articles {
-        UUID id PK
-        UUID category_id FK
-        UUID author_id FK
-        TEXT title 
-        TEXT thumbnail_url 
-        TEXT content 
-        VARCHAR(50) status 
-        TIMESTAMPTZ published_at 
+        uuid id PK
+        uuid category_id FK
+        uuid author_id FK
+        text title
+        text thumbnail_url
+        text content
+        varchar status
+        timestamptz published_at
     }
 
     contact_messages {
-        UUID id PK
-        TEXT sender_name 
-        VARCHAR(100) sender_email 
-        VARCHAR(20) sender_phone 
-        TEXT message 
-        BOOLEAN is_resolved 
-        TIMESTAMPTZ created_at 
+        uuid id PK
+        text sender_name
+        varchar sender_email
+        varchar sender_phone
+        text message
+        boolean is_resolved
+        timestamptz created_at
+    }
+
+    workout_plan_exercises {
+        uuid id PK
+        uuid plan_id FK
+        text name
+        text reps
+        text rest
+        text note
+    }
+
+    workout_plan_assignments {
+        uuid id PK
+        uuid plan_id FK
+        varchar target_type
+        uuid target_id
+        timestamptz assigned_at
     }
 
     class_attendance_sheets {
-        UUID session_id PK
-        VARCHAR(20) state 
-        INT version 
-        TIMESTAMPTZ finalized_at 
-        UUID finalized_by FK
-        TIMESTAMPTZ created_at 
-        TIMESTAMPTZ updated_at 
+        uuid session_id PK, FK
+        varchar state
+        integer version
+        uuid finalized_by FK
+        timestamptz finalized_at
+        timestamptz updated_at
     }
 
     class_attendance_records {
-        UUID session_id FK
-        UUID member_id FK
-        VARCHAR(20) status 
-        TEXT note 
+        uuid id PK
+        uuid session_id FK
+        uuid member_id FK
+        varchar status
+        text note
+        timestamptz updated_at
     }
 
     class_attendance_audits {
-        UUID id PK
-        UUID session_id FK
-        UUID actor_id FK
-        VARCHAR(50) action 
-        TEXT reason 
-        JSONB changes 
-        TIMESTAMPTZ occurred_at 
+        uuid id PK
+        uuid session_id FK
+        uuid actor_id FK
+        varchar action
+        text reason
+        jsonb changes
+        timestamptz occurred_at
     }
 
     training_results {
-        UUID id PK
-        UUID session_id FK
-        UUID member_id FK
-        UUID coach_id FK
-        TEXT metric_name 
-        DECIMAL(102) value 
-        VARCHAR(20) unit 
-        INT effort 
-        TEXT comment 
-        VARCHAR(20) visibility 
-        TIMESTAMPTZ recorded_at 
+        uuid id PK
+        uuid session_id FK
+        uuid member_id FK
+        uuid coach_id FK
+        text metric_name
+        numeric value
+        varchar unit
+        integer effort
+        text comment
+        varchar visibility
+        timestamptz recorded_at
     }
 
     homework_progress {
-        UUID notification_id FK
-        UUID member_id FK
-        VARCHAR(20) status 
-        TIMESTAMPTZ completed_at 
+        uuid id PK
+        uuid communication_id FK
+        uuid member_id FK
+        varchar status
+        timestamptz completed_at
     }
 
-    %% Relationships
-    article_categories ||--o{ articles : "category_id"
-    classes ||--o{ class_attendance_audits : "session_id"
-    classes ||--o{ class_attendance_records : "session_id"
-    classes ||--o{ class_attendance_sheets : "session_id"
-    classes ||--o{ class_bookings : "class_id"
-    classes ||--o{ training_results : "session_id"
-    coaches ||--o{ classes : "coach_id"
-    coaches ||--o{ coach_sports : "coach_id"
-    coaches ||--o{ diet_plans : "coach_id"
-    coaches ||--o{ notifications : "sender_id"
-    coaches ||--o{ pt_enrollments : "coach_id"
-    coaches ||--o{ reviews : "coach_id"
-    coaches ||--o{ training_results : "coach_id"
-    coaches ||--o{ workout_plans : "coach_id"
-    facilities ||--o{ check_in_logs : "facility_id"
-    facilities ||--o{ classes : "facility_id"
-    facilities ||--o{ invoices : "facility_id"
-    facilities ||--o{ subscriptions : "facility_id"
-    invoices ||--o{ invoice_items : "invoice_id"
-    notifications ||--o{ homework_progress : "notification_id"
-    packages ||--o{ membership_benefits : "package_id"
-    packages ||--o{ package_features : "package_id"
-    packages ||--o{ package_sports : "package_id"
-    packages ||--o{ subscriptions : "package_id"
-    products ||--o{ invoice_items : "product_id"
-    pt_enrollments ||--o{ pt_sessions : "enrollment_id"
-    pt_packages ||--o{ pt_enrollments : "pt_package_id"
-    roles ||--o{ users : "role_id"
-    sports ||--o{ classes : "sport_id"
-    sports ||--o{ coach_sports : "sport_id"
-    sports ||--o{ package_sports : "sport_id"
-    sports ||--o{ subscriptions : "sport_id"
-    sports ||--o{ workout_plans : "sport_id"
-    subscriptions ||--o{ check_in_logs : "subscription_id"
-    subscriptions ||--o{ class_bookings : "subscription_id"
-    users ||--o{ articles : "author_id"
-    users ||--o{ body_metrics : "user_id"
-    users ||--o{ check_in_logs : "user_id"
-    users ||--o{ class_attendance_audits : "actor_id"
-    users ||--o{ class_attendance_records : "member_id"
-    users ||--o{ class_attendance_sheets : "finalized_by"
-    users ||--o{ class_bookings : "user_id"
-    users ||--o{ coaches : "user_id"
-    users ||--o{ diet_plans : "user_id"
-    users ||--o{ homework_progress : "member_id"
-    users ||--o{ invoices : "created_by"
-    users ||--o{ invoices : "user_id"
-    users ||--o{ notifications : "user_id"
-    users ||--o{ pt_enrollments : "user_id"
-    users ||--o{ reviews : "user_id"
-    users ||--o{ subscriptions : "user_id"
-    users ||--o{ training_results : "member_id"
-    vouchers ||--o{ pt_enrollments : "voucher_id"
-    vouchers ||--o{ subscriptions : "voucher_id"
-    workout_plans ||--o{ workout_plan_assignments : "plan_id"
-    workout_plans ||--o{ workout_plan_exercises : "plan_id"
-```
+    %% Alias cho public."__EFMigrationsHistory"
+    ef_migrations_history {
+        varchar MigrationId PK
+        varchar ProductVersion
+    }
+
+    coach_profiles {
+        uuid user_id PK, FK
+        text specialties
+        text certifications
+        integer experience_years
+        text bio
+    }
+
+    appointments {
+        uuid id PK
+        varchar time
+        text title
+        text customer_name
+        varchar coach_name
+        varchar status
+    }
+
+    subscription_sports {
+        uuid id PK
+        uuid subscription_id FK
+        uuid sport_id FK
+    }
+
+    chat_conversations {
+        varchar id PK
+        varchar type
+        varchar coach_title
+        varchar coach_subtitle
+        varchar member_title
+        varchar member_subtitle
+        text avatar
+        text coach_avatar
+        text last_message
+        varchar last_time
+        integer unread_count
+        boolean online
+        varchar coach_id
+        varchar coach_name
+        varchar member_id
+        varchar member_name
+        timestamptz updated_at
+    }
+
+    chat_messages {
+        varchar id PK
+        varchar conversation_id FK
+        varchar sender
+        varchar sender_name
+        text text
+        varchar timestamp
+        timestamptz created_at
+    }
+
+    gate_checkins {
+        uuid id PK
+        uuid member_id
+        uuid branch_id
+        uuid member_package_id
+        timestamptz check_in_time
+        uuid receptionist_id
+    }
+
+    roles ||--o{ users : role_id
+
+    users ||--o{ subscriptions : user_id
+    users ||--o{ communications : user_id
+    users ||--o{ check_in_logs : user_id
+    users ||--o{ pt_enrollments : user_id
+    users ||--o{ reviews : user_id
+    users ||--o{ class_bookings : user_id
+    users ||--o{ body_metrics : user_id
+    users ||--o{ workout_plans : user_id
+    users ||--o{ diet_plans : user_id
+    users ||--o{ invoices : user_id
+    users ||--o{ invoices : created_by
+    users ||--o{ invoices : assigned_to
+    users ||--o{ product_order_messages : sender_id
+    users ||--o{ articles : author_id
+    users ||--o{ class_attendance_sheets : finalized_by
+    users ||--o{ class_attendance_records : member_id
+    users ||--o{ class_attendance_audits : actor_id
+    users ||--o{ training_results : member_id
+    users ||--o{ homework_progress : member_id
+    users ||--o| coaches : user_id
+    users ||--o| coach_profiles : user_id
+
+    facilities ||--o{ classes : facility_id
+    facilities ||--o{ invoices : facility_id
+    facilities ||--o{ check_in_logs : facility_id
+    facilities ||--o{ subscriptions : facility_id
+
+    sports ||--o{ package_sports : sport_id
+    sports ||--o{ workout_plans : sport_id
+    sports ||--o{ subscription_sports : sport_id
+    sports ||--o{ subscriptions : sport_id
+    sports ||--o{ coach_sports : sport_id
+    sports ||--o{ classes : sport_id
+
+    packages ||--o{ package_sports : package_id
+    packages ||--o{ package_features : package_id
+    packages ||--o{ membership_benefits : package_id
+    packages ||--o{ subscriptions : package_id
+
+    vouchers ||--o{ pt_enrollments : voucher_id
+    vouchers ||--o{ subscriptions : voucher_id
+
+    subscriptions ||--o{ subscription_sports : subscription_id
+    subscriptions ||--o{ class_bookings : subscription_id
+    subscriptions ||--o{ check_in_logs : subscription_id
+
+    coaches ||--o{ coach_sports : coach_id
+    coaches ||--o{ classes : coach_id
+    coaches ||--o{ pt_enrollments : coach_id
+    coaches ||--o{ reviews : coach_id
+    coaches ||--o{ workout_plans : coach_id
+    coaches ||--o{ diet_plans : coach_id
+    coaches ||--o{ communications : coach_id
+    coaches ||--o{ training_results : coach_id
+
+    pt_packages ||--o{ pt_enrollments : pt_package_id
+    pt_enrollments ||--o{ pt_sessions : enrollment_id
+
+    classes ||--o{ class_bookings : class_id
+    classes ||--o| class_attendance_sheets : session_id
+    classes ||--o{ class_attendance_records : session_id
+    classes ||--o{ class_attendance_audits : session_id
+    classes ||--o{ training_results : session_id
+
+    workout_plans ||--o{ workout_plan_exercises : plan_id
+    workout_plans ||--o{ workout_plan_assignments : plan_id
+
+    products ||--o{ invoice_items : product_id
+    invoices ||--o{ invoice_items : invoice_id
+    invoices ||--o{ product_order_messages : invoice_id
+
+    article_categories ||--o{ articles : category_id
+
+    communications ||--o{ homework_progress : communication_id
+
+    chat_conversations ||--o{ chat_messages : conversation_id
+

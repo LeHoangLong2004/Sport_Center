@@ -1,4 +1,5 @@
 using SmartGym.Application.Interfaces.Repositories;
+using SmartGym.Domain.Entities;
 using SmartGym.Domain.Enums;
 
 namespace SmartGym.Application.Services;
@@ -22,6 +23,12 @@ public sealed class CheckInService
         DateTime checkInTime
     )
     {
+        var openRecord = await _checkInRepository.FindOpenByMemberAsync(memberId);
+        if (openRecord is not null)
+        {
+            return (false, "Hội viên vẫn đang ở trong trung tâm. Vui lòng check-out trước.", null);
+        }
+
         var package = await _packageRepository.FindActivePackageAsync(memberId);
         if (package is null)
         {
@@ -74,4 +81,32 @@ public sealed class CheckInService
         await _checkInRepository.AddAsync(memberId, null, checkInTime, CheckInResult.Approved);
         return (true, "Check-in thành công! Chào mừng bạn đến SmartGym.", plan.PlanName);
     }
+
+    public async Task<(bool Allowed, string Message, CheckInRecord? Record)> CheckOutAsync(
+        Guid memberId,
+        DateTime checkOutTime)
+    {
+        var openRecord = await _checkInRepository.FindOpenByMemberAsync(memberId);
+        if (openRecord is null)
+            return (false, "Hội viên chưa có phiên check-in đang mở.", null);
+
+        var normalizedCheckOut = ToUtc(checkOutTime);
+        var normalizedCheckIn = ToUtc(openRecord.CheckInTime);
+
+        if (normalizedCheckOut < normalizedCheckIn)
+            return (false, "Thời điểm check-out không hợp lệ.", null);
+
+        var record = await _checkInRepository.CheckOutAsync(openRecord.Id, normalizedCheckOut);
+        return record is null
+            ? (false, "Không thể cập nhật phiên check-in.", null)
+            : (true, "Check-out thành công. Hẹn gặp lại bạn!", record);
+    }
+
+    private static DateTime ToUtc(DateTime value)
+        => value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Local => value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Local).ToUniversalTime()
+        };
 }
