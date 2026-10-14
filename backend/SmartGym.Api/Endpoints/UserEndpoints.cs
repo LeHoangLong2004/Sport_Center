@@ -28,6 +28,28 @@ public static class UserEndpoints
             )
             .RequireAuthorization(managerAuth);
 
+        group
+            .MapPost(
+                "/members",
+                async ([FromBody] CreateMemberRequest request, IUserService userService) =>
+                {
+                    try
+                    {
+                        var member = await userService.CreateMemberAsync(request);
+                        return Results.Created($"/api/users/{member.Id}", member);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        return Results.BadRequest(new { message = ex.Message });
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        return Results.Conflict(new { message = ex.Message });
+                    }
+                }
+            )
+            .RequireAuthorization(managerAuth);
+
         group.MapGet(
             "/members-lookup",
             async (SmartGym.Application.Interfaces.IUserRepository userRepo) =>

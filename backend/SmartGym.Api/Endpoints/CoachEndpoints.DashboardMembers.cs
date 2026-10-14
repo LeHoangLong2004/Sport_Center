@@ -20,15 +20,35 @@ namespace SmartGym.Api.Endpoints
             // 1. Dashboard
             group.MapGet(
                 "/dashboard",
-                () =>
+                async (HttpContext context, SmartGymDbContext db) =>
                 {
+                    var coachIdValue = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                        ?? context.User.FindFirst("sub")?.Value;
+
+                    if (!Guid.TryParse(coachIdValue, out var coachId))
+                        return Results.Ok(new { totalSessions = 0, completedSessions = 0, totalMembers = 0, upcomingClasses = 0 });
+
+                    var classes = await db.Database.SqlQueryRaw<ClassSqlRawModel>(
+                        "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status FROM classes WHERE coach_id = {0}",
+                        coachId).ToListAsync();
+                    var classIds = classes.Select(c => c.Id).ToHashSet();
+                    var bookings = classIds.Count == 0
+                        ? new System.Collections.Generic.List<ClassBookingRawModel>()
+                        : await db.Database.SqlQueryRaw<ClassBookingRawModel>(
+                            "SELECT id, user_id, class_id, status, created_at FROM class_bookings WHERE status NOT IN ('cancelled', 'rejected', 'class_cancelled')").ToListAsync();
+                    var now = DateTime.UtcNow;
+                    var coachBookings = bookings.Where(b => classIds.Contains(b.ClassId)).ToList();
+                    var reviews = await db.Reviews.Where(r => r.CoachId == coachId).ToListAsync();
+
                     return Results.Ok(
                         new
                         {
-                            totalSessions = 12,
-                            completedSessions = 8,
-                            totalMembers = 45,
-                            upcomingClasses = 3,
+                            totalSessions = classes.Count,
+                            completedSessions = classes.Count(c => c.ScheduleTime.AddMinutes(c.DurationMinutes) < now),
+                            totalMembers = coachBookings.Select(b => b.UserId).Distinct().Count(),
+                            upcomingClasses = classes.Count(c => c.Status && c.ScheduleTime > now),
+                            averageRating = reviews.Count == 0 ? (double?)null : reviews.Average(r => r.Rating),
+                            reviewCount = reviews.Count,
                         }
                     );
                 }

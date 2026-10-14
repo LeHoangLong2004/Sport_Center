@@ -10,6 +10,9 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
   const [allUsers, setAllUsers] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState("Thành viên")
   const [currentPage, setCurrentPage] = useState(1);
+  const [showCreateMember, setShowCreateMember] = useState(false);
+  const [isCreatingMember, setIsCreatingMember] = useState(false);
+  const [createError, setCreateError] = useState("");
   const rowsPerPage = 10;
 
   React.useEffect(() => {
@@ -73,6 +76,49 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
       }
     } catch {
       alert("Lỗi kết nối.");
+    }
+  };
+
+  const handleCreateMember = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setCreateError("");
+    const form = new FormData(event.currentTarget);
+    const payload = {
+      fullName: String(form.get("fullName") || "").trim(),
+      email: String(form.get("email") || "").trim(),
+      phoneNumber: String(form.get("phoneNumber") || "").trim(),
+      password: String(form.get("password") || ""),
+      dateOfBirth: form.get("dateOfBirth") || null,
+      gender: String(form.get("gender") || "").trim() || null,
+      emergencyContact: String(form.get("emergencyContact") || "").trim() || null,
+    };
+
+    setIsCreatingMember(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/users/members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const rawBody = await response.text();
+        let message = rawBody;
+        try {
+          const body = JSON.parse(rawBody);
+          message = body?.message || body?.detail || body?.title || rawBody;
+        } catch {
+          // Keep the plain-text response when the API does not return JSON.
+        }
+        throw new Error(message || `Không thể tạo hội viên (HTTP ${response.status}).`);
+      }
+      setShowCreateMember(false);
+      fetchUsers();
+      alert("Đã thêm hội viên mới thành công.");
+    } catch (error: any) {
+      setCreateError(error.message || "Lỗi kết nối đến máy chủ.");
+    } finally {
+      setIsCreatingMember(false);
     }
   };
 
@@ -151,7 +197,7 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
             <img src={iDownload} alt="" className="size-4" />
             <span className="font-semibold text-[#0f172a] text-sm">Xuất dữ liệu Excel</span>
           </button>
-          <button onClick={() => alert("Vui lòng sử dụng màn hình Đăng ký (Register) để tạo tài khoản mới.")} className="bg-[#2563eb] flex gap-2 items-center px-4 py-2.5 rounded-lg">
+          <button onClick={() => { setCreateError(""); setShowCreateMember(true); }} className="bg-[#2563eb] flex gap-2 items-center px-4 py-2.5 rounded-lg">
             <span className="font-semibold text-white text-sm">+ Thêm hội viên mới</span>
           </button>
         </div>
@@ -278,6 +324,30 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
           </div>
         </div>
       </div>
+      {showCreateMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+          <form onSubmit={handleCreateMember} className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-5 flex items-start justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-[#0f172a]">Thêm hội viên mới</h2>
+                <p className="mt-1 text-sm text-[#64748b]">Tài khoản sẽ được tạo với quyền hội viên.</p>
+              </div>
+              <button type="button" onClick={() => setShowCreateMember(false)} className="text-2xl text-slate-400 hover:text-slate-700">×</button>
+            </div>
+            {createError && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{createError}</div>}
+            <div className="grid grid-cols-2 gap-4">
+              <label className="col-span-2 flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">Họ và tên *<input name="fullName" required className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500" /></label>
+              <label className="flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">Email *<input name="email" type="email" required className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500" /></label>
+              <label className="flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">Số điện thoại *<input name="phoneNumber" required className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500" /></label>
+              <label className="flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">Mật khẩu tạm thời *<input name="password" type="password" minLength={6} required className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500" /></label>
+              <label className="flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">Ngày sinh<input name="dateOfBirth" type="date" className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500" /></label>
+              <label className="flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">Giới tính<select name="gender" className="rounded-lg border border-[#cbd5e1] bg-white px-3 py-2.5 font-normal outline-none focus:border-blue-500"><option value="">Chưa cập nhật</option><option value="Nam">Nam</option><option value="Nữ">Nữ</option><option value="Khác">Khác</option></select></label>
+              <label className="col-span-2 flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">Liên hệ khẩn cấp<input name="emergencyContact" className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500" /></label>
+            </div>
+            <div className="mt-6 flex justify-end gap-3"><button type="button" onClick={() => setShowCreateMember(false)} className="rounded-lg border border-[#cbd5e1] px-5 py-2.5 text-sm font-semibold text-slate-700">Hủy</button><button type="submit" disabled={isCreatingMember} className="rounded-lg bg-[#2563eb] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{isCreatingMember ? "Đang tạo..." : "Tạo hội viên"}</button></div>
+          </form>
+        </div>
+      )}
     </div>
   )
 }

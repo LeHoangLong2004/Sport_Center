@@ -29,7 +29,7 @@ export default function ProfileHeaderCard({
           <div className="relative group">
             <UserAvatar
               src={avatarUrl}
-              name={fullName || "Enam"}
+              name={fullName || "Chưa cập nhật"}
               className="w-24 h-24 rounded-2xl text-3xl font-bold ring-4 ring-slate-100 dark:ring-slate-800 object-cover shadow-sm bg-orange-500 text-white"
             />
             <button
@@ -45,7 +45,7 @@ export default function ProfileHeaderCard({
           <div className="space-y-1.5">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                {fullName || "Enam"}
+                {fullName || "Chưa cập nhật"}
               </h1>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400 border border-orange-200/60 dark:border-orange-500/20">
                 COACH

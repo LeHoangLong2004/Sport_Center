@@ -78,7 +78,18 @@ export const CurriculumAssignModal: React.FC<CurriculumAssignModalProps> = ({
           <span className="font-semibold text-slate-700 dark:text-slate-300 block mb-2">
             Chọn Lớp học phụ trách:
           </span>
-          <div className="flex flex-col gap-1.5">
+          <select
+            defaultValue=""
+            onChange={(e) => {
+              const selected = uniqueClasses.find((cls) => cls.id === e.target.value);
+              if (selected) onAssign("class", selected.id, selected.name);
+            }}
+            className="w-full p-2.5 mb-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none focus:border-emerald-500"
+          >
+            <option value="">Chọn lớp học...</option>
+            {uniqueClasses.map((cls) => <option key={cls.id} value={cls.id}>{cls.name}</option>)}
+          </select>
+          <div className="hidden flex flex-col gap-1.5">
             {uniqueClasses.map((cls) => (
               <button
                 key={cls.id}
@@ -97,7 +108,18 @@ export const CurriculumAssignModal: React.FC<CurriculumAssignModalProps> = ({
           <span className="font-semibold text-slate-700 dark:text-slate-300 block mb-2">
             Hoặc chọn Học viên kèm 1–1:
           </span>
-          <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto">
+          <select
+            defaultValue=""
+            onChange={(e) => {
+              const selected = members.find((m) => m.id === e.target.value);
+              if (selected) onAssign("member", selected.id, selected.name);
+            }}
+            className="w-full p-2.5 mb-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none focus:border-emerald-500"
+          >
+            <option value="">Chọn học viên 1-1...</option>
+            {members.map((m) => <option key={m.id} value={m.id}>{m.name} ({m.code})</option>)}
+          </select>
+          <div className="hidden flex flex-col gap-1.5 max-h-40 overflow-y-auto">
             {members.map((m) => (
               <button
                 key={m.id}
