@@ -28,10 +28,10 @@ interface Props {
 }
 
 export default function CoachSchedule({ navigateTo }: Props) {
-  const [activeTab] = useState<MainTab>("schedule");
+  const [activeTab, setActiveTab] = useState<MainTab>("schedule");
   const [view, setView] = useState<ViewMode>("week");
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [sportFilter, setSportFilter] = useState<SportFilter>("all");
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [weekOffset, setWeekOffset] = useState(0);
 
@@ -42,6 +42,8 @@ export default function CoachSchedule({ navigateTo }: Props) {
   const [isOpenSlotModalOpen, setIsOpenSlotModalOpen] = useState(false);
   const [selectedOpenSlot, setSelectedOpenSlot] = useState<UnifiedScheduleItem | null>(null);
   const [selectedPtSession, setSelectedPtSession] = useState<UnifiedScheduleItem | null>(null);
+
+  const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
 
   const weekDates = useMemo(() => {
     const now = new Date();
@@ -75,39 +77,12 @@ export default function CoachSchedule({ navigateTo }: Props) {
 
   const filteredSessions = useMemo(() => {
     return allUnifiedSessions.filter((s) => {
-      if (typeFilter !== "all" && s.type !== typeFilter) return false;
       if (sportFilter !== "all" && s.sport !== sportFilter) return false;
+      if (typeFilter !== "all" && s.type !== typeFilter) return false;
       if (statusFilter !== "all" && s.status !== statusFilter) return false;
       return true;
     });
-  }, [allUnifiedSessions, typeFilter, sportFilter, statusFilter]);
-
-  const byDate = useMemo(() => {
-    const map = new Map<string, UnifiedScheduleItem[]>();
-    for (const s of filteredSessions) {
-      if (!map.has(s.date)) map.set(s.date, []);
-      map.get(s.date)!.push(s);
-    }
-    for (const arr of map.values()) {
-      arr.sort((a, b) => a.startTime.localeCompare(b.startTime));
-    }
-    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
-  }, [filteredSessions]);
-
-  const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
-
-  const handleCreateOpenSlotSuccess = (newItem: UnifiedScheduleItem) => {
-    addOpenSlot(newItem);
-    setFeedbackMsg(`Đã tạo lịch trống 1–1 thành công: ${newItem.date} (${newItem.startTime} - ${newItem.endTime})!`);
-    setTimeout(() => setFeedbackMsg(null), 4000);
-  };
-
-  const handleDeleteOpenSlot = (id: string) => {
-    removeOpenSlot(id);
-    setSelectedOpenSlot(null);
-    setFeedbackMsg("Đã đóng/hủy ca trống thành công.");
-    setTimeout(() => setFeedbackMsg(null), 3000);
-  };
+  }, [allUnifiedSessions, sportFilter, typeFilter, statusFilter]);
 
   const handleSubmitRequest = async (data: any) => {
     try {
@@ -118,6 +93,23 @@ export default function CoachSchedule({ navigateTo }: Props) {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const handleCreateOpenSlotSuccess = (newItem: UnifiedScheduleItem) => {
+    addOpenSlot(newItem);
+    setFeedbackMsg(`Đã đăng lịch trống 1-1 (${newItem.sport} ngày ${newItem.date}) thành công!`);
+    setTimeout(() => setFeedbackMsg(null), 4000);
+  };
+
+  const handleDeleteOpenSlot = (slotId: string) => {
+    removeOpenSlot(slotId);
+    setSelectedOpenSlot(null);
+    setFeedbackMsg("Đã đóng/hủy lịch trống 1-1 này.");
+    setTimeout(() => setFeedbackMsg(null), 4000);
+  };
+
+  const handleToggleSlot = async (slotId: string) => {
+    toggleSlot(slotId);
   };
 
   return (
@@ -161,6 +153,43 @@ export default function CoachSchedule({ navigateTo }: Props) {
         </div>
       )}
 
+      {/* Tabs */}
+      <div className="flex border-b border-slate-200 dark:border-slate-800 gap-6 text-sm font-semibold">
+        <button
+          type="button"
+          onClick={() => setActiveTab("schedule")}
+          className={`pb-3 border-b-2 transition-colors ${
+            activeTab === "schedule"
+              ? "border-orange-500 text-orange-600 dark:text-orange-400"
+              : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+          }`}
+        >
+          Lịch dạy & PT 1–1
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("availability")}
+          className={`pb-3 border-b-2 transition-colors ${
+            activeTab === "availability"
+              ? "border-orange-500 text-orange-600 dark:text-orange-400"
+              : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+          }`}
+        >
+          Khung giờ rảnh
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("requests")}
+          className={`pb-3 border-b-2 transition-colors ${
+            activeTab === "requests"
+              ? "border-orange-500 text-orange-600 dark:text-orange-400"
+              : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+          }`}
+        >
+          Yêu cầu ca dạy ({requests.length})
+        </button>
+      </div>
+
       {activeTab === "schedule" && (
         <div className="flex flex-col gap-5">
           <ScheduleFilterBar
@@ -190,15 +219,9 @@ export default function CoachSchedule({ navigateTo }: Props) {
 
           {view === "list" && (
             <ScheduleListView
-              byDate={byDate}
-              todayStr={todayStr}
-              loading={loading}
+              filteredSessions={filteredSessions}
               onSelectOpenSlot={setSelectedOpenSlot}
               onSelectPtSession={setSelectedPtSession}
-              onOpenRequestModal={(sid) => {
-                if (sid) setSelectedSessionForRequest(sid);
-                setIsRequestModalOpen(true);
-              }}
               navigateTo={navigateTo}
             />
           )}
@@ -206,24 +229,29 @@ export default function CoachSchedule({ navigateTo }: Props) {
       )}
 
       {activeTab === "availability" && (
-        <CoachAvailabilityTab availabilitySlots={availabilitySlots} onToggleSlot={toggleSlot} />
+        <CoachAvailabilityTab
+          availabilitySlots={availabilitySlots}
+          onToggleSlot={handleToggleSlot}
+        />
       )}
 
       {activeTab === "requests" && (
         <CoachRequestsTab
           requests={requests}
-          onOpenCreateRequest={() => {
+          onOpenNewRequest={() => {
             setSelectedSessionForRequest(allUnifiedSessions[0]?.id || "");
             setIsRequestModalOpen(true);
           }}
         />
       )}
 
+      {/* Modals */}
       <ScheduleRequestModal
         isOpen={isRequestModalOpen}
         onClose={() => setIsRequestModalOpen(false)}
         sessions={allUnifiedSessions}
-        initialSessionId={selectedSessionForRequest}
+        selectedSessionId={selectedSessionForRequest}
+        setSelectedSessionId={setSelectedSessionForRequest}
         onSubmit={handleSubmitRequest}
       />
 

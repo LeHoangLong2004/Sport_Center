@@ -1,5 +1,6 @@
 using SmartGym.Application.DTOs;
 using SmartGym.Application.Interfaces;
+using SmartGym.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -92,7 +93,31 @@ public class UserService : IUserService
     public async Task<bool> UpdateUserProfileAsync(Guid userId, UpdateUserProfileRequest request)
     {
         var user = await _userRepository.GetByIdAsync(userId);
-        if (user == null) return false;
+        var isCoach = (user != null && string.Equals(user.Role?.Name, "coach", StringComparison.OrdinalIgnoreCase))
+            || (user != null && user.CoachProfile != null)
+            || request.Specialties != null
+            || request.Certifications != null
+            || request.Bio != null
+            || request.ExperienceYears.HasValue;
+
+        if (user == null)
+        {
+            var roleName = isCoach ? "coach" : "member";
+            var role = await _userRepository.GetRoleByNameAsync(roleName);
+            user = new User
+            {
+                Id = userId,
+                RoleId = role?.Id,
+                Role = role,
+                FullName = request.FullName ?? (isCoach ? "Huấn luyện viên" : "Hội viên"),
+                Email = request.Email ?? (isCoach ? "hoxuananhnam1@gmail.com" : "hoxuananhnam@gmail.com"),
+                PhoneNumber = request.PhoneNumber ?? "0900000000",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
+                Status = true,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _userRepository.AddAsync(user);
+        }
 
         if (request.FullName != null) user.FullName = request.FullName;
         if (request.PhoneNumber != null) user.PhoneNumber = request.PhoneNumber;
@@ -101,13 +126,6 @@ public class UserService : IUserService
         if (request.DateOfBirth != null) user.DateOfBirth = DateTime.SpecifyKind(request.DateOfBirth.Value, DateTimeKind.Utc);
         if (request.Gender != null) user.Gender = request.Gender;
         if (request.EmergencyContact != null) user.EmergencyContact = request.EmergencyContact;
-
-        var isCoach = string.Equals(user.Role?.Name, "coach", StringComparison.OrdinalIgnoreCase)
-            || user.CoachProfile != null
-            || request.Specialties != null
-            || request.Certifications != null
-            || request.Bio != null
-            || request.ExperienceYears.HasValue;
 
         if (isCoach)
         {

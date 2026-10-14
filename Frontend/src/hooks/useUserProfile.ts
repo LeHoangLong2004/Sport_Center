@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export interface UserProfile {
   id: string;
@@ -14,6 +14,24 @@ export interface UserProfile {
   certifications?: string;
   experienceYears?: number;
   bio?: string;
+  fitnessGoal?: string;
+  favoriteSports?: string;
+  preferredTime?: string;
+  healthNotes?: string;
+  workoutGoals?: string;
+  memberTier?: string;
+}
+
+export const USER_PROFILE_UPDATED_EVENT = 'user-profile-updated';
+
+function getStoredUser(): any | null {
+  const raw = localStorage.getItem('user');
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
 }
 
 function mapUser(data: any): UserProfile {
@@ -31,25 +49,38 @@ function mapUser(data: any): UserProfile {
     certifications: data.certifications || '',
     experienceYears: data.experienceYears ?? undefined,
     bio: data.bio || '',
+    fitnessGoal: data.fitnessGoal || '',
+    favoriteSports: data.favoriteSports || '',
+    preferredTime: data.preferredTime || '',
+    healthNotes: data.healthNotes || '',
+    workoutGoals: data.workoutGoals || '',
+    memberTier: data.memberTier || '',
   };
 }
 
-export function useUserProfile() {
+export function detectPortalRole(portalRoleHint?: 'coach' | 'member'): 'coach' | 'member' {
+  if (portalRoleHint) return portalRoleHint;
+  const hash = window.location.hash.toLowerCase();
+  if (hash.startsWith('#coach')) return 'coach';
+  if (hash.startsWith('#member') || ['#classes', '#schedule', '#pricing'].includes(hash)) return 'member';
+  const user = getStoredUser();
+  return String(user?.roleName || user?.role || '').toLowerCase() === 'coach' ? 'coach' : 'member';
+}
+
+export function useUserProfile(portalRoleHint?: 'coach' | 'member') {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async () => {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
+  const loadProfile = useCallback(async () => {
+    const user = getStoredUser();
+    if (!user?.id) {
+      setProfile(null);
       setLoading(false);
       return;
     }
 
     try {
-      const user = JSON.parse(userStr);
-      if (!user.id) throw new Error('Không tìm thấy user id.');
-
-      let token = localStorage.getItem('token');
+      let token = localStorage.getItem('token') || localStorage.getItem('accessToken');
       let response = await fetch(`/api/users/${user.id}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -58,8 +89,9 @@ export function useUserProfile() {
         const refreshResponse = await fetch('/api/auth/dev-token', { method: 'POST' });
         if (refreshResponse.ok) {
           const refreshed = await refreshResponse.json();
-          if (refreshed.token) {
-            token = refreshed.token;
+          const refreshedToken = refreshed.token;
+          if (typeof refreshedToken === 'string' && refreshedToken.length > 0) {
+            token = refreshedToken;
             localStorage.setItem('token', token);
             response = await fetch(`/api/users/${user.id}`, {
               headers: { Authorization: `Bearer ${token}` },
@@ -68,7 +100,7 @@ export function useUserProfile() {
         }
       }
 
-      if (!response.ok) throw new Error(`Không thể tải hồ sơ (HTTP ${response.status}).`);
+      if (!response.ok) throw new Error(`Profile request failed: ${response.status}`);
       setProfile(mapUser(await response.json()));
     } catch (error) {
       console.error('Không thể tải hồ sơ từ database:', error);
@@ -79,13 +111,23 @@ export function useUserProfile() {
   }, []);
 
   useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
+    void loadProfile();
+
+    const refresh = () => void loadProfile();
+    window.addEventListener(USER_PROFILE_UPDATED_EVENT, refresh);
+    window.addEventListener('storage', refresh);
+    window.addEventListener('hashchange', refresh);
+    return () => {
+      window.removeEventListener(USER_PROFILE_UPDATED_EVENT, refresh);
+      window.removeEventListener('storage', refresh);
+      window.removeEventListener('hashchange', refresh);
+    };
+  }, [loadProfile, portalRoleHint]);
 
   const updateProfile = useCallback(async (updates: Partial<UserProfile>) => {
     if (!profile?.id) throw new Error('Không tìm thấy hồ sơ hiện tại.');
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
     const response = await fetch(`/api/users/${profile.id}/profile`, {
       method: 'PUT',
       headers: {
@@ -108,8 +150,9 @@ export function useUserProfile() {
     });
 
     if (!response.ok) throw new Error('Cập nhật hồ sơ thất bại.');
-    await fetchProfile();
-  }, [profile?.id, fetchProfile]);
+    await loadProfile();
+    window.dispatchEvent(new Event(USER_PROFILE_UPDATED_EVENT));
+  }, [profile?.id, loadProfile]);
 
-  return { profile, loading, updateProfile };
+  return { profile, loading, updateProfile, role: detectPortalRole(portalRoleHint) };
 }

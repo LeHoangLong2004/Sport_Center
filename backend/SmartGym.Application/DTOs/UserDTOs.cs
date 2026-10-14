@@ -22,6 +22,12 @@ public class UserResponse
     public string? Certifications { get; set; }
     public int? ExperienceYears { get; set; }
     public string? Bio { get; set; }
+
+    // Member Profile Fields
+    public string? FitnessGoal { get; set; }
+    public string? FavoriteSports { get; set; }
+    public string? PreferredTime { get; set; }
+    public string? HealthNotes { get; set; }
 }
 
 public class UpdateUserRoleRequest
@@ -49,6 +55,12 @@ public class UpdateUserProfileRequest
     public string? Certifications { get; set; }
     public int? ExperienceYears { get; set; }
     public string? Bio { get; set; }
+
+    // Member Profile Fields
+    public string? FitnessGoal { get; set; }
+    public string? FavoriteSports { get; set; }
+    public string? PreferredTime { get; set; }
+    public string? HealthNotes { get; set; }
 }
 
 public class CreateMemberRequest
