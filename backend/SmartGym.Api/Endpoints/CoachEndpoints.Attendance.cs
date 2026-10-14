@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using SmartGym.Api.Services;
 using SmartGym.Infrastructure.Persistence.EF;
 using SmartGym.Infrastructure.Persistence.Supabase.Repositories;
 
@@ -86,7 +88,7 @@ namespace SmartGym.Api.Endpoints
             // 7. Attendance Finalize
             group.MapPost(
                 "/sessions/{sessionId}/attendance/finalize",
-                (string sessionId, [FromBody] System.Text.Json.JsonElement request) =>
+                (string sessionId, [FromBody] System.Text.Json.JsonElement request, ScheduleStoreService scheduleStore) =>
                 {
                     if (
                         request.TryGetProperty("records", out var recordsElement)
@@ -114,6 +116,8 @@ namespace SmartGym.Api.Endpoints
                                     note = nt,
                                 }
                             );
+
+                            scheduleStore.UpdateAttendance(sessionId, st, nt);
                         }
                         _mockAttendance[sessionId] = list;
                     }

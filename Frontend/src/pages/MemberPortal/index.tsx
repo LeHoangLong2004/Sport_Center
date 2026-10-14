@@ -1,16 +1,19 @@
-import { useState } from 'react';
-import { ClassItem, classItems, MemberPage } from './shared';
-import { MemberProfile } from './views/MemberProfile';
-import { Overview } from './views/Overview';
-import { MemberSection } from './views/MemberSection';
-import { PackagesPage } from './views/PackagesPage';
-import MemberShell from './components/MemberShell';
-import { Classes } from './views/Classes';
-import { Confirm } from './views/Confirm';
-import MemberPortalV2, { NewMemberPage } from '../../MemberPortalV2';
-import PaymentFlow from '../PaymentFlow';
-import { ProductShopPage } from './views/ProductShopPage';
-import { CatalogPackage, PackagePeriod } from '../../services/packageApi';
+import { useState, useEffect, type ReactNode } from "react";
+import type { MemberScreen } from "./types";
+import MemberShellModern from "./components/MemberShellModern";
+import MemberDashboard from "./views/MemberDashboard";
+import MemberBooking from "./views/MemberBooking";
+import MemberSchedule from "./views/MemberSchedule";
+import MemberPackages from "./views/MemberPackages";
+import MemberPayments from "./views/MemberPayments";
+import MemberWorkouts from "./views/MemberWorkouts";
+import MemberReviews from "./views/MemberReviews";
+import MemberChat from "./views/MemberChat";
+import MemberSupport from "./views/MemberSupport";
+import MemberProfileModern from "./views/MemberProfileModern";
+import { ProductShopPage } from "./views/ProductShopPage";
+import { CatalogPackage, PackagePeriod } from "../../services/packageApi";
+import PaymentFlow from "../PaymentFlow";
 
 type CheckoutSelection = {
   item: CatalogPackage;
@@ -19,13 +22,82 @@ type CheckoutSelection = {
 };
 
 export default function MemberPortal({
-  initialPage = "overview",
+  initialPage = "dashboard",
 }: {
-  initialPage?: MemberPage
+  initialPage?: string;
 }) {
-  const [page, setPage] = useState<MemberPage>(initialPage)
-  const [selectedClass, setSelectedClass] = useState<ClassItem>(classItems[1])
-  const [checkout, setCheckout] = useState<CheckoutSelection | null>(null)
+  const getInitialScreen = (): MemberScreen => {
+    const raw = (window.location.hash || "").replace("#member-", "").replace("#", "");
+    const map: Record<string, MemberScreen> = {
+      member: "dashboard",
+      overview: "dashboard",
+      dashboard: "dashboard",
+      classes: "booking",
+      booking: "booking",
+      schedule: "schedule",
+      packages: "packages",
+      payment: "profile",
+      payments: "profile",
+      workout: "workouts",
+      workouts: "workouts",
+      reports: "dashboard",
+      progress: "dashboard",
+      reviews: "reviews",
+      chat: "chat",
+      messages: "chat",
+      message: "chat",
+      ai: "support",
+      support: "support",
+      shop: "dashboard",
+      profile: "profile",
+    };
+    if (map[raw]) return map[raw];
+    if (map[initialPage]) return map[initialPage];
+    return "dashboard";
+  };
+
+  const [screen, setScreen] = useState<MemberScreen>(getInitialScreen);
+  const [checkout, setCheckout] = useState<CheckoutSelection | null>(null);
+
+  // Sync hashchange with screen state
+  useEffect(() => {
+    const onHashChange = () => {
+      const raw = (window.location.hash || "").replace("#member-", "").replace("#", "");
+      const map: Record<string, MemberScreen> = {
+        member: "dashboard",
+        overview: "dashboard",
+        dashboard: "dashboard",
+        classes: "booking",
+        booking: "booking",
+        schedule: "schedule",
+        packages: "packages",
+        payment: "profile",
+        payments: "profile",
+        workout: "workouts",
+        workouts: "workouts",
+        reports: "dashboard",
+        progress: "dashboard",
+        reviews: "reviews",
+        chat: "chat",
+        messages: "chat",
+        message: "chat",
+        ai: "support",
+        support: "support",
+        shop: "dashboard",
+        profile: "profile",
+      };
+      if (map[raw]) {
+        setScreen(map[raw]);
+      }
+    };
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  const navigateTo = (s: MemberScreen) => {
+    setScreen(s);
+    window.location.hash = `#member-${s}`;
+  };
 
   if (checkout) {
     return (
@@ -35,56 +107,43 @@ export default function MemberPortal({
         initialDiscountPct={checkout.discountPct}
         onExit={() => setCheckout(null)}
       />
-    )
+    );
   }
 
-  if (page === "profile") {
-    return <MemberProfile onNavigate={setPage} />
-  }
-
-  if (["schedule", "success", "workout", "ai"].includes(page)) {
-    return (
-      <MemberPortalV2
-        page={page as NewMemberPage}
-        onNavigate={(nextPage) => setPage(nextPage)}
-        selectedClass={selectedClass}
+  const screenNodes: Record<MemberScreen, ReactNode> = {
+    dashboard: <MemberDashboard onNavigate={navigateTo} />,
+    booking: <MemberBooking onNavigate={navigateTo} />,
+    schedule: <MemberSchedule onNavigate={navigateTo} />,
+    packages: (
+      <MemberPackages
+        onNavigate={navigateTo}
+        onCheckout={(item, duration, discountPct) =>
+          setCheckout({ item, duration, discountPct })
+        }
       />
-    )
-  }
+    ),
+    payments: <MemberPayments onNavigate={navigateTo} />,
+    workouts: <MemberWorkouts onNavigate={navigateTo} />,
+    reviews: <MemberReviews onNavigate={navigateTo} />,
+    chat: <MemberChat onNavigate={navigateTo} />,
+    support: <MemberSupport onNavigate={navigateTo} />,
+    profile: <MemberProfileModern onNavigate={navigateTo} />,
+  };
 
-  if (page === "classes") {
+  if ((window.location.hash || "").includes("shop")) {
     return (
-      <Classes
-        onNavigate={setPage}
-        onSelect={(item) => {
-          setSelectedClass(item)
-          setPage("confirm")
+      <ProductShopPage
+        onNavigate={() => {
+          window.location.hash = "#member-dashboard";
+          navigateTo("dashboard");
         }}
       />
-    )
+    );
   }
 
-  if (page === "confirm") {
-    return <Confirm selectedClass={selectedClass} onNavigate={setPage} />
-  }
-
-  if (page === "payment") {
-    return (
-      <MemberShell page="payment" onNavigate={setPage}>
-        <PackagesPage
-          onCheckout={(item, duration, discountPct) => setCheckout({ item, duration, discountPct })}
-        />
-      </MemberShell>
-    )
-  }
-
-  if (page === "shop") {
-    return <ProductShopPage onNavigate={setPage} />
-  }
-
-  if (page === "users" || page === "reports") {
-    return <MemberSection page={page} onNavigate={setPage} />
-  }
-
-  return <Overview onNavigate={setPage} />
+  return (
+    <MemberShellModern currentScreen={screen} onNavigate={navigateTo}>
+      {screenNodes[screen] || <MemberDashboard onNavigate={navigateTo} />}
+    </MemberShellModern>
+  );
 }

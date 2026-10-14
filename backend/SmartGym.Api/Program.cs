@@ -30,7 +30,7 @@ builder.Services.AddDbContext<SmartGymDbContext>(options => options.UseNpgsql(co
 var supabaseUrl = builder.Configuration["Supabase:Url"];
 var supabaseKey = builder.Configuration["Supabase:Key"];
 var options = new Supabase.SupabaseOptions { AutoConnectRealtime = true };
-builder.Services.AddSingleton(new Supabase.Client(supabaseUrl, supabaseKey, options));
+builder.Services.AddSingleton(new Supabase.Client(supabaseUrl ?? "", supabaseKey, options));
 
 builder.Services.AddScoped<SmartGym.Application.Interfaces.IUserRepository, UserRepository>();
 builder.Services.AddScoped<SmartGym.Application.Interfaces.IPackageRepository, PackageRepository>();
@@ -71,10 +71,6 @@ builder.Services.AddScoped<
     SmartGym.Infrastructure.Persistence.EF.InvoiceRepository
 >();
 builder.Services.AddScoped<
-    SmartGym.Application.Interfaces.IBodyMetricRepository,
-    SmartGym.Infrastructure.Persistence.EF.Repositories.BodyMetricRepository
->();
-builder.Services.AddScoped<
     SmartGym.Application.Interfaces.IWorkoutPlanRepository,
     SmartGym.Infrastructure.Persistence.EF.Repositories.WorkoutPlanRepository
 >();
@@ -108,11 +104,13 @@ builder.Services.AddScoped<IPdfService, SmartGym.Infrastructure.Services.Invoice
 builder.Services.AddScoped<ClassService>();
 builder.Services.AddScoped<BookingService>();
 builder.Services.AddScoped<CheckInService>();
-builder.Services.AddScoped<IBodyMetricService, BodyMetricService>();
 builder.Services.AddScoped<IWorkoutPlanService, WorkoutPlanService>();
 builder.Services.AddScoped<IHomeworkProgressService, HomeworkProgressService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<PackageCatalogService>();
+builder.Services.AddSingleton<SmartGym.Api.Services.ChatStoreService>();
+builder.Services.AddSingleton<SmartGym.Api.Services.ScheduleStoreService>();
+builder.Services.AddSingleton<SmartGym.Api.Services.ReviewStoreService>();
 
 // ΓöÇΓöÇ Services: Flow 3 (thanh to├ín trß╗▒c tuyß║┐n, h├│a ─æ╞ín ─æiß╗çn tß╗¡, b├ío c├ío) ΓöÇΓöÇ
 builder.Services.Configure<SmartGym.Infrastructure.Services.VnPayOptions>(

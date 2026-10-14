@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { CoachScreen } from "../types";
 import { CoachAPI } from "../services/api";
 import type { MockMember } from "../services/api";
+import { curriculumSync } from "../../MemberPortal/services/curriculumSync";
 import {
   MOCK_ATTENDANCE_HISTORY,
   MOCK_ASSIGNED_WORKOUTS,
@@ -71,6 +72,37 @@ export default function CoachMemberProfile({ memberId, navigateTo }: Props) {
       .finally(() => setLoading(false));
   }, [memberId]);
 
+  const [curriculaTick, setCurriculaTick] = useState(0);
+  useEffect(() => {
+    return curriculumSync.subscribe(() => setCurriculaTick((t) => t + 1));
+  }, []);
+
+  // Assigned workout plans linked to curriculumSync
+  const assignedWorkouts: MemberWorkoutItem[] = useMemo(() => {
+    const fromSync = curriculumSync.getCurricula().filter(
+      (c) => c.assignedTo.some((a) => a.id.includes("bbbb") || a.name.includes("Nam") || a.id === memberId)
+    ).map((c) => {
+      const assignee = c.assignedTo.find((a) => a.id.includes("bbbb") || a.name.includes("Nam") || a.id === memberId);
+      const isComplete = assignee ? assignee.progressPercent === 100 : false;
+      return {
+        id: c.id,
+        name: `${c.name || (c as any).title} (${assignee?.progressPercent || 0}% hoàn thành)`,
+        sport: c.sport,
+        level: c.level,
+        duration: c.duration,
+        status: (isComplete ? "Hoàn thành" : "Đang tập luyện") as any,
+        exercises: c.exercises.map((e) => ({
+          name: e.name,
+          reps: e.reps,
+          rest: e.rest,
+          note: e.note,
+        })),
+      };
+    });
+
+    if (fromSync.length > 0) return fromSync;
+    return MOCK_ASSIGNED_WORKOUTS;
+  }, [curriculaTick, memberId]);
   const handleAddNote = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newNote.trim()) return;
@@ -116,7 +148,7 @@ export default function CoachMemberProfile({ memberId, navigateTo }: Props) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <MemberHistoryAndWorkouts
           attendanceHistory={MOCK_ATTENDANCE_HISTORY}
-          assignedWorkouts={MOCK_ASSIGNED_WORKOUTS}
+          assignedWorkouts={assignedWorkouts}
           navigateTo={navigateTo}
         />
 

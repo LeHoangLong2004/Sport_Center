@@ -1,6 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { Star, MessageSquare, Filter, Calendar, ShieldCheck, User } from "lucide-react";
 import { useUserProfile } from "../../../hooks/useUserProfile";
+import {
+  fetchCoachReviews,
+  subscribeToReviews,
+  INITIAL_COACH_REVIEWS,
+  type SyncedCoachReview,
+} from "../../MemberPortal/services/reviewSync";
 
 interface ReviewItem {
   id: string;
@@ -8,81 +14,42 @@ interface ReviewItem {
   memberName: string;
   rating: number;
   comment?: string;
+  tags?: string[];
   createdAt: string;
   sessionName?: string;
 }
 
-const DEFAULT_MOCK_REVIEWS: ReviewItem[] = [
-  {
-    id: "rev-1",
-    memberId: "m1",
-    memberName: "Học viên ẩn danh #842",
-    rating: 5,
-    sessionName: "Gym Group BodyCombat",
-    comment: "Thầy hướng dẫn rất tận tâm, chỉnh sửa tư thế squat và deadlift cực kỳ chi tiết. Sau 1 tháng tập cảm thấy lưng không còn mỏi nữa!",
-    createdAt: "2026-10-02T09:30:00Z"
-  },
-  {
-    id: "rev-2",
-    memberId: "m2",
-    memberName: "Học viên ẩn danh #319",
-    rating: 5,
-    sessionName: "Yoga Phục Hồi",
-    comment: "Lớp Yoga cơ bản siêu thích, thầy tạo không khí thoải mái, thở đúng cách giúp mình ngủ ngon hơn hẳn.",
-    createdAt: "2026-09-28T18:15:00Z"
-  },
-  {
-    id: "rev-3",
-    memberId: "m3",
-    memberName: "Học viên ẩn danh #507",
-    rating: 4,
-    sessionName: "Boxing Cơ Bản",
-    comment: "Giáo án tập thể lực rất chất lượng, khối lượng bài tập vừa sức. Hy vọng buổi sau có thêm bài tập bổ trợ cho cơ vai.",
-    createdAt: "2026-09-20T10:00:00Z"
-  },
-  {
-    id: "rev-4",
-    memberId: "m4",
-    memberName: "Học viên ẩn danh #192",
-    rating: 5,
-    sessionName: "Yoga Cơ Bản – Lớp A",
-    comment: "HLV nhiệt tình, đến lớp sớm chuẩn bị dụng cụ chu đáo. Luôn động viên học viên khi sắp đuối sức.",
-    createdAt: "2026-09-15T16:45:00Z"
-  }
-];
-
 export default function CoachReviews() {
   const { profile } = useUserProfile();
-  const [reviews, setReviews] = useState<ReviewItem[]>(DEFAULT_MOCK_REVIEWS);
+  const [reviews, setReviews] = useState<ReviewItem[]>(INITIAL_COACH_REVIEWS);
   const [loading, setLoading] = useState(false);
   const [selectedStar, setSelectedStar] = useState<number | null>(null);
 
   useEffect(() => {
-    async function fetchReviews() {
+    async function loadReviews() {
       const coachId = profile?.id || "25F50FBA";
       try {
-        setLoading(true);
-        const res = await fetch(`/api/reviews/coach/${coachId}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) {
-            // Anonymize any incoming data for absolute privacy
-            const anonymized = data.map((d: any, index: number) => ({
-              ...d,
-              memberName: d.memberName?.includes("Học viên ẩn danh")
-                ? d.memberName
-                : `Học viên ẩn danh #${(index + 1) * 137 % 900 + 100}`,
-            }));
-            setReviews(anonymized);
-          }
-        }
+        const list = await fetchCoachReviews(coachId);
+        setReviews(list);
       } catch (err) {
         console.error("Lỗi tải đánh giá:", err);
-      } finally {
-        setLoading(false);
       }
     }
-    fetchReviews();
+
+    loadReviews();
+
+    const unsub = subscribeToReviews((updated) => {
+      setReviews(updated);
+    });
+
+    const interval = setInterval(() => {
+      loadReviews();
+    }, 2500);
+
+    return () => {
+      unsub();
+      clearInterval(interval);
+    };
   }, [profile?.id]);
 
   const stats = useMemo(() => {
@@ -251,6 +218,19 @@ export default function CoachReviews() {
                 <p className="mt-3.5 text-sm text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-lg border border-slate-100 dark:border-slate-800/80">
                   {item.comment}
                 </p>
+              )}
+
+              {item.tags && item.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2.5">
+                  {item.tags.map((tag: string, idx: number) => (
+                    <span
+                      key={idx}
+                      className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
           ))

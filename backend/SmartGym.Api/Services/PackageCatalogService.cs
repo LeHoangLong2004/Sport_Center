@@ -52,7 +52,10 @@ public sealed partial class PackageCatalogService(SmartGymDbContext db)
             [
                 "Giảm 5% gói tự tập và lớp nhóm",
                 "Giảm 2% gói Coach 1–1",
-                "Đặt lớp trước 72 giờ",
+                "Đặt lớp trước 72 giờ (3 ngày)",
+                "1 vé mời bạn bè mỗi tháng (1 Day-Pass/tháng)",
+                "Mượn 1 khăn tập miễn phí mỗi buổi",
+                "Đo InBody định kỳ 1 lần/tháng",
             ],
             Terms =
             [
@@ -70,16 +73,19 @@ public sealed partial class PackageCatalogService(SmartGymDbContext db)
             Id = "membership-premium",
             Category = "membership",
             Tier = "premium",
-            Name = "Premium",
-            Description = "Mức ưu đãi cao hơn và thời gian đặt lớp sớm hơn.",
+            Name = "Premium VIP",
+            Description = "Hạng đặc quyền cao cấp với đầy đủ tiện ích thư giãn và ưu đãi tối đa.",
             IsActive = true,
             Prices = Prices(299000, 799000, 1499000, 2799000),
             Benefits =
             [
                 "Giảm 10% gói tự tập và lớp nhóm",
                 "Giảm 5% gói Coach 1–1",
-                "Đặt lớp trước 120 giờ",
-                "Ưu tiên hỗ trợ tại trung tâm",
+                "Đặt lớp trước 120 giờ (5 ngày)",
+                "2 vé mời bạn bè mỗi tháng (2 Day-Pass/tháng)",
+                "Miễn phí Xông hơi đá muối & Hồ sục Jacuzzi",
+                "Tủ đồ thông minh riêng & Combo khăn tập cao cấp",
+                "Đo InBody không giới hạn & Trợ lý tư vấn AI",
             ],
             Terms =
             [
@@ -90,17 +96,17 @@ public sealed partial class PackageCatalogService(SmartGymDbContext db)
             GroupDiscountPct = 10,
             CoachDiscountPct = 5,
             BookingAdvanceHours = 120,
-            LockerTerms = "Được sử dụng tủ trong buổi tập hợp lệ theo điều kiện của gói môn.",
+            LockerTerms = "Tủ đồ thông minh riêng trong buổi tập kèm combo khăn cao cấp.",
         },
         new()
         {
             Id = "sport-gym-self",
             Category = "sport",
             Name = "Gym tự tập",
-            Description = "Tập luyện linh hoạt trong khu Gym.",
+            Description = "Tập luyện linh hoạt trong khu Gym với đầy đủ máy móc tạ khối và Cardio.",
             IsActive = true,
             Prices = Prices(500000, 1350000, 2550000, 4800000),
-            Benefits = ["Sử dụng thiết bị khu Gym", "Tủ đồ trong buổi tập"],
+            Benefits = ["Sử dụng toàn bộ thiết bị khu Gym", "Tủ đồ cá nhân và phòng tắm nóng lạnh trong buổi tập"],
             Terms =
             [
                 "Chỉ sử dụng khu Gym trong khung giờ mở cửa.",
@@ -114,22 +120,43 @@ public sealed partial class PackageCatalogService(SmartGymDbContext db)
         },
         new()
         {
+            Id = "sport-swimming-self",
+            Category = "sport",
+            Name = "Bơi lội tự do (Bể 4 mùa)",
+            Description = "Bơi lội thoải mái với hệ thống gia nhiệt nước ấm và xử lý muối khoáng.",
+            IsActive = true,
+            Prices = Prices(700000, 1890000, 3570000, 6720000),
+            Benefits = ["Sử dụng làn bơi và phao bơi hỗ trợ", "Nước ấm 4 mùa và phòng tắm tráng nước nóng"],
+            Terms =
+            [
+                "Chỉ sử dụng khu Bể bơi trong khung giờ mở cửa.",
+                "Tuân thủ nội quy trang phục bơi tiêu chuẩn.",
+            ],
+            Sport = "Bơi lội",
+            Area = "Khu Bể bơi 4 mùa",
+            Format = "self",
+            AccessHours = "06:00–21:30",
+            LockerTerms = "Tủ dùng trong buổi bơi; trả chìa khóa khi rời khu vực.",
+        },
+        new()
+        {
             Id = "sport-yoga-group",
             Category = "sport",
-            Name = "Yoga nhóm",
-            Description = "Lớp nhóm phù hợp cho người mới và người tập lâu năm.",
+            Name = "Yoga & Pilates Nhóm",
+            Description = "Lớp nhóm phù hợp cho người mới và nâng cao, hướng dẫn bởi Master Trainer.",
             IsActive = true,
             Prices = Prices(700000, 1890000, 3570000, 6720000),
             Benefits =
             [
                 "12 buổi tập mỗi tháng",
-                "Hướng dẫn bởi Coach",
-                "Sử dụng Studio Yoga trong buổi học",
+                "Thời lượng 60 phút mỗi buổi",
+                "Thảm tập, gạch xốp và dụng cụ hỗ trợ miễn phí",
+                "Đã bao gồm quyền sử dụng Studio Yoga trong ca tập",
             ],
             Terms =
             [
                 "Buổi tập tính theo tháng sử dụng từ ngày kích hoạt.",
-                "Hủy lớp đúng hạn được trả lại lượt; không chuyển lượt chưa dùng sang kỳ sau.",
+                "Hủy lớp trước 2 giờ được hoàn trả lượt tập.",
             ],
             Sport = "Yoga",
             Area = "Studio Yoga",
@@ -144,24 +171,53 @@ public sealed partial class PackageCatalogService(SmartGymDbContext db)
             Id = "sport-boxing-coach",
             Category = "sport",
             Name = "Boxing Coach 1–1",
-            Description = "Huấn luyện cá nhân với lộ trình theo mục tiêu.",
+            Description = "Huấn luyện cá nhân chuyên sâu 1 kèm 1 với giáo án mục tiêu riêng biệt.",
             IsActive = true,
             Prices = Prices(2400000, 6480000, 12240000, 23040000),
             Benefits =
             [
-                "8 buổi Coach mỗi tháng",
+                "8 buổi Coach kèm riêng mỗi tháng",
                 "60 phút mỗi buổi",
-                "Đã bao gồm quyền sử dụng khu Boxing",
+                "Đã bao gồm quyền sử dụng Combat Zone & găng tập",
+                "Chỉnh sửa kỹ thuật đấm, né và rèn thể lực chuyên sâu",
             ],
             Terms =
             [
-                "Lịch tập phụ thuộc Coach và khung giờ còn trống.",
-                "Buổi được cấp theo tháng sử dụng; hủy muộn hoặc không đến có thể mất lượt.",
+                "Lịch tập đặt linh hoạt theo khung giờ trống của Coach.",
+                "Hủy lịch trước ít nhất 4 giờ để không bị trừ buổi.",
             ],
             Sport = "Boxing",
             Area = "Combat Zone",
             Format = "coach",
             SessionsPerMonth = 8,
+            MinutesPerSession = 60,
+            MaxClassSize = 1,
+            LockerTerms = "Tủ dùng trong buổi học; không giữ đồ qua đêm.",
+        },
+        new()
+        {
+            Id = "sport-gym-coach",
+            Category = "sport",
+            Name = "Gym Kèm PT 1–1 Chuyên Sâu",
+            Description = "Huấn luyện viên cá nhân theo sát từng buổi, cam kết mục tiêu tăng cơ giảm mỡ.",
+            IsActive = true,
+            Prices = Prices(3000000, 8100000, 15300000, 28800000),
+            Benefits =
+            [
+                "12 buổi PT kèm riêng mỗi tháng",
+                "Thiết kế giáo án tập luyện và thực đơn dinh dưỡng riêng",
+                "Đã bao gồm quyền sử dụng khu Gym",
+                "Theo dõi chỉ số InBody và điều chỉnh form chuẩn xác",
+            ],
+            Terms =
+            [
+                "Lịch tập do học viên và PT chủ động sắp xếp trên hệ thống.",
+                "Hủy lịch báo trước 4 giờ để giữ lượt tập.",
+            ],
+            Sport = "Gym",
+            Area = "Khu Gym",
+            Format = "coach",
+            SessionsPerMonth = 12,
             MinutesPerSession = 60,
             MaxClassSize = 1,
             LockerTerms = "Tủ dùng trong buổi học; không giữ đồ qua đêm.",

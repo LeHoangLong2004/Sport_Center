@@ -62,3 +62,4 @@ Frontend/.vite/
 
 dist/
 node_modules/
+.dotnet/

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using SmartGym.Api.Services;
 using SmartGym.Infrastructure.Persistence.EF;
 using SmartGym.Infrastructure.Persistence.Supabase.Repositories;
 
@@ -39,7 +41,8 @@ namespace SmartGym.Api.Endpoints
                     [FromQuery] string? startDate,
                     [FromQuery] string? endDate,
                     HttpContext context,
-                    SmartGymDbContext db
+                    SmartGymDbContext db,
+                    ScheduleStoreService scheduleStore
                 ) =>
                 {
                     try
@@ -84,16 +87,49 @@ namespace SmartGym.Api.Endpoints
                                     className = c.ClassName,
                                     sport = sport?.Name ?? "Thể thao",
                                     level = "Cơ bản",
+                                    type = "group",
                                     date = c.ScheduleTime.ToString("yyyy-MM-dd"),
                                     startTime = c.ScheduleTime.ToString("HH:mm"),
                                     endTime = endT.ToString("HH:mm"),
                                     room = facility?.Name ?? "Studio 1",
-                                    coachName = "HLV",
+                                    coachName = "HLV Hồ Xuân Ánh Nam",
                                     capacity = c.Capacity,
+                                    registeredCount = registeredIds.Length,
                                     registeredMemberIds = registeredIds,
                                     status = statusStr,
+                                    attendanceStatus = "chưa điểm danh",
+                                    coachNote = "",
                                 };
                             }).ToList();
+
+                            // Also append in-memory store sessions (e.g. 1-1 PT booked)
+                            var storeSessions = scheduleStore.GetAllSessions();
+                            foreach (var s in storeSessions)
+                            {
+                                if (!result.Any(r => r.id == s.Id))
+                                {
+                                    result.Add(new
+                                    {
+                                        id = s.Id,
+                                        classId = s.ClassId ?? "",
+                                        className = s.ClassName,
+                                        sport = s.Sport,
+                                        level = s.Level,
+                                        type = s.Type,
+                                        date = s.Date,
+                                        startTime = s.StartTime,
+                                        endTime = s.EndTime,
+                                        room = s.Room,
+                                        coachName = s.CoachName,
+                                        capacity = s.Capacity,
+                                        registeredCount = s.RegisteredCount,
+                                        registeredMemberIds = new string[] { s.MemberId ?? "m1" },
+                                        status = s.Status,
+                                        attendanceStatus = s.AttendanceStatus,
+                                        coachNote = s.CoachNote,
+                                    });
+                                }
+                            }
 
                             if (!string.IsNullOrWhiteSpace(startDate) && DateTime.TryParse(startDate, out var sDate))
                             {
@@ -109,7 +145,83 @@ namespace SmartGym.Api.Endpoints
                     }
                     catch { }
 
-                    return Results.Ok(Array.Empty<object>());
+                    // Fallback to ScheduleStoreService and default sessions
+                    var fallbackStoreSessions = scheduleStore.GetAllSessions();
+                    var list = new List<object>();
+
+                    foreach (var s in fallbackStoreSessions)
+                    {
+                        list.Add(new
+                        {
+                            id = s.Id,
+                            classId = s.ClassId ?? "",
+                            className = s.ClassName,
+                            sport = s.Sport,
+                            level = s.Level,
+                            type = s.Type,
+                            date = s.Date,
+                            startTime = s.StartTime,
+                            endTime = s.EndTime,
+                            room = s.Room,
+                            coachName = s.CoachName,
+                            capacity = s.Capacity,
+                            registeredCount = s.RegisteredCount,
+                            registeredMemberIds = new string[] { s.MemberId ?? "m1" },
+                            status = s.Status,
+                            attendanceStatus = s.AttendanceStatus,
+                            coachNote = s.CoachNote,
+                            memberName = s.MemberName,
+                            memberPhone = s.MemberPhone,
+                            memberEmail = s.MemberEmail,
+                            goal = s.Goal,
+                            cancelReason = s.CancelReason
+                        });
+                    }
+
+                    // Default classes
+                    list.Add(new
+                    {
+                        id = "s1",
+                        classId = "cls-yoga",
+                        className = "Yoga Cơ Bản – Lớp A",
+                        sport = "Yoga",
+                        level = "Cơ bản",
+                        type = "group",
+                        date = DateTime.Now.ToString("yyyy-MM-dd"),
+                        startTime = "07:00",
+                        endTime = "08:00",
+                        room = "Studio 2",
+                        coachName = "HLV Hồ Xuân Ánh Nam",
+                        capacity = 10,
+                        registeredCount = 8,
+                        registeredMemberIds = new string[] { "m1", "m2" },
+                        status = "hoàn thành",
+                        attendanceStatus = "có mặt",
+                        coachNote = ""
+                    });
+
+                    list.Add(new
+                    {
+                        id = "s2",
+                        classId = "cls-gym",
+                        className = "Gym Group BodyCombat – Lớp B",
+                        sport = "Gym",
+                        level = "Nâng cao",
+                        type = "group",
+                        date = DateTime.Now.ToString("yyyy-MM-dd"),
+                        startTime = "09:00",
+                        endTime = "10:30",
+                        room = "Khu Tạ Tự Do",
+                        coachName = "HLV Hồ Xuân Ánh Nam",
+                        capacity = 8,
+                        registeredCount = 6,
+                        registeredMemberIds = new string[] { "m2", "m3" },
+                        status = "đang diễn ra",
+                        attendanceStatus = "chưa điểm danh",
+                        coachNote = ""
+                    });
+
+                    return Results.Ok(list);
                 }
             );
 

@@ -20,6 +20,23 @@ export interface Conversation {
 
 export const INITIAL_CONVERSATIONS: Conversation[] = [
   {
+    id: "conv-nam",
+    type: "direct",
+    title: "Hồ Xuân Ánh Nam",
+    subtitle: "Học viên PT Kèm 1-1 (Tài khoản Member)",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+    lastMessage: "Thầy ơi, buổi tập sáng mai 7h em đến sớm 10 phút khởi động trước nhé ạ!",
+    lastTime: "14:20",
+    unreadCount: 0,
+    online: true,
+    messages: [
+      { id: "nam1", sender: "coach", text: "Chào Nam! Tuần này cơ bắp của bạn sau buổi tập chân hồi phục thế nào rồi?", timestamp: "09:15" },
+      { id: "nam2", sender: "member", text: "Dạ đỡ mỏi đùi rồi thầy ơi, form Squat bài trước em làm thấy vào mông đùi rất tốt ạ.", timestamp: "09:30" },
+      { id: "nam3", sender: "coach", text: "Tốt lắm! Nhớ nạp đủ 120g protein/ngày và uống tối thiểu 2.5 lít nước nhé.", timestamp: "09:35" },
+      { id: "nam4", sender: "member", text: "Thầy ơi, buổi tập sáng mai 7h em đến sớm 10 phút khởi động trước nhé ạ!", timestamp: "14:20" },
+    ],
+  },
+  {
     id: "conv-1",
     type: "direct",
     title: "Nguyễn Văn An",

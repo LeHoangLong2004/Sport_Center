@@ -13,26 +13,35 @@ import { ChatWindow } from "./chat/ChatWindow";
 export default function CoachChat() {
   const { profile } = useUserProfile();
   const [conversations, setConversations] = useState<Conversation[]>(INITIAL_CONVERSATIONS);
-  const [activeId, setActiveId] = useState<string>("conv-1");
+  const [activeId, setActiveId] = useState<string>("conv-nam");
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<"all" | "class" | "direct">("all");
   const [inputText, setInputText] = useState("");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Polling for real-time messages
   useEffect(() => {
+    let isMounted = true;
     async function loadConversations() {
       try {
         const coachId = profile?.id || "25F50FBA";
         const res = await coachApi.getCoachConversations(coachId);
-        if (Array.isArray(res) && res.length > 0) {
+        if (isMounted && Array.isArray(res) && res.length > 0) {
           setConversations(res);
         }
       } catch (err) {
-        // Keeps initial conversations
+        // Keeps current conversations
       }
     }
+
     loadConversations();
+    const interval = setInterval(loadConversations, 2500);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [profile?.id]);
 
   const activeConv = useMemo(
@@ -56,12 +65,12 @@ export default function CoachChat() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [activeConv?.messages]);
+  }, [activeConv?.messages?.length]);
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const textToSend = inputText.trim();
-    if (!textToSend) return;
+    if (!textToSend || !activeConv) return;
 
     const newMsg: Message = {
       id: `msg-${Date.now()}`,
@@ -87,11 +96,20 @@ export default function CoachChat() {
     setInputText("");
 
     try {
-      await coachApi.sendCoachMessage({
+      const res = await coachApi.sendCoachMessage({
         conversationId: activeConv.id,
         text: textToSend,
-        coachId: profile?.id || "25F50FBA"
+        coachId: profile?.id || "25F50FBA",
+        coachName: profile?.fullName || "HLV Nam"
       });
+      if (res && res.data) {
+        // Refresh to ensure exact sync
+        const coachId = profile?.id || "25F50FBA";
+        const updated = await coachApi.getCoachConversations(coachId);
+        if (Array.isArray(updated) && updated.length > 0) {
+          setConversations(updated);
+        }
+      }
     } catch (err) {
       console.warn("Lưu tin nhắn lên backend thất bại, đã lưu tạm trên trình duyệt:", err);
     }
@@ -125,7 +143,6 @@ export default function CoachChat() {
           onFilterChange={setFilterType}
         />
 
-        {/* Right pane: Chat Area */}
         <ChatWindow
           activeConv={activeConv}
           inputText={inputText}

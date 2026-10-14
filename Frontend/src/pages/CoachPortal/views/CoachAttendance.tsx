@@ -185,7 +185,6 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
         session={session}
         isFinalized={isFinalized}
       />
-
       <div className="grid grid-cols-3 gap-3.5">
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs">
           <span className="text-xs text-slate-400 font-medium">Tổng sĩ số</span>
