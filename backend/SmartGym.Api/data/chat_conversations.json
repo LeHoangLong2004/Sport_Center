@@ -104,8 +104,8 @@
     "MemberSubtitle": "HLV Hu\u1EA5n luy\u1EC7n vi\u00EAn c\u00E1 nh\u00E2n 1-1",
     "Avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100\u0026auto=format\u0026fit=crop\u0026q=80",
     "CoachAvatar": "https://images.unsplash.com/photo-1567013127542-490d757e51fc?w=100\u0026auto=format\u0026fit=crop\u0026q=80",
-    "LastMessage": "Anam2: Em mu\u1ED1n d\u1EDDi l\u1ECBch t\u1EADp ng\u00E0y mai sang bu\u1ED5i t\u1ED1i \u0111\u01B0\u1EE3c kh\u00F4ng \u1EA1?",
-    "LastTime": "22:41",
+    "LastMessage": "Anam2: Th\u1EA7y \u01A1i cho em h\u1ECFi v\u1EC1 b\u00E0i t\u1EADp h\u00F4m nay v\u1EDBi \u1EA1!",
+    "LastTime": "08:55",
     "UnreadCount": 0,
     "Online": true,
     "CoachId": "25F50FBA",
@@ -240,6 +240,22 @@
         "Text": "Em mu\u1ED1n d\u1EDDi l\u1ECBch t\u1EADp ng\u00E0y mai sang bu\u1ED5i t\u1ED1i \u0111\u01B0\u1EE3c kh\u00F4ng \u1EA1?",
         "Timestamp": "22:41",
         "CreatedAt": "2026-10-13T15:41:52.5990322Z"
+      },
+      {
+        "Id": "msg-1791942921412",
+        "Sender": "coach",
+        "SenderName": "Anam2",
+        "Text": "LO",
+        "Timestamp": "08:55",
+        "CreatedAt": "2026-10-14T01:55:21.4125723Z"
+      },
+      {
+        "Id": "msg-1791942926102",
+        "Sender": "member",
+        "SenderName": "Anam2",
+        "Text": "Th\u1EA7y \u01A1i cho em h\u1ECFi v\u1EC1 b\u00E0i t\u1EADp h\u00F4m nay v\u1EDBi \u1EA1!",
+        "Timestamp": "08:55",
+        "CreatedAt": "2026-10-14T01:55:26.1020154Z"
       }
     ]
   },
