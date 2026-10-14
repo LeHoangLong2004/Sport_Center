@@ -18,6 +18,7 @@ import { useUserProfile } from "../../../hooks/useUserProfile";
 interface Message {
   id: string;
   sender: "coach" | "member";
+  senderName?: string;
   text: string;
   timestamp: string;
 }
@@ -37,6 +38,23 @@ interface Conversation {
 
 const INITIAL_CONVERSATIONS: Conversation[] = [
   {
+    id: "conv-nam",
+    type: "direct",
+    title: "Hồ Xuân Ánh Nam",
+    subtitle: "Học viên PT Kèm 1-1 (Tài khoản Member)",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+    lastMessage: "Thầy ơi, buổi tập sáng mai 7h em đến sớm 10 phút khởi động trước nhé ạ!",
+    lastTime: "14:20",
+    unreadCount: 0,
+    online: true,
+    messages: [
+      { id: "nam1", sender: "coach", text: "Chào Nam! Tuần này cơ bắp của bạn sau buổi tập chân hồi phục thế nào rồi?", timestamp: "09:15" },
+      { id: "nam2", sender: "member", senderName: "Hồ Xuân Ánh Nam", text: "Dạ đỡ mỏi đùi rồi thầy ơi, form Squat bài trước em làm thấy vào mông đùi rất tốt ạ.", timestamp: "09:30" },
+      { id: "nam3", sender: "coach", text: "Tốt lắm! Nhớ nạp đủ 120g protein/ngày và uống tối thiểu 2.5 lít nước nhé.", timestamp: "09:35" },
+      { id: "nam4", sender: "member", senderName: "Hồ Xuân Ánh Nam", text: "Thầy ơi, buổi tập sáng mai 7h em đến sớm 10 phút khởi động trước nhé ạ!", timestamp: "14:20" },
+    ],
+  },
+  {
     id: "conv-1",
     type: "direct",
     title: "Nguyễn Văn An",
@@ -48,40 +66,39 @@ const INITIAL_CONVERSATIONS: Conversation[] = [
     online: true,
     messages: [
       { id: "m1", sender: "coach", text: "Chào An, tuần này em cảm thấy cơ bắp phục hồi thế nào rồi?", timestamp: "09:15" },
-      { id: "m2", sender: "member", text: "Dạ cơ đùi sau hôm tập chân hơi mỏi nhưng đỡ nhiều rồi thầy ạ.", timestamp: "09:30" },
-      { id: "m3", sender: "coach", text: "Tốt lắm, nhớ bổ sung đủ 2 lít nước và ăn đủ đạm sau buổi tập nhé.", timestamp: "09:35" },
-      { id: "m4", sender: "member", text: "Thầy ơi, buổi tập sáng mai 7h em đến sớm 10 phút khởi động trước nhé ạ!", timestamp: "14:20" },
+      { id: "m2", sender: "member", senderName: "Nguyễn Văn An", text: "Dạ đỡ mỏi đùi rồi thầy, form Squat bài trước em làm thấy vào mông đùi rất tốt ạ.", timestamp: "09:30" },
+      { id: "m3", sender: "coach", text: "Tốt lắm! Nhớ nạp đủ 120g protein/ngày và uống tối thiểu 2.5 lít nước nhé.", timestamp: "09:35" },
+      { id: "m4", sender: "member", senderName: "Nguyễn Văn An", text: "Thầy ơi, buổi tập sáng mai 7h em đến sớm 10 phút khởi động trước nhé ạ!", timestamp: "14:20" },
     ],
   },
   {
     id: "conv-2",
     type: "class",
-    title: "Lớp Yoga Cơ Bản – Lớp A",
-    subtitle: "Nhóm lớp • 10 học viên",
-    lastMessage: "Coach: Nhắc cả lớp chiều nay mang theo thảm cá nhân nhé!",
-    lastTime: "11:45",
+    title: "Lớp Yoga Cơ Bản – Sáng 3-5-7",
+    subtitle: "Nhóm 12 học viên • Studio 2",
+    lastMessage: "Buổi mai lớp mình tập bài thở Pranayama nâng cao nhé!",
+    lastTime: "11:05",
     unreadCount: 0,
     online: true,
     messages: [
-      { id: "m20", sender: "member", text: "Em chào thầy và cả lớp ạ!", timestamp: "08:00" },
-      { id: "m21", sender: "coach", text: "Chào cả lớp, chiều nay chúng ta sẽ học kỹ thuật thở bụng sâu và tư thế chiến binh.", timestamp: "11:40" },
-      { id: "m22", sender: "coach", text: "Nhắc cả lớp chiều nay mang theo thảm cá nhân và khăn lau nhé!", timestamp: "11:45" },
+      { id: "c1", sender: "coach", text: "Chào cả lớp, mọi người nhớ mang theo khăn riêng và thảm cá nhân nhé.", timestamp: "Hôm qua" },
+      { id: "c2", sender: "coach", text: "Buổi mai lớp mình tập bài thở Pranayama nâng cao nhé!", timestamp: "11:05" },
+      { id: "c3", sender: "member", senderName: "Lan Anh", text: "Dạ vâng HLV ạ, sáng mai em sẽ đến sớm 10 phút ạ!", timestamp: "11:15" },
     ],
   },
   {
     id: "conv-3",
     type: "direct",
     title: "Lê Thu Hà",
-    subtitle: "Học viên kèm 1-1 (Mục tiêu: Giảm mỡ)",
+    subtitle: "Học viên Yoga trị liệu",
     avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80",
-    lastMessage: "Em đã hoàn thành bài tập về nhà hôm qua rồi ạ.",
+    lastMessage: "Dạ cảm ơn thầy, lưng em nay không còn đau khi ngồi lâu nữa.",
     lastTime: "Hôm qua",
     unreadCount: 0,
     online: false,
     messages: [
-      { id: "m30", sender: "coach", text: "Chào Hà, giáo án tuần 2 thầy đã giao trên hệ thống rồi nhé.", timestamp: "Hôm qua 10:00" },
-      { id: "m31", sender: "member", text: "Em đã hoàn thành bài tập về nhà hôm qua rồi ạ. Cảm giác rất khỏe!", timestamp: "Hôm qua 17:30" },
-      { id: "m32", sender: "coach", text: "Tuyệt vời, tiếp tục duy trì phong độ nhé!", timestamp: "Hôm qua 18:00" },
+      { id: "h1", sender: "coach", text: "Chào Hà, động tác rắn hổ mang hôm qua có làm căng thắt lưng quá không em?", timestamp: "Hôm qua" },
+      { id: "h2", sender: "member", senderName: "Lê Thu Hà", text: "Dạ cảm ơn thầy, lưng em nay không còn đau khi ngồi lâu nữa.", timestamp: "Hôm qua" },
     ],
   },
   {
@@ -95,7 +112,7 @@ const INITIAL_CONVERSATIONS: Conversation[] = [
     online: true,
     messages: [
       { id: "m40", sender: "coach", text: "Hôm nay cả lớp tập rất tốt, nhịp độ cardio rất đều.", timestamp: "Hôm qua 10:45" },
-      { id: "m41", sender: "member", text: "Ca hôm nay tập sung quá mọi người! Cảm ơn Coach nhiều ạ.", timestamp: "Hôm qua 11:00" },
+      { id: "m41", sender: "member", senderName: "Phạm Kiệt", text: "Ca hôm nay tập sung quá mọi người! Cảm ơn Coach nhiều ạ.", timestamp: "Hôm qua 11:00" },
     ],
   },
 ];
@@ -103,26 +120,35 @@ const INITIAL_CONVERSATIONS: Conversation[] = [
 export default function CoachChat() {
   const { profile } = useUserProfile();
   const [conversations, setConversations] = useState<Conversation[]>(INITIAL_CONVERSATIONS);
-  const [activeId, setActiveId] = useState<string>("conv-1");
+  const [activeId, setActiveId] = useState<string>("conv-nam");
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<"all" | "class" | "direct">("all");
   const [inputText, setInputText] = useState("");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Polling for real-time messages
   useEffect(() => {
+    let isMounted = true;
     async function loadConversations() {
       try {
         const coachId = profile?.id || "25F50FBA";
         const res = await coachApi.getCoachConversations(coachId);
-        if (Array.isArray(res) && res.length > 0) {
+        if (isMounted && Array.isArray(res) && res.length > 0) {
           setConversations(res);
         }
       } catch (err) {
-        // Keeps initial conversations
+        // Keeps current conversations
       }
     }
+
     loadConversations();
+    const interval = setInterval(loadConversations, 2500);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [profile?.id]);
 
   const activeConv = useMemo(
@@ -146,12 +172,12 @@ export default function CoachChat() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [activeConv?.messages]);
+  }, [activeConv?.messages?.length]);
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const textToSend = inputText.trim();
-    if (!textToSend) return;
+    if (!textToSend || !activeConv) return;
 
     const newMsg: Message = {
       id: `msg-${Date.now()}`,
@@ -177,11 +203,20 @@ export default function CoachChat() {
     setInputText("");
 
     try {
-      await coachApi.sendCoachMessage({
+      const res = await coachApi.sendCoachMessage({
         conversationId: activeConv.id,
         text: textToSend,
-        coachId: profile?.id || "25F50FBA"
+        coachId: profile?.id || "25F50FBA",
+        coachName: profile?.fullName || "HLV Nam"
       });
+      if (res && res.data) {
+        // Refresh to ensure exact sync
+        const coachId = profile?.id || "25F50FBA";
+        const updated = await coachApi.getCoachConversations(coachId);
+        if (Array.isArray(updated) && updated.length > 0) {
+          setConversations(updated);
+        }
+      }
     } catch (err) {
       console.warn("Lưu tin nhắn lên backend thất bại, đã lưu tạm trên trình duyệt:", err);
     }
@@ -352,6 +387,11 @@ export default function CoachChat() {
                   key={m.id}
                   className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
                 >
+                  {!isMe && m.senderName && (
+                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-0.5 px-1">
+                      {m.senderName}
+                    </span>
+                  )}
                   <div
                     className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-xs font-medium leading-relaxed shadow-sm ${
                       isMe

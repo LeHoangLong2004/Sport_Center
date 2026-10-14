@@ -25,7 +25,6 @@ app.MapMemberEndpoints();
 app.MapClassEndpoints();
 app.MapBookingEndpoints();
 app.MapCheckInEndpoints();
-app.MapBodyMetricEndpoints();
 app.MapWorkoutPlanEndpoints();
 app.MapHomeworkEndpoints();
 app.MapReviewEndpoints();

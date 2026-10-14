@@ -102,6 +102,51 @@ using (var scope = app.Services.CreateScope())
     try
     {
         db.Database.ExecuteSqlRaw(
+            @"
+            CREATE TABLE IF NOT EXISTS chat_conversations (
+                id VARCHAR(100) PRIMARY KEY,
+                type VARCHAR(50) NOT NULL DEFAULT 'direct',
+                coach_title VARCHAR(255),
+                coach_subtitle VARCHAR(255),
+                member_title VARCHAR(255),
+                member_subtitle VARCHAR(255),
+                avatar TEXT,
+                coach_avatar TEXT,
+                last_message TEXT,
+                last_time VARCHAR(50),
+                unread_count INT DEFAULT 0,
+                online BOOLEAN DEFAULT true,
+                coach_id VARCHAR(100),
+                coach_name VARCHAR(255),
+                member_id VARCHAR(100),
+                member_name VARCHAR(255),
+                updated_at TIMESTAMPTZ DEFAULT now()
+            );
+
+            CREATE TABLE IF NOT EXISTS chat_messages (
+                id VARCHAR(100) PRIMARY KEY,
+                conversation_id VARCHAR(100) REFERENCES chat_conversations(id) ON DELETE CASCADE,
+                sender VARCHAR(50) NOT NULL,
+                sender_name VARCHAR(255),
+                text TEXT NOT NULL,
+                timestamp VARCHAR(50) NOT NULL,
+                created_at TIMESTAMPTZ DEFAULT now()
+            );
+
+            GRANT ALL ON public.chat_conversations TO anon, authenticated;
+            GRANT ALL ON public.chat_messages TO anon, authenticated;
+        "
+        );
+        app.Logger.LogInformation("chat_conversations and chat_messages tables ensured.");
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning("chat tables ensure error: {Message}", ex.Message);
+    }
+
+    try
+    {
+        db.Database.ExecuteSqlRaw(
             "GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated;"
         );
         db.Database.ExecuteSqlRaw(
@@ -161,6 +206,16 @@ using (var scope = app.Services.CreateScope())
                 ('99999999-9999-9999-9999-999999999999', '10:00', 'Tập thử buổi 1 - PT kèm riêng 1:1', 'Trần Trung Kiên', 'Trần Khoa', 'Đang chờ khách'),
                 ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '14:00', 'Tư vấn gia hạn gói tập vàng', 'Vũ Phương Thảo', 'Lễ tân', 'Đã hủy')
             ON CONFLICT (id) DO NOTHING;
+
+            INSERT INTO users (id, role_id, full_name, email, phone_number, password_hash, status)
+            VALUES 
+                ('25f50fba-506a-4edf-9db7-43f77f6741a4', (SELECT id FROM roles WHERE LOWER(name) = 'coach' LIMIT 1), 'Ho Xuan Anh Nam', 'hoxuananhnam1@gmail.com', '0989123789', '$2a$11$e/r08VbM70tWp6Z97lC4wO9Fh0Zz7XhO3aW8u8/r08VbM70tWp6Z9', true),
+                ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', (SELECT id FROM roles WHERE LOWER(name) = 'member' LIMIT 1), 'Ho Xuan Anh Nam', 'hoxuananhnam@gmail.com', '0989123788', '$2a$11$e/r08VbM70tWp6Z97lC4wO9Fh0Zz7XhO3aW8u8/r08VbM70tWp6Z9', true)
+            ON CONFLICT (id) DO NOTHING;
+
+            INSERT INTO coach_profiles (user_id, specialties, certifications, experience_years, bio)
+            VALUES ('25f50fba-506a-4edf-9db7-43f77f6741a4', 'Gym Fitness, Yoga, BodyCombat', 'Chứng chỉ Huấn luyện viên Thể hình Quốc tế (ACE / NASM)', 3, 'Huấn luyện viên thể hình chuyên sâu.')
+            ON CONFLICT (user_id) DO NOTHING;
         "
         );
         app.Logger.LogInformation(

@@ -1,17 +1,14 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
-using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 
 namespace SmartGym.Api.Endpoints
 {
-    public static class MemberEndpoints
+    public static partial class MemberEndpoints
     {
         // Thread-safe in-memory collections for member-specific real-time operations
         private static readonly ConcurrentDictionary<string, List<object>> _memberBookings = new();
@@ -24,172 +21,10 @@ namespace SmartGym.Api.Endpoints
         {
             var group = app.MapGroup("/api/member");
 
-            // 1. GET /api/member/dashboard - Aggregated Dashboard Data
-            group.MapGet("/dashboard", (HttpContext context) =>
-            {
-                var userId = GetUserId(context) ?? "m-demo";
-                var bookings = _memberBookings.GetOrAdd(userId, _ => GetDefaultBookings());
-                var tasks = GetDefaultTasks();
-                var tickets = _memberSupportTickets.GetOrAdd(userId, _ => GetDefaultTickets());
-
-                return Results.Ok(new
-                {
-                    memberId = userId,
-                    activePackagesCount = 2,
-                    upcomingBookingsCount = bookings.Count,
-                    pendingTasksCount = tasks.Count(t => !((dynamic)t).completed),
-                    attendanceRatePct = 92,
-                    nextSessions = bookings.Take(3),
-                    recentTasks = tasks.Take(3),
-                    supportTickets = tickets.Take(2)
-                });
-            })
-            .WithTags("Member Portal")
-            .WithSummary("Get member aggregated dashboard statistics and preview items");
-
-            // 2. GET & POST /api/member/bookings - Book Class or PT Slot
-            group.MapGet("/bookings", (HttpContext context) =>
-            {
-                var userId = GetUserId(context) ?? "m-demo";
-                var bookings = _memberBookings.GetOrAdd(userId, _ => GetDefaultBookings());
-                return Results.Ok(bookings);
-            })
-            .WithTags("Member Portal")
-            .WithSummary("Get all member active bookings");
-
-            group.MapPost("/bookings", (HttpContext context, [FromBody] JsonElement body) =>
-            {
-                var userId = GetUserId(context) ?? "m-demo";
-                var bookings = _memberBookings.GetOrAdd(userId, _ => GetDefaultBookings());
-
-                var newBooking = new
-                {
-                    id = $"bk-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-                    name = body.TryGetProperty("name", out var n) ? n.GetString() : "Lớp học SportCenter",
-                    sport = body.TryGetProperty("sport", out var sp) ? sp.GetString() : "Gym",
-                    level = body.TryGetProperty("level", out var lv) ? lv.GetString() : "Cơ bản",
-                    type = body.TryGetProperty("type", out var tp) ? tp.GetString() : "group",
-                    date = body.TryGetProperty("date", out var dt) ? dt.GetString() : DateTime.UtcNow.ToString("yyyy-MM-dd"),
-                    startTime = body.TryGetProperty("startTime", out var st) ? st.GetString() : "08:00",
-                    endTime = body.TryGetProperty("endTime", out var et) ? et.GetString() : "09:00",
-                    room = body.TryGetProperty("room", out var rm) ? rm.GetString() : "Studio 1",
-                    coachName = body.TryGetProperty("coachName", out var cn) ? cn.GetString() : "HLV SportCenter",
-                    status = "sắp diễn ra",
-                    attendanceStatus = "chưa điểm danh",
-                    coachNote = body.TryGetProperty("coachNote", out var nt) ? nt.GetString() : "",
-                    bookedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
-                };
-
-                bookings.Insert(0, newBooking);
-                return Results.Ok(new { message = "Đặt lịch thành công!", booking = newBooking });
-            })
-            .WithTags("Member Portal")
-            .WithSummary("Create new booking for group class or 1-on-1 PT slot");
-
-            // 3. DELETE /api/member/bookings/{id} - Cancel Booking with Reason
-            group.MapDelete("/bookings/{id}", (string id, [FromQuery] string? reason, HttpContext context) =>
-            {
-                var userId = GetUserId(context) ?? "m-demo";
-                var bookings = _memberBookings.GetOrAdd(userId, _ => GetDefaultBookings());
-                var cancelledList = _memberCancelledBookings.GetOrAdd(userId, _ => new List<object>());
-
-                var found = bookings.FirstOrDefault(b => ((dynamic)b).id == id);
-                if (found != null)
-                {
-                    bookings.Remove(found);
-                    cancelledList.Insert(0, new
-                    {
-                        id = ((dynamic)found).id,
-                        name = ((dynamic)found).name,
-                        date = ((dynamic)found).date,
-                        startTime = ((dynamic)found).startTime,
-                        coachName = ((dynamic)found).coachName,
-                        cancelReason = string.IsNullOrWhiteSpace(reason) ? "Học viên tự hủy" : reason,
-                        cancelledAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
-                    });
-                    return Results.Ok(new { message = "Hủy lịch thành công!", id });
-                }
-
-                return Results.NotFound(new { message = "Không tìm thấy buổi đặt chỗ" });
-            })
-            .WithTags("Member Portal")
-            .WithSummary("Cancel a booked session with reason");
-
-            // 4. GET /api/member/cancelled-bookings
-            group.MapGet("/cancelled-bookings", (HttpContext context) =>
-            {
-                var userId = GetUserId(context) ?? "m-demo";
-                var cancelledList = _memberCancelledBookings.GetOrAdd(userId, _ => new List<object>());
-                return Results.Ok(cancelledList);
-            })
-            .WithTags("Member Portal")
-            .WithSummary("Get member cancelled bookings history");
-
-            // 5. GET & POST /api/member/support-tickets
-            group.MapGet("/support-tickets", (HttpContext context) =>
-            {
-                var userId = GetUserId(context) ?? "m-demo";
-                var tickets = _memberSupportTickets.GetOrAdd(userId, _ => GetDefaultTickets());
-                return Results.Ok(tickets);
-            })
-            .WithTags("Member Portal")
-            .WithSummary("Get member support tickets");
-
-            group.MapPost("/support-tickets", (HttpContext context, [FromBody] JsonElement body) =>
-            {
-                var userId = GetUserId(context) ?? "m-demo";
-                var tickets = _memberSupportTickets.GetOrAdd(userId, _ => GetDefaultTickets());
-
-                var newTicket = new
-                {
-                    id = $"TCK-{Random.Shared.Next(100, 999)}",
-                    category = body.TryGetProperty("category", out var c) ? c.GetString() : "Tư vấn dịch vụ",
-                    subject = body.TryGetProperty("subject", out var s) ? s.GetString() : "Yêu cầu từ hội viên",
-                    content = body.TryGetProperty("content", out var ct) ? ct.GetString() : "",
-                    status = "open",
-                    createdAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
-                    reply = (string?)null,
-                    repliedAt = (string?)null,
-                    repliedBy = (string?)null
-                };
-
-                tickets.Insert(0, newTicket);
-                return Results.Ok(new { message = "Đã gửi yêu cầu hỗ trợ thành công!", ticket = newTicket });
-            })
-            .WithTags("Member Portal")
-            .WithSummary("Create new support ticket");
-
-            // 6. POST /api/member/ai-ask - Intelligent AI Assistant endpoint
-            group.MapPost("/ai-ask", ([FromBody] JsonElement body) =>
-            {
-                var query = body.TryGetProperty("query", out var q) ? q.GetString()?.ToLower() ?? "" : "";
-                string answer;
-
-                if (query.Contains("lịch") || query.Contains("buổi") || query.Contains("ngày mai") || query.Contains("hôm nay"))
-                {
-                    answer = "📅 Bạn có ca tập gần nhất là lớp **Yoga Cân Bằng Cột Sống** vào ngày mai lúc 07:00 tại Studio 2 với HLV Minh Tuấn, và ca **Kèm 1-1 PT Gym** vào 08:30.";
-                }
-                else if (query.Contains("gói") || query.Contains("hạn") || query.Contains("hạn dùng"))
-                {
-                    answer = "💳 Bạn đang có 2 gói còn hiệu lực:\n1. **Gói Yoga Chuyên Sâu 3 Tháng** (Hạn đến 30/11/2026, còn 49 ngày).\n2. **Gói Gym & Thể Lực 1 Tháng** (Hạn đến 31/10/2026, còn 19 ngày).";
-                }
-                else if (query.Contains("thực đơn") || query.Contains("đạm") || query.Contains("dinh dưỡng") || query.Contains("ăn"))
-                {
-                    answer = "🥗 Gợi ý thực đơn tăng cơ giảm mỡ chuẩn SportCenter:\n• Sáng: 2 trứng ốp la + 1 lát bánh mì nguyên cám + 1 cốc sữa hạt.\n• Trưa: 150g ức gà hoặc phi lê bò + cơm gạo lứt + rau luộc.\n• Trước tập: 1 quả chuối tiêu hoặc 1 muỗng Whey Protein.\n• Tối: 150g cá hồi áp chảo + đĩa salad sốt chanh leo.";
-                }
-                else if (query.Contains("đau") || query.Contains("mỏi") || query.Contains("chân") || query.Contains("giãn"))
-                {
-                    answer = "💪 Khắc phục mỏi cơ bắp sau ngày tập nặng:\n1. Thực hiện giãn cơ tĩnh 10-15 phút sau buổi tập.\n2. Lăn ống Foam Roller vùng đùi và bắp chân.\n3. Uống đủ 2 - 2.5 lít nước, bổ sung điện giải và ngủ đủ 7-8 tiếng.";
-                }
-                else
-                {
-                    answer = "SportCenter AI Assistant đã ghi nhận câu hỏi của bạn. Hệ thống khuyên bạn nên duy trì tập luyện đều đặn 3 buổi/tuần và có thể gửi ticket hỗ trợ nếu cần sự can thiệp từ ban quản lý hoặc HLV!";
-                }
-
-                return Results.Ok(new { answer, timestamp = DateTime.UtcNow.ToString("HH:mm") });
-            })
-            .WithTags("Member Portal")
-            .WithSummary("AI assistant chat consultation for member");
+            MapMemberDashboardEndpoints(group);
+            MapMemberBookingEndpoints(group);
+            MapMemberSupportEndpoints(group);
+            MapMemberChatEndpoints(group);
         }
 
         private static string? GetUserId(HttpContext context)
@@ -199,16 +34,138 @@ namespace SmartGym.Api.Endpoints
 
         private static List<object> GetDefaultBookings()
         {
+            var today = DateTime.UtcNow;
+            var diff = (7 + (today.DayOfWeek - DayOfWeek.Monday)) % 7;
+            var mon = today.AddDays(-1 * diff).Date;
+
             return new List<object>
             {
+                // Thứ 2
                 new
                 {
-                    id = "sess-01",
+                    id = "sess-mon-01",
+                    name = "Yoga Cơ Bản – Lớp A",
+                    sport = "Yoga",
+                    level = "Cơ bản",
+                    type = "group",
+                    date = mon.ToString("yyyy-MM-dd"),
+                    startTime = "07:00",
+                    endTime = "08:00",
+                    room = "Studio 2 - Tầng 2",
+                    coachName = "HLV Hồ Xuân Ánh Nam",
+                    status = "hoàn thành",
+                    attendanceStatus = "có mặt",
+                    coachNote = "Tập thở và giãn cơ sâu rất tốt."
+                },
+                new
+                {
+                    id = "sess-mon-03",
+                    name = "Zumba Sôi Động Khởi Đầu Tuần",
+                    sport = "Zumba",
+                    level = "Cơ bản",
+                    type = "group",
+                    date = mon.ToString("yyyy-MM-dd"),
+                    startTime = "08:00",
+                    endTime = "09:00",
+                    room = "Studio 3 - Tầng 3",
+                    coachName = "HLV Lan Anh",
+                    status = "hoàn thành",
+                    attendanceStatus = "có mặt",
+                    coachNote = "Đốt mỡ cực tốt cùng âm nhạc sôi động."
+                },
+                new
+                {
+                    id = "sess-mon-02",
+                    name = "Gym Group BodyPump",
+                    sport = "Gym",
+                    level = "Nâng cao",
+                    type = "group",
+                    date = mon.ToString("yyyy-MM-dd"),
+                    startTime = "09:00",
+                    endTime = "10:30",
+                    room = "Khu Tạ Tự Do",
+                    coachName = "HLV Hồ Xuân Ánh Nam",
+                    status = "hoàn thành",
+                    attendanceStatus = "có mặt",
+                    coachNote = "Hoàn thành 4 hiệp Squat và Deadlift chuẩn form."
+                },
+
+                // Thứ 3
+                new
+                {
+                    id = "sess-tue-01",
+                    name = "Bơi Lội Sáng Sớm",
+                    sport = "Bơi",
+                    level = "Cơ bản",
+                    type = "group",
+                    date = mon.AddDays(1).ToString("yyyy-MM-dd"),
+                    startTime = "06:00",
+                    endTime = "07:00",
+                    room = "Hồ Bơi Tầng 4",
+                    coachName = "HLV Đỗ Quốc Bảo",
+                    status = "sắp diễn ra",
+                    attendanceStatus = "chưa điểm danh",
+                    coachNote = "Khởi động kỹ khớp vai trước khi xuống nước nhé."
+                },
+                new
+                {
+                    id = "sess-tue-02",
+                    name = "Boxing Cơ Bản",
+                    sport = "Boxing",
+                    level = "Cơ bản",
+                    type = "group",
+                    date = mon.AddDays(1).ToString("yyyy-MM-dd"),
+                    startTime = "07:00",
+                    endTime = "08:00",
+                    room = "Võ Đài Ring 1",
+                    coachName = "HLV Hoàng Long",
+                    status = "sắp diễn ra",
+                    attendanceStatus = "chưa điểm danh",
+                    coachNote = "Mang theo găng tay và băng quấn tay."
+                },
+                new
+                {
+                    id = "sess-tue-03",
+                    name = "Kèm 1-1: Phản xạ & Sức bền",
+                    sport = "Gym",
+                    level = "1-1 PT",
+                    type = "pt",
+                    date = mon.AddDays(1).ToString("yyyy-MM-dd"),
+                    startTime = "14:00",
+                    endTime = "15:00",
+                    room = "Ring PT 1-1",
+                    coachName = "HLV Hồ Xuân Ánh Nam",
+                    status = "sắp diễn ra",
+                    attendanceStatus = "chưa điểm danh",
+                    goal = "Phản xạ & Sức bền",
+                    coachNote = "Kèm kỹ thuật đấm thẳng và xoay hông."
+                },
+                new
+                {
+                    id = "sess-tue-04",
+                    name = "Cardio & Core Workout",
+                    sport = "Cardio",
+                    level = "Trung cấp",
+                    type = "group",
+                    date = mon.AddDays(1).ToString("yyyy-MM-dd"),
+                    startTime = "18:00",
+                    endTime = "19:00",
+                    room = "Khu Thể Lực",
+                    coachName = "HLV Minh Tuấn",
+                    status = "sắp diễn ra",
+                    attendanceStatus = "chưa điểm danh",
+                    coachNote = "Tăng nhịp tim và săn chắc cơ bụng."
+                },
+
+                // Thứ 4
+                new
+                {
+                    id = "sess-wed-01",
                     name = "Yoga Cân Bằng Cột Sống",
                     sport = "Yoga",
                     level = "Cơ bản",
                     type = "group",
-                    date = DateTime.UtcNow.AddDays(1).ToString("yyyy-MM-dd"),
+                    date = mon.AddDays(2).ToString("yyyy-MM-dd"),
                     startTime = "07:00",
                     endTime = "08:00",
                     room = "Studio 2 - Tầng 2",
@@ -219,35 +176,223 @@ namespace SmartGym.Api.Endpoints
                 },
                 new
                 {
-                    id = "sess-02",
-                    name = "Kèm 1-1: Tăng cơ cốt lõi & Giảm mỡ",
+                    id = "sess-wed-02",
+                    name = "Kèm 1-1: Tăng cơ cốt lõi (Core & Leg)",
                     sport = "Gym",
-                    level = "Nâng cao",
+                    level = "1-1 PT",
                     type = "pt",
-                    date = DateTime.UtcNow.AddDays(2).ToString("yyyy-MM-dd"),
-                    startTime = "08:30",
-                    endTime = "09:30",
+                    date = mon.AddDays(2).ToString("yyyy-MM-dd"),
+                    startTime = "08:00",
+                    endTime = "09:00",
+                    room = "Khu PT 1-1 - Tầng 1",
+                    coachName = "HLV Hồ Xuân Ánh Nam",
+                    status = "sắp diễn ra",
+                    attendanceStatus = "chưa điểm danh",
+                    goal = "Tăng cơ & Siết nét",
+                    coachNote = "Tập trung nhóm cơ ngực và tay sau."
+                },
+                new
+                {
+                    id = "sess-wed-03",
+                    name = "Pilates Nâng Cao",
+                    sport = "Pilates",
+                    level = "Nâng cao",
+                    type = "group",
+                    date = mon.AddDays(2).ToString("yyyy-MM-dd"),
+                    startTime = "14:00",
+                    endTime = "15:00",
+                    room = "Studio 1 - Tầng 2",
+                    coachName = "HLV Lê Thu Hà",
+                    status = "sắp diễn ra",
+                    attendanceStatus = "chưa điểm danh",
+                    coachNote = "Cải thiện vóc dáng và cột sống."
+                },
+
+                // Thứ 5
+                new
+                {
+                    id = "sess-thu-01",
+                    name = "Gym Core & Abs",
+                    sport = "Gym",
+                    level = "Trung cấp",
+                    type = "group",
+                    date = mon.AddDays(3).ToString("yyyy-MM-dd"),
+                    startTime = "07:00",
+                    endTime = "08:00",
+                    room = "Khu Tạ Tự Do",
+                    coachName = "HLV Hồ Xuân Ánh Nam",
+                    status = "sắp diễn ra",
+                    attendanceStatus = "chưa điểm danh",
+                    coachNote = "Bài tập siết cơ bụng và liên sườn."
+                },
+                new
+                {
+                    id = "sess-thu-02",
+                    name = "Kèm 1-1: Tăng cơ ngực & Tay sau",
+                    sport = "Gym",
+                    level = "1-1 PT",
+                    type = "pt",
+                    date = mon.AddDays(3).ToString("yyyy-MM-dd"),
+                    startTime = "08:00",
+                    endTime = "09:00",
                     room = "Khu PT 1-1 - Tầng 1",
                     coachName = "HLV Enam",
                     status = "sắp diễn ra",
                     attendanceStatus = "chưa điểm danh",
-                    coachNote = "Hôm nay tập trung vào nhóm cơ ngực và tay sau."
+                    goal = "Tăng cơ ngực",
+                    coachNote = "Hôm nay tập trung vào các bài Bench Press."
                 },
                 new
                 {
-                    id = "sess-03",
-                    name = "Boxing Cardio & Phản xạ",
-                    sport = "Boxing",
-                    level = "Trung cấp",
+                    id = "sess-thu-03",
+                    name = "Zumba Dance Cardio Party",
+                    sport = "Zumba",
+                    level = "Cơ bản",
                     type = "group",
-                    date = DateTime.UtcNow.AddDays(4).ToString("yyyy-MM-dd"),
+                    date = mon.AddDays(3).ToString("yyyy-MM-dd"),
                     startTime = "18:00",
                     endTime = "19:00",
-                    room = "Combat Ring - Tầng 3",
+                    room = "Studio 3 - Tầng 3",
+                    coachName = "HLV Lan Anh",
+                    status = "sắp diễn ra",
+                    attendanceStatus = "chưa điểm danh",
+                    coachNote = "Vũ điệu latin giải tỏa căng thẳng sau giờ làm."
+                },
+
+                // Thứ 6
+                new
+                {
+                    id = "sess-fri-01",
+                    name = "Kèm 1-1: Sức bền & Tốc độ",
+                    sport = "Gym",
+                    level = "1-1 PT",
+                    type = "pt",
+                    date = mon.AddDays(4).ToString("yyyy-MM-dd"),
+                    startTime = "07:00",
+                    endTime = "08:00",
+                    room = "Võ Đài",
+                    coachName = "HLV Hồ Xuân Ánh Nam",
+                    status = "sắp diễn ra",
+                    attendanceStatus = "chưa điểm danh",
+                    goal = "Phản xạ & Sức bền",
+                    coachNote = "Kèm cá nhân cardio phản xạ."
+                },
+                new
+                {
+                    id = "sess-fri-02",
+                    name = "Boxing Nâng Cao",
+                    sport = "Boxing",
+                    level = "Nâng cao",
+                    type = "group",
+                    date = mon.AddDays(4).ToString("yyyy-MM-dd"),
+                    startTime = "15:00",
+                    endTime = "16:30",
+                    room = "Võ Đài Ring 2",
                     coachName = "HLV Hoàng Long",
                     status = "sắp diễn ra",
                     attendanceStatus = "chưa điểm danh",
-                    coachNote = "Tập phản xạ bộ pháp di chuyển."
+                    coachNote = "Luyện đòn tổ hợp và né đòn."
+                },
+                new
+                {
+                    id = "sess-fri-03",
+                    name = "Bơi Thả Lỏng & Hồi Phục",
+                    sport = "Bơi",
+                    level = "Cơ bản",
+                    type = "group",
+                    date = mon.AddDays(4).ToString("yyyy-MM-dd"),
+                    startTime = "17:00",
+                    endTime = "18:00",
+                    room = "Hồ Bơi Tầng 4",
+                    coachName = "HLV Đỗ Quốc Bảo",
+                    status = "sắp diễn ra",
+                    attendanceStatus = "chưa điểm danh",
+                    coachNote = "Thư giãn các nhóm cơ sau một tuần tập luyện."
+                },
+
+                // Thứ 7
+                new
+                {
+                    id = "sess-sat-01",
+                    name = "Kèm 1-1: Sức khỏe & Săn chắc",
+                    sport = "Gym",
+                    level = "1-1 PT",
+                    type = "pt",
+                    date = mon.AddDays(5).ToString("yyyy-MM-dd"),
+                    startTime = "08:00",
+                    endTime = "09:00",
+                    room = "Studio 2",
+                    coachName = "HLV Enam",
+                    status = "sắp diễn ra",
+                    attendanceStatus = "chưa điểm danh",
+                    goal = "Săn chắc toàn thân",
+                    coachNote = "Chuẩn bị bài tập tạ tay vừa sức."
+                },
+                new
+                {
+                    id = "sess-sat-02",
+                    name = "Gym Strength & Fit",
+                    sport = "Gym",
+                    level = "Nâng cao",
+                    type = "group",
+                    date = mon.AddDays(5).ToString("yyyy-MM-dd"),
+                    startTime = "09:00",
+                    endTime = "10:30",
+                    room = "Khu Thể Lực",
+                    coachName = "HLV Hồ Xuân Ánh Nam",
+                    status = "sắp diễn ra",
+                    attendanceStatus = "chưa điểm danh",
+                    coachNote = "Thử thách mức tạ mới an toàn."
+                },
+                new
+                {
+                    id = "sess-sat-03",
+                    name = "Pilates Core Flow",
+                    sport = "Pilates",
+                    level = "Trung cấp",
+                    type = "group",
+                    date = mon.AddDays(5).ToString("yyyy-MM-dd"),
+                    startTime = "15:00",
+                    endTime = "16:00",
+                    room = "Studio 1 - Tầng 2",
+                    coachName = "HLV Lê Thu Hà",
+                    status = "sắp diễn ra",
+                    attendanceStatus = "chưa điểm danh",
+                    coachNote = "Gồng cơ bụng trọng tâm và mở rộng khớp hông."
+                },
+
+                // Chủ nhật
+                new
+                {
+                    id = "sess-sun-01",
+                    name = "Bơi Sải & Thể Lực",
+                    sport = "Bơi",
+                    level = "Trung cấp",
+                    type = "group",
+                    date = mon.AddDays(6).ToString("yyyy-MM-dd"),
+                    startTime = "14:00",
+                    endTime = "15:30",
+                    room = "Hồ Bơi Tầng 4",
+                    coachName = "HLV Đỗ Quốc Bảo",
+                    status = "sắp diễn ra",
+                    attendanceStatus = "chưa điểm danh",
+                    coachNote = "Bơi thả lỏng và rèn dung tích phổi."
+                },
+                new
+                {
+                    id = "sess-sun-02",
+                    name = "Yoga Thiền & Phục Hồi Thần Kinh",
+                    sport = "Yoga",
+                    level = "Cơ bản",
+                    type = "group",
+                    date = mon.AddDays(6).ToString("yyyy-MM-dd"),
+                    startTime = "17:00",
+                    endTime = "18:00",
+                    room = "Studio 2 - Tầng 2",
+                    coachName = "HLV Minh Tuấn",
+                    status = "sắp diễn ra",
+                    attendanceStatus = "chưa điểm danh",
+                    coachNote = "Tái tạo năng lượng chuẩn bị cho tuần mới."
                 }
             };
         }

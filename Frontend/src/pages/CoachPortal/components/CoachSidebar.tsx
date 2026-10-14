@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { CoachScreen } from "../types";
 import { navItems, A } from "../constants";
 import { UserAvatar } from "../../../components/UserAvatar";
+import { useUserProfile } from "../../../hooks/useUserProfile";
 
 export default function CoachSidebar({
   screen,
@@ -10,14 +11,20 @@ export default function CoachSidebar({
   screen: CoachScreen
   onNavigate: (s: CoachScreen) => void
 }) {
+  const { profile } = useUserProfile('coach');
   const userStr = localStorage.getItem("user");
-  let userName = "Huấn luyện viên";
-  if (userStr) {
+  let userName = profile?.fullName;
+  let avatarUrl = profile?.avatarUrl;
+  if (!userName && userStr) {
     try {
       const user = JSON.parse(userStr);
-      userName = user.fullName || user.name || user.email?.split("@")[0] || "Huấn luyện viên";
+      if (user.role?.toLowerCase() === 'coach' || user.roleName?.toLowerCase() === 'coach') {
+        userName = user.fullName || user.name || user.email?.split("@")[0];
+        avatarUrl = avatarUrl || user.avatarUrl;
+      }
     } catch (e) {}
   }
+  userName = userName || "Huấn luyện viên";
 
   return (
     <div className="bg-[#0f172a] flex flex-col gap-[28px] items-start pb-[24px] pt-[28px] px-[18px] shrink-0 w-[240px] sticky top-0 h-screen overflow-y-auto hidden-scrollbar">
@@ -71,7 +78,7 @@ export default function CoachSidebar({
           onClick={() => onNavigate("profile")}
         >
           <UserAvatar
-            src={userStr ? JSON.parse(userStr).avatarUrl : undefined}
+            src={avatarUrl || undefined}
             name={userName}
             className="rounded-full size-10 shrink-0 object-cover border-2 border-[#1e293b] group-hover:border-[#f97316] transition-colors"
           />
@@ -99,6 +106,7 @@ export default function CoachSidebar({
                 e.stopPropagation();
                 localStorage.removeItem("user");
                 localStorage.removeItem("accessToken");
+                localStorage.removeItem("token");
                 window.location.hash = "login";
                 window.location.reload();
               }}

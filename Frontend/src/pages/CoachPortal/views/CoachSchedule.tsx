@@ -42,6 +42,8 @@ interface Props {
   navigateTo: (s: CoachScreen, extra?: { sessionId?: string; memberId?: string }) => void;
 }
 
+import { scheduleSync, type SyncedSession } from "../../../services/sync/scheduleSync";
+
 export interface UnifiedScheduleItem {
   id: string;
   type: "group" | "pt" | "open_pt";
@@ -57,11 +59,15 @@ export interface UnifiedScheduleItem {
   capacity?: number;
   registeredCount: number;
   status: SessionStatus;
+  attendanceStatus?: string;
   // PT specific
   memberName?: string;
   memberPhone?: string;
+  memberEmail?: string;
   goal?: string;
   note?: string;
+  coachNote?: string;
+  cancelReason?: string;
 }
 
 const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
@@ -129,9 +135,23 @@ export default function CoachSchedule({ navigateTo }: Props) {
   const [openSlotNote, setOpenSlotNote] = useState("");
   const [selectedOpenSlot, setSelectedOpenSlot] = useState<UnifiedScheduleItem | null>(null);
 
+  // PT Attendance Modal State
+  const [selectedPtForAttendance, setSelectedPtForAttendance] = useState<UnifiedScheduleItem | null>(null);
+  const [ptAttendanceStatus, setPtAttendanceStatus] = useState<"có mặt" | "vắng" | "có phép">("có mặt");
+  const [ptCoachNote, setPtCoachNote] = useState("");
+  const [syncedSessionsList, setSyncedSessionsList] = useState<SyncedSession[]>(() => scheduleSync.getSyncedSessions());
+
+  // Subscribe to real-time member bookings & cancellations
+  useEffect(() => {
+    const unsub = scheduleSync.subscribe(() => {
+      setSyncedSessionsList(scheduleSync.getSyncedSessions());
+    });
+    return unsub;
+  }, []);
+
   // Lock body scroll when any modal is open to eliminate double scrollbars
   useEffect(() => {
-    if (isRequestModalOpen || isOpenSlotModalOpen || selectedOpenSlot) {
+    if (isRequestModalOpen || isOpenSlotModalOpen || selectedOpenSlot || selectedPtForAttendance) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
@@ -139,7 +159,7 @@ export default function CoachSchedule({ navigateTo }: Props) {
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [isRequestModalOpen, isOpenSlotModalOpen, selectedOpenSlot]);
+  }, [isRequestModalOpen, isOpenSlotModalOpen, selectedOpenSlot, selectedPtForAttendance]);
 
   // Helper to compute week dates (Monday to Sunday) based on offset
   const weekDates = useMemo(() => {
@@ -533,8 +553,38 @@ export default function CoachSchedule({ navigateTo }: Props) {
       },
     ];
 
-    return [...groupItems, ...ptItems, ...defaultOpenItems, ...openSlots];
-  }, [weekDates, openSlots]);
+    // 4. Real-time synced sessions (Member bookings, cancellations, attendance)
+    const syncedItems: UnifiedScheduleItem[] = syncedSessionsList.map((s) => ({
+      id: s.id,
+      type: s.type,
+      classId: s.classId,
+      className: s.className,
+      sport: s.sport,
+      level: s.level,
+      date: s.date,
+      startTime: s.startTime,
+      endTime: s.endTime,
+      room: s.room,
+      coachName: s.coachName,
+      capacity: s.capacity,
+      registeredCount: s.registeredCount,
+      status: s.status as SessionStatus,
+      attendanceStatus: s.attendanceStatus,
+      memberName: s.memberName,
+      memberPhone: s.memberPhone,
+      memberEmail: s.memberEmail,
+      goal: s.goal,
+      note: s.userNote || s.coachNote,
+      coachNote: s.coachNote,
+      cancelReason: s.cancelReason,
+    }));
+
+    const syncedIds = new Set(syncedItems.map((s) => s.id));
+    const filteredPtItems = ptItems.filter((p) => !syncedIds.has(p.id));
+    const filteredOpenItems = defaultOpenItems.filter((o) => !syncedIds.has(o.id));
+
+    return [...groupItems, ...syncedItems, ...filteredPtItems, ...filteredOpenItems, ...openSlots];
+  }, [weekDates, openSlots, syncedSessionsList]);
 
   // Distinct sport options for filter
   const SPORT_OPTIONS = useMemo(
@@ -655,6 +705,19 @@ export default function CoachSchedule({ navigateTo }: Props) {
     const updated = [newSlot, ...openSlots];
     setOpenSlots(updated);
     localStorage.setItem("coach_custom_open_pt_slots", JSON.stringify(updated));
+
+    // Push into real-time cross-portal scheduleSync
+    scheduleSync.createOpenPtSlot({
+      id: newSlot.id,
+      date: openSlotDate,
+      startTime: openSlotStartTime,
+      endTime: openSlotEndTime,
+      sport: openSlotSport,
+      room: openSlotRoom,
+      coachName: coachName || "HLV Hồ Xuân Ánh Nam",
+      note: openSlotNote.trim() || "Chờ học viên đăng ký buổi học 1-1",
+    });
+
     setIsOpenSlotModalOpen(false);
     setOpenSlotNote("");
     setFeedbackMsg(`Đã đăng lịch trống 1-1 (${openSlotSport} ngày ${openSlotDate} lúc ${openSlotStartTime}) thành công! Hội viên đã có thể thấy và đăng ký.`);
@@ -665,6 +728,7 @@ export default function CoachSchedule({ navigateTo }: Props) {
     const updated = openSlots.filter((s) => s.id !== slotId);
     setOpenSlots(updated);
     localStorage.setItem("coach_custom_open_pt_slots", JSON.stringify(updated));
+    scheduleSync.deleteOpenPtSlot(slotId);
     setSelectedOpenSlot(null);
     setFeedbackMsg("Đã đóng/hủy lịch trống 1-1 này.");
     setTimeout(() => setFeedbackMsg(null), 4000);
@@ -918,8 +982,10 @@ export default function CoachSchedule({ navigateTo }: Props) {
                                 onClick={() => {
                                   if (isOpenPT) {
                                     setSelectedOpenSlot(sessionItem);
-                                  } else if (isPT && sessionItem.memberName) {
-                                    navigateTo("members");
+                                  } else if (isPT) {
+                                    setSelectedPtForAttendance(sessionItem);
+                                    setPtAttendanceStatus((sessionItem.attendanceStatus as any) || "có mặt");
+                                    setPtCoachNote(sessionItem.coachNote || "");
                                   } else {
                                     navigateTo("class-detail", { sessionId: sessionItem.id });
                                   }
@@ -1078,10 +1144,30 @@ export default function CoachSchedule({ navigateTo }: Props) {
                                       {s.note || "Chờ học viên đăng ký"}
                                     </span>
                                   ) : isPT ? (
-                                    <span className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400">
-                                      <Target className="w-3.5 h-3.5" />
-                                      Mục tiêu: {s.goal}
-                                    </span>
+                                    <div className="flex items-center gap-3 flex-wrap">
+                                      <span className="flex items-center gap-1 text-slate-800 dark:text-slate-100 font-bold">
+                                        <User className="w-3.5 h-3.5 text-slate-400" />
+                                        Học viên: {s.memberName || "Hồ Xuân Ánh Nam"}
+                                      </span>
+                                      {s.memberPhone && (
+                                        <span className="text-slate-500 font-mono text-[11px]">({s.memberPhone})</span>
+                                      )}
+                                      <span className="flex items-center gap-1 text-amber-700 dark:text-amber-400 font-medium">
+                                        <Target className="w-3.5 h-3.5" />
+                                        Mục tiêu: {s.goal}
+                                      </span>
+                                      {s.attendanceStatus === "có mặt" && (
+                                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 flex items-center gap-1">
+                                          <CheckCircle2 className="w-3 h-3" />
+                                          Có mặt
+                                        </span>
+                                      )}
+                                      {s.cancelReason && (
+                                        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300">
+                                          Lý do hủy: {s.cancelReason}
+                                        </span>
+                                      )}
+                                    </div>
                                   ) : (
                                     <span className="flex items-center gap-1.5">
                                       <Users className="w-3.5 h-3.5 text-slate-400" />
@@ -1089,6 +1175,11 @@ export default function CoachSchedule({ navigateTo }: Props) {
                                     </span>
                                   )}
                                 </div>
+                                {isPT && s.coachNote && (
+                                  <div className="mt-2 text-xs italic text-emerald-800 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-200/80 dark:border-emerald-800 flex items-center gap-1.5">
+                                    <span>💬 Đã nhận xét: "{s.coachNote}"</span>
+                                  </div>
+                                )}
                               </div>
 
                               {/* Action buttons */}
@@ -1103,7 +1194,24 @@ export default function CoachSchedule({ navigateTo }: Props) {
                                   </button>
                                 ) : (
                                   <>
-                                    {!isPT && (
+                                    {isPT ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setSelectedPtForAttendance(s);
+                                          setPtAttendanceStatus((s.attendanceStatus as any) || "có mặt");
+                                          setPtCoachNote(s.coachNote || "");
+                                        }}
+                                        className={`px-3.5 py-2 text-xs font-semibold rounded-lg transition-colors shadow-xs flex items-center gap-1.5 ${
+                                          s.attendanceStatus === "có mặt"
+                                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                                            : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                                        }`}
+                                      >
+                                        <UserCheck className="w-3.5 h-3.5" />
+                                        <span>{s.attendanceStatus === "có mặt" ? "Đã điểm danh" : "Điểm danh & Nhận xét"}</span>
+                                      </button>
+                                    ) : (
                                       <button
                                         type="button"
                                         onClick={() => navigateTo("attendance", { sessionId: s.id })}
@@ -1652,6 +1760,151 @@ export default function CoachSchedule({ navigateTo }: Props) {
                   Đóng
                 </button>
               </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* MODAL 3: ĐIỂM DANH & NHẬN XÉT HỌC VIÊN CA KÈM 1-1 */}
+      {selectedPtForAttendance &&
+        createPortal(
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-emerald-50/50 dark:bg-emerald-950/20">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-emerald-100 dark:bg-emerald-900/60 rounded-xl text-emerald-600 dark:text-emerald-400">
+                    <UserCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 dark:text-white text-base">
+                      Điểm danh & Nhận xét buổi tập PT 1-1
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Đồng bộ trực tiếp sang tài khoản của Hội viên
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPtForAttendance(null)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!selectedPtForAttendance) return;
+                  scheduleSync.recordAttendance(
+                    selectedPtForAttendance.id,
+                    ptAttendanceStatus,
+                    ptCoachNote
+                  );
+                  setFeedbackMsg(
+                    `Đã cập nhật điểm danh "${ptAttendanceStatus === "có mặt" ? "Có mặt" : ptAttendanceStatus}" và gửi nhận xét cho học viên ${selectedPtForAttendance.memberName || "Hồ Xuân Ánh Nam"} thành công!`
+                  );
+                  setSelectedPtForAttendance(null);
+                  setTimeout(() => setFeedbackMsg(null), 4000);
+                }}
+              >
+                <div className="p-5 flex flex-col gap-4 text-xs">
+                  {/* Member & Session Info Card */}
+                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 font-medium">Học viên:</span>
+                      <span className="font-bold text-slate-900 dark:text-white text-sm">
+                        {selectedPtForAttendance.memberName || "Hồ Xuân Ánh Nam"}
+                      </span>
+                    </div>
+                    {selectedPtForAttendance.memberPhone && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500 font-medium">Số điện thoại:</span>
+                        <span className="font-mono text-slate-700 dark:text-slate-300">
+                          {selectedPtForAttendance.memberPhone}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 font-medium">Thời gian & Địa điểm:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        {selectedPtForAttendance.date} ({selectedPtForAttendance.startTime} - {selectedPtForAttendance.endTime}) • {selectedPtForAttendance.room}
+                      </span>
+                    </div>
+                    {selectedPtForAttendance.goal && (
+                      <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+                        <span className="text-amber-700 dark:text-amber-400 font-semibold">Mục tiêu tập luyện:</span>
+                        <span className="font-bold text-amber-800 dark:text-amber-300">
+                          {selectedPtForAttendance.goal}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Attendance Status Selector */}
+                  <div>
+                    <label className="font-bold text-slate-800 dark:text-slate-200 mb-2 block">
+                      Trạng thái điểm danh:
+                    </label>
+                    <div className="grid grid-cols-3 gap-2.5">
+                      {[
+                        { id: "có mặt", label: "Có mặt", color: "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300" },
+                        { id: "vắng", label: "Vắng mặt", color: "border-rose-500 bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300" },
+                        { id: "có phép", label: "Nghỉ có phép", color: "border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300" },
+                      ].map((st) => (
+                        <button
+                          key={st.id}
+                          type="button"
+                          onClick={() => setPtAttendanceStatus(st.id as any)}
+                          className={`py-2.5 px-3 rounded-xl border-2 font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
+                            ptAttendanceStatus === st.id
+                              ? `${st.color} shadow-xs`
+                              : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300"
+                          }`}
+                        >
+                          {ptAttendanceStatus === st.id && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
+                          <span>{st.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Coach Feedback & Note */}
+                  <div>
+                    <label className="font-bold text-slate-800 dark:text-slate-200 mb-1.5 block">
+                      Lời nhận xét & đánh giá chuyên môn của HLV:
+                    </label>
+                    <textarea
+                      rows={4}
+                      placeholder="VD: Học viên tập rất tích cực, hoàn thành tốt 4 hiệp Squat và Bench Press. Form động tác chuẩn, cần giữ lưng thẳng hơn ở hiệp cuối..."
+                      value={ptCoachNote}
+                      onChange={(e) => setPtCoachNote(e.target.value)}
+                      className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    />
+                    <span className="text-[11px] text-slate-400 mt-1 block">
+                      💡 Nhận xét này sẽ hiển thị ngay trên màn hình "Lịch tập của tôi" của Hội viên {selectedPtForAttendance.memberName || "Hồ Xuân Ánh Nam"}.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2.5 shrink-0 bg-slate-50/50 dark:bg-slate-850">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPtForAttendance(null)}
+                    className="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md shadow-emerald-500/20 transition-all flex items-center gap-1.5"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Lưu điểm danh & Gửi nhận xét</span>
+                  </button>
+                </div>
+              </form>
             </div>
           </div>,
           document.body

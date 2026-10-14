@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import type { MemberScreen, MemberCoachReviewItem } from "../types";
 import {
@@ -6,6 +6,12 @@ import {
   getSavedMemberData,
   saveMemberData,
 } from "../services/memberData";
+import {
+  submitCoachReview,
+  fetchCoachReviews,
+  subscribeToReviews,
+} from "../services/reviewSync";
+import { scheduleSync } from "../services/scheduleSync";
 import {
   Star,
   CheckCircle2,
@@ -21,13 +27,13 @@ interface Props {
   onNavigate: (screen: MemberScreen) => void;
 }
 
-const AVAILABLE_FOR_REVIEW = [
+const DEFAULT_AVAILABLE_FOR_REVIEW = [
   {
     sessionId: "sess-05",
     sessionName: "Functional HIIT Cường độ cao",
-    coachId: "coach-02",
-    coachName: "HLV Enam",
-    date: "2026-10-07",
+    coachId: "25f50fba-506a-4edf-9db7-43f77f6741a4",
+    coachName: "HLV Hồ Xuân Ánh Nam (HLV Enam)",
+    date: "2026-10-13",
   },
 ];
 
@@ -41,6 +47,36 @@ export default function MemberReviews({ onNavigate }: Props) {
   const [selectedTags, setSelectedTags] = useState<string[]>(["Nhiệt tình", "Sửa form kỹ"]);
   const [comment, setComment] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Available sessions to review, merged from scheduleSync
+  const availableSessions = useMemo(() => {
+    const fromSchedule = scheduleSync.getSyncedSessions()
+      .filter(
+        (s) =>
+          s.type === "pt" ||
+          s.attendanceStatus === "có mặt" ||
+          (s.coachName && s.coachName.includes("Nam"))
+      )
+      .map((s) => ({
+        sessionId: s.id,
+        sessionName: s.className || `Tập 1-1 với ${s.coachName}`,
+        coachId: s.coachId || "25f50fba-506a-4edf-9db7-43f77f6741a4",
+        coachName: s.coachName || "HLV Hồ Xuân Ánh Nam",
+        date: s.date || new Date().toISOString().split("T")[0],
+      }));
+
+    const combined = [...fromSchedule, ...DEFAULT_AVAILABLE_FOR_REVIEW];
+    const unique = new Map<string, (typeof combined)[0]>();
+    combined.forEach((item) => {
+      // Don't show in available if already reviewed
+      const alreadyReviewed = reviews.some((r) => r.sessionId === item.sessionId);
+      if (!alreadyReviewed && !unique.has(item.sessionId)) {
+        unique.set(item.sessionId, item);
+      }
+    });
+    return Array.from(unique.values());
+  }, [reviews]);
 
   const TAGS_LIST = [
     "Nhiệt tình",
@@ -60,7 +96,7 @@ export default function MemberReviews({ onNavigate }: Props) {
     }
   };
 
-  const handleSubmitReview = (e: React.FormEvent) => {
+  const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeReviewSession) return;
     if (!comment.trim()) {
@@ -68,26 +104,42 @@ export default function MemberReviews({ onNavigate }: Props) {
       return;
     }
 
-    const newReview: MemberCoachReviewItem = {
-      id: `rev-${Date.now()}`,
-      sessionId: activeReviewSession.sessionId,
-      sessionName: activeReviewSession.sessionName,
-      coachId: activeReviewSession.coachId,
-      coachName: activeReviewSession.coachName,
-      date: new Date().toISOString().split("T")[0],
-      rating,
-      tags: selectedTags,
-      comment: comment.trim(),
-    };
+    setIsSubmitting(true);
+    try {
+      const reviewRes = await submitCoachReview({
+        coachId: activeReviewSession.coachId || "25f50fba-506a-4edf-9db7-43f77f6741a4",
+        coachName: activeReviewSession.coachName || "HLV Hồ Xuân Ánh Nam",
+        sessionId: activeReviewSession.sessionId,
+        sessionName: activeReviewSession.sessionName,
+        rating,
+        comment: comment.trim(),
+        tags: selectedTags,
+        memberName: "Hồ Xuân Ánh Nam",
+      });
 
-    const updated = [newReview, ...reviews];
-    setReviews(updated);
-    saveMemberData("member_coach_reviews", updated);
+      const newReview: MemberCoachReviewItem = {
+        id: reviewRes.id,
+        sessionId: activeReviewSession.sessionId,
+        sessionName: activeReviewSession.sessionName,
+        coachId: reviewRes.coachId,
+        coachName: reviewRes.coachName,
+        date: new Date().toISOString().split("T")[0],
+        rating,
+        tags: selectedTags,
+        comment: comment.trim(),
+      };
 
-    setActiveReviewSession(null);
-    setComment("");
-    setFeedback(`Cảm ơn bạn đã gửi đánh giá cho ${activeReviewSession.coachName}!`);
-    setTimeout(() => setFeedback(null), 4000);
+      const updated = [newReview, ...reviews.filter((r) => r.id !== newReview.id)];
+      setReviews(updated);
+      saveMemberData("member_coach_reviews", updated);
+
+      setActiveReviewSession(null);
+      setComment("");
+      setFeedback(`Cảm ơn bạn đã gửi đánh giá cho ${activeReviewSession.coachName}! Đánh giá đã được gửi và ẩn danh bảo mật.`);
+      setTimeout(() => setFeedback(null), 4000);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -113,15 +165,15 @@ export default function MemberReviews({ onNavigate }: Props) {
       </div>
 
       {/* 1. SESSIONS WAITING FOR REVIEW */}
-      {AVAILABLE_FOR_REVIEW.length > 0 && (
+      {availableSessions.length > 0 && (
         <div className="p-5 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 space-y-3">
           <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-bold text-xs">
             <Sparkles className="w-4 h-4 text-amber-500" />
-            <span>Buổi học đã hoàn thành chờ bạn đánh giá:</span>
+            <span>Buổi học đã hoàn thành chờ bạn đánh giá ({availableSessions.length}):</span>
           </div>
 
           <div className="space-y-2.5">
-            {AVAILABLE_FOR_REVIEW.map((sess) => (
+            {availableSessions.map((sess) => (
               <div
                 key={sess.sessionId}
                 className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { CoachAPI } from "../services/api";
 import type { MockCurriculum, MockSession, MockMember } from "../services/api";
+import { curriculumSync, type SyncedCurriculum } from "../../MemberPortal/services/curriculumSync";
 import {
   BookOpen,
   Plus,
@@ -17,11 +18,12 @@ import {
   X
 } from "lucide-react";
 
-type CurriculumStatus = "Nháp" | "Đã giao" | "Lưu trữ";
+type CurriculumStatus = "Nháp" | "Đã giao" | "Lưu trữ" | "Hoàn thành";
 
 const STATUS_STYLE: Record<CurriculumStatus, { label: string; bg: string; text: string }> = {
   "Nháp": { label: "Bản nháp", bg: "bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800", text: "text-amber-700 dark:text-amber-400" },
   "Đã giao": { label: "Đã giao", bg: "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800", text: "text-emerald-700 dark:text-emerald-400" },
+  "Hoàn thành": { label: "Hoàn thành", bg: "bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800", text: "text-blue-700 dark:text-blue-400" },
   "Lưu trữ": { label: "Lưu trữ", bg: "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700", text: "text-slate-600 dark:text-slate-400" },
 };
 
@@ -47,7 +49,7 @@ function makeDraft(): MockCurriculum {
 }
 
 export default function CoachCurriculum() {
-  const [curricula, setCurricula] = useState<MockCurriculum[]>([]);
+  const [curricula, setCurricula] = useState<any[]>(() => curriculumSync.getCurricula());
   const [sessions, setSessions] = useState<MockSession[]>([]);
   const [members, setMembers] = useState<MockMember[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -57,25 +59,34 @@ export default function CoachCurriculum() {
   const [assignDeadline, setAssignDeadline] = useState("");
   const [assignNote, setAssignNote] = useState("");
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; msg: string } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   // Search & filter
   const [searchQuery, setSearchQuery] = useState("");
   const [sportFilter, setSportFilter] = useState("all");
 
   useEffect(() => {
+    // 1. Initial load from curriculumSync
+    const syncData = curriculumSync.getCurricula();
+    setCurricula(syncData);
+
+    // 2. Fetch coach schedule & members
     Promise.all([
-      CoachAPI.getCurricula(),
       CoachAPI.getSchedule(),
       CoachAPI.getMembers(),
     ])
-      .then(([cur, sch, mem]) => {
-        setCurricula(cur);
+      .then(([sch, mem]) => {
         setSessions(sch);
         setMembers(mem);
       })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      .catch(console.error);
+
+    // 3. Subscribe to real-time updates from member task checkoffs
+    const unsub = curriculumSync.subscribe(() => {
+      setCurricula(curriculumSync.getCurricula());
+    });
+
+    return () => unsub();
   }, []);
 
   const openNew = () => {
@@ -106,27 +117,22 @@ export default function CoachCurriculum() {
         ...draft,
         updatedAt: new Date().toISOString().split("T")[0],
       });
-      const cur = await CoachAPI.getCurricula();
-      setCurricula(cur);
-      setFeedback({ type: "success", msg: "Đã lưu giáo án thành công!" });
-      closeEdit();
-    } catch {
-      // Local fallback
-      setCurricula((prev) => {
-        const idx = prev.findIndex((c) => c.id === draft.id);
-        if (idx >= 0) {
-          const updated = [...prev];
-          updated[idx] = { ...draft, updatedAt: new Date().toISOString().split("T")[0] };
-          return updated;
-        }
-        return [{ ...draft, updatedAt: new Date().toISOString().split("T")[0] }, ...prev];
-      });
-      setFeedback({ type: "success", msg: "Đã lưu giáo án thành công!" });
-      closeEdit();
-    } finally {
-      setIsSaving(false);
-      setTimeout(() => setFeedback(null), 3500);
-    }
+    } catch {}
+
+    const updated = {
+      ...draft,
+      status: "Nháp" as const,
+      updatedAt: new Date().toISOString().split("T")[0],
+      coachId: "25f50fba-506a-4edf-9db7-43f77f6741a4",
+      coachName: "HLV Hồ Xuân Ánh Nam",
+      assignedTo: draft.assignedTo || [],
+    };
+    curriculumSync.saveCurricula([updated, ...curricula.filter((c) => c.id !== updated.id)]);
+    setCurricula(curriculumSync.getCurricula());
+    setFeedback({ type: "success", msg: "Đã lưu giáo án thành công!" });
+    closeEdit();
+    setIsSaving(false);
+    setTimeout(() => setFeedback(null), 3500);
   };
 
   const handleAssign = async (type: "class" | "member", id: string, name: string) => {
@@ -136,21 +142,14 @@ export default function CoachCurriculum() {
     } catch {
       // optimistic
     }
-    setCurricula((prev) =>
-      prev.map((c) => {
-        if (c.id === assignTarget.curricId) {
-          const exists = c.assignedTo.some((t) => t.id === id);
-          return {
-            ...c,
-            status: "Đã giao",
-            assignedTo: exists ? c.assignedTo : [...c.assignedTo, { type, id, name }],
-          };
-        }
-        return c;
-      })
+    curriculumSync.assignCurriculumToMember(
+      assignTarget.curricId,
+      { type, id, name },
+      { deadline: assignDeadline, note: assignNote }
     );
+    setCurricula(curriculumSync.getCurricula());
     setAssignTarget(null);
-    setFeedback({ type: "success", msg: `Đã giao giáo án "${assignTarget.curricName}" cho ${name}` });
+    setFeedback({ type: "success", msg: `Đã giao giáo án "${assignTarget.curricName}" cho ${name} thành công!` });
     setTimeout(() => setFeedback(null), 3500);
   };
 
@@ -346,9 +345,16 @@ export default function CoachCurriculum() {
 
                   {/* Assigned to pills */}
                   {c.assignedTo.length > 0 && (
-                    <div className="mt-3 text-xs text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5" />
-                      <span>Đã giao cho: {c.assignedTo.map((t) => t.name).join(", ")}</span>
+                    <div className="mt-3 text-xs text-emerald-700 dark:text-emerald-400 flex flex-wrap items-center gap-1.5 bg-emerald-50/60 dark:bg-emerald-950/30 p-2 rounded-lg border border-emerald-100 dark:border-emerald-800/60">
+                      <Users className="w-3.5 h-3.5 shrink-0" />
+                      <span>
+                        Đã giao:{" "}
+                        {c.assignedTo.map((t: any, idx: number) => (
+                          <span key={idx} className="font-semibold mr-1.5">
+                            {t.name} (Tiến độ: {t.progressPercent !== undefined ? t.progressPercent : 0}%)
+                          </span>
+                        ))}
+                      </span>
                     </div>
                   )}
                 </div>

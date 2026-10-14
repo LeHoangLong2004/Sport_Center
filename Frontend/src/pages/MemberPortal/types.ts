@@ -5,8 +5,8 @@ export type MemberScreen =
   | "packages"    // 4. Gói tập & Mua gói
   | "payments"    // 5. Thanh toán & Hóa đơn
   | "workouts"    // 6. Giáo án & Bài tập
-  | "progress"    // 7. Chỉ số thể hình & Tiến độ
-  | "reviews"     // 8. Đánh giá HLV
+  | "reviews"     // 7. Đánh giá HLV
+  | "chat"        // 8. Tin nhắn trao đổi với HLV
   | "support"     // 9. Trợ lý AI & Hỗ trợ
   | "profile";    // 10. Hồ sơ cá nhân & Đổi mật khẩu
 
@@ -67,15 +67,6 @@ export interface MemberTaskItem {
   category: "workout" | "diet" | "recovery";
 }
 
-export interface MemberBodyMetricItem {
-  date: string;
-  weightKg: number;
-  heightCm: number;
-  bmi: number;
-  bodyFatPct?: number;
-  muscleMassKg?: number;
-  note?: string;
-}
 
 export interface MemberCoachReviewItem {
   id: string;

@@ -7,8 +7,8 @@ import MemberSchedule from "./views/MemberSchedule";
 import MemberPackages from "./views/MemberPackages";
 import MemberPayments from "./views/MemberPayments";
 import MemberWorkouts from "./views/MemberWorkouts";
-import MemberProgress from "./views/MemberProgress";
 import MemberReviews from "./views/MemberReviews";
+import MemberChat from "./views/MemberChat";
 import MemberSupport from "./views/MemberSupport";
 import MemberProfileModern from "./views/MemberProfileModern";
 import { CatalogPackage, PackagePeriod } from "../../services/packageApi";
@@ -35,13 +35,16 @@ export default function MemberPortal({
       booking: "booking",
       schedule: "schedule",
       packages: "packages",
-      payment: "payments",
-      payments: "payments",
+      payment: "profile",
+      payments: "profile",
       workout: "workouts",
       workouts: "workouts",
-      reports: "progress",
-      progress: "progress",
+      reports: "dashboard",
+      progress: "dashboard",
       reviews: "reviews",
+      chat: "chat",
+      messages: "chat",
+      message: "chat",
       ai: "support",
       support: "support",
       profile: "profile",
@@ -66,13 +69,16 @@ export default function MemberPortal({
         booking: "booking",
         schedule: "schedule",
         packages: "packages",
-        payment: "payments",
-        payments: "payments",
+        payment: "profile",
+        payments: "profile",
         workout: "workouts",
         workouts: "workouts",
-        reports: "progress",
-        progress: "progress",
+        reports: "dashboard",
+        progress: "dashboard",
         reviews: "reviews",
+        chat: "chat",
+        messages: "chat",
+        message: "chat",
         ai: "support",
         support: "support",
         profile: "profile",
@@ -105,11 +111,18 @@ export default function MemberPortal({
     dashboard: <MemberDashboard onNavigate={navigateTo} />,
     booking: <MemberBooking onNavigate={navigateTo} />,
     schedule: <MemberSchedule onNavigate={navigateTo} />,
-    packages: <MemberPackages onNavigate={navigateTo} />,
+    packages: (
+      <MemberPackages
+        onNavigate={navigateTo}
+        onCheckout={(item, duration, discountPct) =>
+          setCheckout({ item, duration, discountPct })
+        }
+      />
+    ),
     payments: <MemberPayments onNavigate={navigateTo} />,
     workouts: <MemberWorkouts onNavigate={navigateTo} />,
-    progress: <MemberProgress onNavigate={navigateTo} />,
     reviews: <MemberReviews onNavigate={navigateTo} />,
+    chat: <MemberChat onNavigate={navigateTo} />,
     support: <MemberSupport onNavigate={navigateTo} />,
     profile: <MemberProfileModern onNavigate={navigateTo} />,
   };

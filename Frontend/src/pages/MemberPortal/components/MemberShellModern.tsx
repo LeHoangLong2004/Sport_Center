@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import type { MemberScreen } from "../types";
 import { UserAvatar } from "../../../components/UserAvatar";
+import { useUserProfile } from "../../../hooks/useUserProfile";
 import {
   LayoutDashboard,
   Compass,
@@ -8,18 +10,27 @@ import {
   CreditCard,
   Receipt,
   Dumbbell,
-  Activity,
   Star,
+  MessageSquare,
   Bot,
   User,
-  LogOut,
   Sun,
   Moon,
   Bell,
-  HelpCircle,
-  ExternalLink,
+  QrCode,
+  Ticket,
+  Activity,
+  Lock,
+  Globe,
+  LogOut,
   ChevronRight,
+  CheckCircle2,
+  Shield,
+  X,
   Sparkles,
+  Crown,
+  KeyRound,
+  FileText,
 } from "lucide-react";
 
 interface Props {
@@ -30,12 +41,20 @@ interface Props {
 
 export default function MemberShellModern({ currentScreen, onNavigate, children }: Props) {
   const [isDark, setIsDark] = useState(() => {
-    return document.documentElement.classList.contains("dark") ||
-      localStorage.getItem("theme") === "dark";
+    return (
+      document.documentElement.classList.contains("dark") ||
+      localStorage.getItem("theme") === "dark"
+    );
   });
 
   const [notificationCount, setNotificationCount] = useState(2);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showCheckInModal, setShowCheckInModal] = useState(false);
+  const [currentLang, setCurrentLang] = useState<"vi" | "en">("vi");
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isDark) {
@@ -47,191 +66,259 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
     }
   }, [isDark]);
 
-  // Load user from localStorage
+  // Handle click outside for User Menu & Notifications
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const handleOpenCheckin = () => setShowCheckInModal(true);
+    window.addEventListener("open-checkin-modal", handleOpenCheckin);
+    return () => window.removeEventListener("open-checkin-modal", handleOpenCheckin);
+  }, []);
+
+  // Load reactive profile
+  const { profile } = useUserProfile("member");
   const userStr = localStorage.getItem("user");
-  let userName = "Nguyễn Lan Anh";
-  let userEmail = "lananh@email.com";
-  let avatarUrl: string | null = null;
-  if (userStr) {
+  let userName = profile?.fullName;
+  let userEmail = profile?.email;
+  let avatarUrl = profile?.avatarUrl;
+  if (!userName && userStr) {
     try {
       const u = JSON.parse(userStr);
-      userName = u.fullName || u.name || "Nguyễn Lan Anh";
-      userEmail = u.email || "lananh@email.com";
-      avatarUrl = u.avatarUrl || null;
+      if (u.role?.toLowerCase() !== "coach") {
+        userName = u.fullName || u.name;
+        userEmail = userEmail || u.email;
+        avatarUrl = avatarUrl || u.avatarUrl;
+      }
     } catch (e) {}
   }
+  userName = userName || "Hồ Xuân Ánh Nam";
+  userEmail = userEmail || "hoxuananhnam@gmail.com";
+  const userTier = profile?.memberTier || "Hạng Premium VIP";
 
-  const menuItems: { id: MemberScreen; label: string; icon: any; badge?: string }[] = [
+  const showToast = (text: string) => {
+    setToastMessage(text);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("token");
+    window.location.hash = "login";
+    window.location.reload();
+  };
+
+  const handleSwitchToInvoices = () => {
+    setShowUserMenu(false);
+    onNavigate("profile");
+    // Dispatch custom event to switch profile tab to payments
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("switch-profile-tab", { detail: "payments" }));
+    }, 50);
+  };
+
+  const handleSwitchToSecurity = () => {
+    setShowUserMenu(false);
+    onNavigate("profile");
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("switch-profile-tab", { detail: "security" }));
+    }, 50);
+  };
+
+  // 9 Core Menu Items on Sidebar (Thanh toán & Hóa đơn đã được đưa vào Profile)
+  const menuItems: { id: MemberScreen; label: string; icon: any }[] = [
     { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
-    { id: "booking", label: "Khám phá & Đặt lịch", icon: Compass, badge: "Hot" },
+    { id: "booking", label: "Khám phá & Đặt lịch", icon: Compass },
     { id: "schedule", label: "Lịch của tôi", icon: CalendarCheck },
     { id: "packages", label: "Gói tập của tôi", icon: CreditCard },
-    { id: "payments", label: "Thanh toán & Hóa đơn", icon: Receipt },
     { id: "workouts", label: "Giáo án & Bài tập", icon: Dumbbell },
-    { id: "progress", label: "Chỉ số & Tiến độ", icon: Activity },
     { id: "reviews", label: "Đánh giá HLV", icon: Star },
-    { id: "support", label: "Trợ lý AI & Hỗ trợ", icon: Bot, badge: "AI" },
+    { id: "chat", label: "Tin nhắn", icon: MessageSquare },
+    { id: "support", label: "Trợ lý AI & Hỗ trợ", icon: Bot },
     { id: "profile", label: "Hồ sơ cá nhân", icon: User },
   ];
 
-  const screenTitles: Record<MemberScreen, { title: string; subtitle: string }> = {
-    dashboard: { title: "Tổng quan", subtitle: "Theo dõi lịch tập, gói dịch vụ và tiến độ luyện tập cá nhân" },
-    booking: { title: "Khám phá & Đặt lịch", subtitle: "Đăng ký lớp nhóm các bộ môn hoặc đặt lịch tập kèm 1-1 với HLV" },
-    schedule: { title: "Lịch của tôi", subtitle: "Danh sách buổi tập sắp tới, lịch sử tham gia và ca đã hủy" },
-    packages: { title: "Gói tập & Dịch vụ", subtitle: "Chi tiết các gói tập đang sở hữu và đăng ký / gia hạn gói mới" },
-    payments: { title: "Thanh toán & Hóa đơn", subtitle: "Theo dõi các hóa đơn thanh toán và xác nhận giao dịch" },
-    workouts: { title: "Giáo án & Bài tập", subtitle: "Nội dung luyện tập do HLV chỉ định và bài tập tự rèn luyện" },
-    progress: { title: "Chỉ số thể hình & Tiến độ", subtitle: "Theo dõi cân nặng, chỉ số cơ thể và kết quả đánh giá thể lực" },
-    reviews: { title: "Đánh giá Huấn luyện viên", subtitle: "Phản hồi chất lượng giảng dạy và đóng góp ý kiến sau buổi tập" },
-    support: { title: "Trợ lý AI & Hỗ trợ", subtitle: "Tra cứu thông tin thông minh 24/7 và gửi yêu cầu đến trung tâm" },
-    profile: { title: "Hồ sơ cá nhân", subtitle: "Quản lý thông tin hội viên, mục tiêu thể thao và đổi mật khẩu" },
+  const breadcrumbs: Record<MemberScreen, string> = {
+    dashboard: "HỘI VIÊN / TỔNG QUAN",
+    booking: "HỘI VIÊN / KHÁM PHÁ & ĐẶT LỊCH",
+    schedule: "HỘI VIÊN / LỊCH CỦA TÔI",
+    packages: "HỘI VIÊN / GÓI TẬP & DỊCH VỤ",
+    payments: "HỘI VIÊN / HỒ SƠ & HÓA ĐƠN",
+    workouts: "HỘI VIÊN / GIÁO ÁN & BÀI TẬP",
+    reviews: "HỘI VIÊN / ĐÁNH GIÁ HLV",
+    chat: "HỘI VIÊN / TIN NHẮN TRAO ĐỔI",
+    support: "HỘI VIÊN / TRỢ LÝ AI & HỖ TRỢ",
+    profile: "HỘI VIÊN / HỒ SƠ CÁ NHÂN",
+  };
+
+  const pageTitles: Record<MemberScreen, string> = {
+    dashboard: "Tổng quan hôm nay",
+    booking: "Khám phá & Đặt lịch tập",
+    schedule: "Lịch tập của tôi",
+    packages: "Gói tập & Dịch vụ",
+    payments: "Hồ sơ & Lịch sử giao dịch",
+    workouts: "Giáo án & Bài tập",
+    reviews: "Đánh giá Huấn luyện viên",
+    chat: "Tin nhắn & Trao đổi",
+    support: "Trợ lý AI & Hỗ trợ",
+    profile: "Hồ sơ cá nhân",
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex transition-colors duration-200 font-sans">
+    <div className="flex w-full min-h-screen bg-slate-50 dark:bg-[#0f172a] transition-colors duration-300 font-sans text-slate-900 dark:text-white selection:bg-emerald-500 selection:text-white">
+      {/* Toast popup */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-[100] px-4 py-3 rounded-2xl bg-slate-900 text-white dark:bg-emerald-500 dark:text-slate-950 font-bold text-xs shadow-2xl flex items-center gap-2.5 animate-fadeIn">
+          <Sparkles className="w-4 h-4 shrink-0 text-amber-400 dark:text-slate-950" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       {/* SIDEBAR */}
-      <aside className="w-64 bg-[#0B132B] dark:bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 sticky top-0 h-screen z-30 select-none">
+      <aside className="bg-[#0f172a] flex flex-col gap-[28px] items-start pb-[24px] pt-[28px] px-[18px] shrink-0 w-[250px] sticky top-0 h-screen overflow-y-auto hidden-scrollbar z-30 select-none">
         {/* Brand */}
-        <div className="p-5 border-b border-slate-800/80 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center font-black text-slate-950 text-xl shadow-lg shadow-emerald-500/20 tracking-wider">
-            SC
+        <div
+          className="flex gap-[12px] items-center shrink-0 w-full cursor-pointer"
+          onClick={() => onNavigate("dashboard")}
+        >
+          <div className="bg-[#10b981] flex flex-col items-center justify-center rounded-[10px] shrink-0 size-[40px] shadow-lg shadow-emerald-500/20">
+            <span className="font-bold text-white text-[18px]">SC</span>
           </div>
-          <div className="flex flex-col">
-            <span className="font-extrabold text-white text-[15px] tracking-wide leading-tight">SPORTCENTER</span>
-            <span className="text-[10px] font-bold tracking-widest text-emerald-400 uppercase">MEMBER PORTAL</span>
-          </div>
-        </div>
-
-        {/* Member Quick Badge */}
-        <div className="px-4 py-3 mx-3 my-2.5 rounded-xl bg-slate-800/60 border border-slate-700/50 flex items-center gap-3">
-          <div className="relative">
-            <UserAvatar src={avatarUrl} name={userName} className="w-9 h-9 rounded-full object-cover ring-2 ring-emerald-500/50" />
-            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-slate-900"></span>
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-white truncate">{userName}</p>
-            <p className="text-[10px] text-emerald-400 font-medium">Hội viên Thể thao</p>
+          <div className="flex flex-col gap-[2px] items-start shrink-0">
+            <span className="font-extrabold text-[15px] text-white whitespace-nowrap tracking-wide">
+              SPORTCENTER
+            </span>
+            <span className="font-bold text-[#10b981] text-[10px] whitespace-nowrap uppercase tracking-widest">
+              MEMBER PORTAL
+            </span>
           </div>
         </div>
 
-        {/* Nav Items */}
-        <div className="px-3 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Không gian hội viên</div>
-        <nav className="flex-1 px-3 space-y-1 overflow-y-auto hidden-scrollbar py-1">
+        {/* Navigation Items (9 items) */}
+        <div className="flex flex-col gap-[4px] items-start shrink-0 w-full">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const active = currentScreen === item.id;
+            const isActive = currentScreen === item.id;
             return (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => onNavigate(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all group relative ${
-                  active
-                    ? "bg-emerald-500/15 text-emerald-400 font-semibold shadow-sm border border-emerald-500/20"
-                    : "text-slate-300 hover:text-white hover:bg-slate-800/60"
+                className={`flex gap-[12px] items-center px-[16px] py-[11px] rounded-[10px] shrink-0 w-full text-left transition-all duration-200 cursor-pointer ${
+                  isActive
+                    ? "bg-[#10b981] text-white shadow-md shadow-emerald-500/25 font-bold"
+                    : "bg-transparent text-[#94a3b8] hover:bg-white/5 hover:text-white font-medium"
                 }`}
               >
-                <Icon className={`w-4 h-4 transition-transform group-hover:scale-110 ${active ? "text-emerald-400" : "text-slate-400"}`} />
-                <span className="flex-1 text-left truncate">{item.label}</span>
-                {item.badge && (
-                  <span
-                    className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                      item.badge === "Hot"
-                        ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                        : "bg-teal-500/20 text-teal-300 border border-teal-500/30"
-                    }`}
-                  >
-                    {item.badge}
-                  </span>
-                )}
-                {active && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 ml-auto"></span>}
+                <div className="shrink-0 size-5 flex items-center justify-center">
+                  <Icon className="w-[18px] h-[18px]" strokeWidth={isActive ? 2.2 : 1.8} />
+                </div>
+                <span className="flex-1 text-[13px] leading-normal tracking-wide whitespace-nowrap">
+                  {item.label}
+                </span>
               </button>
             );
           })}
-        </nav>
-
-        {/* Support Center Widget */}
-        <div className="p-3 m-3 rounded-xl bg-slate-800/50 border border-slate-700/40 text-slate-300 text-xs">
-          <div className="flex items-center gap-2 mb-1 text-emerald-400 font-semibold">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Giờ hoạt động</span>
-          </div>
-          <p className="text-[11px] text-slate-400 leading-relaxed">06:00 – 22:00 tất cả các ngày trong tuần. Hotline: 1900 6868</p>
         </div>
 
-        {/* Footer profile actions */}
-        <div className="p-3 border-t border-slate-800/80 flex items-center justify-between">
-          <button
-            type="button"
+        <div className="mt-auto"></div>
+
+        {/* User profile widget at bottom of sidebar */}
+        <div className="pt-2 w-full border-t border-[#1e293b]">
+          <div
+            className="cursor-pointer hover:bg-white/5 p-3 -mx-3 rounded-xl transition-all group relative flex items-center gap-3 overflow-hidden"
             onClick={() => onNavigate("profile")}
-            className="flex items-center gap-2 text-xs text-slate-300 hover:text-white p-1 rounded-lg hover:bg-slate-800/50 transition-colors"
-            title="Xem hồ sơ"
           >
-            <User className="w-4 h-4 text-slate-400" />
-            <span className="text-[11px] font-medium">Hồ sơ cá nhân</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              localStorage.removeItem("token");
-              localStorage.removeItem("user");
-              window.location.hash = "home";
-              window.location.reload();
-            }}
-            className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-            title="Đăng xuất"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
+            <UserAvatar
+              src={avatarUrl || undefined}
+              name={userName}
+              className="rounded-full size-10 shrink-0 object-cover border-2 border-[#1e293b] group-hover:border-[#10b981] transition-colors"
+            />
+            <div className="flex flex-col flex-1 min-w-0 justify-center">
+              <strong className="font-bold text-white text-[13px] truncate">{userName}</strong>
+              <small className="text-[#94a3b8] text-[11px] truncate">{userTier}</small>
+            </div>
+            <div className="flex items-center gap-1 opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 absolute right-3 bg-[#0f172a]/90 pl-2 py-1 shadow-sm rounded-lg backdrop-blur-sm">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.location.hash = "home";
+                }}
+                className="p-1.5 text-[#94a3b8] hover:text-white hover:bg-white/10 rounded-md transition-colors"
+                title="Trang chủ"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleLogout();
+                }}
+                className="p-1.5 text-[#94a3b8] hover:text-red-400 hover:bg-red-400/10 rounded-md transition-colors"
+                title="Đăng xuất"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
       </aside>
 
       {/* MAIN WORKSPACE */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* TOPBAR */}
-        <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800/80 px-6 flex items-center justify-between sticky top-0 z-20 shadow-xs backdrop-blur-md bg-white/90 dark:bg-slate-900/90">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                <span>SportCenter</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-                <span className="font-semibold text-slate-700 dark:text-slate-200">{screenTitles[currentScreen].title}</span>
-              </div>
-              <h1 className="text-base font-bold text-slate-900 dark:text-white truncate">
-                {screenTitles[currentScreen].title}
-              </h1>
-            </div>
+        <header className="flex justify-between items-center px-6 lg:px-8 py-4 border-b border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-[#0f172a]/80 backdrop-blur-xl sticky top-0 z-30">
+          <div>
+            <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-0.5">
+              {breadcrumbs[currentScreen]}
+            </p>
+            <h1 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+              {pageTitles[currentScreen]}
+            </h1>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Role Switcher Demo */}
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-              <span className="text-[11px] text-slate-400 font-medium">Vai trò:</span>
-              <select
-                aria-label="Chuyển vai trò demo"
-                value="member"
-                onChange={(e) => {
-                  const role = e.target.value;
-                  if (role === "coach") window.location.hash = "coach-portal";
-                  else if (role === "admin") window.location.hash = "dashboard";
-                  else if (role === "receptionist") window.location.hash = "receptionist";
-                  else window.location.hash = "member";
-                }}
-                className="bg-transparent border-none text-xs font-semibold text-emerald-600 dark:text-emerald-400 outline-none cursor-pointer"
-              >
-                <option value="member" className="text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800">
-                  Hội viên (Member)
-                </option>
-                <option value="coach" className="text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800">
-                  HLV (Coach)
-                </option>
-                <option value="receptionist" className="text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800">
-                  Lễ tân (Receptionist)
-                </option>
-                <option value="admin" className="text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800">
-                  Quản lý (Manager)
-                </option>
-              </select>
+            {/* Quick Check-in Button on Topbar */}
+            <button
+              id="btn-quick-checkin"
+              type="button"
+              onClick={() => setShowCheckInModal(true)}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-extrabold text-xs border border-emerald-500/20 transition-all shadow-xs cursor-pointer"
+              title="Mở mã QR cá nhân để quét vào cổng"
+            >
+              <QrCode className="w-3.5 h-3.5" />
+              <span>Mã Check-in</span>
+            </button>
+
+            {/* Membership Tier Pill */}
+            <div
+              onClick={() => onNavigate("packages")}
+              className="hidden md:flex items-center gap-1.5 px-3 py-1 bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 font-bold text-xs rounded-full border border-amber-200/60 dark:border-amber-500/20 cursor-pointer hover:opacity-85 transition-opacity"
+            >
+              <Crown className="w-3.5 h-3.5 text-amber-500" />
+              <span>{userTier}</span>
             </div>
 
             {/* Dark/Light mode toggle */}
@@ -244,7 +331,7 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
               {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
             </button>
 
-            {/* Notifications toggle */}
+            {/* Notifications Toggle */}
             <div className="relative">
               <button
                 type="button"
@@ -260,46 +347,337 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
 
               {/* Notification Popover */}
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-4 z-50">
+                <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-4 z-50 animate-fadeIn">
                   <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-700">
-                    <span className="text-xs font-bold text-slate-900 dark:text-white">Thông báo mới ({notificationCount})</span>
+                    <span className="text-xs font-bold text-slate-900 dark:text-white">
+                      Thông báo mới ({notificationCount})
+                    </span>
                     <button
                       type="button"
                       onClick={() => setNotificationCount(0)}
-                      className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline"
+                      className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
                     >
                       Đã đọc hết
                     </button>
                   </div>
                   <div className="space-y-2 text-xs">
                     <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-100 dark:border-slate-700">
-                      <p className="font-semibold text-slate-800 dark:text-slate-200">Nhắc lịch tập: Yoga Cân Bằng</p>
-                      <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">Ngày mai lúc 07:00 tại Studio 2 với HLV Minh Tuấn</p>
+                      <p className="font-semibold text-slate-800 dark:text-slate-200">
+                        Nhắc lịch tập: Yoga Cân Bằng
+                      </p>
+                      <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
+                        Ngày mai lúc 07:00 tại Studio Yoga với HLV Minh Tuấn
+                      </p>
                     </div>
                     <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-100 dark:border-slate-700">
-                      <p className="font-semibold text-slate-800 dark:text-slate-200">Bài tập mới từ HLV Enam</p>
-                      <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">HLV đã giao nhiệm vụ chạy bộ phục hồi 20 phút</p>
+                      <p className="font-semibold text-slate-800 dark:text-slate-200">
+                        Ưu đãi gia hạn Hạng Premium VIP
+                      </p>
+                      <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
+                        Bạn nhận được voucher giảm thêm 10% khi gia hạn kỳ hạn 3 tháng
+                      </p>
                     </div>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* User Avatar Mini */}
-            <div
-              onClick={() => onNavigate("profile")}
-              className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800 cursor-pointer"
-            >
-              <UserAvatar src={avatarUrl} name={userName} className="w-8 h-8 rounded-full object-cover ring-1 ring-slate-200 dark:ring-slate-700" />
+            {/* USER AVATAR BUTTON WITH POPUP DROPDOWN (LIKE YOUTUBE) */}
+            <div className="relative pl-1 border-l border-slate-200 dark:border-slate-800" ref={userMenuRef}>
+              <button
+                type="button"
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-2 p-1 rounded-full hover:ring-2 hover:ring-emerald-500/50 transition-all cursor-pointer focus:outline-none"
+                title="Tài khoản cá nhân"
+              >
+                <UserAvatar
+                  src={avatarUrl || undefined}
+                  name={userName}
+                  className="w-9 h-9 rounded-full object-cover ring-2 ring-emerald-500/40"
+                />
+              </button>
+
+              {/* YOUTUBE-STYLE RICH DROPDOWN MENU */}
+              {showUserMenu && (
+                <div className="absolute right-0 top-full mt-2 w-80 rounded-3xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 shadow-2xl p-2 z-50 text-slate-800 dark:text-slate-200 animate-scaleUp divide-y divide-slate-100 dark:divide-slate-800">
+                  {/* HEADER: USER IDENTITY */}
+                  <div className="p-3 pb-3.5">
+                    <div className="flex items-center gap-3">
+                      <UserAvatar
+                        src={avatarUrl || undefined}
+                        name={userName}
+                        className="w-11 h-11 rounded-2xl object-cover ring-2 ring-emerald-500/40 shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                          {userName}
+                        </h4>
+                        <p className="text-xs text-slate-400 truncate">{userEmail}</p>
+                        <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.2 rounded-full text-[10px] font-extrabold bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300">
+                          <Crown className="w-3 h-3 text-amber-500" />
+                          {userTier}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        onNavigate("profile");
+                      }}
+                      className="mt-3 w-full py-1.5 text-center text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl transition-colors cursor-pointer"
+                    >
+                      Xem & chỉnh sửa hồ sơ cá nhân →
+                    </button>
+                  </div>
+
+                  {/* GROUP 1: TÀI CHÍNH & GÓI TẬP */}
+                  <div className="py-1.5 space-y-0.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        onNavigate("packages");
+                      }}
+                      className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
+                    >
+                      <CreditCard className="w-4 h-4 text-emerald-500" />
+                      <span className="flex-1">Gói dịch vụ & Nâng cấp hạng</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleSwitchToInvoices}
+                      className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
+                    >
+                      <Receipt className="w-4 h-4 text-blue-500" />
+                      <span className="flex-1">Lịch sử giao dịch & Hóa đơn</span>
+                      <span className="text-[10px] px-1.5 py-0.2 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold rounded-md">
+                        Mới
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        onNavigate("packages");
+                      }}
+                      className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
+                    >
+                      <Ticket className="w-4 h-4 text-purple-500" />
+                      <span className="flex-1">Ví đặc quyền (2 vé mời bạn)</span>
+                    </button>
+                  </div>
+
+                  {/* GROUP 2: TẬP LUYỆN & CHECK-IN */}
+                  <div className="py-1.5 space-y-0.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        onNavigate("workouts");
+                      }}
+                      className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
+                    >
+                      <FileText className="w-4 h-4 text-orange-500" />
+                      <span className="flex-1">Giáo án & Bài tập HLV giao</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        onNavigate("profile");
+                      }}
+                      className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
+                    >
+                      <Activity className="w-4 h-4 text-pink-500" />
+                      <span className="flex-1">Chỉ số cơ thể & InBody</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        setShowCheckInModal(true);
+                      }}
+                      className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
+                    >
+                      <QrCode className="w-4 h-4 text-teal-500" />
+                      <span className="flex-1">Mã QR cá nhân Check-in</span>
+                    </button>
+                  </div>
+
+                  {/* GROUP 3: CÀI ĐẶT & TIỆN ÍCH */}
+                  <div className="py-1.5 space-y-0.5">
+                    {/* Theme switcher */}
+                    <button
+                      type="button"
+                      onClick={() => setIsDark(!isDark)}
+                      className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        {isDark ? (
+                          <Sun className="w-4 h-4 text-amber-400" />
+                        ) : (
+                          <Moon className="w-4 h-4 text-slate-500" />
+                        )}
+                        <span>Giao diện: {isDark ? "Tối (Dark)" : "Sáng (Light)"}</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase">
+                        Đổi
+                      </span>
+                    </button>
+
+                    {/* Language switcher */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = currentLang === "vi" ? "en" : "vi";
+                        setCurrentLang(next);
+                        showToast(
+                          next === "vi"
+                            ? "Đã chuyển sang Tiếng Việt 🇻🇳"
+                            : "Switched to English 🇬🇧 (Phiên bản đầy đủ đang cập nhật)"
+                        );
+                      }}
+                      className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Globe className="w-4 h-4 text-blue-500" />
+                        <span>Ngôn ngữ:</span>
+                      </div>
+                      <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                        {currentLang === "vi" ? "Tiếng Việt 🇻🇳" : "English 🇬🇧"}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleSwitchToSecurity}
+                      className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
+                    >
+                      <Lock className="w-4 h-4 text-slate-400" />
+                      <span className="flex-1">Đổi mật khẩu & Bảo mật</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        onNavigate("support");
+                      }}
+                      className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
+                    >
+                      <Bot className="w-4 h-4 text-indigo-500" />
+                      <span className="flex-1">Trợ lý AI & Hỗ trợ kỹ thuật</span>
+                    </button>
+                  </div>
+
+                  {/* GROUP 4: ĐĂNG XUẤT */}
+                  <div className="pt-1.5">
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="w-full px-3 py-2 text-left rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold text-rose-600 dark:text-rose-400 flex items-center gap-2.5 transition-colors cursor-pointer"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Đăng xuất tài khoản</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>
 
         {/* CONTENT AREA */}
-        <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto">
-          {children}
-        </main>
+        <main className="flex-1 p-6 lg:p-8 max-w-7xl w-full mx-auto">{children}</main>
       </div>
+
+      {/* QUICK CHECK-IN QR PASS MODAL (PORTAL) */}
+      {showCheckInModal &&
+        createPortal(
+          <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm shadow-2xl p-6 flex flex-col items-center text-center animate-scaleUp">
+              <div className="w-full flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+                  SPORTCENTER PASS
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowCheckInModal(false)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* QR Container */}
+              <div className="my-6 p-5 rounded-3xl bg-slate-50 dark:bg-slate-800 border-2 border-emerald-500/40 flex flex-col items-center shadow-inner relative">
+                <div className="p-3 bg-white rounded-2xl shadow-sm">
+                  {/* Clean SVG QR mockup */}
+                  <svg className="w-44 h-44" viewBox="0 0 100 100" fill="none">
+                    <rect width="100" height="100" fill="white" />
+                    {/* Top-left corner box */}
+                    <rect x="10" y="10" width="24" height="24" rx="4" fill="#0f172a" />
+                    <rect x="14" y="14" width="16" height="16" rx="2" fill="white" />
+                    <rect x="18" y="18" width="8" height="8" rx="1" fill="#10b981" />
+                    {/* Top-right corner box */}
+                    <rect x="66" y="10" width="24" height="24" rx="4" fill="#0f172a" />
+                    <rect x="70" y="14" width="16" height="16" rx="2" fill="white" />
+                    <rect x="74" y="18" width="8" height="8" rx="1" fill="#10b981" />
+                    {/* Bottom-left corner box */}
+                    <rect x="10" y="66" width="24" height="24" rx="4" fill="#0f172a" />
+                    <rect x="14" y="70" width="16" height="16" rx="2" fill="white" />
+                    <rect x="18" y="74" width="8" height="8" rx="1" fill="#10b981" />
+                    {/* Data dots */}
+                    <rect x="40" y="12" width="6" height="6" rx="1" fill="#0f172a" />
+                    <rect x="50" y="18" width="6" height="6" rx="1" fill="#0f172a" />
+                    <rect x="42" y="26" width="6" height="6" rx="1" fill="#0f172a" />
+                    <rect x="52" y="32" width="6" height="6" rx="1" fill="#10b981" />
+                    <rect x="20" y="42" width="6" height="6" rx="1" fill="#0f172a" />
+                    <rect x="30" y="48" width="6" height="6" rx="1" fill="#0f172a" />
+                    <rect x="68" y="42" width="6" height="6" rx="1" fill="#0f172a" />
+                    <rect x="78" y="50" width="6" height="6" rx="1" fill="#10b981" />
+                    <rect x="40" y="66" width="6" height="6" rx="1" fill="#0f172a" />
+                    <rect x="50" y="72" width="6" height="6" rx="1" fill="#0f172a" />
+                    <rect x="42" y="80" width="6" height="6" rx="1" fill="#0f172a" />
+                    <rect x="68" y="70" width="6" height="6" rx="1" fill="#0f172a" />
+                    <rect x="76" y="82" width="6" height="6" rx="1" fill="#0f172a" />
+                  </svg>
+                </div>
+                <div className="mt-3 flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                  <span>Sẵn sàng quét vào cổng</span>
+                </div>
+              </div>
+
+              <h4 className="text-base font-black text-slate-900 dark:text-white">{userName}</h4>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Mã số: <span className="font-mono font-bold text-slate-700 dark:text-slate-300">MEM-8821</span>
+              </p>
+              <div className="mt-2 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-extrabold text-[11px] flex items-center gap-1">
+                <Crown className="w-3.5 h-3.5" />
+                <span>{userTier}</span>
+              </div>
+
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-4 leading-relaxed">
+                Đưa mã này vào máy quét tại cửa vào hoặc xuất trình cho Lễ tân để check-in ca tập.
+              </p>
+
+              <button
+                type="button"
+                onClick={() => setShowCheckInModal(false)}
+                className="mt-5 w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-emerald-500 dark:text-slate-950 font-bold text-xs transition-colors"
+              >
+                Đóng thẻ
+              </button>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

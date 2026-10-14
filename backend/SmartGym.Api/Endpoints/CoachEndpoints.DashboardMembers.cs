@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using SmartGym.Api.Services;
 using SmartGym.Infrastructure.Persistence.EF;
 
 namespace SmartGym.Api.Endpoints
@@ -34,44 +36,81 @@ namespace SmartGym.Api.Endpoints
             // 2. Schedule
             group.MapGet(
                 "/schedule",
-                ([FromQuery] string? startDate, [FromQuery] string? endDate) =>
+                ([FromQuery] string? startDate, [FromQuery] string? endDate, ScheduleStoreService scheduleStore) =>
                 {
-                    var mockResult = new[]
+                    var storeSessions = scheduleStore.GetAllSessions();
+                    var list = new List<object>();
+
+                    foreach (var s in storeSessions)
                     {
-                        new
+                        list.Add(new
                         {
-                            id = "s1",
-                            classId = "cls-yoga",
-                            className = "Yoga Cơ Bản – Lớp A",
-                            sport = "Yoga",
-                            level = "Cơ bản",
-                            date = DateTime.Now.ToString("yyyy-MM-dd"),
-                            startTime = "07:00",
-                            endTime = "08:00",
-                            room = "Studio 2",
-                            coachName = "HLV Demo",
-                            capacity = 10,
-                            registeredMemberIds = new[] { "m1", "m3", "m5" },
-                            status = "sắp diễn ra",
-                        },
-                        new
-                        {
-                            id = "s2",
-                            classId = "cls-gym",
-                            className = "Gym Group BodyCombat – Lớp B",
-                            sport = "Gym",
-                            level = "Nâng cao",
-                            date = DateTime.Now.ToString("yyyy-MM-dd"),
-                            startTime = "09:00",
-                            endTime = "10:30",
-                            room = "Khu Tạ Tự Do",
-                            coachName = "HLV Demo",
-                            capacity = 8,
-                            registeredMemberIds = new[] { "m2", "m3", "m4" },
-                            status = "đang diễn ra",
-                        },
-                    };
-                    return Results.Ok(mockResult);
+                            id = s.Id,
+                            classId = s.ClassId ?? "",
+                            className = s.ClassName,
+                            sport = s.Sport,
+                            level = s.Level,
+                            type = s.Type,
+                            date = s.Date,
+                            startTime = s.StartTime,
+                            endTime = s.EndTime,
+                            room = s.Room,
+                            coachName = s.CoachName,
+                            capacity = s.Capacity,
+                            registeredCount = s.RegisteredCount,
+                            status = s.Status,
+                            attendanceStatus = s.AttendanceStatus,
+                            coachNote = s.CoachNote,
+                            memberName = s.MemberName,
+                            memberPhone = s.MemberPhone,
+                            memberEmail = s.MemberEmail,
+                            goal = s.Goal,
+                            cancelReason = s.CancelReason
+                        });
+                    }
+
+                    // Default classes
+                    list.Add(new
+                    {
+                        id = "s1",
+                        classId = "cls-yoga",
+                        className = "Yoga Cơ Bản – Lớp A",
+                        sport = "Yoga",
+                        level = "Cơ bản",
+                        type = "group",
+                        date = DateTime.Now.ToString("yyyy-MM-dd"),
+                        startTime = "07:00",
+                        endTime = "08:00",
+                        room = "Studio 2",
+                        coachName = "HLV Hồ Xuân Ánh Nam",
+                        capacity = 10,
+                        registeredCount = 8,
+                        status = "hoàn thành",
+                        attendanceStatus = "có mặt",
+                        coachNote = ""
+                    });
+
+                    list.Add(new
+                    {
+                        id = "s2",
+                        classId = "cls-gym",
+                        className = "Gym Group BodyCombat – Lớp B",
+                        sport = "Gym",
+                        level = "Nâng cao",
+                        type = "group",
+                        date = DateTime.Now.ToString("yyyy-MM-dd"),
+                        startTime = "09:00",
+                        endTime = "10:30",
+                        room = "Khu Tạ Tự Do",
+                        coachName = "HLV Hồ Xuân Ánh Nam",
+                        capacity = 8,
+                        registeredCount = 6,
+                        status = "đang diễn ra",
+                        attendanceStatus = "chưa điểm danh",
+                        coachNote = ""
+                    });
+
+                    return Results.Ok(list);
                 }
             );
 

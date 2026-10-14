@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import type { CoachScreen } from "../types";
 import { CoachAPI } from "../services/api";
 import type { MockSession, MockCurriculum, AssessmentRecord, AttendanceRecord, MockMember } from "../services/api";
+import { curriculumSync } from "../../MemberPortal/services/curriculumSync";
 import {
   ArrowLeft,
   Calendar,
@@ -125,8 +126,31 @@ export default function CoachMemberProfile({ memberId, navigateTo }: Props) {
     ];
   }, []);
 
-  // Assigned workout plans
+  // Assigned workout plans linked to curriculumSync
   const assignedWorkouts: MemberWorkoutItem[] = useMemo(() => {
+    const fromSync = curriculumSync.getCurricula().filter(
+      (c) => c.assignedTo.some((a) => a.id.includes("bbbb") || a.name.includes("Nam"))
+    ).map((c) => {
+      const assignee = c.assignedTo.find((a) => a.id.includes("bbbb") || a.name.includes("Nam"));
+      const isComplete = assignee ? assignee.progressPercent === 100 : false;
+      return {
+        id: c.id,
+        name: `${c.name || c.title} (${assignee?.progressPercent || 0}% hoàn thành)`,
+        sport: c.sport,
+        level: c.level,
+        duration: c.duration,
+        status: (isComplete ? "Hoàn thành" : "Đang tập luyện") as any,
+        exercises: c.exercises.map((e) => ({
+          name: e.name,
+          reps: e.reps,
+          rest: e.rest,
+          note: e.note,
+        })),
+      };
+    });
+
+    if (fromSync.length > 0) return fromSync;
+
     return [
       {
         id: "w-1",
@@ -154,22 +178,9 @@ export default function CoachMemberProfile({ memberId, navigateTo }: Props) {
           { name: "Tư thế Đứa Trẻ (Child's Pose)", reps: "Giữ 3 phút", rest: "0s", note: "Thư giãn hoàn toàn cơ lưng dưới" },
           { name: "Tư thế Rắn Hổ Mang (Cobra)", reps: "3 sets × 8 nhịp", rest: "45s", note: "Mở rộng lồng ngực" }
         ]
-      },
-      {
-        id: "w-3",
-        name: "Cardio Đốt Mỡ & Thể Lực Sức Bền",
-        sport: "HIIT",
-        level: "Trung bình",
-        duration: 35,
-        status: "Đang tập luyện",
-        exercises: [
-          { name: "Jumping Jacks Khởi Động", reps: "3 sets × 45 giây", rest: "30s", note: "Duy trì nhịp thở đều" },
-          { name: "Mountain Climbers", reps: "3 sets × 30 giây", rest: "45s", note: "Gồng chắc cơ bụng" },
-          { name: "Burpees Thể Lực", reps: "3 sets × 10 reps", rest: "60s", note: "Bật nhảy tiếp đất bằng mũi chân" }
-        ]
       }
     ];
-  }, []);
+  }, [curriculaTick]);
 
   const handleAddNote = (e: React.FormEvent) => {
     e.preventDefault();

@@ -22,6 +22,7 @@ import {
   ChevronRight,
   Filter,
 } from "lucide-react";
+import { scheduleSync } from "../services/scheduleSync";
 
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
@@ -176,28 +177,37 @@ export default function MemberBooking({ onNavigate }: Props) {
     getSavedMemberData("member_sessions", DEFAULT_MEMBER_SESSIONS)
   );
 
+  // Load open slots helper
+  const loadAvailablePtSlots = () => {
+    const syncedOpen = scheduleSync.getOpenPtSlots().map((s) => ({
+      id: s.id,
+      sport: s.sport,
+      coachName: s.coachName,
+      date: s.date,
+      startTime: s.startTime,
+      endTime: s.endTime,
+      room: s.room,
+      note: s.coachNote || "Ca kèm 1-1 mở",
+      isBooked: false,
+    }));
+
+    const remainingDefaults = DEFAULT_PT_OPEN_SLOTS.filter(
+      (d) => !syncedOpen.some((s) => s.id === d.id)
+    );
+
+    return [...syncedOpen, ...remainingDefaults];
+  };
+
   // PT slots state
-  const [ptSlots, setPtSlots] = useState(() => {
-    try {
-      const coachSlotsStr = localStorage.getItem("coach_custom_open_pt_slots");
-      if (coachSlotsStr) {
-        const coachSlots = JSON.parse(coachSlotsStr);
-        const mapped = coachSlots.map((s: any) => ({
-          id: s.id,
-          sport: s.sport || "Gym",
-          coachName: s.coachName || "HLV Enam",
-          date: s.date,
-          startTime: s.startTime,
-          endTime: s.endTime,
-          room: s.room || "Khu PT 1-1",
-          note: s.note || "Ca kèm 1-1 mở",
-          isBooked: s.registeredCount > 0,
-        }));
-        return [...mapped, ...DEFAULT_PT_OPEN_SLOTS];
-      }
-    } catch (e) {}
-    return DEFAULT_PT_OPEN_SLOTS;
-  });
+  const [ptSlots, setPtSlots] = useState(loadAvailablePtSlots);
+
+  useEffect(() => {
+    const unsub = scheduleSync.subscribe(() => {
+      setPtSlots(loadAvailablePtSlots());
+      setMySessions(getSavedMemberData("member_sessions", DEFAULT_MEMBER_SESSIONS));
+    });
+    return unsub;
+  }, []);
 
   // Modal State
   const [selectedClassDetail, setSelectedClassDetail] = useState<any | null>(null);
@@ -284,30 +294,55 @@ export default function MemberBooking({ onNavigate }: Props) {
     e.preventDefault();
     if (!bookingPtSlot) return;
 
+    const userStr = localStorage.getItem("user");
+    let currentUserName = "Hồ Xuân Ánh Nam";
+    let currentUserId = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
+    let currentUserPhone = "0989123788";
+    let currentUserEmail = "hoxuananhnam@gmail.com";
+    if (userStr) {
+      try {
+        const u = JSON.parse(userStr);
+        currentUserName = u.fullName || u.name || currentUserName;
+        currentUserId = u.id || currentUserId;
+        currentUserPhone = u.phoneNumber || u.phone || currentUserPhone;
+        currentUserEmail = u.email || currentUserEmail;
+      } catch {}
+    }
+
+    const booked = scheduleSync.bookPtSlot({
+      slotId: bookingPtSlot.id,
+      memberId: currentUserId,
+      memberName: currentUserName,
+      memberPhone: currentUserPhone,
+      memberEmail: currentUserEmail,
+      goal: ptGoal,
+      userNote: ptNote.trim(),
+    });
+
     const newSession: MemberSessionItem = {
-      id: `pt-booked-${Date.now()}`,
-      name: `Kèm 1-1: ${bookingPtSlot.sport} (${ptGoal})`,
-      sport: bookingPtSlot.sport,
+      id: booked.id,
+      name: booked.className,
+      sport: booked.sport,
       level: "1-1 PT",
       type: "pt",
-      date: bookingPtSlot.date,
-      startTime: bookingPtSlot.startTime,
-      endTime: bookingPtSlot.endTime,
-      room: bookingPtSlot.room,
-      coachId: "coach-pt",
-      coachName: bookingPtSlot.coachName,
+      date: booked.date,
+      startTime: booked.startTime,
+      endTime: booked.endTime,
+      room: booked.room,
+      coachId: booked.coachId,
+      coachName: booked.coachName,
       capacity: 1,
       registeredCount: 1,
       status: "sắp diễn ra",
       attendanceStatus: "chưa điểm danh",
-      coachNote: ptNote.trim() || `Mục tiêu học viên: ${ptGoal}`,
+      coachNote: booked.coachNote,
     };
 
     const updatedSessions = [newSession, ...mySessions];
     setMySessions(updatedSessions);
     saveMemberData("member_sessions", updatedSessions);
 
-    // Mark slot as booked
+    // Mark slot as booked in local list
     const updatedSlots = ptSlots.map((s) =>
       s.id === bookingPtSlot.id ? { ...s, isBooked: true } : s
     );

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import type { MemberScreen, MemberSessionItem, MemberTaskItem } from "../types";
+import { useUserProfile } from "../../../hooks/useUserProfile";
 import {
   DEFAULT_MEMBER_PACKAGES,
   DEFAULT_MEMBER_SESSIONS,
   DEFAULT_MEMBER_TASKS,
-  DEFAULT_BODY_METRICS,
   getSavedMemberData,
   saveMemberData,
 } from "../services/memberData";
@@ -20,12 +20,12 @@ import {
   ArrowRight,
   Sparkles,
   ChevronRight,
-  TrendingDown,
   CalendarCheck,
   AlertCircle,
   PlusCircle,
   Bot,
   Compass,
+  MessageSquare,
 } from "lucide-react";
 
 interface Props {
@@ -41,18 +41,20 @@ export default function MemberDashboard({ onNavigate }: Props) {
     getSavedMemberData("member_tasks", DEFAULT_MEMBER_TASKS)
   );
   const packages = DEFAULT_MEMBER_PACKAGES;
-  const metrics = DEFAULT_BODY_METRICS;
-  const latestMetric = metrics[metrics.length - 1];
 
   // User name
+  const { profile } = useUserProfile('member');
   const userStr = localStorage.getItem("user");
-  let userName = "Nguyễn Lan Anh";
-  if (userStr) {
+  let userName = profile?.fullName;
+  if (!userName && userStr) {
     try {
       const u = JSON.parse(userStr);
-      userName = u.fullName || u.name || "Nguyễn Lan Anh";
+      if (u.role?.toLowerCase() !== 'coach') {
+        userName = u.fullName || u.name;
+      }
     } catch (e) {}
   }
+  userName = userName || "Hội viên";
 
   // Next upcoming sessions
   const upcomingSessions = sessions.filter(
@@ -394,51 +396,6 @@ export default function MemberDashboard({ onNavigate }: Props) {
             </div>
           </section>
 
-          {/* Chỉ số thể hình gần nhất */}
-          <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">Chỉ số thể hình</h2>
-              <button
-                type="button"
-                onClick={() => onNavigate("progress")}
-                className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
-              >
-                Chi tiết
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5">
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Cân nặng</span>
-                <div className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
-                  {latestMetric?.weightKg} kg
-                </div>
-                <div className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                  <TrendingDown className="w-3 h-3" />
-                  <span>-3.1 kg từ đầu</span>
-                </div>
-              </div>
-
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Chỉ số BMI</span>
-                <div className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
-                  {latestMetric?.bmi}
-                </div>
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                  Cân đối chuẩn
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-3 p-3 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900 text-xs text-slate-600 dark:text-slate-300">
-              <p className="font-semibold text-emerald-700 dark:text-emerald-400 mb-0.5">
-                Nhận xét gần nhất từ HLV:
-              </p>
-              <p className="text-[11px] leading-relaxed">
-                "{latestMetric?.note || 'Tập luyện đều đặn, cơ bắp săn chắc và phục hồi nhanh chóng!'}"
-              </p>
-            </div>
-          </section>
 
           {/* Quick shortcuts */}
           <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-slate-950 shadow-md">

@@ -132,7 +132,7 @@ function isAdminHash(hash: string) {
 }
 
 function isCoachHash(hash: string) {
-  return hash.startsWith("#coach-") || coachHashes.has(hash)
+  return hash.startsWith("#coach") || coachHashes.has(hash)
 }
 
 export default function App() {

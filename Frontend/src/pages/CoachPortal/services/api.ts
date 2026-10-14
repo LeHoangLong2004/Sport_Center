@@ -130,7 +130,14 @@ export const CoachAPI = {
             if (endDate) query.append('endDate', endDate);
             const qs = query.toString() ? `?${query.toString()}` : '';
             const res = await fetchApi(`/coach/schedule${qs}`);
-            if (Array.isArray(res) && res.length > 0) return res;
+            if (Array.isArray(res) && res.length > 0) {
+                return res.map((s: any) => ({
+                    ...s,
+                    registeredMemberIds: Array.isArray(s.registeredMemberIds)
+                        ? s.registeredMemberIds
+                        : (s.memberId ? [s.memberId] : []),
+                }));
+            }
         } catch {}
         const today = new Date().toISOString().split("T")[0];
         return [
@@ -188,21 +195,32 @@ export const CoachAPI = {
     
     // 4b. Lấy toàn bộ học viên
     getMembers: async (): Promise<MockMember[]> => {
+        const namMember: MockMember = {
+            id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+            name: "Hồ Xuân Ánh Nam",
+            code: "MBNAM",
+            avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
+            goal: "Tăng cơ ngực & Siết nét",
+            level: "Trung cấp",
+            sport: "Gym",
+            phone: "0901234567",
+            email: "hoxuananhnam@gmail.com",
+            classIds: ["s1", "s2"]
+        };
+
         try {
             const res = await fetchApi('/coach/members');
-            if (Array.isArray(res) && res.length >= 2) return res;
+            if (Array.isArray(res) && res.length > 0) {
+                const filtered = res.filter((m: any) => m.id !== namMember.id && m.email !== namMember.email);
+                return [namMember, ...filtered];
+            }
         } catch {}
+
         return [
+            namMember,
             { id: "m1", name: "Nguyễn Văn An", code: "MB001", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80", goal: "Tăng cơ giảm mỡ", level: "Cơ bản", sport: "Gym", phone: "0912345678", email: "an.nguyen@gmail.com", classIds: ["s1", "s2", "s3"] },
             { id: "m2", name: "Lê Thu Hà", code: "MB002", avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80", goal: "Cải thiện vóc dáng", level: "Trung bình", sport: "Yoga", phone: "0987654321", email: "ha.le@gmail.com", classIds: ["s1", "s3", "s5"] },
             { id: "m3", name: "Phạm Tuấn Kiệt", code: "MB003", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80", goal: "Sức bền tim mạch", level: "Nâng cao", sport: "Gym", phone: "0903332211", email: "kiet.pham@gmail.com", classIds: ["s1", "s2", "s4"] },
-            { id: "m4", name: "Trần Minh Đức", code: "MB004", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80", goal: "Tăng cơ ngực & vai", level: "Cơ bản", sport: "Gym", phone: "0977889900", email: "duc.tran@gmail.com", classIds: ["s2", "s5"] },
-            { id: "m5", name: "Hoàng Thu Uyên", code: "MB005", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80", goal: "Cải thiện tư thế", level: "Cơ bản", sport: "Pilates", phone: "0933112233", email: "uyen.hoang@gmail.com", classIds: ["s1", "s3", "s6"] },
-            { id: "m6", name: "Đỗ Quốc Bảo", code: "MB006", avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&auto=format&fit=crop&q=80", goal: "Bơi sải thể lực", level: "Trung bình", sport: "Swimming", phone: "0909123456", email: "bao.do@gmail.com", classIds: ["s3", "s4", "s5"] },
-            { id: "m7", name: "Vũ Mai Chi", code: "MB007", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80", goal: "Giảm mỡ toàn thân", level: "Cơ bản", sport: "Zumba", phone: "0922334455", email: "chi.vu@gmail.com", classIds: ["s1", "s2", "s3"] },
-            { id: "m8", name: "Bùi Hoàng Nam", code: "MB008", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&auto=format&fit=crop&q=80", goal: "Tăng sức mạnh & Siết cơ", level: "Nâng cao", sport: "Boxing", phone: "0911223344", email: "nam.bui@gmail.com", classIds: ["s1", "s2", "s5"] },
-            { id: "m9", name: "Đặng Thúy Nga", code: "MB009", avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=120&auto=format&fit=crop&q=80", goal: "Dẻo dai & Thư giãn", level: "Cơ bản", sport: "Yoga", phone: "0933445566", email: "nga.dang@gmail.com", classIds: ["s1", "s3", "s6"] },
-            { id: "m10", name: "Ngô Gia Huy", code: "MB010", avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=120&auto=format&fit=crop&q=80", goal: "Thể lực tổng hợp", level: "Trung bình", sport: "Gym", phone: "0944556677", email: "huy.ngo@gmail.com", classIds: ["s2", "s3", "s5"] }
         ];
     },
 
