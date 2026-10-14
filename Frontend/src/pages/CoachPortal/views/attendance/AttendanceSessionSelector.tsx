@@ -7,6 +7,7 @@ interface Props {
   activeSessions: MockSession[];
   session: MockSession;
   isFinalized: boolean;
+  enrolledCount: number;
 }
 
 export default function AttendanceSessionSelector({
@@ -15,6 +16,7 @@ export default function AttendanceSessionSelector({
   activeSessions,
   session,
   isFinalized,
+  enrolledCount,
 }: Props) {
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -47,9 +49,7 @@ export default function AttendanceSessionSelector({
         <div>
           <span className="text-xs text-slate-400 block font-medium">Sĩ số</span>
           <span className="font-semibold text-slate-800 dark:text-slate-200">
-            {Array.isArray(session.registeredMemberIds) && session.registeredMemberIds.length > 0
-              ? session.registeredMemberIds.length
-              : (session as any).registeredCount ?? 0}/{session.capacity} học viên
+            {enrolledCount}/{session.capacity} học viên
           </span>
         </div>
         <div>

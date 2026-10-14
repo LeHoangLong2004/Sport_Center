@@ -14,6 +14,8 @@ export default function CoachProfile({ navigateTo }: { navigateTo?: (screen: any
     completedSessions?: number;
     totalMembers?: number;
     upcomingClasses?: number;
+    averageRating?: number;
+    reviewCount?: number;
   } | null>(null);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -46,18 +48,20 @@ export default function CoachProfile({ navigateTo }: { navigateTo?: (screen: any
 
   useEffect(() => {
     if (profile) {
-      setFullName(profile.fullName || "Enam");
-      setPhone(profile.phone || "0900 000 000");
-      setEmail(profile.email || "hoxuananhnam1@gmail.com");
-      setDob(profile.dob ? profile.dob.split("T")[0] : "1998-08-15");
-      setGender(profile.gender || "Nam");
+      setFullName(profile.fullName || "");
+      setPhone(profile.phone || "");
+      setEmail(profile.email || "");
+      setDob(profile.dob ? profile.dob.split("T")[0] : "");
+      setGender(profile.gender || "");
       setAvatarUrl(profile.avatarUrl || "");
-      setExperienceYears(profile.experienceYears ?? 3);
-      setSpecialtiesStr(profile.specialties || "Gym Fitness, Yoga, BodyCombat");
+      setExperienceYears(profile.experienceYears ?? 0);
+      setSpecialtiesStr(profile.specialties || "");
       setBio(
         profile.bio ||
           "Huấn luyện viên thể hình chuyên sâu về xây dựng cơ bắp, cải thiện vóc dáng và phục hồi chức năng vận động."
       );
+
+      if (!profile.bio) setBio("");
 
       const parsedCerts = profile.certifications
         ? profile.certifications.split(",").map((c) => c.trim()).filter(Boolean)
@@ -67,11 +71,12 @@ export default function CoachProfile({ navigateTo }: { navigateTo?: (screen: any
             "Chứng chỉ Dinh dưỡng Thể thao Cơ bản",
           ];
       setCertsList(parsedCerts);
+      if (!profile.certifications) setCertsList([]);
     }
   }, [profile]);
 
   const specialties = useMemo(() => {
-    return (profile?.specialties || specialtiesStr || "Gym Fitness, Yoga, BodyCombat")
+    return (profile?.specialties || specialtiesStr)
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
@@ -141,9 +146,9 @@ export default function CoachProfile({ navigateTo }: { navigateTo?: (screen: any
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-12 animate-in fade-in duration-300">
       <ProfileHeaderCard
-        fullName={profile?.fullName || fullName || "Enam"}
+        fullName={profile?.fullName || fullName || "Chưa cập nhật"}
         avatarUrl={profile?.avatarUrl || avatarUrl}
-        coachId={profile?.id ? profile.id.substring(0, 8).toUpperCase() : "25F50FBA"}
+        coachId={profile?.id ? profile.id.substring(0, 8).toUpperCase() : "—"}
         experienceYears={profile?.experienceYears ?? experienceYears}
         specialties={specialties}
         bio={profile?.bio || bio}

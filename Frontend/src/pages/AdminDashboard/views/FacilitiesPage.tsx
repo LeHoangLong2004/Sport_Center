@@ -29,33 +29,31 @@ export function FacilitiesPage() {
         if (fRes.ok) setFacilities(await fRes.json());
       })
       .catch((err) => {
-        console.error(err);
-        toast.error('Không thể tải dữ liệu danh mục.');
+        console.error('Lỗi tải danh sách:', err);
+        toast.error('Không thể tải dữ liệu bộ môn & phòng tập.');
       })
       .finally(() => setLoading(false));
   }, []);
 
   const openCreateModal = (type: 'sport' | 'facility') => {
-    setModalMode('create');
     setActiveType(type);
+    setModalMode('create');
     setEditingId(null);
     setName('');
     setImageUrl('');
     setAddress('');
   };
 
-  const openEditModal = (type: 'sport' | 'facility', item: any) => {
-    setModalMode('edit');
+  const openEditModal = (type: 'sport' | 'facility', item: SportItem | FacilityItem) => {
     setActiveType(type);
+    setModalMode('edit');
     setEditingId(item.id);
-    setName(item.name || '');
-    setImageUrl(item.imageUrl || '');
-    setAddress(item.address || '');
+    setName(item.name);
+    setImageUrl((item as SportItem).imageUrl || '');
+    setAddress((item as FacilityItem).address || '');
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFileUpload = async (file: File) => {
     setIsUploading(true);
     try {
       const formData = new FormData();
