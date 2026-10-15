@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 export default function ReceptionistPortal({ onExit }: { onExit: () => void }) {
   const [page, setPage] = useState<Page>("checkin")
   const [selectedMember, setSelectedMember] = useState<any>(null)
-  const { profile, loading } = useUserProfile()
+  const { profile, loading, uploadAvatar } = useUserProfile()
   const [error, setError] = useState<string>("");
 
   const handleSave = async (data: any) => {
@@ -114,6 +114,7 @@ export default function ReceptionistPortal({ onExit }: { onExit: () => void }) {
                     gender: profile.gender,
                   } : undefined}
                   onSave={handleSave}
+                  onAvatarUpload={uploadAvatar}
                 />
               </div>
             )

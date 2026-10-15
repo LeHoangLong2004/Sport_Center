@@ -154,5 +154,34 @@ export function useUserProfile(portalRoleHint?: 'coach' | 'member') {
     window.dispatchEvent(new Event(USER_PROFILE_UPDATED_EVENT));
   }, [profile?.id, loadProfile]);
 
-  return { profile, loading, updateProfile, role: detectPortalRole(portalRoleHint) };
+  const uploadAvatar = useCallback(async (file: File) => {
+    if (!profile?.id) throw new Error('Không tìm thấy hồ sơ hiện tại.');
+
+    const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`/api/users/${profile.id}/avatar`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || typeof result.url !== 'string') {
+      throw new Error(result.message || 'Tải ảnh đại diện thất bại.');
+    }
+
+    const normalizedUrl = result.url.startsWith("/")
+      ? `${window.location.origin}${result.url}`
+      : result.url;
+    const storedUser = getStoredUser();
+    if (storedUser) {
+      localStorage.setItem('user', JSON.stringify({ ...storedUser, avatarUrl: normalizedUrl }));
+    }
+    await loadProfile();
+    window.dispatchEvent(new Event(USER_PROFILE_UPDATED_EVENT));
+    return normalizedUrl;
+  }, [profile?.id, loadProfile]);
+
+  return { profile, loading, updateProfile, uploadAvatar, role: detectPortalRole(portalRoleHint) };
 }

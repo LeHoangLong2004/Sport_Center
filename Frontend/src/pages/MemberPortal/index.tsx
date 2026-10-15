@@ -11,7 +11,8 @@ import MemberReviews from "./views/MemberReviews";
 import MemberChat from "./views/MemberChat";
 import MemberSupport from "./views/MemberSupport";
 import MemberProfileModern from "./views/MemberProfileModern";
-import { ProductShopPage } from "./views/ProductShopPage";
+import { ProductShopPage, type ProductOrder } from "./views/ProductShopPage";
+import { ProductPaymentFlow } from "../PaymentFlow/ProductPaymentFlow";
 import { CatalogPackage, PackagePeriod } from "../../services/packageApi";
 import PaymentFlow from "../PaymentFlow";
 
@@ -48,7 +49,7 @@ export default function MemberPortal({
       message: "chat",
       ai: "support",
       support: "support",
-      shop: "dashboard",
+      shop: "shop",
       profile: "profile",
     };
     if (map[raw]) return map[raw];
@@ -58,6 +59,7 @@ export default function MemberPortal({
 
   const [screen, setScreen] = useState<MemberScreen>(getInitialScreen);
   const [checkout, setCheckout] = useState<CheckoutSelection | null>(null);
+  const [productPaymentOrder, setProductPaymentOrder] = useState<ProductOrder | null>(null);
 
   // Sync hashchange with screen state
   useEffect(() => {
@@ -83,11 +85,15 @@ export default function MemberPortal({
         message: "chat",
         ai: "support",
         support: "support",
-        shop: "dashboard",
+        shop: "shop",
         profile: "profile",
       };
       if (map[raw]) {
         setScreen(map[raw]);
+        // Checkout is an in-memory flow. When the browser Back button
+        // changes the hash, leave that flow as well so the rendered UI
+        // follows the URL without requiring a full page refresh.
+        setCheckout(null);
       }
     };
     window.addEventListener("hashchange", onHashChange);
@@ -106,6 +112,24 @@ export default function MemberPortal({
         initialDuration={checkout.duration}
         initialDiscountPct={checkout.discountPct}
         onExit={() => setCheckout(null)}
+      />
+    );
+  }
+
+  if (productPaymentOrder) {
+    return (
+      <ProductPaymentFlow
+        order={productPaymentOrder}
+        onBack={() => {
+          setProductPaymentOrder(null);
+          setScreen("shop");
+          window.location.hash = "#member-shop";
+        }}
+        onCompleted={() => {
+          setProductPaymentOrder(null);
+          setScreen("shop");
+          window.location.hash = "#member-shop";
+        }}
       />
     );
   }
@@ -129,6 +153,8 @@ export default function MemberPortal({
     support: <MemberSupport onNavigate={navigateTo} />,
     shop: (
       <ProductShopPage
+        embedded
+        onOnlinePayment={setProductPaymentOrder}
         onNavigate={() => {
           navigateTo("dashboard");
           window.location.hash = "#member-dashboard";
@@ -137,17 +163,6 @@ export default function MemberPortal({
     ),
     profile: <MemberProfileModern onNavigate={navigateTo} />,
   };
-
-  if ((window.location.hash || "").includes("shop")) {
-    return (
-      <ProductShopPage
-        onNavigate={() => {
-          window.location.hash = "#member-dashboard";
-          navigateTo("dashboard");
-        }}
-      />
-    );
-  }
 
   return (
     <MemberShellModern currentScreen={screen} onNavigate={navigateTo}>

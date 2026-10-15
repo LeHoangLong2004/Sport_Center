@@ -51,7 +51,7 @@ interface Props {
 }
 
 export default function MemberProfileModern({ onNavigate }: Props) {
-  const { profile, loading, updateProfile } = useUserProfile();
+  const { profile, loading, updateProfile, uploadAvatar } = useUserProfile();
 
   // Tab state: "info" | "payments" | "security"
   const [activeProfileTab, setActiveProfileTab] = useState<"info" | "payments" | "security">(() => {
@@ -188,6 +188,7 @@ export default function MemberProfileModern({ onNavigate }: Props) {
   const [newGoalInput, setNewGoalInput] = useState("");
 
   const [savingProfile, setSavingProfile] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [profileMsg, setProfileMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Password state
@@ -217,7 +218,6 @@ export default function MemberProfileModern({ onNavigate }: Props) {
       setEmail(profile.email || "hoxuananhnam@gmail.com");
       setDob(profile.dob ? profile.dob.split("T")[0] : "1998-08-15");
       setGender(profile.gender || "Nam");
-      setAvatarUrl(profile.avatarUrl || "");
       setEmergencyContact(profile.emergencyContact || "0912 345 678 (Người thân)");
       setFitnessGoal(
         profile.fitnessGoal ||
@@ -266,7 +266,6 @@ export default function MemberProfileModern({ onNavigate }: Props) {
     setEmail(profile?.email || "hoxuananhnam@gmail.com");
     setDob(profile?.dob ? profile.dob.split("T")[0] : "1998-08-15");
     setGender(profile?.gender || "Nam");
-    setAvatarUrl(profile?.avatarUrl || "");
     setEmergencyContact(profile?.emergencyContact || "0912 345 678 (Người thân)");
     setFitnessGoal(
       profile?.fitnessGoal ||
@@ -292,6 +291,38 @@ export default function MemberProfileModern({ onNavigate }: Props) {
     setNewGoalInput("");
     setProfileMsg(null);
     setIsEditModalOpen(true);
+  };
+
+  const handleAvatarFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    const previousUrl = avatarUrl || profile?.avatarUrl || "";
+    if (!file.type.startsWith("image/")) {
+      setProfileMsg({ type: "error", text: "Vui lòng chọn file hình ảnh." });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setProfileMsg({ type: "error", text: "Ảnh đại diện không được vượt quá 5MB." });
+      return;
+    }
+
+    setAvatarUploading(true);
+    setProfileMsg(null);
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarUrl(previewUrl);
+    try {
+      const url = await uploadAvatar(file);
+      URL.revokeObjectURL(previewUrl);
+      setAvatarUrl(url);
+      setProfileMsg({ type: "success", text: "Đã cập nhật ảnh đại diện." });
+    } catch (error) {
+      URL.revokeObjectURL(previewUrl);
+      setAvatarUrl(previousUrl);
+      setProfileMsg({ type: "error", text: error instanceof Error ? error.message : "Tải ảnh đại diện thất bại." });
+    } finally {
+      setAvatarUploading(false);
+    }
   };
 
   const handleAddGoal = () => {
@@ -399,19 +430,18 @@ export default function MemberProfileModern({ onNavigate }: Props) {
                 <div className="relative group shrink-0">
                   <div className="p-1 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 shadow-md">
                     <UserAvatar
-                      src={profile?.avatarUrl || avatarUrl}
+                      src={avatarUrl || profile?.avatarUrl || ""}
                       name={profile?.fullName || fullName || "Hồ Xuân Ánh Nam"}
                       className="w-20 h-20 rounded-xl text-2xl font-bold object-cover bg-slate-900 text-white"
                     />
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleOpenEdit}
-                    className="absolute -bottom-1 -right-1 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:scale-110 p-1.5 rounded-xl ring-2 ring-white dark:ring-slate-900 transition-all shadow-sm"
+                  <label
+                    className="absolute -bottom-1 -right-1 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:scale-110 p-1.5 rounded-xl ring-2 ring-white dark:ring-slate-900 transition-all shadow-sm cursor-pointer"
                     title="Cập nhật ảnh đại diện"
                   >
                     <Camera className="w-3.5 h-3.5" />
-                  </button>
+                    <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={avatarUploading} onChange={handleAvatarFileChange} />
+                  </label>
                 </div>
 
                 <div className="space-y-1">
@@ -1409,19 +1439,7 @@ export default function MemberProfileModern({ onNavigate }: Props) {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                        Link ảnh đại diện (Avatar URL):
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="https://... hoặc để trống"
-                        value={avatarUrl}
-                        onChange={(e) => setAvatarUrl(e.target.value)}
-                        className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                      />
-                    </div>
-                    <div>
+                    <div className="col-span-2">
                       <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
                         Liên hệ khẩn cấp:
                       </label>
