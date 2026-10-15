@@ -98,12 +98,32 @@ public static class SportFacilityEndpoints
         // ── IMAGE UPLOAD (CLOUDINARY / LOCAL FALLBACK) ────────────────────────
         app.MapPost(
             "/api/upload/image",
-            async (IFormFile file, SmartGym.Application.Interfaces.IPhotoService photoService) =>
+            async (HttpRequest request, SmartGym.Application.Interfaces.IPhotoService photoService) =>
             {
-                if (file == null || file.Length == 0)
-                    return Results.BadRequest("Vui lòng chọn file ảnh hợp lệ.");
+                if (!request.HasFormContentType)
+                {
+                    return Results.BadRequest(new { message = "Yêu cầu phải có định dạng multipart/form-data." });
+                }
 
-                using var stream = file.OpenReadStream();
+                var form = await request.ReadFormAsync();
+                var file = form.Files.GetFile("file") ?? form.Files.FirstOrDefault();
+
+                if (file == null || file.Length == 0)
+                {
+                    return Results.BadRequest(new { message = "Vui lòng chọn file ảnh hợp lệ." });
+                }
+
+                if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Results.BadRequest(new { message = "Chỉ được phép tải lên tệp hình ảnh." });
+                }
+
+                if (file.Length > 10 * 1024 * 1024)
+                {
+                    return Results.BadRequest(new { message = "Kích thước ảnh không được vượt quá 10MB." });
+                }
+
+                await using var stream = file.OpenReadStream();
                 var (success, url, errorMessage) = await photoService.UploadImageAsync(stream, file.FileName, "sports");
 
                 if (!success || string.IsNullOrEmpty(url))
