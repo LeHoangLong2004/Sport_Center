@@ -41,33 +41,24 @@ export function ScheduleFilters({
 
         <div className="flex flex-col gap-1.5">
           <span className="text-xs font-semibold text-slate-700">Phòng tập</span>
-          <div className="flex flex-wrap gap-1.5 max-w-[520px]">
-            <button
-              type="button"
-              onClick={() => onRoomChange("Tất cả")}
-              className={`px-3.5 py-2 rounded-xl border text-xs font-semibold transition-colors ${
-                selectedRooms.length === 0
-                  ? "bg-orange-50 text-orange-600 border-orange-200"
-                  : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
-              }`}
-            >
-              Tất cả
-            </button>
+          <select
+            value={selectedRooms[0] ?? ""}
+            onChange={(event) => onRoomChange(event.target.value)}
+            aria-label="Lọc theo phòng tập"
+            className="min-w-[240px] max-w-[360px] px-3.5 py-2 bg-white border border-slate-300 rounded-xl shadow-xs text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-orange-500"
+          >
+            <option value="">Tất cả phòng tập</option>
+            {facilities.length === 0 && (
+              <option value="" disabled>
+                Chưa có dữ liệu phòng tập
+              </option>
+            )}
             {facilities.map((room) => (
-              <button
-                key={room}
-                type="button"
-                onClick={() => onRoomChange(room)}
-                className={`px-3.5 py-2 rounded-xl border text-xs font-semibold transition-colors ${
-                  selectedRooms.includes(room)
-                    ? "bg-orange-50 text-orange-600 border-orange-200"
-                    : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
-                }`}
-              >
-                {room.replace(" (Yoga/Pilates)", "")}
-              </button>
+              <option key={room} value={room}>
+                {room}
+              </option>
             ))}
-          </div>
+          </select>
         </div>
       </div>
 

@@ -119,9 +119,25 @@ public class UserService : IUserService
             await _userRepository.AddAsync(user);
         }
 
+        var normalizedEmail = request.Email?.Trim();
+        if (!string.IsNullOrWhiteSpace(normalizedEmail))
+        {
+            var emailOwner = await _userRepository.GetByEmailAsync(normalizedEmail);
+            if (emailOwner != null && emailOwner.Id != userId)
+                throw new InvalidOperationException("Email này đã được sử dụng bởi tài khoản khác.");
+        }
+
+        var normalizedPhone = request.PhoneNumber?.Trim();
+        if (!string.IsNullOrWhiteSpace(normalizedPhone))
+        {
+            var phoneOwner = await _userRepository.GetByPhoneNumberAsync(normalizedPhone);
+            if (phoneOwner != null && phoneOwner.Id != userId)
+                throw new InvalidOperationException("Số điện thoại này đã được sử dụng bởi tài khoản khác.");
+        }
+
         if (request.FullName != null) user.FullName = request.FullName;
-        if (request.PhoneNumber != null) user.PhoneNumber = request.PhoneNumber;
-        if (request.Email != null) user.Email = request.Email;
+        if (normalizedPhone != null) user.PhoneNumber = normalizedPhone;
+        if (normalizedEmail != null) user.Email = normalizedEmail;
         if (request.AvatarUrl != null) user.AvatarUrl = request.AvatarUrl;
         if (request.DateOfBirth != null) user.DateOfBirth = DateTime.SpecifyKind(request.DateOfBirth.Value, DateTimeKind.Utc);
         if (request.Gender != null) user.Gender = request.Gender;

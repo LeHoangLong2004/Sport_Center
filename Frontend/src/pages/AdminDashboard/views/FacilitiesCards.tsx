@@ -52,7 +52,6 @@ export function SportsTableCard({
         <div className="bg-slate-50 flex items-center px-4 py-2.5 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
           <div className="w-12">Ảnh</div>
           <div className="flex-1">Tên bộ môn</div>
-          <div className="w-20 text-right">Mã</div>
           <div className="w-24 text-right">Thao tác</div>
         </div>
         {loading ? (
@@ -90,7 +89,6 @@ export function SportsTableCard({
                 )}
               </div>
               <div className="flex-1 font-semibold text-sm text-slate-800">{s.name}</div>
-              <div className="w-20 text-xs text-slate-400 font-mono text-right">{s.id.substring(0, 6)}</div>
               <div className="w-24 flex items-center justify-end gap-1">
                 <button
                   onClick={() => onOpenEdit(s)}
@@ -152,7 +150,6 @@ export function FacilitiesTableCard({
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
         <div className="bg-slate-50 flex items-center px-4 py-2.5 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
           <div className="flex-1">Tên phòng / Khu vực</div>
-          <div className="w-20 text-right">Mã</div>
           <div className="w-24 text-right">Thao tác</div>
         </div>
         {loading ? (
@@ -171,7 +168,6 @@ export function FacilitiesTableCard({
                   <p className="text-xs text-slate-400 mt-0.5">{f.address}</p>
                 )}
               </div>
-              <div className="w-20 text-xs text-slate-400 font-mono text-right">{f.id.substring(0, 6)}</div>
               <div className="w-24 flex items-center justify-end gap-1">
                 <button
                   onClick={() => onOpenEdit(f)}

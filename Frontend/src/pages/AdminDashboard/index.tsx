@@ -23,7 +23,7 @@ import { ProfileSettings } from '../../components/ProfileSettings';
 export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [page, setPage] = useState<AdminPage>("overview")
   const [selectedMember, setSelectedMember] = useState<any>(null)
-  const { profile } = useUserProfile()
+  const { profile, uploadAvatar } = useUserProfile()
   const [error, setError] = useState<string>("");
 
   const handleSave = async (data: any) => {
@@ -132,6 +132,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                   avatarUrl: profile.avatarUrl,
                 } : undefined}
                 onSave={handleSave}
+                onAvatarUpload={uploadAvatar}
               />
             </div>
           )}
