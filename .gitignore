@@ -68,15 +68,18 @@ backend/**/secrets.json
 **/*.key
 **/*.cer
 
-# Thư mục upload ảnh cục bộ (đã dùng Cloudinary CDN)
-backend/**/wwwroot/uploads/*
-!backend/**/wwwroot/uploads/.gitkeep
-wwwroot/uploads/*
-!wwwroot/uploads/.gitkeep
+# Thư mục upload ảnh cục bộ (fallback khi không dùng Cloudinary CDN)
+**/wwwroot/uploads/**
+!**/wwwroot/uploads/
+!**/wwwroot/uploads/**/.gitkeep
 
-# Logs
+# Logs & Test Results
 backend/**/*.log
 *.log
+[Tt]est[Rr]esult*/
+coverage*/
+*.trx
+*.coverage
 
 # ------------------------------------------------------------------------------
 # 4. Frontend (React / Vite / TypeScript / Tailwind)
@@ -111,10 +114,20 @@ Frontend/.eslintcache
 Frontend/.stylelintcache
 Frontend/.cache/
 .eslintcache
+*.tsbuildinfo
 
 # ------------------------------------------------------------------------------
-# 5. Antigravity & AI Assistant artifacts
+# 5. Antigravity, AI Assistants & .NET Tooling Cache
 # ------------------------------------------------------------------------------
 .gemini/
+**/.gemini/
 .agents/
+**/.agents/
 .dotnet/
+**/.dotnet/
+*.dotnetUserLevelCache
+*.toolpath.sentinel
+.cursor/
+.windsurf/
+.claude/
+.copilot/

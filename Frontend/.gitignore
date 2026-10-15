@@ -47,6 +47,11 @@ Thumbs.db
 *.swp
 *~
 
+# Build cache & TypeScript
+*.tsbuildinfo
+
 # AI Assistant & Tooling
 .gemini/
+**/.gemini/
 .agents/
+**/.agents/

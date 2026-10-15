@@ -61,8 +61,9 @@ nuget.config
 # -------------------------------------------------------
 # Bundled static files & local uploads (using Cloudinary)
 wwwroot/dist/
-wwwroot/uploads/*
-!wwwroot/uploads/.gitkeep
+wwwroot/uploads/**
+!wwwroot/uploads/
+!wwwroot/uploads/**/.gitkeep
 
 # -------------------------------------------------------
 # Entity Framework Core migrations (keep tracked)
@@ -133,9 +134,18 @@ docker-compose.override.yml
 node_modules/
 
 # -------------------------------------------------------
-# Miscellaneous
+# Miscellaneous & AI / .NET Tooling Cache
 # -------------------------------------------------------
 *.swp
 *.bak
 *.tmp
 *~
+.gemini/
+**/.gemini/
+.agents/
+**/.agents/
+.dotnet/
+**/.dotnet/
+*.dotnetUserLevelCache
+*.toolpath.sentinel
+

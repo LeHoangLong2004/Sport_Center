@@ -14,10 +14,12 @@ public class CloudinaryPhotoService : IPhotoService
     private readonly Cloudinary? _cloudinary;
     private readonly ILogger<CloudinaryPhotoService> _logger;
     private readonly bool _isConfigured;
+    private readonly string _webRootPath;
 
     public CloudinaryPhotoService(IConfiguration configuration, ILogger<CloudinaryPhotoService> logger)
     {
         _logger = logger;
+        _webRootPath = configuration["WebRootPath"] ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
         var cloudName = configuration["Cloudinary:CloudName"]?.Trim().ToLowerInvariant();
         var apiKey = configuration["Cloudinary:ApiKey"]?.Trim();
         var apiSecret = configuration["Cloudinary:ApiSecret"]?.Trim();
@@ -108,7 +110,7 @@ public class CloudinaryPhotoService : IPhotoService
         // 2. Fallback: Lưu vào wwwroot/uploads/{folder} an toàn
         try
         {
-            var rootDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", folder);
+            var rootDir = Path.Combine(_webRootPath, "uploads", folder);
             Directory.CreateDirectory(rootDir);
 
             var generatedFileName = $"{Guid.NewGuid():N}{Path.GetExtension(fileName)}";

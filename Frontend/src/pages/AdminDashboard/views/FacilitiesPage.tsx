@@ -55,28 +55,42 @@ export function FacilitiesPage() {
     setAddress((item as FacilityItem).address || '');
   };
 
-  const handleFileUpload = async (file: File) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Vui lòng chọn file hình ảnh hợp lệ (PNG, JPG, WEBP,...).');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Kích thước ảnh không được vượt quá 10MB.');
+      return;
+    }
+
     setIsUploading(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
       const res = await fetch('/api/upload/image', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       });
-      if (res.ok) {
-        const data = await res.json();
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.url) {
         setImageUrl(data.url);
         toast.success('Đã tải ảnh thành công! Bấm "Lưu thay đổi" (hoặc "Xác nhận thêm") để lưu.');
       } else {
-        toast.error('Tải ảnh thất bại.');
+        toast.error(data?.message || 'Tải ảnh thất bại.');
       }
     } catch {
       toast.error('Lỗi khi tải ảnh lên server.');
     } finally {
       setIsUploading(false);
+      e.target.value = '';
     }
   };
 
