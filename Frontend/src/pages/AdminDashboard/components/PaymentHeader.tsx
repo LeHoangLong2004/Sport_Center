@@ -1,6 +1,12 @@
 import { iDownload, iPlus, iSearch2 } from "../shared";
 
-export function PaymentHeader({ exportUrl }: { exportUrl: string }) {
+export function PaymentHeader({
+  onExport,
+  isExporting = false,
+}: {
+  onExport: () => void;
+  isExporting?: boolean;
+}) {
   return (
     <>
       <div className="flex items-center justify-between">
@@ -33,7 +39,8 @@ export function PaymentHeader({ exportUrl }: { exportUrl: string }) {
         </div>
         <div className="flex gap-3 items-center shrink-0">
           <button
-            onClick={() => window.open(exportUrl, "_blank")}
+            onClick={onExport}
+            disabled={isExporting}
             className="bg-white border border-[#cbd5e1] flex gap-2 items-center px-4 py-2.5 rounded-lg"
           >
             <img src={iDownload} alt="" className="size-4" />

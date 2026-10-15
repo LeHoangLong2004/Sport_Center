@@ -73,6 +73,7 @@ export function FacilitiesPage() {
     try {
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('folder', activeType === 'sport' ? 'sports' : 'facilities');
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
       const res = await fetch('/api/upload/image', {
         method: 'POST',
@@ -106,7 +107,7 @@ export function FacilitiesPage() {
 
       const body = isSport
         ? { name: name.trim(), imageUrl: imageUrl.trim() }
-        : { name: name.trim(), address: address.trim() };
+        : { name: name.trim(), imageUrl: imageUrl.trim(), address: address.trim() };
 
       const res = await fetch(endpoint, {
         method,

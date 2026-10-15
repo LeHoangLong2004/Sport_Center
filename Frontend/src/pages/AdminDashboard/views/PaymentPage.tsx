@@ -76,7 +76,7 @@ import {
   reportApi,
   type InvoiceResponse,
 } from "../../../hooks/flow3Api";
-import { formatVnd, apiPost } from "../../../hooks/apiClient";
+import { apiDownloadFile, formatVnd, apiPost } from "../../../hooks/apiClient";
 
 const STATUS_STYLE: Record<string, string> = {
   completed: "bg-[#dcfce7] text-[#15803d]",
@@ -95,6 +95,7 @@ export function PaymentPage() {
   const [statusFilter, setStatusFilter] = useState("Tất cả");
   const [methodFilter, setMethodFilter] = useState("Tất cả");
   const [page, setPage] = useState(0);
+  const [isExporting, setIsExporting] = useState(false);
 
   const list = invoices.data ?? [];
 
@@ -152,6 +153,17 @@ export function PaymentPage() {
 
   const exportUrl = reportApi.revenueExportUrl();
 
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      await apiDownloadFile(exportUrl, "bao-cao-doanh-thu.xlsx");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Không thể xuất báo cáo.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleRecordCash = async (id: string) => {
     try {
       await apiPost(`/api/payments/${id}/record-cash`);
@@ -176,7 +188,7 @@ export function PaymentPage() {
 
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
-      <PaymentHeader exportUrl={exportUrl} />
+      <PaymentHeader onExport={handleExport} isExporting={isExporting} />
       <PaymentSummary
         loading={invoices.loading}
         error={invoices.error}
