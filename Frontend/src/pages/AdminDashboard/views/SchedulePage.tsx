@@ -29,20 +29,13 @@ export function SchedulePage() {
   const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<"calendar" | "bookings">("calendar");
   const [bookings, setBookings] = useState<any[]>([]);
-  const facilities = [
-    "Studio 1 (Yoga/Pilates)",
-    "Studio 2 (Dance)",
-    "Studio 3 (Cycling)",
-    "Gym Area",
-  ];
+  const [facilities, setFacilities] = useState<string[]>([]);
 
   const handleRoomChange = (room: string) => {
-    if (room === "Tất cả") {
+    if (!room || room === "Tất cả") {
       setSelectedRooms([]);
     } else {
-      setSelectedRooms((prev) =>
-        prev.includes(room) ? prev.filter((r) => r !== room) : [...prev, room],
-      );
+      setSelectedRooms([room]);
     }
   };
 
@@ -134,9 +127,41 @@ export function SchedulePage() {
           };
         });
         setClasses(formattedClasses);
+
+        // Fallback để dropdown vẫn có dữ liệu nếu endpoint phòng tập tạm thời lỗi.
+        const roomsFromClasses = Array.from(
+          new Set(
+            formattedClasses
+              .map((item: any) => item.room?.trim())
+              .filter(Boolean),
+          ),
+        ) as string[];
+        setFacilities((current) => (current.length ? current : roomsFromClasses));
       }
     } catch (error) {
       console.error("Failed to fetch classes:", error);
+    }
+  };
+
+  const fetchFacilities = async () => {
+    try {
+      const res = await fetch("/api/facilities");
+      if (res.ok) {
+        const data = await res.json();
+        const roomNames = Array.from(
+          new Set(
+            (Array.isArray(data) ? data : [])
+              .map((facility: any) => facility.name?.trim())
+              .filter(Boolean),
+          ),
+        ) as string[];
+
+        if (roomNames.length > 0) {
+          setFacilities(roomNames);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch facilities:", error);
     }
   };
 
@@ -156,6 +181,7 @@ export function SchedulePage() {
 
   useEffect(() => {
     fetchClasses();
+    fetchFacilities();
     fetchBookings();
   }, []);
 
@@ -201,7 +227,14 @@ export function SchedulePage() {
 
   if (selectedRooms.length > 0) {
     classesThisWeek = classesThisWeek.filter((c) =>
-      selectedRooms.some((r) => c.room.includes(r.split(" (")[0])),
+      selectedRooms.some((r) => {
+        const classRoom = String(c.room || "").trim().toLowerCase();
+        const selectedRoom = r.trim().toLowerCase();
+        const classRoomBase = classRoom.split(" (")[0];
+        const selectedRoomBase = selectedRoom.split(" (")[0];
+
+        return classRoom === selectedRoom || classRoomBase === selectedRoomBase;
+      }),
     );
   }
 

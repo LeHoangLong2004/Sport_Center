@@ -5,12 +5,14 @@ export function ProfileSettings({
   initialData,
   roleLabel,
   onSave,
+  onAvatarUpload,
   extraInfo,
   tierColor = "blue",
 }: {
   initialData?: Partial<ProfileData>;
   roleLabel: string;
-  onSave?: (data: ProfileData) => void;
+  onSave?: (data: ProfileData) => void | Promise<void>;
+  onAvatarUpload?: (file: File) => Promise<string>;
   extraInfo?: React.ReactNode;
   tierColor?: "blue" | "gold" | "black" | "teal";
 }) {
@@ -24,6 +26,8 @@ export function ProfileSettings({
     address: initialData?.address || "",
   });
   const [showToast, setShowToast] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
   useEffect(() => {
     if (initialData) {
       setData((prev) => ({
@@ -37,9 +41,33 @@ export function ProfileSettings({
   ) => {
     setData({ ...data, [e.target.name]: e.target.value });
   };
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleAvatarChange = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setAvatarError("Vui lòng chọn file hình ảnh.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError("Ảnh đại diện không được vượt quá 5MB.");
+      return;
+    }
+    if (!onAvatarUpload) return;
+
+    setAvatarError("");
+    setAvatarUploading(true);
+    try {
+      const url = await onAvatarUpload(file);
+      setData((prev) => ({ ...prev, avatarUrl: url }));
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    } catch (error) {
+      setAvatarError(error instanceof Error ? error.message : "Tải ảnh đại diện thất bại.");
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (onSave) onSave(data);
+    if (onSave) await onSave(data);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
   };
@@ -72,7 +100,10 @@ export function ProfileSettings({
             roleLabel={roleLabel}
             tierColor={tierColor}
             extraInfo={extraInfo}
+            onAvatarChange={handleAvatarChange}
+            avatarUploading={avatarUploading}
           />
+          {avatarError && <p className="text-sm text-rose-600 mt-2">{avatarError}</p>}
           {/* Right Column: Form */}
           <div className="flex-1">
             <form

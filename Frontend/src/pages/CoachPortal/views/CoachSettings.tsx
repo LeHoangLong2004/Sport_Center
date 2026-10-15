@@ -4,7 +4,7 @@ import { useUserProfile } from "../../../hooks/useUserProfile";
 import { toast } from 'sonner';
 
 export default function CoachSettings() {
-  const { profile, loading, updateProfile } = useUserProfile();
+  const { profile, loading, updateProfile, uploadAvatar } = useUserProfile();
   const [error, setError] = useState<string>("");
 
   const handleSave = async (data: any) => {
@@ -81,6 +81,7 @@ export default function CoachSettings() {
               bio: profile.bio
             } : undefined}
             onSave={handleSave}
+            onAvatarUpload={uploadAvatar}
           />
         </div>
       )}

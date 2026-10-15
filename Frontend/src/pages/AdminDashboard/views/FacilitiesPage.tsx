@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { Building2, Dumbbell } from 'lucide-react';
 import { SportsTableCard, FacilitiesTableCard, SportItem, FacilityItem } from './FacilitiesCards';
 import { FacilityFormModal, FacilityDeleteModal } from './FacilitiesModals';
 
@@ -7,6 +8,7 @@ export function FacilitiesPage() {
   const [sports, setSports] = useState<SportItem[]>([]);
   const [facilities, setFacilities] = useState<FacilityItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'sport' | 'facility'>('sport');
 
   // Form modal state
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
@@ -163,22 +165,55 @@ export function FacilitiesPage() {
         <p className="text-[#64748b] text-sm mt-1">Quản lý danh mục thể thao và phòng tập của trung tâm thể thao.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-2">
-        <SportsTableCard
-          sports={sports}
-          loading={loading}
-          onOpenCreate={() => openCreateModal('sport')}
-          onOpenEdit={(s) => openEditModal('sport', s)}
-          onOpenDelete={(s) => setDeleteTarget({ type: 'sport', id: s.id, name: s.name })}
-        />
+      <div className="mt-2 flex flex-col gap-5">
+        <div className="inline-flex w-full max-w-xl rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setActiveTab('sport')}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${
+              activeTab === 'sport'
+                ? 'bg-rose-50 text-rose-600 shadow-sm ring-1 ring-rose-200'
+                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+            }`}
+          >
+            <Dumbbell className="size-4" />
+            Bộ môn
+            <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-600">{sports.length}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('facility')}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${
+              activeTab === 'facility'
+                ? 'bg-blue-50 text-blue-600 shadow-sm ring-1 ring-blue-200'
+                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+            }`}
+          >
+            <Building2 className="size-4" />
+            Phòng tập
+            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-600">{facilities.length}</span>
+          </button>
+        </div>
 
-        <FacilitiesTableCard
-          facilities={facilities}
-          loading={loading}
-          onOpenCreate={() => openCreateModal('facility')}
-          onOpenEdit={(f) => openEditModal('facility', f)}
-          onOpenDelete={(f) => setDeleteTarget({ type: 'facility', id: f.id, name: f.name })}
-        />
+        <div className="w-full">
+          {activeTab === 'sport' ? (
+            <SportsTableCard
+              sports={sports}
+              loading={loading}
+              onOpenCreate={() => openCreateModal('sport')}
+              onOpenEdit={(s) => openEditModal('sport', s)}
+              onOpenDelete={(s) => setDeleteTarget({ type: 'sport', id: s.id, name: s.name })}
+            />
+          ) : (
+            <FacilitiesTableCard
+              facilities={facilities}
+              loading={loading}
+              onOpenCreate={() => openCreateModal('facility')}
+              onOpenEdit={(f) => openEditModal('facility', f)}
+              onOpenDelete={(f) => setDeleteTarget({ type: 'facility', id: f.id, name: f.name })}
+            />
+          )}
+        </div>
       </div>
 
       {activeType && (

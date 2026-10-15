@@ -15,6 +15,7 @@ export function MemberEditPage({ memberData, onBack }: { memberData?: any, onBac
     vip: false
   };
   const [isSaving, setIsSaving] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(member.avatar);
   const [toast, setToast] = useState<{msg: string, type: "success"|"error"}|null>(null);
 
@@ -43,7 +44,7 @@ export function MemberEditPage({ memberData, onBack }: { memberData?: any, onBac
 
     setIsSaving(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
       const res = await fetch(`/api/users/${member.realId}/profile`, {
         method: "PUT",
         headers: {
@@ -65,9 +66,50 @@ export function MemberEditPage({ memberData, onBack }: { memberData?: any, onBac
     }
   };
 
-  const handleChangeAvatar = () => {
-    const url = prompt("Nhập URL hình ảnh mới:");
-    if (url) setAvatarUrl(url);
+  const handleChangeAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      showToast("Vui lòng chọn file hình ảnh.", "error");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast("Ảnh đại diện không được vượt quá 5MB.", "error");
+      return;
+    }
+    if (!member.realId) {
+      showToast("Không tìm thấy ID của hội viên.", "error");
+      return;
+    }
+
+    const previousUrl = avatarUrl;
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarUrl(previewUrl);
+    setAvatarUploading(true);
+    try {
+      const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetch(`/api/users/${member.realId}/avatar`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || typeof result.url !== "string") {
+        throw new Error(result.message || "Tải ảnh đại diện thất bại.");
+      }
+      URL.revokeObjectURL(previewUrl);
+      setAvatarUrl(result.url);
+      showToast("Đã cập nhật ảnh đại diện.", "success");
+    } catch (error) {
+      URL.revokeObjectURL(previewUrl);
+      setAvatarUrl(previousUrl);
+      showToast(error instanceof Error ? error.message : "Tải ảnh đại diện thất bại.", "error");
+    } finally {
+      setAvatarUploading(false);
+    }
   };
 
   return (
@@ -151,9 +193,10 @@ export function MemberEditPage({ memberData, onBack }: { memberData?: any, onBac
             <p className="font-extrabold text-[#0f172a] text-base mb-5">Ảnh đại diện hội viên</p>
             <div className="flex flex-col items-center gap-4">
               <img src={avatarUrl} alt="" className="rounded-full size-24 object-cover" />
-              <button type="button" onClick={handleChangeAvatar} className="border border-[#e2e8f0] flex gap-2 items-center px-4 py-2 rounded-lg">
+              <label className={`border border-[#e2e8f0] flex gap-2 items-center px-4 py-2 rounded-lg cursor-pointer ${avatarUploading ? "opacity-60 pointer-events-none" : ""}`}>
                 <span className="text-[#0f172a] text-sm">✏ Thay đổi hình ảnh</span>
-              </button>
+                <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={avatarUploading} onChange={handleChangeAvatar} />
+              </label>
               <p className="text-[#94a3b8] text-[11px] text-center">Hỗ trợ file PNG, JPG tối đa 5MB</p>
             </div>
           </div>

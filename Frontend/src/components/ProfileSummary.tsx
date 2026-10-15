@@ -8,6 +8,8 @@ interface ProfileSummaryProps {
   roleLabel: string;
   tierColor: TierColor;
   extraInfo?: ReactNode;
+  onAvatarChange?: (file: File) => void;
+  avatarUploading?: boolean;
 }
 
 export function ProfileSummary({
@@ -15,6 +17,8 @@ export function ProfileSummary({
   roleLabel,
   tierColor,
   extraInfo,
+  onAvatarChange,
+  avatarUploading = false,
 }: ProfileSummaryProps) {
   return (
     <div className="w-full lg:w-[340px] shrink-0 flex flex-col gap-6">
@@ -46,7 +50,7 @@ export function ProfileSummary({
             name={data.fullName || "User"}
             className="w-full h-full object-cover group-hover:opacity-75 transition-opacity text-5xl"
           />
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+          <label className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 cursor-pointer">
             <svg
               width="24"
               height="24"
@@ -61,8 +65,19 @@ export function ProfileSummary({
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
-          </div>
-          <input type="file" className="hidden" accept="image/*" />
+            <span className="sr-only">{avatarUploading ? "Đang tải ảnh" : "Chọn ảnh đại diện"}</span>
+            <input
+              type="file"
+              className="hidden"
+              accept="image/png,image/jpeg,image/webp"
+              disabled={avatarUploading || !onAvatarChange}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file && onAvatarChange) onAvatarChange(file);
+                event.currentTarget.value = "";
+              }}
+            />
+          </label>
         </div>
         <h3 className="text-xl font-bold text-slate-800 dark:text-white tracking-tight">
           {data.fullName}

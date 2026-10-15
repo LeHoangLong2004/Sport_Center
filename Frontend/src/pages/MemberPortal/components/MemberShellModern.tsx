@@ -134,12 +134,13 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
     }, 50);
   };
 
-  // 9 Core Menu Items on Sidebar (Thanh toán & Hóa đơn đã được đưa vào Profile)
+  // Core menu items on the sidebar (Thanh toán & Hóa đơn đã được đưa vào Profile)
   const menuItems: { id: MemberScreen; label: string; icon: any }[] = [
     { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
     { id: "booking", label: "Khám phá & Đặt lịch", icon: Compass },
     { id: "schedule", label: "Lịch của tôi", icon: CalendarCheck },
     { id: "packages", label: "Gói tập của tôi", icon: CreditCard },
+    { id: "shop", label: "Cửa hàng", icon: ShoppingBag },
     { id: "workouts", label: "Giáo án & Bài tập", icon: Dumbbell },
     { id: "reviews", label: "Đánh giá HLV", icon: Star },
     { id: "chat", label: "Tin nhắn", icon: MessageSquare },

@@ -12,7 +12,6 @@ interface Props {
     email: string;
     dob: string;
     gender: string;
-    avatarUrl: string;
     experienceYears: number;
     specialtiesStr: string;
     certsList: string[];
@@ -24,7 +23,6 @@ interface Props {
     email: string;
     dob: string;
     gender: string;
-    avatarUrl: string;
     experienceYears: number;
     specialties: string;
     certifications: string;
@@ -47,7 +45,6 @@ export default function EditProfileModal({
   const [email, setEmail] = useState(initialData.email);
   const [dob, setDob] = useState(initialData.dob);
   const [gender, setGender] = useState(initialData.gender);
-  const [avatarUrl, setAvatarUrl] = useState(initialData.avatarUrl);
   const [experienceYears, setExperienceYears] = useState(initialData.experienceYears);
   const [specialtiesStr, setSpecialtiesStr] = useState(initialData.specialtiesStr);
   const [certsList, setCertsList] = useState<string[]>(initialData.certsList);
@@ -61,7 +58,6 @@ export default function EditProfileModal({
       setEmail(initialData.email);
       setDob(initialData.dob);
       setGender(initialData.gender);
-      setAvatarUrl(initialData.avatarUrl);
       setExperienceYears(initialData.experienceYears);
       setSpecialtiesStr(initialData.specialtiesStr);
       setCertsList(initialData.certsList);
@@ -89,7 +85,6 @@ export default function EditProfileModal({
       email,
       dob,
       gender,
-      avatarUrl,
       experienceYears,
       specialties: specialtiesStr,
       certifications: certsList.join(", "),
@@ -208,19 +203,6 @@ export default function EditProfileModal({
                   className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
                 />
               </div>
-            </div>
-
-            <div>
-              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                Link ảnh đại diện (Avatar URL):
-              </label>
-              <input
-                type="text"
-                placeholder="https://... hoặc để trống"
-                value={avatarUrl}
-                onChange={(e) => setAvatarUrl(e.target.value)}
-                className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-              />
             </div>
 
             <div>

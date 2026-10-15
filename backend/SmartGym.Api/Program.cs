@@ -24,7 +24,17 @@ builder.Logging.AddConsole();
 
 // ΓöÇΓöÇ Database Configuration ΓöÇΓöÇ
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<SmartGymDbContext>(options => options.UseNpgsql(connectionString));
+builder.Services.AddDbContext<SmartGymDbContext>(options =>
+    options.UseNpgsql(
+        connectionString,
+        npgsqlOptions =>
+            npgsqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(5),
+                errorCodesToAdd: null
+            )
+    )
+);
 
 // ΓöÇΓöÇ Services: Infrastructure ΓöÇΓöÇ
 var supabaseUrl = builder.Configuration["Supabase:Url"];
