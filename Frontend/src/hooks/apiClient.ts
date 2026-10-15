@@ -33,6 +33,29 @@ async function parseError(res: Response): Promise<string> {
   }
 }
 
+export async function apiDownloadFile(path: string, fallbackFilename: string): Promise<void> {
+  const res = await fetch(path, { headers: { ...authHeaders() } });
+  if (!res.ok) throw new ApiError(res.status, await parseError(res));
+
+  const blob = await res.blob();
+  const contentDisposition = res.headers.get("Content-Disposition");
+  const encodedFilename = contentDisposition?.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+  const plainFilename = contentDisposition?.match(/filename="?([^";]+)"?/i)?.[1];
+  const filename = encodedFilename
+    ? decodeURIComponent(encodedFilename)
+    : plainFilename || fallbackFilename;
+
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = filename;
+  link.style.display = "none";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+}
+
 export async function apiGet<T>(path: string): Promise<T> {
   const res = await fetch(path, { headers: { ...authHeaders() } });
   if (!res.ok) throw new ApiError(res.status, await parseError(res));

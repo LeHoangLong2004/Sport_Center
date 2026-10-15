@@ -48,6 +48,7 @@ using (var scope = app.Services.CreateScope())
         db.Database.ExecuteSqlRaw(
             @"
             ALTER TABLE invoices ADD COLUMN IF NOT EXISTS facility_id UUID REFERENCES facilities(id) ON DELETE SET NULL;
+            ALTER TABLE facilities ADD COLUMN IF NOT EXISTS image_url TEXT;
             ALTER TABLE invoices ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ;
             ALTER TABLE invoices ADD COLUMN IF NOT EXISTS fulfillment_method VARCHAR(50) NOT NULL DEFAULT 'counter_pickup';
             ALTER TABLE invoices ADD COLUMN IF NOT EXISTS fulfillment_status VARCHAR(50) NOT NULL DEFAULT 'pending';

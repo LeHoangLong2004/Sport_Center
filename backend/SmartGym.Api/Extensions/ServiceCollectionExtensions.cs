@@ -30,6 +30,7 @@ public static class ServiceCollectionExtensions
         var webRoot = Path.Combine(environment.ContentRootPath, "wwwroot");
         if (!Directory.Exists(webRoot)) Directory.CreateDirectory(webRoot);
         Directory.CreateDirectory(Path.Combine(webRoot, "uploads", "sports"));
+        Directory.CreateDirectory(Path.Combine(webRoot, "uploads", "facilities"));
         Directory.CreateDirectory(Path.Combine(webRoot, "uploads", "avatars"));
         environment.WebRootPath = webRoot;
         configuration["WebRootPath"] = webRoot;
