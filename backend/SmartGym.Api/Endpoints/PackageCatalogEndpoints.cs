@@ -173,37 +173,6 @@ public static class PackageCatalogEndpoints
             )
             .RequireAuthorization();
 
-        orders
-            .MapPost(
-                "/checkout",
-                async (
-                    HttpContext context,
-                    [FromBody] CreatePackageCheckoutRequest request,
-                    PackageCatalogService service,
-                    CancellationToken cancellationToken
-                ) =>
-                {
-                    if (!TryGetUserId(context, out var userId))
-                        return Results.Unauthorized();
-                    try
-                    {
-                        var checkout = await service.CheckoutAsync(
-                            userId,
-                            request,
-                            cancellationToken
-                        );
-                        return Results.Ok(checkout);
-                    }
-                    catch (PackageCatalogException exception)
-                    {
-                        return Results.Json(
-                            new { message = exception.Message },
-                            statusCode: exception.StatusCode
-                        );
-                    }
-                }
-            )
-            .RequireAuthorization();
 
         orders
             .MapPost(

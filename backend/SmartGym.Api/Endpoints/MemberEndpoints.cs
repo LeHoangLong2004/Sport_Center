@@ -25,6 +25,7 @@ namespace SmartGym.Api.Endpoints
             MapMemberBookingEndpoints(group);
             MapMemberSupportEndpoints(group);
             MapMemberChatEndpoints(group);
+            MapMemberWalletEndpoints(group);
         }
 
         private static string? GetUserId(HttpContext context)
