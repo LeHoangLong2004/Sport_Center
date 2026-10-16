@@ -107,6 +107,8 @@ public static class SportFacilityEndpoints
 
                 var form = await request.ReadFormAsync();
                 var file = form.Files.GetFile("file") ?? form.Files.FirstOrDefault();
+                var requestedFolder = form["folder"].FirstOrDefault();
+                var uploadFolder = requestedFolder is "sports" or "facilities" ? requestedFolder : "sports";
 
                 if (file == null || file.Length == 0)
                 {
@@ -124,7 +126,7 @@ public static class SportFacilityEndpoints
                 }
 
                 await using var stream = file.OpenReadStream();
-                var (success, url, errorMessage) = await photoService.UploadImageAsync(stream, file.FileName, "sports");
+                var (success, url, errorMessage) = await photoService.UploadImageAsync(stream, file.FileName, uploadFolder);
 
                 if (!success || string.IsNullOrEmpty(url))
                 {
@@ -147,6 +149,7 @@ public static class SportFacilityEndpoints
                 {
                     id = f.Id,
                     name = f.Name,
+                    imageUrl = f.ImageUrl,
                     address = f.Address,
                 }));
             }
@@ -158,7 +161,7 @@ public static class SportFacilityEndpoints
             {
                 request.Id = Guid.NewGuid();
                 await client.From<FacilityModel>().Insert(request);
-                return Results.Ok(new { id = request.Id, name = request.Name, address = request.Address });
+                return Results.Ok(new { id = request.Id, name = request.Name, imageUrl = request.ImageUrl, address = request.Address });
             }
         ).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
 
@@ -173,11 +176,13 @@ public static class SportFacilityEndpoints
 
                 if (!string.IsNullOrWhiteSpace(request.Name))
                     existing.Name = request.Name.Trim();
+                if (request.ImageUrl != null)
+                    existing.ImageUrl = request.ImageUrl;
                 if (!string.IsNullOrWhiteSpace(request.Address))
                     existing.Address = request.Address.Trim();
 
                 await client.From<FacilityModel>().Update(existing);
-                return Results.Ok(new { id = existing.Id, name = existing.Name, address = existing.Address });
+                return Results.Ok(new { id = existing.Id, name = existing.Name, imageUrl = existing.ImageUrl, address = existing.Address });
             }
         ).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
 

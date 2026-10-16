@@ -11,6 +11,7 @@ export interface SportItem {
 export interface FacilityItem {
   id: string;
   name: string;
+  imageUrl?: string;
   address?: string;
 }
 
@@ -149,6 +150,7 @@ export function FacilitiesTableCard({
 
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
         <div className="bg-slate-50 flex items-center px-4 py-2.5 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
+          <div className="w-12">Ảnh</div>
           <div className="flex-1">Tên phòng / Khu vực</div>
           <div className="w-24 text-right">Thao tác</div>
         </div>
@@ -162,6 +164,30 @@ export function FacilitiesTableCard({
               key={f.id}
               className="flex items-center px-4 py-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50/60 transition-colors gap-3"
             >
+              <div className="size-10 rounded-lg overflow-hidden bg-slate-100 shrink-0 border border-slate-200 relative flex items-center justify-center">
+                {f.imageUrl ? (
+                  <>
+                    <img
+                      src={f.imageUrl}
+                      alt={f.name}
+                      className="size-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                        const fallback = (e.target as HTMLElement).nextElementSibling;
+                        if (fallback) (fallback as HTMLElement).style.display = 'flex';
+                      }}
+                    />
+                    <div
+                      style={{ display: 'none' }}
+                      className="size-full items-center justify-center text-[10px] text-slate-400 font-bold bg-slate-100"
+                    >
+                      ROOM
+                    </div>
+                  </>
+                ) : (
+                  <div className="size-full flex items-center justify-center text-[10px] text-slate-400 font-bold">ROOM</div>
+                )}
+              </div>
               <div className="flex-1">
                 <p className="font-semibold text-sm text-slate-800">{f.name}</p>
                 {f.address && f.address !== 'Chưa cập nhật' && (

@@ -6,8 +6,20 @@ import { PaymentFilters } from "../components/PaymentFilters";
 import { InvoiceDetailModal } from "../components/InvoiceDetailModal";
 import { CreatePaymentModal } from "../components/CreatePaymentModal";
 import { useApiResource } from "../../../hooks/useApiResource";
-import { type InvoiceResponse } from "../../../hooks/flow3Api";
-import { apiPost, formatDateTime } from "../../../hooks/apiClient";
+import {
+  paymentApi,
+  reportApi,
+  type InvoiceResponse,
+} from "../../../hooks/flow3Api";
+import { apiDownloadFile, formatVnd, apiPost, formatDateTime } from "../../../hooks/apiClient";
+
+const STATUS_STYLE: Record<string, string> = {
+  completed: "bg-[#dcfce7] text-[#15803d]",
+  pending: "bg-[#fef3c7] text-[#b45309]",
+  failed: "bg-[#fee2e2] text-[#b91c1c]",
+  refunded: "bg-[#e0e7ff] text-[#4338ca]",
+  expired: "bg-[#f1f5f9] text-[#475569]",
+};
 
 const PAGE_SIZE = 8;
 
@@ -18,6 +30,7 @@ export function PaymentPage() {
   const [statusFilter, setStatusFilter] = useState("Tất cả");
   const [methodFilter, setMethodFilter] = useState("Tất cả");
   const [page, setPage] = useState(0);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Modals state
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceResponse | null>(null);
@@ -76,6 +89,19 @@ export function PaymentPage() {
     thisMonth.length === 0
       ? 0
       : Math.round((completed.length / thisMonth.length) * 100);
+
+  const exportUrl = reportApi.revenueExportUrl();
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      await apiDownloadFile(exportUrl, "bao-cao-doanh-thu.xlsx");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Không thể xuất báo cáo.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const handleRecordCash = async (id: string) => {
     try {
@@ -149,7 +175,9 @@ export function PaymentPage() {
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto relative">
       <PaymentHeader
+        onExport={handleExport}
         onExportCsv={handleExportCsv}
+        isExporting={isExporting}
         onOpenCreate={() => setShowCreateModal(true)}
       />
 

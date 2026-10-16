@@ -28,6 +28,9 @@ public class FacilityModel : BaseModel
     [Column("name")]
     public string Name { get; set; } = string.Empty;
 
+    [Column("image_url")]
+    public string? ImageUrl { get; set; }
+
     [Column("address")]
     public string Address { get; set; } = "Chưa cập nhật";
 }

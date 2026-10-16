@@ -54,6 +54,7 @@ CREATE TABLE users (
 CREATE TABLE facilities (
     id      UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     name    TEXT        NOT NULL,
+    image_url TEXT,
     address TEXT        NOT NULL,
     hotline VARCHAR(20),
     status  BOOLEAN     DEFAULT true

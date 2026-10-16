@@ -1,11 +1,20 @@
 import { iDownload, iPlus } from "../shared";
 
 interface PaymentHeaderProps {
-  onExportCsv: () => void;
-  onOpenCreate: () => void;
+  onExport?: () => void;
+  onExportCsv?: () => void;
+  isExporting?: boolean;
+  onOpenCreate?: () => void;
 }
 
-export function PaymentHeader({ onExportCsv, onOpenCreate }: PaymentHeaderProps) {
+export function PaymentHeader({
+  onExport,
+  onExportCsv,
+  isExporting = false,
+  onOpenCreate,
+}: PaymentHeaderProps) {
+  const handleExport = onExportCsv || onExport;
+
   return (
     <div className="flex items-center justify-between">
       <div>
@@ -17,15 +26,18 @@ export function PaymentHeader({ onExportCsv, onOpenCreate }: PaymentHeaderProps)
         </p>
       </div>
       <div className="flex gap-3 items-center shrink-0">
-        <button
-          onClick={onExportCsv}
-          className="bg-white border border-[#cbd5e1] flex gap-2 items-center px-4 py-2.5 rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
-        >
-          <img src={iDownload} alt="" className="size-4" />
-          <span className="font-semibold text-[#0f172a] text-sm">
-            Xuất dữ liệu CSV
-          </span>
-        </button>
+        {handleExport && (
+          <button
+            onClick={handleExport}
+            disabled={isExporting}
+            className="bg-white border border-[#cbd5e1] flex gap-2 items-center px-4 py-2.5 rounded-lg hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50"
+          >
+            <img src={iDownload} alt="" className="size-4" />
+            <span className="font-semibold text-[#0f172a] text-sm">
+              {isExporting ? "Đang xuất..." : onExportCsv ? "Xuất dữ liệu CSV" : "Xuất báo cáo Excel"}
+            </span>
+          </button>
+        )}
         <button
           onClick={onOpenCreate}
           className="bg-[#2563eb] flex gap-2 items-center px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm shadow-blue-500/20"

@@ -15,6 +15,7 @@ public static class EndpointRouteExtensions
         app.MapProductEndpoints();
         app.MapProductOrderEndpoints();
         app.MapAppointmentEndpoints();
+        app.MapNotificationEndpoints();
 
         app.MapGet("/", () => Results.Redirect("/swagger"));
         return app;
