@@ -16,16 +16,9 @@ export function SchedulePage() {
     "Thứ 7",
     "Chủ nhật",
   ];
-  const hours = [
-    "06:00",
-    "08:00",
-    "10:00",
-    "12:00",
-    "14:00",
-    "16:00",
-    "18:00",
-    "20:00",
-  ];
+  const hours = Array.from({ length: 15 }, (_, index) =>
+    `${String(index + 6).padStart(2, "0")}:00`,
+  );
 
   const [classes, setClasses] = useState<any[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -36,20 +29,13 @@ export function SchedulePage() {
   const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<"calendar" | "bookings">("calendar");
   const [bookings, setBookings] = useState<any[]>([]);
-  const facilities = [
-    "Studio 1 (Yoga/Pilates)",
-    "Studio 2 (Dance)",
-    "Studio 3 (Cycling)",
-    "Gym Area",
-  ];
+  const [facilities, setFacilities] = useState<string[]>([]);
 
   const handleRoomChange = (room: string) => {
-    if (room === "Tất cả") {
+    if (!room || room === "Tất cả") {
       setSelectedRooms([]);
     } else {
-      setSelectedRooms((prev) =>
-        prev.includes(room) ? prev.filter((r) => r !== room) : [...prev, room],
-      );
+      setSelectedRooms([room]);
     }
   };
 
@@ -72,6 +58,20 @@ export function SchedulePage() {
     };
     return `${formatDate(currentWeekStart)} - ${formatDate(end)}, ${end.getFullYear()}`;
   };
+
+  const weekDates = days.map((label, index) => {
+    const date = new Date(currentWeekStart);
+    date.setDate(date.getDate() + index);
+    return {
+      label,
+      date: `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}`,
+      iso: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+        date.getDate(),
+      ).padStart(2, "0")}`,
+    };
+  });
 
   const fetchClasses = async () => {
     try {
@@ -112,12 +112,14 @@ export function SchedulePage() {
           return {
             id: c.id,
             name: c.className,
+            sport: c.sportName,
             room: c.facilityName || "Studio",
             coach: c.coachName,
             enrolled: `${c.currentEnrolled || 0}/${c.capacity || 0}`,
             day: day,
             hour: hourIndex,
             duration: durationIndex,
+            durationMinutes: c.durationMinutes || 60,
             color: colorBg,
             text: colorText,
             rawStart: start,
@@ -125,9 +127,41 @@ export function SchedulePage() {
           };
         });
         setClasses(formattedClasses);
+
+        // Fallback để dropdown vẫn có dữ liệu nếu endpoint phòng tập tạm thời lỗi.
+        const roomsFromClasses = Array.from(
+          new Set(
+            formattedClasses
+              .map((item: any) => item.room?.trim())
+              .filter(Boolean),
+          ),
+        ) as string[];
+        setFacilities((current) => (current.length ? current : roomsFromClasses));
       }
     } catch (error) {
       console.error("Failed to fetch classes:", error);
+    }
+  };
+
+  const fetchFacilities = async () => {
+    try {
+      const res = await fetch("/api/facilities");
+      if (res.ok) {
+        const data = await res.json();
+        const roomNames = Array.from(
+          new Set(
+            (Array.isArray(data) ? data : [])
+              .map((facility: any) => facility.name?.trim())
+              .filter(Boolean),
+          ),
+        ) as string[];
+
+        if (roomNames.length > 0) {
+          setFacilities(roomNames);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch facilities:", error);
     }
   };
 
@@ -147,6 +181,7 @@ export function SchedulePage() {
 
   useEffect(() => {
     fetchClasses();
+    fetchFacilities();
     fetchBookings();
   }, []);
 
@@ -160,6 +195,16 @@ export function SchedulePage() {
     const next = new Date(currentWeekStart);
     next.setDate(next.getDate() + 7);
     setCurrentWeekStart(next);
+  };
+
+  const handleCurrentWeek = () => {
+    const today = new Date();
+    const day = today.getDay();
+    const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(today);
+    monday.setDate(diff);
+    monday.setHours(0, 0, 0, 0);
+    setCurrentWeekStart(monday);
   };
 
   // Lọc các lớp trong tuần đang chọn
@@ -182,7 +227,14 @@ export function SchedulePage() {
 
   if (selectedRooms.length > 0) {
     classesThisWeek = classesThisWeek.filter((c) =>
-      selectedRooms.some((r) => c.room.includes(r.split(" (")[0])),
+      selectedRooms.some((r) => {
+        const classRoom = String(c.room || "").trim().toLowerCase();
+        const selectedRoom = r.trim().toLowerCase();
+        const classRoomBase = classRoom.split(" (")[0];
+        const selectedRoomBase = selectedRoom.split(" (")[0];
+
+        return classRoom === selectedRoom || classRoomBase === selectedRoomBase;
+      }),
     );
   }
 
@@ -256,21 +308,22 @@ export function SchedulePage() {
       )}
 
       {activeTab === "calendar" ? (
-        <div className="flex gap-4 pt-2">
+        <div className="flex flex-col gap-4 pt-2 min-w-0">
           <ScheduleFilters
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             facilities={facilities}
             selectedRooms={selectedRooms}
             onRoomChange={handleRoomChange}
-          />
-
-          <ScheduleCalendarView
-            days={days}
-            hours={hours}
             currentWeekString={getWeekString()}
             onPrevWeek={handlePrevWeek}
             onNextWeek={handleNextWeek}
+            onToday={handleCurrentWeek}
+          />
+
+          <ScheduleCalendarView
+            hours={hours}
+            weekDates={weekDates}
             classesThisWeek={classesThisWeek}
             onSelectClass={(id) => setSelectedClassId(id)}
           />

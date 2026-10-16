@@ -35,13 +35,12 @@ export function useCoachAttendanceData(initialSessionId: string | null) {
           CoachAPI.getSessionMembers(selectedSessionId).catch(() => []),
         ]);
 
+        const isMockSession = FALLBACK_SESSIONS.some((session) => session.id === selectedSessionId);
         let usableMembers = Array.isArray(sessionMembers) && sessionMembers.length > 0
           ? sessionMembers
-          : FALLBACK_MEMBERS.filter((m) => m.classIds.includes(selectedSessionId));
-
-        if (usableMembers.length === 0) {
-          usableMembers = FALLBACK_MEMBERS.slice(0, 8);
-        }
+          : isMockSession
+            ? FALLBACK_MEMBERS.filter((m) => m.classIds.includes(selectedSessionId))
+            : [];
 
         const localKey = `coach_attendance_${selectedSessionId}`;
         const localSaved = localStorage.getItem(localKey);
@@ -67,6 +66,15 @@ export function useCoachAttendanceData(initialSessionId: string | null) {
         setRecords(initialized);
         setSavedRecords(initialized);
         setMembers(usableMembers);
+
+        // Đồng bộ lại registeredMemberIds cho buổi học đang chọn để sĩ số trên Header luôn chuẩn xác
+        setActiveSessions((prev) =>
+          prev.map((s) =>
+            s.id === selectedSessionId
+              ? { ...s, registeredMemberIds: usableMembers.map((m) => m.id) }
+              : s
+          )
+        );
       } catch (err) {
         console.error("Lỗi nạp điểm danh:", err);
       }

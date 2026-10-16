@@ -54,13 +54,18 @@ public class MemberPackageModel : BaseModel
             StartDate,
             EndDate,
             RemainingSessions,
-            Enum.Parse<PackageStatus>(Status, true),
+            ParseStatus(Status),
             FreezeCount,
             FreezeDaysUsed,
             FrozenAt,
             AutoRenew
         );
     }
+
+    private static PackageStatus ParseStatus(string? value)
+        => Enum.TryParse<PackageStatus>(value, true, out var status)
+            ? status
+            : PackageStatus.Inactive;
 
     public static MemberPackageModel FromDomain(MemberPackage package)
     {

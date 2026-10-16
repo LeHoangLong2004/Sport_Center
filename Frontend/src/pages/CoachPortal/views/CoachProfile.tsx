@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, type ChangeEvent } from "react";
 import { useUserProfile } from "../../../hooks/useUserProfile";
 import { CoachAPI } from "../services/api";
 import ProfileHeaderCard from "./profile/ProfileHeaderCard";
@@ -8,12 +8,14 @@ import EditProfileModal from "./profile/EditProfileModal";
 import ChangePasswordModal from "./profile/ChangePasswordModal";
 
 export default function CoachProfile({ navigateTo }: { navigateTo?: (screen: any) => void }) {
-  const { profile, loading, updateProfile } = useUserProfile();
+  const { profile, loading, updateProfile, uploadAvatar } = useUserProfile();
   const [stats, setStats] = useState<{
     totalSessions?: number;
     completedSessions?: number;
     totalMembers?: number;
     upcomingClasses?: number;
+    averageRating?: number;
+    reviewCount?: number;
   } | null>(null);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -31,6 +33,7 @@ export default function CoachProfile({ navigateTo }: { navigateTo?: (screen: any
   const [bio, setBio] = useState("");
 
   const [savingProfile, setSavingProfile] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [profileMsg, setProfileMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const [savingPassword, setSavingPassword] = useState(false);
@@ -46,18 +49,19 @@ export default function CoachProfile({ navigateTo }: { navigateTo?: (screen: any
 
   useEffect(() => {
     if (profile) {
-      setFullName(profile.fullName || "Enam");
-      setPhone(profile.phone || "0900 000 000");
-      setEmail(profile.email || "hoxuananhnam1@gmail.com");
-      setDob(profile.dob ? profile.dob.split("T")[0] : "1998-08-15");
-      setGender(profile.gender || "Nam");
-      setAvatarUrl(profile.avatarUrl || "");
-      setExperienceYears(profile.experienceYears ?? 3);
-      setSpecialtiesStr(profile.specialties || "Gym Fitness, Yoga, BodyCombat");
+      setFullName(profile.fullName || "");
+      setPhone(profile.phone || "");
+      setEmail(profile.email || "");
+      setDob(profile.dob ? profile.dob.split("T")[0] : "");
+      setGender(profile.gender || "");
+      setExperienceYears(profile.experienceYears ?? 0);
+      setSpecialtiesStr(profile.specialties || "");
       setBio(
         profile.bio ||
           "Huấn luyện viên thể hình chuyên sâu về xây dựng cơ bắp, cải thiện vóc dáng và phục hồi chức năng vận động."
       );
+
+      if (!profile.bio) setBio("");
 
       const parsedCerts = profile.certifications
         ? profile.certifications.split(",").map((c) => c.trim()).filter(Boolean)
@@ -67,11 +71,12 @@ export default function CoachProfile({ navigateTo }: { navigateTo?: (screen: any
             "Chứng chỉ Dinh dưỡng Thể thao Cơ bản",
           ];
       setCertsList(parsedCerts);
+      if (!profile.certifications) setCertsList([]);
     }
   }, [profile]);
 
   const specialties = useMemo(() => {
-    return (profile?.specialties || specialtiesStr || "Gym Fitness, Yoga, BodyCombat")
+    return (profile?.specialties || specialtiesStr)
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
@@ -99,7 +104,6 @@ export default function CoachProfile({ navigateTo }: { navigateTo?: (screen: any
       setEmail(formData.email);
       setDob(formData.dob);
       setGender(formData.gender);
-      setAvatarUrl(formData.avatarUrl);
       setExperienceYears(formData.experienceYears);
       setSpecialtiesStr(formData.specialties);
       setBio(formData.bio);
@@ -114,6 +118,38 @@ export default function CoachProfile({ navigateTo }: { navigateTo?: (screen: any
       setProfileMsg({ type: "error", text: "Lỗi cập nhật hồ sơ. Vui lòng thử lại!" });
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  const handleAvatarFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    const previousUrl = avatarUrl || profile?.avatarUrl || "";
+    if (!file.type.startsWith("image/")) {
+      setProfileMsg({ type: "error", text: "Vui lòng chọn file hình ảnh." });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setProfileMsg({ type: "error", text: "Ảnh đại diện không được vượt quá 5MB." });
+      return;
+    }
+
+    setAvatarUploading(true);
+    setProfileMsg(null);
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarUrl(previewUrl);
+    try {
+      const url = await uploadAvatar(file);
+      URL.revokeObjectURL(previewUrl);
+      setAvatarUrl(url);
+      setProfileMsg({ type: "success", text: "Đã cập nhật ảnh đại diện." });
+    } catch (error) {
+      URL.revokeObjectURL(previewUrl);
+      setAvatarUrl(previousUrl);
+      setProfileMsg({ type: "error", text: error instanceof Error ? error.message : "Tải ảnh đại diện thất bại." });
+    } finally {
+      setAvatarUploading(false);
     }
   };
 
@@ -141,14 +177,16 @@ export default function CoachProfile({ navigateTo }: { navigateTo?: (screen: any
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-12 animate-in fade-in duration-300">
       <ProfileHeaderCard
-        fullName={profile?.fullName || fullName || "Enam"}
-        avatarUrl={profile?.avatarUrl || avatarUrl}
-        coachId={profile?.id ? profile.id.substring(0, 8).toUpperCase() : "25F50FBA"}
+        fullName={profile?.fullName || fullName || "Chưa cập nhật"}
+        avatarUrl={avatarUrl || profile?.avatarUrl || ""}
+        coachId={profile?.id ? profile.id.substring(0, 8).toUpperCase() : "—"}
         experienceYears={profile?.experienceYears ?? experienceYears}
         specialties={specialties}
         bio={profile?.bio || bio}
         onOpenEdit={() => setIsEditModalOpen(true)}
         onOpenPassword={() => setIsPasswordModalOpen(true)}
+        onAvatarFileChange={handleAvatarFileChange}
+        avatarUploading={avatarUploading}
       />
 
       <ProfileStatsCards stats={stats} />
@@ -171,7 +209,6 @@ export default function CoachProfile({ navigateTo }: { navigateTo?: (screen: any
           email: profile?.email || email,
           dob: profile?.dob ? profile.dob.split("T")[0] : dob,
           gender: profile?.gender || gender,
-          avatarUrl: profile?.avatarUrl || avatarUrl,
           experienceYears: profile?.experienceYears ?? experienceYears,
           specialtiesStr: profile?.specialties || specialtiesStr,
           certsList: displayCerts,

@@ -1,7 +1,7 @@
 # SmartGym - Báo Cáo Tiến Độ Dự Án (Project Progress Update)
 
-**Ngày cập nhật:** 05/10/2026
-**Người phụ trách:** Phương
+**Ngày cập nhật:** 15/10/2026
+**Người phụ trách:** Phương, Long, Nam, Thuận
 
 ---
 
@@ -70,23 +70,40 @@
 
 ---
 
-### 1.11. Nâng cấp Hồ Sơ Năng Lực HLV (Coach Profile) & Cập nhật Cài Đặt Tài Khoản Đa Nền Tảng - **HOÀN THÀNH**
-- **Mở rộng Cơ sở dữ liệu (Backend)**: Tự động khởi tạo bảng `coach_profiles` thông qua EF Core Raw SQL tại `Program.cs` để lưu trữ chuyên biệt các thông tin của Huấn luyện viên như `specialties` (Chuyên môn), `certifications` (Bằng cấp), `experience_years` (Năm kinh nghiệm) và `bio` (Giới thiệu bản thân).
-- **Cập nhật DTO & UserService**: Ánh xạ (mapping) thành công các trường dữ liệu mới của HLV vào `UserResponse` và xử lý logic lưu trữ trực tiếp trong `UpdateUserProfileAsync`.
-- **Tái cấu trúc UI & Cập nhật API (Frontend)**:
-  - Nâng cấp Component dùng chung `ProfileSettings.tsx`, tự động hiển thị thêm khu vực "Hồ sơ năng lực" nếu tài khoản đang đăng nhập là HLV. Đảm bảo form hiển thị mượt mà và trực quan.
-  - Phủ sóng tính năng cập nhật hồ sơ cá nhân (`PUT /api/users/{id}/profile`) lên **tất cả** các Portal: `MemberProfile`, `CoachSettings`, `AdminDashboard` và `ReceptionistPortal`. Tất cả các vai trò hiện đã có thể tự thay đổi thông tin cá nhân và lưu thẳng vào hệ thống theo thời gian thực (real-time).
+### 1.12. Quản Lý Bộ Môn & Phòng Tập & Tích Hợp Cloudinary CDN (Task 55) - **HOÀN THÀNH**
+- **CRUD Danh mục Thể thao & Cơ sở tập luyện**: Xây dựng toàn diện các API và giao diện quản lý Bộ môn (`SportModel`) và Phòng tập (`FacilityModel`), kiểm tra toàn vẹn dữ liệu (không cho phép xóa môn/phòng khi đang có lớp học gắn kết).
+- **Lưu trữ ảnh Cloudinary & Fallback Cục bộ**: Xây dựng dịch vụ `IPhotoService` và `CloudinaryPhotoService`, tự động upload lên CDN đám mây của Cloudinary, đồng thời có cơ chế fallback lưu trữ an toàn vào thư mục tĩnh `wwwroot/uploads` khi ngoại tuyến.
+- **Tách module giao diện Facilities**: Phân chia `FacilitiesPage.tsx` thành `FacilitiesCards.tsx` và `FacilitiesModals.tsx` để bảo đảm chuẩn code dưới 200 dòng.
+
+### 1.13. Hoàn Thiện Luồng Mua Gói Tập & Thanh Toán Sản Phẩm (Task 57, Task 9, Task 31) - **HOÀN THÀNH**
+- **Chuẩn hóa 4 bước Checkout mua gói tập**: Loại bỏ màn hình OTP giả định; đồng bộ thông tin hội viên thực tế từ `localStorage` và tổng tiền thanh toán theo chu kỳ thời gian.
+- **Khôi phục Giỏ hàng & Thanh toán Đơn hàng (`ProductPaymentFlow.tsx`)**: Đấu nối luồng mua sản phẩm tại Member Portal với quy trình thanh toán trực tiếp hoặc qua cổng VNPay Sandbox, tự động cập nhật trạng thái đơn sang `paid`/`pending` và hiển thị chi tiết hóa đơn.
+
+### 1.14. Tái Cấu Trúc Backend & Rút Gọn Program.cs (<50 Dòng) (Task 56, Task 58) - **HOÀN THÀNH**
+- **Rút gọn triệt để `Program.cs`**: Đưa file khởi động hệ thống từ **282 dòng xuống chỉ còn 33 dòng** (giảm 88%), loại bỏ triệt để đoạn khai báo CORS trùng lặp 2 lần.
+- **Module hóa các Extension Methods**:
+  - `ServiceCollectionExtensions.cs`: Quản lý DbContext, Supabase Client, toàn bộ Repositories, Services, In-memory Stores, VnPay/SMTP options và QuestPDF.
+  - `AuthenticationExtensions.cs`: Quản lý cấu hình JWT Bearer và chính sách CORS `AllowAll`.
+  - `SwaggerExtensions.cs`: Quản lý cấu hình tài liệu API và tích hợp Bearer Token UI.
+  - `EndpointRouteExtensions.cs`: Gom các nhóm route API tập trung (`MapSmartGymEndpoints`).
+
+### 1.15. Khắc Phục Lỗi Tải Ảnh & Chuẩn Hóa FormData / Static Files (Task 59) - **HOÀN THÀNH**
+- **Sửa lỗi gửi SyntheticEvent `e` thay vì `File`**: Khắc phục lỗi truyền tham số `file: File` trong `FacilitiesPage.tsx` khiến FormData gửi payload rỗng 150 bytes (`[object Object]`), gây lỗi HTTP 400 Bad Request.
+- **Gia cố Minimal API `/api/upload/image`**: Đọc file an toàn qua `HttpRequest request`, bổ sung validation MIME type ảnh (`image/*`) và giới hạn kích thước 10MB.
+- **Tự động khởi tạo thư mục tĩnh**: Tự động kiểm tra và tạo thư mục `wwwroot/uploads/sports` và `wwwroot/uploads/avatars` ngay khi ứng dụng khởi động để middleware `app.UseStaticFiles()` luôn phục vụ được ảnh tĩnh.
 
 ---
 
 ## 2. Các Công Việc Đang Thực Hiện (In Progress)
+1. **Hoàn thiện đồng bộ sĩ số điểm danh lớp học (Task 18)**: Chuẩn hóa mapping sĩ số giữa API danh sách lớp và danh sách học viên điểm danh thực tế của Coach.
+2. **Tối ưu hiển thị lưới lịch tuần (Task 23)**: Hoàn thiện tính năng phát hiện ca học trùng giờ và điều chỉnh độ cao khung giờ linh hoạt.
+3. **Chuyển đổi hoàn toàn Coach Endpoints sang Database Supabase (Task 28)**: Thay thế hoàn toàn dữ liệu in-memory sang các bảng quan hệ trên PostgreSQL.
 
 ## 3. Các Bước Tiếp Theo (Next Steps)
-Căn cứ theo PRD (Hồ sơ yêu cầu dự án), các bước tiếp theo sẽ tiến hành:
-1. **Flow 3 & Flow 4 - Quản Lý Tập PT & Điểm Danh Cổng / Check-in:** Xây dựng API Đăng ký tập với HLV cá nhân (PT) và tích hợp luồng điểm danh cổng.
-2. **Thiết lập Middleware Xử Lý Lỗi (Global Exception Handling):** Bắt và trả về các lỗi JSON chuẩn thay vì log thô để Frontend dễ dàng bắt lỗi.
-3. **Thanh toán trực tuyến:** Tích hợp với dịch vụ Payment Gateway (VNPay / PayOS) để hoàn tất trạng thái thanh toán (PaymentStatus) thay vì chỉ gán là `pending`.
+1. **Kiểm thử tích hợp chéo (End-to-End Testing)**: Thực hiện kiểm thử toàn bộ luồng từ Lễ tân bán gói -> Hội viên đặt lớp -> HLV điểm danh -> Xuất hóa đơn PDF.
+2. **Rà soát & tối ưu hóa các trang Frontend lớn**: Tiếp tục phân tách các view lớn (>400 dòng) ở Member Portal thành các sub-components gọn gàng.
+3. **Chuẩn bị kịch bản Demo & Báo cáo đồ án SWP391**: Lắp ráp dữ liệu mẫu phong phú cho 10 bộ môn thể thao và các gói thành viên VIP.
 
 ---
-*Ghi chú: File `Project_Tracking.md` cũng đã được cập nhật trạng thái "Done" cho các tính năng thuộc Flow 2.*
+*Ghi chú: Toàn bộ bảng phân công nhân sự và tiến độ chi tiết từng màn hình/tính năng đã được cập nhật đồng bộ trong file `docs/Project_Tracking.md`.*
 

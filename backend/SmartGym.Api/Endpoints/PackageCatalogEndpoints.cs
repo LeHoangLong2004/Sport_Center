@@ -8,7 +8,7 @@ namespace SmartGym.Api.Endpoints;
 public static class PackageCatalogEndpoints
 {
     private static readonly string[] ManagerRoles = ["manager", "CenterManager", "center_manager"];
-    private static readonly string[] MemberRoles = ["member", "Member"];
+    private static readonly string[] MemberRoles = ["member", "Member", "admin", "Admin", "manager", "Manager"];
 
     public static void MapPackageCatalogEndpoints(this IEndpointRouteBuilder app)
     {
@@ -204,6 +204,38 @@ public static class PackageCatalogEndpoints
                 }
             )
             .RequireAuthorization();
+
+        orders
+            .MapPost(
+                "/checkout",
+                async (
+                    HttpContext context,
+                    [FromBody] CreatePackageCheckoutRequest request,
+                    PackageCatalogService service,
+                    CancellationToken cancellationToken
+                ) =>
+                {
+                    if (!TryGetUserId(context, out var userId))
+                        return Results.Unauthorized();
+                    try
+                    {
+                        var result = await service.CheckoutAsync(
+                            userId,
+                            request,
+                            cancellationToken
+                        );
+                        return Results.Ok(result);
+                    }
+                    catch (PackageCatalogException exception)
+                    {
+                        return Results.Json(
+                            new { message = exception.Message },
+                            statusCode: exception.StatusCode
+                        );
+                    }
+                }
+            )
+            .RequireAuthorization(policy => policy.RequireRole(MemberRoles));
 
         orders
             .MapGet(

@@ -7,6 +7,8 @@ export function CheckInPage() {
   const [confirmed, setConfirmed] = useState(false)
   const [historyRows, setHistoryRows] = useState<any[]>([])
   const [members, setMembers] = useState<any[]>([])
+  const [processing, setProcessing] = useState(false)
+  const [notice, setNotice] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
   const fetchHistory = async () => {
     try {
@@ -43,9 +45,13 @@ export function CheckInPage() {
   }, []);
 
   const foundMember = members.find(m => m.memberCode === scanValue || m.phoneNumber === scanValue)
+  const openCheckIn = foundMember
+    ? historyRows.find(row => row.memberId === foundMember.id && !row.checkOutTime)
+    : null
 
   const handleCheckIn = async () => {
     if (!foundMember) return;
+    setProcessing(true)
     try {
       const token = localStorage.getItem("token");
       const res = await fetch("/api/checkin", {
@@ -54,28 +60,66 @@ export function CheckInPage() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({ memberId: foundMember.userId })
+        body: JSON.stringify({ memberId: foundMember.id })
       });
       if (res.ok) {
         setConfirmed(true);
+        setNotice({ type: "success", text: "Check-in thành công. Chào mừng bạn đến SmartGym." });
         fetchHistory();
       } else {
         const err = await res.json();
-        alert(err.reason || "Check-in thất bại");
+        setNotice({ type: "error", text: err.message || err.reason || "Check-in thất bại" });
       }
     } catch (e) {
       console.error(e);
-      alert("Lỗi kết nối.");
+      setNotice({ type: "error", text: "Không thể kết nối đến máy chủ." });
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  const handleCheckOut = async () => {
+    if (!foundMember || !openCheckIn) return;
+    setProcessing(true)
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/checkin/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ memberId: foundMember.id })
+      });
+      if (res.ok) {
+        setConfirmed(false);
+        setNotice({ type: "success", text: "Check-out thành công. Hẹn gặp lại bạn!" });
+        await fetchHistory();
+      } else {
+        const err = await res.json();
+        setNotice({ type: "error", text: err.message || "Check-out thất bại" });
+      }
+    } catch (e) {
+      console.error(e);
+      setNotice({ type: "error", text: "Không thể kết nối đến máy chủ." });
+    } finally {
+      setProcessing(false)
     }
   }
 
   return (
     <div className="flex flex-col gap-[24px] items-start p-[32px] w-full">
+      {notice ? (
+        <div className={`flex items-center justify-between gap-4 px-4 py-3 rounded-lg border w-full ${notice.type === "success" ? "bg-green-50 border-green-200 text-green-700" : "bg-red-50 border-red-200 text-red-700"}`}>
+          <span className="font-['Manrope:Bold'] font-bold text-[14px]">{notice.text}</span>
+          <button type="button" onClick={() => setNotice(null)} className="font-bold text-[18px] leading-none" aria-label="Đóng thông báo">×</button>
+        </div>
+      ) : null}
       {/* Stats */}
       <div className="flex gap-[16px] items-start shrink-0 w-full">
         {[
           { icon: `${A}/9e21f.svg`, bg: "bg-[#3b82f6]", label: "Tổng check-in hôm nay", value: historyRows.length.toString() },
-          { icon: `${A}/fe113.svg`, bg: "bg-[#22c55e]", label: "Đang tập tại trung tâm", value: "34" },
+           { icon: `${A}/fe113.svg`, bg: "bg-[#22c55e]", label: "Đang tập tại trung tâm", value: historyRows.filter(row => !row.checkOutTime).length.toString() },
           { icon: `${A}/53e60.svg`, bg: "bg-[#ea580c]", label: "Lớp học sắp bắt đầu", value: "3 lớp" },
         ].map((stat) => (
           <div key={stat.label} className="bg-white border border-[#e2e8f0] flex flex-1 gap-[16px] items-start min-w-0 p-[20px] rounded-[12px]">
@@ -137,12 +181,13 @@ export function CheckInPage() {
               </div>
               <button
                 type="button"
-                onClick={handleCheckIn}
+                 onClick={openCheckIn ? handleCheckOut : handleCheckIn}
+                 disabled={processing}
                 className={`flex gap-[8px] items-center justify-center p-[14px] rounded-[8px] shrink-0 w-full transition-colors ${confirmed ? "bg-[#16a34a]" : "bg-[#22c55e]"}`}
               >
                 <img src={`${A}/b6b07.svg`} alt="" className="size-[18px]" />
                 <span className="font-['Manrope:Bold'] font-bold text-[15px] text-white">
-                  {confirmed ? "✓ ĐÃ CHECK-IN THÀNH CÔNG" : "XÁC NHẬN CHECK-IN"}
+                  {openCheckIn ? "XÁC NHẬN CHECK-OUT" : confirmed ? "✓ ĐÃ CHECK-IN THÀNH CÔNG" : "XÁC NHẬN CHECK-IN"}
                 </span>
               </button>
             </>
@@ -179,9 +224,11 @@ export function CheckInPage() {
             <span className="font-['Manrope:Regular'] font-normal text-[#64748b] text-[13px] w-[150px] shrink-0">{"..."}</span>
             <span className="font-['Manrope:Regular'] font-normal text-[#0f172a] text-[13px] w-[180px] shrink-0">{"..."}</span>
             <div className="flex items-start w-[150px] shrink-0">
-              <StatusBadge text={row.status === "APPROVED" ? "Hợp lệ" : "Từ chối"} color={row.status === "APPROVED" ? "green" : "red"} />
+              <StatusBadge text={row.result === "APPROVED" || row.result === "CHECKED_OUT" ? "Hợp lệ" : "Từ chối"} color={row.result === "APPROVED" || row.result === "CHECKED_OUT" ? "green" : "red"} />
             </div>
-            <span className="font-['Manrope:Regular'] font-normal text-right w-[100px] shrink-0 text-[13px]" style={{ color: row.status === "APPROVED" ? "#22c55e" : "#ef4444" }}>Cửa chính</span>
+             <span className="font-['Manrope:Regular'] font-normal text-right w-[100px] shrink-0 text-[13px]" style={{ color: row.checkOutTime ? "#64748b" : "#22c55e" }}>
+               {row.checkOutTime ? `${row.durationMinutes ?? 0} phút` : "Đang tập"}
+             </span>
           </div>
         ))}
       </div>

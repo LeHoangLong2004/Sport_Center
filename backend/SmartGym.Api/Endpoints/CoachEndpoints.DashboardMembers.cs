@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using SmartGym.Api.Services;
 using SmartGym.Infrastructure.Persistence.EF;
 using SmartGym.Infrastructure.Persistence.Supabase.Repositories;
 
@@ -18,15 +20,35 @@ namespace SmartGym.Api.Endpoints
             // 1. Dashboard
             group.MapGet(
                 "/dashboard",
-                () =>
+                async (HttpContext context, SmartGymDbContext db) =>
                 {
+                    var coachIdValue = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                        ?? context.User.FindFirst("sub")?.Value;
+
+                    if (!Guid.TryParse(coachIdValue, out var coachId))
+                        return Results.Ok(new { totalSessions = 0, completedSessions = 0, totalMembers = 0, upcomingClasses = 0 });
+
+                    var classes = await db.Database.SqlQueryRaw<ClassSqlRawModel>(
+                        "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status FROM classes WHERE coach_id = {0}",
+                        coachId).ToListAsync();
+                    var classIds = classes.Select(c => c.Id).ToHashSet();
+                    var bookings = classIds.Count == 0
+                        ? new System.Collections.Generic.List<ClassBookingRawModel>()
+                        : await db.Database.SqlQueryRaw<ClassBookingRawModel>(
+                            "SELECT id, user_id, class_id, status, created_at FROM class_bookings WHERE status NOT IN ('cancelled', 'rejected', 'class_cancelled')").ToListAsync();
+                    var now = DateTime.UtcNow;
+                    var coachBookings = bookings.Where(b => classIds.Contains(b.ClassId)).ToList();
+                    var reviews = await db.Reviews.Where(r => r.CoachId == coachId).ToListAsync();
+
                     return Results.Ok(
                         new
                         {
-                            totalSessions = 12,
-                            completedSessions = 8,
-                            totalMembers = 45,
-                            upcomingClasses = 3,
+                            totalSessions = classes.Count,
+                            completedSessions = classes.Count(c => c.ScheduleTime.AddMinutes(c.DurationMinutes) < now),
+                            totalMembers = coachBookings.Select(b => b.UserId).Distinct().Count(),
+                            upcomingClasses = classes.Count(c => c.Status && c.ScheduleTime > now),
+                            averageRating = reviews.Count == 0 ? (double?)null : reviews.Average(r => r.Rating),
+                            reviewCount = reviews.Count,
                         }
                     );
                 }
@@ -39,7 +61,8 @@ namespace SmartGym.Api.Endpoints
                     [FromQuery] string? startDate,
                     [FromQuery] string? endDate,
                     HttpContext context,
-                    SmartGymDbContext db
+                    SmartGymDbContext db,
+                    ScheduleStoreService scheduleStore
                 ) =>
                 {
                     try
@@ -84,16 +107,49 @@ namespace SmartGym.Api.Endpoints
                                     className = c.ClassName,
                                     sport = sport?.Name ?? "Thể thao",
                                     level = "Cơ bản",
+                                    type = "group",
                                     date = c.ScheduleTime.ToString("yyyy-MM-dd"),
                                     startTime = c.ScheduleTime.ToString("HH:mm"),
                                     endTime = endT.ToString("HH:mm"),
                                     room = facility?.Name ?? "Studio 1",
-                                    coachName = "HLV",
+                                    coachName = "HLV Hồ Xuân Ánh Nam",
                                     capacity = c.Capacity,
+                                    registeredCount = registeredIds.Length,
                                     registeredMemberIds = registeredIds,
                                     status = statusStr,
+                                    attendanceStatus = "chưa điểm danh",
+                                    coachNote = "",
                                 };
                             }).ToList();
+
+                            // Also append in-memory store sessions (e.g. 1-1 PT booked)
+                            var storeSessions = scheduleStore.GetAllSessions();
+                            foreach (var s in storeSessions)
+                            {
+                                if (!result.Any(r => r.id == s.Id))
+                                {
+                                    result.Add(new
+                                    {
+                                        id = s.Id,
+                                        classId = s.ClassId ?? "",
+                                        className = s.ClassName,
+                                        sport = s.Sport,
+                                        level = s.Level,
+                                        type = s.Type,
+                                        date = s.Date,
+                                        startTime = s.StartTime,
+                                        endTime = s.EndTime,
+                                        room = s.Room,
+                                        coachName = s.CoachName,
+                                        capacity = s.Capacity,
+                                        registeredCount = s.RegisteredCount,
+                                        registeredMemberIds = new string[] { s.MemberId ?? "m1" },
+                                        status = s.Status,
+                                        attendanceStatus = s.AttendanceStatus,
+                                        coachNote = s.CoachNote,
+                                    });
+                                }
+                            }
 
                             if (!string.IsNullOrWhiteSpace(startDate) && DateTime.TryParse(startDate, out var sDate))
                             {
@@ -109,7 +165,83 @@ namespace SmartGym.Api.Endpoints
                     }
                     catch { }
 
-                    return Results.Ok(Array.Empty<object>());
+                    // Fallback to ScheduleStoreService and default sessions
+                    var fallbackStoreSessions = scheduleStore.GetAllSessions();
+                    var list = new List<object>();
+
+                    foreach (var s in fallbackStoreSessions)
+                    {
+                        list.Add(new
+                        {
+                            id = s.Id,
+                            classId = s.ClassId ?? "",
+                            className = s.ClassName,
+                            sport = s.Sport,
+                            level = s.Level,
+                            type = s.Type,
+                            date = s.Date,
+                            startTime = s.StartTime,
+                            endTime = s.EndTime,
+                            room = s.Room,
+                            coachName = s.CoachName,
+                            capacity = s.Capacity,
+                            registeredCount = s.RegisteredCount,
+                            registeredMemberIds = new string[] { s.MemberId ?? "m1" },
+                            status = s.Status,
+                            attendanceStatus = s.AttendanceStatus,
+                            coachNote = s.CoachNote,
+                            memberName = s.MemberName,
+                            memberPhone = s.MemberPhone,
+                            memberEmail = s.MemberEmail,
+                            goal = s.Goal,
+                            cancelReason = s.CancelReason
+                        });
+                    }
+
+                    // Default classes
+                    list.Add(new
+                    {
+                        id = "s1",
+                        classId = "cls-yoga",
+                        className = "Yoga Cơ Bản – Lớp A",
+                        sport = "Yoga",
+                        level = "Cơ bản",
+                        type = "group",
+                        date = DateTime.Now.ToString("yyyy-MM-dd"),
+                        startTime = "07:00",
+                        endTime = "08:00",
+                        room = "Studio 2",
+                        coachName = "HLV Hồ Xuân Ánh Nam",
+                        capacity = 10,
+                        registeredCount = 8,
+                        registeredMemberIds = new string[] { "m1", "m2" },
+                        status = "hoàn thành",
+                        attendanceStatus = "có mặt",
+                        coachNote = ""
+                    });
+
+                    list.Add(new
+                    {
+                        id = "s2",
+                        classId = "cls-gym",
+                        className = "Gym Group BodyCombat – Lớp B",
+                        sport = "Gym",
+                        level = "Nâng cao",
+                        type = "group",
+                        date = DateTime.Now.ToString("yyyy-MM-dd"),
+                        startTime = "09:00",
+                        endTime = "10:30",
+                        room = "Khu Tạ Tự Do",
+                        coachName = "HLV Hồ Xuân Ánh Nam",
+                        capacity = 8,
+                        registeredCount = 6,
+                        registeredMemberIds = new string[] { "m2", "m3" },
+                        status = "đang diễn ra",
+                        attendanceStatus = "chưa điểm danh",
+                        coachNote = ""
+                    });
+
+                    return Results.Ok(list);
                 }
             );
 
@@ -166,9 +298,14 @@ namespace SmartGym.Api.Endpoints
                 "/sessions/{sessionId}/members",
                 async (string sessionId, SmartGymDbContext db) =>
                 {
+                    if (!Guid.TryParse(sessionId, out _))
+                        return Results.Ok(Array.Empty<object>());
+
+                    var memberIds = await LoadSessionMemberIdsAsync(db, sessionId);
                     var users = await db
                         .Users.Include(u => u.Role)
                         .Where(u => u.Role != null && u.Role.Name == "member")
+                        .Where(u => memberIds.Contains(u.Id))
                         .ToListAsync();
 
                     var members = users

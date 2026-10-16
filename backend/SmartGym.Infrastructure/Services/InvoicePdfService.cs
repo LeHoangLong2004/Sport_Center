@@ -35,7 +35,10 @@ public class InvoicePdfService(SmartGymDbContext db) : IPdfService
             p.Size(PageSizes.A4);
             p.Margin(2, Unit.Centimetre);
             p.PageColor(Colors.White);
-            p.DefaultTextStyle(x => x.FontSize(11).FontFamily(Fonts.Arial));
+            // QuestPDF 2026.9 disables system-font lookup by default.  Use the
+            // bundled Lato font instead of Arial so PDF generation also works
+            // on clean development machines and in containers.
+            p.DefaultTextStyle(x => x.FontSize(11).FontFamily("Lato"));
             p.Header().Element(ComposeHeader);
             p.Content().Element(c2 => ComposeContent(c2, invoice, sub));
             p.Footer().Element(ComposeFooter);

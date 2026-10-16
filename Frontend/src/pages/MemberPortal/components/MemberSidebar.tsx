@@ -16,6 +16,7 @@ export function MemberSidebar({
     ["profile", "Hồ sơ thành viên", icons.users],
     ["schedule", "Lớp & lịch", icons.calendar],
     ["payment", "Gói tập của tôi", icons.payment],
+    ["shop", "Cửa hàng", icons.payment],
     ["reports", "Báo cáo", icons.reports],
     ["ai", "AI & đào tạo", icons.ai],
   ] as const
@@ -105,7 +106,7 @@ export function MemberSidebar({
             </button>
             <button 
               type="button" 
-              onClick={(e) => { e.stopPropagation(); localStorage.removeItem("user"); localStorage.removeItem("accessToken"); window.location.hash = "login"; window.location.reload(); }}
+              onClick={(e) => { e.stopPropagation(); localStorage.removeItem("user"); localStorage.removeItem("accessToken"); localStorage.removeItem("token"); window.location.hash = "login"; window.location.reload(); }}
               className="p-1.5 text-[#94a3b8] hover:text-red-400 hover:bg-red-400/10 rounded-md transition-colors"
               title="Đăng xuất"
             >

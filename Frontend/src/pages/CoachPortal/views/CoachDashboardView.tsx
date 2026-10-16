@@ -6,17 +6,36 @@ const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> 
   "hoÃ n thÃ nh": { label: "HoÃ n thÃ nh", bg: "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700", text: "text-slate-600 dark:text-slate-400" },
   "Ä‘Ã£ há»§y": { label: "ÄÃ£ há»§y", bg: "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800", text: "text-rose-700 dark:text-rose-400" },
 };
+interface SessionItem {
+  id: string;
+  className: string;
+  sport?: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  room: string;
+  status: string;
+  capacity?: number;
+  registeredCount?: number;
+  registeredMemberIds?: string[];
+  memberName?: string;
+}
+interface AttendanceRecord {
+  id: string;
+  status: string;
+  memberName?: string;
+}
 interface Props {
-  navigateTo: any;
-  userName: any;
-  totalRegistrations: any;
-  pendingAttendanceCount: any;
-  nextSession: any;
-  pendingSessions: any;
-  attendances: any;
-  dateLabel: any;
-  loading: any;
-  todaySessions: any;
+  navigateTo: (screen: string, extra?: Record<string, string>) => void;
+  userName: string;
+  totalRegistrations: number;
+  pendingAttendanceCount: number;
+  nextSession: SessionItem | null;
+  pendingSessions: SessionItem[];
+  attendances: Record<string, AttendanceRecord[]>;
+  dateLabel: string;
+  loading: boolean;
+  todaySessions: SessionItem[];
 }
 export default function CoachDashboardView(props: Props) {
   const { navigateTo, userName, totalRegistrations, pendingAttendanceCount, nextSession, pendingSessions, attendances, dateLabel, loading, todaySessions } = props;

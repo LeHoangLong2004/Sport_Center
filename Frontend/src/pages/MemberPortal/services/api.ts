@@ -23,18 +23,7 @@ async function fetchApi(endpoint: string, options: RequestInit = {}) {
 }
 
 export const MemberAPI = {
-    // 1. Body Metrics
-    logBodyMetrics: async (data: { weightKg: number, heightCm: number }) => {
-        return fetchApi('/body-metrics', {
-            method: 'POST',
-            body: JSON.stringify(data)
-        });
-    },
-    getBodyMetricsHistory: async () => {
-        return fetchApi('/body-metrics/me');
-    },
-
-    // 1.5 Subscriptions
+    // 1. Subscriptions
     getMySubscriptions: async () => {
         return fetchApi('/subscriptions/me');
     },
@@ -79,5 +68,32 @@ export const MemberAPI = {
     },
     getMyBookings: async () => {
         return fetchApi('/bookings/my');
+    },
+
+    // 6. Tin nhắn trao đổi với Huấn luyện viên (Chat)
+    getMemberConversations: async (memberId?: string) => {
+        const query = memberId ? `?memberId=${encodeURIComponent(memberId)}` : '';
+        return fetchApi(`/member/chat/conversations${query}`);
+    },
+    getMemberMessages: async (conversationId: string) => {
+        return fetchApi(`/member/chat/messages/${conversationId}`);
+    },
+    sendMemberMessage: async (data: { conversationId: string; text: string; memberId?: string; memberName?: string }) => {
+        return fetchApi('/member/chat/messages', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+    startChatWithCoach: async (data: { coachId: string; coachName: string; memberId?: string; memberName?: string }) => {
+        return fetchApi('/member/chat/start', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+    startConversation: async (data: { targetId: string; targetName: string; role: string; memberId?: string; memberName?: string; avatar?: string; subtitle?: string }) => {
+        return fetchApi('/member/chat/start', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
     }
 };

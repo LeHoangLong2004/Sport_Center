@@ -5,6 +5,7 @@ import StatusBadge from "../components/StatusBadge"
 export function SchedulePage() {
   const [appointments, setAppointments] = useState<any[]>([])
   const [showForm, setShowForm] = useState(false)
+  const [formError, setFormError] = useState("")
   const [formData, setFormData] = useState({
     time: "08:00",
     title: "",
@@ -27,13 +28,22 @@ export function SchedulePage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.title || !formData.customerName) return
+    setFormError("")
+    if (!formData.title || !formData.customerName || !formData.coachName) {
+      setFormError("Vui lòng nhập đầy đủ tên lịch hẹn, khách hàng và Coach/PT.")
+      return
+    }
     try {
-      await fetch("/api/appointments", {
+      const response = await fetch("/api/appointments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       })
+      const result = await response.json().catch(() => null)
+      if (!response.ok) {
+        setFormError(result?.message || "Không thể tạo lịch hẹn.")
+        return
+      }
       setShowForm(false)
       setFormData({ time: "08:00", title: "", customerName: "", coachName: "" })
       fetchAppointments()
@@ -100,6 +110,11 @@ export function SchedulePage() {
               onSubmit={handleCreate}
               className="w-full bg-[#f8fafc] p-[16px] rounded-[8px] border border-[#e2e8f0] flex flex-col gap-4"
             >
+              {formError && (
+                <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {formError}
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <input
                   required
@@ -120,6 +135,7 @@ export function SchedulePage() {
                   }
                 />
                 <input
+                  required
                   placeholder="Tên Coach/PT"
                   className="p-2 border rounded text-sm"
                   value={formData.coachName}

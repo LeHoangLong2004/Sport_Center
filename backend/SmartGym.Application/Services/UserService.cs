@@ -1,5 +1,6 @@
 using SmartGym.Application.DTOs;
 using SmartGym.Application.Interfaces;
+using SmartGym.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -92,22 +93,55 @@ public class UserService : IUserService
     public async Task<bool> UpdateUserProfileAsync(Guid userId, UpdateUserProfileRequest request)
     {
         var user = await _userRepository.GetByIdAsync(userId);
-        if (user == null) return false;
-
-        if (request.FullName != null) user.FullName = request.FullName;
-        if (request.PhoneNumber != null) user.PhoneNumber = request.PhoneNumber;
-        if (request.Email != null) user.Email = request.Email;
-        if (request.AvatarUrl != null) user.AvatarUrl = request.AvatarUrl;
-        if (request.DateOfBirth != null) user.DateOfBirth = DateTime.SpecifyKind(request.DateOfBirth.Value, DateTimeKind.Utc);
-        if (request.Gender != null) user.Gender = request.Gender;
-        if (request.EmergencyContact != null) user.EmergencyContact = request.EmergencyContact;
-
-        var isCoach = string.Equals(user.Role?.Name, "coach", StringComparison.OrdinalIgnoreCase)
-            || user.CoachProfile != null
+        var isCoach = (user != null && string.Equals(user.Role?.Name, "coach", StringComparison.OrdinalIgnoreCase))
+            || (user != null && user.CoachProfile != null)
             || request.Specialties != null
             || request.Certifications != null
             || request.Bio != null
             || request.ExperienceYears.HasValue;
+
+        if (user == null)
+        {
+            var roleName = isCoach ? "coach" : "member";
+            var role = await _userRepository.GetRoleByNameAsync(roleName);
+            user = new User
+            {
+                Id = userId,
+                RoleId = role?.Id,
+                Role = role,
+                FullName = request.FullName ?? (isCoach ? "Huấn luyện viên" : "Hội viên"),
+                Email = request.Email ?? (isCoach ? "hoxuananhnam1@gmail.com" : "hoxuananhnam@gmail.com"),
+                PhoneNumber = request.PhoneNumber ?? "0900000000",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
+                Status = true,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _userRepository.AddAsync(user);
+        }
+
+        var normalizedEmail = request.Email?.Trim();
+        if (!string.IsNullOrWhiteSpace(normalizedEmail))
+        {
+            var emailOwner = await _userRepository.GetByEmailAsync(normalizedEmail);
+            if (emailOwner != null && emailOwner.Id != userId)
+                throw new InvalidOperationException("Email này đã được sử dụng bởi tài khoản khác.");
+        }
+
+        var normalizedPhone = request.PhoneNumber?.Trim();
+        if (!string.IsNullOrWhiteSpace(normalizedPhone))
+        {
+            var phoneOwner = await _userRepository.GetByPhoneNumberAsync(normalizedPhone);
+            if (phoneOwner != null && phoneOwner.Id != userId)
+                throw new InvalidOperationException("Số điện thoại này đã được sử dụng bởi tài khoản khác.");
+        }
+
+        if (request.FullName != null) user.FullName = request.FullName;
+        if (normalizedPhone != null) user.PhoneNumber = normalizedPhone;
+        if (normalizedEmail != null) user.Email = normalizedEmail;
+        if (request.AvatarUrl != null) user.AvatarUrl = request.AvatarUrl;
+        if (request.DateOfBirth != null) user.DateOfBirth = DateTime.SpecifyKind(request.DateOfBirth.Value, DateTimeKind.Utc);
+        if (request.Gender != null) user.Gender = request.Gender;
+        if (request.EmergencyContact != null) user.EmergencyContact = request.EmergencyContact;
 
         if (isCoach)
         {
@@ -123,6 +157,67 @@ public class UserService : IUserService
 
         await _userRepository.UpdateAsync(user);
         return true;
+    }
+
+    public async Task<UserResponse> CreateMemberAsync(CreateMemberRequest request)
+    {
+        var fullName = request.FullName?.Trim();
+        var email = request.Email?.Trim().ToLowerInvariant();
+        var phoneNumber = request.PhoneNumber?.Trim();
+        var password = request.Password?.Trim();
+
+        if (string.IsNullOrWhiteSpace(fullName) || string.IsNullOrWhiteSpace(email)
+            || string.IsNullOrWhiteSpace(phoneNumber) || string.IsNullOrWhiteSpace(password))
+            throw new ArgumentException("Họ tên, email, số điện thoại và mật khẩu là bắt buộc.");
+
+        if (password.Length < 6)
+            throw new ArgumentException("Mật khẩu phải có ít nhất 6 ký tự.");
+
+        if (await _userRepository.GetByEmailAsync(email) != null)
+            throw new InvalidOperationException("Email đã được sử dụng.");
+
+        if (await _userRepository.GetByPhoneNumberAsync(phoneNumber) != null)
+            throw new InvalidOperationException("Số điện thoại đã được sử dụng.");
+
+        var memberRole = await _userRepository.GetRoleByNameAsync("member");
+        if (memberRole == null)
+            throw new InvalidOperationException("Không tìm thấy role member trong hệ thống.");
+
+        var user = new Domain.Entities.User
+        {
+            Id = Guid.NewGuid(),
+            RoleId = memberRole.Id,
+            Role = memberRole,
+            FullName = fullName,
+            Email = email,
+            PhoneNumber = phoneNumber,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+            DateOfBirth = request.DateOfBirth.HasValue
+                ? DateTime.SpecifyKind(request.DateOfBirth.Value, DateTimeKind.Utc)
+                : null,
+            Gender = string.IsNullOrWhiteSpace(request.Gender) ? null : request.Gender.Trim(),
+            EmergencyContact = string.IsNullOrWhiteSpace(request.EmergencyContact)
+                ? null
+                : request.EmergencyContact.Trim(),
+            Status = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _userRepository.AddAsync(user);
+
+        return new UserResponse
+        {
+            Id = user.Id,
+            FullName = user.FullName,
+            Email = user.Email,
+            PhoneNumber = user.PhoneNumber,
+            RoleName = memberRole.Name,
+            DateOfBirth = user.DateOfBirth,
+            Gender = user.Gender,
+            EmergencyContact = user.EmergencyContact,
+            Status = user.Status,
+            CreatedAt = user.CreatedAt
+        };
     }
 
     public async Task<IEnumerable<RoleResponse>> GetAllRolesAsync()

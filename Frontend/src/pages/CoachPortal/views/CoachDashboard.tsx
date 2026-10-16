@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Star,
   CalendarDays,
+  Sparkles,
 } from "lucide-react";
 import { TodaySessionsList } from "./dashboard/TodaySessionsList";
 import { DashboardSidebar } from "./dashboard/DashboardSidebar";
@@ -26,8 +27,19 @@ const dateLabel = today.toLocaleDateString("vi-VN", {
 });
 
 export default function CoachDashboard({ navigateTo }: Props) {
-  const { profile } = useUserProfile();
-  const userName = profile?.fullName ? profile.fullName.split(" ").pop() : "HLV";
+  const { profile } = useUserProfile('coach');
+  const userStr = localStorage.getItem("user");
+  let coachName = "Huấn luyện viên";
+  if (profile?.fullName) {
+    coachName = profile.fullName;
+  } else if (userStr) {
+    try {
+      const u = JSON.parse(userStr);
+      if (u.role?.toLowerCase() === 'coach' || u.roleName?.toLowerCase() === 'coach') {
+        coachName = u.fullName || u.name || "Huấn luyện viên";
+      }
+    } catch (e) {}
+  }
 
   const [todaySessions, setTodaySessions] = useState<MockSession[]>([]);
   const [attendances, setAttendances] = useState<Record<string, AttendanceRecord[]>>({});
@@ -57,7 +69,7 @@ export default function CoachDashboard({ navigateTo }: Props) {
   }, []);
 
   const totalRegistrations = useMemo(
-    () => todaySessions.reduce((s, c) => s + c.registeredMemberIds.length, 0),
+    () => todaySessions.reduce((s, c) => s + (c.registeredMemberIds?.length ?? (c as any).registeredCount ?? 0), 0),
     [todaySessions]
   );
 
@@ -89,27 +101,45 @@ export default function CoachDashboard({ navigateTo }: Props) {
 
   return (
     <div className="flex flex-col gap-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-300">
-      {/* Executive Welcome Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-            Xin chào, {userName}! 👋
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 capitalize">
-            {dateLabel} • Trung tâm Thể thao Sport Center
-          </p>
+      {/* 1. WELCOME BANNER (Matching Member's modern hero card, styled for Coach) */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 md:p-8 text-white shadow-lg border border-slate-700/50">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/20 text-orange-300 text-xs font-semibold border border-orange-500/30">
+              <Sparkles className="w-3.5 h-3.5 text-orange-400" />
+              <span>Huấn luyện viên SportCenter</span>
+            </div>
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+              Xin chào, {coachName} 👋
+            </h1>
+            <p className="text-sm text-slate-300 max-w-xl leading-relaxed">
+              Chào mừng bạn trở lại! Hôm nay bạn có <strong className="text-orange-400">{todaySessions.length} ca dạy</strong> được xếp lịch ({totalRegistrations} học viên). Hãy duy trì năng lượng và đồng hành cùng học viên nhé!
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => navigateTo("schedule")}
+              className="px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md shadow-orange-500/25 transition-all flex items-center gap-2"
+            >
+              <CalendarDays className="w-4 h-4" />
+              <span>Lịch dạy hôm nay</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => navigateTo("attendance")}
+              className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-medium text-xs backdrop-blur-sm transition-all flex items-center gap-1.5 border border-white/10"
+            >
+              <CheckCircle2 className="w-4 h-4 text-orange-400" />
+              <span>Điểm danh lớp ({pendingAttendanceCount})</span>
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => navigateTo("schedule")}
-            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-sm"
-          >
-            <CalendarDays className="w-4 h-4 text-slate-500" />
-            Lịch dạy đầy đủ
-          </button>
-        </div>
+        {/* Ambient subtle background blur lights */}
+        <div className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-orange-500/10 blur-3xl pointer-events-none"></div>
+        <div className="absolute right-48 -bottom-16 w-56 h-56 rounded-full bg-amber-500/10 blur-3xl pointer-events-none"></div>
       </div>
 
       {/* Modern SaaS Stat Cards */}

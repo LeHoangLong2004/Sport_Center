@@ -41,7 +41,7 @@ export default function ProfileDetailsSection({
             <div>
               <p className="text-xs text-slate-400">Số điện thoại</p>
               <p className="font-medium text-slate-800 dark:text-slate-200">
-                {phone || "0900 000 000"}
+                {phone || "Chưa cập nhật"}
               </p>
             </div>
           </div>
@@ -51,7 +51,7 @@ export default function ProfileDetailsSection({
             <div>
               <p className="text-xs text-slate-400">Email công việc</p>
               <p className="font-medium text-slate-800 dark:text-slate-200">
-                {email || "hoxuananhnam1@gmail.com"}
+                {email || "Chưa cập nhật"}
               </p>
             </div>
           </div>
@@ -67,7 +67,7 @@ export default function ProfileDetailsSection({
                       month: "2-digit",
                       year: "numeric",
                     })
-                  : "15/08/1998"}
+                  : "Chưa cập nhật"}
               </p>
             </div>
           </div>
@@ -77,7 +77,7 @@ export default function ProfileDetailsSection({
             <div>
               <p className="text-xs text-slate-400">Giới tính</p>
               <p className="font-medium text-slate-800 dark:text-slate-200">
-                {gender || "Nam"}
+                {gender || "Chưa cập nhật"}
               </p>
             </div>
           </div>

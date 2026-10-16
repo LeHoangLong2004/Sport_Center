@@ -6,7 +6,7 @@ import { FinanceTopBar } from '../components/FinanceTopBar';
 import { InlineValue } from '../components/DataState';
 import { useApiResource } from '../../../hooks/useApiResource';
 import { reportApi, type DashboardMetricsResponse, type MemberRetentionResponse } from '../../../hooks/flow3Api';
-import { formatVnd } from '../../../hooks/apiClient';
+import { apiDownloadFile, formatVnd } from '../../../hooks/apiClient';
 
 import ReportsTabRevenue from './ReportsTabRevenue';
 import ReportsTabMembers from './ReportsTabMembers';
@@ -15,10 +15,22 @@ import ReportsTabHR from './ReportsTabHR';
 
 export function ReportsPage() {
   const [tab, setTab] = useState(0)
+  const [isExporting, setIsExporting] = useState(false)
   const tabs = ["Tổng quan doanh thu","Phân tích hội viên","Hiệu suất lớp học","Báo cáo nhân sự"]
 
   const dashboard = useApiResource<DashboardMetricsResponse>("/api/reports/dashboard");
   const retention = useApiResource<MemberRetentionResponse>("/api/reports/members/retention");
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      await apiDownloadFile(reportApi.revenueExportUrl(), "bao-cao-doanh-thu.xlsx");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Không thể xuất báo cáo.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
@@ -31,7 +43,8 @@ export function ReportsPage() {
         </div>
         <div className="flex gap-3 items-center shrink-0">
           <button
-            onClick={() => window.open(reportApi.revenueExportUrl(), '_blank')}
+            onClick={handleExport}
+            disabled={isExporting}
             className="bg-white border border-[#e2e8f0] flex gap-2 items-center px-[18px] py-3 rounded-lg"
           >
             <img src={iDownload2} alt="" className="size-4" />

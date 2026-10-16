@@ -4,7 +4,7 @@ import { useUserProfile } from "../../../hooks/useUserProfile";
 import { toast } from 'sonner';
 
 export default function CoachSettings() {
-  const { profile, loading } = useUserProfile();
+  const { profile, loading, updateProfile, uploadAvatar } = useUserProfile();
   const [error, setError] = useState<string>("");
 
   const handleSave = async (data: any) => {
@@ -35,40 +35,19 @@ export default function CoachSettings() {
 
     // 2. Gửi API lưu dữ liệu (Thời gian thực)
     try {
-      const token = localStorage.getItem("token");
-      if (!profile?.id || !token) return;
-
-      const res = await fetch(`/api/users/${profile.id}/profile`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          fullName: data.fullName,
-          phoneNumber: data.phone,
-          dateOfBirth: data.dob ? new Date(data.dob).toISOString() : null,
-          gender: data.gender,
-          avatarUrl: data.avatarUrl,
-          specialties: data.specialties,
-          certifications: data.certifications,
-          experienceYears: data.experienceYears ? parseInt(data.experienceYears) : 0,
-          bio: data.bio
-        }),
+      await updateProfile({
+        fullName: data.fullName,
+        phone: data.phone,
+        dob: data.dob,
+        gender: data.gender,
+        avatarUrl: data.avatarUrl,
+        specialties: data.specialties,
+        certifications: data.certifications,
+        experienceYears: data.experienceYears ? parseInt(data.experienceYears) : 0,
+        bio: data.bio
       });
 
-      if (!res.ok) throw new Error("Cập nhật thất bại");
-
-      // 3. Cập nhật localStorage để UI đồng bộ lập tức
-      const userStr = localStorage.getItem("user");
-      if (userStr) {
-        const userObj = JSON.parse(userStr);
-        userObj.fullName = data.fullName;
-        localStorage.setItem("user", JSON.stringify(userObj));
-      }
-      
       toast.success("Đã cập nhật hồ sơ thành công!");
-      setTimeout(() => window.location.reload(), 1500);
     } catch (err: any) {
       setError(err.message || "Có lỗi xảy ra khi lưu.");
     }
@@ -102,6 +81,7 @@ export default function CoachSettings() {
               bio: profile.bio
             } : undefined}
             onSave={handleSave}
+            onAvatarUpload={uploadAvatar}
           />
         </div>
       )}

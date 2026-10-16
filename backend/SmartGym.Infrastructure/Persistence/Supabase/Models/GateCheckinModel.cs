@@ -36,10 +36,19 @@ public class GateCheckinModel : BaseModel
             MemberId,
             BranchId ?? Guid.Empty,
             MemberPackageId ?? Guid.Empty,
-            CheckInTime,
-            null
+            ToUtc(CheckInTime),
+            null,
+            CheckOutTime.HasValue ? ToUtc(CheckOutTime.Value) : null
         );
     }
+
+    private static DateTime ToUtc(DateTime value)
+        => value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Local => value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Local).ToUniversalTime()
+        };
 
     public static GateCheckinModel FromDomain(CheckInRecord record)
     {
@@ -50,6 +59,7 @@ public class GateCheckinModel : BaseModel
             BranchId = record.BranchId == Guid.Empty ? null : record.BranchId,
             MemberPackageId = record.MemberPackageId == Guid.Empty ? null : record.MemberPackageId,
             CheckInTime = record.CheckInTime,
+            CheckOutTime = record.CheckOutTime,
         };
     }
 }

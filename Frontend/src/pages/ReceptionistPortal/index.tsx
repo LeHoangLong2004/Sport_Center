@@ -7,6 +7,7 @@ import { RegisterPage } from './views/RegisterPage';
 import { ClassesPage } from './views/ClassesPage';
 import { SchedulePage } from './views/SchedulePage';
 import { PosPage } from './views/PosPage';
+import { ProductOrdersPage } from './views/ProductOrdersPage';
 import { LookupPage } from './views/LookupPage';
 import { DetailPage } from './views/DetailPage';
 import { ProfileSettings } from '../../components/ProfileSettings';
@@ -16,7 +17,7 @@ import { toast } from 'sonner';
 export default function ReceptionistPortal({ onExit }: { onExit: () => void }) {
   const [page, setPage] = useState<Page>("checkin")
   const [selectedMember, setSelectedMember] = useState<any>(null)
-  const { profile, loading } = useUserProfile()
+  const { profile, loading, uploadAvatar } = useUserProfile()
   const [error, setError] = useState<string>("");
 
   const handleSave = async (data: any) => {
@@ -75,6 +76,7 @@ export default function ReceptionistPortal({ onExit }: { onExit: () => void }) {
           {page === "classes" && <ClassesPage />}
           {page === "schedule" && <SchedulePage />}
           {page === "pos" && <PosPage />}
+          {page === "orders" && <ProductOrdersPage />}
           {page === "lookup" && (
             <LookupPage
               onDetail={(m) => {
@@ -112,6 +114,7 @@ export default function ReceptionistPortal({ onExit }: { onExit: () => void }) {
                     gender: profile.gender,
                   } : undefined}
                   onSave={handleSave}
+                  onAvatarUpload={uploadAvatar}
                 />
               </div>
             )

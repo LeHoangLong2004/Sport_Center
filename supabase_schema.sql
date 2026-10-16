@@ -54,6 +54,7 @@ CREATE TABLE users (
 CREATE TABLE facilities (
     id      UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     name    TEXT        NOT NULL,
+    image_url TEXT,
     address TEXT        NOT NULL,
     hotline VARCHAR(20),
     status  BOOLEAN     DEFAULT true
@@ -407,6 +408,13 @@ CREATE TABLE invoices (
     -- payment_method: 'qr' | 'card' | 'wallet' | 'counter' | 'bank_transfer'
     payment_status VARCHAR(50) DEFAULT 'pending',
     -- payment_status: 'pending' | 'completed' | 'failed' | 'refunded' | 'expired'
+    fulfillment_method VARCHAR(50) DEFAULT 'counter_pickup',
+    -- fulfillment_method: 'counter_pickup' | 'in_center_delivery'
+    fulfillment_status VARCHAR(50) DEFAULT 'pending',
+    -- fulfillment_status: 'pending' | 'preparing' | 'ready' | 'delivering' | 'delivered' | 'cancelled'
+    delivery_location TEXT,
+    assigned_to UUID REFERENCES users(id) ON DELETE SET NULL,
+    fulfilled_at TIMESTAMPTZ,
     created_at     TIMESTAMPTZ DEFAULT now(),
     paid_at        TIMESTAMPTZ -- Thời điểm xác nhận thanh toán thành công
 );
@@ -417,6 +425,15 @@ CREATE TABLE invoice_items (
     product_id UUID        REFERENCES products(id) ON DELETE CASCADE,
     quantity   INT         NOT NULL,
     unit_price DECIMAL(18,2) NOT NULL
+);
+
+-- Trao đổi giữa Member và lễ tân theo từng đơn hàng
+CREATE TABLE product_order_messages (
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    invoice_id UUID NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+    sender_id  UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    message    TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 
