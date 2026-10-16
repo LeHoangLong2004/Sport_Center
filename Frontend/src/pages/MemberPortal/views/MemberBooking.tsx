@@ -22,6 +22,7 @@ import {
   Filter,
 } from "lucide-react";
 import { scheduleSync } from "../services/scheduleSync";
+import { DateInput } from "../../../components/DateInput";
 
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
@@ -383,10 +384,9 @@ export default function MemberBooking({ onNavigate }: Props) {
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
           <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
           <span className="text-slate-500 font-medium">Ngày học:</span>
-          <input
-            type="date"
+          <DateInput
             value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
+            onChange={setSelectedDate}
             className="bg-transparent border-none text-xs font-bold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
           />
         </div>

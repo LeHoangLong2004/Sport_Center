@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SmartGym.Application.Common;
 using SmartGym.Application.DTOs.Classes;
 using SmartGym.Application.Interfaces;
 using SmartGym.Application.Interfaces.Repositories;
@@ -93,6 +94,14 @@ public sealed partial class ClassService
 
         await _classRepository.AddAsync(newClass);
 
+        await _classRepository.NotifyCoachAsync(
+            request.CoachId,
+            "Bạn được phân công lớp học mới",
+            $"Bạn vừa được phân công lớp {request.ClassName} vào {CenterTime.ToLocal(request.ScheduleTime):dd/MM/yyyy HH:mm}.",
+            "class",
+            newClass.Id
+        );
+
         return (true, null);
     }
 
@@ -149,7 +158,19 @@ public sealed partial class ClassService
         }
 
         // 4. Gọi hàm thực thi Transaction ở tầng Data (nguyên tử)
-        return await _classRepository.BookClassTransactionAsync(userId, classId, validSub.Id);
+        var result = await _classRepository.BookClassTransactionAsync(userId, classId, validSub.Id);
+        if (result.IsSuccess && targetClass.CoachId.HasValue)
+        {
+            await _classRepository.NotifyCoachAsync(
+                targetClass.CoachId.Value,
+                "Có học viên vừa đặt lớp",
+                $"Một học viên vừa đặt lớp {targetClass.ClassName} vào {CenterTime.ToLocal(targetClass.ScheduleTime):dd/MM/yyyy HH:mm}.",
+                "class",
+                targetClass.Id
+            );
+        }
+
+        return result;
     }
 
     public async Task<(bool IsSuccess, string? ErrorMessage)> CancelBookingAsync(
@@ -169,7 +190,19 @@ public sealed partial class ClassService
             return (false, "Chỉ có thể hủy lớp trước 2 tiếng so với giờ bắt đầu.");
         }
 
-        return await _classRepository.CancelBookingTransactionAsync(userId, classId);
+        var result = await _classRepository.CancelBookingTransactionAsync(userId, classId);
+        if (result.IsSuccess && targetClass.CoachId.HasValue)
+        {
+            await _classRepository.NotifyCoachAsync(
+                targetClass.CoachId.Value,
+                "Học viên đã hủy đặt lớp",
+                $"Một học viên vừa hủy đặt lớp {targetClass.ClassName} vào {CenterTime.ToLocal(targetClass.ScheduleTime):dd/MM/yyyy HH:mm}.",
+                "class",
+                targetClass.Id
+            );
+        }
+
+        return result;
     }
 
     public async Task<(bool IsSuccess, string? ErrorMessage)> CancelClassAsync(Guid classId)
@@ -284,6 +317,25 @@ public sealed partial class ClassService
             );
 
             await _classRepository.UpdateAsync(updatedClass);
+
+            if (targetClass.CoachId.HasValue && targetClass.CoachId.Value != request.CoachId)
+            {
+                await _classRepository.NotifyCoachAsync(
+                    targetClass.CoachId.Value,
+                    "Bạn không còn phụ trách lớp học",
+                    $"Lớp {targetClass.ClassName} đã được chuyển sang HLV khác.",
+                    "class",
+                    classId
+                );
+            }
+
+            await _classRepository.NotifyCoachAsync(
+                request.CoachId,
+                "Lịch lớp học đã được cập nhật",
+                $"Lớp {request.ClassName} đã được cập nhật lịch vào {CenterTime.ToLocal(request.ScheduleTime):dd/MM/yyyy HH:mm}.",
+                "class",
+                classId
+            );
 
             await _classRepository.NotifyAffectedMembersAsync(
                 classId,

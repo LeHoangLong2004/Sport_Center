@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react"
+import { DateInput } from "../../../components/DateInput"
 
 type Plan = {
   id: string
@@ -141,7 +142,7 @@ export function RegisterPage() {
           </div>
           <div className="flex gap-[16px] items-start w-full">
             <Field label="Ngày sinh">
-              <input type="date" value={form.dateOfBirth} onChange={(e) => updateField("dateOfBirth", e.target.value)} />
+              <DateInput value={form.dateOfBirth} onChange={(value) => updateField("dateOfBirth", value)} />
             </Field>
             <Field label="Số CCCD/Passport">
               <input value={form.identityNumber} onChange={(e) => updateField("identityNumber", e.target.value)} />

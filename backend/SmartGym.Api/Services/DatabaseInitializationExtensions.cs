@@ -79,6 +79,23 @@ using (var scope = app.Services.CreateScope())
     {
         db.Database.ExecuteSqlRaw(
             @"
+            CREATE TABLE IF NOT EXISTS notifications (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                sender_id UUID REFERENCES coaches(id) ON DELETE SET NULL,
+                user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                target_type VARCHAR(20) DEFAULT 'member',
+                target_id UUID,
+                type VARCHAR(50) DEFAULT 'Thông báo',
+                state VARCHAR(20) DEFAULT 'published',
+                title TEXT NOT NULL,
+                message TEXT,
+                deadline TIMESTAMPTZ,
+                is_read BOOLEAN DEFAULT false,
+                created_at TIMESTAMPTZ DEFAULT now()
+            );
+            CREATE INDEX IF NOT EXISTS idx_notifications_unread
+                ON notifications(user_id, is_read);
+
             ALTER TABLE packages ADD COLUMN IF NOT EXISTS catalog_json JSONB;
             ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS duration_months INTEGER;
             ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS discount_pct NUMERIC(8, 3) NOT NULL DEFAULT 0;
@@ -121,6 +138,9 @@ using (var scope = app.Services.CreateScope())
             CREATE TABLE IF NOT EXISTS chat_conversations (
                 id VARCHAR(100) PRIMARY KEY,
                 type VARCHAR(50) NOT NULL DEFAULT 'direct',
+                category VARCHAR(50) NOT NULL DEFAULT 'coach',
+                role_tag VARCHAR(50) NOT NULL DEFAULT 'HLV',
+                badge_color VARCHAR(50) NOT NULL DEFAULT 'orange',
                 coach_title VARCHAR(255),
                 coach_subtitle VARCHAR(255),
                 member_title VARCHAR(255),
@@ -138,6 +158,10 @@ using (var scope = app.Services.CreateScope())
                 updated_at TIMESTAMPTZ DEFAULT now()
             );
 
+            ALTER TABLE chat_conversations ADD COLUMN IF NOT EXISTS category VARCHAR(50) NOT NULL DEFAULT 'coach';
+            ALTER TABLE chat_conversations ADD COLUMN IF NOT EXISTS role_tag VARCHAR(50) NOT NULL DEFAULT 'HLV';
+            ALTER TABLE chat_conversations ADD COLUMN IF NOT EXISTS badge_color VARCHAR(50) NOT NULL DEFAULT 'orange';
+
             CREATE TABLE IF NOT EXISTS chat_messages (
                 id VARCHAR(100) PRIMARY KEY,
                 conversation_id VARCHAR(100) REFERENCES chat_conversations(id) ON DELETE CASCADE,
@@ -150,6 +174,8 @@ using (var scope = app.Services.CreateScope())
 
             GRANT ALL ON public.chat_conversations TO anon, authenticated;
             GRANT ALL ON public.chat_messages TO anon, authenticated;
+            CREATE INDEX IF NOT EXISTS idx_chat_conversations_coach ON chat_conversations(coach_id);
+            CREATE INDEX IF NOT EXISTS idx_chat_conversations_member ON chat_conversations(member_id);
         "
         );
         app.Logger.LogInformation("chat_conversations and chat_messages tables ensured.");

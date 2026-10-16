@@ -2,33 +2,40 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { MessageSquare } from "lucide-react";
 import { coachApi } from "../services/api";
 import { useUserProfile } from "../../../hooks/useUserProfile";
-import {
-  INITIAL_CONVERSATIONS,
-  type Conversation,
-  type Message,
-} from "./chat/types";
+import { type Conversation, type Message } from "./chat/types";
 import { ChatConversationList } from "./chat/ChatConversationList";
 import { ChatWindow } from "./chat/ChatWindow";
 
-export default function CoachChat() {
+interface CoachChatProps {
+  initialMemberId?: string | null;
+}
+
+export default function CoachChat({ initialMemberId }: CoachChatProps) {
   const { profile } = useUserProfile();
-  const [conversations, setConversations] = useState<Conversation[]>(INITIAL_CONVERSATIONS);
-  const [activeId, setActiveId] = useState<string>("conv-nam");
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeId, setActiveId] = useState<string>("");
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<"all" | "class" | "direct">("all");
   const [inputText, setInputText] = useState("");
+  const [openError, setOpenError] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const openedMemberRef = useRef<string | null>(null);
 
   // Polling for real-time messages
   useEffect(() => {
     let isMounted = true;
     async function loadConversations() {
       try {
-        const coachId = profile?.id || "25F50FBA";
+        const coachId = profile?.id || "";
         const res = await coachApi.getCoachConversations(coachId);
-        if (isMounted && Array.isArray(res) && res.length > 0) {
+        if (isMounted && Array.isArray(res)) {
           setConversations(res);
+          setActiveId((current) =>
+            res.some((conversation) => conversation.id === current)
+              ? current
+              : (res[0]?.id || "")
+          );
         }
       } catch (err) {
         // Keeps current conversations
@@ -43,6 +50,53 @@ export default function CoachChat() {
       clearInterval(interval);
     };
   }, [profile?.id]);
+
+  // A profile's "Nhắn tin trao đổi" action creates/gets the DB conversation
+  // and selects it. The conversation then remains in the normal list and is
+  // available on later visits for this coach.
+  useEffect(() => {
+    if (!initialMemberId) {
+      openedMemberRef.current = null;
+      setOpenError(null);
+      return;
+    }
+    if (!profile?.id || openedMemberRef.current === initialMemberId) return;
+    openedMemberRef.current = initialMemberId;
+    setOpenError(null);
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const started = await coachApi.startMemberConversation(initialMemberId);
+        const conversation = started?.conversation;
+        if (cancelled || !conversation?.id) return;
+
+        const refreshed = await coachApi.getCoachConversations(profile.id);
+        if (cancelled) return;
+        const nextConversations = Array.isArray(refreshed)
+          ? refreshed
+          : [conversation];
+        setConversations(nextConversations);
+        setActiveId(conversation.id);
+      } catch (error) {
+        // The API checks ownership; leave the chat empty if the member is not
+        // assigned to this coach instead of showing a fake conversation.
+        openedMemberRef.current = null;
+        if (!cancelled) {
+          setOpenError(
+            error instanceof Error
+              ? error.message
+              : "Không thể mở cuộc trò chuyện với học viên này."
+          );
+        }
+        console.warn("Không thể mở cuộc trò chuyện với học viên:", error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialMemberId, profile?.id]);
 
   const activeConv = useMemo(
     () => conversations.find((c) => c.id === activeId) || conversations[0],
@@ -99,18 +153,25 @@ export default function CoachChat() {
       const res = await coachApi.sendCoachMessage({
         conversationId: activeConv.id,
         text: textToSend,
-        coachId: profile?.id || "25F50FBA",
+        coachId: profile?.id,
       });
       if (res && res.data) {
         // Refresh to ensure exact sync
-        const coachId = profile?.id || "25F50FBA";
+        const coachId = profile?.id || "";
         const updated = await coachApi.getCoachConversations(coachId);
-        if (Array.isArray(updated) && updated.length > 0) {
+        if (Array.isArray(updated)) {
           setConversations(updated);
         }
       }
     } catch (err) {
-      console.warn("Lưu tin nhắn lên backend thất bại, đã lưu tạm trên trình duyệt:", err);
+      setConversations((prev) =>
+        prev.map((conversation) =>
+          conversation.id === activeConv.id
+            ? { ...conversation, messages: conversation.messages.filter((message) => message.id !== newMsg.id) }
+            : conversation
+        )
+      );
+      console.warn("Không thể lưu tin nhắn lên máy chủ:", err);
     }
   };
 
@@ -148,6 +209,7 @@ export default function CoachChat() {
           setInputText={setInputText}
           onSendMessage={handleSendMessage}
           messagesEndRef={messagesEndRef}
+          errorMessage={openError}
         />
       </div>
     </div>

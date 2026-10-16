@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { A, avatarSidebar, avatarTopbar, iDashboard, iUsers, iPackage, iCalendar, iReceipt, iBarChart, iSettings, iSearch, iBell, iSearch2, iDownload, iPlus, iWallet, iCheckCircle, iClock, iRotateCcw, iChevron, iEye, iPrinter, iMore, iBell2, iDownload2, iKpiRevenue, iKpiMembers, iKpiClasses, iKpiRetain, iSeg1, iSeg2, iSeg3, iSeg4, iDotBlue, iDotTeal, iDotOrange, iDotPurple, iActivity0, iActivity1, iActivity2, iActivity3, iLineChart, iBarFill, coachAvatar1, coachAvatar2, coachAvatar3, coachAvatar4, hrAvatar1, hrAvatar2, hrAvatar3, hrAvatar4, iBudgetIcon, iExpenseIcon, iBudgetChevron, iPLRevIcon, memberEditAvatar, transactions, reportBarData, reportMonths, members } from '../shared';
 import { UserAvatar } from '../../../components/UserAvatar';
+import { DateInput } from '../../../components/DateInput';
 import KpiCard from '../components/KpiCard';
 import SimpleLineChart from '../components/SimpleLineChart';
 import { FinanceTopBar } from '../components/FinanceTopBar';
@@ -157,6 +158,8 @@ export function MemberEditPage({ memberData, onBack }: { memberData?: any, onBac
                       </select>
                       <img src={iChevron} alt="" className="absolute right-3 top-1/2 -translate-y-1/2 size-4 pointer-events-none"/>
                     </div>
+                  ) : f.type === "date" ? (
+                    <DateInput name={f.name} value={f.value} required={f.required} className="border border-[#e2e8f0] px-3 py-2.5 rounded-lg text-sm" />
                   ) : (
                     <input name={f.name} defaultValue={f.value} type={f.type} required={f.required} className="border border-[#e2e8f0] px-3 py-2.5 rounded-lg text-sm" />
                   )}

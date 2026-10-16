@@ -10,6 +10,20 @@ export function useCoachScheduleData(weekDates: string[]) {
   const [loading, setLoading] = useState(true);
   const [syncedSessions, setSyncedSessions] = useState(() => scheduleSync.getSyncedSessions());
 
+  // Coach-created slots must be isolated per authenticated coach. The previous
+  // global localStorage key made one coach's slots appear in every coach portal.
+  const currentCoachId = useMemo(() => {
+    try {
+      const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+      return typeof storedUser?.id === "string" ? storedUser.id : "";
+    } catch {
+      return "";
+    }
+  }, []);
+  const customSlotsStorageKey = currentCoachId
+    ? `coach_custom_open_pt_slots_${currentCoachId}`
+    : null;
+
   useEffect(() => {
     return scheduleSync.subscribe(() => {
       setSyncedSessions(scheduleSync.getSyncedSessions());
@@ -18,7 +32,9 @@ export function useCoachScheduleData(weekDates: string[]) {
 
   const [openSlots, setOpenSlots] = useState<UnifiedScheduleItem[]>(() => {
     try {
-      const saved = localStorage.getItem("coach_custom_open_pt_slots");
+      const saved = customSlotsStorageKey
+        ? localStorage.getItem(customSlotsStorageKey)
+        : null;
       if (saved) return JSON.parse(saved);
     } catch {}
     return [];
@@ -110,7 +126,13 @@ export function useCoachScheduleData(weekDates: string[]) {
         };
       });
 
-    const syncedItems: UnifiedScheduleItem[] = syncedSessions.map((s) => ({
+    const syncedItems: UnifiedScheduleItem[] = syncedSessions
+      .filter(
+        (s) =>
+          Boolean(currentCoachId) &&
+          s.coachId?.toLowerCase() === currentCoachId.toLowerCase()
+      )
+      .map((s) => ({
       id: s.id,
       type: s.type === "pt" ? ("pt" as const) : ("group" as const),
       classId: s.classId,
@@ -137,13 +159,15 @@ export function useCoachScheduleData(weekDates: string[]) {
       seen.add(item.id);
       return true;
     });
-  }, [rawSessions, availabilitySlots, openSlots, weekDates, syncedSessions]);
+  }, [rawSessions, availabilitySlots, openSlots, weekDates, syncedSessions, currentCoachId]);
 
   const addOpenSlot = (newItem: UnifiedScheduleItem) => {
     const updated = [newItem, ...openSlots];
     setOpenSlots(updated);
     try {
-      localStorage.setItem("coach_custom_open_pt_slots", JSON.stringify(updated));
+      if (customSlotsStorageKey) {
+        localStorage.setItem(customSlotsStorageKey, JSON.stringify(updated));
+      }
     } catch {}
     scheduleSync.createOpenPtSlot({
       id: newItem.id,
@@ -153,6 +177,7 @@ export function useCoachScheduleData(weekDates: string[]) {
       sport: newItem.sport,
       room: newItem.room,
       coachName: newItem.coachName || "HLV",
+      coachId: currentCoachId || undefined,
       note: newItem.note,
     });
   };
@@ -161,7 +186,9 @@ export function useCoachScheduleData(weekDates: string[]) {
     const updated = openSlots.filter((s) => s.id !== id);
     setOpenSlots(updated);
     try {
-      localStorage.setItem("coach_custom_open_pt_slots", JSON.stringify(updated));
+      if (customSlotsStorageKey) {
+        localStorage.setItem(customSlotsStorageKey, JSON.stringify(updated));
+      }
     } catch {}
     scheduleSync.deleteOpenPtSlot(id);
   };

@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using SmartGym.Api.Services;
 using SmartGym.Application.DTOs.Reviews;
 using SmartGym.Application.Interfaces;
+using SmartGym.Application.Interfaces.Repositories;
 using SmartGym.Infrastructure.Persistence.EF;
 
 namespace SmartGym.Api.Endpoints;
@@ -28,7 +29,8 @@ public static class ReviewEndpoints
                     HttpContext context,
                     [FromBody] CreateCoachReviewDto request,
                     ReviewStoreService reviewStore,
-                    IReviewService service
+                    IReviewService service,
+                    IGroupClassRepository classRepository
                 ) =>
                 {
                     var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -56,6 +58,16 @@ public static class ReviewEndpoints
                         {
                             // DB fallback swallowed
                         }
+                    }
+
+                    if (Guid.TryParse(request.CoachId, out var notificationCoachId))
+                    {
+                        await classRepository.NotifyCoachAsync(
+                            notificationCoachId,
+                            "Bạn nhận được đánh giá mới",
+                            $"Hội viên đã gửi đánh giá {request.Rating}/5 cho bạn.",
+                            "review"
+                        );
                     }
 
                     return Results.Ok(new

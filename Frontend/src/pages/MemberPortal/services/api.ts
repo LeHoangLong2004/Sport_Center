@@ -62,6 +62,10 @@ export const MemberAPI = {
         return fetchApi('/schedule/my');
     },
 
+    getCoaches: async () => {
+        return fetchApi('/coaches');
+    },
+
     // 5. Invoices & Bookings
     getMyInvoices: async () => {
         return fetchApi('/payments/my');
