@@ -10,7 +10,13 @@ import {
   Building,
   Copy,
   PlusCircle,
+  Wallet,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Sparkles,
 } from "lucide-react";
+import { WalletService, MEMBER_WALLET_UPDATED_EVENT, WalletTransaction } from "../services/walletService";
+import WalletTopUpModal from "../components/WalletTopUpModal";
 
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
@@ -26,8 +32,40 @@ export default function MemberPayments({ onNavigate }: Props) {
   const [activePaymentModal, setActivePaymentModal] = useState<MemberPaymentItem | null>(null);
   const [receiptModal, setReceiptModal] = useState<MemberPaymentItem | null>(null);
   const [bankMethod, setBankMethod] = useState<"Chuyển khoản" | "Tiền mặt tại quầy">("Chuyển khoản");
-  const [refCode, setRefCode] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"invoices" | "wallet">("invoices");
+  const [balance, setBalance] = useState<number>(() => WalletService.getLocalWallet().balance);
+  const [transactions, setTransactions] = useState<WalletTransaction[]>(() => WalletService.getLocalWallet().transactions);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    WalletService.getWallet(user?.id).then((w) => {
+      if (!cancelled) {
+        setBalance(w.balance);
+        setTransactions(w.transactions);
+      }
+    });
+
+    const handleWalletUpdate = (e: any) => {
+      if (e?.detail?.balance !== undefined) {
+        setBalance(e.detail.balance);
+        if (Array.isArray(e.detail.transactions)) {
+          setTransactions(e.detail.transactions);
+        }
+      } else {
+        const local = WalletService.getLocalWallet(user?.id);
+        setBalance(local.balance);
+        setTransactions(local.transactions);
+      }
+    };
+
+    window.addEventListener(MEMBER_WALLET_UPDATED_EVENT, handleWalletUpdate);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(MEMBER_WALLET_UPDATED_EVENT, handleWalletUpdate);
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -97,21 +135,156 @@ export default function MemberPayments({ onNavigate }: Props) {
         </div>
       )}
 
-      {/* Header */}
-      <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
-        <h2 className="text-base font-bold text-slate-900 dark:text-white">Thanh toán & Hóa đơn</h2>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Quản lý lịch sử giao dịch thực tế, tra cứu hóa đơn và gửi thông tin xác nhận thanh toán chuyển khoản
-        </p>
+      {/* Wallet Hero Banner */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-6 text-white border border-slate-700/50 shadow-xl relative overflow-hidden">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold border border-emerald-500/30">
+              <Wallet className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Ví tài khoản hội viên SportCenter</span>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Số dư khả dụng hiện tại</p>
+              <div className="text-3xl font-black tracking-tight text-white mt-0.5">
+                {balance.toLocaleString("vi-VN")}{" "}
+                <span className="text-emerald-400 text-lg font-bold">đ</span>
+              </div>
+            </div>
+            <p className="text-xs text-slate-400 max-w-md">
+              Sử dụng số dư ví để đăng ký nhanh các gói môn thể thao, mua vật phẩm thể thao hoặc dịch vụ tập luyện trực tiếp.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setShowWalletModal(true)}
+              className="px-5 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Nạp tiền vào ví</span>
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Payment Table / Empty State */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-          <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-            Lịch sử đơn hàng & Hóa đơn ({payments.length})
-          </h3>
+      {/* Tab Switcher */}
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+        <button
+          type="button"
+          onClick={() => setActiveTab("invoices")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            activeTab === "invoices"
+              ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
+              : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+          }`}
+        >
+          <Receipt className="w-4 h-4" />
+          <span>Hóa đơn gói tập ({payments.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("wallet")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            activeTab === "wallet"
+              ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
+              : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+          }`}
+        >
+          <Wallet className="w-4 h-4" />
+          <span>Biến động số dư ví ({transactions.length})</span>
+        </button>
+      </div>
+
+      {/* Main Content Based on Active Tab */}
+      {activeTab === "wallet" ? (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
+          <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+              <Wallet className="w-4 h-4 text-emerald-500" />
+              Lịch sử nạp & biến động số dư ví
+            </h3>
+            <span className="text-xs text-slate-500">
+              Tổng số dư: <strong className="text-emerald-600">{balance.toLocaleString("vi-VN")} đ</strong>
+            </span>
+          </div>
+
+          {transactions.length === 0 ? (
+            <div className="p-12 text-center">
+              <Wallet className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+              <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300">Chưa có giao dịch ví nào</h4>
+              <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                Khi bạn nạp tiền hoặc thanh toán dịch vụ bằng ví, lịch sử biến động số dư sẽ hiển thị chi tiết tại đây.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowWalletModal(true)}
+                className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Nạp tiền ngay</span>
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 font-semibold border-b border-slate-100 dark:border-slate-800">
+                  <tr>
+                    <th className="p-4">Mã giao dịch</th>
+                    <th className="p-4">Loại giao dịch</th>
+                    <th className="p-4">Số tiền</th>
+                    <th className="p-4">Phương thức</th>
+                    <th className="p-4">Nội dung</th>
+                    <th className="p-4">Thời gian</th>
+                    <th className="p-4 text-right">Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                  {transactions.map((tx) => (
+                    <tr key={tx.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                      <td className="p-4 font-mono font-semibold text-slate-900 dark:text-white">
+                        {tx.id}
+                      </td>
+                      <td className="p-4">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                          <ArrowDownLeft className="w-3 h-3 text-emerald-600" />
+                          Nạp tiền vào ví
+                        </span>
+                      </td>
+                      <td className="p-4 font-bold text-emerald-600 dark:text-emerald-400">
+                        +{tx.amount.toLocaleString("vi-VN")} đ
+                      </td>
+                      <td className="p-4 text-slate-600 dark:text-slate-400 font-medium">
+                        {tx.method}
+                      </td>
+                      <td className="p-4 text-slate-500 max-w-xs truncate">
+                        {tx.note}
+                      </td>
+                      <td className="p-4 text-slate-500">
+                        {new Date(tx.createdAt).toLocaleDateString("vi-VN")}
+                      </td>
+                      <td className="p-4 text-right">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Thành công
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
+      ) : (
+        /* Payment Table / Empty State */
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
+          <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+              Lịch sử đơn hàng & Hóa đơn ({payments.length})
+            </h3>
+          </div>
 
         {loading ? (
           <div className="p-12 text-center text-xs text-slate-400">Đang tải lịch sử giao dịch...</div>
@@ -210,6 +383,7 @@ export default function MemberPayments({ onNavigate }: Props) {
           </div>
         )}
       </div>
+      )}
 
       {/* MODAL BÁO THANH TOÁN (PORTAL) */}
       {activePaymentModal &&
@@ -380,6 +554,18 @@ export default function MemberPayments({ onNavigate }: Props) {
           </div>,
           document.body
         )}
+
+      {/* Wallet TopUp Modal */}
+      <WalletTopUpModal
+        isOpen={showWalletModal}
+        onClose={() => setShowWalletModal(false)}
+        currentBalance={balance}
+        userName={userName}
+        phone={user?.phoneNumber}
+        onSuccess={(newBal) => {
+          setBalance(newBal);
+        }}
+      />
     </div>
   );
 }

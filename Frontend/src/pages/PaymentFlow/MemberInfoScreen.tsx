@@ -24,6 +24,8 @@ export function MemberInfoScreen({
 
 
 
+  const isLoggedIn = typeof window !== "undefined" && !!(localStorage.getItem("token") || localStorage.getItem("accessToken"))
+
   return (
     <div className="bg-[#f8fafc] flex flex-col items-center w-full min-h-screen pb-20">
       <Stepper active={2} />
@@ -35,6 +37,24 @@ export function MemberInfoScreen({
         <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-base max-w-2xl">
           Vui lòng kiểm tra thông tin cá nhân và thời gian kích hoạt trước khi thanh toán.
         </p>
+
+        {!isLoggedIn && (
+          <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-amber-900 w-full max-w-2xl mt-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">⚠️</span>
+              <p className="text-sm font-medium">
+                Bạn chưa đăng nhập. Vui lòng đăng nhập để liên kết gói tập vào tài khoản hội viên của bạn.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => { window.location.hash = "login" }}
+              className="shrink-0 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-4 py-2 rounded-xl shadow transition-all cursor-pointer"
+            >
+              Đăng nhập ngay
+            </button>
+          </div>
+        )}
       </FadeUp>
 
       <div className="flex items-start justify-center w-full px-4 md:px-8">
@@ -215,7 +235,12 @@ export function MemberInfoScreen({
 
                   try {
                     const userStr = localStorage.getItem("user");
-                    if (!userStr) throw new Error("Không tìm thấy phiên đăng nhập. Vui lòng đăng nhập lại.")
+                    if (!userStr) {
+                      if (window.confirm("Bạn cần đăng nhập tài khoản để tiến hành thanh toán và liên kết gói tập. Bạn có muốn chuyển đến trang Đăng nhập ngay bây giờ?")) {
+                        window.location.hash = "login";
+                      }
+                      return;
+                    }
                     const user = JSON.parse(userStr)
                     const token = localStorage.getItem("accessToken") || localStorage.getItem("token")
                     const response = await fetch(`/api/users/${user.id}/profile`, {

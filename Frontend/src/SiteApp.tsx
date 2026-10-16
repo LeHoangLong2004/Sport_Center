@@ -42,6 +42,7 @@ const labelRoutes: Record<string, SiteRoute | "admin" | "register"> = {
   "Bộ môn": "bomon",
   "Lớp học": "lophoc",
   "Huấn luyện viên": "coach",
+  "Gói tập": "pricing",
   Gói: "pricing",
   "Về chúng tôi": "about",
   "Liên hệ": "contact",
@@ -186,11 +187,18 @@ export default function SiteApp({
 
       if (!planId) {
         const lowerLabel = label.toLowerCase()
-        if (lowerLabel.includes("starter") || lowerLabel.includes("swim"))
-          planId = "swim"
-        else if (lowerLabel.includes("fitness")) planId = "fitness"
+        if (lowerLabel.includes("starter") || lowerLabel.includes("cơ bản"))
+          planId = "membership-basic"
+        else if (lowerLabel.includes("fitness") || lowerLabel.includes("plus"))
+          planId = "membership-plus"
         else if (lowerLabel.includes("premium") || lowerLabel.includes("vip"))
-          planId = "premium"
+          planId = "membership-premium"
+        else if (lowerLabel.includes("pt") || lowerLabel.includes("coach") || lowerLabel.includes("boxing"))
+          planId = "sport-boxing-coach"
+        else if (lowerLabel.includes("yoga"))
+          planId = "sport-yoga-group"
+        else if (lowerLabel.includes("gym") || lowerLabel.includes("kickfit"))
+          planId = "sport-gym-self"
       }
 
       if (onOpenPayment && planId) onOpenPayment(planId, periodId)

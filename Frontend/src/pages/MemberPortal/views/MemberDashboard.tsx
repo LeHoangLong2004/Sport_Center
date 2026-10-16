@@ -18,7 +18,9 @@ import {
   Compass,
   MapPin,
   User,
+  Wallet,
 } from "lucide-react";
+import { WalletService, MEMBER_WALLET_UPDATED_EVENT } from "../services/walletService";
 
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
@@ -39,6 +41,29 @@ export default function MemberDashboard({ onNavigate }: Props) {
   const [tasks, setTasks] = useState<MemberTaskItem[]>(() =>
     getSavedMemberData(`member_tasks_${userId}`, [])
   );
+  const [balance, setBalance] = useState<number>(() => {
+    return WalletService.getLocalWallet().balance;
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    WalletService.getWallet(userId).then((w) => {
+      if (!cancelled && typeof w.balance === "number") setBalance(w.balance);
+    });
+
+    const handleUpdate = (e: any) => {
+      if (e?.detail?.balance !== undefined) {
+        setBalance(e.detail.balance);
+      } else {
+        setBalance(WalletService.getLocalWallet(userId).balance);
+      }
+    };
+    window.addEventListener(MEMBER_WALLET_UPDATED_EVENT, handleUpdate);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(MEMBER_WALLET_UPDATED_EVENT, handleUpdate);
+    };
+  }, [userId]);
 
   // Load user package orders
   useEffect(() => {
@@ -137,6 +162,28 @@ export default function MemberDashboard({ onNavigate }: Props) {
                 ? `Chào mừng bạn trở lại! Bạn có ${upcomingSessions.length} buổi tập được xếp lịch trong tuần này. Hãy duy trì năng lượng và tập luyện đều đặn nhé!`
                 : "Chào mừng bạn đến với SportCenter! Hãy bắt đầu hành trình nâng cao sức khỏe bằng việc khám phá các gói tập và lớp học nhé!"}
             </p>
+
+            {/* Wallet quick balance widget */}
+            <div className="pt-2 flex items-center gap-3">
+              <div className="inline-flex items-center gap-3 p-2 px-3.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 shadow-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                    <Wallet className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-xs text-slate-300 font-medium">Số dư ví:</span>
+                  <strong className="text-sm font-extrabold text-white tracking-tight">
+                    {balance.toLocaleString("vi-VN")} đ
+                  </strong>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent("open-wallet-modal"))}
+                  className="px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-[11px] transition-all cursor-pointer shadow-xs"
+                >
+                  + Nạp ví
+                </button>
+              </div>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-3 shrink-0">
             <button

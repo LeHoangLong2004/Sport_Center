@@ -257,5 +257,5 @@ public sealed partial class PackageCatalogService
                 )
             );
     }
-
 }
+

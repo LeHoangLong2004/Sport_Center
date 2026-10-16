@@ -210,7 +210,13 @@ export default function PaymentFlow({
             method={method}
             setMethod={setMethod}
             formData={formData}
-            onNext={goProcessing}
+            onNext={() => {
+              if (method === "card") {
+                setScreen("otp");
+              } else {
+                void goProcessing();
+              }
+            }}
             onBack={() => setScreen("member-info")}
           />
         </div>
@@ -227,6 +233,8 @@ export default function PaymentFlow({
             pkg={pkgData}
             period={period}
             formData={formData}
+            phone={formData.phone}
+            email={formData.email}
             onConfirm={goProcessing}
             onCancel={() => setScreen("failed")}
           />

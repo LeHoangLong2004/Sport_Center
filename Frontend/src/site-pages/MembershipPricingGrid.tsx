@@ -185,7 +185,7 @@ export function MembershipPricingGrid({
                     </div>
                   ))}
                 </div>
-                <button className="bg-[#0f172a] text-white font-['Inter:Bold'] font-bold text-[14px] py-[14px] rounded-[10px] w-full hover:bg-[#1e293b] transition-colors cursor-pointer">
+                <button data-planid="membership-basic" data-period="monthly" className="bg-[#0f172a] text-white font-['Inter:Bold'] font-bold text-[14px] py-[14px] rounded-[10px] w-full hover:bg-[#1e293b] transition-colors cursor-pointer">
                   Chọn gói Starter
                 </button>
               </div>
@@ -251,7 +251,7 @@ export function MembershipPricingGrid({
                     </div>
                   ))}
                 </div>
-                <button className="bg-[#2563eb] text-white font-['Inter:Bold'] font-bold text-[14px] py-[14px] rounded-[10px] w-full hover:bg-[#1d4ed8] transition-colors cursor-pointer">
+                <button data-planid="membership-plus" data-period="monthly" className="bg-[#2563eb] text-white font-['Inter:Bold'] font-bold text-[14px] py-[14px] rounded-[10px] w-full hover:bg-[#1d4ed8] transition-colors cursor-pointer">
                   Đăng ký Fitness Plus
                 </button>
               </div>
@@ -304,7 +304,7 @@ export function MembershipPricingGrid({
                     </div>
                   ))}
                 </div>
-                <button className="bg-[#0f172a] text-white font-['Inter:Bold'] font-bold text-[14px] py-[14px] rounded-[10px] w-full hover:bg-[#1e293b] transition-colors cursor-pointer">
+                <button data-planid="membership-premium" data-period="monthly" className="bg-[#0f172a] text-white font-['Inter:Bold'] font-bold text-[14px] py-[14px] rounded-[10px] w-full hover:bg-[#1e293b] transition-colors cursor-pointer">
                   Chọn gói Premium
                 </button>
               </div>
