@@ -153,6 +153,12 @@ export default function App() {
   const [selectedPeriod, setSelectedPeriod] = useState<string | undefined>()
 
   useEffect(() => {
+    if (paymentOpen && !selectedPlanId) {
+      window.location.hash = "pricing";
+    }
+  }, [paymentOpen, selectedPlanId]);
+
+  useEffect(() => {
     const sync = () => {
       setAdminOpen(isAdminHash(window.location.hash))
       setCoachOpen(isCoachHash(window.location.hash))
@@ -175,12 +181,6 @@ export default function App() {
       />
     )
   }
-
-  useEffect(() => {
-    if (paymentOpen && !selectedPlanId) {
-      window.location.hash = "pricing";
-    }
-  }, [paymentOpen, selectedPlanId]);
 
   if (paymentOpen) {
     if (!selectedPlanId) {
