@@ -32,7 +32,10 @@ import {
   KeyRound,
   FileText,
   ShoppingBag,
+  Wallet,
 } from "lucide-react";
+import { WalletService, MEMBER_WALLET_UPDATED_EVENT } from "../services/walletService";
+import WalletTopUpModal from "./WalletTopUpModal";
 
 interface Props {
   currentScreen: MemberScreen;
@@ -54,6 +57,10 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [currentLang, setCurrentLang] = useState<"vi" | "en">("vi");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number>(() => {
+    return WalletService.getLocalWallet().balance;
+  });
+  const [showWalletModal, setShowWalletModal] = useState(false);
 
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -80,8 +87,36 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
 
   useEffect(() => {
     const handleOpenCheckin = () => setShowCheckInModal(true);
+    const handleOpenWallet = () => setShowWalletModal(true);
+    const handleWalletUpdate = (e: any) => {
+      if (e?.detail?.balance !== undefined) {
+        setWalletBalance(e.detail.balance);
+      } else {
+        setWalletBalance(WalletService.getLocalWallet().balance);
+      }
+    };
+
     window.addEventListener("open-checkin-modal", handleOpenCheckin);
-    return () => window.removeEventListener("open-checkin-modal", handleOpenCheckin);
+    window.addEventListener("open-wallet-modal", handleOpenWallet);
+    window.addEventListener(MEMBER_WALLET_UPDATED_EVENT, handleWalletUpdate);
+
+    return () => {
+      window.removeEventListener("open-checkin-modal", handleOpenCheckin);
+      window.removeEventListener("open-wallet-modal", handleOpenWallet);
+      window.removeEventListener(MEMBER_WALLET_UPDATED_EVENT, handleWalletUpdate);
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    WalletService.getWallet().then((w) => {
+      if (!cancelled && typeof w.balance === "number") {
+        setWalletBalance(w.balance);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Load reactive profile
@@ -319,6 +354,21 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
             >
               <QrCode className="w-3.5 h-3.5" />
               <span>Mã Check-in</span>
+            </button>
+
+            {/* Wallet Balance Pill */}
+            <button
+              id="btn-member-wallet"
+              type="button"
+              onClick={() => setShowWalletModal(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 hover:from-emerald-500/20 hover:to-teal-500/20 text-emerald-700 dark:text-emerald-300 font-extrabold text-xs rounded-xl border border-emerald-500/30 transition-all shadow-xs cursor-pointer group"
+              title="Xem số dư tài khoản & Nạp tiền vào ví"
+            >
+              <Wallet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
+              <span>Ví: {walletBalance.toLocaleString("vi-VN")} đ</span>
+              <span className="ml-1 px-1.5 py-0.5 rounded-md bg-emerald-600 text-white text-[10px] font-black group-hover:bg-emerald-500 transition-colors">
+                + Nạp
+              </span>
             </button>
 
             {/* Membership Tier Pill */}
@@ -687,6 +737,18 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
           </div>,
           document.body
         )}
+
+      {/* Wallet TopUp & Balance Modal */}
+      <WalletTopUpModal
+        isOpen={showWalletModal}
+        onClose={() => setShowWalletModal(false)}
+        currentBalance={walletBalance}
+        userName={userName}
+        phone={profile?.phone}
+        onSuccess={(newBal) => {
+          setWalletBalance(newBal);
+        }}
+      />
     </div>
   );
 }
