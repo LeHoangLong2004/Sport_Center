@@ -34,8 +34,8 @@ public static class ReviewEndpoints
                     var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                     var nameClaim = context.User.FindFirst(ClaimTypes.Name)?.Value;
 
-                    var memberId = !string.IsNullOrEmpty(userIdClaim) ? userIdClaim : "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
-                    var memberName = !string.IsNullOrEmpty(nameClaim) ? nameClaim : "Hồ Xuân Ánh Nam";
+                    var memberId = !string.IsNullOrEmpty(userIdClaim) ? userIdClaim : "";
+                    var memberName = !string.IsNullOrEmpty(nameClaim) ? nameClaim : (context.User.FindFirst("FullName")?.Value ?? context.User.FindFirst("name")?.Value ?? "Hội viên");
 
                     // Persist to ReviewStoreService
                     var stored = reviewStore.AddReview(request, memberId, memberName);

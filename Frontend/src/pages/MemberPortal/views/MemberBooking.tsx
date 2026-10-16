@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import type { MemberScreen, MemberSessionItem } from "../types";
 import {
-  DEFAULT_MEMBER_SESSIONS,
   getSavedMemberData,
   saveMemberData,
 } from "../services/memberData";
@@ -116,54 +115,7 @@ const CATALOG_GROUP_CLASSES = [
   },
 ];
 
-// Default PT Open Slots (augmented with coach_custom_open_pt_slots if present)
-const DEFAULT_PT_OPEN_SLOTS = [
-  {
-    id: "pt-slot-01",
-    sport: "Gym",
-    coachName: "HLV Enam",
-    date: "2026-10-14",
-    startTime: "08:30",
-    endTime: "09:30",
-    room: "Khu PT 1-1 - Tầng 1",
-    note: "Nhận kèm cá nhân siết mỡ, tăng cơ ngực và tay sau",
-    isBooked: false,
-  },
-  {
-    id: "pt-slot-02",
-    sport: "Yoga",
-    coachName: "HLV Minh Tuấn",
-    date: "2026-10-14",
-    startTime: "14:00",
-    endTime: "15:00",
-    room: "Studio VIP 1-1",
-    note: "Kèm phục hồi khớp vai và trị liệu đau lưng dưới",
-    isBooked: false,
-  },
-  {
-    id: "pt-slot-03",
-    sport: "Boxing",
-    coachName: "HLV Hoàng Long",
-    date: "2026-10-15",
-    startTime: "16:00",
-    endTime: "17:00",
-    room: "Ring PT 1-1",
-    note: "Rèn phản xạ đòn né và thể lực chiến đấu 1-1",
-    isBooked: false,
-  },
-  {
-    id: "pt-slot-04",
-    sport: "Gym",
-    coachName: "HLV Enam",
-    date: "2026-10-15",
-    startTime: "18:00",
-    endTime: "19:00",
-    room: "Khu PT 1-1 - Tầng 1",
-    note: "Tập chân đùi mông (Leg day) cho học viên muốn tăng cơ",
-    isBooked: false,
-  },
-];
-
+// Open PT slots helper
 export default function MemberBooking({ onNavigate }: Props) {
   const [activeTab, setActiveTab] = useState<"group" | "pt">("group");
 
@@ -172,14 +124,19 @@ export default function MemberBooking({ onNavigate }: Props) {
   const [selectedSport, setSelectedSport] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
+  const userStr = localStorage.getItem("user");
+  const user = userStr ? JSON.parse(userStr) : null;
+  const userId = user?.id || "";
+  const storageKey = userId ? `member_sessions_${userId}` : "member_sessions";
+
   // My booked sessions
   const [mySessions, setMySessions] = useState<MemberSessionItem[]>(() =>
-    getSavedMemberData("member_sessions", DEFAULT_MEMBER_SESSIONS)
+    getSavedMemberData(storageKey, [])
   );
 
   // Load open slots helper
   const loadAvailablePtSlots = () => {
-    const syncedOpen = scheduleSync.getOpenPtSlots().map((s) => ({
+    return scheduleSync.getOpenPtSlots().map((s) => ({
       id: s.id,
       sport: s.sport,
       coachName: s.coachName,
@@ -190,12 +147,6 @@ export default function MemberBooking({ onNavigate }: Props) {
       note: s.coachNote || "Ca kèm 1-1 mở",
       isBooked: false,
     }));
-
-    const remainingDefaults = DEFAULT_PT_OPEN_SLOTS.filter(
-      (d) => !syncedOpen.some((s) => s.id === d.id)
-    );
-
-    return [...syncedOpen, ...remainingDefaults];
   };
 
   // PT slots state
@@ -204,10 +155,10 @@ export default function MemberBooking({ onNavigate }: Props) {
   useEffect(() => {
     const unsub = scheduleSync.subscribe(() => {
       setPtSlots(loadAvailablePtSlots());
-      setMySessions(getSavedMemberData("member_sessions", DEFAULT_MEMBER_SESSIONS));
+      setMySessions(getSavedMemberData(storageKey, []));
     });
     return unsub;
-  }, []);
+  }, [storageKey]);
 
   // Modal State
   const [selectedClassDetail, setSelectedClassDetail] = useState<any | null>(null);
@@ -270,7 +221,7 @@ export default function MemberBooking({ onNavigate }: Props) {
 
     const updated = [newSession, ...mySessions];
     setMySessions(updated);
-    saveMemberData("member_sessions", updated);
+    saveMemberData(storageKey, updated);
     setSelectedClassDetail(null);
     setFeedback(`Đã đăng ký thành công lớp "${item.name}" ngày ${selectedDate} lúc ${item.startTime}!`);
     setTimeout(() => setFeedback(null), 4000);
@@ -283,7 +234,7 @@ export default function MemberBooking({ onNavigate }: Props) {
       s.id === sessionId ? { ...s, status: "đã hủy" as const, cancelReason: "Học viên tự hủy trước giờ tập" } : s
     );
     setMySessions(updated);
-    saveMemberData("member_sessions", updated);
+    saveMemberData(storageKey, updated);
     setSelectedClassDetail(null);
     setFeedback("Đã hủy đặt chỗ thành công. Chỗ đã được nhường lại cho học viên khác.");
     setTimeout(() => setFeedback(null), 4000);
@@ -295,19 +246,11 @@ export default function MemberBooking({ onNavigate }: Props) {
     if (!bookingPtSlot) return;
 
     const userStr = localStorage.getItem("user");
-    let currentUserName = "Hồ Xuân Ánh Nam";
-    let currentUserId = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
-    let currentUserPhone = "0989123788";
-    let currentUserEmail = "hoxuananhnam@gmail.com";
-    if (userStr) {
-      try {
-        const u = JSON.parse(userStr);
-        currentUserName = u.fullName || u.name || currentUserName;
-        currentUserId = u.id || currentUserId;
-        currentUserPhone = u.phoneNumber || u.phone || currentUserPhone;
-        currentUserEmail = u.email || currentUserEmail;
-      } catch {}
-    }
+    const u = userStr ? JSON.parse(userStr) : null;
+    const currentUserName = u?.fullName || u?.name || "Hội viên";
+    const currentUserId = u?.id || "";
+    const currentUserPhone = u?.phoneNumber || u?.phone || "";
+    const currentUserEmail = u?.email || "";
 
     const booked = scheduleSync.bookPtSlot({
       slotId: bookingPtSlot.id,
@@ -340,7 +283,7 @@ export default function MemberBooking({ onNavigate }: Props) {
 
     const updatedSessions = [newSession, ...mySessions];
     setMySessions(updatedSessions);
-    saveMemberData("member_sessions", updatedSessions);
+    saveMemberData(storageKey, updatedSessions);
 
     // Mark slot as booked in local list
     const updatedSlots = ptSlots.map((s) =>
@@ -589,72 +532,84 @@ export default function MemberBooking({ onNavigate }: Props) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredPtSlots.map((slot) => (
-              <div
-                key={slot.id}
-                className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs hover:border-purple-500/40 transition-all flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800">
-                      {slot.sport} • PT 1-1
-                    </span>
-                    <span
-                      className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                        slot.isBooked
-                          ? "bg-slate-100 text-slate-400 dark:bg-slate-800"
-                          : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
-                      }`}
-                    >
-                      {slot.isBooked ? "Đã có người đặt" : "Ca trống sẵn sàng"}
-                    </span>
-                  </div>
-
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    {slot.coachName}
-                  </h3>
-
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 italic">
-                    "{slot.note}"
-                  </p>
-
-                  <div className="space-y-1.5 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{slot.date}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-3.5 h-3.5 text-slate-400" />
-                      <span className="font-semibold text-purple-600 dark:text-purple-400">
-                        {slot.startTime} - {slot.endTime}
+          {filteredPtSlots.length === 0 ? (
+            <div className="bg-white dark:bg-slate-900 p-12 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center">
+              <Calendar className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+              <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                Chưa có ca tập 1-1 nào đang mở trong ngày đã chọn
+              </h4>
+              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                Vui lòng chọn ngày khác trên thanh lọc hoặc liên hệ trực tiếp HLV qua tin nhắn để đặt lịch riêng.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredPtSlots.map((slot) => (
+                <div
+                  key={slot.id}
+                  className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs hover:border-purple-500/40 transition-all flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800">
+                        {slot.sport} • PT 1-1
+                      </span>
+                      <span
+                        className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                          slot.isBooked
+                            ? "bg-slate-100 text-slate-400 dark:bg-slate-800"
+                            : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                        }`}
+                      >
+                        {slot.isBooked ? "Đã có người đặt" : "Ca trống sẵn sàng"}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{slot.room}</span>
+
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                      {slot.coachName}
+                    </h3>
+
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 italic">
+                      "{slot.note}"
+                    </p>
+
+                    <div className="space-y-1.5 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{slot.date}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="font-semibold text-purple-600 dark:text-purple-400">
+                          {slot.startTime} - {slot.endTime}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{slot.room}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800">
-                  <button
-                    type="button"
-                    disabled={slot.isBooked}
-                    onClick={() => setBookingPtSlot(slot)}
-                    className={`w-full py-2.5 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 ${
-                      slot.isBooked
-                        ? "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
-                        : "bg-purple-600 hover:bg-purple-500 text-white shadow-md shadow-purple-500/20"
-                    }`}
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>{slot.isBooked ? "Đã được đăng ký" : "Đặt lịch kèm 1–1 ngay"}</span>
-                  </button>
+                  <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                      type="button"
+                      disabled={slot.isBooked}
+                      onClick={() => setBookingPtSlot(slot)}
+                      className={`w-full py-2.5 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                        slot.isBooked
+                          ? "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
+                          : "bg-purple-600 hover:bg-purple-500 text-white shadow-md shadow-purple-500/20"
+                      }`}
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>{slot.isBooked ? "Đã được đăng ký" : "Đặt lịch kèm 1–1 ngay"}</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

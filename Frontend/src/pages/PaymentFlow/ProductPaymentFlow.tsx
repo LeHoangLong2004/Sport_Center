@@ -52,8 +52,8 @@ export function ProductPaymentFlow({ order, onBack, onCompleted }: Props) {
     periodLabel: "Đơn hàng",
     features: order.items.map((item) => `${item.name} × ${item.quantity}`),
     details: [
-      ["Số mặt hàng", `${order.items.reduce((sum, item) => sum + item.quantity, 0)} món`],
-      ["Nhận hàng", order.fulfillmentMethod === "in_center_delivery" ? `Giao tại ${order.deliveryLocation || "vị trí đã chọn"}` : "Nhận tại quầy lễ tân"],
+      { label: "Số mặt hàng", value: `${order.items.reduce((sum, item) => sum + item.quantity, 0)} món` },
+      { label: "Nhận hàng", value: order.fulfillmentMethod === "in_center_delivery" ? `Giao tại ${order.deliveryLocation || "vị trí đã chọn"}` : "Nhận tại quầy lễ tân" },
     ],
   }), [order]);
 

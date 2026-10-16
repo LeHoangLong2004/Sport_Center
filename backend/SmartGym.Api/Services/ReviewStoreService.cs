@@ -11,8 +11,8 @@ namespace SmartGym.Api.Services
     public class StoredReviewRecord
     {
         public string Id { get; set; } = "";
-        public string CoachId { get; set; } = "25f50fba-506a-4edf-9db7-43f77f6741a4";
-        public string CoachName { get; set; } = "HLV Hồ Xuân Ánh Nam";
+        public string CoachId { get; set; } = "";
+        public string CoachName { get; set; } = "HLV SportCenter";
         public string MemberId { get; set; } = "";
         public string MemberName { get; set; } = "";
         public string AnonymizedMemberName { get; set; } = "";
@@ -179,8 +179,8 @@ namespace SmartGym.Api.Services
                 var newRev = new StoredReviewRecord
                 {
                     Id = $"rev-{Guid.NewGuid():N}",
-                    CoachId = !string.IsNullOrWhiteSpace(dto.CoachId) ? dto.CoachId : "25f50fba-506a-4edf-9db7-43f77f6741a4",
-                    CoachName = !string.IsNullOrWhiteSpace(dto.CoachName) ? dto.CoachName : "HLV Hồ Xuân Ánh Nam",
+                    CoachId = !string.IsNullOrWhiteSpace(dto.CoachId) ? dto.CoachId : "",
+                    CoachName = !string.IsNullOrWhiteSpace(dto.CoachName) ? dto.CoachName : "HLV SportCenter",
                     MemberId = memberId,
                     MemberName = memberName,
                     AnonymizedMemberName = anonName,

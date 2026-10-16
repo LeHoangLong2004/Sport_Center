@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import type { MemberScreen, MemberSessionItem } from "../types";
 import {
-  DEFAULT_MEMBER_SESSIONS,
   getSavedMemberData,
   saveMemberData,
   MemberBackendAPI,
@@ -125,15 +124,15 @@ function formatDateISO(d: Date): string {
 }
 
 export default function MemberSchedule({ onNavigate }: Props) {
+  const userStr = localStorage.getItem("user");
+  const user = userStr ? JSON.parse(userStr) : null;
+  const userId = user?.id || "";
+  const storageKey = userId ? `member_sessions_${userId}` : "member_sessions";
+
   // 1. Data States
-  const [sessions, setSessions] = useState<MemberSessionItem[]>(() => {
-    const saved = getSavedMemberData("member_sessions", DEFAULT_MEMBER_SESSIONS);
-    if (!saved || saved.length < DEFAULT_MEMBER_SESSIONS.length) {
-      saveMemberData("member_sessions", DEFAULT_MEMBER_SESSIONS);
-      return DEFAULT_MEMBER_SESSIONS;
-    }
-    return saved;
-  });
+  const [sessions, setSessions] = useState<MemberSessionItem[]>(() =>
+    getSavedMemberData(storageKey, [])
+  );
   const [loading, setLoading] = useState(false);
 
   // 2. View Mode & Filters
@@ -157,19 +156,13 @@ export default function MemberSchedule({ onNavigate }: Props) {
     try {
       const backendData = await MemberBackendAPI.getBookings();
       if (Array.isArray(backendData) && backendData.length > 0) {
-        const existingIds = new Set(backendData.map((d: any) => d.id));
-        const missing = DEFAULT_MEMBER_SESSIONS.filter((d) => !existingIds.has(d.id));
-        const merged = [...backendData, ...missing];
-        setSessions(merged);
-        saveMemberData("member_sessions", merged);
-      } else {
-        const local = getSavedMemberData("member_sessions", DEFAULT_MEMBER_SESSIONS);
-        setSessions(local);
+        setSessions(backendData);
+        saveMemberData(storageKey, backendData);
+        return;
       }
-    } catch {
-      const local = getSavedMemberData("member_sessions", DEFAULT_MEMBER_SESSIONS);
-      setSessions(local);
-    }
+    } catch {}
+    const local = getSavedMemberData(storageKey, []);
+    setSessions(local);
   };
 
   useEffect(() => {
@@ -318,7 +311,7 @@ export default function MemberSchedule({ onNavigate }: Props) {
         : s
     );
     setSessions(updated);
-    saveMemberData("member_sessions", updated);
+    saveMemberData(storageKey, updated);
 
     setFeedback(`Đã hủy buổi tập "${cancellingSession.name}". Chỗ học đã được hoàn trả về tài khoản.`);
     setCancellingSession(null);
