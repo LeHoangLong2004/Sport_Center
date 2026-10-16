@@ -5,7 +5,9 @@ export function ClassDetailModal({ classId, onClose, onEdit }: { classId: string
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
   const [showConfirmCancel, setShowConfirmCancel] = useState(false);
+  const [showConfirmRestore, setShowConfirmRestore] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
 
   useEffect(() => {
@@ -50,6 +52,32 @@ export function ClassDetailModal({ classId, onClose, onEdit }: { classId: string
       setNotification({ type: 'error', message: 'Lỗi kết nối khi hủy lớp học.' });
     } finally {
       setIsCancelling(false);
+    }
+  };
+
+  const handleRestoreClass = async () => {
+    setShowConfirmRestore(false);
+    setIsRestoring(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/classes/${classId}/restore`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setNotification({ type: 'success', message: 'Đã khôi phục lớp học thành công!' });
+        setTimeout(() => {
+          setNotification(null);
+          onClose();
+        }, 2000);
+      } else {
+        const data = await res.json().catch(() => null);
+        setNotification({ type: 'error', message: data?.message || 'Không thể khôi phục lớp học lúc này.' });
+      }
+    } catch (err) {
+      setNotification({ type: 'error', message: 'Lỗi kết nối khi khôi phục lớp học.' });
+    } finally {
+      setIsRestoring(false);
     }
   };
 
@@ -177,17 +205,19 @@ export function ClassDetailModal({ classId, onClose, onEdit }: { classId: string
               Sửa thông tin
             </button>
             <button 
-              onClick={() => setShowConfirmCancel(true)}
-              disabled={isCancelling}
-              className="px-5 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:bg-red-400 transition-colors flex items-center gap-2"
+              onClick={() => classDetail.status === false ? setShowConfirmRestore(true) : setShowConfirmCancel(true)}
+              disabled={isCancelling || isRestoring}
+              className={`px-5 py-2 text-sm font-semibold text-white rounded-lg transition-colors flex items-center gap-2 ${classDetail.status === false ? 'bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400' : 'bg-red-600 hover:bg-red-700 disabled:bg-red-400'}`}
             >
-              {isCancelling && (
+              {(isCancelling || isRestoring) && (
                 <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
               )}
-              {isCancelling ? 'Đang xử lý...' : 'Hủy lớp học'}
+              {classDetail.status === false
+                ? (isRestoring ? 'Đang xử lý...' : 'Khôi phục lớp học')
+                : (isCancelling ? 'Đang xử lý...' : 'Hủy lớp học')}
             </button>
           </div>
         )}
@@ -238,7 +268,7 @@ export function ClassDetailModal({ classId, onClose, onEdit }: { classId: string
                 <h3 className="text-xl font-bold text-gray-900">Xác nhận hủy lớp học</h3>
               </div>
               <p className="text-gray-600 text-sm">
-                Bạn có chắc chắn muốn hủy lớp học này không? Mọi lượt đăng ký của học viên cũng sẽ bị hủy bỏ và không thể khôi phục.
+                Bạn có chắc chắn muốn hủy lớp học này không? Lớp học có thể được khôi phục sau đó nếu vẫn còn thời gian phù hợp.
               </p>
               <div className="flex justify-end gap-3 mt-4">
                 <button 
@@ -252,6 +282,36 @@ export function ClassDetailModal({ classId, onClose, onEdit }: { classId: string
                   className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
                 >
                   Có, hủy lớp học
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showConfirmRestore && (
+          <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in-up">
+            <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl flex flex-col gap-4">
+              <div className="flex items-center gap-3 text-emerald-600">
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5M5.2 9A7 7 0 0117.9 6.1L20 9M18.8 15A7 7 0 016.1 17.9L4 15" />
+                </svg>
+                <h3 className="text-xl font-bold text-gray-900">Xác nhận khôi phục lớp học</h3>
+              </div>
+              <p className="text-gray-600 text-sm">
+                Lớp học sẽ hoạt động trở lại. Các lượt đăng ký trước đó sẽ được chuyển về trạng thái chờ duyệt lại.
+              </p>
+              <div className="flex justify-end gap-3 mt-4">
+                <button
+                  onClick={() => setShowConfirmRestore(false)}
+                  className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Không, quay lại
+                </button>
+                <button
+                  onClick={handleRestoreClass}
+                  className="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
+                >
+                  Có, khôi phục lớp
                 </button>
               </div>
             </div>

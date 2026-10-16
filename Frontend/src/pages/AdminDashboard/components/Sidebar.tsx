@@ -33,7 +33,7 @@ export function Sidebar({ page, setPage }: { page: AdminPage; setPage: (p: Admin
   const isFinancePage = ["budget", "expenses", "payroll", "pl-report"].includes(page)
 
   return (
-    <aside className="bg-[#0f172a] flex flex-col gap-[28px] items-start pb-[24px] pt-[28px] px-[18px] shrink-0 w-[230px] sticky top-0 h-screen overflow-y-auto hidden-scrollbar">
+    <aside className="manager-sidebar bg-[#0f172a] flex flex-col gap-[28px] items-start pb-[24px] pt-[28px] px-[18px] shrink-0 w-[230px] sticky top-0 h-screen overflow-y-auto hidden-scrollbar">
       {/* brand */}
       <div className="flex gap-[12px] items-center shrink-0 w-full">
         <div className="bg-[#f43f5e] flex flex-col items-center justify-center rounded-[10px] shrink-0 size-[40px] shadow-lg shadow-rose-500/20">

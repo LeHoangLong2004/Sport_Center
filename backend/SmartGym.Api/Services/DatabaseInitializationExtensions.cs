@@ -25,7 +25,15 @@ using (var scope = app.Services.CreateScope())
             "..",
             "supabase_schema.sql"
         );
-        if (File.Exists(sqlPath))
+        var baseSchemaExists = db.Database
+            .SqlQueryRaw<bool>(@"SELECT to_regclass('public.roles') IS NOT NULL AND to_regclass('public.users') IS NOT NULL AS ""Value""")
+            .FirstOrDefault();
+
+        if (baseSchemaExists)
+        {
+            app.Logger.LogInformation("Base Supabase schema already exists; skipped non-idempotent schema script.");
+        }
+        else if (File.Exists(sqlPath))
         {
             var sql = File.ReadAllText(sqlPath);
             using (var command = db.Database.GetDbConnection().CreateCommand())
@@ -191,6 +199,51 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         Console.WriteLine($"coach_profiles create error: {ex.Message}");
+    }
+
+    // Persist coach-published 1-on-1 availability slots. These slots are
+    // separate from pt_sessions because they are still open for a member to
+    // claim; once claimed, the row is marked as booked and remains part of
+    // the coach's schedule history.
+    try
+    {
+        db.Database.ExecuteSqlRaw(
+            @"
+            CREATE TABLE IF NOT EXISTS coach_availability_slots (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                coach_id UUID NOT NULL REFERENCES coaches(id) ON DELETE CASCADE,
+                start_time TIMESTAMPTZ NOT NULL,
+                end_time TIMESTAMPTZ NOT NULL,
+                sport TEXT NOT NULL,
+                room TEXT NOT NULL,
+                note TEXT,
+                status VARCHAR(20) NOT NULL DEFAULT 'open',
+                booked_member_id UUID REFERENCES users(id) ON DELETE SET NULL,
+                booked_member_name TEXT,
+                booked_member_phone VARCHAR(30),
+                goal TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                CONSTRAINT coach_availability_slots_valid_range CHECK (end_time > start_time),
+                CONSTRAINT coach_availability_slots_valid_status CHECK (status IN ('open', 'booked', 'closed', 'cancelled'))
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_coach_availability_slots_coach_time
+                ON coach_availability_slots(coach_id, start_time, end_time);
+            CREATE INDEX IF NOT EXISTS idx_coach_availability_slots_open_time
+                ON coach_availability_slots(status, start_time);
+
+            -- Demo tokens can represent a member before that account is
+            -- materialized in users. Keep the booking identity on the slot
+            -- without making the availability flow fail on that FK.
+            ALTER TABLE coach_availability_slots
+                DROP CONSTRAINT IF EXISTS coach_availability_slots_booked_member_id_fkey;
+            "
+        );
+        app.Logger.LogInformation("coach_availability_slots table is ready.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"coach availability schema sync error: {ex.Message}");
     }
 
     // Keep the review table compatible with both the original EF migration

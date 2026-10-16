@@ -95,11 +95,11 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [bc, title] = breadcrumbs[page] || ["", ""]
 
   return (
-    <div className="flex w-full h-screen bg-slate-50 dark:bg-[#0f172a] transition-colors duration-300 font-sans text-slate-900 dark:text-white selection:bg-rose-500 selection:text-white overflow-hidden">
+    <div className="manager-portal-shell flex w-full h-screen bg-slate-50 dark:bg-[#0f172a] transition-colors duration-300 font-sans text-slate-900 dark:text-white selection:bg-rose-500 selection:text-white overflow-hidden">
       <Sidebar page={page} setPage={setPage} />
       <div className="flex flex-col flex-1 min-w-0 h-full">
         <TopBar breadcrumb={bc} title={title} onProfileClick={() => setPage("profile")} />
-        <div className="flex-1 overflow-y-auto p-6 lg:p-8">
+        <div className="manager-page-content flex-1 overflow-y-auto p-6 lg:p-8">
           {page === "overview"   && <OverviewPage />}
           {page === "packages"   && <PackagesPage />}
           {page === "schedule"   && <SchedulePage />}

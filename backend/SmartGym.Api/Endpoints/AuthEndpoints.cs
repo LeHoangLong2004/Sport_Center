@@ -14,10 +14,20 @@ public static class AuthEndpoints
     {
         var group = routes.MapGroup("/api/auth").WithTags("Auth");
 
-        group.MapPost("/register", async (RegisterRequest request, IAuthService authService) =>
+        group.MapPost("/register", async (RegisterRequest request, IAuthService authService, HttpContext httpContext) =>
         {
             try
             {
+                // Public registration can only create Member accounts. Staff roles
+                // may be requested only by an authenticated administrator/manager.
+                var isPrivilegedStaff = httpContext.User.Identity?.IsAuthenticated == true
+                    && (httpContext.User.IsInRole("admin") || httpContext.User.IsInRole("manager"));
+
+                if (!isPrivilegedStaff)
+                {
+                    request.RoleName = "member";
+                }
+
                 var response = await authService.RegisterAsync(request);
                 return Results.Ok(response);
             }

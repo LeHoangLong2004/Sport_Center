@@ -193,6 +193,15 @@ public class ClassBookingRawModel
     public DateTime CreatedAt { get; set; }
 }
 
+public class ClassTimeConflictRawModel
+{
+    [Column("schedule_time")]
+    public DateTime ScheduleTime { get; set; }
+
+    [Column("duration_minutes")]
+    public int DurationMinutes { get; set; }
+}
+
 public class PtEnrollmentRawModel
 {
     [Column("id")]

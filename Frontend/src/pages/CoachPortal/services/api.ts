@@ -286,14 +286,33 @@ export const CoachAPI = {
     // 10. PT 1-1 Availability Slots
     getAvailabilitySlots: async (): Promise<AvailabilitySlot[]> => {
         try {
-            return await fetchApi('/coach/availability');
+            const res = await fetchApi('/coach/availability');
+            return Array.isArray(res) ? res : [];
         } catch {
             return [];
         }
     },
+    createAvailabilitySlot: async (data: {
+        date: string;
+        startTime: string;
+        endTime: string;
+        sport: string;
+        room: string;
+        note?: string;
+    }): Promise<AvailabilitySlot> => {
+        return fetchApi('/coach/availability', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
     toggleAvailabilitySlot: async (slotId: string) => {
         return fetchApi(`/coach/availability/toggle/${slotId}`, {
             method: 'POST'
+        });
+    },
+    deleteAvailabilitySlot: async (slotId: string) => {
+        return fetchApi(`/coach/availability/${encodeURIComponent(slotId)}`, {
+            method: 'DELETE'
         });
     },
 

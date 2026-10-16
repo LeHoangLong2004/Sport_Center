@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
@@ -290,6 +291,101 @@ namespace SmartGym.Api.Services
                     .ToList();
             }
         }
+
+        public bool TryBookPtSlot(
+            BookPtSessionRequest req,
+            out ScheduleSessionRecord? booked,
+            out string? conflictMessage)
+        {
+            lock (_lock)
+            {
+                booked = null;
+                conflictMessage = null;
+
+                var selected = !string.IsNullOrWhiteSpace(req.SlotId)
+                    ? _sessions.FirstOrDefault(s => s.Id == req.SlotId)
+                    : null;
+                var date = selected?.Date ?? req.Date;
+                var startText = selected?.StartTime ?? req.StartTime;
+                var endText = selected?.EndTime ?? req.EndTime;
+
+                if (!TryBuildInterval(date, startText, endText, out var start, out var end))
+                {
+                    conflictMessage = "Ngày hoặc thời gian đặt lịch PT không hợp lệ.";
+                    return false;
+                }
+
+                if (selected != null && (selected.Type != "open_pt" || selected.RegisteredCount > 0 || selected.Status == "đã hủy"))
+                {
+                    conflictMessage = "Khung giờ PT này không còn trống.";
+                    return false;
+                }
+
+                var coachId = selected?.CoachId ?? req.CoachId ?? "";
+                var memberId = req.MemberId ?? "";
+                var activeSessions = _sessions.Where(s =>
+                    s.Type != "open_pt"
+                    && s.Status != "đã hủy"
+                    && s.Status != "hoàn thành"
+                    && s.Status != "đã hoàn thành");
+
+                if (activeSessions.Any(s =>
+                    s.Id != selected?.Id
+                    && !string.IsNullOrWhiteSpace(coachId)
+                    && string.Equals(s.CoachId, coachId, StringComparison.OrdinalIgnoreCase)
+                    && TryBuildInterval(s.Date, s.StartTime, s.EndTime, out var sStart, out var sEnd)
+                    && Overlaps(start, end, sStart, sEnd)))
+                {
+                    conflictMessage = "Huấn luyện viên đã có lịch khác trùng thời gian.";
+                    return false;
+                }
+
+                if (activeSessions.Any(s =>
+                    s.Id != selected?.Id
+                    && !string.IsNullOrWhiteSpace(memberId)
+                    && string.Equals(s.MemberId, memberId, StringComparison.OrdinalIgnoreCase)
+                    && TryBuildInterval(s.Date, s.StartTime, s.EndTime, out var sStart, out var sEnd)
+                    && Overlaps(start, end, sStart, sEnd)))
+                {
+                    conflictMessage = "Bạn đã có lịch tập khác trùng thời gian.";
+                    return false;
+                }
+
+                booked = BookPtSlot(req);
+                return true;
+            }
+        }
+
+        private static bool TryBuildInterval(
+            string? dateText,
+            string? startText,
+            string? endText,
+            out DateTime start,
+            out DateTime end)
+        {
+            start = default;
+            end = default;
+            if (!DateTime.TryParseExact(
+                    $"{dateText} {startText}",
+                    new[] { "yyyy-MM-dd HH:mm", "yyyy-MM-dd H:mm" },
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+                    out start)
+                || !DateTime.TryParseExact(
+                    $"{dateText} {endText}",
+                    new[] { "yyyy-MM-dd HH:mm", "yyyy-MM-dd H:mm" },
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+                    out end))
+            {
+                return false;
+            }
+
+            return end > start;
+        }
+
+        private static bool Overlaps(DateTime start, DateTime end, DateTime otherStart, DateTime otherEnd)
+            => start < otherEnd && otherStart < end;
 
         public ScheduleSessionRecord BookPtSlot(BookPtSessionRequest req)
         {

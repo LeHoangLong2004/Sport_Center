@@ -10,8 +10,6 @@ export function useCoachScheduleData(weekDates: string[]) {
   const [loading, setLoading] = useState(true);
   const [syncedSessions, setSyncedSessions] = useState(() => scheduleSync.getSyncedSessions());
 
-  // Coach-created slots must be isolated per authenticated coach. The previous
-  // global localStorage key made one coach's slots appear in every coach portal.
   const currentCoachId = useMemo(() => {
     try {
       const storedUser = JSON.parse(localStorage.getItem("user") || "null");
@@ -20,25 +18,11 @@ export function useCoachScheduleData(weekDates: string[]) {
       return "";
     }
   }, []);
-  const customSlotsStorageKey = currentCoachId
-    ? `coach_custom_open_pt_slots_${currentCoachId}`
-    : null;
-
   useEffect(() => {
     return scheduleSync.subscribe(() => {
       setSyncedSessions(scheduleSync.getSyncedSessions());
     });
   }, []);
-
-  const [openSlots, setOpenSlots] = useState<UnifiedScheduleItem[]>(() => {
-    try {
-      const saved = customSlotsStorageKey
-        ? localStorage.getItem(customSlotsStorageKey)
-        : null;
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return [];
-  });
 
   useEffect(() => {
     async function loadData() {
@@ -82,18 +66,18 @@ export function useCoachScheduleData(weekDates: string[]) {
     const ptItems: UnifiedScheduleItem[] = availabilitySlots
       .filter((slot) => slot.isOpen && Boolean(slot.bookedMemberName))
       .map((slot) => {
-        const targetDate = weekDates[(slot.dayOfWeek - 1) % 7] || weekDates[0];
+        const targetDate = slot.date || weekDates[((slot.dayOfWeek || 1) - 1) % 7] || weekDates[0];
         return {
           id: slot.id,
           type: "pt" as const,
           className: `Kèm 1-1: ${slot.bookedMemberName}`,
-          sport: "Gym",
+          sport: slot.sport || "Gym",
           level: "1-1 PT",
           date: targetDate,
           startTime: slot.startTime,
           endTime: slot.endTime,
-          room: "Khu PT 1-1",
-          coachName: "HLV",
+          room: slot.room || "Khu PT 1-1",
+          coachName: slot.coachName || "HLV",
           registeredCount: 1,
           capacity: 1,
           status: "sắp diễn ra" as SessionStatus,
@@ -107,28 +91,29 @@ export function useCoachScheduleData(weekDates: string[]) {
     const openItems: UnifiedScheduleItem[] = availabilitySlots
       .filter((slot) => slot.isOpen && !slot.bookedMemberName)
       .map((slot) => {
-        const targetDate = weekDates[(slot.dayOfWeek - 1) % 7] || weekDates[0];
+        const targetDate = slot.date || weekDates[((slot.dayOfWeek || 1) - 1) % 7] || weekDates[0];
         return {
           id: `open-${slot.id}`,
           type: "open_pt" as const,
           className: "Lịch trống 1–1 (Mở nhận HV)",
-          sport: "Gym",
+          sport: slot.sport || "Gym",
           level: "1-1 PT",
           date: targetDate,
           startTime: slot.startTime,
           endTime: slot.endTime,
-          room: "Khu PT 1-1",
-          coachName: "HLV",
+          room: slot.room || "Khu PT 1-1",
+          coachName: slot.coachName || "HLV",
           registeredCount: 0,
           capacity: 1,
           status: "sắp diễn ra" as SessionStatus,
-          note: `Ca ${slot.period} - Sẵn sàng nhận học viên`,
+          note: slot.note || `Ca ${slot.period || "trống"} - Sẵn sàng nhận học viên`,
         };
       });
 
     const syncedItems: UnifiedScheduleItem[] = syncedSessions
       .filter(
         (s) =>
+          s.type !== "open_pt" &&
           Boolean(currentCoachId) &&
           s.coachId?.toLowerCase() === currentCoachId.toLowerCase()
       )
@@ -152,45 +137,32 @@ export function useCoachScheduleData(weekDates: string[]) {
       note: s.userNote || s.coachNote,
     }));
 
-    const combined = [...groupItems, ...ptItems, ...openItems, ...openSlots, ...syncedItems];
+    const combined = [...groupItems, ...ptItems, ...openItems, ...syncedItems];
     const seen = new Set<string>();
     return combined.filter((item) => {
       if (seen.has(item.id)) return false;
       seen.add(item.id);
       return true;
     });
-  }, [rawSessions, availabilitySlots, openSlots, weekDates, syncedSessions, currentCoachId]);
+  }, [rawSessions, availabilitySlots, weekDates, syncedSessions, currentCoachId]);
 
-  const addOpenSlot = (newItem: UnifiedScheduleItem) => {
-    const updated = [newItem, ...openSlots];
-    setOpenSlots(updated);
-    try {
-      if (customSlotsStorageKey) {
-        localStorage.setItem(customSlotsStorageKey, JSON.stringify(updated));
-      }
-    } catch {}
-    scheduleSync.createOpenPtSlot({
-      id: newItem.id,
+  const addOpenSlot = async (newItem: UnifiedScheduleItem) => {
+    const created = await CoachAPI.createAvailabilitySlot({
       date: newItem.date,
       startTime: newItem.startTime,
       endTime: newItem.endTime,
       sport: newItem.sport,
       room: newItem.room,
-      coachName: newItem.coachName || "HLV",
-      coachId: currentCoachId || undefined,
       note: newItem.note,
     });
+    setAvailabilitySlots((previous) => [created, ...previous.filter((slot) => slot.id !== created.id)]);
+    return created;
   };
 
-  const removeOpenSlot = (id: string) => {
-    const updated = openSlots.filter((s) => s.id !== id);
-    setOpenSlots(updated);
-    try {
-      if (customSlotsStorageKey) {
-        localStorage.setItem(customSlotsStorageKey, JSON.stringify(updated));
-      }
-    } catch {}
-    scheduleSync.deleteOpenPtSlot(id);
+  const removeOpenSlot = async (id: string) => {
+    const availabilityId = id.startsWith("open-") ? id.slice("open-".length) : id;
+    await CoachAPI.deleteAvailabilitySlot(availabilityId);
+    setAvailabilitySlots((previous) => previous.filter((slot) => slot.id !== availabilityId));
   };
 
   const toggleSlot = async (slotId: string) => {
@@ -210,7 +182,6 @@ export function useCoachScheduleData(weekDates: string[]) {
     rawSessions,
     requests,
     availabilitySlots,
-    openSlots,
     allUnifiedSessions,
     loading,
     addOpenSlot,
