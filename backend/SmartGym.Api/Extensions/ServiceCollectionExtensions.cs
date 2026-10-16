@@ -96,7 +96,6 @@ public static class ServiceCollectionExtensions
         // Chat data is stored in PostgreSQL and must share the request DbContext.
         services.AddScoped<ChatStoreService>();
         services.AddSingleton<ScheduleStoreService>();
-        services.AddSingleton<ReviewStoreService>();
 
         // ── External Integration Services (VnPay, SMTP, Cloudinary) ──
         services.Configure<VnPayOptions>(configuration.GetSection(VnPayOptions.SectionName));

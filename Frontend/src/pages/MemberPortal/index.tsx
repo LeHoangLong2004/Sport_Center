@@ -16,7 +16,7 @@ import { ProductPaymentFlow } from "../PaymentFlow/ProductPaymentFlow";
 import { CatalogPackage, PackagePeriod } from "../../services/packageApi";
 import PaymentFlow from "../PaymentFlow";
 
-type CheckoutSelection = {
+export type CheckoutSelection = {
   item: CatalogPackage;
   duration: PackagePeriod;
   discountPct: number;
@@ -24,8 +24,12 @@ type CheckoutSelection = {
 
 export default function MemberPortal({
   initialPage = "dashboard",
+  onCheckout: onExternalCheckout,
+  onProductPayment: onExternalProductPayment,
 }: {
   initialPage?: string;
+  onCheckout?: (selection: CheckoutSelection) => void;
+  onProductPayment?: (order: ProductOrder) => void;
 }) {
   const getInitialScreen = (): MemberScreen => {
     const raw = (window.location.hash || "").replace("#member-", "").replace("#", "");
@@ -141,9 +145,14 @@ export default function MemberPortal({
     packages: (
       <MemberPackages
         onNavigate={navigateTo}
-        onCheckout={(item, duration, discountPct) =>
-          setCheckout({ item, duration, discountPct })
-        }
+        onCheckout={(item, duration, discountPct) => {
+          const selection = { item, duration, discountPct };
+          if (onExternalCheckout) {
+            onExternalCheckout(selection);
+            return;
+          }
+          setCheckout(selection);
+        }}
       />
     ),
     payments: <MemberPayments onNavigate={navigateTo} />,
@@ -154,7 +163,13 @@ export default function MemberPortal({
     shop: (
       <ProductShopPage
         embedded
-        onOnlinePayment={setProductPaymentOrder}
+        onOnlinePayment={(order) => {
+          if (onExternalProductPayment) {
+            onExternalProductPayment(order);
+            return;
+          }
+          setProductPaymentOrder(order);
+        }}
         onNavigate={() => {
           navigateTo("dashboard");
           window.location.hash = "#member-dashboard";

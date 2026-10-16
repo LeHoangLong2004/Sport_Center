@@ -75,12 +75,9 @@ namespace SmartGym.Api.Endpoints
                     try
                     {
                         // classes.coach_id references coaches.id, while the JWT contains users.id.
-                        var coachProfile = await db.Database.SqlQueryRaw<CoachSqlRawModel>(
-                            "SELECT id, user_id FROM coaches WHERE user_id = {0}",
-                            coachUserId
-                        ).FirstOrDefaultAsync();
+                        var coachProfileId = await CoachProfileResolver.FindByUserIdAsync(db, coachUserId);
 
-                        if (coachProfile == null)
+                        if (coachProfileId == null)
                             return Results.Ok(Array.Empty<object>());
 
                         var coachUser = await db.Database.SqlQueryRaw<UserSqlRawModel>(
@@ -91,7 +88,7 @@ namespace SmartGym.Api.Endpoints
                         // Query real classes from DB
                         var query = db.Database.SqlQueryRaw<ClassSqlRawModel>(
                             "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status FROM classes WHERE coach_id = {0}",
-                            coachProfile.Id
+                            coachProfileId.Value
                         );
 
                         var dbClasses = await query.ToListAsync();
@@ -319,17 +316,14 @@ namespace SmartGym.Api.Endpoints
                         return Results.Unauthorized();
 
                     // JWT stores users.id while classes/pt_enrollments store coaches.id.
-                    var coachProfile = await db.Database.SqlQueryRaw<CoachSqlRawModel>(
-                        "SELECT id, user_id FROM coaches WHERE user_id = {0} AND status = TRUE",
-                        coachUserId
-                    ).FirstOrDefaultAsync();
+                    var coachProfileId = await CoachProfileResolver.FindByUserIdAsync(db, coachUserId, activeOnly: true);
 
-                    if (coachProfile == null)
+                    if (coachProfileId == null)
                         return Results.Ok(Array.Empty<object>());
 
                     var coachClasses = await db.Database.SqlQueryRaw<ClassSqlRawModel>(
                         "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status FROM classes WHERE coach_id = {0} AND status = TRUE",
-                        coachProfile.Id
+                        coachProfileId.Value
                     ).ToListAsync();
 
                     var classIds = coachClasses.Select(c => c.Id).ToHashSet();
@@ -344,7 +338,7 @@ namespace SmartGym.Api.Endpoints
                     // PT ownership is stored directly on pt_enrollments.
                     var ptEnrollments = await db.Database.SqlQueryRaw<PtEnrollmentRawModel>(
                         "SELECT id, user_id, coach_id FROM pt_enrollments WHERE coach_id = {0} AND payment_status = 'completed' AND start_date <= CURRENT_DATE AND end_date >= CURRENT_DATE",
-                        coachProfile.Id
+                        coachProfileId.Value
                     ).ToListAsync();
 
                     var memberIds = classBookings

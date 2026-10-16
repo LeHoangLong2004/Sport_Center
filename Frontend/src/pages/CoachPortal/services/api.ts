@@ -115,8 +115,8 @@ export const CoachAPI = {
         try {
             const res = await fetchApi(`/coach/sessions/${sessionId}/members`);
             return Array.isArray(res) ? res : [];
-        } catch {
-            return [];
+        } catch (error) {
+            throw error;
         }
     },
 
@@ -163,8 +163,10 @@ export const CoachAPI = {
                 goal: p.goal || "",
                 level: p.level || "",
                 duration: p.durationMinutes || 60,
-                status: "Đã giao" as const,
-                updatedAt: new Date().toISOString().split("T")[0],
+                status: (p.status === "Nháp" ? "Nháp" : p.status === "Lưu trữ" ? "Lưu trữ" : "Đã giao") as MockCurriculum["status"],
+                updatedAt: p.updatedAt
+                    ? new Date(p.updatedAt).toISOString().split("T")[0]
+                    : new Date().toISOString().split("T")[0],
                 description: p.description || "",
                 exercises: p.exercises?.map((e: any) => ({ 
                     name: e.name, reps: e.reps, rest: e.rest, note: e.note 
@@ -192,6 +194,25 @@ export const CoachAPI = {
         };
         return fetchApi('/workout-plans', {
             method: 'POST',
+            body: JSON.stringify(payload)
+        });
+    },
+    updateCurriculum: async (id: string, curriculum: any) => {
+        const payload = {
+            planName: curriculum.name,
+            description: curriculum.description,
+            goal: curriculum.goal,
+            level: curriculum.level,
+            durationMinutes: curriculum.duration,
+            exercises: curriculum.exercises.map((e: any) => ({
+                name: e.name,
+                reps: e.reps,
+                rest: e.rest,
+                note: e.note
+            }))
+        };
+        return fetchApi(`/workout-plans/${id}`, {
+            method: 'PUT',
             body: JSON.stringify(payload)
         });
     },
@@ -277,7 +298,7 @@ export const CoachAPI = {
     },
 
     // 11. Đánh giá từ học viên (Anonymous Reviews)
-    getCoachReviews: async (coachId: string = '25F50FBA') => {
+    getCoachReviews: async (coachId: string) => {
         return fetchApi(`/reviews/coach/${coachId}`);
     },
 
