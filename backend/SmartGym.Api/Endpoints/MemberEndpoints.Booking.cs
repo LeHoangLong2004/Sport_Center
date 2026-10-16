@@ -79,13 +79,13 @@ namespace SmartGym.Api.Endpoints
                     StartTime = body.TryGetProperty("startTime", out var st) ? st.GetString() : "08:00",
                     EndTime = body.TryGetProperty("endTime", out var et) ? et.GetString() : "09:00",
                     Room = body.TryGetProperty("room", out var rm) ? rm.GetString() : "Khu PT 1-1",
-                    CoachName = body.TryGetProperty("coachName", out var cn) ? cn.GetString() : "HLV Hồ Xuân Ánh Nam",
-                    CoachId = body.TryGetProperty("coachId", out var cId) ? cId.GetString() : "25f50fba-506a-4edf-9db7-43f77f6741a4",
+                    CoachName = body.TryGetProperty("coachName", out var cn) && !string.IsNullOrWhiteSpace(cn.GetString()) ? cn.GetString()! : "HLV Trung tâm",
+                    CoachId = body.TryGetProperty("coachId", out var cId) && !string.IsNullOrWhiteSpace(cId.GetString()) ? cId.GetString()! : "",
                     MemberId = userId,
-                    MemberName = body.TryGetProperty("memberName", out var mn) ? mn.GetString() : "Hồ Xuân Ánh Nam",
-                    MemberPhone = body.TryGetProperty("memberPhone", out var mp) ? mp.GetString() : "0989123788",
-                    MemberEmail = body.TryGetProperty("memberEmail", out var me) ? me.GetString() : "hoxuananhnam@gmail.com",
-                    Goal = body.TryGetProperty("goal", out var gl) ? gl.GetString() : "Tăng cơ & Siết nét",
+                    MemberName = body.TryGetProperty("memberName", out var mn) && !string.IsNullOrWhiteSpace(mn.GetString()) ? mn.GetString()! : (context.User.Identity?.Name ?? "Hội viên"),
+                    MemberPhone = body.TryGetProperty("memberPhone", out var mp) && !string.IsNullOrWhiteSpace(mp.GetString()) ? mp.GetString()! : "",
+                    MemberEmail = body.TryGetProperty("memberEmail", out var me) && !string.IsNullOrWhiteSpace(me.GetString()) ? me.GetString()! : "",
+                    Goal = body.TryGetProperty("goal", out var gl) ? gl.GetString() : "Rèn luyện thể lực",
                     CoachNote = body.TryGetProperty("coachNote", out var nt) ? nt.GetString() : ""
                 };
 

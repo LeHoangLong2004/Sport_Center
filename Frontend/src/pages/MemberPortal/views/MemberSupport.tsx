@@ -1,11 +1,7 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import type { MemberScreen, MemberSupportTicketItem } from "../types";
-import {
-  DEFAULT_SUPPORT_TICKETS,
-  getSavedMemberData,
-  saveMemberData,
-} from "../services/memberData";
+import { getSavedMemberData, saveMemberData } from "../services/memberData";
 import {
   Bot,
   HelpCircle,
@@ -31,13 +27,19 @@ interface ChatMessage {
 }
 
 export default function MemberSupport({ onNavigate }: Props) {
+  const userStr = localStorage.getItem("user");
+  const user = userStr ? JSON.parse(userStr) : null;
+  const userId = user?.id || "";
+  const userName = user?.fullName || user?.name || "Hội viên";
+  const storageKey = userId ? `member_support_tickets_${userId}` : "member_support_tickets";
+
   const [activeTab, setActiveTab] = useState<"ai" | "tickets">("ai");
 
   // AI Chat State
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       sender: "ai",
-      text: "Xin chào Nguyễn Lan Anh! Tôi là Trợ lý AI của SportCenter. Tôi có thể hỗ trợ bạn tra cứu lịch tập, kiểm tra hạn gói, hoặc giải đáp các thắc mắc về kỹ thuật bài tập và dinh dưỡng thể thao. Bạn cần tôi hỗ trợ gì hôm nay?",
+      text: `Xin chào ${userName}! Tôi là Trợ lý AI của SportCenter. Tôi có thể hỗ trợ bạn tra cứu lịch tập, kiểm tra thông tin hoặc giải đáp các thắc mắc về kỹ thuật bài tập và dinh dưỡng thể thao. Bạn cần tôi hỗ trợ gì hôm nay?`,
       time: "08:00",
     },
   ]);
@@ -45,7 +47,7 @@ export default function MemberSupport({ onNavigate }: Props) {
 
   // Support Tickets State
   const [tickets, setTickets] = useState<MemberSupportTicketItem[]>(() =>
-    getSavedMemberData("member_support_tickets", DEFAULT_SUPPORT_TICKETS)
+    getSavedMemberData(storageKey, [])
   );
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
   const [ticketCategory, setTicketCategory] = useState<any>("Tư vấn dịch vụ");
@@ -55,8 +57,8 @@ export default function MemberSupport({ onNavigate }: Props) {
 
   // Quick questions
   const quickQuestions = [
-    "Lịch tập tiếp theo của tôi là khi nào?",
-    "Gói tập của tôi còn hạn bao lâu?",
+    "Lịch tập của tôi xem ở đâu?",
+    "Làm sao để đăng ký gói tập mới?",
     "Gợi ý thực đơn giàu đạm cho ngày tập nặng",
     "Cách giảm đau cơ sau buổi tập chân (Leg day)",
   ];
@@ -68,20 +70,19 @@ export default function MemberSupport({ onNavigate }: Props) {
     const now = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
     const userMsg: ChatMessage = { sender: "user", text: q, time: now };
 
-    // Intelligent Mock Response
     let aiReply = "Tôi đã ghi nhận câu hỏi của bạn. ";
     const lower = q.toLowerCase();
 
     if (lower.includes("lịch") || lower.includes("buổi") || lower.includes("hôm nay") || lower.includes("ngày mai")) {
-      aiReply = "📅 Bạn có ca tập gần nhất là lớp **Yoga Cân Bằng Cột Sống** vào ngày 13/10 lúc 07:00 tại Studio 2 với HLV Minh Tuấn. Tiếp theo là ca **Kèm 1-1 với HLV Enam** vào 08:30 ngày 14/10.";
-    } else if (lower.includes("gói") || lower.includes("hạn") || lower.includes("ngày")) {
-      aiReply = "💳 Bạn đang có 2 gói còn hiệu lực:\n1. **Gói Yoga Chuyên Sâu 3 Tháng** (Hạn đến 30/11/2026, còn 49 ngày).\n2. **Gói Gym & Thể Lực 1 Tháng** (Hạn đến 31/10/2026, còn 19 ngày).";
+      aiReply = "📅 Bạn có thể theo dõi và quản lý toàn bộ các ca học nhóm cũng như ca kèm 1-1 tại mục **Lịch tập cá nhân** trên thanh điều hướng. Tại đó bạn cũng có thể đổi ca hoặc hủy lịch trước giờ tập.";
+    } else if (lower.includes("gói") || lower.includes("hạn") || lower.includes("đăng ký") || lower.includes("mua")) {
+      aiReply = "💳 Để xem các gói thẻ thành viên Gym, Bơi, Yoga, Boxing đang mở đăng ký kèm ưu đãi hiện hành, bạn có thể ghé mục **Gói tập & Dịch vụ** trên menu để lựa chọn gói phù hợp nhé.";
     } else if (lower.includes("thực đơn") || lower.includes("ăn") || lower.includes("đạm") || lower.includes("dinh dưỡng")) {
       aiReply = "🥗 Gợi ý thực đơn phục hồi giàu Protein:\n• Bữa sáng: 2 quả trứng ốp la, 1 lát bánh mì đen, 1 cốc sữa chua Hy Lạp.\n• Bữa trưa: 150g ức gà áp chảo, cơm gạo lứt, bông cải xanh luộc.\n• Trước tập 1h: 1 quả chuối + 1 muỗng Whey Protein.\n• Bữa tối: 150g cá hồi hoặc thịt bò áp chảo, salad dầu oliu.";
     } else if (lower.includes("đau cơ") || lower.includes("mỏi") || lower.includes("chân") || lower.includes("giãn")) {
-      aiReply = "💪 Để giảm hiện tượng đau mỏi cơ (DOMS) sau ngày tập chân:\n1. Dành 10-15 phút lăn bọt (Foam Roller) đùi trước và bắp chuối.\n2. Tắm nước ấm và ngâm chân để tăng tuần hoàn máu.\n3. Uống đủ 2-2.5 lít nước và bổ sung thêm Magie/BCAA nếu cần.\n4. Đi bộ nhẹ nhàng 15-20 phút thay vì nằm yên cả ngày.";
+      aiReply = "💪 Để giảm hiện tượng đau mỏi cơ (DOMS) sau ngày tập:\n1. Dành 10-15 phút lăn bọt (Foam Roller) đùi trước và bắp chuối.\n2. Tắm nước ấm và ngâm chân để tăng tuần hoàn máu.\n3. Uống đủ 2-2.5 lít nước và bổ sung thêm Magie/BCAA nếu cần.\n4. Đi bộ nhẹ nhàng 15-20 phút thay vì nằm yên cả ngày.";
     } else {
-      aiReply = `Dạ với yêu cầu "${q}", hệ thống SportCenter khuyên bạn nên kết hợp tập luyện đều đặn 3-4 buổi/tuần và có thể gửi ticket hỗ trợ hoặc trao đổi trực tiếp với HLV để có lộ trình chính xác nhất!`;
+      aiReply = `Dạ với câu hỏi "${q}", bạn có thể trao đổi trực tiếp với Huấn luyện viên hoặc gửi phiếu yêu cầu hỗ trợ (Ticket) tại tab bên cạnh để bộ phận Lễ tân & CSKH hỗ trợ bạn nhanh nhất!`;
     }
 
     const aiMsg: ChatMessage = { sender: "ai", text: aiReply, time: now };
@@ -102,17 +103,18 @@ export default function MemberSupport({ onNavigate }: Props) {
       category: ticketCategory,
       subject: ticketSubject.trim(),
       content: ticketContent.trim(),
-      status: "open",
       createdAt: nowStr,
+      status: "open",
     };
 
     const updated = [newTicket, ...tickets];
     setTickets(updated);
-    saveMemberData("member_support_tickets", updated);
+    saveMemberData(storageKey, updated);
+
     setIsTicketModalOpen(false);
     setTicketSubject("");
     setTicketContent("");
-    setFeedback(`Yêu cầu #${newTicket.id} đã được gửi đến ban quản lý và lễ tân!`);
+    setFeedback("Đã gửi yêu cầu hỗ trợ thành công! Nhân viên CSKH sẽ phản hồi trong 2-4 giờ làm việc.");
     setTimeout(() => setFeedback(null), 4000);
   };
 
@@ -124,218 +126,228 @@ export default function MemberSupport({ onNavigate }: Props) {
             <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span>{feedback}</span>
           </div>
-          <button onClick={() => setFeedback(null)} className="text-emerald-600">
+          <button onClick={() => setFeedback(null)} className="text-emerald-600 cursor-pointer">
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      {/* Header & Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+      {/* Header */}
+      <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-base font-bold text-slate-900 dark:text-white">
-            Trợ lý AI & Hỗ trợ trung tâm
-          </h2>
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">Trợ giúp & Hỗ trợ</h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Hỏi đáp thông minh 24/7 hoặc gửi phiếu yêu cầu hỗ trợ trực tiếp đến nhân viên
+            Trợ lý AI thể thao 24/7 và hệ thống tiếp nhận yêu cầu CSKH từ hội viên
           </p>
         </div>
 
-        <div className="inline-flex p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700">
+        {/* Tab switchers */}
+        <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
           <button
             type="button"
             onClick={() => setActiveTab("ai")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               activeTab === "ai"
-                ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs"
-                : "text-slate-600 dark:text-slate-400"
+                ? "bg-white dark:bg-slate-700 text-orange-600 shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
             }`}
           >
             <Bot className="w-4 h-4" />
-            <span>Trợ lý AI</span>
+            <span>Trợ lý AI 24/7</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("tickets")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               activeTab === "tickets"
-                ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs"
-                : "text-slate-600 dark:text-slate-400"
+                ? "bg-white dark:bg-slate-700 text-orange-600 shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
             }`}
           >
             <HelpCircle className="w-4 h-4" />
-            <span>Yêu cầu hỗ trợ ({tickets.length})</span>
+            <span>Phiếu hỗ trợ ({tickets.length})</span>
           </button>
         </div>
       </div>
 
-      {/* TAB 1: AI ASSISTANT CHAT */}
+      {/* 1. AI ASSISTANT VIEW */}
       {activeTab === "ai" && (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col h-[580px] overflow-hidden">
-          {/* Top Quick Suggestions */}
-          <div className="p-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-850 flex items-center gap-2 overflow-x-auto text-xs hidden-scrollbar">
-            <span className="text-[11px] font-bold text-slate-400 shrink-0 flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
-              Gợi ý:
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden flex flex-col h-[560px]">
+          {/* Quick Questions Header */}
+          <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2 overflow-x-auto text-xs">
+            <span className="font-semibold text-slate-400 shrink-0 text-[11px] flex items-center gap-1">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Gợi ý câu hỏi:
             </span>
-            {quickQuestions.map((q, idx) => (
+            {quickQuestions.map((q) => (
               <button
-                key={idx}
+                key={q}
                 type="button"
                 onClick={() => handleSendQuestion(q)}
-                className="px-3 py-1 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs shrink-0 transition-colors shadow-2xs font-medium"
+                className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 shrink-0 transition-colors cursor-pointer text-[11px]"
               >
                 {q}
               </button>
             ))}
           </div>
 
-          {/* Messages body */}
+          {/* Messages Log */}
           <div className="flex-1 p-5 overflow-y-auto space-y-4 text-xs">
-            {messages.map((m, idx) => (
-              <div
-                key={idx}
-                className={`flex gap-3 max-w-[85%] ${
-                  m.sender === "user" ? "ml-auto flex-row-reverse" : "mr-auto"
-                }`}
-              >
+            {messages.map((m, idx) => {
+              const isAi = m.sender === "ai";
+              return (
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                    m.sender === "user"
-                      ? "bg-emerald-600 text-white"
-                      : "bg-gradient-to-tr from-slate-900 to-slate-800 text-emerald-400 border border-slate-700 shadow-xs"
+                  key={idx}
+                  className={`flex gap-3 max-w-[85%] ${
+                    isAi ? "self-start" : "self-end ml-auto flex-row-reverse"
                   }`}
                 >
-                  {m.sender === "user" ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
-                </div>
-
-                <div>
                   <div
-                    className={`p-3.5 rounded-2xl leading-relaxed whitespace-pre-line shadow-xs ${
-                      m.sender === "user"
-                        ? "bg-emerald-600 text-white rounded-tr-none font-medium"
-                        : "bg-slate-50 dark:bg-slate-800/90 text-slate-800 dark:text-slate-100 border border-slate-200/80 dark:border-slate-700 rounded-tl-none"
+                    className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                      isAi
+                        ? "bg-gradient-to-tr from-orange-600 to-amber-500 text-white shadow-xs"
+                        : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
                     }`}
                   >
-                    {m.text}
+                    {isAi ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
                   </div>
-                  <span
-                    className={`block text-[10px] text-slate-400 mt-1 ${
-                      m.sender === "user" ? "text-right" : "text-left"
-                    }`}
-                  >
-                    {m.time}
-                  </span>
+
+                  <div className="space-y-1">
+                    <div
+                      className={`p-3.5 rounded-2xl leading-relaxed whitespace-pre-line ${
+                        isAi
+                          ? "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-tl-xs"
+                          : "bg-orange-600 text-white rounded-tr-xs"
+                      }`}
+                    >
+                      {m.text}
+                    </div>
+                    <span className="text-[10px] text-slate-400 px-1">{m.time}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          {/* Chat input form */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSendQuestion(inputQuestion);
-            }}
-            className="p-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 bg-white dark:bg-slate-900"
-          >
-            <input
-              type="text"
-              value={inputQuestion}
-              onChange={(e) => setInputQuestion(e.target.value)}
-              placeholder="Nhập câu hỏi cho trợ lý AI (VD: Lịch tập ngày mai, bài tập giảm mỡ...)"
-              className="flex-1 px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-emerald-500"
-            />
-            <button
-              type="submit"
-              disabled={!inputQuestion.trim()}
-              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs transition-colors shadow-xs flex items-center gap-1.5"
+          {/* Input Bar */}
+          <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendQuestion(inputQuestion);
+              }}
+              className="flex items-center gap-2"
             >
-              <Send className="w-3.5 h-3.5" />
-              <span>Gửi</span>
-            </button>
-          </form>
+              <input
+                type="text"
+                value={inputQuestion}
+                onChange={(e) => setInputQuestion(e.target.value)}
+                placeholder="Đặt câu hỏi về dinh dưỡng, bài tập, lịch rèn luyện..."
+                className="flex-1 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-none focus:border-orange-500"
+              />
+              <button
+                type="submit"
+                className="p-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white shadow-xs cursor-pointer transition-colors"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
         </div>
       )}
 
-      {/* TAB 2: SUPPORT TICKETS */}
+      {/* 2. TICKETS VIEW */}
       {activeTab === "tickets" && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <span className="text-xs text-slate-500 dark:text-slate-400">
-              Danh sách các yêu cầu hỗ trợ bạn đã gửi đến trung tâm
-            </span>
+            <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+              Danh sách phiếu hỗ trợ của bạn
+            </h3>
             <button
               type="button"
               onClick={() => setIsTicketModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-emerald-500 dark:text-slate-950 dark:hover:bg-emerald-400 text-xs font-bold shadow-xs transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-xs cursor-pointer transition-colors"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-4 h-4" />
               <span>Gửi yêu cầu mới</span>
             </button>
           </div>
 
-          <div className="space-y-3">
-            {tickets.map((t) => (
-              <div
-                key={t.id}
-                className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                      {t.category}
-                    </span>
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                      {t.subject}
-                    </h4>
-                  </div>
-                  <span
-                    className={`text-[10px] px-2 py-0.5 rounded-full font-bold self-start sm:self-center ${
-                      t.status === "resolved"
-                        ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
-                        : "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300"
-                    }`}
-                  >
-                    {t.status === "resolved" ? "Đã phản hồi giải quyết" : "Đang chờ xử lý"}
-                  </span>
-                </div>
-
-                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                  {t.content}
-                </p>
-
-                {t.reply && (
-                  <div className="p-3 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/80 dark:border-emerald-900 text-xs text-slate-700 dark:text-slate-300 space-y-1">
-                    <div className="flex items-center justify-between font-bold text-emerald-700 dark:text-emerald-400">
-                      <span>Phản hồi từ trung tâm ({t.repliedBy || "Lễ tân"}):</span>
-                      <span className="text-[10px] font-normal text-slate-400">{t.repliedAt}</span>
+          {tickets.length === 0 ? (
+            <div className="bg-white dark:bg-slate-900 p-12 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center">
+              <MessageSquare className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+              <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                Chưa có yêu cầu hỗ trợ nào
+              </h4>
+              <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                Nếu bạn cần hỗ trợ về hợp đồng, chuyển nhượng gói, đổi huấn luyện viên hoặc báo cáo sự cố cơ sở vật chất, hãy bấm "Gửi yêu cầu mới".
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {tickets.map((t) => (
+                <div
+                  key={t.id}
+                  className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-2"
+                >
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-slate-500">{t.id}</span>
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                        {t.category}
+                      </span>
                     </div>
-                    <p className="leading-relaxed">{t.reply}</p>
+                    <span
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        t.status === "resolved"
+                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+                          : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+                      }`}
+                    >
+                      {t.status === "resolved" ? (
+                        <>
+                          <CheckCircle2 className="w-3 h-3" /> Đã phản hồi
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="w-3 h-3" /> Đang xử lý
+                        </>
+                      )}
+                    </span>
                   </div>
-                )}
 
-                <div className="text-[10px] text-slate-400 pt-1">
-                  Mã yêu cầu: <span className="font-mono text-slate-600 dark:text-slate-300">{t.id}</span> • Ngày gửi: {t.createdAt}
+                  <h4 className="font-bold text-xs text-slate-900 dark:text-white">{t.subject}</h4>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">{t.content}</p>
+
+                  {t.reply && (
+                    <div className="p-3 rounded-xl bg-orange-50/60 dark:bg-orange-950/30 border border-orange-200/60 dark:border-orange-800/40 text-xs text-orange-950 dark:text-orange-200 mt-2">
+                      <div className="font-bold flex items-center gap-1.5 mb-1">
+                        <Shield className="w-3.5 h-3.5 text-orange-600" />
+                        <span>Phản hồi từ Ban Quản lý SportCenter:</span>
+                      </div>
+                      <p>{t.reply}</p>
+                    </div>
+                  )}
+
+                  <div className="text-[10px] text-slate-400 pt-1">Ngày gửi: {t.createdAt}</div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* MODAL TẠO TICKET MỚI (PORTAL) */}
+      {/* CREATE TICKET MODAL (PORTAL) */}
       {isTicketModalOpen &&
         createPortal(
           <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden flex flex-col">
               <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                  Gửi yêu cầu hỗ trợ mới
+                  Gửi yêu cầu hỗ trợ đến Ban Quản lý
                 </h3>
                 <button
                   onClick={() => setIsTicketModalOpen(false)}
-                  className="p-1 text-slate-400 hover:text-slate-600"
+                  className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -344,60 +356,57 @@ export default function MemberSupport({ onNavigate }: Props) {
               <form onSubmit={handleCreateTicket} className="p-5 space-y-4 text-xs">
                 <div>
                   <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                    Phân loại yêu cầu:
+                    Danh mục vấn đề:
                   </label>
                   <select
                     value={ticketCategory}
-                    onChange={(e: any) => setTicketCategory(e.target.value)}
-                    className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none"
+                    onChange={(e) => setTicketCategory(e.target.value as any)}
+                    className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
                   >
-                    <option value="Tư vấn dịch vụ">Tư vấn dịch vụ & Gói tập</option>
-                    <option value="Đổi lịch">Xin đổi lịch / Bảo lưu buổi tập</option>
-                    <option value="Cơ sở vật chất">Phản ánh cơ sở vật chất (phòng tập, máy móc)</option>
-                    <option value="Hoàn tiền">Khiếu nại & Hoàn tiền</option>
-                    <option value="Khác">Ý kiến đóng góp khác</option>
+                    <option value="Tư vấn dịch vụ">Tư vấn dịch vụ & Gia hạn gói</option>
+                    <option value="Lịch tập & HLV">Thắc mắc Lịch tập & Đổi Huấn luyện viên</option>
+                    <option value="Thanh toán & Hóa đơn">Thanh toán, Hóa đơn & Đối soát</option>
+                    <option value="Cơ sở vật chất">Góp ý Cơ sở vật chất & Thiết bị</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                    Tiêu đề: *
+                    Tiêu đề yêu cầu:
                   </label>
                   <input
                     type="text"
-                    required
                     value={ticketSubject}
                     onChange={(e) => setTicketSubject(e.target.value)}
-                    placeholder="VD: Xin phép đổi lịch tập lớp Yoga sang tối Thứ 5"
-                    className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none"
+                    placeholder="VD: Nhờ hỗ trợ dời hạn gói tập do đi công tác"
+                    className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
                   />
                 </div>
 
                 <div>
                   <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                    Nội dung chi tiết: *
+                    Nội dung chi tiết:
                   </label>
                   <textarea
                     rows={4}
-                    required
                     value={ticketContent}
                     onChange={(e) => setTicketContent(e.target.value)}
-                    placeholder="Mô tả cụ thể vấn đề hoặc mong muốn của bạn để bộ phận hỗ trợ xử lý nhanh nhất..."
-                    className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none"
+                    placeholder="Mô tả cụ thể thông tin để nhân viên CSKH hỗ trợ bạn thuận tiện nhất..."
+                    className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white resize-none"
                   />
                 </div>
 
-                <div className="pt-2 flex justify-end gap-2.5">
+                <div className="pt-2 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
                   <button
                     type="button"
                     onClick={() => setIsTicketModalOpen(false)}
-                    className="px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold"
+                    className="px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold cursor-pointer"
                   >
                     Hủy
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-emerald-500 dark:text-slate-950 dark:hover:bg-emerald-400 rounded-lg shadow-sm"
+                    className="px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold cursor-pointer transition-colors shadow-xs"
                   >
                     Gửi yêu cầu
                   </button>

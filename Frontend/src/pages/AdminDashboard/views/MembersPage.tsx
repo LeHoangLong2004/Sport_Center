@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { A, avatarSidebar, avatarTopbar, iDashboard, iUsers, iPackage, iCalendar, iReceipt, iBarChart, iSettings, iSearch, iBell, iSearch2, iDownload, iPlus, iWallet, iCheckCircle, iClock, iRotateCcw, iChevron, iEye, iPrinter, iMore, mAvatar0, mAvatar1, mAvatar2, mAvatar3, mAvatar4, iBell2, iDownload2, iKpiRevenue, iKpiMembers, iKpiClasses, iKpiRetain, iSeg1, iSeg2, iSeg3, iSeg4, iDotBlue, iDotTeal, iDotOrange, iDotPurple, iActivity0, iActivity1, iActivity2, iActivity3, iLineChart, iBarFill, coachAvatar1, coachAvatar2, coachAvatar3, coachAvatar4, hrAvatar1, hrAvatar2, hrAvatar3, hrAvatar4, iBudgetIcon, iExpenseIcon, iBudgetChevron, iPLRevIcon, memberEditAvatar, transactions, reportBarData, reportMonths, members } from '../shared';
+import { A, avatarSidebar, avatarTopbar, iDashboard, iUsers, iPackage, iCalendar, iReceipt, iBarChart, iSettings, iSearch, iBell, iSearch2, iDownload, iPlus, iWallet, iCheckCircle, iClock, iRotateCcw, iChevron, iEye, iPrinter, iMore, iBell2, iDownload2, iKpiRevenue, iKpiMembers, iKpiClasses, iKpiRetain, iSeg1, iSeg2, iSeg3, iSeg4, iDotBlue, iDotTeal, iDotOrange, iDotPurple, iActivity0, iActivity1, iActivity2, iActivity3, iLineChart, iBarFill, coachAvatar1, coachAvatar2, coachAvatar3, coachAvatar4, hrAvatar1, hrAvatar2, hrAvatar3, hrAvatar4, iBudgetIcon, iExpenseIcon, iBudgetChevron, iPLRevIcon, memberEditAvatar, transactions, reportBarData, reportMonths, members } from '../shared';
+import { UserAvatar } from '../../../components/UserAvatar';
 import KpiCard from '../components/KpiCard';
 import SimpleLineChart from '../components/SimpleLineChart';
 import { FinanceTopBar } from '../components/FinanceTopBar';
@@ -27,8 +28,7 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
     .then(res => res.json())
     .then(data => {
       if (Array.isArray(data)) {
-        const mapped = data.map((u: any, index: number) => {
-          const avatars = [mAvatar0, mAvatar1, mAvatar2, mAvatar3, mAvatar4];
+        const mapped = data.map((u: any) => {
           return {
             id: u.id.substring(0, 8).toUpperCase(),
             realId: u.id,
@@ -41,7 +41,7 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
             status: u.status ? "Đang hoạt động" : "Tạm khóa",
             statusRaw: u.status,
             expiry: new Date(u.createdAt).toLocaleDateString('vi-VN'),
-            avatar: u.avatarUrl || avatars[index % avatars.length],
+            avatar: u.avatarUrl || null,
             dob: u.dateOfBirth ? u.dateOfBirth.split('T')[0] : "",
             gender: u.gender,
             emergencyContact: u.emergencyContact
@@ -255,7 +255,7 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
           <div key={m.id} className="border-b border-[#f1f5f9] flex h-16 items-center px-6">
             <div className="w-8"><input type="checkbox" /></div>
             <div className="flex gap-2.5 items-center flex-1">
-              <img src={m.avatar} alt="" className="rounded-full size-9 object-cover" />
+              <UserAvatar src={m.avatar} name={m.name} className="rounded-full size-9 object-cover" />
               <div>
                 <p className="font-semibold text-[#0f172a] text-sm">{m.name}</p>
                 <p className="text-[#64748b] text-[12px]">{m.id}</p>

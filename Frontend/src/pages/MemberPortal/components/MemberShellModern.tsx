@@ -90,19 +90,24 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
   let userName = profile?.fullName;
   let userEmail = profile?.email;
   let avatarUrl = profile?.avatarUrl;
-  if (!userName && userStr) {
+  let memberCode = profile?.id ? profile.id.substring(0, 8).toUpperCase() : "";
+  if (userStr) {
     try {
       const u = JSON.parse(userStr);
       if (u.role?.toLowerCase() !== "coach") {
-        userName = u.fullName || u.name;
+        if (!userName) userName = u.fullName || u.name;
         userEmail = userEmail || u.email;
         avatarUrl = avatarUrl || u.avatarUrl;
       }
+      if (!memberCode && u.id) {
+        memberCode = String(u.id).substring(0, 8).toUpperCase();
+      }
     } catch (e) {}
   }
-  userName = userName || "Hồ Xuân Ánh Nam";
-  userEmail = userEmail || "hoxuananhnam@gmail.com";
-  const userTier = profile?.memberTier || "Hạng Premium VIP";
+  userName = userName || "Hội viên";
+  userEmail = userEmail || "";
+  const userTier = profile?.memberTier || "Hội viên Mới";
+  memberCode = memberCode ? `MEM-${memberCode}` : "MEM-OFFICIAL";
 
   const showToast = (text: string) => {
     setToastMessage(text);
@@ -660,7 +665,7 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
 
               <h4 className="text-base font-black text-slate-900 dark:text-white">{userName}</h4>
               <p className="text-xs text-slate-400 mt-0.5">
-                Mã số: <span className="font-mono font-bold text-slate-700 dark:text-slate-300">MEM-8821</span>
+                Mã số: <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{memberCode}</span>
               </p>
               <div className="mt-2 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-extrabold text-[11px] flex items-center gap-1">
                 <Crown className="w-3.5 h-3.5" />

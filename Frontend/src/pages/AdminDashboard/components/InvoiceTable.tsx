@@ -1,6 +1,7 @@
 import { DataState } from "./DataState";
 import { formatDateTime, formatVnd } from "../../../hooks/apiClient";
-import { iPrinter, mAvatar0 } from "../shared";
+import { iPrinter, iEye } from "../shared";
+import { UserAvatar } from "../../../components/UserAvatar";
 import type { InvoiceResponse } from "../../../hooks/flow3Api";
 
 const STATUS_STYLE: Record<string, string> = {
@@ -25,6 +26,7 @@ interface InvoiceTableProps {
   onPageChange: (page: number) => void;
   onRecordCash: (id: string) => void;
   onPrintPdf: (id: string) => void;
+  onViewDetail: (invoice: InvoiceResponse) => void;
 }
 
 export function InvoiceTable({
@@ -39,11 +41,12 @@ export function InvoiceTable({
   onPageChange,
   onRecordCash,
   onPrintPdf,
+  onViewDetail,
 }: InvoiceTableProps) {
   return (
     <>
       {/* table */}
-      <div className="bg-white border border-[#e2e8f0] overflow-hidden rounded-xl">
+      <div className="bg-white border border-[#e2e8f0] overflow-hidden rounded-xl shadow-sm">
         <div className="bg-[#f1f5f9] flex font-semibold items-center px-6 text-[#475569] text-[13px]">
           <div className="py-3 w-[160px]">MÃ HÓA ĐƠN</div>
           <div className="py-3 w-[195px]">HỘI VIÊN / KHÁCH HÀNG</div>
@@ -66,24 +69,27 @@ export function InvoiceTable({
         {pageRows.map((tx) => (
           <div
             key={tx.id}
-            className="border-b border-[#f1f5f9] flex h-16 items-center px-6"
+            className="border-b border-[#f1f5f9] flex h-16 items-center px-6 hover:bg-slate-50/60 transition-colors"
           >
-            <div className="w-[160px]">
-              <p className="font-bold text-[#0f172a] text-sm">
+            <div className="w-[160px] cursor-pointer" onClick={() => onViewDetail(tx)}>
+              <p className="font-bold text-[#0f172a] text-sm hover:text-blue-600 transition-colors">
                 {tx.invoiceNumber}
               </p>
               <p className="text-[#64748b] text-[12px]">
                 {formatDateTime(tx.createdAt)}
               </p>
             </div>
-            <div className="flex gap-2.5 items-center w-[195px]">
-              <img
-                src={mAvatar0}
-                alt=""
-                className="rounded-full size-8 object-cover"
+            <div
+              className="flex gap-2.5 items-center w-[195px] cursor-pointer"
+              onClick={() => onViewDetail(tx)}
+            >
+              <UserAvatar
+                src={null}
+                name={tx.memberName ?? "Khách vãng lai"}
+                className="rounded-full size-8 object-cover text-xs"
               />
               <div className="min-w-0">
-                <p className="font-semibold text-[#0f172a] text-sm truncate">
+                <p className="font-semibold text-[#0f172a] text-sm truncate hover:text-blue-600 transition-colors">
                   {tx.memberName ?? "Khách vãng lai"}
                 </p>
                 <p className="text-[#64748b] text-[12px] truncate">
@@ -109,7 +115,9 @@ export function InvoiceTable({
             </div>
             <div className="w-[140px]">
               <span
-                className={`font-semibold px-2.5 py-1 rounded-full text-[12px] ${STATUS_STYLE[tx.status] ?? "bg-[#f1f5f9] text-[#475569]"}`}
+                className={`font-semibold px-2.5 py-1 rounded-full text-[12px] ${
+                  STATUS_STYLE[tx.status] ?? "bg-[#f1f5f9] text-[#475569]"
+                }`}
               >
                 {tx.statusName}
               </span>
@@ -123,7 +131,8 @@ export function InvoiceTable({
               {tx.status === "pending" && (
                 <button
                   onClick={() => onRecordCash(tx.id)}
-                  className="bg-[#2563eb] flex items-center px-3 py-1.5 rounded-md"
+                  title="Xác nhận thu tiền mặt"
+                  className="bg-emerald-600 hover:bg-emerald-700 transition-colors flex items-center px-2.5 py-1.5 rounded-md shadow-sm"
                 >
                   <span className="font-semibold text-white text-[12px]">
                     Duyệt thu
@@ -131,11 +140,18 @@ export function InvoiceTable({
                 </button>
               )}
               <button
+                onClick={() => onViewDetail(tx)}
+                title="Xem chi tiết hóa đơn"
+                className="bg-white border border-[#e2e8f0] hover:bg-blue-50 hover:border-blue-200 flex items-center justify-center rounded-md size-8 text-slate-600 transition-colors"
+              >
+                <img src={iEye} alt="Xem" className="size-4" />
+              </button>
+              <button
                 onClick={() => onPrintPdf(tx.id)}
                 title="In hóa đơn PDF"
-                className="bg-white border border-[#e2e8f0] flex items-center justify-center rounded-md size-8"
+                className="bg-white border border-[#e2e8f0] hover:bg-slate-50 flex items-center justify-center rounded-md size-8 transition-colors"
               >
-                <img src={iPrinter} alt="" className="size-4" />
+                <img src={iPrinter} alt="In" className="size-4" />
               </button>
             </div>
           </div>
@@ -143,7 +159,7 @@ export function InvoiceTable({
 
         {/* pagination */}
         {!loading && !error && filteredCount > 0 && (
-          <div className="flex h-14 items-center justify-between px-6">
+          <div className="flex h-14 items-center justify-between px-6 bg-slate-50/50">
             <span className="text-[#64748b] text-sm">
               Hiển thị {currentPage * PAGE_SIZE + 1} -{" "}
               {Math.min((currentPage + 1) * PAGE_SIZE, filteredCount)} trong
@@ -153,7 +169,7 @@ export function InvoiceTable({
               <button
                 disabled={currentPage === 0}
                 onClick={() => onPageChange(currentPage - 1)}
-                className="bg-white border border-[#e2e8f0] disabled:opacity-50 px-3 py-1.5 rounded-md text-[#0f172a] text-[13px]"
+                className="bg-white border border-[#e2e8f0] hover:bg-slate-50 disabled:opacity-50 px-3 py-1.5 rounded-md text-[#0f172a] text-[13px] transition-colors"
               >
                 Trước
               </button>
@@ -163,7 +179,7 @@ export function InvoiceTable({
               <button
                 disabled={currentPage >= totalPages - 1}
                 onClick={() => onPageChange(currentPage + 1)}
-                className="bg-white border border-[#e2e8f0] disabled:opacity-50 px-3 py-1.5 rounded-md text-[#0f172a] text-[13px]"
+                className="bg-white border border-[#e2e8f0] hover:bg-slate-50 disabled:opacity-50 px-3 py-1.5 rounded-md text-[#0f172a] text-[13px] transition-colors"
               >
                 Sau
               </button>

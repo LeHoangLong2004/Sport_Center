@@ -1,45 +1,31 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import type { MemberScreen, MemberCoachReviewItem } from "../types";
-import {
-  DEFAULT_COACH_REVIEWS,
-  getSavedMemberData,
-  saveMemberData,
-} from "../services/memberData";
-import {
-  submitCoachReview,
-  fetchCoachReviews,
-  subscribeToReviews,
-} from "../services/reviewSync";
+import { getSavedMemberData, saveMemberData } from "../services/memberData";
+import { submitCoachReview } from "../services/reviewSync";
 import { scheduleSync } from "../services/scheduleSync";
 import {
   Star,
   CheckCircle2,
-  User,
   Calendar,
-  MessageSquare,
   Sparkles,
   X,
-  Plus,
+  MessageSquare,
 } from "lucide-react";
 
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
 }
 
-const DEFAULT_AVAILABLE_FOR_REVIEW = [
-  {
-    sessionId: "sess-05",
-    sessionName: "Functional HIIT Cường độ cao",
-    coachId: "25f50fba-506a-4edf-9db7-43f77f6741a4",
-    coachName: "HLV Hồ Xuân Ánh Nam (HLV Enam)",
-    date: "2026-10-13",
-  },
-];
-
 export default function MemberReviews({ onNavigate }: Props) {
+  const userStr = localStorage.getItem("user");
+  const user = userStr ? JSON.parse(userStr) : null;
+  const userId = user?.id || "";
+  const memberName = user?.fullName || user?.name || "Hội viên";
+  const storageKey = userId ? `member_coach_reviews_${userId}` : "member_coach_reviews";
+
   const [reviews, setReviews] = useState<MemberCoachReviewItem[]>(() =>
-    getSavedMemberData("member_coach_reviews", DEFAULT_COACH_REVIEWS)
+    getSavedMemberData(storageKey, [])
   );
 
   const [activeReviewSession, setActiveReviewSession] = useState<any | null>(null);
@@ -49,34 +35,32 @@ export default function MemberReviews({ onNavigate }: Props) {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Available sessions to review, merged from scheduleSync
+  // Available sessions to review from user's real completed sessions
   const availableSessions = useMemo(() => {
     const fromSchedule = scheduleSync.getSyncedSessions()
       .filter(
         (s) =>
-          s.type === "pt" ||
-          s.attendanceStatus === "có mặt" ||
-          (s.coachName && s.coachName.includes("Nam"))
+          (s.memberId === userId || s.memberName === memberName) &&
+          (s.attendanceStatus === "có mặt" || s.status === "hoàn thành") &&
+          s.coachName
       )
       .map((s) => ({
         sessionId: s.id,
-        sessionName: s.className || `Tập 1-1 với ${s.coachName}`,
-        coachId: s.coachId || "25f50fba-506a-4edf-9db7-43f77f6741a4",
-        coachName: s.coachName || "HLV Hồ Xuân Ánh Nam",
+        sessionName: s.className || `Tập với ${s.coachName}`,
+        coachId: s.coachId || "",
+        coachName: s.coachName,
         date: s.date || new Date().toISOString().split("T")[0],
       }));
 
-    const combined = [...fromSchedule, ...DEFAULT_AVAILABLE_FOR_REVIEW];
-    const unique = new Map<string, (typeof combined)[0]>();
-    combined.forEach((item) => {
-      // Don't show in available if already reviewed
+    const unique = new Map<string, (typeof fromSchedule)[0]>();
+    fromSchedule.forEach((item) => {
       const alreadyReviewed = reviews.some((r) => r.sessionId === item.sessionId);
       if (!alreadyReviewed && !unique.has(item.sessionId)) {
         unique.set(item.sessionId, item);
       }
     });
     return Array.from(unique.values());
-  }, [reviews]);
+  }, [reviews, userId, memberName]);
 
   const TAGS_LIST = [
     "Nhiệt tình",
@@ -107,14 +91,14 @@ export default function MemberReviews({ onNavigate }: Props) {
     setIsSubmitting(true);
     try {
       const reviewRes = await submitCoachReview({
-        coachId: activeReviewSession.coachId || "25f50fba-506a-4edf-9db7-43f77f6741a4",
-        coachName: activeReviewSession.coachName || "HLV Hồ Xuân Ánh Nam",
+        coachId: activeReviewSession.coachId || "",
+        coachName: activeReviewSession.coachName || "HLV Thể thao",
         sessionId: activeReviewSession.sessionId,
         sessionName: activeReviewSession.sessionName,
         rating,
         comment: comment.trim(),
         tags: selectedTags,
-        memberName: "Hồ Xuân Ánh Nam",
+        memberName,
       });
 
       const newReview: MemberCoachReviewItem = {
@@ -129,14 +113,18 @@ export default function MemberReviews({ onNavigate }: Props) {
         comment: comment.trim(),
       };
 
-      const updated = [newReview, ...reviews.filter((r) => r.id !== newReview.id)];
+      const updated = [newReview, ...reviews];
       setReviews(updated);
-      saveMemberData("member_coach_reviews", updated);
+      saveMemberData(storageKey, updated);
 
       setActiveReviewSession(null);
       setComment("");
-      setFeedback(`Cảm ơn bạn đã gửi đánh giá cho ${activeReviewSession.coachName}! Đánh giá đã được gửi và ẩn danh bảo mật.`);
+      setSelectedTags(["Nhiệt tình", "Sửa form kỹ"]);
+      setRating(5);
+      setFeedback("Cảm ơn bạn đã gửi đánh giá! Đóng góp của bạn giúp HLV hoàn thiện chất lượng giảng dạy.");
       setTimeout(() => setFeedback(null), 4000);
+    } catch {
+      alert("Có lỗi xảy ra khi lưu đánh giá. Vui lòng thử lại!");
     } finally {
       setIsSubmitting(false);
     }
@@ -150,7 +138,7 @@ export default function MemberReviews({ onNavigate }: Props) {
             <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span>{feedback}</span>
           </div>
-          <button onClick={() => setFeedback(null)} className="text-emerald-600">
+          <button onClick={() => setFeedback(null)} className="text-emerald-600 cursor-pointer">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -160,116 +148,135 @@ export default function MemberReviews({ onNavigate }: Props) {
       <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
         <h2 className="text-base font-bold text-slate-900 dark:text-white">Đánh giá Huấn luyện viên</h2>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Gửi nhận xét sau mỗi buổi tập để giúp nâng cao chất lượng huấn luyện của trung tâm
+          Gửi phản hồi và xếp hạng chất lượng hướng dẫn sau mỗi ca tập luyện thực tế của bạn
         </p>
       </div>
 
-      {/* 1. SESSIONS WAITING FOR REVIEW */}
-      {availableSessions.length > 0 && (
-        <div className="p-5 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 space-y-3">
-          <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-bold text-xs">
+      {/* 1. SESSIONS READY FOR REVIEW */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-amber-500" />
-            <span>Buổi học đã hoàn thành chờ bạn đánh giá ({availableSessions.length}):</span>
+            <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+              Ca tập đã tham gia cần bạn gửi cảm nhận ({availableSessions.length})
+            </h3>
           </div>
+        </div>
 
-          <div className="space-y-2.5">
-            {availableSessions.map((sess) => (
+        {availableSessions.length === 0 ? (
+          <div className="p-8 text-center text-xs text-slate-400">
+            <Calendar className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+            <p className="font-semibold text-slate-600 dark:text-slate-400">
+              Chưa có buổi tập nào cần đánh giá
+            </p>
+            <p className="text-[11px] text-slate-400 mt-1">
+              Sau khi bạn tham gia và hoàn thành các buổi tập kèm cùng Huấn luyện viên, mục đánh giá sẽ hiển thị tại đây.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {availableSessions.map((s) => (
               <div
-                key={sess.sessionId}
-                className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
+                key={s.sessionId}
+                className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex items-center justify-between gap-3"
               >
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                    {sess.sessionName}
-                  </h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    HLV: <strong>{sess.coachName}</strong> • Ngày học: {sess.date}
-                  </p>
+                  <h4 className="font-bold text-xs text-slate-900 dark:text-white">{s.sessionName}</h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">HLV: {s.coachName}</p>
+                  <span className="text-[10px] text-slate-400 mt-1 block">Ngày tập: {s.date}</span>
                 </div>
-
                 <button
                   type="button"
-                  onClick={() => setActiveReviewSession(sess)}
-                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-colors shadow-sm self-start sm:self-center flex items-center gap-1.5"
+                  onClick={() => {
+                    setActiveReviewSession(s);
+                    setRating(5);
+                    setComment("");
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-xs cursor-pointer transition-colors shrink-0"
                 >
-                  <Star className="w-3.5 h-3.5 fill-slate-950" />
-                  <span>Đánh giá ngay</span>
+                  Viết đánh giá
                 </button>
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* 2. REVIEWS SENT HISTORY */}
-      <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-        <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-          Lịch sử các đánh giá bạn đã gửi ({reviews.length})
-        </h3>
-
-        <div className="space-y-3">
-          {reviews.map((rev) => (
-            <div
-              key={rev.id}
-              className="p-4 rounded-xl bg-slate-50/60 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 space-y-2 text-xs"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                <div>
-                  <span className="font-bold text-slate-900 dark:text-white">{rev.sessionName}</span>
-                  <span className="text-slate-400 ml-2">với {rev.coachName}</span>
-                </div>
-                <div className="flex items-center gap-1 text-amber-400">
-                  {Array.from({ length: rev.rating }).map((_, i) => (
-                    <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                  ))}
-                  <span className="text-slate-500 text-[11px] ml-1">({rev.rating}/5)</span>
-                </div>
-              </div>
-
-              <p className="text-slate-700 dark:text-slate-300 italic">
-                "{rev.comment}"
-              </p>
-
-              <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                {rev.tags.map((tag, idx) => (
-                  <span
-                    key={idx}
-                    className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                  >
-                    #{tag}
-                  </span>
-                ))}
-                <span className="text-[10px] text-slate-400 ml-auto">{rev.date}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+        )}
       </div>
 
-      {/* MODAL GỬI ĐÁNH GIÁ (PORTAL) */}
+      {/* 2. SUBMITTED REVIEWS */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
+        <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+          Lịch sử đánh giá của bạn ({reviews.length})
+        </h3>
+
+        {reviews.length === 0 ? (
+          <div className="p-8 text-center text-xs text-slate-400">
+            <MessageSquare className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+            <p>Bạn chưa gửi đánh giá nào</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
+            {reviews.map((r) => (
+              <div key={r.id} className="py-4 first:pt-0 last:pb-0 space-y-2">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <h4 className="font-bold text-xs text-slate-900 dark:text-white">{r.sessionName}</h4>
+                    <p className="text-[11px] text-slate-500">HLV: {r.coachName} • Ngày gửi: {r.date}</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`w-3.5 h-3.5 ${
+                          star <= r.rating ? "text-amber-400 fill-amber-400" : "text-slate-300"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-700 dark:text-slate-300 italic">"{r.comment}"</p>
+
+                {r.tags && r.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {r.tags.map((t) => (
+                      <span
+                        key={t}
+                        className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                      >
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* REVIEW MODAL (PORTAL) */}
       {activeReviewSession &&
         createPortal(
           <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden flex flex-col">
               <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">
-                    Đánh giá chất lượng
+                  <span className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">
+                    {activeReviewSession.sessionName}
                   </span>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    {activeReviewSession.coachName} - {activeReviewSession.sessionName}
+                    Đánh giá HLV {activeReviewSession.coachName}
                   </h3>
                 </div>
                 <button
                   onClick={() => setActiveReviewSession(null)}
-                  className="p-1 text-slate-400 hover:text-slate-600"
+                  className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <form onSubmit={handleSubmitReview} className="p-5 space-y-4 text-xs">
-                {/* Rating Stars */}
                 <div>
                   <label className="font-semibold text-slate-700 dark:text-slate-300 mb-2 block">
                     Mức độ hài lòng:
@@ -280,83 +287,70 @@ export default function MemberReviews({ onNavigate }: Props) {
                         key={star}
                         type="button"
                         onClick={() => setRating(star)}
-                        className="p-1 hover:scale-110 transition-transform"
+                        className="p-1 text-slate-300 hover:scale-110 transition-transform cursor-pointer"
                       >
                         <Star
                           className={`w-7 h-7 ${
-                            star <= rating
-                              ? "fill-amber-400 text-amber-400"
-                              : "text-slate-300 dark:text-slate-600"
+                            star <= rating ? "text-amber-400 fill-amber-400" : "text-slate-300"
                           }`}
                         />
                       </button>
                     ))}
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-2">
-                      {rating === 5
-                        ? "Rất tuyệt vời!"
-                        : rating === 4
-                        ? "Hài lòng"
-                        : rating === 3
-                        ? "Bình thường"
-                        : "Cần cải thiện"}
+                    <span className="ml-2 font-bold text-slate-700 dark:text-slate-300">
+                      {rating === 5 ? "Rất hài lòng ⭐⭐⭐⭐⭐" : `${rating} sao`}
                     </span>
                   </div>
                 </div>
 
-                {/* Quick Tags */}
                 <div>
-                  <label className="font-semibold text-slate-700 dark:text-slate-300 mb-2 block">
-                    Điểm nổi bật của buổi học:
+                  <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    Nhãn nhận xét nổi bật:
                   </label>
-                  <div className="flex flex-wrap gap-2">
-                    {TAGS_LIST.map((tag) => {
-                      const active = selectedTags.includes(tag);
-                      return (
-                        <button
-                          key={tag}
-                          type="button"
-                          onClick={() => toggleTag(tag)}
-                          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                            active
-                              ? "bg-emerald-600 text-white shadow-xs"
-                              : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
-                          }`}
-                        >
-                          {tag}
-                        </button>
-                      );
-                    })}
+                  <div className="flex flex-wrap gap-1.5">
+                    {TAGS_LIST.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => toggleTag(tag)}
+                        className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
+                          selectedTags.includes(tag)
+                            ? "bg-orange-600 border-orange-600 text-white"
+                            : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100"
+                        }`}
+                      >
+                        {tag}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                {/* Comment textarea */}
                 <div>
                   <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                    Cảm nhận & Góp ý chi tiết cho HLV: *
+                    Cảm nhận chi tiết & góp ý:
                   </label>
                   <textarea
-                    rows={3}
-                    required
+                    rows={4}
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    placeholder="VD: Thầy chỉnh tư thế rất kỹ, bài tập nặng vừa sức, em rất thích buổi tập này!"
-                    className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none"
+                    placeholder="Hãy chia sẻ trải nghiệm tập luyện, tinh thần hướng dẫn hoặc bài học bạn nhận được từ HLV..."
+                    className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs resize-none"
                   />
                 </div>
 
-                <div className="pt-2 flex justify-end gap-2.5">
+                <div className="pt-2 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
                   <button
                     type="button"
                     onClick={() => setActiveReviewSession(null)}
-                    className="px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold"
+                    className="px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold cursor-pointer"
                   >
                     Hủy
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-emerald-500 dark:text-slate-950 dark:hover:bg-emerald-400 rounded-lg shadow-sm"
+                    disabled={isSubmitting}
+                    className="px-5 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold cursor-pointer transition-colors shadow-xs disabled:opacity-50"
                   >
-                    Gửi đánh giá
+                    {isSubmitting ? "Đang gửi..." : "Gửi đánh giá"}
                   </button>
                 </div>
               </form>

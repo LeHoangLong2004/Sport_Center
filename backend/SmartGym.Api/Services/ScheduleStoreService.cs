@@ -20,8 +20,8 @@ namespace SmartGym.Api.Services
         public string StartTime { get; set; } = "";
         public string EndTime { get; set; } = "";
         public string Room { get; set; } = "";
-        public string CoachId { get; set; } = "25f50fba-506a-4edf-9db7-43f77f6741a4";
-        public string CoachName { get; set; } = "HLV Hồ Xuân Ánh Nam";
+        public string CoachId { get; set; } = "";
+        public string CoachName { get; set; } = "HLV SportCenter";
         public int Capacity { get; set; } = 1;
         public int RegisteredCount { get; set; } = 0;
         public string Status { get; set; } = "sắp diễn ra"; // "sắp diễn ra" | "đang diễn ra" | "hoàn thành" | "đã hủy"
@@ -269,12 +269,8 @@ namespace SmartGym.Api.Services
             {
                 return _sessions
                     .Where(s => s.Type != "open_pt" && (
-                        string.IsNullOrEmpty(memberId) ||
-                        memberId == "m-demo" ||
-                        s.MemberId == memberId ||
-                        s.MemberEmail == "hoxuananhnam@gmail.com" ||
-                        s.MemberName == "Hồ Xuân Ánh Nam" ||
-                        s.MemberName == "Anam"
+                        (!string.IsNullOrEmpty(memberId) && s.MemberId == memberId) ||
+                        (memberId == "m-demo" && (s.MemberId == "m-demo" || s.MemberId == "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
                     ))
                     .ToList();
             }
@@ -307,11 +303,11 @@ namespace SmartGym.Api.Services
                     booked.RegisteredCount = 1;
                     booked.Status = "sắp diễn ra";
                     booked.AttendanceStatus = "chưa điểm danh";
-                    booked.MemberId = req.MemberId ?? "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
-                    booked.MemberName = req.MemberName ?? "Hồ Xuân Ánh Nam";
-                    booked.MemberPhone = req.MemberPhone ?? "0989123788";
-                    booked.MemberEmail = req.MemberEmail ?? "hoxuananhnam@gmail.com";
-                    booked.Goal = req.Goal ?? "Tăng cơ & Siết nét";
+                    booked.MemberId = req.MemberId ?? "";
+                    booked.MemberName = req.MemberName ?? "Hội viên";
+                    booked.MemberPhone = req.MemberPhone ?? "";
+                    booked.MemberEmail = req.MemberEmail ?? "";
+                    booked.Goal = req.Goal ?? "Rèn luyện thể lực";
                     booked.CoachNote = req.CoachNote ?? $"Mục tiêu HV: {booked.Goal}";
                     booked.UpdatedAt = DateTime.UtcNow;
                 }
@@ -328,17 +324,17 @@ namespace SmartGym.Api.Services
                         StartTime = req.StartTime ?? "08:30",
                         EndTime = req.EndTime ?? "09:30",
                         Room = req.Room ?? "Khu PT 1-1 - Tầng 1",
-                        CoachId = req.CoachId ?? "25f50fba-506a-4edf-9db7-43f77f6741a4",
-                        CoachName = req.CoachName ?? "HLV Hồ Xuân Ánh Nam",
+                        CoachId = req.CoachId ?? "",
+                        CoachName = req.CoachName ?? "HLV SportCenter",
                         Capacity = 1,
                         RegisteredCount = 1,
                         Status = "sắp diễn ra",
                         AttendanceStatus = "chưa điểm danh",
-                        MemberId = req.MemberId ?? "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-                        MemberName = req.MemberName ?? "Hồ Xuân Ánh Nam",
-                        MemberPhone = req.MemberPhone ?? "0989123788",
-                        MemberEmail = req.MemberEmail ?? "hoxuananhnam@gmail.com",
-                        Goal = req.Goal ?? "Tăng cơ & Siết nét",
+                        MemberId = req.MemberId ?? "",
+                        MemberName = req.MemberName ?? "Hội viên",
+                        MemberPhone = req.MemberPhone ?? "",
+                        MemberEmail = req.MemberEmail ?? "",
+                        Goal = req.Goal ?? "Rèn luyện thể lực",
                         CoachNote = req.CoachNote ?? $"Mục tiêu HV: {req.Goal}",
                         UpdatedAt = DateTime.UtcNow
                     };

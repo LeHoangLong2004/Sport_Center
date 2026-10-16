@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { iSearch2, iDownload, mAvatar0, mAvatar1, mAvatar2, mAvatar3, mAvatar4, iEye, iRotateCcw, iMore } from '../shared';
+import { iSearch2, iDownload, iEye, iRotateCcw, iMore } from '../shared';
+import { UserAvatar } from '../../../components/UserAvatar';
 
 export function StaffPage() {
   const [query, setQuery] = useState("")
@@ -25,8 +26,7 @@ export function StaffPage() {
       if (Array.isArray(data)) {
         const mapped = data
           .filter((u: any) => u.roleName && u.roleName.toLowerCase() !== "member")
-          .map((u: any, index: number) => {
-            const avatars = [mAvatar0, mAvatar1, mAvatar2, mAvatar3, mAvatar4];
+          .map((u: any) => {
             return {
               id: u.id.substring(0, 8).toUpperCase(),
               realId: u.id,
@@ -37,7 +37,7 @@ export function StaffPage() {
               status: u.status ? "Đang hoạt động" : "Tạm khóa",
               statusRaw: u.status,
               joined: new Date(u.createdAt).toLocaleDateString('vi-VN'),
-              avatar: u.avatarUrl || avatars[index % avatars.length],
+              avatar: u.avatarUrl || null,
             };
           });
         setStaffList(mapped);
@@ -220,7 +220,7 @@ export function StaffPage() {
         {filtered.map(m=>(
           <div key={m.id} className="border-b border-[#f1f5f9] flex h-16 items-center px-6">
             <div className="flex gap-2.5 items-center flex-1">
-              <img src={m.avatar} alt="" className="rounded-full size-9 object-cover" />
+              <UserAvatar src={m.avatar} name={m.name} className="rounded-full size-9 object-cover" />
               <div>
                 <p className="font-semibold text-[#0f172a] text-sm">{m.name}</p>
                 <p className="text-[#64748b] text-[12px]">{m.id}</p>
