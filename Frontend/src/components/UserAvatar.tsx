@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 
 const COLORS = [
   "#f87171",
@@ -42,7 +42,12 @@ export function UserAvatar({
   onClick?: () => void
 }) {
   const [error, setError] = useState(false)
-  const initial = name ? name.charAt(0).toUpperCase() : "?"
+
+  useEffect(() => {
+    setError(false)
+  }, [src])
+
+  const initial = name?.trim() ? name.trim().charAt(0).toUpperCase() : "?"
   const bgColor = stringToColor(name || "User")
 
   if (src && !error && src.trim() !== "") {

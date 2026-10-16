@@ -21,10 +21,10 @@ namespace SmartGym.Api.Endpoints
                 return Results.Ok(new
                 {
                     memberId = userId,
-                    activePackagesCount = 2,
+                    activePackagesCount = 0,
                     upcomingBookingsCount = bookings.Count,
                     pendingTasksCount = tasks.Count(t => !((dynamic)t).completed),
-                    attendanceRatePct = 92,
+                    attendanceRatePct = bookings.Count > 0 ? 100 : 0,
                     nextSessions = bookings.Take(3),
                     recentTasks = tasks.Take(3),
                     supportTickets = tickets.Take(2)

@@ -1,82 +1,17 @@
 import { useMemo, useState } from "react";
-import {
-  A,
-  avatarSidebar,
-  avatarTopbar,
-  iDashboard,
-  iUsers,
-  iPackage,
-  iCalendar,
-  iReceipt,
-  iBarChart,
-  iSettings,
-  iSearch,
-  iBell,
-  iSearch2,
-  iDownload,
-  iPlus,
-  iWallet,
-  iCheckCircle,
-  iClock,
-  iRotateCcw,
-  iChevron,
-  iEye,
-  iPrinter,
-  iMore,
-  mAvatar0,
-  mAvatar1,
-  mAvatar2,
-  mAvatar3,
-  mAvatar4,
-  iBell2,
-  iDownload2,
-  iKpiRevenue,
-  iKpiMembers,
-  iKpiClasses,
-  iKpiRetain,
-  iSeg1,
-  iSeg2,
-  iSeg3,
-  iSeg4,
-  iDotBlue,
-  iDotTeal,
-  iDotOrange,
-  iDotPurple,
-  iActivity0,
-  iActivity1,
-  iActivity2,
-  iActivity3,
-  iLineChart,
-  iBarFill,
-  coachAvatar1,
-  coachAvatar2,
-  coachAvatar3,
-  coachAvatar4,
-  hrAvatar1,
-  hrAvatar2,
-  hrAvatar3,
-  hrAvatar4,
-  iBudgetIcon,
-  iExpenseIcon,
-  iBudgetChevron,
-  iPLRevIcon,
-  memberEditAvatar,
-} from "../shared";
 import { InvoiceTable } from "../components/InvoiceTable";
 import { PaymentHeader } from "../components/PaymentHeader";
 import { PaymentSummary } from "../components/PaymentSummary";
 import { PaymentFilters } from "../components/PaymentFilters";
-import KpiCard from "../components/KpiCard";
-import SimpleLineChart from "../components/SimpleLineChart";
-import { FinanceTopBar } from "../components/FinanceTopBar";
-import { DataState } from "../components/DataState";
+import { InvoiceDetailModal } from "../components/InvoiceDetailModal";
+import { CreatePaymentModal } from "../components/CreatePaymentModal";
 import { useApiResource } from "../../../hooks/useApiResource";
 import {
   paymentApi,
   reportApi,
   type InvoiceResponse,
 } from "../../../hooks/flow3Api";
-import { apiDownloadFile, formatVnd, apiPost } from "../../../hooks/apiClient";
+import { apiDownloadFile, formatVnd, apiPost, formatDateTime } from "../../../hooks/apiClient";
 
 const STATUS_STYLE: Record<string, string> = {
   completed: "bg-[#dcfce7] text-[#15803d]",
@@ -96,6 +31,10 @@ export function PaymentPage() {
   const [methodFilter, setMethodFilter] = useState("Tất cả");
   const [page, setPage] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
+
+  // Modals state
+  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceResponse | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const list = invoices.data ?? [];
 
@@ -186,9 +125,62 @@ export function PaymentPage() {
     window.open(url, "_blank");
   };
 
+  const handleExportCsv = () => {
+    if (filtered.length === 0) {
+      alert("Không có dữ liệu giao dịch để xuất!");
+      return;
+    }
+
+    const headers = [
+      "Mã hóa đơn",
+      "Khách hàng / Hội viên",
+      "Mã hội viên",
+      "Số tiền (VNĐ)",
+      "Phương thức thanh toán",
+      "Trạng thái",
+      "Ngày tạo",
+      "Ngày thanh toán",
+    ];
+
+    const rows = filtered.map((i) => [
+      i.invoiceNumber,
+      i.memberName ?? "Khách vãng lai",
+      i.userId.substring(0, 8).toUpperCase(),
+      i.totalAmount,
+      i.paymentMethodName,
+      i.statusName,
+      formatDateTime(i.createdAt),
+      i.paidAt ? formatDateTime(i.paidAt) : "",
+    ]);
+
+    const csvContent =
+      "\uFEFF" +
+      headers.join(",") +
+      "\n" +
+      rows.map((e) => e.map((cell) => `"${cell}"`).join(",")).join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `danh_sach_hoa_don_${new Date().getTime()}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
-    <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
-      <PaymentHeader onExport={handleExport} isExporting={isExporting} />
+    <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto relative">
+      <PaymentHeader
+        onExport={handleExport}
+        onExportCsv={handleExportCsv}
+        isExporting={isExporting}
+        onOpenCreate={() => setShowCreateModal(true)}
+      />
+
       <PaymentSummary
         loading={invoices.loading}
         error={invoices.error}
@@ -201,6 +193,7 @@ export function PaymentPage() {
         refundedCount={refunded.length}
         successRate={successRate}
       />
+
       <PaymentFilters
         query={query}
         methods={methods}
@@ -235,7 +228,24 @@ export function PaymentPage() {
         onPageChange={setPage}
         onRecordCash={handleRecordCash}
         onPrintPdf={handlePrintPdf}
+        onViewDetail={(invoice) => setSelectedInvoice(invoice)}
       />
+
+      {/* Modal chi tiết hóa đơn */}
+      <InvoiceDetailModal
+        invoice={selectedInvoice}
+        onClose={() => setSelectedInvoice(null)}
+        onRecordCash={handleRecordCash}
+        onPrintPdf={handlePrintPdf}
+      />
+
+      {/* Modal tạo giao dịch thu tiền tại quầy */}
+      {showCreateModal && (
+        <CreatePaymentModal
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => invoices.reload()}
+        />
+      )}
     </div>
   );
 }

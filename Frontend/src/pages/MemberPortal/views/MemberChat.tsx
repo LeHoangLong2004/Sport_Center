@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { MemberAPI } from "../services/api";
 import type { MemberScreen } from "../types";
+import { getSavedMemberData, saveMemberData } from "../services/memberData";
 
 export interface ChatMessage {
   id: string;
@@ -55,45 +56,29 @@ interface Props {
   onNavigate?: (screen: MemberScreen) => void;
 }
 
-// Initial full set of realistic conversations covering Coach, Members, Managers, and Classes
+// Default official communication channels for members
 const INITIAL_CONVERSATIONS: ChatConversation[] = [
-  {
-    id: "conv-nam",
-    type: "direct",
-    category: "coach",
-    roleTag: "HLV",
-    badgeColor: "orange",
-    title: "HLV Nam (PT Thể Hình)",
-    subtitle: "HLV Huấn luyện viên cá nhân 1-1",
-    avatar: "https://images.unsplash.com/photo-1567013127542-490d757e51fc?w=100&auto=format&fit=crop&q=80",
-    lastMessage: "Thầy ơi, buổi tập sáng mai 7h em đến sớm 10 phút khởi động trước nhé ạ!",
-    lastTime: "14:20",
-    unreadCount: 0,
-    online: true,
-    coachId: "25F50FBA",
-    coachName: "HLV Nam",
-    messages: [
-      { id: "nam1", sender: "coach", senderName: "HLV Nam", text: "Chào Nam! Tuần này cơ bắp của bạn sau buổi tập chân hồi phục thế nào rồi?", timestamp: "09:15" },
-      { id: "nam2", sender: "member", senderName: "Hồ Xuân Ánh Nam", text: "Dạ đỡ mỏi đùi rồi thầy ơi, form Squat bài trước em làm thấy vào mông đùi rất tốt ạ.", timestamp: "09:30" },
-      { id: "nam3", sender: "coach", senderName: "HLV Nam", text: "Tốt lắm! Nhớ nạp đủ 120g protein/ngày và uống tối thiểu 2.5 lít nước nhé.", timestamp: "09:35" },
-      { id: "nam4", sender: "member", senderName: "Hồ Xuân Ánh Nam", text: "Thầy ơi, buổi tập sáng mai 7h em đến sớm 10 phút khởi động trước nhé ạ!", timestamp: "14:20" },
-    ],
-  },
   {
     id: "conv-manager",
     type: "direct",
     category: "manager",
     roleTag: "QUẢN LÝ",
     badgeColor: "blue",
-    title: "Quản lý Trung tâm SportCenter",
-    subtitle: "Ban Quản lý & Tiếp nhận yêu cầu hội viên",
+    title: "Ban Quản lý & Tiếp nhận yêu cầu",
+    subtitle: "Ban Quản lý Trung tâm SportCenter",
     avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80",
     lastMessage: "Ban quản lý SportCenter luôn sẵn sàng hỗ trợ giải đáp mọi thắc mắc của bạn.",
     lastTime: "08:00",
     unreadCount: 0,
     online: true,
     messages: [
-      { id: "mgr-1", sender: "manager", senderName: "Quản lý Trung tâm", text: "Chào bạn Hồ Xuân Ánh Nam! Ban quản lý SportCenter luôn sẵn sàng tiếp nhận ý kiến và giải quyết thắc mắc về hợp đồng, cơ sở vật chất hay đổi gói tập.", timestamp: "08:00" },
+      {
+        id: "mgr-1",
+        sender: "manager",
+        senderName: "Ban Quản lý",
+        text: "Chào mừng bạn đến với SportCenter! Ban Quản lý luôn sẵn sàng tiếp nhận ý kiến, hỗ trợ thủ tục hợp đồng, gói dịch vụ và giải đáp mọi thắc mắc.",
+        timestamp: "08:00",
+      },
     ],
   },
   {
@@ -103,109 +88,20 @@ const INITIAL_CONVERSATIONS: ChatConversation[] = [
     roleTag: "LỄ TÂN",
     badgeColor: "blue",
     title: "Quầy Lễ Tân & Dịch Vụ Hội Viên",
-    subtitle: "Hỗ trợ Check-in, Khóa tủ & Gia hạn gói",
+    subtitle: "Hỗ trợ Check-in, Khóa tủ & Dịch vụ",
     avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&auto=format&fit=crop&q=80",
     lastMessage: "Quầy Lễ tân mở cửa từ 06:00 đến 22:00 hàng ngày.",
     lastTime: "08:15",
     unreadCount: 0,
     online: true,
     messages: [
-      { id: "rec-1", sender: "manager", senderName: "Quầy Lễ Tân", text: "Dạ chào anh Nam, quầy Lễ tân mở cửa hỗ trợ từ 06:00 - 22:00 hàng ngày. Anh cần hỗ trợ kiểm tra thời hạn gói tập hay dịch vụ tủ đồ cá nhân không ạ?", timestamp: "08:15" },
-    ],
-  },
-  {
-    id: "conv-member-an",
-    type: "direct",
-    category: "member",
-    roleTag: "HỘI VIÊN",
-    badgeColor: "emerald",
-    title: "Nguyễn Văn An",
-    subtitle: "Hội viên Thể thao · Bạn tập Gym",
-    avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
-    lastMessage: "Chiều nay tầm 17h30 bạn có qua phòng gym tập ngực không, tập chung đổi tạ cho vui nhé!",
-    lastTime: "09:30",
-    unreadCount: 0,
-    online: true,
-    messages: [
-      { id: "an-1", sender: "other_member", senderName: "Nguyễn Văn An", text: "Chào bạn Nam! Chiều nay tầm 17h30 bạn có qua phòng gym tập bài ngực không, tập chung đổi tạ cho vui nhé!", timestamp: "09:30" },
-    ],
-  },
-  {
-    id: "conv-member-lananh",
-    type: "direct",
-    category: "member",
-    roleTag: "HỘI VIÊN",
-    badgeColor: "emerald",
-    title: "Nguyễn Lan Anh",
-    subtitle: "Hội viên Thể thao · Nhóm Yoga & Pilates",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80",
-    lastMessage: "Chào anh Nam, sáng mai anh có tham gia buổi tập Yoga Vinyasa cùng HLV Minh Tuyết không ạ?",
-    lastTime: "10:00",
-    unreadCount: 0,
-    online: true,
-    messages: [
-      { id: "la-1", sender: "other_member", senderName: "Nguyễn Lan Anh", text: "Chào anh Nam, sáng mai anh có tham gia buổi tập Yoga Vinyasa cùng HLV Minh Tuyết không ạ?", timestamp: "10:00" },
-    ],
-  },
-  {
-    id: "conv-1",
-    type: "direct",
-    category: "coach",
-    roleTag: "HLV",
-    badgeColor: "orange",
-    title: "HLV Enam (Master PT)",
-    subtitle: "HLV Thể hình & PT Cá nhân 1-1",
-    avatar: "https://images.unsplash.com/photo-1567013127542-490d757e51fc?w=100&auto=format&fit=crop&q=80",
-    lastMessage: "Thầy ơi, buổi tập sáng mai 7h em đến sớm 10 phút khởi động trước nhé ạ!",
-    lastTime: "14:20",
-    unreadCount: 0,
-    online: true,
-    coachId: "25F50FBA",
-    coachName: "HLV Enam",
-    messages: [
-      { id: "m1", sender: "coach", senderName: "HLV Enam", text: "Chào bạn, tuần này bạn cảm thấy cơ bắp phục hồi thế nào rồi?", timestamp: "09:15" },
-      { id: "m2", sender: "member", senderName: "Học viên", text: "Dạ đỡ mỏi đùi rồi thầy, form Squat bài trước em làm thấy vào mông đùi rất tốt ạ.", timestamp: "09:30" },
-    ],
-  },
-  {
-    id: "conv-2",
-    type: "class",
-    category: "class",
-    roleTag: "NHÓM LỚP",
-    badgeColor: "purple",
-    title: "Lớp Yoga Cơ Bản – Sáng 3-5-7",
-    subtitle: "Nhóm lớp học • HLV Minh Tuyết",
-    avatar: "https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=100&auto=format&fit=crop&q=80",
-    lastMessage: "Buổi mai lớp mình tập bài thở Pranayama nâng cao nhé!",
-    lastTime: "11:05",
-    unreadCount: 0,
-    online: true,
-    coachId: "coach-02",
-    coachName: "HLV Minh Tuyết",
-    messages: [
-      { id: "c1", sender: "coach", senderName: "HLV Minh Tuyết", text: "Chào cả lớp, mọi người nhớ mang theo khăn riêng và thảm cá nhân nhé.", timestamp: "Hôm qua" },
-      { id: "c2", sender: "coach", senderName: "HLV Minh Tuyết", text: "Buổi mai lớp mình tập bài thở Pranayama nâng cao nhé!", timestamp: "11:05" },
-      { id: "c3", sender: "member", senderName: "Lan Anh", text: "Dạ vâng HLV ạ, sáng mai em sẽ đến sớm 10 phút ạ!", timestamp: "11:15" }
-    ],
-  },
-  {
-    id: "conv-4",
-    type: "class",
-    category: "class",
-    roleTag: "NHÓM LỚP",
-    badgeColor: "purple",
-    title: "Gym Group BodyCombat",
-    subtitle: "Nhóm cardio & kickfit • HLV Hoàng Long",
-    avatar: "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=100&auto=format&fit=crop&q=80",
-    lastMessage: "Ca hôm nay tập sung quá mọi người! Cảm ơn Coach nhiều ạ.",
-    lastTime: "Hôm qua",
-    unreadCount: 0,
-    online: true,
-    coachId: "coach-03",
-    coachName: "HLV Hoàng Long",
-    messages: [
-      { id: "m40", sender: "coach", senderName: "HLV Hoàng Long", text: "Hôm nay cả lớp tập rất tốt, nhịp độ cardio rất đều.", timestamp: "Hôm qua 10:45" },
-      { id: "m41", sender: "member", senderName: "Phạm Kiệt", text: "Ca hôm nay tập sung quá mọi người! Cảm ơn Coach nhiều ạ.", timestamp: "Hôm qua 11:00" },
+      {
+        id: "rec-1",
+        sender: "manager",
+        senderName: "Quầy Lễ Tân",
+        text: "Quầy Lễ tân mở cửa từ 06:00 - 22:00 hàng ngày. Bạn có thể nhắn tin tại đây nếu cần hỗ trợ mượn khóa tủ cá nhân, kiểm tra thời hạn hoặc tìm đồ thất lạc nhé!",
+        timestamp: "08:15",
+      },
     ],
   },
 ];
@@ -290,8 +186,8 @@ const DIRECTORY_CONTACTS = {
       avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
     },
     {
-      id: "m-lananh",
-      name: "Nguyễn Lan Anh",
+      id: "m-phuong",
+      name: "Trần Mai Phương",
       role: "member",
       roleTag: "HỘI VIÊN",
       subtitle: "Hội viên Thể thao · Nhóm Yoga & Pilates",
@@ -336,19 +232,16 @@ const DIRECTORY_CONTACTS = {
 
 export default function MemberChat({ onNavigate }: Props) {
   // Load current member identity
-  const userStr = localStorage.getItem("user");
-  let memberName = "Hồ Xuân Ánh Nam";
-  let memberId = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
-  if (userStr) {
-    try {
-      const u = JSON.parse(userStr);
-      memberName = u.fullName || u.name || "Hồ Xuân Ánh Nam";
-      memberId = u.id || "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
-    } catch {}
-  }
+  const userStr = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+  const user = userStr ? JSON.parse(userStr) : null;
+  const memberName = user?.fullName || user?.name || "Hội viên";
+  const memberId = user?.id || "";
+  const storageKey = memberId ? `member_chats_${memberId}` : "member_chats";
 
-  const [conversations, setConversations] = useState<ChatConversation[]>(INITIAL_CONVERSATIONS);
-  const [activeId, setActiveId] = useState<string>("conv-nam");
+  const [conversations, setConversations] = useState<ChatConversation[]>(() =>
+    getSavedMemberData(storageKey, INITIAL_CONVERSATIONS)
+  );
+  const [activeId, setActiveId] = useState<string>("conv-manager");
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState<"all" | "coach" | "member" | "manager" | "class">("all");
   const [inputText, setInputText] = useState("");
@@ -365,9 +258,12 @@ export default function MemberChat({ onNavigate }: Props) {
   const loadConversations = async (silent = false) => {
     if (!silent) setIsRefreshing(true);
     try {
-      const res = await MemberAPI.getMemberConversations(memberId);
-      if (Array.isArray(res) && res.length > 0) {
-        setConversations(res);
+      if (memberId) {
+        const res = await MemberAPI.getMemberConversations(memberId);
+        if (Array.isArray(res) && res.length > 0) {
+          setConversations(res);
+          saveMemberData(storageKey, res);
+        }
       }
     } catch (err) {
       // Keep state if network issue
@@ -375,6 +271,12 @@ export default function MemberChat({ onNavigate }: Props) {
       if (!silent) setIsRefreshing(false);
     }
   };
+
+  useEffect(() => {
+    if (conversations.length > 0) {
+      saveMemberData(storageKey, conversations);
+    }
+  }, [conversations, storageKey]);
 
   // Real-time auto sync polling every 2.5s
   useEffect(() => {

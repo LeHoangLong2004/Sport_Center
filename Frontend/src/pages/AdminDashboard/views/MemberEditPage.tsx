@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { A, avatarSidebar, avatarTopbar, iDashboard, iUsers, iPackage, iCalendar, iReceipt, iBarChart, iSettings, iSearch, iBell, iSearch2, iDownload, iPlus, iWallet, iCheckCircle, iClock, iRotateCcw, iChevron, iEye, iPrinter, iMore, mAvatar0, mAvatar1, mAvatar2, mAvatar3, mAvatar4, iBell2, iDownload2, iKpiRevenue, iKpiMembers, iKpiClasses, iKpiRetain, iSeg1, iSeg2, iSeg3, iSeg4, iDotBlue, iDotTeal, iDotOrange, iDotPurple, iActivity0, iActivity1, iActivity2, iActivity3, iLineChart, iBarFill, coachAvatar1, coachAvatar2, coachAvatar3, coachAvatar4, hrAvatar1, hrAvatar2, hrAvatar3, hrAvatar4, iBudgetIcon, iExpenseIcon, iBudgetChevron, iPLRevIcon, memberEditAvatar, transactions, reportBarData, reportMonths, members } from '../shared';
+import { A, avatarSidebar, avatarTopbar, iDashboard, iUsers, iPackage, iCalendar, iReceipt, iBarChart, iSettings, iSearch, iBell, iSearch2, iDownload, iPlus, iWallet, iCheckCircle, iClock, iRotateCcw, iChevron, iEye, iPrinter, iMore, iBell2, iDownload2, iKpiRevenue, iKpiMembers, iKpiClasses, iKpiRetain, iSeg1, iSeg2, iSeg3, iSeg4, iDotBlue, iDotTeal, iDotOrange, iDotPurple, iActivity0, iActivity1, iActivity2, iActivity3, iLineChart, iBarFill, coachAvatar1, coachAvatar2, coachAvatar3, coachAvatar4, hrAvatar1, hrAvatar2, hrAvatar3, hrAvatar4, iBudgetIcon, iExpenseIcon, iBudgetChevron, iPLRevIcon, memberEditAvatar, transactions, reportBarData, reportMonths, members } from '../shared';
+import { UserAvatar } from '../../../components/UserAvatar';
 import KpiCard from '../components/KpiCard';
 import SimpleLineChart from '../components/SimpleLineChart';
 import { FinanceTopBar } from '../components/FinanceTopBar';
@@ -192,7 +193,7 @@ export function MemberEditPage({ memberData, onBack }: { memberData?: any, onBac
           <div className="bg-white border border-[#e2e8f0] p-6 rounded-xl">
             <p className="font-extrabold text-[#0f172a] text-base mb-5">Ảnh đại diện hội viên</p>
             <div className="flex flex-col items-center gap-4">
-              <img src={avatarUrl} alt="" className="rounded-full size-24 object-cover" />
+              <UserAvatar src={avatarUrl} name={member.name} className="rounded-full size-24 object-cover text-3xl font-extrabold shadow-sm" />
               <label className={`border border-[#e2e8f0] flex gap-2 items-center px-4 py-2 rounded-lg cursor-pointer ${avatarUploading ? "opacity-60 pointer-events-none" : ""}`}>
                 <span className="text-[#0f172a] text-sm">✏ Thay đổi hình ảnh</span>
                 <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={avatarUploading} onChange={handleChangeAvatar} />

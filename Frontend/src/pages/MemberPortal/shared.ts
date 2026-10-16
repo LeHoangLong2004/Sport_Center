@@ -126,14 +126,14 @@ export const memberSections = {
     title: "Hồ sơ hội viên",
     description: "Quản lý thông tin cá nhân và trạng thái hội viên của bạn.",
     stats: [
-      ["Hạng hội viên", "Premium", "Hoạt động"],
-      ["Mã hội viên", "MB-2048", "Tham gia từ 2024"],
-      ["Chi nhánh", "Quận 1", "SportCenter Central"],
+      ["Hạng hội viên", "Hội viên SportCenter", "Hoạt động"],
+      ["Mã hội viên", "MB-MEMBER", "Tài khoản chính thức"],
+      ["Chi nhánh", "SportCenter Complex", "Toàn hệ thống"],
     ],
     rows: [
-      ["Họ và tên", "Nguyễn Lan Anh", "Thông tin định danh"],
-      ["Số điện thoại", "0903 456 789", "Số liên hệ chính"],
-      ["Email", "lananh@email.com", "Nhận thông báo hệ thống"],
+      ["Họ và tên", "Hội viên", "Thông tin định danh"],
+      ["Số điện thoại", "Chưa cập nhật", "Số liên hệ chính"],
+      ["Email", "Chưa cập nhật", "Nhận thông báo hệ thống"],
     ],
   },
   payment: {
@@ -141,29 +141,21 @@ export const memberSections = {
     title: "Thanh toán",
     description: "Theo dõi gói tập hiện tại và các giao dịch gần đây.",
     stats: [
-      ["Gói hiện tại", "Premium", "12 tháng"],
-      ["Ngày hết hạn", "18/12/2026", "Còn 88 ngày"],
-      ["Trạng thái", "Đã thanh toán", "Không có dư nợ"],
+      ["Gói hiện tại", "Chưa đăng ký", "0 tháng"],
+      ["Ngày hết hạn", "--/--/----", "Chưa kích hoạt"],
+      ["Trạng thái", "Chưa kích hoạt", "Không có dư nợ"],
     ],
-    rows: [
-      ["HD-092026", "Premium 12 tháng", "12.000.000 đ"],
-      ["HD-032026", "Gia hạn tủ đồ", "600.000 đ"],
-      ["HD-122025", "PT cá nhân • 10 buổi", "4.500.000 đ"],
-    ],
+    rows: [],
   },
   reports: {
     kicker: "TIẾN ĐỘ LUYỆN TẬP",
     title: "Báo cáo",
     description: "Tổng hợp hoạt động và kết quả luyện tập của bạn.",
     stats: [
-      ["Buổi tập tháng này", "12 buổi", "Tăng 3 buổi"],
-      ["Năng lượng tiêu hao", "8.400 kcal", "Đạt 84% mục tiêu"],
-      ["Chuỗi tập hiện tại", "5 ngày", "Kỷ lục 18 ngày"],
+      ["Buổi tập tháng này", "0 buổi", "Khởi đầu mới"],
+      ["Năng lượng tiêu hao", "0 kcal", "Chưa có dữ liệu"],
+      ["Chuỗi tập hiện tại", "0 ngày", "Bắt đầu hôm nay"],
     ],
-    rows: [
-      ["Functional HIIT", "22/09/2026", "450 kcal"],
-      ["Yoga Flow", "20/09/2026", "210 kcal"],
-      ["Cardio tự do", "18/09/2026", "380 kcal"],
-    ],
+    rows: [],
   },
 } as const
