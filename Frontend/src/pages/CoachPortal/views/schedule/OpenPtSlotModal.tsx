@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { TIME_ROWS, type UnifiedScheduleItem } from "./types";
+import { DateInput } from "../../../../components/DateInput";
 
 interface Props {
   isOpen: boolean;
@@ -67,11 +68,10 @@ export default function OpenPtSlotModal({ isOpen, onClose, onSuccess }: Props) {
               <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
                 Ngày mở ca trống: <span className="text-rose-500">*</span>
               </label>
-              <input
-                type="date"
+              <DateInput
                 required
                 value={openSlotDate}
-                onChange={(e) => setOpenSlotDate(e.target.value)}
+                onChange={setOpenSlotDate}
                 className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400 font-medium"
               />
             </div>

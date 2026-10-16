@@ -23,6 +23,8 @@ public class HomeworkProgressService : IHomeworkProgressService
     {
         var plan = await _planRepository.GetByIdAsync(request.PlanId);
         if (plan == null) throw new Exception("Workout plan not found");
+        if (plan.CoachId != coachId)
+            throw new UnauthorizedAccessException("You can only assign workout plans that you created.");
 
         var progress = new HomeworkProgress
         {

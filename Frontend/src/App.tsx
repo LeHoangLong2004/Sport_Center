@@ -4,7 +4,11 @@ import MemberPortal from "./pages/MemberPortal";
 import CoachPortal from "./pages/CoachPortal";
 import AdminDashboard from "./pages/AdminDashboard";
 import PaymentFlow from "./pages/PaymentFlow";
+import { ProductPaymentFlow } from "./pages/PaymentFlow/ProductPaymentFlow";
 import ReceptionistPortal from "./pages/ReceptionistPortal";
+import type { CatalogPackage, PackagePeriod } from "./services/packageApi";
+import type { CheckoutSelection } from "./pages/MemberPortal";
+import type { ProductOrder } from "./pages/MemberPortal/views/ProductShopPage";
 
 import { Registration } from "./components/Auth/Registration";
 import { Login } from "./components/Auth/Login";
@@ -16,10 +20,14 @@ function AdminPortal({
   onExit,
   initialStep = "register",
   initialMemberPage = "overview",
+  onMemberCheckout,
+  onMemberProductPayment,
 }: {
   onExit: () => void
   initialStep?: "register" | "login" | "verify" | "forgotPassword" | "member" | "dashboard"
   initialMemberPage?: MemberPage
+  onMemberCheckout?: (selection: CheckoutSelection) => void
+  onMemberProductPayment?: (order: ProductOrder) => void
 }) {
   const [step, setStep] = useState<
     "register" | "login" | "verify" | "forgotPassword" | "member" | "dashboard"
@@ -27,7 +35,13 @@ function AdminPortal({
   const [verifyTarget, setVerifyTarget] = useState<"member" | "login">("member")
 
   if (step === "member") {
-    return <MemberPortal initialPage={initialMemberPage} />
+    return (
+      <MemberPortal
+        initialPage={initialMemberPage}
+        onCheckout={onMemberCheckout}
+        onProductPayment={onMemberProductPayment}
+      />
+    )
   }
 
   if (step === "dashboard") {
@@ -151,6 +165,16 @@ export default function App() {
   )
   const [selectedPlanId, setSelectedPlanId] = useState<string | undefined>()
   const [selectedPeriod, setSelectedPeriod] = useState<string | undefined>()
+  const [selectedPackage, setSelectedPackage] = useState<CatalogPackage | undefined>()
+  const [selectedDuration, setSelectedDuration] = useState<PackagePeriod | undefined>()
+  const [selectedDiscountPct, setSelectedDiscountPct] = useState(0)
+  const [selectedProductOrder, setSelectedProductOrder] = useState<ProductOrder | undefined>()
+
+  useEffect(() => {
+    if (paymentOpen && !selectedPlanId && !selectedPackage && !selectedProductOrder) {
+      window.location.hash = "pricing";
+    }
+  }, [paymentOpen, selectedPlanId, selectedPackage, selectedProductOrder]);
 
   useEffect(() => {
     const sync = () => {
@@ -176,26 +200,45 @@ export default function App() {
     )
   }
 
-  useEffect(() => {
-    if (paymentOpen && !selectedPlanId) {
-      window.location.hash = "pricing";
-    }
-  }, [paymentOpen, selectedPlanId]);
-
   if (paymentOpen) {
-    if (!selectedPlanId) {
+    if (!selectedPlanId && !selectedPackage && !selectedProductOrder) {
       return null;
+    }
+
+    if (selectedProductOrder) {
+      const exitProductPayment = () => {
+        setSelectedProductOrder(undefined)
+        setPaymentOpen(false)
+        window.location.hash = "member-shop"
+      }
+
+      return (
+        <ProductPaymentFlow
+          order={selectedProductOrder}
+          onBack={exitProductPayment}
+          onCompleted={exitProductPayment}
+        />
+      )
     }
 
     return (
       <PaymentFlow
-        initialPlan={selectedPlanId as any}
-        initialPeriod={selectedPeriod as any}
+        initialPlan={selectedPackage ? undefined : selectedPlanId as any}
+        initialPeriod={selectedPackage ? undefined : selectedPeriod as any}
+        initialPackage={selectedPackage}
+        initialDuration={selectedDuration}
+        initialDiscountPct={selectedDiscountPct}
         onExit={(dest = "home") => {
-          window.location.hash = dest
+          window.location.hash = selectedPackage && dest === "member"
+            ? "member-packages"
+            : dest
           setPaymentOpen(false)
           setSelectedPlanId(undefined)
           setSelectedPeriod(undefined)
+          setSelectedPackage(undefined)
+          setSelectedDuration(undefined)
+          setSelectedDiscountPct(0)
+          setSelectedProductOrder(undefined)
         }}
       />
     )
@@ -242,6 +285,26 @@ export default function App() {
                       ? "ai"
                       : "overview"
         }
+        onMemberCheckout={(selection) => {
+          setSelectedPlanId(undefined)
+          setSelectedPeriod(undefined)
+          setSelectedPackage(selection.item)
+          setSelectedDuration(selection.duration)
+          setSelectedDiscountPct(selection.discountPct)
+          setSelectedProductOrder(undefined)
+          window.location.hash = "payment"
+          setPaymentOpen(true)
+        }}
+        onMemberProductPayment={(order) => {
+          setSelectedPlanId(undefined)
+          setSelectedPeriod(undefined)
+          setSelectedPackage(undefined)
+          setSelectedDuration(undefined)
+          setSelectedDiscountPct(0)
+          setSelectedProductOrder(order)
+          window.location.hash = "payment"
+          setPaymentOpen(true)
+        }}
         onExit={() => {
           localStorage.removeItem("token")
           localStorage.removeItem("user")
@@ -265,6 +328,10 @@ export default function App() {
       onOpenPayment={(planId, periodId) => {
         setSelectedPlanId(planId)
         setSelectedPeriod(periodId)
+        setSelectedPackage(undefined)
+        setSelectedDuration(undefined)
+        setSelectedDiscountPct(0)
+        setSelectedProductOrder(undefined)
         window.location.hash = "payment"
         setPaymentOpen(true)
       }}

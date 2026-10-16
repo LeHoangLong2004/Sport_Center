@@ -52,11 +52,11 @@ export const ClassRosterList: React.FC<ClassRosterListProps> = ({
       </div>
 
       <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
-        {members.map((m, index) => {
+        {members.map((m) => {
           const att = attendanceRecords.find((r) => r.memberId === m.id);
-          const attStatus =
-            att?.status ||
-            (index === 0 ? "attended" : index === 1 ? "late" : index === 2 ? "attended" : "chưa điểm danh");
+          // Chỉ hiển thị trạng thái sau khi backend có bản ghi điểm danh thật.
+          // Không tự gán Có mặt/Đi trễ cho lớp chưa diễn ra.
+          const attStatus = att?.status || "chưa điểm danh";
           return (
             <div
               key={m.id}

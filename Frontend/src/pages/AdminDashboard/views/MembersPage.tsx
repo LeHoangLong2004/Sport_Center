@@ -4,6 +4,7 @@ import { UserAvatar } from '../../../components/UserAvatar';
 import KpiCard from '../components/KpiCard';
 import SimpleLineChart from '../components/SimpleLineChart';
 import { FinanceTopBar } from '../components/FinanceTopBar';
+import { DateInput } from '../../../components/DateInput';
 
 export function MembersPage({ onEditMember }: { onEditMember: (member: any) => void }) {
   const [query, setQuery] = useState("")
@@ -340,7 +341,7 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
               <label className="flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">Email *<input name="email" type="email" required className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500" /></label>
               <label className="flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">Số điện thoại *<input name="phoneNumber" required className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500" /></label>
               <label className="flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">Mật khẩu tạm thời *<input name="password" type="password" minLength={6} required className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500" /></label>
-              <label className="flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">Ngày sinh<input name="dateOfBirth" type="date" className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500" /></label>
+              <label className="flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">Ngày sinh<DateInput name="dateOfBirth" className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500" /></label>
               <label className="flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">Giới tính<select name="gender" className="rounded-lg border border-[#cbd5e1] bg-white px-3 py-2.5 font-normal outline-none focus:border-blue-500"><option value="">Chưa cập nhật</option><option value="Nam">Nam</option><option value="Nữ">Nữ</option><option value="Khác">Khác</option></select></label>
               <label className="col-span-2 flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">Liên hệ khẩn cấp<input name="emergencyContact" className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500" /></label>
             </div>

@@ -12,6 +12,9 @@ export interface MockMember {
   phone: string;
   email: string;
   classIds: string[];
+  attendanceRate?: number | null;
+  attendedSessions?: number;
+  totalSessions?: number;
 }
 
 export interface MockSession {

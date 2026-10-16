@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { Building2, Dumbbell } from 'lucide-react';
 import { SportsTableCard, FacilitiesTableCard, SportItem, FacilityItem } from './FacilitiesCards';
 import { FacilityFormModal, FacilityDeleteModal } from './FacilitiesModals';
+import { CoachSportAssignmentModal } from './CoachSportAssignmentModal';
 
 export function FacilitiesPage() {
   const [sports, setSports] = useState<SportItem[]>([]);
@@ -23,6 +24,9 @@ export function FacilitiesPage() {
   // Delete modal state
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'sport' | 'facility'; id: string; name: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Coach assignment modal state
+  const [assignmentSport, setAssignmentSport] = useState<SportItem | null>(null);
 
   useEffect(() => {
     Promise.all([fetch('/api/sports'), fetch('/api/facilities')])
@@ -218,6 +222,7 @@ export function FacilitiesPage() {
               onOpenCreate={() => openCreateModal('sport')}
               onOpenEdit={(s) => openEditModal('sport', s)}
               onOpenDelete={(s) => setDeleteTarget({ type: 'sport', id: s.id, name: s.name })}
+              onOpenManageCoaches={(s) => setAssignmentSport(s)}
             />
           ) : (
             <FacilitiesTableCard
@@ -256,6 +261,10 @@ export function FacilitiesPage() {
           onClose={() => setDeleteTarget(null)}
           onConfirm={handleDelete}
         />
+      )}
+
+      {assignmentSport && (
+        <CoachSportAssignmentModal sport={assignmentSport} onClose={() => setAssignmentSport(null)} />
       )}
     </div>
   );

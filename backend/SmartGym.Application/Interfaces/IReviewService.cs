@@ -9,4 +9,5 @@ public interface IReviewService
 {
     Task<ReviewResponse> CreateReviewAsync(Guid memberId, CreateReviewRequest request);
     Task<IEnumerable<ReviewResponse>> GetCoachReviewsAsync(Guid coachId);
+    Task<IEnumerable<ReviewResponse>> GetMemberReviewsAsync(Guid memberId);
 }

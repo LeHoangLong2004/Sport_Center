@@ -1,5 +1,17 @@
-import { STATUS_OPTIONS } from "./constants";
 import type { MockMember, AttendanceRecord } from "../../services/api";
+
+const STATUS_OPTIONS: { value: "attended" | "no_show"; label: string; activeStyle: string }[] = [
+  {
+    value: "attended",
+    label: "Có mặt",
+    activeStyle: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400 border-emerald-400 dark:border-emerald-500/40 font-semibold shadow-xs",
+  },
+  {
+    value: "no_show",
+    label: "Vắng",
+    activeStyle: "bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400 border-rose-400 dark:border-rose-500/40 font-semibold shadow-xs",
+  },
+];
 
 interface Props {
   members: MockMember[];
@@ -29,7 +41,7 @@ export default function AttendanceMemberList({
       <div className="divide-y divide-slate-100 dark:divide-slate-800">
         {members.map((m) => {
           const record = records.find((r) => r.memberId === m.id);
-          const status = record?.status === "no_show" ? "no_show" : "attended";
+          const status = record?.status || "chưa điểm danh";
           const note = record?.note || "";
 
           return (
@@ -37,7 +49,7 @@ export default function AttendanceMemberList({
               key={m.id}
               className="p-4 sm:px-6 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors"
             >
-              <div className="flex items-center gap-3.5 min-w-[220px]">
+              <div className="flex flex-1 items-center gap-3.5 min-w-[220px]">
                 <img
                   src={m.avatar}
                   alt={m.name}

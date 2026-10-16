@@ -135,10 +135,17 @@ export default function CoachMembers({ navigateTo }: Props) {
                   <div>
                     <div className="flex items-center justify-between text-[11px] mb-1">
                       <span className="text-slate-500 dark:text-slate-400">Độ chuyên cần:</span>
-                      <span className="font-bold text-emerald-600 dark:text-emerald-400">92% (11/12 buổi)</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                        {m.attendanceRate == null
+                          ? "Chưa có dữ liệu"
+                          : `${m.attendanceRate}% (${m.attendedSessions ?? 0}/${m.totalSessions ?? 0} buổi)`}
+                      </span>
                     </div>
                     <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: "92%" }}></div>
+                      <div
+                        className="h-full bg-emerald-500 rounded-full"
+                        style={{ width: `${Math.min(Math.max(m.attendanceRate ?? 0, 0), 100)}%` }}
+                      ></div>
                     </div>
                   </div>
 

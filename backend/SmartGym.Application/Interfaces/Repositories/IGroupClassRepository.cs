@@ -29,6 +29,13 @@ public interface IGroupClassRepository
     Task<(bool IsSuccess, string? ErrorMessage)> CancelClassTransactionAsync(Guid classId);
     Task<(bool IsSuccess, string? ErrorMessage)> ApproveBookingAsync(Guid bookingId);
     Task<(bool IsSuccess, string? ErrorMessage)> RejectBookingAsync(Guid bookingId);
+    Task NotifyCoachAsync(
+        Guid coachId,
+        string title,
+        string message,
+        string targetType = "system",
+        Guid? targetId = null
+    );
     Task NotifyAffectedMembersAsync(Guid classId, string title, string message);
 
     // Giai đoạn G: Điểm danh & Xem lịch

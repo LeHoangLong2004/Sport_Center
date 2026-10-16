@@ -1,134 +1,246 @@
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import type { MemberScreen } from "../types";
+import { MemberAPI } from "../services/api";
 import {
-  curriculumSync,
-  type SyncedCurriculum,
-  type SyncedHomeworkTask,
-} from "../services/curriculumSync";
-import {
-  Dumbbell,
   CheckCircle2,
   Circle,
-  Flame,
-  X,
+  Dumbbell,
   Eye,
+  Flame,
   MessageSquare,
+  X,
 } from "lucide-react";
+
+interface HomeworkExercise {
+  id?: string;
+  name: string;
+  reps?: string | null;
+  rest?: string | null;
+  note?: string | null;
+}
+
+interface HomeworkPlan {
+  id: string;
+  planName: string;
+  description?: string | null;
+  goal?: string | null;
+  level?: string | null;
+  durationMinutes?: number | null;
+  exercises: HomeworkExercise[];
+}
+
+interface MemberHomework {
+  id: string;
+  memberId: string;
+  planId: string;
+  assignedBy?: string | null;
+  status: string;
+  progressPct?: number | null;
+  assignedDate: string;
+  dueDate?: string | null;
+  notes?: string | null;
+  plan?: HomeworkPlan | null;
+}
+
+interface HomeworkTask {
+  id: string;
+  homeworkId: string;
+  exerciseIndex: number;
+  title: string;
+  description: string;
+  dueDate?: string | null;
+  assignedDate: string;
+  completed: boolean;
+}
 
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
 }
 
+const formatDate = (value?: string | null) => {
+  if (!value) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("vi-VN");
+};
+
+const getExerciseDescription = (exercise: HomeworkExercise) =>
+  [
+    exercise.reps ? `Số lượng: ${exercise.reps}` : "",
+    exercise.rest ? `Nghỉ: ${exercise.rest}` : "",
+    exercise.note || "",
+  ]
+    .filter(Boolean)
+    .join(". ");
+
 export default function MemberWorkouts({ onNavigate }: Props) {
-  const userStr = localStorage.getItem("user");
-  const user = userStr ? JSON.parse(userStr) : null;
-  const userId = user?.id || "";
-  const userName = user?.fullName || user?.name || "";
+  const [homeworks, setHomeworks] = useState<MemberHomework[]>([]);
+  const [completedTasks, setCompletedTasks] = useState<Record<string, number[]>>({});
+  const [selectedHomework, setSelectedHomework] = useState<MemberHomework | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const [curricula, setCurricula] = useState<SyncedCurriculum[]>(() => curriculumSync.getCurricula());
-  const [tasks, setTasks] = useState<SyncedHomeworkTask[]>(() => curriculumSync.getTasks());
-  const [selectedCurriculum, setSelectedCurriculum] = useState<SyncedCurriculum | null>(null);
+  const loadHomeworks = async () => {
+    setLoading(true);
+    setError(null);
 
-  useEffect(() => {
-    setCurricula(curriculumSync.getCurricula());
-    setTasks(curriculumSync.getTasks());
+    try {
+      const result = await MemberAPI.getMyHomework();
+      const data = (Array.isArray(result) ? result : []) as MemberHomework[];
+      setHomeworks(data);
 
-    const unsub = curriculumSync.subscribe(() => {
-      setCurricula(curriculumSync.getCurricula());
-      setTasks(curriculumSync.getTasks());
-    });
-
-    return () => unsub();
-  }, []);
-
-  const handleToggleTask = (taskId: string) => {
-    const res = curriculumSync.toggleTaskCompletion(taskId);
-    setTasks([...res.tasks]);
-    setCurricula(curriculumSync.getCurricula());
+      const completedByHomework: Record<string, number[]> = {};
+      data.forEach((homework) => {
+        const total = homework.plan?.exercises?.length || 0;
+        const completedCount = Math.min(
+          total,
+          Math.round(((homework.progressPct || 0) / 100) * total),
+        );
+        completedByHomework[homework.id] = Array.from(
+          { length: completedCount },
+          (_, index) => index,
+        );
+      });
+      setCompletedTasks(completedByHomework);
+    } catch (loadError) {
+      console.error("Failed to load assigned workouts", loadError);
+      setHomeworks([]);
+      setError("Không thể tải giáo án được giao. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Filter curricula assigned to this logged-in member
-  const assignedCurriculums = useMemo(() => {
-    if (!userId && !userName) return [];
-    return curricula.filter((c) =>
-      c.assignedTo.some(
-        (a) =>
-          a.id === userId ||
-          (userName && a.name?.toLowerCase().includes(userName.toLowerCase()))
-      )
-    );
-  }, [curricula, userId, userName]);
+  useEffect(() => {
+    void loadHomeworks();
+  }, []);
 
-  // Filter tasks assigned to this logged-in member
-  const assignedTasks = useMemo(() => {
-    if (!userId && !userName) return [];
-    return tasks.filter(
-      (t) => t.memberId === userId || t.memberId === "all" || !t.memberId
-    );
-  }, [tasks, userId, userName]);
+  const assignedTasks = useMemo<HomeworkTask[]>(
+    () =>
+      homeworks.flatMap((homework) => {
+        const exercises = homework.plan?.exercises || [];
+        const completedIndexes = completedTasks[homework.id] || [];
+
+        return exercises.map((exercise, exerciseIndex) => ({
+          id: `${homework.id}-${exerciseIndex}`,
+          homeworkId: homework.id,
+          exerciseIndex,
+          title: exercise.name || `Bài tập #${exerciseIndex + 1}`,
+          description: getExerciseDescription(exercise),
+          dueDate: homework.dueDate,
+          assignedDate: homework.assignedDate,
+          completed: completedIndexes.includes(exerciseIndex),
+        }));
+      }),
+    [completedTasks, homeworks],
+  );
+
+  const getProgress = (homework: MemberHomework) => {
+    const total = homework.plan?.exercises?.length || 0;
+    if (total === 0) return Math.round(homework.progressPct || 0);
+    return Math.round(((completedTasks[homework.id]?.length || 0) / total) * 100);
+  };
+
+  const handleToggleTask = async (task: HomeworkTask) => {
+    const homework = homeworks.find((item) => item.id === task.homeworkId);
+    if (!homework || updatingTaskId) return;
+
+    const currentIndexes = completedTasks[homework.id] || [];
+    const nextIndexes = task.completed
+      ? currentIndexes.filter((index) => index !== task.exerciseIndex)
+      : [...currentIndexes, task.exerciseIndex].sort((a, b) => a - b);
+    const total = homework.plan?.exercises?.length || 1;
+    const progressPct = Math.round((nextIndexes.length / total) * 100);
+    const status = progressPct === 100 ? "completed" : progressPct > 0 ? "in_progress" : "assigned";
+
+    setUpdatingTaskId(task.id);
+    setError(null);
+    try {
+      await MemberAPI.updateHomeworkProgress(homework.id, { status, progressPct });
+      setCompletedTasks((current) => ({ ...current, [homework.id]: nextIndexes }));
+      setHomeworks((current) =>
+        current.map((item) =>
+          item.id === homework.id ? { ...item, status, progressPct } : item,
+        ),
+      );
+    } catch (updateError) {
+      console.error("Failed to update workout progress", updateError);
+      setError("Không thể cập nhật tiến độ bài tập. Vui lòng thử lại.");
+    } finally {
+      setUpdatingTaskId(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
         <h2 className="text-base font-bold text-slate-900 dark:text-white">Giáo án & Bài tập</h2>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Kế hoạch rèn luyện chuyên sâu do Huấn luyện viên chỉ định và nhiệm vụ rèn luyện tại nhà
+          Giáo án được giao riêng bởi huấn luyện viên của bạn
         </p>
       </div>
 
-      {/* 1. ASSIGNED CURRICULUMS */}
+      {error && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700">
+          <span>{error}</span>
+          <button type="button" onClick={() => void loadHomeworks()} className="font-semibold underline">
+            Thử lại
+          </button>
+        </div>
+      )}
+
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Dumbbell className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-            Giáo án được giao riêng cho bạn ({assignedCurriculums.length})
+            Giáo án được giao riêng cho bạn ({homeworks.length})
           </h3>
         </div>
 
-        {assignedCurriculums.length === 0 ? (
+        {loading ? (
+          <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 text-center text-xs text-slate-400">
+            Đang tải giáo án...
+          </div>
+        ) : homeworks.length === 0 ? (
           <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center">
             <Dumbbell className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
             <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
-              Chưa có giáo án nào được chỉ định
+              Chưa có giáo án nào được giao
             </h4>
             <p className="text-[11px] text-slate-400 mt-1 max-w-sm mx-auto">
-              Khi bạn tham gia các buổi tập 1-1 hoặc lớp nhóm, Huấn luyện viên sẽ thiết kế và bàn giao lộ trình rèn luyện cá nhân hóa tại đây.
+              Giáo án sẽ xuất hiện tại đây sau khi huấn luyện viên giao cho bạn.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {assignedCurriculums.map((curr) => {
-              const memberAssignee = curr.assignedTo.find(
-                (a) => a.id === userId || (userName && a.name?.toLowerCase().includes(userName.toLowerCase()))
-              );
-              const progress = memberAssignee ? memberAssignee.progressPercent : 0;
+            {homeworks.map((homework) => {
+              const plan = homework.plan;
+              const progress = getProgress(homework);
+              const exerciseCount = plan?.exercises?.length || 0;
 
               return (
                 <div
-                  key={curr.id}
+                  key={homework.id}
                   className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs hover:border-emerald-500/40 transition-all flex flex-col justify-between"
                 >
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                        {curr.sport} • {curr.level}
+                        {plan?.level || "Giáo án cá nhân"}
                       </span>
                       <span className="text-[11px] text-slate-500 font-medium">
-                        {curr.durationWeeks || Math.round(curr.duration / 15) || 4} tuần lộ trình
+                        {plan?.durationMinutes ? `${plan.durationMinutes} phút` : "Theo giáo án"}
                       </span>
                     </div>
 
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                      {curr.name || curr.title}
+                      {plan?.planName || "Giáo án tập luyện"}
                     </h4>
-
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
-                      {curr.goal || curr.description}
+                      {plan?.goal || plan?.description || "Giáo án do huấn luyện viên giao riêng."}
                     </p>
 
-                    {/* Progress bar */}
                     <div className="mt-3 bg-slate-50 dark:bg-slate-800/80 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
                       <div className="flex items-center justify-between text-[11px] mb-1 font-semibold">
                         <span className="text-slate-600 dark:text-slate-400">Tiến độ bài tập:</span>
@@ -138,24 +250,22 @@ export default function MemberWorkouts({ onNavigate }: Props) {
                       </div>
                       <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                         <div
-                          className={`h-full rounded-full transition-all duration-300 ${
-                            progress === 100 ? "bg-emerald-500" : "bg-amber-500"
-                          }`}
+                          className={`h-full rounded-full transition-all duration-300 ${progress === 100 ? "bg-emerald-500" : "bg-amber-500"}`}
                           style={{ width: `${progress}%` }}
                         />
                       </div>
                     </div>
 
                     <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300">
-                      <span>HLV phụ trách: <strong>{curr.coachName || "Huấn luyện viên"}</strong></span>
-                      <span className="text-emerald-600 font-semibold">{curr.exercises?.length || 0} bài tập</span>
+                      <span>HLV phụ trách: <strong>Huấn luyện viên</strong></span>
+                      <span className="text-emerald-600 font-semibold">{exerciseCount} bài tập</span>
                     </div>
                   </div>
 
                   <div className="flex gap-2 mt-4">
                     <button
                       type="button"
-                      onClick={() => setSelectedCurriculum(curr)}
+                      onClick={() => setSelectedHomework(homework)}
                       className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <Eye className="w-3.5 h-3.5 text-slate-400" />
@@ -178,7 +288,6 @@ export default function MemberWorkouts({ onNavigate }: Props) {
         )}
       </div>
 
-      {/* 2. HOMEWORK TASKS */}
       <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -189,61 +298,40 @@ export default function MemberWorkouts({ onNavigate }: Props) {
           </div>
           {assignedTasks.length > 0 && (
             <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
-              Đã hoàn thành {assignedTasks.filter((t) => t.completed).length}/{assignedTasks.length}
+              Đã hoàn thành {assignedTasks.filter((task) => task.completed).length}/{assignedTasks.length}
             </span>
           )}
         </div>
 
-        {assignedTasks.length === 0 ? (
+        {loading ? (
+          <div className="p-6 text-center text-xs text-slate-400">Đang tải bài tập...</div>
+        ) : assignedTasks.length === 0 ? (
           <div className="p-6 text-center text-xs text-slate-400">
-            Chưa có bài tập rèn luyện tại nhà nào hôm nay. Hãy duy trì thói quen nghỉ ngơi và sinh hoạt lành mạnh!
+            Chưa có bài tập rèn luyện nào được giao.
           </div>
         ) : (
           <div className="space-y-3">
             {assignedTasks.map((task) => (
               <div
                 key={task.id}
-                onClick={() => handleToggleTask(task.id)}
-                className={`p-4 rounded-xl border transition-all cursor-pointer flex items-start gap-3.5 select-none ${
-                  task.completed
-                    ? "bg-slate-50/60 dark:bg-slate-850 border-slate-200 dark:border-slate-800 opacity-70"
-                    : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-emerald-500/50 shadow-xs"
-                }`}
+                onClick={() => void handleToggleTask(task)}
+                className={`p-4 rounded-xl border transition-all cursor-pointer flex items-start gap-3.5 select-none ${task.completed ? "bg-slate-50/60 dark:bg-slate-850 border-slate-200 dark:border-slate-800 opacity-70" : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-emerald-500/50 shadow-xs"}`}
               >
-                <button
-                  type="button"
-                  className="mt-0.5 text-slate-400 hover:text-emerald-500 transition-colors"
-                >
-                  {task.completed ? (
-                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                  ) : (
-                    <Circle className="w-5 h-5 text-slate-400" />
-                  )}
+                <button type="button" className="mt-0.5 text-slate-400 hover:text-emerald-500 transition-colors">
+                  {task.completed ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <Circle className="w-5 h-5 text-slate-400" />}
                 </button>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                    <h4
-                      className={`text-xs font-bold ${
-                        task.completed
-                          ? "line-through text-slate-400 dark:text-slate-500"
-                          : "text-slate-900 dark:text-white"
-                      }`}
-                    >
+                    <h4 className={`text-xs font-bold ${task.completed ? "line-through text-slate-400 dark:text-slate-500" : "text-slate-900 dark:text-white"}`}>
                       {task.title}
                     </h4>
-                    {task.dueDate && (
-                      <span className="text-[10px] text-slate-400 font-medium">
-                        Hạn: {task.dueDate}
-                      </span>
-                    )}
+                    {task.dueDate && <span className="text-[10px] text-slate-400 font-medium">Hạn: {formatDate(task.dueDate)}</span>}
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    {task.description}
-                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{task.description || "Thực hiện theo hướng dẫn của huấn luyện viên."}</p>
                   <div className="flex items-center gap-3 mt-2 text-[10px] text-slate-400">
-                    <span>Giao bởi: <strong className="text-emerald-600 dark:text-emerald-400">{task.assignedBy}</strong></span>
-                    <span>Ngày giao: {task.assignedDate}</span>
+                    <span>Giao bởi: <strong className="text-emerald-600 dark:text-emerald-400">HLV phụ trách</strong></span>
+                    <span>Ngày giao: {formatDate(task.assignedDate)}</span>
                   </div>
                 </div>
               </div>
@@ -252,24 +340,16 @@ export default function MemberWorkouts({ onNavigate }: Props) {
         )}
       </div>
 
-      {/* DETAIL MODAL (PORTAL) */}
-      {selectedCurriculum &&
+      {selectedHomework?.plan &&
         createPortal(
           <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-xl max-h-[85vh] shadow-xl overflow-hidden flex flex-col">
               <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
-                    {selectedCurriculum.sport} • {selectedCurriculum.level}
-                  </span>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    {selectedCurriculum.name || selectedCurriculum.title}
-                  </h3>
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Giáo án được giao</span>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">{selectedHomework.plan.planName}</h3>
                 </div>
-                <button
-                  onClick={() => setSelectedCurriculum(null)}
-                  className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
-                >
+                <button onClick={() => setSelectedHomework(null)} className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer" aria-label="Đóng">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -277,35 +357,18 @@ export default function MemberWorkouts({ onNavigate }: Props) {
               <div className="p-5 overflow-y-auto space-y-4 text-xs">
                 <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
                   <span className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">Mục tiêu huấn luyện:</span>
-                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                    {selectedCurriculum.goal || selectedCurriculum.description}
-                  </p>
+                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{selectedHomework.plan.goal || selectedHomework.plan.description || "Thực hiện theo hướng dẫn của huấn luyện viên."}</p>
+                  {selectedHomework.notes && <p className="mt-2 text-amber-600 dark:text-amber-400">Ghi chú: {selectedHomework.notes}</p>}
                 </div>
 
                 <div className="space-y-2">
-                  <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px]">
-                    Danh sách bài tập ({selectedCurriculum.exercises?.length || 0})
-                  </h4>
-
+                  <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px]">Danh sách bài tập ({selectedHomework.plan.exercises.length})</h4>
                   <div className="space-y-2">
-                    {selectedCurriculum.exercises?.map((ex, i) => (
-                      <div
-                        key={i}
-                        className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-850 flex items-center justify-between"
-                      >
-                        <div className="space-y-0.5">
-                          <p className="font-bold text-slate-900 dark:text-white">
-                            {i + 1}. {ex.name}
-                          </p>
-                          <p className="text-[11px] text-slate-500">
-                            {ex.sets ? `${ex.sets} hiệp x ` : ""}{ex.reps} • Nghỉ {ex.rest}
-                          </p>
-                          {ex.note && (
-                            <p className="text-[10px] text-amber-600 dark:text-amber-400 italic">
-                              💡 Lưu ý: {ex.note}
-                            </p>
-                          )}
-                        </div>
+                    {selectedHomework.plan.exercises.map((exercise, index) => (
+                      <div key={exercise.id || index} className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-850">
+                        <p className="font-bold text-slate-900 dark:text-white">{index + 1}. {exercise.name}</p>
+                        <p className="text-[11px] text-slate-500 mt-1">{exercise.reps || "Theo hướng dẫn"}{exercise.rest ? ` • Nghỉ ${exercise.rest}` : ""}</p>
+                        {exercise.note && <p className="text-[10px] text-amber-600 dark:text-amber-400 italic mt-1">Lưu ý: {exercise.note}</p>}
                       </div>
                     ))}
                   </div>
@@ -313,18 +376,14 @@ export default function MemberWorkouts({ onNavigate }: Props) {
               </div>
 
               <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex justify-end bg-slate-50/50 dark:bg-slate-850">
-                <button
-                  type="button"
-                  onClick={() => setSelectedCurriculum(null)}
-                  className="px-4 py-2 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-semibold text-xs cursor-pointer"
-                >
-                  Đóng giáo án
-                </button>
+                <button type="button" onClick={() => setSelectedHomework(null)} className="px-4 py-2 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-semibold text-xs cursor-pointer">Đóng giáo án</button>
               </div>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
+
+      {updatingTaskId && <span className="sr-only">Đang cập nhật tiến độ</span>}
     </div>
   );
 }

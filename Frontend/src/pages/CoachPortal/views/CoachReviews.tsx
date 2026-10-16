@@ -1,11 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
-import { Star, MessageSquare, Filter, Calendar, ShieldCheck, User } from "lucide-react";
+import { Star, MessageSquare, Calendar, ShieldCheck, User } from "lucide-react";
 import { useUserProfile } from "../../../hooks/useUserProfile";
 import {
   fetchCoachReviews,
-  subscribeToReviews,
-  INITIAL_COACH_REVIEWS,
-  type SyncedCoachReview,
 } from "../../MemberPortal/services/reviewSync";
 
 interface ReviewItem {
@@ -21,39 +18,46 @@ interface ReviewItem {
 
 export default function CoachReviews() {
   const { profile } = useUserProfile();
-  const [reviews, setReviews] = useState<ReviewItem[]>(INITIAL_COACH_REVIEWS);
-  const [loading, setLoading] = useState(false);
+  const [reviews, setReviews] = useState<ReviewItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedStar, setSelectedStar] = useState<number | null>(null);
 
   useEffect(() => {
+    if (!profile?.id) {
+      setReviews([]);
+      setLoading(false);
+      return;
+    }
+
+    let active = true;
+
     async function loadReviews() {
-      const coachId = profile?.id || "25F50FBA";
+      setLoading(true);
       try {
-        const list = await fetchCoachReviews(coachId);
-        setReviews(list);
+        const list = await fetchCoachReviews(profile.id);
+        if (active) setReviews(list);
       } catch (err) {
         console.error("Lỗi tải đánh giá:", err);
+        if (active) setReviews([]);
+      } finally {
+        if (active) setLoading(false);
       }
     }
 
-    loadReviews();
-
-    const unsub = subscribeToReviews((updated) => {
-      setReviews(updated);
-    });
+    void loadReviews();
 
     const interval = setInterval(() => {
-      loadReviews();
-    }, 2500);
+      void loadReviews();
+    }, 10000);
 
     return () => {
-      unsub();
+      active = false;
       clearInterval(interval);
     };
   }, [profile?.id]);
 
   const stats = useMemo(() => {
-    if (reviews.length === 0) return { avg: 5.0, count: 0, breakdown: [0, 0, 0, 0, 0] };
+    if (reviews.length === 0) return { avg: 0.0, count: 0, breakdown: [0, 0, 0, 0, 0] };
     const total = reviews.reduce((acc, r) => acc + r.rating, 0);
     const avg = Number((total / reviews.length).toFixed(1));
     const breakdown = [5, 4, 3, 2, 1].map(
@@ -156,7 +160,11 @@ export default function CoachReviews() {
 
       {/* Reviews List */}
       <div className="space-y-3.5">
-        {filteredReviews.length === 0 ? (
+        {loading ? (
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-12 text-center text-sm text-slate-400">
+            Đang tải đánh giá từ cơ sở dữ liệu...
+          </div>
+        ) : filteredReviews.length === 0 ? (
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-12 text-center">
             <MessageSquare className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
             <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200">

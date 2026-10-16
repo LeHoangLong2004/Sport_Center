@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using SmartGym.Application.Common;
 using SmartGym.Application.DTOs.Classes;
 using SmartGym.Application.Interfaces.Repositories;
 using SmartGym.Domain.Entities;
@@ -223,7 +224,10 @@ public sealed partial class SupabaseGroupClassRepository
                     ClassName = c.ClassName,
                     SportName = sport?.Name ?? "N/A",
                     FacilityName = facility?.Name ?? "N/A",
-                    ScheduleTime = c.ScheduleTime,
+                    // Classes are stored as UTC. Return the center's local time
+                    // so legacy coach schedule consumers render the same slot
+                    // as the manager calendar.
+                    ScheduleTime = CenterTime.ToLocal(c.ScheduleTime),
                     DurationMinutes = c.DurationMinutes,
                     Capacity = c.Capacity,
                     CurrentEnrolled = c.CurrentEnrolled,

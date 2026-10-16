@@ -42,18 +42,10 @@ export default function CoachClassDetail({ sessionId, navigateTo }: Props) {
       CoachAPI.getSessionMembers(sessionId),
       CoachAPI.getAttendance(sessionId),
       CoachAPI.getCurricula(),
-      CoachAPI.getMembers(),
     ])
-      .then(([s, sessionMems, att, cur, allMems]) => {
+      .then(([s, sessionMems, att, cur]) => {
         setSession(s);
-
-        if (sessionMems && sessionMems.length >= 4) {
-          setMembers(sessionMems);
-        } else if (allMems && allMems.length > 0) {
-          setMembers(allMems.slice(0, 8));
-        } else {
-          setMembers(sessionMems || []);
-        }
+        setMembers(Array.isArray(sessionMems) ? sessionMems : []);
 
         setAttendanceRecords(att || []);
 

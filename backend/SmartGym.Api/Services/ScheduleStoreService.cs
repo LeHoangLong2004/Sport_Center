@@ -259,7 +259,12 @@ namespace SmartGym.Api.Services
         {
             lock (_lock)
             {
-                return _sessions.ToList();
+                if (string.IsNullOrWhiteSpace(coachId))
+                    return new List<ScheduleSessionRecord>();
+
+                return _sessions
+                    .Where(s => string.Equals(s.CoachId, coachId, System.StringComparison.OrdinalIgnoreCase))
+                    .ToList();
             }
         }
 

@@ -14,6 +14,32 @@ namespace SmartGym.Infrastructure.Persistence.Supabase.Repositories;
 
 public sealed partial class SupabaseGroupClassRepository
 {
+    public async Task NotifyCoachAsync(
+        Guid coachId,
+        string title,
+        string message,
+        string targetType = "system",
+        Guid? targetId = null
+    )
+    {
+        try
+        {
+            await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+                $@"
+                INSERT INTO notifications (user_id, title, message, type, target_type, target_id)
+                SELECT user_id, {title}, {message}, 'coach_event', {targetType}, {targetId}
+                FROM coaches
+                WHERE (id = {coachId} OR user_id = {coachId})
+                AND user_id IS NOT NULL"
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Coach Notification Error] {ex.Message}");
+            // Notification failure must not roll back the successful business action.
+        }
+    }
+
     public async Task NotifyAffectedMembersAsync(Guid classId, string title, string message)
     {
         try

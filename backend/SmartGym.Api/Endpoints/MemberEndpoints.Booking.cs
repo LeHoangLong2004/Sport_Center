@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using SmartGym.Api.Services;
+using SmartGym.Application.Interfaces.Repositories;
 
 namespace SmartGym.Api.Endpoints
 {
@@ -63,7 +64,7 @@ namespace SmartGym.Api.Endpoints
             .WithTags("Member Portal")
             .WithSummary("Get available PT slots for booking");
 
-            group.MapPost("/bookings", (HttpContext context, ScheduleStoreService scheduleStore, [FromBody] JsonElement body) =>
+            group.MapPost("/bookings", async (HttpContext context, ScheduleStoreService scheduleStore, IGroupClassRepository classRepository, [FromBody] JsonElement body) =>
             {
                 var userId = GetUserId(context) ?? "m-demo";
                 var bookings = _memberBookings.GetOrAdd(userId, _ => GetDefaultBookings());
@@ -91,6 +92,16 @@ namespace SmartGym.Api.Endpoints
 
                 var bookedSession = scheduleStore.BookPtSlot(req);
 
+                if (Guid.TryParse(bookedSession.CoachId, out var coachId))
+                {
+                    await classRepository.NotifyCoachAsync(
+                        coachId,
+                        "Có lịch PT 1-1 mới",
+                        $"{req.MemberName ?? "Hội viên"} vừa đặt lịch PT 1-1 vào {bookedSession.Date} {bookedSession.StartTime} - {bookedSession.EndTime}.",
+                        "pt"
+                    );
+                }
+
                 var newBooking = new
                 {
                     id = bookedSession.Id,
@@ -117,13 +128,25 @@ namespace SmartGym.Api.Endpoints
             .WithSummary("Create new booking for group class or 1-on-1 PT slot");
 
             // 3. DELETE /api/member/bookings/{id} - Cancel Booking with Reason
-            group.MapDelete("/bookings/{id}", (string id, [FromQuery] string? reason, HttpContext context, ScheduleStoreService scheduleStore) =>
+            group.MapDelete("/bookings/{id}", async (string id, [FromQuery] string? reason, HttpContext context, ScheduleStoreService scheduleStore, IGroupClassRepository classRepository) =>
             {
                 var userId = GetUserId(context) ?? "m-demo";
                 var bookings = _memberBookings.GetOrAdd(userId, _ => GetDefaultBookings());
                 var cancelledList = _memberCancelledBookings.GetOrAdd(userId, _ => new List<object>());
 
+                var cancelledSession = scheduleStore.GetAllSessions().FirstOrDefault(s => s.Id == id);
+
                 scheduleStore.CancelBooking(id, reason ?? "Học viên tự hủy");
+
+                if (cancelledSession != null && Guid.TryParse(cancelledSession.CoachId, out var coachId))
+                {
+                    await classRepository.NotifyCoachAsync(
+                        coachId,
+                        "Lịch PT 1-1 đã bị hủy",
+                        $"{cancelledSession.MemberName ?? "Hội viên"} đã hủy lịch PT 1-1 vào {cancelledSession.Date} {cancelledSession.StartTime}.",
+                        "pt"
+                    );
+                }
 
                 var found = bookings.FirstOrDefault(b => ((dynamic)b).id == id);
                 if (found != null)

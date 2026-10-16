@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import type { MemberScreen, MemberCoachReviewItem } from "../types";
-import { getSavedMemberData, saveMemberData } from "../services/memberData";
-import { submitCoachReview } from "../services/reviewSync";
+import { fetchMyReviews, submitCoachReview } from "../services/reviewSync";
 import { scheduleSync } from "../services/scheduleSync";
 import {
   Star,
@@ -22,11 +21,35 @@ export default function MemberReviews({ onNavigate }: Props) {
   const user = userStr ? JSON.parse(userStr) : null;
   const userId = user?.id || "";
   const memberName = user?.fullName || user?.name || "Hội viên";
-  const storageKey = userId ? `member_coach_reviews_${userId}` : "member_coach_reviews";
+  const [reviews, setReviews] = useState<MemberCoachReviewItem[]>([]);
 
-  const [reviews, setReviews] = useState<MemberCoachReviewItem[]>(() =>
-    getSavedMemberData(storageKey, [])
-  );
+  useEffect(() => {
+    if (!userId) return;
+
+    let active = true;
+    void fetchMyReviews()
+      .then((items) => {
+        if (!active) return;
+        setReviews(
+          items.map((item) => ({
+            id: item.id,
+            sessionId: item.sessionId || "",
+            sessionName: item.sessionName || "Buổi tập",
+            coachId: item.coachId,
+            coachName: item.coachName || "Huấn luyện viên",
+            date: item.createdAt.split("T")[0],
+            rating: item.rating,
+            tags: item.tags,
+            comment: item.comment,
+          }))
+        );
+      })
+      .catch((error) => console.error("Không thể tải lịch sử đánh giá:", error));
+
+    return () => {
+      active = false;
+    };
+  }, [userId]);
 
   const [activeReviewSession, setActiveReviewSession] = useState<any | null>(null);
   const [rating, setRating] = useState(5);
@@ -106,7 +129,7 @@ export default function MemberReviews({ onNavigate }: Props) {
         sessionId: activeReviewSession.sessionId,
         sessionName: activeReviewSession.sessionName,
         coachId: reviewRes.coachId,
-        coachName: reviewRes.coachName,
+        coachName: reviewRes.coachName || activeReviewSession.coachName || "Coach",
         date: new Date().toISOString().split("T")[0],
         rating,
         tags: selectedTags,
@@ -115,7 +138,6 @@ export default function MemberReviews({ onNavigate }: Props) {
 
       const updated = [newReview, ...reviews];
       setReviews(updated);
-      saveMemberData(storageKey, updated);
 
       setActiveReviewSession(null);
       setComment("");

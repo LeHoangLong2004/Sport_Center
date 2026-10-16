@@ -7,10 +7,9 @@ import { CurriculumHeader } from "./curriculum/CurriculumHeader";
 import { CurriculumGrid } from "./curriculum/CurriculumGrid";
 import { CurriculumEditorModal } from "./curriculum/CurriculumEditorModal";
 import { CurriculumAssignModal } from "./curriculum/CurriculumAssignModal";
-import { curriculumSync, type SyncedCurriculum } from "../../MemberPortal/services/curriculumSync";
 
 export default function CoachCurriculum() {
-  const [curricula, setCurricula] = useState<any[]>(() => curriculumSync.getCurricula());
+  const [curricula, setCurricula] = useState<MockCurriculum[]>([]);
   const [sessions, setSessions] = useState<MockSession[]>([]);
   const [members, setMembers] = useState<MockMember[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -22,42 +21,50 @@ export default function CoachCurriculum() {
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; msg: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Search & filter
   const [searchQuery, setSearchQuery] = useState("");
   const [sportFilter, setSportFilter] = useState("all");
 
   useEffect(() => {
-    // 1. Initial load from curriculumSync
-    const syncData = curriculumSync.getCurricula();
-    setCurricula(syncData);
+    let cancelled = false;
+    setLoading(true);
 
-    // 2. Fetch coach schedule & members
-    Promise.all([
-      CoachAPI.getSchedule(),
-      CoachAPI.getMembers(),
-    ])
-      .then(([sch, mem]) => {
-        setSessions(sch);
-        setMembers(mem);
+    // The API scopes curricula by the coach id in the authenticated token.
+    Promise.all([CoachAPI.getCurricula(), CoachAPI.getSchedule(), CoachAPI.getMembers()])
+      .then(([cur, sch, mem]) => {
+        if (cancelled) return;
+        setCurricula(Array.isArray(cur) ? cur : []);
+        setSessions(Array.isArray(sch) ? sch : []);
+        setMembers(Array.isArray(mem) ? mem : []);
       })
-      .catch(console.error);
+      .catch((error) => {
+        console.error("Failed to load coach curricula", error);
+        if (!cancelled) {
+          setCurricula([]);
+          setFeedback({ type: "error", msg: "Không thể tải danh sách giáo án từ hệ thống." });
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
-    // 3. Subscribe to real-time updates from member task checkoffs
-    const unsub = curriculumSync.subscribe(() => {
-      setCurricula(curriculumSync.getCurricula());
-    });
-
-    return () => unsub();
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  const reloadCurricula = async () => {
+    const data = await CoachAPI.getCurricula();
+    setCurricula(Array.isArray(data) ? data : []);
+  };
 
   const openNew = () => {
     setDraft(makeDraft());
     setEditingId("new");
   };
 
-  const openEdit = (c: MockCurriculum) => {
-    setDraft({ ...c, exercises: c.exercises.map((e) => ({ ...e })) });
-    setEditingId(c.id);
+  const openEdit = (curriculum: MockCurriculum) => {
+    setDraft({ ...curriculum, exercises: curriculum.exercises.map((exercise) => ({ ...exercise })) });
+    setEditingId(curriculum.id);
   };
 
   const closeEdit = () => {
@@ -71,77 +78,77 @@ export default function CoachCurriculum() {
       setFeedback({ type: "error", msg: "Tên giáo án không được để trống." });
       return;
     }
+
     setIsSaving(true);
     setFeedback(null);
     try {
-      await CoachAPI.saveCurriculum({
-        ...draft,
-        updatedAt: new Date().toISOString().split("T")[0],
-      });
-    } catch {}
+      if (editingId && editingId !== "new") {
+        await CoachAPI.updateCurriculum(editingId, draft);
+      } else {
+        await CoachAPI.saveCurriculum(draft);
+      }
 
-    const updated = {
-      ...draft,
-      status: "Nháp" as const,
-      updatedAt: new Date().toISOString().split("T")[0],
-      coachId: "25f50fba-506a-4edf-9db7-43f77f6741a4",
-      coachName: "HLV Hồ Xuân Ánh Nam",
-      assignedTo: draft.assignedTo || [],
-    };
-    curriculumSync.saveCurricula([updated, ...curricula.filter((c) => c.id !== updated.id)]);
-    setCurricula(curriculumSync.getCurricula());
-    setFeedback({ type: "success", msg: "Đã lưu giáo án thành công!" });
-    closeEdit();
-    setIsSaving(false);
-    setTimeout(() => setFeedback(null), 3500);
+      await reloadCurricula();
+      setFeedback({ type: "success", msg: "Đã lưu giáo án thành công!" });
+      closeEdit();
+      setTimeout(() => setFeedback(null), 3500);
+    } catch (error) {
+      console.error("Failed to save coach curriculum", error);
+      setFeedback({ type: "error", msg: "Không thể lưu giáo án. Vui lòng thử lại." });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleAssign = async (type: "class" | "member", id: string, name: string) => {
     if (!assignTarget) return;
+
     try {
-      await CoachAPI.assignCurriculum(assignTarget.curricId, { type, id, name });
-    } catch {
-      // optimistic
+      await CoachAPI.assignCurriculum(assignTarget.curricId, {
+        type,
+        id,
+        name,
+        deadline: assignDeadline,
+        note: assignNote,
+      });
+      await reloadCurricula();
+      setAssignTarget(null);
+      setFeedback({ type: "success", msg: `Đã giao giáo án "${assignTarget.curricName}" cho ${name} thành công!` });
+      setTimeout(() => setFeedback(null), 3500);
+    } catch (error) {
+      console.error("Failed to assign coach curriculum", error);
+      setFeedback({ type: "error", msg: "Không thể giao giáo án. Vui lòng thử lại." });
     }
-    curriculumSync.assignCurriculumToMember(
-      assignTarget.curricId,
-      { type, id, name },
-      { deadline: assignDeadline, note: assignNote }
-    );
-    setCurricula(curriculumSync.getCurricula());
-    setAssignTarget(null);
-    setFeedback({ type: "success", msg: `Đã giao giáo án "${assignTarget.curricName}" cho ${name} thành công!` });
-    setTimeout(() => setFeedback(null), 3500);
   };
 
   const uniqueClasses = useMemo(() => {
     const map = new Map<string, { id: string; name: string }>();
-    sessions.forEach((s) => {
-      if (!map.has(s.classId)) {
-        map.set(s.classId, { id: s.classId, name: s.className.split("–")[0].trim() });
+    sessions.forEach((session) => {
+      if (!map.has(session.classId)) {
+        map.set(session.classId, { id: session.classId, name: session.className.split("–")[0].trim() });
       }
     });
     return Array.from(map.values());
   }, [sessions]);
 
   const filteredCurricula = useMemo(() => {
-    return curricula.filter((c) => {
+    const query = searchQuery.toLowerCase();
+    return curricula.filter((curriculum) => {
       const matchSearch =
-        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.goal?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.description?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchSport = sportFilter === "all" || c.sport === sportFilter;
+        curriculum.name.toLowerCase().includes(query) ||
+        curriculum.goal?.toLowerCase().includes(query) ||
+        curriculum.description?.toLowerCase().includes(query);
+      const matchSport = sportFilter === "all" || curriculum.sport === sportFilter;
       return matchSearch && matchSport;
     });
   }, [curricula, searchQuery, sportFilter]);
 
   const sportsList = useMemo(() => {
-    return ["all", ...Array.from(new Set(curricula.map((c) => c.sport)))];
+    return ["all", ...Array.from(new Set(curricula.map((curriculum) => curriculum.sport)))];
   }, [curricula]);
 
   return (
     <div className="flex flex-col gap-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-300">
-      {/* Header, Metrics & Filters */}
       <CurriculumHeader
         curricula={curricula}
         searchQuery={searchQuery}
@@ -152,7 +159,6 @@ export default function CoachCurriculum() {
         onOpenNew={openNew}
       />
 
-      {/* Feedback banner */}
       {feedback && (
         <div
           className={`p-4 rounded-xl text-sm flex items-center gap-3 border ${
@@ -166,15 +172,13 @@ export default function CoachCurriculum() {
         </div>
       )}
 
-      {/* Curricula Cards Grid */}
       <CurriculumGrid
         loading={loading}
         curricula={filteredCurricula}
         onEdit={openEdit}
-        onAssign={(c) => setAssignTarget({ curricId: c.id, curricName: c.name })}
+        onAssign={(curriculum) => setAssignTarget({ curricId: curriculum.id, curricName: curriculum.name })}
       />
 
-      {/* Edit / Create Modal */}
       <CurriculumEditorModal
         editingId={editingId}
         draft={draft}
@@ -184,7 +188,6 @@ export default function CoachCurriculum() {
         onSave={handleSave}
       />
 
-      {/* Assign Modal */}
       <CurriculumAssignModal
         assignTarget={assignTarget}
         assignDeadline={assignDeadline}

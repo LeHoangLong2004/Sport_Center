@@ -9,4 +9,5 @@ public interface IReviewRepository
 {
     Task<Review> CreateAsync(Review review);
     Task<IEnumerable<Review>> GetByCoachIdAsync(Guid coachId);
+    Task<IEnumerable<Review>> GetByMemberIdAsync(Guid memberId);
 }

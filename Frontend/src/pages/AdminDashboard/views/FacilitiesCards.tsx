@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Pencil, Trash2, Dumbbell, Building2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Dumbbell, Building2, UsersRound } from 'lucide-react';
 
 export interface SportItem {
   id: string;
@@ -21,6 +21,7 @@ interface SportsTableCardProps {
   onOpenCreate: () => void;
   onOpenEdit: (item: SportItem) => void;
   onOpenDelete: (item: SportItem) => void;
+  onOpenManageCoaches: (item: SportItem) => void;
 }
 
 export function SportsTableCard({
@@ -29,6 +30,7 @@ export function SportsTableCard({
   onOpenCreate,
   onOpenEdit,
   onOpenDelete,
+  onOpenManageCoaches,
 }: SportsTableCardProps) {
   return (
     <div className="flex flex-col gap-3">
@@ -53,7 +55,7 @@ export function SportsTableCard({
         <div className="bg-slate-50 flex items-center px-4 py-2.5 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
           <div className="w-12">Ảnh</div>
           <div className="flex-1">Tên bộ môn</div>
-          <div className="w-24 text-right">Thao tác</div>
+          <div className="w-36 text-right">Thao tác</div>
         </div>
         {loading ? (
           <div className="p-8 text-center text-sm text-slate-400">Đang tải dữ liệu...</div>
@@ -90,7 +92,16 @@ export function SportsTableCard({
                 )}
               </div>
               <div className="flex-1 font-semibold text-sm text-slate-800">{s.name}</div>
-              <div className="w-24 flex items-center justify-end gap-1">
+              <div className="w-36 flex items-center justify-end gap-1">
+                <button
+                  type="button"
+                  onClick={() => onOpenManageCoaches(s)}
+                  className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors cursor-pointer"
+                  title="Quản lý Coach phụ trách"
+                  aria-label={`Quản lý Coach phụ trách bộ môn ${s.name}`}
+                >
+                  <UsersRound className="size-3.5" />
+                </button>
                 <button
                   onClick={() => onOpenEdit(s)}
                   className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors cursor-pointer"

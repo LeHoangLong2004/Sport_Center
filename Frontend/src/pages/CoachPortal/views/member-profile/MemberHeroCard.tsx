@@ -78,7 +78,7 @@ export const MemberHeroCard: React.FC<MemberHeroCardProps> = ({ member, navigate
           <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
             <button
               type="button"
-              onClick={() => navigateTo("chat")}
+              onClick={() => navigateTo("chat", { memberId: member.id })}
               className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-xl transition-colors shadow-sm shadow-orange-500/20"
             >
               <MessageSquare className="w-3.5 h-3.5" />

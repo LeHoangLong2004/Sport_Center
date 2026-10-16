@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using SmartGym.Application.Interfaces.Repositories;
 using SmartGym.Infrastructure.Persistence.Supabase.Models;
 
 namespace SmartGym.Api.Endpoints;
@@ -33,7 +34,8 @@ public static class AppointmentEndpoints
 
         group.MapPost("", async (
             CreateAppointmentRequest request,
-            global::Supabase.Client supabase) =>
+            global::Supabase.Client supabase,
+            IGroupClassRepository classRepository) =>
         {
             if (string.IsNullOrWhiteSpace(request.Time)
                 || string.IsNullOrWhiteSpace(request.Title)
@@ -78,6 +80,14 @@ public static class AppointmentEndpoints
             await supabase
                 .From<AppointmentModel>()
                 .Insert(appointment);
+
+            await classRepository.NotifyCoachAsync(
+                matchedCoach.Id,
+                "Bạn có lịch hẹn mới",
+                $"{appointment.CustomerName} đã đặt lịch hẹn {appointment.Title} vào {appointment.Time}.",
+                "appointment",
+                appointment.Id
+            );
 
             return Results.Created(
                 $"/api/appointments/{appointment.Id}",

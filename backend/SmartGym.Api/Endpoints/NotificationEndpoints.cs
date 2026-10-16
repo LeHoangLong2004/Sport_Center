@@ -8,7 +8,7 @@ using SmartGym.Infrastructure.Persistence.EF;
 namespace SmartGym.Api.Endpoints;
 
 /// <summary>
-/// Notifications dành cho các vai trò vận hành trung tâm.
+/// Notifications dành cho các vai trò vận hành trung tâm và Coach.
 /// Dữ liệu cố định đọc từ bảng notifications; các cảnh báo vận hành được
 /// tổng hợp từ dữ liệu hiện tại để Manager vẫn nhìn thấy việc cần xử lý.
 /// </summary>
@@ -34,7 +34,8 @@ public static class NotificationEndpoints
         EndpointFilterInvocationContext context,
         EndpointFilterDelegate next)
     {
-        var role = context.HttpContext.User.FindFirstValue(ClaimTypes.Role);
+        var role = context.HttpContext.User.FindFirstValue(ClaimTypes.Role)
+            ?? context.HttpContext.User.FindFirstValue("role");
         var isStaff = role is not null && (
             role.Equals("manager", StringComparison.OrdinalIgnoreCase)
             || role.Equals("admin", StringComparison.OrdinalIgnoreCase)
@@ -42,6 +43,7 @@ public static class NotificationEndpoints
             || role.Equals("centermanager", StringComparison.OrdinalIgnoreCase)
             || role.Equals("CenterManager", StringComparison.OrdinalIgnoreCase)
             || role.Equals("receptionist", StringComparison.OrdinalIgnoreCase)
+            || role.Equals("coach", StringComparison.OrdinalIgnoreCase)
             || role.Equals("staff", StringComparison.OrdinalIgnoreCase));
 
         return isStaff
@@ -89,32 +91,38 @@ public static class NotificationEndpoints
             // Không làm hỏng TopBar nếu database cũ chưa chạy migration notifications.
         }
 
-        // Cảnh báo hóa đơn pending là dữ liệu thật và không phụ thuộc vào mock UI.
-        try
+        // Cảnh báo hóa đơn pending chỉ dành cho nhóm vận hành, không hiển thị cho Coach.
+        var role = context.User.FindFirstValue(ClaimTypes.Role)
+            ?? context.User.FindFirstValue("role");
+        var isCoach = role?.Equals("coach", StringComparison.OrdinalIgnoreCase) == true;
+        if (!isCoach)
         {
-            var pendingInvoices = await db.Database.SqlQueryRaw<CountRow>(
-                    """
-                    SELECT COUNT(*)::int AS "Value"
-                    FROM invoices
-                    WHERE payment_status = 'pending'
-                    """)
-                .Select(row => row.Value)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (pendingInvoices > 0)
+            try
             {
-                notifications.Add(new NotificationResponse(
-                    "derived-pending-invoices",
-                    "Có giao dịch đang chờ xử lý",
-                    $"Hiện có {pendingInvoices} hóa đơn chưa hoàn tất thanh toán hoặc đối soát.",
-                    "payment",
-                    false,
-                    DateTime.UtcNow));
+                var pendingInvoices = await db.Database.SqlQueryRaw<CountRow>(
+                        """
+                        SELECT COUNT(*)::int AS "Value"
+                        FROM invoices
+                        WHERE payment_status = 'pending'
+                        """)
+                    .Select(row => row.Value)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (pendingInvoices > 0)
+                {
+                    notifications.Add(new NotificationResponse(
+                        "derived-pending-invoices",
+                        "Có giao dịch đang chờ xử lý",
+                        $"Hiện có {pendingInvoices} hóa đơn chưa hoàn tất thanh toán hoặc đối soát.",
+                        "payment",
+                        false,
+                        DateTime.UtcNow));
+                }
             }
-        }
-        catch
-        {
-            // Giữ API usable trong lúc schema invoices chưa đồng bộ.
+            catch
+            {
+                // Giữ API usable trong lúc schema invoices chưa đồng bộ.
+            }
         }
 
         return Results.Ok(notifications
@@ -157,7 +165,8 @@ public static class NotificationEndpoints
 
     private static Guid? GetUserId(HttpContext context)
     {
-        var rawUserId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var rawUserId = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? context.User.FindFirstValue("sub");
         return Guid.TryParse(rawUserId, out var userId) ? userId : null;
     }
 

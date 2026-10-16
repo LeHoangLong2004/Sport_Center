@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { DateInput } from '../../../components/DateInput';
 
 export function CreateClassModal({ onClose, editData }: { onClose: () => void, editData?: any }) {
   const [formData, setFormData] = useState(() => {
@@ -106,7 +107,17 @@ export function CreateClassModal({ onClose, editData }: { onClose: () => void, e
 
     try {
       // Combine date and time
-      const startDateTime = new Date(`${formData.scheduleDate}T${formData.scheduleTime}:00`);
+      const scheduleDate = formData.scheduleDate;
+      const scheduleTime = formData.scheduleTime;
+
+      if (!scheduleDate || !scheduleTime) {
+        throw new Error('Vui lòng chọn đầy đủ ngày và giờ học.');
+      }
+
+      const startDateTime = new Date(`${scheduleDate}T${scheduleTime}:00`);
+      if (Number.isNaN(startDateTime.getTime())) {
+        throw new Error('Ngày hoặc giờ học không hợp lệ.');
+      }
       
       const payload = {
         sportId: formData.sportId,
@@ -184,7 +195,7 @@ export function CreateClassModal({ onClose, editData }: { onClose: () => void, e
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Ngày học</label>
-                <input required type="date" name="scheduleDate" value={formData.scheduleDate} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" />
+                <DateInput required value={formData.scheduleDate} onChange={(value) => setFormData((prev) => ({ ...prev, scheduleDate: value }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Giờ học</label>
