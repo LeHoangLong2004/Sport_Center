@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using SmartGym.Api.Filters;
 using SmartGym.Application.DTOs.CheckIn;
+using IPackageRepository = SmartGym.Application.Interfaces.IPackageRepository;
 using SmartGym.Application.Interfaces.Repositories;
 using SmartGym.Application.Services;
 using SmartGym.Domain.Enums;
@@ -150,9 +151,24 @@ public static class CheckInEndpoints
 
         // ── Package Plans (public) ──
 
-        packages.MapGet("/plans", async (IMemberPackageRepository packageRepo) =>
+        packages.MapGet("/plans", async (IPackageRepository packageRepo) =>
         {
-            var plans = await packageRepo.GetAllPlansAsync();
+            var packages = await packageRepo.GetAllAsync();
+            var plans = packages
+                .Where(package => package.Status)
+                .Select(package => new
+                {
+                    id = package.Id,
+                    planName = package.Name,
+                    description = package.Description ?? package.Tagline ?? package.Name,
+                    price = package.MonthlyPrice ?? 0,
+                    durationDays = 30,
+                    totalSessions = (int?)null,
+                    accessHours = AccessHours.All,
+                    isAllAccess = true,
+                    isActive = package.Status
+                });
+
             return Results.Ok(plans);
         });
     }

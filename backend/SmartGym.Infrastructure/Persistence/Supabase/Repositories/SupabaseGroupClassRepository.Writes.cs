@@ -14,6 +14,24 @@ namespace SmartGym.Infrastructure.Persistence.Supabase.Repositories;
 
 public sealed partial class SupabaseGroupClassRepository
 {
+    public async Task<bool> HasCoachAvailabilityConflictAsync(Guid coachId, DateTime startTime, DateTime endTime)
+    {
+        var conflicts = await _dbContext.Database.SqlQueryRaw<int>(
+            @"SELECT 1 AS ""Value""
+              FROM coach_availability_slots
+              WHERE coach_id = {0}
+                AND status IN ('open', 'booked')
+                AND start_time < {1}
+                AND end_time > {2}
+              LIMIT 1",
+            coachId,
+            endTime,
+            startTime
+        ).ToListAsync();
+
+        return conflicts.Count > 0;
+    }
+
     public async Task AddAsync(GroupClass groupClass)
     {
         if (groupClass.CoachId.HasValue)
@@ -76,7 +94,7 @@ public sealed partial class SupabaseGroupClassRepository
             {
                 var existingBookings = await _dbContext
                     .Database.SqlQueryRaw<ClassBookingRawModel>(
-                        "SELECT id, user_id, class_id, status, created_at FROM class_bookings WHERE user_id = {0} AND class_id = {1} AND status IN ('confirmed', 'pending')",
+                        "SELECT id, user_id, class_id, status, created_at FROM class_bookings WHERE user_id = {0} AND class_id = {1} AND LOWER(status) IN ('confirmed', 'pending', 'approved')",
                         userId,
                         classId
                     )
@@ -86,6 +104,57 @@ public sealed partial class SupabaseGroupClassRepository
                 {
                     await transaction.RollbackAsync();
                     return (false, "Hội viên đã đặt chỗ lớp học này trước đó rồi.");
+                }
+
+                var targetTime = await _dbContext.Database
+                    .SqlQueryRaw<ClassTimeConflictRawModel>(
+                        "SELECT schedule_time, duration_minutes FROM classes WHERE id = {0} AND status = true",
+                        classId
+                    )
+                    .FirstOrDefaultAsync();
+
+                if (targetTime == null)
+                {
+                    await transaction.RollbackAsync();
+                    return (false, "Lớp học không còn hoạt động.");
+                }
+
+                var targetEnd = targetTime.ScheduleTime.AddMinutes(Math.Max(1, targetTime.DurationMinutes));
+                var memberClassTimes = await _dbContext.Database
+                    .SqlQueryRaw<ClassTimeConflictRawModel>(
+                        @"SELECT c.schedule_time, c.duration_minutes
+                          FROM class_bookings b
+                          INNER JOIN classes c ON c.id = b.class_id
+                          WHERE b.user_id = {0}
+                            AND b.class_id <> {1}
+                            AND LOWER(b.status) IN ('confirmed', 'pending', 'approved')
+                            AND c.status = true",
+                        userId,
+                        classId
+                    )
+                    .ToListAsync();
+
+                if (memberClassTimes.Any(x => Overlaps(targetTime.ScheduleTime, targetEnd, x.ScheduleTime, x.DurationMinutes)))
+                {
+                    await transaction.RollbackAsync();
+                    return (false, "Bạn đã có một lớp học khác trùng thời gian.");
+                }
+
+                var memberPtTimes = await _dbContext.Database
+                    .SqlQueryRaw<ClassTimeConflictRawModel>(
+                        @"SELECT ps.schedule_time, ps.duration_minutes
+                          FROM pt_sessions ps
+                          INNER JOIN pt_enrollments pe ON pe.id = ps.enrollment_id
+                          WHERE pe.user_id = {0}
+                            AND ps.status IN ('scheduled', 'pending', 'confirmed')",
+                        userId
+                    )
+                    .ToListAsync();
+
+                if (memberPtTimes.Any(x => Overlaps(targetTime.ScheduleTime, targetEnd, x.ScheduleTime, x.DurationMinutes)))
+                {
+                    await transaction.RollbackAsync();
+                    return (false, "Bạn đã có một buổi PT trùng thời gian với lớp học này.");
                 }
 
                 var affectedRows = await _dbContext.Database.ExecuteSqlRawAsync(
@@ -140,7 +209,7 @@ public sealed partial class SupabaseGroupClassRepository
                 var affectedBooking = await _dbContext.Database.ExecuteSqlRawAsync(
                     @"UPDATE class_bookings 
                   SET status = 'cancelled' 
-                  WHERE user_id = {0} AND class_id = {1} AND status IN ('confirmed', 'pending')",
+                  WHERE user_id = {0} AND class_id = {1} AND LOWER(status) IN ('confirmed', 'pending', 'approved')",
                     userId,
                     classId
                 );
@@ -271,7 +340,7 @@ public sealed partial class SupabaseGroupClassRepository
                 await _dbContext.Database.ExecuteSqlRawAsync(
                     @"UPDATE class_bookings 
                   SET status = 'class_cancelled' 
-                  WHERE class_id = {0} AND status IN ('confirmed', 'pending')",
+                  WHERE class_id = {0} AND LOWER(status) IN ('confirmed', 'pending', 'approved')",
                     classId
                 );
 
@@ -286,4 +355,53 @@ public sealed partial class SupabaseGroupClassRepository
         });
     }
 
+    public async Task<(bool IsSuccess, string? ErrorMessage)> RestoreClassTransactionAsync(
+        Guid classId
+    )
+    {
+        var strategy = _dbContext.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            try
+            {
+                var affected = await _dbContext.Database.ExecuteSqlRawAsync(
+                    @"UPDATE classes
+                      SET status = true
+                      WHERE id = {0} AND status = false",
+                    classId
+                );
+
+                if (affected == 0)
+                {
+                    await transaction.RollbackAsync();
+                    return (false, "Lớp học không tồn tại hoặc đang hoạt động.");
+                }
+
+                // A class cancellation marks active bookings as class_cancelled.
+                // Restoring the class makes those bookings pending again so they
+                // can be reviewed without incrementing the enrollment counter twice.
+                await _dbContext.Database.ExecuteSqlRawAsync(
+                    @"UPDATE class_bookings
+                      SET status = 'pending'
+                      WHERE class_id = {0} AND status = 'class_cancelled'",
+                    classId
+                );
+
+                await transaction.CommitAsync();
+                return (true, null);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return (false, "Lỗi hệ thống khi khôi phục lớp học. " + ex.Message);
+            }
+        });
+    }
+
+    private static bool Overlaps(DateTime start, DateTime end, DateTime otherStart, int otherDurationMinutes)
+    {
+        var otherEnd = otherStart.AddMinutes(Math.Max(1, otherDurationMinutes));
+        return start < otherEnd && otherStart < end;
+    }
 }

@@ -66,6 +66,19 @@ public static class AppointmentEndpoints
                 });
             }
 
+            var existingAppointments = await supabase.From<AppointmentModel>().Get();
+            var normalizedTime = request.Time.Trim();
+            if (existingAppointments.Models.Any(existing =>
+                IsActiveAppointment(existing.Status)
+                && string.Equals(existing.Time?.Trim(), normalizedTime, StringComparison.OrdinalIgnoreCase)
+                && NamesMatch(existing.CoachName, matchedCoach.FullName)))
+            {
+                return Results.Conflict(new
+                {
+                    message = $"Coach '{matchedCoach.FullName}' đã có lịch hẹn khác vào {normalizedTime}."
+                });
+            }
+
             var appointment = new AppointmentModel
             {
                 Id = Guid.NewGuid(),
@@ -131,6 +144,12 @@ public static class AppointmentEndpoints
         }
 
         return normalized;
+    }
+
+    private static bool IsActiveAppointment(string? status)
+    {
+        var normalized = status?.Trim().ToLowerInvariant();
+        return normalized is not "đã hủy" and not "đã hoàn tất" and not "cancelled" and not "completed";
     }
 
     public sealed record CreateAppointmentRequest(

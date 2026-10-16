@@ -11,6 +11,8 @@ public interface IGroupClassRepository
     Task<GroupClass?> GetByIdAsync(Guid id);
     Task<ClassDetailResponse?> GetClassDetailByIdAsync(Guid id);
     Task<IEnumerable<GroupClass>> GetClassesByCoachAndDateAsync(Guid coachId, DateTime date);
+    Task<IEnumerable<GroupClass>> GetClassesByFacilityAndDateAsync(Guid facilityId, DateTime date);
+    Task<bool> HasCoachAvailabilityConflictAsync(Guid coachId, DateTime startTime, DateTime endTime);
     Task<IEnumerable<ClassResponse>> GetAllClassesAsync();
     Task<IEnumerable<ClassResponse>> GetAvailableClassesAsync();
     Task AddAsync(GroupClass groupClass);
@@ -27,6 +29,7 @@ public interface IGroupClassRepository
         Guid classId
     );
     Task<(bool IsSuccess, string? ErrorMessage)> CancelClassTransactionAsync(Guid classId);
+    Task<(bool IsSuccess, string? ErrorMessage)> RestoreClassTransactionAsync(Guid classId);
     Task<(bool IsSuccess, string? ErrorMessage)> ApproveBookingAsync(Guid bookingId);
     Task<(bool IsSuccess, string? ErrorMessage)> RejectBookingAsync(Guid bookingId);
     Task NotifyCoachAsync(

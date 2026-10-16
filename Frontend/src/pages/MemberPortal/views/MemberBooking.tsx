@@ -1,10 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import type { MemberScreen, MemberSessionItem } from "../types";
-import {
-  getSavedMemberData,
-  saveMemberData,
-} from "../services/memberData";
+import { MemberAPI } from "../services/api";
 import {
   Calendar,
   Clock,
@@ -14,163 +11,167 @@ import {
   Search,
   CheckCircle2,
   AlertCircle,
-  Plus,
   X,
   Dumbbell,
+  Plus,
   Sparkles,
-  ChevronRight,
   Filter,
+  LoaderCircle,
 } from "lucide-react";
-import { scheduleSync } from "../services/scheduleSync";
 import { DateInput } from "../../../components/DateInput";
 
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
 }
 
-// Group Class Catalog
-const CATALOG_GROUP_CLASSES = [
-  {
-    id: "gc-01",
-    name: "Yoga Cân Bằng Cột Sống",
-    sport: "Yoga",
-    level: "Cơ bản",
-    startTime: "07:00",
-    endTime: "08:00",
-    room: "Studio 2 - Tầng 2",
-    coachName: "HLV Minh Tuấn",
-    coachBio: "HLV Yoga Quốc tế Alliance 500h, 8 năm kinh nghiệm phục hồi cột sống.",
-    capacity: 15,
-    registeredCount: 12,
-    description: "Giúp giải phóng áp lực đốt sống lưng, tăng cường độ dẻo dai và hơi thở.",
-  },
-  {
-    id: "gc-02",
-    name: "Functional HIIT Giảm Mỡ",
-    sport: "Gym",
-    level: "Nâng cao",
-    startTime: "08:30",
-    endTime: "09:30",
-    room: "Arena 2 - Tầng 1",
-    coachName: "HLV Enam",
-    coachBio: "Chuyên gia huấn luyện thể lực và siết cơ, chứng chỉ NASM-CPT.",
-    capacity: 16,
-    registeredCount: 14,
-    description: "Tập luyện chuỗi bài tập cường độ cao kích hoạt trao đổi chất và đốt calo liên tục.",
-  },
-  {
-    id: "gc-03",
-    name: "Boxing Cardio & Phản Xạ",
-    sport: "Boxing",
-    level: "Trung cấp",
-    startTime: "18:00",
-    endTime: "19:00",
-    room: "Combat Ring - Tầng 3",
-    coachName: "HLV Hoàng Long",
-    coachBio: "Kiện tướng Boxing quốc gia, cựu vận động viên đội tuyển.",
-    capacity: 20,
-    registeredCount: 18,
-    description: "Rèn luyện bộ pháp di chuyển, các tổ hợp đòn cơ bản và xả stress cực tốt.",
-  },
-  {
-    id: "gc-04",
-    name: "Pilates Core & Tỉ Lệ Dáng",
-    sport: "Pilates",
-    level: "Cơ bản",
-    startTime: "09:00",
-    endTime: "10:00",
-    room: "Studio 3 - Tầng 2",
-    coachName: "HLV Minh Thư",
-    coachBio: "HLV Pilates Reformer & Mat, chuyên cải thiện vóc dáng và võng lưng.",
-    capacity: 12,
-    registeredCount: 12, // full
-    description: "Siết cơ trọng tâm sâu, cải thiện tư thế đứng và làm thon gọn cơ thể.",
-  },
-  {
-    id: "gc-05",
-    name: "Zumba Sôi Động & Nhịp Điệu",
-    sport: "Zumba",
-    level: "Mọi cấp độ",
-    startTime: "19:00",
-    endTime: "20:00",
-    room: "Dance Studio - Tầng 2",
-    coachName: "HLV Ngọc Trâm",
-    coachBio: "Zumba Fitness Zin quốc tế, năng lượng bùng nổ.",
-    capacity: 25,
-    registeredCount: 17,
-    description: "Hòa mình cùng âm nhạc Latin sôi động, đốt cháy tới 600 calo mỗi buổi.",
-  },
-  {
-    id: "gc-06",
-    name: "Bơi Sải Thể Lực & Thở Nước",
-    sport: "Bơi lội",
-    level: "Trung cấp",
-    startTime: "17:30",
-    endTime: "18:30",
-    room: "Hồ bơi vô cực - Tầng 4",
-    coachName: "HLV Quốc Bảo",
-    coachBio: "VĐV Bơi lội chuyên nghiệp, chuyên kỹ thuật đường dài.",
-    capacity: 10,
-    registeredCount: 7,
-    description: "Hoàn thiện kỹ thuật quạt tay, đạp chân và nhịp thở đường trường bền bỉ.",
-  },
-];
+type Feedback = {
+  message: string;
+  type: "success" | "error";
+};
+
+// Group classes are loaded from the database API.
 
 // Open PT slots helper
 export default function MemberBooking({ onNavigate }: Props) {
   const [activeTab, setActiveTab] = useState<"group" | "pt">("group");
 
   // Filters
-  const [selectedDate, setSelectedDate] = useState("2026-10-14");
+  const [selectedDate, setSelectedDate] = useState("");
   const [selectedSport, setSelectedSport] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const userStr = localStorage.getItem("user");
-  const user = userStr ? JSON.parse(userStr) : null;
-  const userId = user?.id || "";
-  const storageKey = userId ? `member_sessions_${userId}` : "member_sessions";
-
   // My booked sessions
-  const [mySessions, setMySessions] = useState<MemberSessionItem[]>(() =>
-    getSavedMemberData(storageKey, [])
-  );
-
-  // Load open slots helper
-  const loadAvailablePtSlots = () => {
-    return scheduleSync.getOpenPtSlots().map((s) => ({
-      id: s.id,
-      sport: s.sport,
-      coachName: s.coachName,
-      date: s.date,
-      startTime: s.startTime,
-      endTime: s.endTime,
-      room: s.room,
-      note: s.coachNote || "Ca kèm 1-1 mở",
-      isBooked: false,
-    }));
-  };
+  const [mySessions, setMySessions] = useState<MemberSessionItem[]>([]);
+  const [groupClasses, setGroupClasses] = useState<any[]>([]);
+  const [ptSlots, setPtSlots] = useState<any[]>([]);
+  const [loadingGroupClasses, setLoadingGroupClasses] = useState(true);
+  const [refreshingGroupClasses, setRefreshingGroupClasses] = useState(false);
+  const [groupClassesError, setGroupClassesError] = useState<string | null>(null);
 
   // PT slots state
-  const [ptSlots, setPtSlots] = useState(loadAvailablePtSlots);
+  const loadGroupClasses = async (silent = false) => {
+    if (silent) {
+      setRefreshingGroupClasses(true);
+    } else {
+      setLoadingGroupClasses(true);
+    }
+    setGroupClassesError(null);
+    try {
+      const [availableClasses, memberSchedule, availablePtSlots] = await Promise.all([
+        MemberAPI.getAvailableClasses(),
+        MemberAPI.getMemberSchedule(),
+        MemberAPI.getAvailablePtSlots().catch(() => []),
+      ]);
+
+      const mappedClasses = (Array.isArray(availableClasses) ? availableClasses : []).map((item: any) => {
+        const start = new Date(item.scheduleTime);
+        const end = new Date(start.getTime() + Number(item.durationMinutes || 60) * 60000);
+        const dateStr = [start.getFullYear(), String(start.getMonth() + 1).padStart(2, "0"), String(start.getDate()).padStart(2, "0")].join("-");
+        const time = (value: Date) => `${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}`;
+
+        return {
+          ...item,
+          name: item.className,
+          sport: item.sportName,
+          level: "",
+          startTime: time(start),
+          endTime: time(end),
+          room: item.facilityName,
+          coachName: item.coachName || "Chưa phân công",
+          capacity: item.capacity,
+          registeredCount: item.currentEnrolled,
+          availableSpots: item.availableSpots,
+          dateStr,
+          description: "",
+        };
+      });
+      setGroupClasses(mappedClasses);
+
+      const dbBookings = (memberSchedule?.classBookings || []).map((booking: any) => {
+        const start = new Date(booking.scheduleTime);
+        const end = new Date(start.getTime() + Number(booking.durationMinutes || 60) * 60000);
+        const date = [start.getFullYear(), String(start.getMonth() + 1).padStart(2, "0"), String(start.getDate()).padStart(2, "0")].join("-");
+        return {
+          id: booking.classId,
+          classId: booking.classId,
+          name: booking.className,
+          sport: booking.sportName,
+          level: "",
+          type: "group",
+          date,
+          startTime: `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`,
+          endTime: `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`,
+          room: booking.facilityName,
+          coachId: "",
+          coachName: booking.coachName,
+          capacity: 0,
+          registeredCount: 0,
+          // Preserve the real database status. Hard-coding this as an upcoming
+          // status made cancelled/attended bookings look active in the UI.
+          status: booking.status,
+          bookingStatus: booking.status,
+        };
+      });
+      const dbPtBookings = (memberSchedule?.ptSessions || []).map((session: any) => {
+        const start = new Date(session.scheduleTime);
+        const end = new Date(start.getTime() + Number(session.durationMinutes || 60) * 60000);
+        const date = [start.getFullYear(), String(start.getMonth() + 1).padStart(2, "0"), String(start.getDate()).padStart(2, "0")].join("-");
+        return {
+          id: session.sessionId,
+          name: "PT 1-1 session",
+          sport: "PT 1-1",
+          level: "1-1 PT",
+          type: "pt",
+          date,
+          startTime: `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`,
+          endTime: `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`,
+          room: "",
+          coachId: "",
+          coachName: session.coachName,
+          capacity: 1,
+          registeredCount: 1,
+          status: session.status,
+        };
+      });
+      setMySessions([...dbBookings, ...dbPtBookings]);
+      setPtSlots(Array.isArray(availablePtSlots) ? availablePtSlots : []);
+    } catch (error: any) {
+      console.error("Không thể tải dữ liệu đặt lịch từ database:", error);
+      if (!silent) {
+        setGroupClasses([]);
+        setGroupClassesError(
+        error?.message || "Không thể kết nối đến dữ liệu lịch học. Vui lòng thử lại."
+        );
+      }
+    } finally {
+      if (silent) {
+        setRefreshingGroupClasses(false);
+      } else {
+        setLoadingGroupClasses(false);
+      }
+    }
+  };
 
   useEffect(() => {
-    const unsub = scheduleSync.subscribe(() => {
-      setPtSlots(loadAvailablePtSlots());
-      setMySessions(getSavedMemberData(storageKey, []));
-    });
-    return unsub;
-  }, [storageKey]);
+    void loadGroupClasses();
+  }, []);
 
   // Modal State
   const [selectedClassDetail, setSelectedClassDetail] = useState<any | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<{ classId: string; className: string } | null>(null);
   const [bookingPtSlot, setBookingPtSlot] = useState<any | null>(null);
   const [ptGoal, setPtGoal] = useState("Tăng cơ & Siết nét");
   const [ptNote, setPtNote] = useState("");
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
+
+  const showFeedback = (message: string, type: Feedback["type"] = "success") => {
+    setFeedback({ message, type });
+    window.setTimeout(() => setFeedback(null), 4000);
+  };
 
   // Lock body scroll on modal open
   useEffect(() => {
-    if (selectedClassDetail || bookingPtSlot) {
+    if (selectedClassDetail) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
@@ -178,160 +179,205 @@ export default function MemberBooking({ onNavigate }: Props) {
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [selectedClassDetail, bookingPtSlot]);
+  }, [selectedClassDetail]);
 
   // Check if session is already booked
-  const isBooked = (sessionName: string, date: string, startTime: string) => {
+  const normalizeBookingStatus = (status: unknown) =>
+    String(status ?? "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d");
+
+  const getBookingStatus = (session: MemberSessionItem) =>
+    (session as any).bookingStatus ?? (session as any).status;
+
+  const isInactiveBookingStatus = (status: unknown) => {
+    const normalizedStatus = normalizeBookingStatus(status);
+    return (
+      normalizedStatus.includes("cancel") ||
+      normalizedStatus.includes("huy") ||
+      normalizedStatus === "rejected" ||
+      normalizedStatus === "class_cancelled" ||
+      normalizedStatus === "attended" ||
+      normalizedStatus === "no_show" ||
+      normalizedStatus === "no-show"
+    );
+  };
+
+  const isBooked = (classId: string, date: string) => {
     return mySessions.some(
       (s) =>
-        s.name.includes(sessionName) &&
+        String((s as any).classId ?? s.id).toLowerCase() === String(classId).toLowerCase() &&
         s.date === date &&
-        s.startTime === startTime &&
-        s.status !== "đã hủy"
+        !isInactiveBookingStatus(getBookingStatus(s))
     );
   };
 
-  // Handle Book Group Class
-  const handleBookGroupClass = (item: any) => {
+  // Group-class bookings are persisted by the backend database.
+  const handleBookGroupClass = async (item: any) => {
     if (item.registeredCount >= item.capacity) {
-      alert("Lớp đã đủ chỗ!");
+      showFeedback("Lớp đã đủ chỗ.", "error");
       return;
     }
-    if (isBooked(item.name, selectedDate, item.startTime)) {
-      alert("Bạn đã đặt chỗ buổi học này rồi!");
+    if (isBooked(item.id, item.dateStr)) {
+      showFeedback("Bạn đã đặt lớp học này rồi.", "error");
       return;
     }
 
-    const newSession: MemberSessionItem = {
-      id: `booked-${Date.now()}`,
-      name: item.name,
-      sport: item.sport,
-      level: item.level,
-      type: "group",
-      date: selectedDate,
-      startTime: item.startTime,
-      endTime: item.endTime,
-      room: item.room,
-      coachId: "coach-01",
-      coachName: item.coachName,
-      capacity: item.capacity,
-      registeredCount: item.registeredCount + 1,
-      status: "sắp diễn ra",
-      attendanceStatus: "chưa điểm danh",
-    };
+    try {
+      await MemberAPI.bookClass(item.id);
 
-    const updated = [newSession, ...mySessions];
-    setMySessions(updated);
-    saveMemberData(storageKey, updated);
-    setSelectedClassDetail(null);
-    setFeedback(`Đã đăng ký thành công lớp "${item.name}" ngày ${selectedDate} lúc ${item.startTime}!`);
-    setTimeout(() => setFeedback(null), 4000);
+      const localBooking = {
+        id: item.id,
+        classId: item.id,
+        name: item.name,
+        sport: item.sport,
+        level: item.level || "",
+        type: "group" as const,
+        date: item.dateStr,
+        startTime: item.startTime,
+        endTime: item.endTime,
+        room: item.room,
+        coachId: item.coachId || "",
+        coachName: item.coachName,
+        capacity: item.capacity,
+        registeredCount: item.registeredCount + 1,
+        status: "confirmed" as any,
+        bookingStatus: "confirmed",
+      } as MemberSessionItem & { classId: string; bookingStatus: string };
+
+      setGroupClasses((currentClasses) =>
+        currentClasses.map((currentClass) =>
+          currentClass.id === item.id
+            ? {
+                ...currentClass,
+                registeredCount: Math.min(currentClass.registeredCount + 1, currentClass.capacity),
+                availableSpots: Math.max(0, currentClass.availableSpots - 1),
+              }
+            : currentClass
+        )
+      );
+      setMySessions((currentSessions) =>
+        currentSessions.some((session) => (session as any).classId === item.id && session.date === item.dateStr)
+          ? currentSessions
+          : [...currentSessions, localBooking]
+      );
+      void loadGroupClasses(true);
+      setSelectedClassDetail(null);
+      showFeedback(`Đã đăng ký thành công lớp "${item.name}".`);
+    } catch (error: any) {
+      showFeedback(error?.message || "Không thể đặt lớp học.", "error");
+    }
   };
 
-  // Handle Cancel Group Class
-  const handleCancelBooking = (sessionId: string) => {
-    if (!confirm("Bạn có chắc chắn muốn hủy giữ chỗ buổi học này không?")) return;
-    const updated = mySessions.map((s) =>
-      s.id === sessionId ? { ...s, status: "đã hủy" as const, cancelReason: "Học viên tự hủy trước giờ tập" } : s
-    );
-    setMySessions(updated);
-    saveMemberData(storageKey, updated);
-    setSelectedClassDetail(null);
-    setFeedback("Đã hủy đặt chỗ thành công. Chỗ đã được nhường lại cho học viên khác.");
-    setTimeout(() => setFeedback(null), 4000);
+  // Group-class cancellations are persisted by the backend database.
+  const handleCancelBooking = async (classId: string) => {
+    setCancelTarget(null);
+    try {
+      await MemberAPI.cancelClassBooking(classId);
+
+      setGroupClasses((currentClasses) =>
+        currentClasses.map((currentClass) =>
+          currentClass.id === classId
+            ? {
+                ...currentClass,
+                registeredCount: Math.max(0, currentClass.registeredCount - 1),
+                availableSpots: Math.min(currentClass.capacity, currentClass.availableSpots + 1),
+              }
+            : currentClass
+        )
+      );
+      setMySessions((currentSessions) =>
+        currentSessions.map((session) =>
+          (session as any).classId === classId ? { ...session, status: "đã hủy" as any } : session
+        )
+      );
+      void loadGroupClasses(true);
+      setSelectedClassDetail(null);
+      showFeedback("Đã hủy đặt lớp thành công.");
+    } catch (error: any) {
+      // Đồng bộ lại với database để UI tự sửa trạng thái nếu booking đã bị hủy
+      // từ tab hoặc thiết bị khác trước đó.
+      void loadGroupClasses(true);
+      showFeedback(error?.message || "Không thể hủy đặt lớp.", "error");
+    }
   };
 
-  // Handle Book PT Slot
-  const handleConfirmPtBooking = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleConfirmPtBooking = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (!bookingPtSlot) return;
 
-    const userStr = localStorage.getItem("user");
-    const u = userStr ? JSON.parse(userStr) : null;
-    const currentUserName = u?.fullName || u?.name || "Hội viên";
-    const currentUserId = u?.id || "";
-    const currentUserPhone = u?.phoneNumber || u?.phone || "";
-    const currentUserEmail = u?.email || "";
-
-    const booked = scheduleSync.bookPtSlot({
-      slotId: bookingPtSlot.id,
-      memberId: currentUserId,
-      memberName: currentUserName,
-      memberPhone: currentUserPhone,
-      memberEmail: currentUserEmail,
-      goal: ptGoal,
-      userNote: ptNote.trim(),
-    });
-
-    const newSession: MemberSessionItem = {
-      id: booked.id,
-      name: booked.className,
-      sport: booked.sport,
-      level: "1-1 PT",
-      type: "pt",
-      date: booked.date,
-      startTime: booked.startTime,
-      endTime: booked.endTime,
-      room: booked.room,
-      coachId: booked.coachId,
-      coachName: booked.coachName,
-      capacity: 1,
-      registeredCount: 1,
-      status: "sắp diễn ra",
-      attendanceStatus: "chưa điểm danh",
-      coachNote: booked.coachNote,
-    };
-
-    const updatedSessions = [newSession, ...mySessions];
-    setMySessions(updatedSessions);
-    saveMemberData(storageKey, updatedSessions);
-
-    // Mark slot as booked in local list
-    const updatedSlots = ptSlots.map((s) =>
-      s.id === bookingPtSlot.id ? { ...s, isBooked: true } : s
-    );
-    setPtSlots(updatedSlots);
-
-    setBookingPtSlot(null);
-    setPtNote("");
-    setFeedback(`Đã đặt lịch tập kèm 1-1 với ${bookingPtSlot.coachName} lúc ${bookingPtSlot.startTime} ngày ${bookingPtSlot.date} thành công!`);
-    setTimeout(() => setFeedback(null), 4000);
+    try {
+      await MemberAPI.bookPtSlot({
+        slotId: bookingPtSlot.id,
+        sport: bookingPtSlot.sport,
+        date: bookingPtSlot.date,
+        startTime: bookingPtSlot.startTime,
+        endTime: bookingPtSlot.endTime,
+        room: bookingPtSlot.room,
+        coachId: bookingPtSlot.coachId,
+        coachName: bookingPtSlot.coachName,
+        goal: ptGoal,
+        coachNote: ptNote,
+      });
+      setPtSlots((currentSlots) => currentSlots.filter((slot) => slot.id !== bookingPtSlot.id));
+      setBookingPtSlot(null);
+      setPtNote("");
+      showFeedback("Đã đặt lịch kèm riêng 1–1 thành công.");
+      void loadGroupClasses(true);
+    } catch (error: any) {
+      showFeedback(error?.message || "Không thể đặt lịch kèm riêng 1–1.", "error");
+    }
   };
 
   // Filtered Group Classes
   const filteredGroupClasses = useMemo(() => {
-    return CATALOG_GROUP_CLASSES.filter((c) => {
+    return groupClasses.filter((c) => {
+      const matchDate = !selectedDate || c.dateStr === selectedDate;
       const matchSport = selectedSport === "all" || c.sport.toLowerCase() === selectedSport.toLowerCase();
       const matchQuery =
         !searchQuery ||
         c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.coachName.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchSport && matchQuery;
+      return matchDate && matchSport && matchQuery;
     });
-  }, [selectedSport, searchQuery]);
+  }, [groupClasses, selectedDate, selectedSport, searchQuery]);
 
-  // Filtered PT Slots
   const filteredPtSlots = useMemo(() => {
-    return ptSlots.filter((s) => {
-      const matchSport = selectedSport === "all" || s.sport.toLowerCase() === selectedSport.toLowerCase();
+    return ptSlots.filter((slot) => {
+      const matchDate = !selectedDate || slot.date === selectedDate;
+      const matchSport = selectedSport === "all" || String(slot.sport || "").toLowerCase() === selectedSport.toLowerCase();
       const matchQuery =
         !searchQuery ||
-        s.coachName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.sport.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchSport && matchQuery;
+        String(slot.coachName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        String(slot.sport || "").toLowerCase().includes(searchQuery.toLowerCase());
+      return matchDate && matchSport && matchQuery;
     });
-  }, [ptSlots, selectedSport, searchQuery]);
+  }, [ptSlots, selectedDate, selectedSport, searchQuery]);
+  const selectedClassBooked = selectedClassDetail
+    ? isBooked(selectedClassDetail.id, selectedClassDetail.dateStr)
+    : false;
 
   return (
     <div className="space-y-6">
       {/* Toast Feedback */}
       {feedback && (
-        <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-semibold flex items-center justify-between shadow-md">
+        <div className={`p-4 rounded-xl border text-xs font-semibold flex items-center justify-between shadow-md ${
+          feedback.type === "error"
+            ? "bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200"
+            : "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200"
+        }`}>
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <span>{feedback}</span>
+            {feedback.type === "error" ? (
+              <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
+            ) : (
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            )}
+            <span>{feedback.message}</span>
           </div>
-          <button onClick={() => setFeedback(null)} className="text-emerald-600 hover:text-emerald-800">
+          <button onClick={() => setFeedback(null)} className={feedback.type === "error" ? "text-rose-600 hover:text-rose-800" : "text-emerald-600 hover:text-emerald-800"}>
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -425,9 +471,51 @@ export default function MemberBooking({ onNavigate }: Props) {
 
       {/* TAB CONTENT: GROUP CLASSES */}
       {activeTab === "group" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredGroupClasses.map((item) => {
-            const booked = isBooked(item.name, selectedDate, item.startTime);
+        loadingGroupClasses ? (
+          <div className="bg-white dark:bg-slate-900 p-12 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center">
+            <Calendar className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-2 animate-pulse" />
+            <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300">
+              Đang tải lịch lớp học...
+            </h4>
+          </div>
+        ) : groupClassesError ? (
+          <div className="bg-rose-50 dark:bg-rose-950/30 p-8 rounded-2xl border border-rose-200 dark:border-rose-800 text-center">
+            <AlertCircle className="w-10 h-10 text-rose-400 mx-auto mb-2" />
+            <h4 className="text-sm font-bold text-rose-700 dark:text-rose-300">
+              Không thể tải lịch học
+            </h4>
+            <p className="text-xs text-rose-600/80 dark:text-rose-300/80 mt-1">
+              {groupClassesError}
+            </p>
+            <button
+              type="button"
+              onClick={() => void loadGroupClasses()}
+              className="mt-4 px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold"
+            >
+              Thử tải lại
+            </button>
+          </div>
+        ) : (
+        <div className="space-y-3">
+          {refreshingGroupClasses && (
+            <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
+              <LoaderCircle className="h-4 w-4 animate-spin" />
+              <span>Đang đồng bộ trạng thái đặt lớp...</span>
+            </div>
+          )}
+          <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 transition-opacity ${refreshingGroupClasses ? "opacity-70" : ""}`}>
+          {filteredGroupClasses.length === 0 ? (
+            <div className="md:col-span-2 lg:col-span-3 bg-white dark:bg-slate-900 p-12 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center">
+              <Calendar className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+              <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                Không có lớp học phù hợp
+              </h4>
+              <p className="text-xs text-slate-500 mt-1">
+                Vui lòng thử ngày, bộ môn hoặc từ khóa khác.
+              </p>
+            </div>
+          ) : filteredGroupClasses.map((item) => {
+            const booked = isBooked(item.id, item.dateStr);
             const isFull = item.registeredCount >= item.capacity;
 
             return (
@@ -491,8 +579,13 @@ export default function MemberBooking({ onNavigate }: Props) {
                     <button
                       type="button"
                       onClick={() => {
-                        const s = mySessions.find((x) => x.name.includes(item.name) && x.date === selectedDate);
-                        if (s) handleCancelBooking(s.id);
+                        const s = mySessions.find(
+                          (x) =>
+                            String((x as any).classId ?? x.id).toLowerCase() === String(item.id).toLowerCase() &&
+                            x.date === item.dateStr &&
+                            !isInactiveBookingStatus(getBookingStatus(x))
+                        );
+                        if (s) setCancelTarget({ classId: s.id, className: item.name });
                       }}
                       className="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-900/60 font-semibold text-xs transition-colors border border-rose-200 dark:border-rose-800"
                     >
@@ -516,7 +609,9 @@ export default function MemberBooking({ onNavigate }: Props) {
               </div>
             );
           })}
+          </div>
         </div>
+        )
       )}
 
       {/* TAB CONTENT: 1-ON-1 PT SLOTS */}
@@ -525,9 +620,9 @@ export default function MemberBooking({ onNavigate }: Props) {
           <div className="p-4 rounded-xl bg-purple-50/60 dark:bg-purple-950/20 border border-purple-200/80 dark:border-purple-800 text-xs text-purple-900 dark:text-purple-300 flex items-center gap-3">
             <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400 shrink-0" />
             <div>
-              <p className="font-bold">Lịch kèm riêng 1-1 do Huấn luyện viên trực tiếp mở</p>
+              <p className="font-bold">Lịch kèm riêng 1-1 từ hệ thống</p>
               <p className="text-[11px] text-purple-700/80 dark:text-purple-300/80 mt-0.5">
-                Các ca trống dưới đây được đồng bộ thời gian thực từ lịch mở ca của các HLV. Bạn có thể giữ chỗ tập riêng 1-1 với HLV yêu thích.
+                Các ca PT chỉ hiển thị khi đã được tạo và mở từ dữ liệu hệ thống.
               </p>
             </div>
           </div>
@@ -645,7 +740,7 @@ export default function MemberBooking({ onNavigate }: Props) {
                   <div className="flex justify-between">
                     <span className="text-slate-400">Thời gian:</span>
                     <strong className="text-slate-900 dark:text-white">
-                      {selectedClassDetail.startTime} - {selectedClassDetail.endTime} (Ngày {selectedDate})
+                      {selectedClassDetail.startTime} - {selectedClassDetail.endTime} (Ngày {selectedClassDetail.dateStr || selectedDate})
                     </strong>
                   </div>
                   <div className="flex justify-between">
@@ -688,10 +783,80 @@ export default function MemberBooking({ onNavigate }: Props) {
                 </button>
                 <button
                   type="button"
+                  disabled={selectedClassBooked}
                   onClick={() => handleBookGroupClass(selectedClassDetail)}
-                  className="px-5 py-2 font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-emerald-500 dark:text-slate-950 dark:hover:bg-emerald-400 rounded-lg shadow-sm transition-colors"
+                  className={`px-5 py-2 font-semibold rounded-lg shadow-sm transition-colors ${
+                    selectedClassBooked
+                      ? "cursor-not-allowed bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                      : "text-white bg-slate-900 hover:bg-slate-800 dark:bg-emerald-500 dark:text-slate-950 dark:hover:bg-emerald-400"
+                  }`}
                 >
-                  Xác nhận đặt lớp
+                  {selectedClassBooked ? "Đã đặt lớp" : "Xác nhận đặt lớp"}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* MODAL: XÁC NHẬN HỦY ĐẶT LỚP */}
+      {cancelTarget &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[60] bg-slate-950/65 backdrop-blur-sm flex items-center justify-center p-4"
+            role="presentation"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setCancelTarget(null);
+            }}
+          >
+            <div
+              className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="cancel-booking-title"
+            >
+              <div className="flex items-start gap-4 border-b border-slate-100 p-5 dark:border-slate-800">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-300">
+                  <AlertCircle className="h-6 w-6" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 id="cancel-booking-title" className="text-base font-bold text-slate-900 dark:text-white">
+                    Xác nhận hủy đặt lớp
+                  </h3>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                    Bạn có chắc chắn muốn hủy lịch đã đặt không? Thao tác này sẽ cập nhật ngay vào lịch cá nhân của bạn.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Đóng hộp thoại"
+                  onClick={() => setCancelTarget(null)}
+                  className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="p-5">
+                <div className="rounded-xl border border-rose-100 bg-rose-50/70 px-4 py-3 text-sm font-semibold text-slate-800 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-slate-200">
+                  {cancelTarget.className}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 border-t border-slate-100 bg-slate-50/70 px-5 py-4 dark:border-slate-800 dark:bg-slate-950/30">
+                <button
+                  type="button"
+                  onClick={() => setCancelTarget(null)}
+                  className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-white dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                >
+                  Giữ lại lịch
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleCancelBooking(cancelTarget.classId)}
+                  className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-rose-500"
+                >
+                  Xác nhận hủy
                 </button>
               </div>
             </div>

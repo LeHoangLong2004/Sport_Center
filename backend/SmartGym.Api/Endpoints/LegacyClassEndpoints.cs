@@ -162,6 +162,18 @@ app.MapPost(
     )
     .RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
 
+app.MapPost(
+        "/api/classes/{id}/restore",
+        async (Guid id, ClassService service) =>
+        {
+            var (isSuccess, errorMessage) = await service.RestoreClassAsync(id);
+            if (!isSuccess)
+                return Results.BadRequest(new { message = errorMessage });
+            return Results.Ok(new { message = "Class restored successfully" });
+        }
+    )
+    .RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
+
 // ── GIAI ĐOẠN G: ĐIỂM DANH VÀ XEM LỊCH ──
 
 // Điểm danh theo lớp (HLV / Receptionist / Manager / Admin)
