@@ -48,7 +48,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches")
             .ToListAsync();
         var users = await _dbContext
-            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number FROM users")
+            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number, avatar_url FROM users")
             .ToListAsync();
 
         var sport = sports.FirstOrDefault(s => s.Id == c.SportId);
@@ -91,6 +91,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             Capacity: c.Capacity,
             CurrentEnrolled: c.CurrentEnrolled,
             AvailableSpots: c.Capacity - c.CurrentEnrolled,
+            Status: c.Status,
             EnrolledMembers: enrolledMembers
         );
     }
@@ -103,15 +104,63 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
         var startOfDay = date.Date;
         var endOfDay = startOfDay.AddDays(1);
 
-        var response = await _client
-            .From<GroupClassModel>()
-            .Where(x => x.CoachId == coachId)
-            .Where(x => x.ScheduleTime >= startOfDay)
-            .Where(x => x.ScheduleTime < endOfDay)
-            .Get();
+        var models = await _dbContext.Database
+            .SqlQueryRaw<ClassSqlRawModel>(
+                @"SELECT id, sport_id, facility_id, coach_id, class_name,
+                         schedule_time, duration_minutes, capacity,
+                         current_enrolled, status
+                  FROM classes
+                  WHERE coach_id = {0}
+                    AND schedule_time >= {1}
+                    AND schedule_time < {2}",
+                coachId,
+                startOfDay,
+                endOfDay
+            )
+            .ToListAsync();
 
-        return response.Models.Select(x => x.ToDomain());
+        return models.Select(ToDomain);
     }
+
+    public async Task<IEnumerable<GroupClass>> GetClassesByFacilityAndDateAsync(
+        Guid facilityId,
+        DateTime date
+    )
+    {
+        var startOfDay = date.Date;
+        var endOfDay = startOfDay.AddDays(1);
+
+        var models = await _dbContext.Database
+            .SqlQueryRaw<ClassSqlRawModel>(
+                @"SELECT id, sport_id, facility_id, coach_id, class_name,
+                         schedule_time, duration_minutes, capacity,
+                         current_enrolled, status
+                  FROM classes
+                  WHERE facility_id = {0}
+                    AND schedule_time >= {1}
+                    AND schedule_time < {2}",
+                facilityId,
+                startOfDay,
+                endOfDay
+            )
+            .ToListAsync();
+
+        return models.Select(ToDomain);
+    }
+
+    private static GroupClass ToDomain(ClassSqlRawModel model)
+        => new(
+            model.Id,
+            model.SportId,
+            model.CoachId,
+            model.FacilityId,
+            model.ClassName,
+            model.ScheduleTime,
+            model.DurationMinutes,
+            model.Capacity,
+            model.CurrentEnrolled,
+            model.Status
+        );
 
     public async Task<IEnumerable<ClassResponse>> GetAllClassesAsync()
     {
@@ -130,7 +179,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches")
             .ToListAsync();
         var users = await _dbContext
-            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number FROM users")
+            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number, avatar_url FROM users")
             .ToListAsync();
 
         return classModels
@@ -184,7 +233,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches")
             .ToListAsync();
         var users = await _dbContext
-            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number FROM users")
+            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number, avatar_url FROM users")
             .ToListAsync();
 
         return classModels

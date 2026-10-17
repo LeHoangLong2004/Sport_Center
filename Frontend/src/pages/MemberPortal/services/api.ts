@@ -1,4 +1,7 @@
-const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api';
+const configuredApiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+const BASE_URL = configuredApiUrl
+    ? `${configuredApiUrl}${configuredApiUrl.endsWith('/api') ? '' : '/api'}`
+    : '/api';
 
 async function fetchApi(endpoint: string, options: RequestInit = {}) {
     const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
@@ -10,16 +13,22 @@ async function fetchApi(endpoint: string, options: RequestInit = {}) {
         headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-        ...options,
-        headers
-    });
-    
-    if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+    let response: Response;
+    try {
+        response = await fetch(`${BASE_URL}${endpoint}`, {
+            ...options,
+            headers
+        });
+    } catch {
+        throw new Error('Không thể kết nối đến máy chủ. Vui lòng kiểm tra backend đang chạy.');
     }
     
-    return response.json();
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+        throw new Error(data?.message || `API error: ${response.status}`);
+    }
+
+    return data;
 }
 
 export const MemberAPI = {
@@ -56,10 +65,48 @@ export const MemberAPI = {
             method: 'POST'
         });
     },
+    cancelClassBooking: async (classId: string) => {
+        return fetchApi(`/classes/${classId}/cancel-booking`, {
+            method: 'POST'
+        });
+    },
+    getMemberSchedule: async () => {
+        return fetchApi('/schedule/member');
+    },
+    getAvailablePtSlots: async () => {
+        return fetchApi('/member/available-pt-slots');
+    },
+    bookPtSlot: async (data: {
+        slotId: string;
+        sport: string;
+        date: string;
+        startTime: string;
+        endTime: string;
+        room: string;
+        coachId?: string;
+        coachName?: string;
+        goal?: string;
+        coachNote?: string;
+    }) => {
+        return fetchApi('/member/bookings', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+    cancelPtBooking: async (sessionId: string, reason?: string) => {
+        const query = reason ? `?reason=${encodeURIComponent(reason)}` : '';
+        return fetchApi(`/member/bookings/${encodeURIComponent(sessionId)}${query}`, {
+            method: 'DELETE'
+        });
+    },
 
     // 4. Lịch cá nhân
     getMySchedule: async () => {
         return fetchApi('/schedule/my');
+    },
+
+    getCoaches: async () => {
+        return fetchApi('/coaches');
     },
 
     // 5. Invoices & Bookings

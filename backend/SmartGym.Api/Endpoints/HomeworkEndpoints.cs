@@ -4,8 +4,10 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore;
 using SmartGym.Application.DTOs.WorkoutPlans;
 using SmartGym.Application.Interfaces;
+using SmartGym.Infrastructure.Persistence.EF;
 
 namespace SmartGym.Api.Endpoints;
 
@@ -22,7 +24,8 @@ public static class HomeworkEndpoints
                 async (
                     HttpContext context,
                     [FromBody] AssignHomeworkRequest request,
-                    IHomeworkProgressService service
+                    IHomeworkProgressService service,
+                    SmartGymDbContext db
                 ) =>
                 {
                     var roleClaim = context.User.FindFirst(ClaimTypes.Role)?.Value;
@@ -34,15 +37,19 @@ public static class HomeworkEndpoints
                     var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                     if (
                         string.IsNullOrEmpty(userIdClaim)
-                        || !Guid.TryParse(userIdClaim, out var coachId)
+                        || !Guid.TryParse(userIdClaim, out var userId)
                     )
                     {
                         return Results.Unauthorized();
                     }
 
+                    var coachId = await CoachProfileResolver.FindByUserIdAsync(db, userId);
+                    if (coachId == null)
+                        return Results.BadRequest(new { message = "Coach profile not found." });
+
                     try
                     {
-                        var result = await service.AssignHomeworkAsync(coachId, request);
+                        var result = await service.AssignHomeworkAsync(coachId.Value, request);
                         return Results.Ok(result);
                     }
                     catch (Exception ex)
@@ -111,4 +118,5 @@ public static class HomeworkEndpoints
             .WithTags("Homework")
             .WithSummary("Update progress status of a homework (Member only)");
     }
+
 }

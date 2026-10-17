@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { MemberAPI } from "../services/api";
 import type { MemberScreen } from "../types";
-import { getSavedMemberData, saveMemberData } from "../services/memberData";
+import { saveMemberData } from "../services/memberData";
 
 export interface ChatMessage {
   id: string;
@@ -238,10 +238,8 @@ export default function MemberChat({ onNavigate }: Props) {
   const memberId = user?.id || "";
   const storageKey = memberId ? `member_chats_${memberId}` : "member_chats";
 
-  const [conversations, setConversations] = useState<ChatConversation[]>(() =>
-    getSavedMemberData(storageKey, INITIAL_CONVERSATIONS)
-  );
-  const [activeId, setActiveId] = useState<string>("conv-manager");
+  const [conversations, setConversations] = useState<ChatConversation[]>([]);
+  const [activeId, setActiveId] = useState<string>("");
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState<"all" | "coach" | "member" | "manager" | "class">("all");
   const [inputText, setInputText] = useState("");
@@ -251,8 +249,32 @@ export default function MemberChat({ onNavigate }: Props) {
   // Modal state
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [modalTab, setModalTab] = useState<"coaches" | "managers" | "members" | "classes">("coaches");
+  const [coachContacts, setCoachContacts] = useState<typeof DIRECTORY_CONTACTS.coaches>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    MemberAPI.getCoaches()
+      .then((coaches) => {
+        if (!mounted || !Array.isArray(coaches)) return;
+        setCoachContacts(coaches.map((coach: { id: string; fullName?: string; email?: string }) => ({
+          id: coach.id,
+          name: coach.fullName || coach.email || "Huấn luyện viên",
+          role: "coach",
+          roleTag: "HLV",
+          subtitle: "Huấn luyện viên SportCenter",
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(coach.fullName || "HLV")}&background=f97316&color=fff`,
+        })));
+      })
+      .catch(() => {
+        if (mounted) setCoachContacts([]);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Load conversations from backend
   const loadConversations = async (silent = false) => {
@@ -260,9 +282,14 @@ export default function MemberChat({ onNavigate }: Props) {
     try {
       if (memberId) {
         const res = await MemberAPI.getMemberConversations(memberId);
-        if (Array.isArray(res) && res.length > 0) {
+        if (Array.isArray(res)) {
           setConversations(res);
           saveMemberData(storageKey, res);
+          setActiveId((current) =>
+            res.some((conversation) => conversation.id === current)
+              ? current
+              : (res[0]?.id || "")
+          );
         }
       }
     } catch (err) {
@@ -355,12 +382,19 @@ export default function MemberChat({ onNavigate }: Props) {
       if (res && res.data) {
         // Refresh conversations to keep exact sync
         const updated = await MemberAPI.getMemberConversations(memberId);
-        if (Array.isArray(updated) && updated.length > 0) {
+        if (Array.isArray(updated)) {
           setConversations(updated);
         }
       }
     } catch (err) {
-      console.warn("Lưu tin nhắn lên backend, đã lưu tạm:", err);
+      setConversations((prev) =>
+        prev.map((conversation) =>
+          conversation.id === activeConv.id
+            ? { ...conversation, messages: conversation.messages.filter((message) => message.id !== newMsg.id) }
+            : conversation
+        )
+      );
+      console.warn("Không thể lưu tin nhắn lên máy chủ:", err);
     } finally {
       setIsSending(false);
     }
@@ -394,31 +428,7 @@ export default function MemberChat({ onNavigate }: Props) {
         setActiveId(res.conversation.id);
       }
     } catch (err) {
-      // Local fallback
-      const newId = `conv-${contact.id}`;
-      const fallbackConv: ChatConversation = {
-        id: newId,
-        type: contact.role === "class" ? "class" : "direct",
-        category: contact.role === "coach" ? "coach" : (contact.role === "class" ? "class" : (contact.role === "member" ? "member" : "manager")),
-        roleTag: contact.roleTag,
-        title: contact.name,
-        subtitle: contact.subtitle,
-        avatar: contact.avatar,
-        lastMessage: "Bắt đầu cuộc trò chuyện",
-        lastTime: "Vừa xong",
-        online: true,
-        messages: [
-          {
-            id: `msg-${Date.now()}`,
-            sender: contact.role === "coach" ? "coach" : "other_member",
-            senderName: contact.name,
-            text: `Chào bạn ${memberName}, mình là ${contact.name}. Rất vui được kết nối cùng bạn tại SportCenter!`,
-            timestamp: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })
-          }
-        ]
-      };
-      setConversations((prev) => [fallbackConv, ...prev]);
-      setActiveId(newId);
+      console.warn("Không thể tạo cuộc trò chuyện trên máy chủ:", err);
     } finally {
       setShowNewChatModal(false);
     }
@@ -939,7 +949,7 @@ export default function MemberChat({ onNavigate }: Props) {
             {/* Modal Body List */}
             <div className="p-4 overflow-y-auto flex-1 space-y-2.5">
               {modalTab === "coaches" &&
-                DIRECTORY_CONTACTS.coaches.map((c) => (
+                coachContacts.map((c) => (
                   <div
                     key={c.id}
                     onClick={() => handleStartChat(c)}

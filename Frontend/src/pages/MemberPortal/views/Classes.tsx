@@ -4,6 +4,7 @@ import MemberShell from '../components/MemberShell';
 import { CancelBookingModal, NotificationModal } from '../components/ClassesModals';
 import { ClassCard } from '../components/ClassCard';
 import { MyBookingsPanel } from './MyBookingsPanel';
+import { DateInput } from '../../../components/DateInput';
 export function Classes({
   onNavigate,
   onSelect,
@@ -214,18 +215,12 @@ export function Classes({
                 <div>
                   <strong className="block text-xs font-bold text-slate-400 tracking-widest uppercase mb-4">Chọn ngày xem lịch</strong>
                   <div className="flex gap-3 items-center">
-                    <div className="relative inline-block w-full md:w-auto">
-                      <input
-                        type="date"
-                        value={selectedDate}
-                        onChange={e => setSelectedDate(e.target.value)}
-                        className="px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all outline-none text-transparent bg-white shadow-sm font-bold w-full md:w-auto z-10 relative cursor-pointer"
-                        style={{ WebkitTextFillColor: 'transparent' }}
-                      />
-                      <div className="absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-800 font-bold z-20 flex items-center gap-2">
-                        {selectedDate ? selectedDate.split('-').reverse().join('/') : "dd/mm/yyyy"}
-                      </div>
-                    </div>
+                    <DateInput
+                      value={selectedDate}
+                      onChange={setSelectedDate}
+                      placeholder="dd/mm/yyyy"
+                      className="px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all outline-none bg-white shadow-sm font-bold w-full md:w-auto cursor-pointer"
+                    />
                     {selectedDate && (
                       <button
                         onClick={() => setSelectedDate("")}

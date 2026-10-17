@@ -104,8 +104,8 @@
     "MemberSubtitle": "HLV Hu\u1EA5n luy\u1EC7n vi\u00EAn c\u00E1 nh\u00E2n 1-1",
     "Avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100\u0026auto=format\u0026fit=crop\u0026q=80",
     "CoachAvatar": "https://images.unsplash.com/photo-1567013127542-490d757e51fc?w=100\u0026auto=format\u0026fit=crop\u0026q=80",
-    "LastMessage": "Ph\u1EA1m \u0110\u1EE9c Thanh Ph\u01B0\u01A1ng: Th\u1EA7y \u01A1i cho em h\u1ECFi v\u1EC1 b\u00E0i t\u1EADp h\u00F4m nay v\u1EDBi \u1EA1!",
-    "LastTime": "12:47",
+    "LastMessage": "Coach: abc",
+    "LastTime": "09:15",
     "UnreadCount": 0,
     "Online": true,
     "CoachId": "25F50FBA",
@@ -264,6 +264,14 @@
         "Text": "Th\u1EA7y \u01A1i cho em h\u1ECFi v\u1EC1 b\u00E0i t\u1EADp h\u00F4m nay v\u1EDBi \u1EA1!",
         "Timestamp": "12:47",
         "CreatedAt": "2026-10-14T05:47:25.2087906Z"
+      },
+      {
+        "Id": "msg-1792116957841",
+        "Sender": "coach",
+        "SenderName": "HLV Nam",
+        "Text": "abc",
+        "Timestamp": "09:15",
+        "CreatedAt": "2026-10-16T02:15:57.8411765Z"
       }
     ]
   },

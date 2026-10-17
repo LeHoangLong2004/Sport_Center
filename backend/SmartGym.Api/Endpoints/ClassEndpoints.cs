@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Logging;
 using SmartGym.Application.DTOs.Classes;
 using SmartGym.Application.Services;
 
@@ -36,12 +37,57 @@ public static class ClassEndpoints
 
         classGroup.MapGet(
             "/available",
-            async (ClassService service) =>
+            async (ClassService service, ILoggerFactory loggerFactory) =>
             {
-                var classes = await service.GetAvailableClassesAsync();
-                return Results.Ok(classes);
+                try
+                {
+                    var classes = await service.GetAvailableClassesAsync();
+                    return Results.Ok(classes);
+                }
+                catch (Exception exception)
+                {
+                    var logger = loggerFactory.CreateLogger("ClassEndpoints");
+                    logger.LogError(exception, "Không thể tải danh sách lớp học khả dụng.");
+                    return Results.Problem(
+                        title: "Không thể tải lịch học",
+                        detail: "Database hiện không khả dụng. Vui lòng kiểm tra kết nối máy chủ rồi thử lại.",
+                        statusCode: StatusCodes.Status503ServiceUnavailable
+                    );
+                }
             }
         );
+
+        classGroup.MapPost(
+                "/{id:guid}/book",
+                async (Guid id, HttpContext context, ClassService service) =>
+                {
+                    var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    if (!Guid.TryParse(userIdClaim, out var userId))
+                        return Results.Unauthorized();
+
+                    var (isSuccess, errorMessage) = await service.BookClassAsync(userId, id);
+                    return isSuccess
+                        ? Results.Ok(new { message = "Đặt lớp thành công." })
+                        : Results.BadRequest(new { message = errorMessage });
+                }
+            )
+            .RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
+
+        classGroup.MapPost(
+                "/{id:guid}/cancel-booking",
+                async (Guid id, HttpContext context, ClassService service) =>
+                {
+                    var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    if (!Guid.TryParse(userIdClaim, out var userId))
+                        return Results.Unauthorized();
+
+                    var (isSuccess, errorMessage) = await service.CancelBookingAsync(userId, id);
+                    return isSuccess
+                        ? Results.Ok(new { message = "Hủy đặt lớp thành công." })
+                        : Results.BadRequest(new { message = errorMessage });
+                }
+            )
+            .RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
 
         /* classGroup.MapGet("/{id:guid}", async (Guid id, ClassService service) =>
         {

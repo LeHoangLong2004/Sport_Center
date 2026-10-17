@@ -183,6 +183,22 @@ export function SchedulePage() {
     fetchClasses();
     fetchFacilities();
     fetchBookings();
+
+    // A member can submit a booking from another tab/session while Manager is
+    // already viewing this page. Keep the approval list in sync without
+    // requiring a manual navigation or a full-page reload.
+    const refreshBookings = () => {
+      if (document.visibilityState === "visible") {
+        void fetchBookings();
+      }
+    };
+    const interval = window.setInterval(refreshBookings, 15000);
+    window.addEventListener("focus", refreshBookings);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshBookings);
+    };
   }, []);
 
   const handlePrevWeek = () => {

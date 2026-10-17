@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, X } from "lucide-react";
 import type { MockMember } from "../../services/api";
+import { DateInput } from "../../../../components/DateInput";
 
 interface AssignmentDropdownItem {
   id: string;
@@ -99,7 +100,7 @@ export const CurriculumAssignModal: React.FC<CurriculumAssignModalProps> = ({
         </p>
         <div>
           <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">Hạn hoàn thành (Deadline):</label>
-          <input type="date" value={assignDeadline} onChange={(e) => setAssignDeadline(e.target.value)} className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs mb-3" />
+          <DateInput value={assignDeadline} onChange={setAssignDeadline} className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs mb-3" />
           <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">Ghi chú bài tập về nhà:</label>
           <input type="text" placeholder="VD: Tập 3 hiệp, nghỉ đủ 45s giữa các hiệp..." value={assignNote} onChange={(e) => setAssignNote(e.target.value)} className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs" />
         </div>

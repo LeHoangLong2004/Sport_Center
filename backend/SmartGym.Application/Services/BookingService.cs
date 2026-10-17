@@ -33,6 +33,11 @@ public sealed class BookingService
             return (null, "Lớp học không tồn tại.");
         }
 
+        if (schedule.IsCancelled)
+        {
+            return (null, "Lớp học đã bị hủy và không thể đặt chỗ.");
+        }
+
         var now = DateTime.UtcNow;
         var timeUntilClass = schedule.StartTime - now;
 
@@ -53,6 +58,25 @@ public sealed class BookingService
         if (existing is not null)
         {
             return (null, $"Bạn đã đặt chỗ cho lớp này (trạng thái: {existing.Status}).");
+        }
+
+        var memberBookings = await _bookingRepository.GetByMemberAsync(memberId);
+        foreach (var memberBooking in memberBookings)
+        {
+            if (memberBooking.ScheduleId == scheduleId
+                || memberBooking.Status is not (BookingStatus.Confirmed or BookingStatus.Swapped))
+            {
+                continue;
+            }
+
+            var otherSchedule = await _scheduleRepository.FindByIdAsync(memberBooking.ScheduleId);
+            if (otherSchedule is not null
+                && !otherSchedule.IsCancelled
+                && schedule.StartTime < otherSchedule.EndTime
+                && otherSchedule.StartTime < schedule.EndTime)
+            {
+                return (null, "Bạn đã có một lớp học khác trùng thời gian.");
+            }
         }
 
         var activePackage = await _packageRepository.FindActivePackageAsync(memberId);

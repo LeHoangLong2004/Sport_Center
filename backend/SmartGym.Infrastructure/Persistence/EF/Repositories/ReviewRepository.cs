@@ -33,4 +33,13 @@ public class ReviewRepository : IReviewRepository
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync();
     }
+
+    public async Task<IEnumerable<Review>> GetByMemberIdAsync(Guid memberId)
+    {
+        return await _context.Reviews
+            .Include(r => r.Member)
+            .Where(r => r.MemberId == memberId)
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync();
+    }
 }

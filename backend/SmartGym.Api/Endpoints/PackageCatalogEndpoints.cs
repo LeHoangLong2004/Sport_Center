@@ -171,7 +171,8 @@ public static class PackageCatalogEndpoints
                     }
                 }
             )
-            .RequireAuthorization(policy => policy.RequireRole(MemberRoles));
+            .RequireAuthorization();
+
 
         orders
             .MapPost(

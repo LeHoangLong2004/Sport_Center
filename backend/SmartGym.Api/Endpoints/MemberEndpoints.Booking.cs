@@ -1,12 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore;
 using SmartGym.Api.Services;
+using SmartGym.Application.Common;
+using SmartGym.Application.Interfaces.Repositories;
+using SmartGym.Infrastructure.Persistence.EF;
 
 namespace SmartGym.Api.Endpoints
 {
@@ -56,14 +61,28 @@ namespace SmartGym.Api.Endpoints
             .WithTags("Member Portal")
             .WithSummary("Get all member active bookings");
 
-            group.MapGet("/available-pt-slots", (ScheduleStoreService scheduleStore) =>
+            group.MapGet("/available-pt-slots", async (SmartGymDbContext db) =>
             {
-                return Results.Ok(scheduleStore.GetAvailablePtSlots());
+                var persistentSlots = await db.Database.SqlQueryRaw<CoachAvailabilitySlotSqlModel>(
+                    @"SELECT s.id AS ""Id"", s.coach_id AS ""CoachId"", s.start_time AS ""StartTime"",
+                             s.end_time AS ""EndTime"", s.sport AS ""Sport"", s.room AS ""Room"",
+                             s.note AS ""Note"", s.status AS ""Status"", s.booked_member_id AS ""BookedMemberId"",
+                             s.booked_member_name AS ""BookedMemberName"", s.booked_member_phone AS ""BookedMemberPhone"",
+                             s.goal AS ""Goal"", u.full_name AS ""CoachName""
+                      FROM coach_availability_slots s
+                      INNER JOIN coaches c ON c.id = s.coach_id
+                      LEFT JOIN users u ON u.id = c.user_id
+                      WHERE s.status = 'open' AND s.start_time > now()
+                      ORDER BY s.start_time")
+                    .ToListAsync();
+
+                var persistentResponses = persistentSlots.Select(CoachEndpoints.ToAvailabilityResponse);
+                return Results.Ok(persistentResponses);
             })
             .WithTags("Member Portal")
             .WithSummary("Get available PT slots for booking");
 
-            group.MapPost("/bookings", (HttpContext context, ScheduleStoreService scheduleStore, [FromBody] JsonElement body) =>
+            group.MapPost("/bookings", async (HttpContext context, ScheduleStoreService scheduleStore, SmartGymDbContext db, IGroupClassRepository classRepository, IPtSessionRepository ptSessionRepository, [FromBody] JsonElement body) =>
             {
                 var userId = GetUserId(context) ?? "m-demo";
                 var bookings = _memberBookings.GetOrAdd(userId, _ => GetDefaultBookings());
@@ -89,7 +108,113 @@ namespace SmartGym.Api.Endpoints
                     CoachNote = body.TryGetProperty("coachNote", out var nt) ? nt.GetString() : ""
                 };
 
-                var bookedSession = scheduleStore.BookPtSlot(req);
+                CoachAvailabilitySlotSqlModel? persistentSlot = null;
+                if (Guid.TryParse(slotId, out var requestedSlotId))
+                {
+                    persistentSlot = await db.Database.SqlQueryRaw<CoachAvailabilitySlotSqlModel>(
+                        @"SELECT s.id AS ""Id"", s.coach_id AS ""CoachId"", s.start_time AS ""StartTime"",
+                                 s.end_time AS ""EndTime"", s.sport AS ""Sport"", s.room AS ""Room"",
+                                 s.note AS ""Note"", s.status AS ""Status"", s.booked_member_id AS ""BookedMemberId"",
+                                 s.booked_member_name AS ""BookedMemberName"", s.booked_member_phone AS ""BookedMemberPhone"",
+                                 s.goal AS ""Goal"", u.full_name AS ""CoachName""
+                          FROM coach_availability_slots s
+                          INNER JOIN coaches c ON c.id = s.coach_id
+                          LEFT JOIN users u ON u.id = c.user_id
+                          WHERE s.id = {0} AND s.status = 'open'",
+                        requestedSlotId)
+                        .FirstOrDefaultAsync();
+                }
+
+                if (persistentSlot != null)
+                {
+                    var localStart = CenterTime.ToLocal(persistentSlot.StartTime);
+                    var localEnd = CenterTime.ToLocal(persistentSlot.EndTime);
+                    req.Date = localStart.ToString("yyyy-MM-dd");
+                    req.StartTime = localStart.ToString("HH:mm");
+                    req.EndTime = localEnd.ToString("HH:mm");
+                    req.Sport = persistentSlot.Sport;
+                    req.Room = persistentSlot.Room;
+                    req.CoachId = persistentSlot.CoachId.ToString();
+                    req.CoachName = persistentSlot.CoachName ?? req.CoachName;
+                }
+
+                if (!TryBuildInterval(req.Date, req.StartTime, req.EndTime, out var start, out var end))
+                {
+                    return Results.BadRequest(new { message = "Ngày hoặc thời gian đặt lịch PT không hợp lệ." });
+                }
+
+                if (Guid.TryParse(req.CoachId, out var requestedCoachId))
+                {
+                    var coachClasses = await classRepository.GetClassesByCoachAndDateAsync(requestedCoachId, start);
+                    if (coachClasses.Any(c => c.Status && Overlaps(start, end, c.ScheduleTime, c.DurationMinutes)))
+                    {
+                        return Results.Conflict(new { message = "Huấn luyện viên đã có lớp học khác trùng thời gian." });
+                    }
+
+                    var coachPtSessions = await ptSessionRepository.GetSessionsByCoachAndDateAsync(requestedCoachId, start);
+                    if (coachPtSessions.Any(p => IsBlockingStatus(p.Status) && Overlaps(start, end, p.ScheduleTime, p.DurationMinutes)))
+                    {
+                        return Results.Conflict(new { message = "Huấn luyện viên đã có buổi PT khác trùng thời gian." });
+                    }
+                }
+
+                if (Guid.TryParse(userId, out var memberId))
+                {
+                    var memberSchedule = await classRepository.GetMemberScheduleAsync(memberId);
+                    if (memberSchedule.ClassBookings.Any(c => IsBlockingMemberStatus(c.Status) && Overlaps(start, end, c.ScheduleTime, c.DurationMinutes)))
+                    {
+                        return Results.Conflict(new { message = "Bạn đã có lớp học khác trùng thời gian." });
+                    }
+
+                    if (memberSchedule.PtSessions.Any(p => IsBlockingStatus(p.Status) && Overlaps(start, end, p.ScheduleTime, p.DurationMinutes)))
+                    {
+                        return Results.Conflict(new { message = "Bạn đã có buổi PT khác trùng thời gian." });
+                    }
+                }
+
+                if (persistentSlot != null)
+                {
+                    var bookedMemberId = Guid.TryParse(userId, out var parsedMemberId)
+                        ? parsedMemberId
+                        : (Guid?)null;
+                    var changed = await db.Database.ExecuteSqlInterpolatedAsync($@"UPDATE coach_availability_slots SET status = 'booked', booked_member_id = {bookedMemberId}, booked_member_name = {req.MemberName}, booked_member_phone = {req.MemberPhone}, goal = {req.Goal} WHERE id = {persistentSlot.Id} AND status = 'open'");
+                    if (changed == 0)
+                        return Results.Conflict(new { message = "Khung giờ PT này vừa được người khác đặt." });
+
+                    var persistentBooking = new
+                    {
+                        id = persistentSlot.Id.ToString(),
+                        name = $"Kèm 1-1: {req.Sport}",
+                        sport = req.Sport,
+                        level = "1-1 PT",
+                        type = "pt",
+                        date = req.Date,
+                        startTime = req.StartTime,
+                        endTime = req.EndTime,
+                        room = req.Room,
+                        coachName = req.CoachName ?? "HLV SportCenter",
+                        coachId = req.CoachId,
+                        status = "confirmed",
+                        attendanceStatus = "chưa điểm danh",
+                        coachNote = req.CoachNote,
+                        bookedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
+                    };
+                    bookings.Insert(0, persistentBooking);
+                    return Results.Ok(new { message = "Đặt lịch thành công!", booking = persistentBooking });
+                }
+
+                if (!scheduleStore.TryBookPtSlot(req, out var bookedSession, out var conflictMessage) || bookedSession == null)
+                    return Results.Conflict(new { message = conflictMessage ?? "Khung giờ này không còn khả dụng." });
+
+                if (Guid.TryParse(bookedSession.CoachId, out var coachId))
+                {
+                    await classRepository.NotifyCoachAsync(
+                        coachId,
+                        "Có lịch PT 1-1 mới",
+                        $"{req.MemberName ?? "Hội viên"} vừa đặt lịch PT 1-1 vào {bookedSession.Date} {bookedSession.StartTime} - {bookedSession.EndTime}.",
+                        "pt"
+                    );
+                }
 
                 var newBooking = new
                 {
@@ -117,13 +242,33 @@ namespace SmartGym.Api.Endpoints
             .WithSummary("Create new booking for group class or 1-on-1 PT slot");
 
             // 3. DELETE /api/member/bookings/{id} - Cancel Booking with Reason
-            group.MapDelete("/bookings/{id}", (string id, [FromQuery] string? reason, HttpContext context, ScheduleStoreService scheduleStore) =>
+            group.MapDelete("/bookings/{id}", async (string id, [FromQuery] string? reason, HttpContext context, ScheduleStoreService scheduleStore, SmartGymDbContext db, IGroupClassRepository classRepository) =>
             {
                 var userId = GetUserId(context) ?? "m-demo";
                 var bookings = _memberBookings.GetOrAdd(userId, _ => GetDefaultBookings());
                 var cancelledList = _memberCancelledBookings.GetOrAdd(userId, _ => new List<object>());
 
-                scheduleStore.CancelBooking(id, reason ?? "Học viên tự hủy");
+                var cancelledSession = scheduleStore.GetAllSessions().FirstOrDefault(s => s.Id == id);
+                var reopenedPersistentSlot = false;
+                if (Guid.TryParse(userId, out var memberId) && Guid.TryParse(id, out var persistentSlotId))
+                {
+                    reopenedPersistentSlot = await db.Database.ExecuteSqlInterpolatedAsync($@"UPDATE coach_availability_slots SET status = 'open', booked_member_id = NULL, booked_member_name = NULL, booked_member_phone = NULL, goal = NULL WHERE id = {persistentSlotId} AND booked_member_id = {memberId} AND status = 'booked'") > 0;
+                }
+
+                if (!reopenedPersistentSlot)
+                {
+                    scheduleStore.CancelBooking(id, reason ?? "Học viên tự hủy");
+                }
+
+                if (cancelledSession != null && Guid.TryParse(cancelledSession.CoachId, out var coachId))
+                {
+                    await classRepository.NotifyCoachAsync(
+                        coachId,
+                        "Lịch PT 1-1 đã bị hủy",
+                        $"{cancelledSession.MemberName ?? "Hội viên"} đã hủy lịch PT 1-1 vào {cancelledSession.Date} {cancelledSession.StartTime}.",
+                        "pt"
+                    );
+                }
 
                 var found = bookings.FirstOrDefault(b => ((dynamic)b).id == id);
                 if (found != null)
@@ -156,5 +301,28 @@ namespace SmartGym.Api.Endpoints
             .WithTags("Member Portal")
             .WithSummary("Get member cancelled bookings history");
         }
+
+        private static bool TryBuildInterval(string? date, string? startText, string? endText, out DateTime start, out DateTime end)
+        {
+            start = default;
+            end = default;
+            var formats = new[] { "yyyy-MM-dd HH:mm", "yyyy-MM-dd H:mm" };
+            if (!DateTime.TryParseExact($"{date} {startText}", formats, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out start)
+                || !DateTime.TryParseExact($"{date} {endText}", formats, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out end))
+            {
+                return false;
+            }
+
+            return end > start;
+        }
+
+        private static bool Overlaps(DateTime start, DateTime end, DateTime otherStart, int otherDurationMinutes)
+            => start < otherStart.AddMinutes(Math.Max(1, otherDurationMinutes)) && otherStart < end;
+
+        private static bool IsBlockingStatus(string? status)
+            => status?.Trim().ToLowerInvariant() is "scheduled" or "pending" or "confirmed" or "sắp diễn ra";
+
+        private static bool IsBlockingMemberStatus(string? status)
+            => status?.Trim().ToLowerInvariant() is "pending" or "confirmed" or "approved";
     }
 }

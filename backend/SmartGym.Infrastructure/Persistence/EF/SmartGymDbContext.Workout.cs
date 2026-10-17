@@ -86,10 +86,15 @@ public partial class SmartGymDbContext
             entity.ToTable("reviews");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
-            entity.Property(e => e.MemberId).HasColumnName("member_id");
+            // The running Supabase schema names this relation user_id. Keep the
+            // domain property as MemberId while mapping it to the real column.
+            entity.Property(e => e.MemberId).HasColumnName("user_id");
             entity.Property(e => e.CoachId).HasColumnName("coach_id");
             entity.Property(e => e.Rating).HasColumnName("rating").IsRequired();
             entity.Property(e => e.Comment).HasColumnName("comment");
+            entity.Property(e => e.SessionId).HasColumnName("session_id");
+            entity.Property(e => e.SessionName).HasColumnName("session_name");
+            entity.Property(e => e.TagsJson).HasColumnName("tags_json");
             entity
                 .Property(e => e.CreatedAt)
                 .HasColumnName("created_at")

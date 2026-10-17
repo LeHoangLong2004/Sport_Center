@@ -1,4 +1,5 @@
 import React from "react";
+import { DateInput } from "../../components/DateInput";
 
 export const A = "/assets"
 
@@ -55,75 +56,21 @@ export function fmt(n: number) {
 }
 
 export function CustomDatePicker({ value, onChange, placeholder = "dd/mm/yyyy" }: { value: string, onChange: (v: string) => void, placeholder?: string }) {
-  const [text, setText] = React.useState(() => {
-    if (!value) return "";
-    const parts = value.split('-');
-    if (parts.length !== 3) return value;
-    return `${parts[2]}/${parts[1]}/${parts[0]}`;
-  });
-
-  React.useEffect(() => {
-    if (value) {
-      const parts = value.split('-');
-      if (parts.length === 3) {
-        setText(`${parts[2]}/${parts[1]}/${parts[0]}`);
-      }
-    } else {
-      setText("");
-    }
-  }, [value]);
-
-  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let val = e.target.value.replace(/[^\d/]/g, '');
-    
-    // Auto-insert slashes
-    if (val.length === 2 && !val.includes('/') && text.length < val.length) {
-      val += '/';
-    } else if (val.length === 5 && val.split('/').length === 2 && text.length < val.length) {
-      val += '/';
-    }
-    
-    if (val.length > 10) val = val.substring(0, 10);
-    setText(val);
-
-    if (val.length === 10) {
-      const parts = val.split('/');
-      if (parts.length === 3 && parts[0].length === 2 && parts[1].length === 2 && parts[2].length === 4) {
-        const iso = `${parts[2]}-${parts[1]}-${parts[0]}`;
-        onChange(iso);
-      }
-    } else if (val === '') {
-      onChange('');
-    }
-  };
-
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
-  };
-
   return (
     <div className="flex bg-white border border-[#cbd5e1] focus-within:border-[#2563eb] rounded-[10px] w-full overflow-hidden transition-colors">
-      <input
-        type="text"
-        value={text}
-        onChange={handleTextChange}
+      <DateInput
+        value={value}
+        onChange={onChange}
         placeholder={placeholder}
         className="flex-1 outline-none px-[16px] py-[12px] font-['Inter:Medium'] font-medium text-[#0f172a] text-[14px] bg-transparent min-w-0"
-        maxLength={10}
       />
-      <div className="relative w-[48px] border-l border-[#cbd5e1] flex items-center justify-center bg-[#f8fafc] hover:bg-[#f1f5f9] transition-colors cursor-pointer shrink-0">
+      <div className="w-[48px] border-l border-[#cbd5e1] flex items-center justify-center bg-[#f8fafc] shrink-0">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
           <line x1="16" y1="2" x2="16" y2="6"></line>
           <line x1="8" y1="2" x2="8" y2="6"></line>
           <line x1="3" y1="10" x2="21" y2="10"></line>
         </svg>
-        <input
-          type="date"
-          value={value || ''}
-          onChange={handleDateChange}
-          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-        />
       </div>
     </div>
   );

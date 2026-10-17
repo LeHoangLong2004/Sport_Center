@@ -32,7 +32,11 @@ import {
   KeyRound,
   FileText,
   ShoppingBag,
+  Wallet,
 } from "lucide-react";
+import { WalletService, MEMBER_WALLET_UPDATED_EVENT } from "../services/walletService";
+import WalletTopUpModal from "./WalletTopUpModal";
+import { notificationApi, type ManagerNotification } from "../../../hooks/notificationApi";
 
 interface Props {
   currentScreen: MemberScreen;
@@ -48,14 +52,72 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
     );
   });
 
-  const [notificationCount, setNotificationCount] = useState(2);
+  const [notifications, setNotifications] = useState<ManagerNotification[]>([]);
+  const [notificationsError, setNotificationsError] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [currentLang, setCurrentLang] = useState<"vi" | "en">("vi");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number>(() => {
+    return WalletService.getLocalWallet().balance;
+  });
+  const [showWalletModal, setShowWalletModal] = useState(false);
 
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  const notificationCount = notifications.filter((notification) => !notification.isRead).length;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadNotifications = async () => {
+      try {
+        const data = await notificationApi.list();
+        if (!cancelled) {
+          setNotifications(data);
+          setNotificationsError(false);
+        }
+      } catch {
+        if (!cancelled) setNotificationsError(true);
+      }
+    };
+
+    void loadNotifications();
+    const interval = window.setInterval(() => void loadNotifications(), 30000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  const markNotificationAsRead = async (notification: ManagerNotification) => {
+    if (notification.isRead || notification.id.startsWith("derived-")) return;
+    try {
+      await notificationApi.markRead(notification.id);
+      setNotifications((current) => current.map((item) =>
+        item.id === notification.id ? { ...item, isRead: true } : item
+      ));
+    } catch {
+      // Keep the notification unread when the server update fails.
+    }
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    try {
+      await notificationApi.markAllRead();
+      setNotifications((current) => current.map((item) => ({ ...item, isRead: true })));
+    } catch {
+      // Keep the current unread state when the server update fails.
+    }
+  };
+
+  const formatNotificationTime = (value: string) => {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime())
+      ? ""
+      : date.toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" });
+  };
 
   useEffect(() => {
     if (isDark) {
@@ -80,8 +142,36 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
 
   useEffect(() => {
     const handleOpenCheckin = () => setShowCheckInModal(true);
+    const handleOpenWallet = () => setShowWalletModal(true);
+    const handleWalletUpdate = (e: any) => {
+      if (e?.detail?.balance !== undefined) {
+        setWalletBalance(e.detail.balance);
+      } else {
+        setWalletBalance(WalletService.getLocalWallet().balance);
+      }
+    };
+
     window.addEventListener("open-checkin-modal", handleOpenCheckin);
-    return () => window.removeEventListener("open-checkin-modal", handleOpenCheckin);
+    window.addEventListener("open-wallet-modal", handleOpenWallet);
+    window.addEventListener(MEMBER_WALLET_UPDATED_EVENT, handleWalletUpdate);
+
+    return () => {
+      window.removeEventListener("open-checkin-modal", handleOpenCheckin);
+      window.removeEventListener("open-wallet-modal", handleOpenWallet);
+      window.removeEventListener(MEMBER_WALLET_UPDATED_EVENT, handleWalletUpdate);
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    WalletService.getWallet().then((w) => {
+      if (!cancelled && typeof w.balance === "number") {
+        setWalletBalance(w.balance);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Load reactive profile
@@ -308,7 +398,7 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
             </h1>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="relative flex items-center gap-3">
             {/* Quick Check-in Button on Topbar */}
             <button
               id="btn-quick-checkin"
@@ -319,6 +409,21 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
             >
               <QrCode className="w-3.5 h-3.5" />
               <span>Mã Check-in</span>
+            </button>
+
+            {/* Wallet Balance Pill */}
+            <button
+              id="btn-member-wallet"
+              type="button"
+              onClick={() => setShowWalletModal(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 hover:from-emerald-500/20 hover:to-teal-500/20 text-emerald-700 dark:text-emerald-300 font-extrabold text-xs rounded-xl border border-emerald-500/30 transition-all shadow-xs cursor-pointer group"
+              title="Xem số dư tài khoản & Nạp tiền vào ví"
+            >
+              <Wallet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
+              <span>Ví: {walletBalance.toLocaleString("vi-VN")} đ</span>
+              <span className="ml-1 px-1.5 py-0.5 rounded-md bg-emerald-600 text-white text-[10px] font-black group-hover:bg-emerald-500 transition-colors">
+                + Nạp
+              </span>
             </button>
 
             {/* Membership Tier Pill */}
@@ -355,7 +460,7 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
               </button>
 
               {/* Notification Popover */}
-              {showNotifications && (
+              {false && showNotifications && (
                 <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-4 z-50 animate-fadeIn">
                   <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-700">
                     <span className="text-xs font-bold text-slate-900 dark:text-white">
@@ -363,7 +468,7 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
                     </span>
                     <button
                       type="button"
-                      onClick={() => setNotificationCount(0)}
+                      onClick={() => void markAllNotificationsAsRead()}
                       className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
                     >
                       Đã đọc hết
@@ -390,6 +495,47 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
                 </div>
               )}
             </div>
+
+            {showNotifications && (
+              <div className="absolute right-0 top-full z-50 mt-2 w-96 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
+                <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-slate-800">
+                  <span className="font-bold text-slate-800 dark:text-white">Thông báo</span>
+                  <button
+                    type="button"
+                    onClick={() => void markAllNotificationsAsRead()}
+                    disabled={notificationCount === 0}
+                    className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 disabled:cursor-not-allowed disabled:text-slate-400"
+                  >
+                    Đánh dấu đã đọc
+                  </button>
+                </div>
+                {notificationsError ? (
+                  <div className="px-4 py-8 text-center text-sm text-rose-500">Không thể tải thông báo.</div>
+                ) : notifications.length === 0 ? (
+                  <div className="px-4 py-8 text-center text-sm text-slate-400">Chưa có thông báo mới.</div>
+                ) : (
+                  <div className="max-h-96 overflow-y-auto">
+                    {notifications.map((notification) => (
+                      <button
+                        type="button"
+                        key={notification.id}
+                        onClick={() => void markNotificationAsRead(notification)}
+                        className={`block w-full border-b border-slate-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-emerald-50/50 dark:border-slate-800 dark:hover:bg-slate-800/70 ${notification.isRead ? "" : "bg-emerald-50/60 dark:bg-emerald-950/20"}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <span className={`mt-1.5 size-2 shrink-0 rounded-full ${notification.isRead ? "bg-slate-300" : "bg-emerald-500"}`} />
+                          <span className="min-w-0">
+                            <span className="block text-sm font-semibold text-slate-800 dark:text-white">{notification.title}</span>
+                            {notification.message && <span className="mt-1 block text-xs leading-5 text-slate-500 dark:text-slate-400">{notification.message}</span>}
+                            <span className="mt-1 block text-[11px] text-slate-400">{formatNotificationTime(notification.createdAt)}</span>
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* USER AVATAR BUTTON WITH POPUP DROPDOWN (LIKE YOUTUBE) */}
             <div className="relative pl-1 border-l border-slate-200 dark:border-slate-800" ref={userMenuRef}>
@@ -687,6 +833,18 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
           </div>,
           document.body
         )}
+
+      {/* Wallet TopUp & Balance Modal */}
+      <WalletTopUpModal
+        isOpen={showWalletModal}
+        onClose={() => setShowWalletModal(false)}
+        currentBalance={walletBalance}
+        userName={userName}
+        phone={profile?.phone}
+        onSuccess={(newBal) => {
+          setWalletBalance(newBal);
+        }}
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using SmartGym.Application.Common;
 using SmartGym.Application.DTOs.Classes;
 using SmartGym.Application.Interfaces.Repositories;
 using SmartGym.Domain.Entities;
@@ -79,7 +80,7 @@ public sealed partial class SupabaseGroupClassRepository
                 .ToListAsync();
             var users = await _dbContext
                 .Database.SqlQueryRaw<UserSqlRawModel>(
-                    "SELECT id, full_name, phone_number FROM users"
+                    "SELECT id, full_name, phone_number, avatar_url FROM users"
                 )
                 .ToListAsync();
 
@@ -193,7 +194,7 @@ public sealed partial class SupabaseGroupClassRepository
             )
             .ToListAsync();
         var users = await _dbContext
-            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number FROM users")
+            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number, avatar_url FROM users")
             .ToListAsync();
 
         var result = new List<CoachClassScheduleDto>();
@@ -223,7 +224,10 @@ public sealed partial class SupabaseGroupClassRepository
                     ClassName = c.ClassName,
                     SportName = sport?.Name ?? "N/A",
                     FacilityName = facility?.Name ?? "N/A",
-                    ScheduleTime = c.ScheduleTime,
+                    // Classes are stored as UTC. Return the center's local time
+                    // so legacy coach schedule consumers render the same slot
+                    // as the manager calendar.
+                    ScheduleTime = CenterTime.ToLocal(c.ScheduleTime),
                     DurationMinutes = c.DurationMinutes,
                     Capacity = c.Capacity,
                     CurrentEnrolled = c.CurrentEnrolled,
@@ -279,7 +283,7 @@ public sealed partial class SupabaseGroupClassRepository
             .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches")
             .ToListAsync();
         var users = await _dbContext
-            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number FROM users")
+            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number, avatar_url FROM users")
             .ToListAsync();
 
         return allClasses

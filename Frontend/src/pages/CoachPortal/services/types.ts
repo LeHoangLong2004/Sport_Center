@@ -12,6 +12,9 @@ export interface MockMember {
   phone: string;
   email: string;
   classIds: string[];
+  attendanceRate?: number | null;
+  attendedSessions?: number;
+  totalSessions?: number;
 }
 
 export interface MockSession {
@@ -90,11 +93,18 @@ export interface ScheduleChangeRequest {
 
 export interface AvailabilitySlot {
   id: string;
-  dayOfWeek: number; // 1: T2, 2: T3, ... 7: CN
-  period: "Sáng" | "Chiều" | "Tối";
+  date?: string; // YYYY-MM-DD for a concrete coach-published slot
+  dayOfWeek?: number; // legacy recurring availability: 1: T2, ... 7: CN
+  period?: "Sáng" | "Chiều" | "Tối";
   startTime: string;
   endTime: string;
   isOpen: boolean;
+  status?: string;
+  sport?: string;
+  room?: string;
+  note?: string;
+  coachId?: string;
+  coachName?: string;
   memberId?: string;
   bookedMemberName?: string;
   bookedMemberPhone?: string;

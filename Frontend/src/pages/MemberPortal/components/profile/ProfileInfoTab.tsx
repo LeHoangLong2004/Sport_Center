@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   Check,
 } from "lucide-react";
+import { DateInput } from "../../../../components/DateInput";
 
 interface ProfileInfoTabProps {
   profile: any;
@@ -324,10 +325,9 @@ export const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
                       <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
                         Ngày sinh:
                       </label>
-                      <input
-                        type="date"
+                      <DateInput
                         value={formDob}
-                        onChange={(e) => setFormDob(e.target.value)}
+                        onChange={setFormDob}
                         className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
                       />
                     </div>

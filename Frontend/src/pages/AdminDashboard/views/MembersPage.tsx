@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { LockKeyhole, UnlockKeyhole } from 'lucide-react';
 import { A, avatarSidebar, avatarTopbar, iDashboard, iUsers, iPackage, iCalendar, iReceipt, iBarChart, iSettings, iSearch, iBell, iSearch2, iDownload, iPlus, iWallet, iCheckCircle, iClock, iRotateCcw, iChevron, iEye, iPrinter, iMore, iBell2, iDownload2, iKpiRevenue, iKpiMembers, iKpiClasses, iKpiRetain, iSeg1, iSeg2, iSeg3, iSeg4, iDotBlue, iDotTeal, iDotOrange, iDotPurple, iActivity0, iActivity1, iActivity2, iActivity3, iLineChart, iBarFill, coachAvatar1, coachAvatar2, coachAvatar3, coachAvatar4, hrAvatar1, hrAvatar2, hrAvatar3, hrAvatar4, iBudgetIcon, iExpenseIcon, iBudgetChevron, iPLRevIcon, memberEditAvatar, transactions, reportBarData, reportMonths, members } from '../shared';
 import { UserAvatar } from '../../../components/UserAvatar';
 import KpiCard from '../components/KpiCard';
 import SimpleLineChart from '../components/SimpleLineChart';
 import { FinanceTopBar } from '../components/FinanceTopBar';
+import { DateInput } from '../../../components/DateInput';
 
 export function MembersPage({ onEditMember }: { onEditMember: (member: any) => void }) {
   const [query, setQuery] = useState("")
@@ -277,9 +279,13 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
               <button 
                 onClick={() => handleToggleStatus(m.realId, m.statusRaw)} 
                 title={m.statusRaw ? "Khóa tài khoản" : "Mở khóa tài khoản"}
-                className={`flex items-center justify-center rounded-md size-8 border ${m.statusRaw ? 'bg-white border-[#e2e8f0] hover:bg-red-50' : 'bg-red-100 border-red-200 hover:bg-green-100'}`}
+                aria-label={m.statusRaw ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                className={`inline-flex min-w-[72px] items-center justify-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-xs font-semibold shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 ${m.statusRaw
+                  ? 'border-rose-200 bg-rose-50 text-rose-600 hover:border-rose-300 hover:bg-rose-100 focus:ring-rose-300'
+                  : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 focus:ring-emerald-300'}`}
               >
-                <img src={m.statusRaw ? iEye : iRotateCcw} alt="Toggle Status" className="size-4" />
+                {m.statusRaw ? <LockKeyhole size={14} strokeWidth={2.2} /> : <UnlockKeyhole size={14} strokeWidth={2.2} />}
+                <span>{m.statusRaw ? "Khóa" : "Mở khóa"}</span>
               </button>
               <button onClick={() => onEditMember(m)} title="Sửa thông tin" className="bg-white border border-[#e2e8f0] hover:bg-blue-50 flex items-center justify-center rounded-md size-8">
                 <img src={iMore} alt="Edit" className="size-4" />
@@ -340,7 +346,7 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
               <label className="flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">Email *<input name="email" type="email" required className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500" /></label>
               <label className="flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">Số điện thoại *<input name="phoneNumber" required className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500" /></label>
               <label className="flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">Mật khẩu tạm thời *<input name="password" type="password" minLength={6} required className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500" /></label>
-              <label className="flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">Ngày sinh<input name="dateOfBirth" type="date" className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500" /></label>
+              <label className="flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">Ngày sinh<DateInput name="dateOfBirth" className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500" /></label>
               <label className="flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">Giới tính<select name="gender" className="rounded-lg border border-[#cbd5e1] bg-white px-3 py-2.5 font-normal outline-none focus:border-blue-500"><option value="">Chưa cập nhật</option><option value="Nam">Nam</option><option value="Nữ">Nữ</option><option value="Khác">Khác</option></select></label>
               <label className="col-span-2 flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">Liên hệ khẩn cấp<input name="emergencyContact" className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500" /></label>
             </div>

@@ -240,7 +240,7 @@ class ScheduleSyncService {
     this.saveSyncedSessions(updated);
   }
 
-  public bookPtSlot(params: {
+  public async bookPtSlot(params: {
     slotId: string;
     memberId: string;
     memberName: string;
@@ -248,8 +248,10 @@ class ScheduleSyncService {
     memberEmail: string;
     goal: string;
     userNote?: string;
-  }): SyncedSession {
+  }): Promise<SyncedSession> {
     const all = this.getSyncedSessions();
+    const previousAll = all.map((session) => ({ ...session }));
+    const previousMemberStorage = localStorage.getItem("member_sessions");
     const slotIndex = all.findIndex((s) => s.id === params.slotId);
 
     const nowStr = new Date().toISOString();
@@ -331,7 +333,17 @@ class ScheduleSyncService {
       localStorage.setItem("member_sessions", JSON.stringify([newMemberSession, ...memSessions]));
     } catch {}
 
-    this.pushBookingToBackend(bookedSession);
+    const backendResult = await this.pushBookingToBackend(bookedSession);
+    if (!backendResult.ok) {
+      this.saveSyncedSessions(previousAll);
+      if (previousMemberStorage === null) {
+        localStorage.removeItem("member_sessions");
+      } else {
+        localStorage.setItem("member_sessions", previousMemberStorage);
+      }
+      throw new Error(backendResult.message || "Không thể đặt lịch PT.");
+    }
+
     return bookedSession;
   }
 
@@ -404,10 +416,10 @@ class ScheduleSyncService {
     this.finalizeAttendanceOnBackend(sessionId, attendanceStatus, coachNote);
   }
 
-  private async pushBookingToBackend(session: SyncedSession) {
+  private async pushBookingToBackend(session: SyncedSession): Promise<{ ok: boolean; message?: string }> {
     try {
       const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
-      await fetch(`${BASE_URL}/member/bookings`, {
+      const response = await fetch(`${BASE_URL}/member/bookings`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -432,7 +444,17 @@ class ScheduleSyncService {
           coachNote: session.coachNote,
         }),
       });
-    } catch {}
+      if (response.ok) return { ok: true };
+
+      let message = "Khung giờ PT không còn khả dụng.";
+      try {
+        const payload = await response.json();
+        if (payload?.message) message = payload.message;
+      } catch {}
+      return { ok: false, message };
+    } catch {
+      return { ok: false, message: "Không thể kết nối máy chủ để kiểm tra xung đột lịch." };
+    }
   }
 
   private async cancelBookingOnBackend(sessionId: string, reason: string) {

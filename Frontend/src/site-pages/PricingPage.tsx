@@ -147,7 +147,6 @@ export default function GoiTapBangGiaRedesign() {
                       </div>
                     )}
                   </div>
-
                   <div className="border-t border-[#e2e8f0]" />
 
                   <div className="flex flex-col gap-[12px] flex-1">

@@ -11,7 +11,9 @@ import {
   X,
   FileCheck,
   Copy,
+  Wallet,
 } from "lucide-react";
+import { WalletService, MEMBER_WALLET_UPDATED_EVENT } from "../../services/walletService";
 
 interface InvoiceItem {
   id: string;
@@ -49,6 +51,23 @@ export const ProfileInvoicesTab: React.FC<ProfileInvoicesTabProps> = ({
   const [reportBankMethod, setReportBankMethod] = useState<string>("Chuyển khoản QR");
   const [reportRefCode, setReportRefCode] = useState<string>("");
   const [invoiceFeedback, setInvoiceFeedback] = useState<string | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number>(() => WalletService.getLocalWallet().balance);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    WalletService.getWallet().then((w) => {
+      if (!cancelled && typeof w.balance === "number") setWalletBalance(w.balance);
+    });
+    const handleUpdate = (e: any) => {
+      if (e?.detail?.balance !== undefined) setWalletBalance(e.detail.balance);
+      else setWalletBalance(WalletService.getLocalWallet().balance);
+    };
+    window.addEventListener(MEMBER_WALLET_UPDATED_EVENT, handleUpdate);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(MEMBER_WALLET_UPDATED_EVENT, handleUpdate);
+    };
+  }, []);
 
   const totalSpent = invoices
     .filter((inv) => inv.status === "paid")
@@ -86,8 +105,35 @@ export const ProfileInvoicesTab: React.FC<ProfileInvoicesTabProps> = ({
         </div>
       )}
 
-      {/* 4 Financial Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 5 Financial Stat Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        {/* Card 1: Số dư ví khả dụng */}
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-emerald-500/30 dark:border-emerald-500/20 p-5 shadow-xs bg-gradient-to-br from-emerald-500/5 to-transparent">
+          <div className="flex items-center justify-between text-slate-400">
+            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+              Số dư ví
+            </span>
+            <Wallet className="w-4 h-4 text-emerald-500" />
+          </div>
+          <div className="mt-3">
+            <div className="text-2xl font-bold text-slate-900 dark:text-white">
+              {walletBalance.toLocaleString("vi-VN")} đ
+            </div>
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                Khả dụng
+              </span>
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent("open-wallet-modal"))}
+                className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white transition-colors cursor-pointer"
+              >
+                + Nạp ví
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs">
           <div className="flex items-center justify-between text-slate-400">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">

@@ -105,14 +105,14 @@ export default function CoachSchedule({ navigateTo }: Props) {
     }
   };
 
-  const handleCreateOpenSlotSuccess = (newItem: UnifiedScheduleItem) => {
-    addOpenSlot(newItem);
+  const handleCreateOpenSlotSuccess = async (newItem: UnifiedScheduleItem) => {
+    await addOpenSlot(newItem);
     setFeedbackMsg(`Đã đăng lịch trống 1-1 (${newItem.sport} ngày ${newItem.date}) thành công!`);
     setTimeout(() => setFeedbackMsg(null), 4000);
   };
 
-  const handleDeleteOpenSlot = (slotId: string) => {
-    removeOpenSlot(slotId);
+  const handleDeleteOpenSlot = async (slotId: string) => {
+    await removeOpenSlot(slotId);
     setSelectedOpenSlot(null);
     setFeedbackMsg("Đã đóng/hủy lịch trống 1-1 này.");
     setTimeout(() => setFeedbackMsg(null), 4000);

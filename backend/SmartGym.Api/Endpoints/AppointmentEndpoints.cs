@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using SmartGym.Application.Interfaces.Repositories;
 using SmartGym.Infrastructure.Persistence.Supabase.Models;
 
 namespace SmartGym.Api.Endpoints;
@@ -33,7 +34,8 @@ public static class AppointmentEndpoints
 
         group.MapPost("", async (
             CreateAppointmentRequest request,
-            global::Supabase.Client supabase) =>
+            global::Supabase.Client supabase,
+            IGroupClassRepository classRepository) =>
         {
             if (string.IsNullOrWhiteSpace(request.Time)
                 || string.IsNullOrWhiteSpace(request.Title)
@@ -64,6 +66,19 @@ public static class AppointmentEndpoints
                 });
             }
 
+            var existingAppointments = await supabase.From<AppointmentModel>().Get();
+            var normalizedTime = request.Time.Trim();
+            if (existingAppointments.Models.Any(existing =>
+                IsActiveAppointment(existing.Status)
+                && string.Equals(existing.Time?.Trim(), normalizedTime, StringComparison.OrdinalIgnoreCase)
+                && NamesMatch(existing.CoachName, matchedCoach.FullName)))
+            {
+                return Results.Conflict(new
+                {
+                    message = $"Coach '{matchedCoach.FullName}' đã có lịch hẹn khác vào {normalizedTime}."
+                });
+            }
+
             var appointment = new AppointmentModel
             {
                 Id = Guid.NewGuid(),
@@ -78,6 +93,14 @@ public static class AppointmentEndpoints
             await supabase
                 .From<AppointmentModel>()
                 .Insert(appointment);
+
+            await classRepository.NotifyCoachAsync(
+                matchedCoach.Id,
+                "Bạn có lịch hẹn mới",
+                $"{appointment.CustomerName} đã đặt lịch hẹn {appointment.Title} vào {appointment.Time}.",
+                "appointment",
+                appointment.Id
+            );
 
             return Results.Created(
                 $"/api/appointments/{appointment.Id}",
@@ -121,6 +144,12 @@ public static class AppointmentEndpoints
         }
 
         return normalized;
+    }
+
+    private static bool IsActiveAppointment(string? status)
+    {
+        var normalized = status?.Trim().ToLowerInvariant();
+        return normalized is not "đã hủy" and not "đã hoàn tất" and not "cancelled" and not "completed";
     }
 
     public sealed record CreateAppointmentRequest(

@@ -4,12 +4,16 @@ import { A, BillingPeriod, Stepper, OrderSummarySidebar } from "./shared";
 export function OTPScreen({
   pkg,
   period,
+  phone,
+  email,
   formData,
   onConfirm,
   onCancel,
 }: {
   pkg: any
   period: BillingPeriod
+  phone?: string
+  email?: string
   formData?: any
   onConfirm: () => void
   onCancel: () => void
@@ -18,8 +22,8 @@ export function OTPScreen({
   const [seconds, setSeconds] = useState(45)
   const inputs = useRef<Array<HTMLInputElement | null>>([])
 
-  let memberEmail = formData?.email;
-  let memberPhone = formData?.phone;
+  let memberEmail = email || formData?.email;
+  let memberPhone = phone || formData?.phone;
   if (!memberEmail || !memberPhone) {
     try {
       const uStr = localStorage.getItem("user");
@@ -58,8 +62,12 @@ export function OTPScreen({
                 <p className="font-['Inter'] font-bold text-[#0b1f3a] text-[24px]">Xác minh mã giao dịch OTP</p>
                 <p className="font-['Inter'] font-normal text-[#64748b] text-sm leading-[20px]">
                   Mã xác thực giao dịch OTP gồm 6 chữ số đã được gửi đến số điện thoại{" "}
-                  <strong className="text-[#0f172a]">{memberPhone || "số điện thoại đăng ký"}</strong> và email{" "}
-                  <strong className="text-[#0f172a]">{memberEmail || "email hội viên"}</strong>
+                  <strong className="text-[#0f172a]">{memberPhone || "số điện thoại của bạn"}</strong>
+                  {memberEmail ? (
+                    <>
+                      {" "}và email <strong className="text-[#0f172a]">{memberEmail}</strong>
+                    </>
+                  ) : null}
                 </p>
               </div>
 

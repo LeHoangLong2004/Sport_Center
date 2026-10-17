@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ProfileSummary } from "./ProfileSummary";
 import type { ProfileData } from "./profileTypes";
+import { DateInput } from "./DateInput";
 export function ProfileSettings({
   initialData,
   roleLabel,
@@ -162,11 +163,10 @@ export function ProfileSettings({
                   <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Ngày sinh
                   </label>
-                  <input
-                    type="date"
+                  <DateInput
                     name="dob"
                     value={data.dob}
-                    onChange={handleChange}
+                    onChange={(value) => setData((prev) => ({ ...prev, dob: value }))}
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium [&::-webkit-calendar-picker-indicator]:dark:invert"
                   />
                 </div>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
+import { UserAvatar } from '../../../components/UserAvatar';
 
 export function BookingRow({ 
   booking: b, 
@@ -22,7 +23,11 @@ export function BookingRow({
     <>
       <div className="border-[#e2e8f0] border-b border-solid flex items-center px-[24px] py-[12px] shrink-0 w-full hover:bg-slate-50 transition-colors">
       <div className="flex flex-1 gap-[10px] items-center min-w-0">
-        <img src={b.memberAvatar} alt="" className="shrink-0 size-[32px] rounded-full object-cover" />
+        <UserAvatar
+          src={b.memberAvatar}
+          name={b.memberName || "Hội viên"}
+          className="shrink-0 size-[32px] rounded-full object-cover"
+        />
         <div className="flex flex-col min-w-0">
           <span className="font-bold text-[#0f172a] text-[13px] truncate">{b.memberName}</span>
           <span className="font-medium text-[#64748b] text-[11px]">{b.memberPhone} • {b.memberCode}</span>

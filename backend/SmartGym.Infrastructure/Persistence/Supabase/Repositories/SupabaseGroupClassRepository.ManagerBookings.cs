@@ -27,7 +27,7 @@ public sealed partial class SupabaseGroupClassRepository
             )
             .ToListAsync();
         var users = await _dbContext
-            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number FROM users")
+            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number, avatar_url FROM users")
             .ToListAsync();
         var coaches = await _dbContext
             .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches")
@@ -69,7 +69,7 @@ public sealed partial class SupabaseGroupClassRepository
                 new BookingManagerResponse
                 {
                     Id = b.Id,
-                    MemberAvatar = "/assets/images/user-default.png",
+                    MemberAvatar = u?.AvatarUrl ?? string.Empty,
                     MemberName = u?.FullName ?? "Unknown",
                     MemberPhone = u?.PhoneNumber ?? "Unknown",
                     MemberCode = "MB-" + (u?.Id.ToString().Substring(0, 4).ToUpper() ?? "0000"),
@@ -158,6 +158,9 @@ public class UserSqlRawModel
 
     [Column("phone_number")]
     public string PhoneNumber { get; set; } = string.Empty;
+
+    [Column("avatar_url")]
+    public string? AvatarUrl { get; set; }
 }
 
 public class PtSessionMemberSqlDto
@@ -191,6 +194,15 @@ public class ClassBookingRawModel
 
     [Column("created_at")]
     public DateTime CreatedAt { get; set; }
+}
+
+public class ClassTimeConflictRawModel
+{
+    [Column("schedule_time")]
+    public DateTime ScheduleTime { get; set; }
+
+    [Column("duration_minutes")]
+    public int DurationMinutes { get; set; }
 }
 
 public class PtEnrollmentRawModel

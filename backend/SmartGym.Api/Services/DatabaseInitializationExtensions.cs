@@ -25,7 +25,15 @@ using (var scope = app.Services.CreateScope())
             "..",
             "supabase_schema.sql"
         );
-        if (File.Exists(sqlPath))
+        var baseSchemaExists = db.Database
+            .SqlQueryRaw<bool>(@"SELECT to_regclass('public.roles') IS NOT NULL AND to_regclass('public.users') IS NOT NULL AS ""Value""")
+            .FirstOrDefault();
+
+        if (baseSchemaExists)
+        {
+            app.Logger.LogInformation("Base Supabase schema already exists; skipped non-idempotent schema script.");
+        }
+        else if (File.Exists(sqlPath))
         {
             var sql = File.ReadAllText(sqlPath);
             using (var command = db.Database.GetDbConnection().CreateCommand())
@@ -40,6 +48,68 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         Console.WriteLine($"DB init error: {ex.Message}");
+    }
+
+    // Sync the homework table with the database-backed workout-plan flow.
+    // Older databases used communication_id only; keep it nullable for
+    // backwards compatibility while adding the fields used by HomeworkProgress.
+    try
+    {
+        db.Database.ExecuteSqlRaw(
+            @"
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_schema = 'public'
+                      AND table_name = 'homework_progress'
+                      AND column_name = 'communication_id'
+                ) THEN
+                    ALTER TABLE homework_progress
+                        ALTER COLUMN communication_id DROP NOT NULL;
+                END IF;
+            END $$;
+            ALTER TABLE homework_progress
+                ADD COLUMN IF NOT EXISTS plan_id UUID;
+            ALTER TABLE homework_progress
+                ADD COLUMN IF NOT EXISTS assigned_by UUID;
+            ALTER TABLE homework_progress
+                ADD COLUMN IF NOT EXISTS progress_pct NUMERIC DEFAULT 0;
+            ALTER TABLE homework_progress
+                ADD COLUMN IF NOT EXISTS assigned_date TIMESTAMPTZ NOT NULL DEFAULT now();
+            ALTER TABLE homework_progress
+                ADD COLUMN IF NOT EXISTS due_date TIMESTAMPTZ;
+            ALTER TABLE homework_progress
+                ADD COLUMN IF NOT EXISTS notes TEXT;
+            ALTER TABLE homework_progress
+                ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT now();
+            ALTER TABLE homework_progress
+                ALTER COLUMN status SET DEFAULT 'assigned';
+
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint
+                    WHERE conname = 'homework_progress_plan_id_fkey'
+                      AND conrelid = 'homework_progress'::regclass
+                ) THEN
+                    ALTER TABLE homework_progress
+                        ADD CONSTRAINT homework_progress_plan_id_fkey
+                        FOREIGN KEY (plan_id) REFERENCES workout_plans(id) ON DELETE CASCADE;
+                END IF;
+            END $$;
+
+            CREATE INDEX IF NOT EXISTS idx_homework_progress_member_id
+                ON homework_progress(member_id);
+            CREATE INDEX IF NOT EXISTS idx_homework_progress_plan_id
+                ON homework_progress(plan_id);
+            "
+        );
+        app.Logger.LogInformation("homework_progress schema is in sync with workout plans.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Homework schema sync error: {ex.Message}");
     }
 
     // ── Flow 3: đồng bộ cột bảng invoices với EF Core (an toàn khi chạy lại) ──
@@ -79,6 +149,23 @@ using (var scope = app.Services.CreateScope())
     {
         db.Database.ExecuteSqlRaw(
             @"
+            CREATE TABLE IF NOT EXISTS notifications (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                sender_id UUID REFERENCES coaches(id) ON DELETE SET NULL,
+                user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                target_type VARCHAR(20) DEFAULT 'member',
+                target_id UUID,
+                type VARCHAR(50) DEFAULT 'Thông báo',
+                state VARCHAR(20) DEFAULT 'published',
+                title TEXT NOT NULL,
+                message TEXT,
+                deadline TIMESTAMPTZ,
+                is_read BOOLEAN DEFAULT false,
+                created_at TIMESTAMPTZ DEFAULT now()
+            );
+            CREATE INDEX IF NOT EXISTS idx_notifications_unread
+                ON notifications(user_id, is_read);
+
             ALTER TABLE packages ADD COLUMN IF NOT EXISTS catalog_json JSONB;
             ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS duration_months INTEGER;
             ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS discount_pct NUMERIC(8, 3) NOT NULL DEFAULT 0;
@@ -114,6 +201,98 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine($"coach_profiles create error: {ex.Message}");
     }
 
+    // Persist coach-published 1-on-1 availability slots. These slots are
+    // separate from pt_sessions because they are still open for a member to
+    // claim; once claimed, the row is marked as booked and remains part of
+    // the coach's schedule history.
+    try
+    {
+        db.Database.ExecuteSqlRaw(
+            @"
+            CREATE TABLE IF NOT EXISTS coach_availability_slots (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                coach_id UUID NOT NULL REFERENCES coaches(id) ON DELETE CASCADE,
+                start_time TIMESTAMPTZ NOT NULL,
+                end_time TIMESTAMPTZ NOT NULL,
+                sport TEXT NOT NULL,
+                room TEXT NOT NULL,
+                note TEXT,
+                status VARCHAR(20) NOT NULL DEFAULT 'open',
+                booked_member_id UUID REFERENCES users(id) ON DELETE SET NULL,
+                booked_member_name TEXT,
+                booked_member_phone VARCHAR(30),
+                goal TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                CONSTRAINT coach_availability_slots_valid_range CHECK (end_time > start_time),
+                CONSTRAINT coach_availability_slots_valid_status CHECK (status IN ('open', 'booked', 'closed', 'cancelled'))
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_coach_availability_slots_coach_time
+                ON coach_availability_slots(coach_id, start_time, end_time);
+            CREATE INDEX IF NOT EXISTS idx_coach_availability_slots_open_time
+                ON coach_availability_slots(status, start_time);
+
+            -- Demo tokens can represent a member before that account is
+            -- materialized in users. Keep the booking identity on the slot
+            -- without making the availability flow fail on that FK.
+            ALTER TABLE coach_availability_slots
+                DROP CONSTRAINT IF EXISTS coach_availability_slots_booked_member_id_fkey;
+            "
+        );
+        app.Logger.LogInformation("coach_availability_slots table is ready.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"coach availability schema sync error: {ex.Message}");
+    }
+
+    // Keep the review table compatible with both the original EF migration
+    // (member_id) and the running Supabase schema (user_id). Review data is
+    // always stored in PostgreSQL; this block only aligns legacy column names
+    // and adds the optional context fields used by the review form.
+    try
+    {
+        db.Database.ExecuteSqlRaw(
+            @"
+            CREATE TABLE IF NOT EXISTS reviews (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                coach_id UUID,
+                rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+                comment TEXT,
+                session_id TEXT,
+                session_name TEXT,
+                tags_json TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            );
+
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_schema = 'public' AND table_name = 'reviews' AND column_name = 'member_id'
+                ) AND NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_schema = 'public' AND table_name = 'reviews' AND column_name = 'user_id'
+                ) THEN
+                    ALTER TABLE reviews RENAME COLUMN member_id TO user_id;
+                END IF;
+            END $$;
+
+            ALTER TABLE reviews ADD COLUMN IF NOT EXISTS session_id TEXT;
+            ALTER TABLE reviews ADD COLUMN IF NOT EXISTS session_name TEXT;
+            ALTER TABLE reviews ADD COLUMN IF NOT EXISTS tags_json TEXT;
+            CREATE INDEX IF NOT EXISTS idx_reviews_coach_id ON reviews(coach_id);
+            CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON reviews(user_id);
+        "
+        );
+        app.Logger.LogInformation("reviews schema is in sync with the database-backed review flow.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"reviews schema sync error: {ex.Message}");
+    }
+
     try
     {
         db.Database.ExecuteSqlRaw(
@@ -121,6 +300,9 @@ using (var scope = app.Services.CreateScope())
             CREATE TABLE IF NOT EXISTS chat_conversations (
                 id VARCHAR(100) PRIMARY KEY,
                 type VARCHAR(50) NOT NULL DEFAULT 'direct',
+                category VARCHAR(50) NOT NULL DEFAULT 'coach',
+                role_tag VARCHAR(50) NOT NULL DEFAULT 'HLV',
+                badge_color VARCHAR(50) NOT NULL DEFAULT 'orange',
                 coach_title VARCHAR(255),
                 coach_subtitle VARCHAR(255),
                 member_title VARCHAR(255),
@@ -138,6 +320,10 @@ using (var scope = app.Services.CreateScope())
                 updated_at TIMESTAMPTZ DEFAULT now()
             );
 
+            ALTER TABLE chat_conversations ADD COLUMN IF NOT EXISTS category VARCHAR(50) NOT NULL DEFAULT 'coach';
+            ALTER TABLE chat_conversations ADD COLUMN IF NOT EXISTS role_tag VARCHAR(50) NOT NULL DEFAULT 'HLV';
+            ALTER TABLE chat_conversations ADD COLUMN IF NOT EXISTS badge_color VARCHAR(50) NOT NULL DEFAULT 'orange';
+
             CREATE TABLE IF NOT EXISTS chat_messages (
                 id VARCHAR(100) PRIMARY KEY,
                 conversation_id VARCHAR(100) REFERENCES chat_conversations(id) ON DELETE CASCADE,
@@ -150,6 +336,8 @@ using (var scope = app.Services.CreateScope())
 
             GRANT ALL ON public.chat_conversations TO anon, authenticated;
             GRANT ALL ON public.chat_messages TO anon, authenticated;
+            CREATE INDEX IF NOT EXISTS idx_chat_conversations_coach ON chat_conversations(coach_id);
+            CREATE INDEX IF NOT EXISTS idx_chat_conversations_member ON chat_conversations(member_id);
         "
         );
         app.Logger.LogInformation("chat_conversations and chat_messages tables ensured.");
@@ -253,8 +441,7 @@ using (var scope = app.Services.CreateScope())
     {
         Console.WriteLine($"DB grant/seed error: {ex.Message}");
     }
-}
-
 
     }
+}
 }
