@@ -1,9 +1,0 @@
-$kind: http-request
-description: Yêu cầu đăng nhập tài khoản Quản lý (Admin) ở mục 1.2 trước.
-url: "{{base_url}}/api/reports/dashboard"
-method: GET
-auth:
-  type: bearer
-  credentials:
-    token: "{{token}}"
-order: 1000

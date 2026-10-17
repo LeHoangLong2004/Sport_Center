@@ -1,9 +1,0 @@
-$kind: http-request
-description: Kiểm tra số dư khả dụng hiện tại (mặc định 0 đ) và các giao dịch phát sinh.
-url: "{{base_url}}/api/member/wallet"
-method: GET
-auth:
-  type: bearer
-  credentials:
-    token: "{{token}}"
-order: 1000
