@@ -66,7 +66,7 @@ public sealed partial class SupabaseGroupClassRepository
         {
             var classes = await _dbContext
                 .Database.SqlQueryRaw<ClassSqlRawModel>(
-                    "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status FROM classes"
+                    "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status FROM classes"
                 )
                 .ToListAsync();
             var sports = await _dbContext
@@ -165,7 +165,7 @@ public sealed partial class SupabaseGroupClassRepository
 
         var allClasses = await _dbContext
             .Database.SqlQueryRaw<ClassSqlRawModel>(
-                "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status FROM classes WHERE coach_id = {0}",
+                    "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status FROM classes WHERE coach_id = {0}",
                 coach.Id
             )
             .ToListAsync();
@@ -248,7 +248,7 @@ public sealed partial class SupabaseGroupClassRepository
     {
         var allClasses = await _dbContext
             .Database.SqlQueryRaw<ClassSqlRawModel>(
-                "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status FROM classes"
+                    "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status FROM classes"
             )
             .ToListAsync();
 
@@ -308,7 +308,8 @@ public sealed partial class SupabaseGroupClassRepository
                     Capacity: c.Capacity,
                     CurrentEnrolled: c.CurrentEnrolled,
                     AvailableSpots: c.Capacity - c.CurrentEnrolled,
-                    Status: c.Status
+                    Status: c.Status,
+                    ApprovalStatus: c.ApprovalStatus
                 );
             })
             .OrderBy(x => x.ScheduleTime)

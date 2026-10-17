@@ -60,7 +60,8 @@ public static class NotificationEndpoints
             var rows = await db.Database.SqlQueryRaw<NotificationRow>(
                     """
                     SELECT id AS "Id", title AS "Title", message AS "Message",
-                           type AS "Type", is_read AS "IsRead", created_at AS "CreatedAt"
+                           type AS "Type", target_type AS "TargetType", target_id AS "TargetId",
+                           is_read AS "IsRead", created_at AS "CreatedAt"
                     FROM notifications
                     WHERE user_id = {0}
                     ORDER BY created_at DESC
@@ -75,7 +76,9 @@ public static class NotificationEndpoints
                 row.Message,
                 row.Type ?? "general",
                 row.IsRead,
-                row.CreatedAt)));
+                row.CreatedAt,
+                row.TargetType,
+                row.TargetId?.ToString())));
         }
         catch
         {
@@ -107,7 +110,8 @@ public static class NotificationEndpoints
                         $"Hiện có {pendingInvoices} hóa đơn chưa hoàn tất thanh toán hoặc đối soát.",
                         "payment",
                         false,
-                        DateTime.UtcNow));
+                        DateTime.UtcNow,
+                        "payment"));
                 }
             }
             catch
@@ -167,6 +171,8 @@ public static class NotificationEndpoints
         public string Title { get; init; } = string.Empty;
         public string? Message { get; init; }
         public string? Type { get; init; }
+        public string? TargetType { get; init; }
+        public Guid? TargetId { get; init; }
         public bool IsRead { get; init; }
         public DateTime CreatedAt { get; init; }
     }
@@ -182,5 +188,7 @@ public static class NotificationEndpoints
         string? Message,
         string Type,
         bool IsRead,
-        DateTime CreatedAt);
+        DateTime CreatedAt,
+        string? TargetType = null,
+        string? TargetId = null);
 }

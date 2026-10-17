@@ -31,6 +31,7 @@ export interface MockSession {
   capacity: number;
   registeredMemberIds: string[];
   status: SessionStatus;
+  approvalStatus?: "pending" | "approved" | "rejected";
 }
 
 export interface AttendanceRecord {

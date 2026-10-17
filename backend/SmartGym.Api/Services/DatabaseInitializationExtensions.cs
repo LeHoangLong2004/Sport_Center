@@ -50,6 +50,27 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine($"DB init error: {ex.Message}");
     }
 
+    // Coach-created classes stay hidden from members until a Manager approves them.
+    try
+    {
+        db.Database.ExecuteSqlRaw(
+            @"
+            ALTER TABLE classes
+                ADD COLUMN IF NOT EXISTS approval_status VARCHAR(20) NOT NULL DEFAULT 'approved';
+            UPDATE classes
+                SET approval_status = 'approved'
+                WHERE approval_status IS NULL OR approval_status = '';
+            CREATE INDEX IF NOT EXISTS idx_classes_approval_status
+                ON classes(approval_status);
+            "
+        );
+        app.Logger.LogInformation("classes approval workflow schema is ready.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Class approval schema sync error: {ex.Message}");
+    }
+
     // Sync the homework table with the database-backed workout-plan flow.
     // Older databases used communication_id only; keep it nullable for
     // backwards compatibility while adding the fields used by HomeworkProgress.
@@ -163,6 +184,8 @@ using (var scope = app.Services.CreateScope())
                 is_read BOOLEAN DEFAULT false,
                 created_at TIMESTAMPTZ DEFAULT now()
             );
+            ALTER TABLE notifications ADD COLUMN IF NOT EXISTS target_type VARCHAR(20);
+            ALTER TABLE notifications ADD COLUMN IF NOT EXISTS target_id UUID;
             CREATE INDEX IF NOT EXISTS idx_notifications_unread
                 ON notifications(user_id, is_read);
 

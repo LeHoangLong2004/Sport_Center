@@ -519,7 +519,13 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
                       <button
                         type="button"
                         key={notification.id}
-                        onClick={() => void markNotificationAsRead(notification)}
+                        onClick={() => {
+                          void markNotificationAsRead(notification);
+                          if (notification.targetType === "class" || notification.targetType === "booking" || notification.type === "booking_event") {
+                            setShowNotifications(false);
+                            onNavigate("schedule");
+                          }
+                        }}
                         className={`block w-full border-b border-slate-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-emerald-50/50 dark:border-slate-800 dark:hover:bg-slate-800/70 ${notification.isRead ? "" : "bg-emerald-50/60 dark:bg-emerald-950/20"}`}
                       >
                         <div className="flex items-start gap-3">

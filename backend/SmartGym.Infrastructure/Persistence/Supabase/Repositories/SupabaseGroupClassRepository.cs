@@ -92,7 +92,8 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             CurrentEnrolled: c.CurrentEnrolled,
             AvailableSpots: c.Capacity - c.CurrentEnrolled,
             Status: c.Status,
-            EnrolledMembers: enrolledMembers
+            EnrolledMembers: enrolledMembers,
+            ApprovalStatus: c.ApprovalStatus
         );
     }
 
@@ -101,14 +102,14 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
         DateTime date
     )
     {
-        var startOfDay = date.Date;
+        var startOfDay = AsUtc(date).Date;
         var endOfDay = startOfDay.AddDays(1);
 
         var models = await _dbContext.Database
             .SqlQueryRaw<ClassSqlRawModel>(
                 @"SELECT id, sport_id, facility_id, coach_id, class_name,
                          schedule_time, duration_minutes, capacity,
-                         current_enrolled, status
+                         current_enrolled, status, approval_status
                   FROM classes
                   WHERE coach_id = {0}
                     AND schedule_time >= {1}
@@ -127,14 +128,14 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
         DateTime date
     )
     {
-        var startOfDay = date.Date;
+        var startOfDay = AsUtc(date).Date;
         var endOfDay = startOfDay.AddDays(1);
 
         var models = await _dbContext.Database
             .SqlQueryRaw<ClassSqlRawModel>(
                 @"SELECT id, sport_id, facility_id, coach_id, class_name,
                          schedule_time, duration_minutes, capacity,
-                         current_enrolled, status
+                         current_enrolled, status, approval_status
                   FROM classes
                   WHERE facility_id = {0}
                     AND schedule_time >= {1}
@@ -159,8 +160,17 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             model.DurationMinutes,
             model.Capacity,
             model.CurrentEnrolled,
-            model.Status
+            model.Status,
+            model.ApprovalStatus
         );
+
+    private static DateTime AsUtc(DateTime value)
+        => value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Local => value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Utc),
+        };
 
     public async Task<IEnumerable<ClassResponse>> GetAllClassesAsync()
     {
@@ -204,7 +214,8 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                     Capacity: c.Capacity,
                     CurrentEnrolled: c.CurrentEnrolled,
                     AvailableSpots: c.Capacity - c.CurrentEnrolled,
-                    Status: c.Status
+                    Status: c.Status,
+                    ApprovalStatus: c.ApprovalStatus
                 );
             })
             .OrderBy(x => x.ScheduleTime)
@@ -219,7 +230,9 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             .Where(x => x.ScheduleTime > DateTime.UtcNow)
             .Get();
 
-        var classModels = classResponse.Models;
+        var classModels = classResponse.Models
+            .Where(c => c.Status && string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase))
+            .ToList();
         if (!classModels.Any())
             return Enumerable.Empty<ClassResponse>();
 
@@ -258,7 +271,8 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                     Capacity: c.Capacity,
                     CurrentEnrolled: c.CurrentEnrolled,
                     AvailableSpots: c.Capacity - c.CurrentEnrolled,
-                    Status: c.Status
+                    Status: c.Status,
+                    ApprovalStatus: c.ApprovalStatus
                 );
             })
             .OrderBy(x => x.ScheduleTime)

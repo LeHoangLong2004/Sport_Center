@@ -135,7 +135,12 @@ export default function CoachTopbar({ screen }: { screen: CoachScreen }) {
                       onClick={() => {
                         void markAsRead(notification);
                         setIsNotificationsOpen(false);
-                        if (notification.type !== "payment") window.location.hash = "#coach-notifications";
+                        if (notification.targetType === "class") {
+                          window.dispatchEvent(new Event("coach-schedule-updated"));
+                          window.location.hash = "#coach-schedule";
+                        } else if (notification.type !== "payment") {
+                          window.location.hash = "#coach-notifications";
+                        }
                       }}
                       className={`flex w-full gap-3 border-b border-slate-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-orange-50/60 dark:border-slate-800 dark:hover:bg-slate-800/70 ${notification.isRead ? "" : "bg-orange-50/60 dark:bg-orange-950/20"}`}
                     >

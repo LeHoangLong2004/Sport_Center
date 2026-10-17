@@ -3,7 +3,7 @@ import { avatarTopbar, iSearch, iBell } from '../shared';
 import { UserAvatar } from '../../../components/UserAvatar';
 import { notificationApi, type ManagerNotification } from '../../../hooks/notificationApi';
 
-export function TopBar({ breadcrumb, title, onProfileClick }: { breadcrumb: string; title: string; onProfileClick?: () => void }) {
+export function TopBar({ breadcrumb, title, onProfileClick, onNotificationClick }: { breadcrumb: string; title: string; onProfileClick?: () => void; onNotificationClick?: (notification: ManagerNotification) => void }) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<ManagerNotification[]>([]);
   const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
@@ -145,7 +145,11 @@ export function TopBar({ breadcrumb, title, onProfileClick }: { breadcrumb: stri
                     <button
                       type="button"
                       key={notification.id}
-                      onClick={() => void markAsRead(notification)}
+                      onClick={() => {
+                        void markAsRead(notification);
+                        setIsNotificationsOpen(false);
+                        onNotificationClick?.(notification);
+                      }}
                       className={`block w-full border-b border-slate-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/70 ${notification.isRead ? '' : 'bg-rose-50/60 dark:bg-rose-950/20'}`}
                     >
                       <div className="flex items-start gap-3">

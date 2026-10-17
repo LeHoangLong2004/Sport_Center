@@ -19,7 +19,8 @@ app.MapGet(
         var classes = await service.GetAllClassesAsync();
         return Results.Ok(classes);
     }
-);
+)
+.RequireAuthorization(policy => policy.RequireRole("admin", "manager", "receptionist"));
 app.MapGet(
         "/api/bookings/all",
         async (ClassService service) =>

@@ -61,7 +61,7 @@ function mapUser(data: any): UserProfile {
 export function detectPortalRole(portalRoleHint?: 'coach' | 'member'): 'coach' | 'member' {
   if (portalRoleHint) return portalRoleHint;
   const hash = window.location.hash.toLowerCase();
-  if (hash.startsWith('#coach')) return 'coach';
+  if (hash.startsWith('#coach-')) return 'coach';
   if (hash.startsWith('#member') || ['#classes', '#schedule', '#pricing'].includes(hash)) return 'member';
   const user = getStoredUser();
   return String(user?.roleName || user?.role || '').toLowerCase() === 'coach' ? 'coach' : 'member';

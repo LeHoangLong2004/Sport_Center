@@ -14,5 +14,6 @@ public sealed record ClassResponse(
     int Capacity,
     int CurrentEnrolled,
     int AvailableSpots,
-    bool Status
+    bool Status,
+    string ApprovalStatus = "approved"
 );

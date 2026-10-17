@@ -74,6 +74,7 @@ export default function ScheduleWeekGrid({
                   {cellSessions.map((sessionItem) => {
                     const isPT = sessionItem.type === "pt";
                     const isOpenPT = sessionItem.type === "open_pt";
+                    const isPendingApproval = !isPT && !isOpenPT && sessionItem.approvalStatus === "pending";
                     return (
                       <button
                         key={sessionItem.id}
@@ -88,7 +89,9 @@ export default function ScheduleWeekGrid({
                           }
                         }}
                         className={`w-full text-left p-2.5 rounded-xl border transition-all flex flex-col justify-between shadow-xs hover:shadow-md ${
-                          isOpenPT
+                          isPendingApproval
+                            ? "bg-amber-50/70 dark:bg-amber-950/30 border-amber-300 dark:border-amber-700"
+                            : isOpenPT
                             ? "bg-sky-50/70 dark:bg-sky-950/30 border-dashed border-sky-300 dark:border-sky-700 hover:border-sky-500 hover:bg-sky-50"
                             : isPT
                             ? "bg-amber-50/50 dark:bg-amber-950/20 border-amber-200/90 dark:border-amber-800/60 hover:border-amber-400"
