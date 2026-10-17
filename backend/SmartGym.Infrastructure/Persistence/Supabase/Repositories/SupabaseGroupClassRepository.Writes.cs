@@ -252,9 +252,21 @@ public sealed partial class SupabaseGroupClassRepository
         try
         {
             var affected = await _dbContext.Database.ExecuteSqlRawAsync(
-                @"UPDATE class_bookings 
-                  SET status = 'confirmed' 
-                  WHERE id = {0} AND status = 'pending'",
+                @"WITH approved_booking AS (
+                    UPDATE class_bookings
+                    SET status = 'confirmed'
+                    WHERE id = {0} AND status = 'pending'
+                    RETURNING user_id, class_id
+                  )
+                  INSERT INTO notifications (user_id, title, message, type, target_type, target_id)
+                  SELECT approved_booking.user_id,
+                         'Yêu cầu đặt lớp đã được duyệt',
+                         'Yêu cầu đặt lớp ' || COALESCE(classes.class_name, 'lớp học') || ' của bạn đã được Manager duyệt.',
+                         'booking_event',
+                         'class',
+                         approved_booking.class_id
+                  FROM approved_booking
+                  LEFT JOIN classes ON classes.id = approved_booking.class_id",
                 bookingId
             );
 
@@ -290,9 +302,21 @@ public sealed partial class SupabaseGroupClassRepository
                 }
 
                 await _dbContext.Database.ExecuteSqlRawAsync(
-                    @"UPDATE class_bookings 
-                      SET status = 'rejected' 
-                      WHERE id = {0}",
+                    @"WITH rejected_booking AS (
+                        UPDATE class_bookings
+                        SET status = 'rejected'
+                        WHERE id = {0}
+                        RETURNING user_id, class_id
+                      )
+                      INSERT INTO notifications (user_id, title, message, type, target_type, target_id)
+                      SELECT rejected_booking.user_id,
+                             'Yêu cầu đặt lớp bị từ chối',
+                             'Yêu cầu đặt lớp ' || COALESCE(classes.class_name, 'lớp học') || ' của bạn đã bị Manager từ chối.',
+                             'booking_event',
+                             'class',
+                             rejected_booking.class_id
+                      FROM rejected_booking
+                      LEFT JOIN classes ON classes.id = rejected_booking.class_id",
                     bookingId
                 );
 

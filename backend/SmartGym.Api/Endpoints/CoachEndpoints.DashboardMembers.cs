@@ -81,7 +81,7 @@ namespace SmartGym.Api.Endpoints
                             return Results.Ok(Array.Empty<object>());
 
                         var coachUser = await db.Database.SqlQueryRaw<UserSqlRawModel>(
-                            "SELECT id, full_name, phone_number FROM users WHERE id = {0}",
+                            "SELECT id, full_name, phone_number, avatar_url FROM users WHERE id = {0}",
                             coachUserId
                         ).FirstOrDefaultAsync();
 

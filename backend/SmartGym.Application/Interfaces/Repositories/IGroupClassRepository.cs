@@ -39,6 +39,19 @@ public interface IGroupClassRepository
         string targetType = "system",
         Guid? targetId = null
     );
+    Task NotifyUserAsync(
+        Guid userId,
+        string title,
+        string message,
+        string targetType = "system",
+        Guid? targetId = null
+    );
+    Task NotifyManagersAsync(
+        string title,
+        string message,
+        string targetType = "system",
+        Guid? targetId = null
+    );
     Task NotifyAffectedMembersAsync(Guid classId, string title, string message);
 
     // Giai đoạn G: Điểm danh & Xem lịch

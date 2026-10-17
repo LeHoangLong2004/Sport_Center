@@ -40,6 +40,54 @@ public sealed partial class SupabaseGroupClassRepository
         }
     }
 
+    public async Task NotifyUserAsync(
+        Guid userId,
+        string title,
+        string message,
+        string targetType = "system",
+        Guid? targetId = null
+    )
+    {
+        try
+        {
+            await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+                $@"
+                INSERT INTO notifications (user_id, title, message, type, target_type, target_id)
+                VALUES ({userId}, {title}, {message}, 'booking_event', {targetType}, {targetId})"
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[User Notification Error] {ex.Message}");
+            // Notification failure must not roll back the successful business action.
+        }
+    }
+
+    public async Task NotifyManagersAsync(
+        string title,
+        string message,
+        string targetType = "system",
+        Guid? targetId = null
+    )
+    {
+        try
+        {
+            await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+                $@"
+                INSERT INTO notifications (user_id, title, message, type, target_type, target_id)
+                SELECT u.id, {title}, {message}, 'booking_event', {targetType}, {targetId}
+                FROM users u
+                INNER JOIN roles r ON r.id = u.role_id
+                WHERE LOWER(r.name) IN ('manager', 'admin', 'center_manager', 'center manager', 'centermanager')"
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Manager Notification Error] {ex.Message}");
+            // Notification failure must not roll back the successful business action.
+        }
+    }
+
     public async Task NotifyAffectedMembersAsync(Guid classId, string title, string message)
     {
         try

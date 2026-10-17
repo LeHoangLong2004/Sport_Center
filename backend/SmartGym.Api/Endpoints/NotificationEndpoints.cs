@@ -20,23 +20,18 @@ public static class NotificationEndpoints
             .WithTags("Notifications")
             .RequireAuthorization();
 
-        group.MapGet("", GetNotificationsAsync)
-            .AddEndpointFilter(EnsureStaffRole);
+        group.MapGet("", GetNotificationsAsync);
 
-        group.MapPost("/{notificationId:guid}/read", MarkAsReadAsync)
-            .AddEndpointFilter(EnsureStaffRole);
+        group.MapPost("/{notificationId:guid}/read", MarkAsReadAsync);
 
-        group.MapPost("/read-all", MarkAllAsReadAsync)
-            .AddEndpointFilter(EnsureStaffRole);
+        group.MapPost("/read-all", MarkAllAsReadAsync);
     }
 
-    private static async ValueTask<object?> EnsureStaffRole(
-        EndpointFilterInvocationContext context,
-        EndpointFilterDelegate next)
+    private static bool IsStaffRole(ClaimsPrincipal user)
     {
-        var role = context.HttpContext.User.FindFirstValue(ClaimTypes.Role)
-            ?? context.HttpContext.User.FindFirstValue("role");
-        var isStaff = role is not null && (
+        var role = user.FindFirstValue(ClaimTypes.Role)
+            ?? user.FindFirstValue("role");
+        return role is not null && (
             role.Equals("manager", StringComparison.OrdinalIgnoreCase)
             || role.Equals("admin", StringComparison.OrdinalIgnoreCase)
             || role.Equals("center_manager", StringComparison.OrdinalIgnoreCase)
@@ -45,10 +40,6 @@ public static class NotificationEndpoints
             || role.Equals("receptionist", StringComparison.OrdinalIgnoreCase)
             || role.Equals("coach", StringComparison.OrdinalIgnoreCase)
             || role.Equals("staff", StringComparison.OrdinalIgnoreCase));
-
-        return isStaff
-            ? await next(context)
-            : Results.Forbid();
     }
 
     private static async Task<IResult> GetNotificationsAsync(
@@ -95,7 +86,7 @@ public static class NotificationEndpoints
         var role = context.User.FindFirstValue(ClaimTypes.Role)
             ?? context.User.FindFirstValue("role");
         var isCoach = role?.Equals("coach", StringComparison.OrdinalIgnoreCase) == true;
-        if (!isCoach)
+        if (!isCoach && IsStaffRole(context.User))
         {
             try
             {
