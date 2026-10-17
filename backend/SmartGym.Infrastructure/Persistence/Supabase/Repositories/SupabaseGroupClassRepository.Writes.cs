@@ -88,7 +88,7 @@ public sealed partial class SupabaseGroupClassRepository
     public async Task<(bool IsSuccess, string? ErrorMessage)> BookClassTransactionAsync(
         Guid userId,
         Guid classId,
-        Guid subscriptionId
+        Guid? subscriptionId = null
     )
     {
         var strategy = _dbContext.Database.CreateExecutionStrategy();
@@ -181,15 +181,29 @@ public sealed partial class SupabaseGroupClassRepository
                     );
                 }
 
-                await _dbContext.Database.ExecuteSqlRawAsync(
-                    @"INSERT INTO class_bookings (user_id, class_id, subscription_id, status)
-                  VALUES ({0}, {1}, {2}, 'pending')
-                  ON CONFLICT (user_id, class_id) 
-                  DO UPDATE SET status = 'pending', subscription_id = {2}",
-                    userId,
-                    classId,
-                    subscriptionId
-                );
+                if (subscriptionId.HasValue)
+                {
+                    await _dbContext.Database.ExecuteSqlRawAsync(
+                        @"INSERT INTO class_bookings (user_id, class_id, subscription_id, status)
+                      VALUES ({0}, {1}, {2}, 'confirmed')
+                      ON CONFLICT (user_id, class_id) 
+                      DO UPDATE SET status = 'confirmed', subscription_id = {2}",
+                        userId,
+                        classId,
+                        subscriptionId.Value
+                    );
+                }
+                else
+                {
+                    await _dbContext.Database.ExecuteSqlRawAsync(
+                        @"INSERT INTO class_bookings (user_id, class_id, subscription_id, status)
+                      VALUES ({0}, {1}, NULL, 'confirmed')
+                      ON CONFLICT (user_id, class_id) 
+                      DO UPDATE SET status = 'confirmed', subscription_id = NULL",
+                        userId,
+                        classId
+                    );
+                }
 
                 await transaction.CommitAsync();
                 return (true, null);

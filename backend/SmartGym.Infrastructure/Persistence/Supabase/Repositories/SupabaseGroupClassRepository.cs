@@ -45,7 +45,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             .Database.SqlQueryRaw<FacilitySqlRawModel>("SELECT id, name FROM facilities")
             .ToListAsync();
         var coaches = await _dbContext
-            .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches")
+            .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id, specialty, bio, experience_years, rating FROM coaches")
             .ToListAsync();
         var users = await _dbContext
             .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number, avatar_url FROM users")
@@ -186,7 +186,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             .Database.SqlQueryRaw<FacilitySqlRawModel>("SELECT id, name FROM facilities")
             .ToListAsync();
         var coaches = await _dbContext
-            .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches")
+            .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id, specialty, bio, experience_years, rating FROM coaches")
             .ToListAsync();
         var users = await _dbContext
             .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number, avatar_url FROM users")
@@ -215,7 +215,14 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                     CurrentEnrolled: c.CurrentEnrolled,
                     AvailableSpots: c.Capacity - c.CurrentEnrolled,
                     Status: c.Status,
-                    ApprovalStatus: c.ApprovalStatus
+                    ApprovalStatus: c.ApprovalStatus,
+                    CoachAvatar: SmartGym.Domain.Common.CoachAvatarHelper.GetRealCoachAvatar(user?.FullName, user?.AvatarUrl, c.CoachId),
+                    CoachSpecialty: coach?.Specialty ?? "Huấn luyện viên Thể hình",
+                    CoachPhone: user?.PhoneNumber ?? "",
+                    CoachBio: coach?.Bio ?? "Huấn luyện viên phụ trách lớp học.",
+                    CoachRating: coach?.Rating ?? 4.9m,
+                    CoachExperienceYears: coach?.ExperienceYears ?? 5,
+                    Price: 150000m
                 );
             })
             .OrderBy(x => x.ScheduleTime)
@@ -243,7 +250,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             .Database.SqlQueryRaw<FacilitySqlRawModel>("SELECT id, name FROM facilities")
             .ToListAsync();
         var coaches = await _dbContext
-            .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches")
+            .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id, specialty, bio, experience_years, rating FROM coaches")
             .ToListAsync();
         var users = await _dbContext
             .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number, avatar_url FROM users")
@@ -272,7 +279,14 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                     CurrentEnrolled: c.CurrentEnrolled,
                     AvailableSpots: c.Capacity - c.CurrentEnrolled,
                     Status: c.Status,
-                    ApprovalStatus: c.ApprovalStatus
+                    ApprovalStatus: c.ApprovalStatus,
+                    CoachAvatar: SmartGym.Domain.Common.CoachAvatarHelper.GetRealCoachAvatar(user?.FullName, user?.AvatarUrl, c.CoachId),
+                    CoachSpecialty: coach?.Specialty ?? "Huấn luyện viên Thể hình",
+                    CoachPhone: user?.PhoneNumber ?? "",
+                    CoachBio: coach?.Bio ?? "Huấn luyện viên phụ trách lớp học.",
+                    CoachRating: coach?.Rating ?? 4.9m,
+                    CoachExperienceYears: coach?.ExperienceYears ?? 5,
+                    Price: 150000m
                 );
             })
             .OrderBy(x => x.ScheduleTime)

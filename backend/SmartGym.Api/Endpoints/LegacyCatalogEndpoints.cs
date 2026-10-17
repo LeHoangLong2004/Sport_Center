@@ -136,7 +136,7 @@ app.MapGet(
         using var command = db.Database.GetDbConnection().CreateCommand();
         string sql =
             @"
-        SELECT c.id, u.full_name, u.email 
+        SELECT c.id, u.full_name, u.email, u.phone_number, u.avatar_url, c.specialty, c.bio, c.experience_years, c.rating 
         FROM coaches c
         JOIN users u ON c.user_id = u.id";
 
@@ -158,12 +158,23 @@ app.MapGet(
         using var reader = await command.ExecuteReaderAsync();
         while (await reader.ReadAsync())
         {
+            var fullName = reader.IsDBNull(1) ? "Huấn luyện viên" : reader.GetString(1);
+            var coachId = reader.GetGuid(0);
+            var dbAvatar = reader.IsDBNull(4) ? null : reader.GetString(4);
+            var avatarUrl = SmartGym.Domain.Common.CoachAvatarHelper.GetRealCoachAvatar(fullName, dbAvatar, coachId);
+
             coaches.Add(
                 new
                 {
                     id = reader.GetGuid(0),
-                    fullName = reader.IsDBNull(1) ? null : reader.GetString(1),
+                    fullName = fullName,
                     email = reader.IsDBNull(2) ? null : reader.GetString(2),
+                    phoneNumber = reader.IsDBNull(3) ? "0901 234 567" : reader.GetString(3),
+                    avatarUrl = avatarUrl,
+                    specialty = reader.IsDBNull(5) ? "Huấn luyện viên Thể hình" : reader.GetString(5),
+                    bio = reader.IsDBNull(6) ? "Huấn luyện viên chuyên nghiệp tại Sport Center." : reader.GetString(6),
+                    experienceYears = reader.IsDBNull(7) ? 5 : reader.GetInt32(7),
+                    rating = reader.IsDBNull(8) ? 4.9m : reader.GetDecimal(8),
                 }
             );
         }

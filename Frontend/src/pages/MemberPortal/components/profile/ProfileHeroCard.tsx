@@ -40,7 +40,7 @@ export const ProfileHeroCard: React.FC<ProfileHeroCardProps> = ({
   onOpenEdit,
   onOpenPasswordModal,
 }) => {
-  const currentTier = profile?.memberTier || (hasPaidInvoice ? "Hội viên Hoạt động" : "Hội viên Mới");
+  const currentTier = profile?.memberTier || (hasPaidInvoice ? "Hội viên Hoạt động" : "Thành viên mới");
   const memberCode = profile?.id
     ? profile.id.substring(0, 8).toUpperCase()
     : storedUser?.id
@@ -111,7 +111,7 @@ export const ProfileHeroCard: React.FC<ProfileHeroCardProps> = ({
                   </span>
                   <span>•</span>
                   <span>
-                    Hạng thẻ: <strong className="text-emerald-600 dark:text-emerald-400">{profile?.memberTier || (hasPaidInvoice ? "Hội viên Thể thao" : "Hội viên Mới")}</strong>
+                    Hạng thẻ: <strong className="text-emerald-600 dark:text-emerald-400">{profile?.memberTier || (hasPaidInvoice ? "Hội viên Thể thao" : "Thành viên mới")}</strong>
                   </span>
                 </p>
               </div>

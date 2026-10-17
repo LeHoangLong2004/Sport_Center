@@ -76,7 +76,7 @@ public sealed partial class SupabaseGroupClassRepository
                 .Database.SqlQueryRaw<FacilitySqlRawModel>("SELECT id, name FROM facilities")
                 .ToListAsync();
             var coaches = await _dbContext
-                .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches")
+                .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id, specialty, bio, experience_years, rating FROM coaches")
                 .ToListAsync();
             var users = await _dbContext
                 .Database.SqlQueryRaw<UserSqlRawModel>(
@@ -110,7 +110,15 @@ public sealed partial class SupabaseGroupClassRepository
                         ClassName = targetClass?.ClassName ?? "Unknown Class",
                         SportName = sport?.Name ?? "N/A",
                         FacilityName = facility?.Name ?? "N/A",
+                        CoachId = targetClass?.CoachId,
                         CoachName = coachUser?.FullName ?? "N/A",
+                        CoachAvatar = SmartGym.Domain.Common.CoachAvatarHelper.GetRealCoachAvatar(coachUser?.FullName, coachUser?.AvatarUrl, coach?.Id),
+                        CoachSpecialty = coach?.Specialty ?? "Huấn luyện viên Thể hình",
+                        CoachPhone = coachUser?.PhoneNumber ?? "",
+                        CoachBio = coach?.Bio ?? "Huấn luyện viên phụ trách lớp học.",
+                        CoachRating = coach?.Rating ?? 4.9m,
+                        CoachExperienceYears = coach?.ExperienceYears ?? 5,
+                        Price = 150000m,
                         ScheduleTime = targetClass?.ScheduleTime ?? DateTime.MinValue,
                         DurationMinutes = targetClass?.DurationMinutes ?? 60,
                         Status = cb.Status,
@@ -155,7 +163,7 @@ public sealed partial class SupabaseGroupClassRepository
     {
         var coach = await _dbContext
             .Database.SqlQueryRaw<CoachSqlRawModel>(
-                "SELECT id, user_id FROM coaches WHERE user_id = {0}",
+                "SELECT id, user_id, specialty, bio, experience_years, rating FROM coaches WHERE user_id = {0}",
                 coachUserId
             )
             .FirstOrDefaultAsync();
@@ -280,7 +288,7 @@ public sealed partial class SupabaseGroupClassRepository
             .Database.SqlQueryRaw<FacilitySqlRawModel>("SELECT id, name FROM facilities")
             .ToListAsync();
         var coaches = await _dbContext
-            .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches")
+            .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id, specialty, bio, experience_years, rating FROM coaches")
             .ToListAsync();
         var users = await _dbContext
             .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number, avatar_url FROM users")

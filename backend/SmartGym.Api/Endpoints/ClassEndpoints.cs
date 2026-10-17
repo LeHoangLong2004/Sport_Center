@@ -146,6 +146,17 @@ public static class ClassEndpoints
             }
         );
 
+        classGroup.MapGet(
+                "/{id:guid}",
+                async (Guid id, ClassService service) =>
+                {
+                    var classDetail = await service.GetClassDetailAsync(id);
+                    if (classDetail == null)
+                        return Results.NotFound(new { message = "Không tìm thấy lớp học" });
+                    return Results.Ok(classDetail);
+                }
+            );
+
         classGroup.MapPost(
                 "/{id:guid}/book",
                 async (Guid id, HttpContext context, ClassService service) =>
@@ -155,9 +166,109 @@ public static class ClassEndpoints
                         return Results.Unauthorized();
 
                     var (isSuccess, errorMessage) = await service.BookClassAsync(userId, id);
-                    return isSuccess
-                        ? Results.Ok(new { message = "Đặt lớp thành công." })
-                        : Results.BadRequest(new { message = errorMessage });
+                    if (!isSuccess)
+                    {
+                        if (errorMessage != null && (errorMessage.Contains("đã đặt chỗ") || errorMessage.Contains("đã đăng ký")))
+                        {
+                            ClassDetailResponse? existingDetail = null;
+                            try { existingDetail = await service.GetClassDetailAsync(id); } catch { }
+                            return Results.Ok(new 
+                            { 
+                                success = true,
+                                alreadyBooked = true,
+                                message = "Bạn đã đăng ký lớp học này trước đó rồi.",
+                                classInfo = existingDetail
+                            });
+                        }
+                        return Results.BadRequest(new { message = errorMessage });
+                    }
+
+                    ClassDetailResponse? classDetail = null;
+                    try
+                    {
+                        classDetail = await service.GetClassDetailAsync(id);
+                    }
+                    catch
+                    {
+                        // Safe fallback so transient fetch error doesn't break response
+                    }
+
+                    return Results.Ok(new 
+                    { 
+                        message = "Đặt lớp thành công.",
+                        classInfo = classDetail
+                    });
+                }
+            )
+            .RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
+
+        classGroup.MapPost(
+                "/{id:guid}/pay-and-book",
+                async (Guid id, [FromBody] PayAndBookClassRequest? request, HttpContext context, ClassService service, SmartGym.Infrastructure.Persistence.EF.SmartGymDbContext db) =>
+                {
+                    var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    if (!Guid.TryParse(userIdClaim, out var userId))
+                        return Results.Unauthorized();
+
+                    var method = request?.PaymentMethod ?? "qr";
+                    var amount = request?.Amount ?? 150000m;
+
+                    var (isSuccess, errorMessage) = await service.BookClassAsync(userId, id);
+                    if (!isSuccess)
+                    {
+                        if (errorMessage != null && (errorMessage.Contains("đã đặt chỗ") || errorMessage.Contains("đã đăng ký")))
+                        {
+                            ClassDetailResponse? existingDetail = null;
+                            try { existingDetail = await service.GetClassDetailAsync(id); } catch { }
+                            return Results.Ok(new
+                            {
+                                success = true,
+                                alreadyBooked = true,
+                                message = "Bạn đã hoàn tất đặt chỗ lớp học này trước đó rồi.",
+                                classInfo = existingDetail
+                            });
+                        }
+                        return Results.BadRequest(new { message = errorMessage });
+                    }
+
+                    var invoice = new SmartGym.Domain.Entities.Invoice
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = userId,
+                        TotalAmount = amount,
+                        PaymentMethod = method.ToLower() switch
+                        {
+                            "card" or "creditcard" or "credit_card" => SmartGym.Domain.Enums.PaymentMethod.CreditCard,
+                            "counter" or "cashatcounter" => SmartGym.Domain.Enums.PaymentMethod.CashAtCounter,
+                            "wallet" or "ewallet" => SmartGym.Domain.Enums.PaymentMethod.EWallet,
+                            "bank_transfer" or "banktransfer" => SmartGym.Domain.Enums.PaymentMethod.BankTransfer,
+                            _ => SmartGym.Domain.Enums.PaymentMethod.QRCode
+                        },
+                        Status = SmartGym.Domain.Enums.PaymentStatus.Completed,
+                        PaidAt = DateTime.UtcNow,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    await db.Invoices.AddAsync(invoice);
+                    await db.SaveChangesAsync();
+
+                    ClassDetailResponse? classDetail = null;
+                    try
+                    {
+                        classDetail = await service.GetClassDetailAsync(id);
+                    }
+                    catch
+                    {
+                        // Safe fallback so transient fetch error doesn't break payment response
+                    }
+
+                    return Results.Ok(new
+                    {
+                        success = true,
+                        message = "Thanh toán với giá gốc và đặt lịch thành công!",
+                        invoiceId = invoice.Id,
+                        amount = amount,
+                        classInfo = classDetail
+                    });
                 }
             )
             .RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
@@ -177,13 +288,6 @@ public static class ClassEndpoints
                 }
             )
             .RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
-
-        /* classGroup.MapGet("/{id:guid}", async (Guid id, ClassService service) =>
-        {
-            var classDetail = await service.GetClassDetailAsync(id);
-            if (classDetail == null) return Results.NotFound(new { message = "Class not found" });
-            return Results.Ok(classDetail);
-        }); */
 
         /* classGroup.MapPost("/{id:guid}/book", async (Guid id, HttpContext httpContext, ClassService service) =>
         {
@@ -267,3 +371,5 @@ public static class ClassEndpoints
         }).RequireAuthorization(policy => policy.RequireRole("manager", "admin")); */
     }
 }
+
+public record PayAndBookClassRequest(string? PaymentMethod = "qr", decimal Amount = 150000);
