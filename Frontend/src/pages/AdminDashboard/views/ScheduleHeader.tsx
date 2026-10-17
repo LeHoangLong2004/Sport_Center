@@ -1,15 +1,17 @@
-type ScheduleTab = "calendar" | "bookings";
+export type ScheduleTab = "calendar" | "bookings" | "proposals";
 
 interface ScheduleHeaderProps {
   activeTab: ScheduleTab;
   onTabChange: (tab: ScheduleTab) => void;
   onCreate: () => void;
+  proposalCount?: number;
 }
 
 export function ScheduleHeader({
   activeTab,
   onTabChange,
   onCreate,
+  proposalCount = 0,
 }: ScheduleHeaderProps) {
   return (
     <div className="flex items-center justify-between border-b border-[#e2e8f0] pb-4">
@@ -34,6 +36,17 @@ export function ScheduleHeader({
             className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${activeTab === "bookings" ? "bg-white text-[#0f172a] shadow-sm" : "text-[#64748b] hover:text-[#0f172a]"}`}
           >
             Danh sách đặt chỗ
+          </button>
+          <button
+            onClick={() => onTabChange("proposals")}
+            className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${activeTab === "proposals" ? "bg-white text-[#0f172a] shadow-sm" : "text-[#64748b] hover:text-[#0f172a]"}`}
+          >
+            <span>Đề xuất lớp học</span>
+            {proposalCount > 0 && (
+              <span className="ml-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
+                {proposalCount}
+              </span>
+            )}
           </button>
         </div>
         {activeTab === "calendar" && (

@@ -20,6 +20,7 @@ import OpenPtSlotModal from "./schedule/OpenPtSlotModal";
 import OpenPtDetailModal from "./schedule/OpenPtDetailModal";
 import PtSessionDetailModal from "./schedule/PtSessionDetailModal";
 import { useCoachScheduleData } from "./schedule/useCoachScheduleData";
+import { CreateClassModal } from "../../AdminDashboard/components/CreateClassModal";
 
 export type { UnifiedScheduleItem } from "./schedule/types";
 
@@ -40,6 +41,7 @@ export default function CoachSchedule({ navigateTo }: Props) {
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
 
   const [isOpenSlotModalOpen, setIsOpenSlotModalOpen] = useState(false);
+  const [isClassProposalModalOpen, setIsClassProposalModalOpen] = useState(false);
   const [selectedOpenSlot, setSelectedOpenSlot] = useState<UnifiedScheduleItem | null>(null);
   const [selectedPtSession, setSelectedPtSession] = useState<UnifiedScheduleItem | null>(null);
 
@@ -135,6 +137,15 @@ export default function CoachSchedule({ navigateTo }: Props) {
         <div className="flex items-center gap-3">
           <button
             type="button"
+            onClick={() => setIsClassProposalModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all shadow-sm hover:shadow-md"
+          >
+            <CalendarPlus className="w-4 h-4" />
+            Đề xuất lớp học
+          </button>
+
+          <button
+            type="button"
             onClick={() => setIsOpenSlotModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-xl transition-all shadow-sm hover:shadow-md"
           >
@@ -161,6 +172,19 @@ export default function CoachSchedule({ navigateTo }: Props) {
           <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
           <span>{feedbackMsg}</span>
         </div>
+      )}
+
+      {isClassProposalModalOpen && (
+        <CreateClassModal
+          mode="coach"
+          onSuccess={() => {
+            setFeedbackMsg("Đề xuất lớp học đã được gửi để Manager duyệt.");
+            setTimeout(() => setFeedbackMsg(null), 4000);
+          }}
+          onClose={() => {
+            setIsClassProposalModalOpen(false);
+          }}
+        />
       )}
 
       {/* Tabs */}

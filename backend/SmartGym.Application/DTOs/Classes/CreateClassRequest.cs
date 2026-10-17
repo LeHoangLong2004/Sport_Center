@@ -11,3 +11,13 @@ public class CreateClassRequest
     public int Capacity { get; set; }
 }
 
+public class CreateClassProposalRequest
+{
+    public Guid SportId { get; set; }
+    public Guid FacilityId { get; set; }
+    public string ClassName { get; set; } = string.Empty;
+    public DateTime ScheduleTime { get; set; }
+    public int DurationMinutes { get; set; }
+    public int Capacity { get; set; }
+}
+

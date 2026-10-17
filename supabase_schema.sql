@@ -304,6 +304,7 @@ CREATE TABLE classes (
     capacity         INT         NOT NULL,
     current_enrolled INT         DEFAULT 0,
     status           BOOLEAN     DEFAULT true,
+    approval_status   VARCHAR(20) NOT NULL DEFAULT 'approved',
     created_at       TIMESTAMPTZ DEFAULT now()
 );
 

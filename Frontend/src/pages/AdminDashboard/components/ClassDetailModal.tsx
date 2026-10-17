@@ -1,14 +1,23 @@
 import React, { useState, useEffect } from 'react';
 
-export function ClassDetailModal({ classId, onClose, onEdit }: { classId: string, onClose: () => void, onEdit: (data: any) => void }) {
+export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: { classId: string, onClose: () => void, onEdit: (data: any) => void, onApproval?: (action: 'approve' | 'reject') => Promise<boolean> }) {
   const [classDetail, setClassDetail] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isCancelling, setIsCancelling] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
   const [showConfirmCancel, setShowConfirmCancel] = useState(false);
   const [showConfirmRestore, setShowConfirmRestore] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
+
+  const handleApproval = async (action: 'approve' | 'reject') => {
+    if (!onApproval) return;
+    setIsApproving(true);
+    const success = await onApproval(action);
+    setIsApproving(false);
+    if (success) onClose();
+  };
 
   useEffect(() => {
     const fetchClassDetail = async () => {
@@ -196,7 +205,12 @@ export function ClassDetailModal({ classId, onClose, onEdit }: { classId: string
         </div>
 
         {/* Footer Actions */}
-        {classDetail && (
+        {classDetail && classDetail.approvalStatus === 'pending' && onApproval ? (
+          <div className="flex shrink-0 items-center justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4">
+            <button type="button" onClick={() => void handleApproval('reject')} disabled={isApproving} className="rounded-lg border border-rose-200 bg-white px-5 py-2.5 text-sm font-bold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50">Từ chối</button>
+            <button type="button" onClick={() => void handleApproval('approve')} disabled={isApproving} className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50">{isApproving ? 'Đang xử lý...' : 'Duyệt lớp học'}</button>
+          </div>
+        ) : classDetail && (
           <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 shrink-0">
             <button 
               onClick={() => onEdit(classDetail)} 

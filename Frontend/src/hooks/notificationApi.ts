@@ -5,6 +5,8 @@ export interface ManagerNotification {
   title: string;
   message?: string | null;
   type: string;
+  targetType?: string | null;
+  targetId?: string | null;
   isRead: boolean;
   createdAt: string;
 }

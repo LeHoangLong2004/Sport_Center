@@ -18,7 +18,7 @@ public sealed partial class SupabaseGroupClassRepository
     {
         var allClasses = await _dbContext
             .Database.SqlQueryRaw<ClassSqlRawModel>(
-                "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status FROM classes"
+                "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status FROM classes"
             )
             .ToListAsync();
         var allBookings = await _dbContext
@@ -119,6 +119,24 @@ public class ClassSqlRawModel
 
     [Column("status")]
     public bool Status { get; set; }
+
+    [Column("approval_status")]
+    public string ApprovalStatus { get; set; } = "approved";
+}
+
+public class ClassApprovalRawModel
+{
+    [Column("id")]
+    public Guid Id { get; set; }
+
+    [Column("coach_id")]
+    public Guid? CoachId { get; set; }
+
+    [Column("class_name")]
+    public string ClassName { get; set; } = string.Empty;
+
+    [Column("approval_status")]
+    public string ApprovalStatus { get; set; } = string.Empty;
 }
 
 public class SportSqlRawModel

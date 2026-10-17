@@ -30,6 +30,8 @@ public interface IGroupClassRepository
     );
     Task<(bool IsSuccess, string? ErrorMessage)> CancelClassTransactionAsync(Guid classId);
     Task<(bool IsSuccess, string? ErrorMessage)> RestoreClassTransactionAsync(Guid classId);
+    Task<(bool IsSuccess, string? ErrorMessage)> ApproveClassAsync(Guid classId);
+    Task<(bool IsSuccess, string? ErrorMessage)> RejectClassAsync(Guid classId);
     Task<(bool IsSuccess, string? ErrorMessage)> ApproveBookingAsync(Guid bookingId);
     Task<(bool IsSuccess, string? ErrorMessage)> RejectBookingAsync(Guid bookingId);
     Task NotifyCoachAsync(
