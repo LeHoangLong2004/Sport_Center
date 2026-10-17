@@ -193,6 +193,14 @@ export default function MemberBooking({ onNavigate }: Props) {
   const getBookingStatus = (session: MemberSessionItem) =>
     (session as any).bookingStatus ?? (session as any).status;
 
+  const findActiveBooking = (classId: string, date: string) =>
+    mySessions.find(
+      (session) =>
+        String((session as any).classId ?? session.id).toLowerCase() === String(classId).toLowerCase() &&
+        session.date === date &&
+        !isInactiveBookingStatus(getBookingStatus(session))
+    );
+
   const isInactiveBookingStatus = (status: unknown) => {
     const normalizedStatus = normalizeBookingStatus(status);
     return (
@@ -207,12 +215,7 @@ export default function MemberBooking({ onNavigate }: Props) {
   };
 
   const isBooked = (classId: string, date: string) => {
-    return mySessions.some(
-      (s) =>
-        String((s as any).classId ?? s.id).toLowerCase() === String(classId).toLowerCase() &&
-        s.date === date &&
-        !isInactiveBookingStatus(getBookingStatus(s))
-    );
+    return Boolean(findActiveBooking(classId, date));
   };
 
   // Group-class bookings are persisted by the backend database.
@@ -244,8 +247,9 @@ export default function MemberBooking({ onNavigate }: Props) {
         coachName: item.coachName,
         capacity: item.capacity,
         registeredCount: item.registeredCount + 1,
-        status: "confirmed" as any,
-        bookingStatus: "confirmed",
+        // The API creates group-class bookings as pending until Manager approves.
+        status: "pending" as any,
+        bookingStatus: "pending",
       } as MemberSessionItem & { classId: string; bookingStatus: string };
 
       setGroupClasses((currentClasses) =>
@@ -266,7 +270,7 @@ export default function MemberBooking({ onNavigate }: Props) {
       );
       void loadGroupClasses(true);
       setSelectedClassDetail(null);
-      showFeedback(`Đã đăng ký thành công lớp "${item.name}".`);
+      showFeedback(`Yêu cầu đặt lớp "${item.name}" đã được gửi và đang chờ Manager duyệt.`);
     } catch (error: any) {
       showFeedback(error?.message || "Không thể đặt lớp học.", "error");
     }
@@ -515,7 +519,10 @@ export default function MemberBooking({ onNavigate }: Props) {
               </p>
             </div>
           ) : filteredGroupClasses.map((item) => {
-            const booked = isBooked(item.id, item.dateStr);
+            const bookedSession = findActiveBooking(item.id, item.dateStr);
+            const booked = Boolean(bookedSession);
+            const bookingStatus = normalizeBookingStatus(bookedSession ? getBookingStatus(bookedSession) : "");
+            const isPending = bookingStatus === "pending";
             const isFull = item.registeredCount >= item.capacity;
 
             return (
@@ -542,6 +549,18 @@ export default function MemberBooking({ onNavigate }: Props) {
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-snug">
                     {item.name}
                   </h3>
+
+                  {booked && (
+                    <span
+                      className={`mt-2 inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold ${
+                        isPending
+                          ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+                          : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+                      }`}
+                    >
+                      {isPending ? "Đang chờ duyệt" : "Đã được duyệt"}
+                    </span>
+                  )}
 
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
                     {item.description}
@@ -791,7 +810,13 @@ export default function MemberBooking({ onNavigate }: Props) {
                       : "text-white bg-slate-900 hover:bg-slate-800 dark:bg-emerald-500 dark:text-slate-950 dark:hover:bg-emerald-400"
                   }`}
                 >
-                  {selectedClassBooked ? "Đã đặt lớp" : "Xác nhận đặt lớp"}
+                  {selectedClassBooked
+                    ? normalizeBookingStatus(
+                        getBookingStatus(findActiveBooking(selectedClassDetail.id, selectedClassDetail.dateStr) as MemberSessionItem)
+                      ) === "pending"
+                      ? "Đang chờ duyệt"
+                      : "Đã được duyệt"
+                    : "Xác nhận đặt lớp"}
                 </button>
               </div>
             </div>

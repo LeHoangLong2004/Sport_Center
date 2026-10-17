@@ -196,15 +196,33 @@ public sealed partial class ClassService
 
         // 4. Gọi hàm thực thi Transaction ở tầng Data (nguyên tử)
         var result = await _classRepository.BookClassTransactionAsync(userId, classId, validSub.Id);
-        if (result.IsSuccess && targetClass.CoachId.HasValue)
+        if (result.IsSuccess)
         {
-            await _classRepository.NotifyCoachAsync(
+            var localSchedule = CenterTime.ToLocal(targetClass.ScheduleTime);
+            await _classRepository.NotifyUserAsync(
+                userId,
+                "Yêu cầu đặt lớp đang chờ duyệt",
+                $"Yêu cầu đặt lớp {targetClass.ClassName} vào {localSchedule:dd/MM/yyyy HH:mm} đã được gửi đến Manager.",
+                "class",
+                targetClass.Id
+            );
+            await _classRepository.NotifyManagersAsync(
+                "Có đơn đặt lớp mới cần duyệt",
+                $"Hội viên {user.FullName} vừa gửi yêu cầu đặt lớp {targetClass.ClassName} vào {localSchedule:dd/MM/yyyy HH:mm}.",
+                "class",
+                targetClass.Id
+            );
+
+            if (targetClass.CoachId.HasValue)
+            {
+                await _classRepository.NotifyCoachAsync(
                 targetClass.CoachId.Value,
                 "Có học viên vừa đặt lớp",
                 $"Một học viên vừa đặt lớp {targetClass.ClassName} vào {CenterTime.ToLocal(targetClass.ScheduleTime):dd/MM/yyyy HH:mm}.",
                 "class",
                 targetClass.Id
-            );
+                );
+            }
         }
 
         return result;
@@ -228,15 +246,26 @@ public sealed partial class ClassService
         }
 
         var result = await _classRepository.CancelBookingTransactionAsync(userId, classId);
-        if (result.IsSuccess && targetClass.CoachId.HasValue)
+        if (result.IsSuccess)
         {
-            await _classRepository.NotifyCoachAsync(
+            var localSchedule = CenterTime.ToLocal(targetClass.ScheduleTime);
+            await _classRepository.NotifyManagersAsync(
+                "Có yêu cầu hủy đặt lớp",
+                $"Hội viên vừa hủy đặt lớp {targetClass.ClassName} vào {localSchedule:dd/MM/yyyy HH:mm}.",
+                "class",
+                targetClass.Id
+            );
+
+            if (targetClass.CoachId.HasValue)
+            {
+                await _classRepository.NotifyCoachAsync(
                 targetClass.CoachId.Value,
                 "Học viên đã hủy đặt lớp",
                 $"Một học viên vừa hủy đặt lớp {targetClass.ClassName} vào {CenterTime.ToLocal(targetClass.ScheduleTime):dd/MM/yyyy HH:mm}.",
                 "class",
                 targetClass.Id
-            );
+                );
+            }
         }
 
         return result;

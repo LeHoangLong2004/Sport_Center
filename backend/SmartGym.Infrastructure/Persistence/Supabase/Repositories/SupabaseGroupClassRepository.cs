@@ -48,7 +48,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches")
             .ToListAsync();
         var users = await _dbContext
-            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number FROM users")
+            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number, avatar_url FROM users")
             .ToListAsync();
 
         var sport = sports.FirstOrDefault(s => s.Id == c.SportId);
@@ -179,7 +179,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches")
             .ToListAsync();
         var users = await _dbContext
-            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number FROM users")
+            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number, avatar_url FROM users")
             .ToListAsync();
 
         return classModels
@@ -233,7 +233,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches")
             .ToListAsync();
         var users = await _dbContext
-            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number FROM users")
+            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number, avatar_url FROM users")
             .ToListAsync();
 
         return classModels

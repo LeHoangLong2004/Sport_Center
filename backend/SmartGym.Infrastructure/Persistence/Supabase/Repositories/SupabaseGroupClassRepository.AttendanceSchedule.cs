@@ -80,7 +80,7 @@ public sealed partial class SupabaseGroupClassRepository
                 .ToListAsync();
             var users = await _dbContext
                 .Database.SqlQueryRaw<UserSqlRawModel>(
-                    "SELECT id, full_name, phone_number FROM users"
+                    "SELECT id, full_name, phone_number, avatar_url FROM users"
                 )
                 .ToListAsync();
 
@@ -194,7 +194,7 @@ public sealed partial class SupabaseGroupClassRepository
             )
             .ToListAsync();
         var users = await _dbContext
-            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number FROM users")
+            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number, avatar_url FROM users")
             .ToListAsync();
 
         var result = new List<CoachClassScheduleDto>();
@@ -283,7 +283,7 @@ public sealed partial class SupabaseGroupClassRepository
             .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches")
             .ToListAsync();
         var users = await _dbContext
-            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number FROM users")
+            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number, avatar_url FROM users")
             .ToListAsync();
 
         return allClasses
