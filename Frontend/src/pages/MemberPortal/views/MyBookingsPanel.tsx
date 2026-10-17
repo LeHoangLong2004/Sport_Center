@@ -1,3 +1,5 @@
+import { CoachAvatar } from "../utils/coachAvatar";
+
 interface MyBookingsPanelProps {
   loading: boolean
   bookings: any[]
@@ -72,18 +74,48 @@ export function MyBookingsPanel({ loading, bookings, cancellingId, onExplore, on
                           </span>
                         </div>
 
-                        <div className="space-y-2 text-sm text-slate-600 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                          <div className="flex items-center gap-2">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-teal-600"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                            <span className="font-semibold text-slate-700">{dateStr}</span>
+                        {/* Coach Profile Card in Booking */}
+                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
+                          <div className="flex items-center gap-3 pb-3 border-b border-slate-200/60">
+                            <CoachAvatar
+                              src={b.coachAvatar}
+                              name={b.coachName || 'HLV'}
+                              className="w-12 h-12 rounded-xl shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-bold text-slate-800 text-sm truncate">{b.coachName || 'HLV Trung Tâm'}</span>
+                                {b.coachRating ? (
+                                  <span className="inline-flex items-center gap-0.5 text-xs font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
+                                    ⭐ {b.coachRating}
+                                  </span>
+                                ) : null}
+                              </div>
+                              <p className="text-xs text-teal-700 font-medium truncate">{b.coachSpecialty || 'Huấn luyện viên chuyên nghiệp'}</p>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-teal-600"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                            <span>HLV: <strong className="text-slate-800">{b.coachName || 'N/A'}</strong></span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-teal-600"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
-                            <span>Phòng: <strong className="text-slate-800">{b.roomName || 'Studio'}</strong></span>
+
+                          <div className="space-y-1.5 text-xs text-slate-600">
+                            <div className="flex items-center gap-2">
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-teal-600 shrink-0"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                              <span className="font-semibold text-slate-700">{dateStr}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-teal-600 shrink-0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                              <span>Phòng: <strong className="text-slate-800">{b.roomName || 'Studio trung tâm'}</strong></span>
+                            </div>
+                            {b.coachPhone && (
+                              <div className="flex items-center gap-2">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-teal-600 shrink-0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
+                                <span>Hotline HLV: <a href={`tel:${b.coachPhone}`} className="text-teal-700 font-bold hover:underline">{b.coachPhone}</a></span>
+                              </div>
+                            )}
+                            <div className="flex items-center justify-between pt-1 border-t border-slate-200/40">
+                              <span className="text-slate-500">Mức phí:</span>
+                              <span className="font-bold text-slate-800">
+                                {b.price ? `${b.price.toLocaleString('vi-VN')} đ` : "150.000 đ (Giá gốc)"}
+                              </span>
+                            </div>
                           </div>
                         </div>
 

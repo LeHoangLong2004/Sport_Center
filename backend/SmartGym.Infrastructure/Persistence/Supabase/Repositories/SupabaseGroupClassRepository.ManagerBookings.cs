@@ -30,7 +30,7 @@ public sealed partial class SupabaseGroupClassRepository
             .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number, avatar_url FROM users")
             .ToListAsync();
         var coaches = await _dbContext
-            .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches")
+            .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id, specialty, bio, experience_years, rating FROM coaches")
             .ToListAsync();
 
         var result = new List<BookingManagerResponse>();
@@ -146,6 +146,18 @@ public class CoachSqlRawModel
 
     [Column("user_id")]
     public Guid UserId { get; set; }
+
+    [Column("specialty")]
+    public string? Specialty { get; set; }
+
+    [Column("bio")]
+    public string? Bio { get; set; }
+
+    [Column("experience_years")]
+    public int? ExperienceYears { get; set; }
+
+    [Column("rating")]
+    public decimal? Rating { get; set; }
 }
 
 public class UserSqlRawModel

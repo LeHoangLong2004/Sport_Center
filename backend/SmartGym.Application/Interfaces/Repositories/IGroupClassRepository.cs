@@ -22,7 +22,7 @@ public interface IGroupClassRepository
     Task<(bool IsSuccess, string? ErrorMessage)> BookClassTransactionAsync(
         Guid userId,
         Guid classId,
-        Guid subscriptionId
+        Guid? subscriptionId = null
     );
     Task<(bool IsSuccess, string? ErrorMessage)> CancelBookingTransactionAsync(
         Guid userId,

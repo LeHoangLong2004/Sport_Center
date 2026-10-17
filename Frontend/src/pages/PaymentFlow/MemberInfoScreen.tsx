@@ -88,10 +88,15 @@ export function MemberInfoScreen({
                 
                 <div className="flex flex-col gap-[8px] min-w-0">
                   <label className="font-['Inter:Semi_Bold'] font-semibold text-[#1e293b] text-[14px]">Giới tính</label>
-                  <select value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})} className="bg-white border border-[#cbd5e1] focus:border-[#2563eb] outline-none px-[16px] py-[12px] rounded-[10px] w-full font-['Inter:Medium'] font-medium text-[#0f172a] text-[14px]">
-                    <option>Nam</option>
-                    <option>Nữ</option>
-                    <option>Khác</option>
+                  <select
+                    value={formData.gender || ""}
+                    onChange={e => setFormData({...formData, gender: e.target.value})}
+                    className="bg-white border border-[#cbd5e1] focus:border-[#2563eb] outline-none px-[16px] py-[12px] rounded-[10px] w-full font-['Inter:Medium'] font-medium text-[#0f172a] text-[14px]"
+                  >
+                    <option value="">Chọn giới tính</option>
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
+                    <option value="Khác">Khác</option>
                   </select>
                 </div>
                 

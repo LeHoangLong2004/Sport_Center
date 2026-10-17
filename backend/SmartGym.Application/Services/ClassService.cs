@@ -170,10 +170,9 @@ public sealed partial class ClassService
             && targetClass.ScheduleTime <= s.EndDate
         );
 
-        if (validSub == null)
-        {
-            return (false, "Hội viên chưa có gói tập hợp lệ hoặc gói tập đã hết hạn.");
-        }
+        // Thành viên ở mọi hạng (kể cả Basic / chưa mua gói tháng) đều được đặt lớp:
+        // Nếu có gói tháng hợp lệ thì gắn với subscriptionId, nếu là Basic thì đặt theo vé giá gốc (subscriptionId = null).
+        Guid? subscriptionIdToUse = validSub?.Id;
 
         var targetStart = targetClass.ScheduleTime;
         var targetEnd = targetStart.AddMinutes(targetClass.DurationMinutes);
@@ -195,14 +194,14 @@ public sealed partial class ClassService
         }
 
         // 4. Gọi hàm thực thi Transaction ở tầng Data (nguyên tử)
-        var result = await _classRepository.BookClassTransactionAsync(userId, classId, validSub.Id);
+        var result = await _classRepository.BookClassTransactionAsync(userId, classId, subscriptionIdToUse);
         if (result.IsSuccess)
         {
             var localSchedule = CenterTime.ToLocal(targetClass.ScheduleTime);
             await _classRepository.NotifyUserAsync(
                 userId,
-                "Yêu cầu đặt lớp đang chờ duyệt",
-                $"Yêu cầu đặt lớp {targetClass.ClassName} vào {localSchedule:dd/MM/yyyy HH:mm} đã được gửi đến Manager.",
+                "Đặt lớp thành công",
+                $"Bạn đã đặt thành công lớp {targetClass.ClassName} vào {localSchedule:dd/MM/yyyy HH:mm}.",
                 "class",
                 targetClass.Id
             );

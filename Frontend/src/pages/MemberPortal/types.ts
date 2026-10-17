@@ -23,6 +23,14 @@ export interface MemberSessionItem {
   room: string;
   coachId: string;
   coachName: string;
+  coachAvatar?: string;
+  coachSpecialty?: string;
+  coachPhone?: string;
+  coachBio?: string;
+  coachRating?: number;
+  coachExperienceYears?: number;
+  price?: number;
+  paymentStatus?: string;
   capacity: number;
   registeredCount: number;
   status: "sắp diễn ra" | "đang diễn ra" | "hoàn thành" | "đã hủy";

@@ -49,7 +49,7 @@ export default function PaymentFlow({
       phone: "",
       email: "",
       dob: "",
-      gender: "Nữ",
+      gender: "",
       emergencyContact: "",
       startDate: (() => {
         const today = new Date();
@@ -70,7 +70,7 @@ export default function PaymentFlow({
           phone: u.phoneNumber || "",
           email: u.email || "",
           dob: u.dateOfBirth ? u.dateOfBirth.split('T')[0] : "",
-          gender: u.gender || "Nữ"
+          gender: u.gender || ""
         };
       }
     } catch {}

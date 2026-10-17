@@ -38,7 +38,7 @@ export default function MemberProfileModern({ onNavigate }: Props) {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [dob, setDob] = useState("");
-  const [gender, setGender] = useState("Nam");
+  const [gender, setGender] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [emergencyContact, setEmergencyContact] = useState("");
   const [fitnessGoal, setFitnessGoal] = useState("");
@@ -96,7 +96,7 @@ export default function MemberProfileModern({ onNavigate }: Props) {
       setPhone(profile.phone || storedUser?.phoneNumber || storedUser?.phone || "");
       setEmail(profile.email || storedUser?.email || "");
       setDob(profile.dob ? profile.dob.split("T")[0] : "");
-      setGender(profile.gender || "Chưa cập nhật");
+      setGender((profile.gender && profile.gender !== "Chưa cập nhật") ? profile.gender : "");
       setEmergencyContact(profile.emergencyContact || "");
       setFitnessGoal(profile.fitnessGoal || "");
       setFavoriteSportsStr(profile.favoriteSports || "");
