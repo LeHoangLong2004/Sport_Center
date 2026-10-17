@@ -79,14 +79,102 @@ export const MemberBackendAPI = {
 
   async getBookings(): Promise<MemberSessionItem[]> {
     try {
-      const res = await fetch("/api/member/bookings", {
+      // The personal schedule is persisted in class_bookings/pt_sessions.
+      // Do not use the legacy /api/member/bookings endpoint here because it
+      // only contains the old in-memory PT booking store.
+      const res = await fetch("/api/schedule/member", {
         headers: this.getAuthHeaders(),
       });
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data)) {
-          return data.filter((item: any) => !item?.id || !LEGACY_MOCK_IDS.has(item.id));
-        }
+        const toSessionTime = (value: string | undefined, fallback = "00:00") => {
+          const date = value ? new Date(value) : null;
+          if (!date || Number.isNaN(date.getTime())) return { date: "", time: fallback };
+          return {
+            date: [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-"),
+            time: `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`,
+          };
+        };
+        const getUiStatus = (value: unknown): MemberSessionItem["status"] => {
+          const status = String(value ?? "").trim().toLowerCase();
+          if (["cancelled", "canceled", "rejected", "class_cancelled", "đã hủy"].includes(status)) return "đã hủy";
+          if (["attended", "completed", "hoàn thành"].includes(status)) return "hoàn thành";
+          if (["in_progress", "đang diễn ra"].includes(status)) return "đang diễn ra";
+          return "sắp diễn ra";
+        };
+
+        const classBookings = (Array.isArray(data?.classBookings) ? data.classBookings : []).map((booking: any) => {
+          const start = toSessionTime(booking.scheduleTime);
+          const duration = Number(booking.durationMinutes || 60);
+          const startDate = booking.scheduleTime ? new Date(booking.scheduleTime) : null;
+          const endDate = startDate && !Number.isNaN(startDate.getTime())
+            ? new Date(startDate.getTime() + duration * 60000)
+            : null;
+          return {
+            id: booking.bookingId || booking.classId,
+            classId: booking.classId,
+            name: booking.className || "Lớp học",
+            sport: booking.sportName || "N/A",
+            level: "",
+            type: "group" as const,
+            date: start.date,
+            startTime: start.time,
+            endTime: endDate && !Number.isNaN(endDate.getTime())
+              ? `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`
+              : start.time,
+            room: booking.facilityName || "N/A",
+            coachId: "",
+            coachName: booking.coachName || "N/A",
+            coachAvatar: booking.coachAvatar || "",
+            coachSpecialty: booking.coachSpecialty || "",
+            coachPhone: booking.coachPhone || "",
+            coachBio: booking.coachBio || "",
+            coachRating: booking.coachRating ? Number(booking.coachRating) : undefined,
+            coachExperienceYears: booking.coachExperienceYears ? Number(booking.coachExperienceYears) : undefined,
+            price: booking.price ? Number(booking.price) : 150000,
+            capacity: 0,
+            registeredCount: 0,
+            status: getUiStatus(booking.status),
+            bookingStatus: booking.status,
+          };
+        });
+
+        const ptSessions = (Array.isArray(data?.ptSessions) ? data.ptSessions : []).map((session: any) => {
+          const start = toSessionTime(session.scheduleTime);
+          const duration = Number(session.durationMinutes || 60);
+          const startDate = session.scheduleTime ? new Date(session.scheduleTime) : null;
+          const endDate = startDate && !Number.isNaN(startDate.getTime())
+            ? new Date(startDate.getTime() + duration * 60000)
+            : null;
+          return {
+            id: session.sessionId,
+            name: "PT 1-1 session",
+            sport: "PT 1-1",
+            level: "1-1 PT",
+            type: "pt" as const,
+            date: start.date,
+            startTime: start.time,
+            endTime: endDate && !Number.isNaN(endDate.getTime())
+              ? `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`
+              : start.time,
+            room: "",
+            coachId: "",
+            coachName: session.coachName || "Personal Trainer",
+            coachAvatar: session.coachAvatar || "",
+            coachSpecialty: session.coachSpecialty || "Huấn luyện viên cá nhân 1-1",
+            coachPhone: session.coachPhone || "",
+            coachBio: session.coachBio || "",
+            coachRating: session.coachRating ? Number(session.coachRating) : undefined,
+            price: session.price ? Number(session.price) : 250000,
+            capacity: 1,
+            registeredCount: 1,
+            status: getUiStatus(session.status),
+            bookingStatus: session.status,
+          };
+        });
+
+        return [...classBookings, ...ptSessions]
+          .filter((item: any) => item.date && (!item.id || !LEGACY_MOCK_IDS.has(item.id)));
       }
     } catch (e) {
       console.warn("Backend getBookings failed", e);

@@ -60,9 +60,18 @@ export const MemberAPI = {
     getAvailableClasses: async () => {
         return fetchApi('/classes/available');
     },
+    getClassDetail: async (classId: string) => {
+        return fetchApi(`/classes/${classId}`);
+    },
     bookClass: async (classId: string) => {
         return fetchApi(`/classes/${classId}/book`, {
             method: 'POST'
+        });
+    },
+    payAndBookClass: async (classId: string, paymentMethod: string = 'qr', amount: number = 150000) => {
+        return fetchApi(`/classes/${classId}/pay-and-book`, {
+            method: 'POST',
+            body: JSON.stringify({ paymentMethod, amount })
         });
     },
     cancelClassBooking: async (classId: string) => {
@@ -121,6 +130,9 @@ export const MemberAPI = {
     getMemberConversations: async (memberId?: string) => {
         const query = memberId ? `?memberId=${encodeURIComponent(memberId)}` : '';
         return fetchApi(`/member/chat/conversations${query}`);
+    },
+    getChatDirectory: async () => {
+        return fetchApi('/member/chat/directory');
     },
     getMemberMessages: async (conversationId: string) => {
         return fetchApi(`/member/chat/messages/${conversationId}`);

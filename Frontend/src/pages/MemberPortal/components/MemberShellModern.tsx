@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { WalletService, MEMBER_WALLET_UPDATED_EVENT } from "../services/walletService";
 import WalletTopUpModal from "./WalletTopUpModal";
+import { notificationApi, type ManagerNotification } from "../../../hooks/notificationApi";
 
 interface Props {
   currentScreen: MemberScreen;
@@ -51,7 +52,8 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
     );
   });
 
-  const [notificationCount, setNotificationCount] = useState(2);
+  const [notifications, setNotifications] = useState<ManagerNotification[]>([]);
+  const [notificationsError, setNotificationsError] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showCheckInModal, setShowCheckInModal] = useState(false);
@@ -63,6 +65,59 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
   const [showWalletModal, setShowWalletModal] = useState(false);
 
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  const notificationCount = notifications.filter((notification) => !notification.isRead).length;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadNotifications = async () => {
+      try {
+        const data = await notificationApi.list();
+        if (!cancelled) {
+          setNotifications(data);
+          setNotificationsError(false);
+        }
+      } catch {
+        if (!cancelled) setNotificationsError(true);
+      }
+    };
+
+    void loadNotifications();
+    const interval = window.setInterval(() => void loadNotifications(), 30000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  const markNotificationAsRead = async (notification: ManagerNotification) => {
+    if (notification.isRead || notification.id.startsWith("derived-")) return;
+    try {
+      await notificationApi.markRead(notification.id);
+      setNotifications((current) => current.map((item) =>
+        item.id === notification.id ? { ...item, isRead: true } : item
+      ));
+    } catch {
+      // Keep the notification unread when the server update fails.
+    }
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    try {
+      await notificationApi.markAllRead();
+      setNotifications((current) => current.map((item) => ({ ...item, isRead: true })));
+    } catch {
+      // Keep the current unread state when the server update fails.
+    }
+  };
+
+  const formatNotificationTime = (value: string) => {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime())
+      ? ""
+      : date.toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" });
+  };
 
   useEffect(() => {
     if (isDark) {
@@ -141,7 +196,7 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
   }
   userName = userName || "Hội viên";
   userEmail = userEmail || "";
-  const userTier = profile?.memberTier || "Hội viên Mới";
+  const userTier = profile?.memberTier || "Thành viên mới";
   memberCode = memberCode ? `MEM-${memberCode}` : "MEM-OFFICIAL";
 
   const showToast = (text: string) => {
@@ -343,7 +398,7 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
             </h1>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="relative flex items-center gap-3">
             {/* Quick Check-in Button on Topbar */}
             <button
               id="btn-quick-checkin"
@@ -405,7 +460,7 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
               </button>
 
               {/* Notification Popover */}
-              {showNotifications && (
+              {false && showNotifications && (
                 <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-4 z-50 animate-fadeIn">
                   <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-700">
                     <span className="text-xs font-bold text-slate-900 dark:text-white">
@@ -413,7 +468,7 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
                     </span>
                     <button
                       type="button"
-                      onClick={() => setNotificationCount(0)}
+                      onClick={() => void markAllNotificationsAsRead()}
                       className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
                     >
                       Đã đọc hết
@@ -440,6 +495,53 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
                 </div>
               )}
             </div>
+
+            {showNotifications && (
+              <div className="absolute right-0 top-full z-50 mt-2 w-96 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
+                <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-slate-800">
+                  <span className="font-bold text-slate-800 dark:text-white">Thông báo</span>
+                  <button
+                    type="button"
+                    onClick={() => void markAllNotificationsAsRead()}
+                    disabled={notificationCount === 0}
+                    className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 disabled:cursor-not-allowed disabled:text-slate-400"
+                  >
+                    Đánh dấu đã đọc
+                  </button>
+                </div>
+                {notificationsError ? (
+                  <div className="px-4 py-8 text-center text-sm text-rose-500">Không thể tải thông báo.</div>
+                ) : notifications.length === 0 ? (
+                  <div className="px-4 py-8 text-center text-sm text-slate-400">Chưa có thông báo mới.</div>
+                ) : (
+                  <div className="max-h-96 overflow-y-auto">
+                    {notifications.map((notification) => (
+                      <button
+                        type="button"
+                        key={notification.id}
+                        onClick={() => {
+                          void markNotificationAsRead(notification);
+                          if (notification.targetType === "class" || notification.targetType === "booking" || notification.type === "booking_event") {
+                            setShowNotifications(false);
+                            onNavigate("schedule");
+                          }
+                        }}
+                        className={`block w-full border-b border-slate-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-emerald-50/50 dark:border-slate-800 dark:hover:bg-slate-800/70 ${notification.isRead ? "" : "bg-emerald-50/60 dark:bg-emerald-950/20"}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <span className={`mt-1.5 size-2 shrink-0 rounded-full ${notification.isRead ? "bg-slate-300" : "bg-emerald-500"}`} />
+                          <span className="min-w-0">
+                            <span className="block text-sm font-semibold text-slate-800 dark:text-white">{notification.title}</span>
+                            {notification.message && <span className="mt-1 block text-xs leading-5 text-slate-500 dark:text-slate-400">{notification.message}</span>}
+                            <span className="mt-1 block text-[11px] text-slate-400">{formatNotificationTime(notification.createdAt)}</span>
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* USER AVATAR BUTTON WITH POPUP DROPDOWN (LIKE YOUTUBE) */}
             <div className="relative pl-1 border-l border-slate-200 dark:border-slate-800" ref={userMenuRef}>

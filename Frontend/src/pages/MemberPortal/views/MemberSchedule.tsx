@@ -36,8 +36,11 @@ import {
   Dumbbell,
   ArrowRight,
   Info,
+  Phone,
+  Award,
 } from "lucide-react";
 import { scheduleSync, type SyncedSession } from "../services/scheduleSync";
+import { CoachAvatar } from "../utils/coachAvatar";
 
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
@@ -871,12 +874,54 @@ export default function MemberSchedule({ onNavigate }: Props) {
                   </strong>
                 </div>
 
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 col-span-2">
-                  <span className="text-slate-400 block mb-0.5">Huấn luyện viên phụ trách</span>
-                  <strong className="text-slate-800 dark:text-slate-200 flex items-center gap-1.5 font-bold">
-                    <User className="w-3.5 h-3.5 text-emerald-500" />
-                    {selectedSession.coachName}
-                  </strong>
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 col-span-2 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <CoachAvatar
+                      src={selectedSession.coachAvatar}
+                      name={selectedSession.coachName}
+                      className="w-12 h-12 rounded-xl shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-slate-400 block text-[11px] font-medium">Huấn luyện viên phụ trách</span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <strong className="text-slate-900 dark:text-white font-bold text-sm truncate">
+                          {selectedSession.coachName}
+                        </strong>
+                        {selectedSession.coachRating ? (
+                          <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded">
+                            <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                            {selectedSession.coachRating}
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="text-[11px] text-teal-600 dark:text-teal-400 font-medium truncate">
+                        {selectedSession.coachSpecialty || "Huấn luyện viên thể hình"}
+                        {selectedSession.coachExperienceYears ? ` • ${selectedSession.coachExperienceYears} năm kinh nghiệm` : ""}
+                      </p>
+                    </div>
+                  </div>
+
+                  {selectedSession.coachBio && (
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 italic line-clamp-2 bg-white dark:bg-slate-900/50 p-2 rounded-lg border border-slate-200/50 dark:border-slate-800/50">
+                      "{selectedSession.coachBio}"
+                    </p>
+                  )}
+
+                  <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-200/60 dark:border-slate-700/60">
+                    {selectedSession.coachPhone ? (
+                      <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300">
+                        <Phone className="w-3 h-3 text-teal-600" />
+                        <a href={`tel:${selectedSession.coachPhone}`} className="text-teal-600 dark:text-teal-400 font-bold hover:underline">
+                          {selectedSession.coachPhone}
+                        </a>
+                      </span>
+                    ) : (
+                      <span className="text-slate-400">HLV SmartGym</span>
+                    )}
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                      Phí buổi học: <strong className="text-teal-700 dark:text-teal-400">{selectedSession.price ? `${selectedSession.price.toLocaleString('vi-VN')} đ` : "150.000 đ (Giá gốc)"}</strong>
+                    </span>
+                  </div>
                 </div>
               </div>
 

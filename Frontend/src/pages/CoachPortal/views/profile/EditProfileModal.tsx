@@ -181,10 +181,11 @@ export default function EditProfileModal({
                   Giới tính:
                 </label>
                 <select
-                  value={gender}
+                  value={gender || ""}
                   onChange={(e) => setGender(e.target.value)}
                   className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
                 >
+                  <option value="">Chọn giới tính</option>
                   <option value="Nam">Nam</option>
                   <option value="Nữ">Nữ</option>
                   <option value="Khác">Khác</option>

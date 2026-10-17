@@ -177,13 +177,14 @@ export function ProfileSettings({
                   <div className="relative">
                     <select
                       name="gender"
-                      value={data.gender}
+                      value={data.gender || ""}
                       onChange={handleChange}
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium appearance-none cursor-pointer"
                     >
-                      <option value="male">Nam</option>
-                      <option value="female">Nữ</option>
-                      <option value="other">Khác</option>
+                      <option value="">Chọn giới tính</option>
+                      <option value="Nam">Nam</option>
+                      <option value="Nữ">Nữ</option>
+                      <option value="Khác">Khác</option>
                     </select>
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                       <svg

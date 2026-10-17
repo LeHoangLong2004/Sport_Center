@@ -147,7 +147,9 @@ function isAdminHash(hash: string) {
 }
 
 function isCoachHash(hash: string) {
-  return hash.startsWith("#coach") || coachHashes.has(hash)
+  // `#coach` is the public coach directory page. Only the explicit portal
+  // hashes should render the authenticated Coach Portal.
+  return hash.startsWith("#coach-") || coachHashes.has(hash)
 }
 
 export default function App() {
@@ -245,6 +247,13 @@ export default function App() {
   }
 
   if (coachOpen) {
+    const userStr = localStorage.getItem("user")
+    const user = userStr ? JSON.parse(userStr) : null
+    const role = user?.role?.toLowerCase()
+    if (!user || role !== "coach") {
+      window.location.hash = "login"
+      return null
+    }
     return <CoachPortal />
   }
 

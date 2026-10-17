@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { MemberAPI } from "../services/api";
 import type { MemberScreen } from "../types";
-import { saveMemberData } from "../services/memberData";
+import { CoachAvatar, getRealCoachAvatar } from "../utils/coachAvatar";
 
 export interface ChatMessage {
   id: string;
@@ -52,183 +52,24 @@ export interface ChatConversation {
   messages: ChatMessage[];
 }
 
+interface DirectoryContact {
+  id: string;
+  name: string;
+  role: string;
+  roleTag: string;
+  subtitle: string;
+  avatar?: string | null;
+}
+
+interface ChatDirectory {
+  managers: DirectoryContact[];
+  members: DirectoryContact[];
+  classes: DirectoryContact[];
+}
+
 interface Props {
   onNavigate?: (screen: MemberScreen) => void;
 }
-
-// Default official communication channels for members
-const INITIAL_CONVERSATIONS: ChatConversation[] = [
-  {
-    id: "conv-manager",
-    type: "direct",
-    category: "manager",
-    roleTag: "QUẢN LÝ",
-    badgeColor: "blue",
-    title: "Ban Quản lý & Tiếp nhận yêu cầu",
-    subtitle: "Ban Quản lý Trung tâm SportCenter",
-    avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80",
-    lastMessage: "Ban quản lý SportCenter luôn sẵn sàng hỗ trợ giải đáp mọi thắc mắc của bạn.",
-    lastTime: "08:00",
-    unreadCount: 0,
-    online: true,
-    messages: [
-      {
-        id: "mgr-1",
-        sender: "manager",
-        senderName: "Ban Quản lý",
-        text: "Chào mừng bạn đến với SportCenter! Ban Quản lý luôn sẵn sàng tiếp nhận ý kiến, hỗ trợ thủ tục hợp đồng, gói dịch vụ và giải đáp mọi thắc mắc.",
-        timestamp: "08:00",
-      },
-    ],
-  },
-  {
-    id: "conv-reception",
-    type: "direct",
-    category: "manager",
-    roleTag: "LỄ TÂN",
-    badgeColor: "blue",
-    title: "Quầy Lễ Tân & Dịch Vụ Hội Viên",
-    subtitle: "Hỗ trợ Check-in, Khóa tủ & Dịch vụ",
-    avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&auto=format&fit=crop&q=80",
-    lastMessage: "Quầy Lễ tân mở cửa từ 06:00 đến 22:00 hàng ngày.",
-    lastTime: "08:15",
-    unreadCount: 0,
-    online: true,
-    messages: [
-      {
-        id: "rec-1",
-        sender: "manager",
-        senderName: "Quầy Lễ Tân",
-        text: "Quầy Lễ tân mở cửa từ 06:00 - 22:00 hàng ngày. Bạn có thể nhắn tin tại đây nếu cần hỗ trợ mượn khóa tủ cá nhân, kiểm tra thời hạn hoặc tìm đồ thất lạc nhé!",
-        timestamp: "08:15",
-      },
-    ],
-  },
-];
-
-// Available Directory for "+ Cuộc trò chuyện mới"
-const DIRECTORY_CONTACTS = {
-  coaches: [
-    {
-      id: "25F50FBA",
-      name: "HLV Nam (PT Thể Hình)",
-      role: "coach",
-      roleTag: "HLV",
-      subtitle: "HLV Huấn luyện viên cá nhân 1-1",
-      avatar: "https://images.unsplash.com/photo-1567013127542-490d757e51fc?w=100&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "coach-enam",
-      name: "HLV Enam (Master PT)",
-      role: "coach",
-      roleTag: "HLV",
-      subtitle: "HLV Thể hình & PT Cá nhân 1-1",
-      avatar: "https://images.unsplash.com/photo-1567013127542-490d757e51fc?w=100&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "coach-01",
-      name: "HLV Minh Tuấn (Yoga Specialist)",
-      role: "coach",
-      roleTag: "HLV",
-      subtitle: "Chuyên gia Yoga & Phục hồi cột sống",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "coach-02",
-      name: "HLV Minh Tuyết",
-      role: "coach",
-      roleTag: "HLV",
-      subtitle: "HLV Yoga Vinyasa & Thiền dưỡng sinh",
-      avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "coach-03",
-      name: "HLV Hoàng Long",
-      role: "coach",
-      roleTag: "HLV",
-      subtitle: "HLV KickFit, Cardio & Boxing",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80",
-    },
-  ],
-  managers: [
-    {
-      id: "mgr-01",
-      name: "Quản lý Trung tâm SportCenter",
-      role: "manager",
-      roleTag: "QUẢN LÝ",
-      subtitle: "Ban Quản lý & Tiếp nhận phản ánh dịch vụ",
-      avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "rec-01",
-      name: "Quầy Lễ Tân & Dịch Vụ Hội Viên",
-      role: "reception",
-      roleTag: "LỄ TÂN",
-      subtitle: "Check-in thẻ, Khóa tủ & Gia hạn gói",
-      avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "cskh-01",
-      name: "Bộ phận Chăm sóc Khách hàng (CSKH)",
-      role: "manager",
-      roleTag: "CSKH",
-      subtitle: "Hỗ trợ chính sách hội viên & Voucher ưu đãi",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
-    },
-  ],
-  members: [
-    {
-      id: "m-01",
-      name: "Nguyễn Văn An",
-      role: "member",
-      roleTag: "HỘI VIÊN",
-      subtitle: "Hội viên Thể thao · Bạn tập Gym",
-      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "m-phuong",
-      name: "Trần Mai Phương",
-      role: "member",
-      roleTag: "HỘI VIÊN",
-      subtitle: "Hội viên Thể thao · Nhóm Yoga & Pilates",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "m-ha",
-      name: "Lê Thu Hà",
-      role: "member",
-      roleTag: "HỘI VIÊN",
-      subtitle: "Hội viên Yoga trị liệu",
-      avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "m-kiet",
-      name: "Phạm Tuấn Kiệt",
-      role: "member",
-      roleTag: "HỘI VIÊN",
-      subtitle: "Hội viên Boxing & Cardio",
-      avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&auto=format&fit=crop&q=80",
-    },
-  ],
-  classes: [
-    {
-      id: "cls-yoga-01",
-      name: "Lớp Yoga Cơ Bản – Sáng 3-5-7",
-      role: "class",
-      roleTag: "NHÓM LỚP",
-      subtitle: "Nhóm lớp học • HLV Minh Tuyết",
-      avatar: "https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=100&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "cls-combat",
-      name: "Gym Group BodyCombat",
-      role: "class",
-      roleTag: "NHÓM LỚP",
-      subtitle: "Nhóm cardio & kickfit • HLV Hoàng Long",
-      avatar: "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=100&auto=format&fit=crop&q=80",
-    },
-  ],
-};
 
 export default function MemberChat({ onNavigate }: Props) {
   // Load current member identity
@@ -236,8 +77,6 @@ export default function MemberChat({ onNavigate }: Props) {
   const user = userStr ? JSON.parse(userStr) : null;
   const memberName = user?.fullName || user?.name || "Hội viên";
   const memberId = user?.id || "";
-  const storageKey = memberId ? `member_chats_${memberId}` : "member_chats";
-
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [activeId, setActiveId] = useState<string>("");
   const [search, setSearch] = useState("");
@@ -249,26 +88,39 @@ export default function MemberChat({ onNavigate }: Props) {
   // Modal state
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [modalTab, setModalTab] = useState<"coaches" | "managers" | "members" | "classes">("coaches");
-  const [coachContacts, setCoachContacts] = useState<typeof DIRECTORY_CONTACTS.coaches>([]);
+  const [coachContacts, setCoachContacts] = useState<DirectoryContact[]>([]);
+  const [directory, setDirectory] = useState<ChatDirectory>({ managers: [], members: [], classes: [] });
+  const [isDirectoryLoading, setIsDirectoryLoading] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let mounted = true;
-    MemberAPI.getCoaches()
-      .then((coaches) => {
-        if (!mounted || !Array.isArray(coaches)) return;
-        setCoachContacts(coaches.map((coach: { id: string; fullName?: string; email?: string }) => ({
-          id: coach.id,
+    setIsDirectoryLoading(true);
+    Promise.all([MemberAPI.getCoaches(), MemberAPI.getChatDirectory()])
+      .then(([coaches, chatDirectory]) => {
+        if (!mounted) return;
+        setCoachContacts(Array.isArray(coaches) ? coaches.map((coach: any) => ({
+          id: String(coach.id),
           name: coach.fullName || coach.email || "Huấn luyện viên",
           role: "coach",
           roleTag: "HLV",
-          subtitle: "Huấn luyện viên SportCenter",
-          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(coach.fullName || "HLV")}&background=f97316&color=fff`,
-        })));
+          subtitle: coach.specialty || "Huấn luyện viên SportCenter",
+          avatar: getRealCoachAvatar(coach.fullName, coach.avatarUrl, coach.id),
+        })) : []);
+        setDirectory({
+          managers: Array.isArray(chatDirectory?.managers) ? chatDirectory.managers : [],
+          members: Array.isArray(chatDirectory?.members) ? chatDirectory.members : [],
+          classes: Array.isArray(chatDirectory?.classes) ? chatDirectory.classes : [],
+        });
       })
       .catch(() => {
-        if (mounted) setCoachContacts([]);
+        if (!mounted) return;
+        setCoachContacts([]);
+        setDirectory({ managers: [], members: [], classes: [] });
+      })
+      .finally(() => {
+        if (mounted) setIsDirectoryLoading(false);
       });
 
     return () => {
@@ -283,12 +135,12 @@ export default function MemberChat({ onNavigate }: Props) {
       if (memberId) {
         const res = await MemberAPI.getMemberConversations(memberId);
         if (Array.isArray(res)) {
-          setConversations(res);
-          saveMemberData(storageKey, res);
+          const conversationsFromDatabase = res as ChatConversation[];
+          setConversations(conversationsFromDatabase);
           setActiveId((current) =>
-            res.some((conversation) => conversation.id === current)
+            conversationsFromDatabase.some((conversation) => conversation.id === current)
               ? current
-              : (res[0]?.id || "")
+              : (conversationsFromDatabase[0]?.id || "")
           );
         }
       }
@@ -299,12 +151,6 @@ export default function MemberChat({ onNavigate }: Props) {
     }
   };
 
-  useEffect(() => {
-    if (conversations.length > 0) {
-      saveMemberData(storageKey, conversations);
-    }
-  }, [conversations, storageKey]);
-
   // Real-time auto sync polling every 2.5s
   useEffect(() => {
     loadConversations(true);
@@ -314,6 +160,57 @@ export default function MemberChat({ onNavigate }: Props) {
 
     return () => clearInterval(interval);
   }, [memberId]);
+
+  // Auto-connect with coach when member navigates from class booking
+  useEffect(() => {
+    const targetCoachStr = localStorage.getItem("chat_target_coach");
+    if (!targetCoachStr) return;
+
+    try {
+      localStorage.removeItem("chat_target_coach");
+      const targetCoach = JSON.parse(targetCoachStr);
+      if (!targetCoach || !targetCoach.coachName) return;
+
+      const coachName = targetCoach.coachName;
+      const coachId = targetCoach.coachId;
+      if (!coachId) return;
+      const coachAvatar = targetCoach.coachAvatar || "";
+
+      // Check if conversation already exists in state
+      const existing = conversations.find(
+        (c) =>
+          (targetCoach.coachId && (c.coachId === targetCoach.coachId || c.id.includes(targetCoach.coachId))) ||
+          c.title.toLowerCase().includes(coachName.toLowerCase())
+      );
+
+      if (existing) {
+        setActiveId(existing.id);
+      } else {
+        if (memberId) {
+          MemberAPI.startConversation({
+            targetId: coachId,
+            targetName: coachName,
+            role: "coach",
+            memberId,
+            memberName,
+            avatar: coachAvatar,
+            subtitle: "Huấn luyện viên phụ trách lớp học",
+          }).then((res) => {
+            if (!res?.conversation) return;
+            setConversations((prev) => [
+              res.conversation,
+              ...prev.filter((conversation) => conversation.id !== res.conversation.id),
+            ]);
+            setActiveId(res.conversation.id);
+          }).catch(() => {});
+        }
+        return;
+
+      }
+    } catch (e) {
+      console.warn("Failed to consume chat_target_coach:", e);
+    }
+  }, [memberId, memberName, conversations]);
 
   const activeConv = useMemo(
     () => conversations.find((c) => c.id === activeId) || conversations[0],
@@ -346,30 +243,6 @@ export default function MemberChat({ onNavigate }: Props) {
     const textToSend = (customText ?? inputText).trim();
     if (!textToSend || !activeConv || isSending) return;
 
-    const newMsg: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      sender: "member",
-      senderName: memberName,
-      text: textToSend,
-      timestamp: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
-    };
-
-    // Optimistically update
-    setConversations((prev) =>
-      prev.map((c) => {
-        if (c.id === activeConv.id) {
-          return {
-            ...c,
-            messages: [...c.messages, newMsg],
-            lastMessage: `${memberName}: ${newMsg.text}`,
-            lastTime: newMsg.timestamp,
-          };
-        }
-        return c;
-      })
-    );
-
-    if (!customText) setInputText("");
     setIsSending(true);
 
     try {
@@ -380,20 +253,14 @@ export default function MemberChat({ onNavigate }: Props) {
         memberName
       });
       if (res && res.data) {
-        // Refresh conversations to keep exact sync
+        if (!customText) setInputText("");
+        // Refresh conversations so the UI only reflects persisted database data.
         const updated = await MemberAPI.getMemberConversations(memberId);
         if (Array.isArray(updated)) {
           setConversations(updated);
         }
       }
     } catch (err) {
-      setConversations((prev) =>
-        prev.map((conversation) =>
-          conversation.id === activeConv.id
-            ? { ...conversation, messages: conversation.messages.filter((message) => message.id !== newMsg.id) }
-            : conversation
-        )
-      );
       console.warn("Không thể lưu tin nhắn lên máy chủ:", err);
     } finally {
       setIsSending(false);
@@ -406,7 +273,7 @@ export default function MemberChat({ onNavigate }: Props) {
     role: string;
     roleTag: string;
     subtitle: string;
-    avatar: string;
+    avatar?: string | null;
   }) => {
     try {
       const res = await MemberAPI.startConversation({
@@ -415,7 +282,7 @@ export default function MemberChat({ onNavigate }: Props) {
         role: contact.role,
         memberId,
         memberName,
-        avatar: contact.avatar,
+        avatar: contact.avatar || undefined,
         subtitle: contact.subtitle,
       });
 
@@ -610,11 +477,11 @@ export default function MemberChat({ onNavigate }: Props) {
                     )}
 
                     <div className="relative shrink-0 mt-0.5">
-                      {c.avatar ? (
-                        <img
+                      {c.avatar || c.category === "coach" ? (
+                        <CoachAvatar
                           src={c.avatar}
-                          alt={c.title}
-                          className="w-10 h-10 rounded-xl object-cover ring-2 ring-slate-100 dark:ring-slate-800"
+                          name={c.title}
+                          className="w-10 h-10 rounded-xl object-cover ring-2 ring-slate-100 dark:ring-slate-800 shrink-0"
                         />
                       ) : (
                         <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs ring-2 ring-slate-100 dark:ring-slate-800">
@@ -687,11 +554,11 @@ export default function MemberChat({ onNavigate }: Props) {
               <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 shrink-0">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="relative shrink-0">
-                    {activeConv.avatar ? (
-                      <img
+                    {activeConv.avatar || activeConv.category === "coach" ? (
+                      <CoachAvatar
                         src={activeConv.avatar}
-                        alt={activeConv.title}
-                        className="w-10 h-10 rounded-xl object-cover ring-2 ring-slate-100 dark:ring-slate-800"
+                        name={activeConv.title}
+                        className="w-10 h-10 rounded-xl object-cover ring-2 ring-slate-100 dark:ring-slate-800 shrink-0"
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs ring-2 ring-slate-100 dark:ring-slate-800">
@@ -948,6 +815,12 @@ export default function MemberChat({ onNavigate }: Props) {
 
             {/* Modal Body List */}
             <div className="p-4 overflow-y-auto flex-1 space-y-2.5">
+              {isDirectoryLoading && (
+                <div className="py-10 text-center text-sm text-slate-500 dark:text-slate-400">
+                  Đang tải danh sách từ hệ thống...
+                </div>
+              )}
+
               {modalTab === "coaches" &&
                 coachContacts.map((c) => (
                   <div
@@ -956,7 +829,7 @@ export default function MemberChat({ onNavigate }: Props) {
                     className="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 hover:border-emerald-500/60 dark:hover:border-emerald-500/60 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 transition-all flex items-center justify-between gap-3 cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
-                      <img src={c.avatar} alt={c.name} className="w-11 h-11 rounded-xl object-cover ring-2 ring-slate-100 dark:ring-slate-800" />
+                      <CoachAvatar src={c.avatar} name={c.name} className="w-11 h-11 rounded-xl ring-2 ring-slate-100 dark:ring-slate-800 shrink-0" />
                       <div>
                         <div className="flex items-center gap-1.5">
                           <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100">{c.name}</h4>
@@ -972,14 +845,14 @@ export default function MemberChat({ onNavigate }: Props) {
                 ))}
 
               {modalTab === "managers" &&
-                DIRECTORY_CONTACTS.managers.map((m) => (
+                directory.managers.map((m) => (
                   <div
                     key={m.id}
                     onClick={() => handleStartChat(m)}
                     className="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 hover:border-emerald-500/60 dark:hover:border-emerald-500/60 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 transition-all flex items-center justify-between gap-3 cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
-                      <img src={m.avatar} alt={m.name} className="w-11 h-11 rounded-xl object-cover ring-2 ring-slate-100 dark:ring-slate-800" />
+                      <CoachAvatar src={m.avatar} name={m.name} className="w-11 h-11 rounded-xl ring-2 ring-slate-100 dark:ring-slate-800" />
                       <div>
                         <div className="flex items-center gap-1.5">
                           <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100">{m.name}</h4>
@@ -995,14 +868,14 @@ export default function MemberChat({ onNavigate }: Props) {
                 ))}
 
               {modalTab === "members" &&
-                DIRECTORY_CONTACTS.members.map((mb) => (
+                directory.members.map((mb) => (
                   <div
                     key={mb.id}
                     onClick={() => handleStartChat(mb)}
                     className="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 hover:border-emerald-500/60 dark:hover:border-emerald-500/60 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 transition-all flex items-center justify-between gap-3 cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
-                      <img src={mb.avatar} alt={mb.name} className="w-11 h-11 rounded-xl object-cover ring-2 ring-slate-100 dark:ring-slate-800" />
+                      <CoachAvatar src={mb.avatar} name={mb.name} className="w-11 h-11 rounded-xl ring-2 ring-slate-100 dark:ring-slate-800" />
                       <div>
                         <div className="flex items-center gap-1.5">
                           <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100">{mb.name}</h4>
@@ -1018,14 +891,14 @@ export default function MemberChat({ onNavigate }: Props) {
                 ))}
 
               {modalTab === "classes" &&
-                DIRECTORY_CONTACTS.classes.map((cl) => (
+                directory.classes.map((cl) => (
                   <div
                     key={cl.id}
                     onClick={() => handleStartChat(cl)}
                     className="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 hover:border-emerald-500/60 dark:hover:border-emerald-500/60 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 transition-all flex items-center justify-between gap-3 cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
-                      <img src={cl.avatar} alt={cl.name} className="w-11 h-11 rounded-xl object-cover ring-2 ring-slate-100 dark:ring-slate-800" />
+                      <CoachAvatar src={cl.avatar} name={cl.name} className="w-11 h-11 rounded-xl ring-2 ring-slate-100 dark:ring-slate-800" />
                       <div>
                         <div className="flex items-center gap-1.5">
                           <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100">{cl.name}</h4>
@@ -1039,6 +912,16 @@ export default function MemberChat({ onNavigate }: Props) {
                     </button>
                   </div>
                 ))}
+
+              {!isDirectoryLoading && (
+                (modalTab === "coaches" ? coachContacts :
+                  modalTab === "managers" ? directory.managers :
+                  modalTab === "members" ? directory.members : directory.classes).length === 0
+              ) && (
+                <div className="py-10 text-center text-sm text-slate-500 dark:text-slate-400">
+                  Chưa có dữ liệu phù hợp trong hệ thống.
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -18,7 +18,7 @@ public sealed partial class SupabaseGroupClassRepository
     {
         var allClasses = await _dbContext
             .Database.SqlQueryRaw<ClassSqlRawModel>(
-                "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status FROM classes"
+                "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status FROM classes"
             )
             .ToListAsync();
         var allBookings = await _dbContext
@@ -27,10 +27,10 @@ public sealed partial class SupabaseGroupClassRepository
             )
             .ToListAsync();
         var users = await _dbContext
-            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number FROM users")
+            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number, avatar_url FROM users")
             .ToListAsync();
         var coaches = await _dbContext
-            .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id FROM coaches")
+            .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id, specialty, bio, experience_years, rating FROM coaches")
             .ToListAsync();
 
         var result = new List<BookingManagerResponse>();
@@ -69,7 +69,7 @@ public sealed partial class SupabaseGroupClassRepository
                 new BookingManagerResponse
                 {
                     Id = b.Id,
-                    MemberAvatar = "/assets/images/user-default.png",
+                    MemberAvatar = u?.AvatarUrl ?? string.Empty,
                     MemberName = u?.FullName ?? "Unknown",
                     MemberPhone = u?.PhoneNumber ?? "Unknown",
                     MemberCode = "MB-" + (u?.Id.ToString().Substring(0, 4).ToUpper() ?? "0000"),
@@ -119,6 +119,24 @@ public class ClassSqlRawModel
 
     [Column("status")]
     public bool Status { get; set; }
+
+    [Column("approval_status")]
+    public string ApprovalStatus { get; set; } = "approved";
+}
+
+public class ClassApprovalRawModel
+{
+    [Column("id")]
+    public Guid Id { get; set; }
+
+    [Column("coach_id")]
+    public Guid? CoachId { get; set; }
+
+    [Column("class_name")]
+    public string ClassName { get; set; } = string.Empty;
+
+    [Column("approval_status")]
+    public string ApprovalStatus { get; set; } = string.Empty;
 }
 
 public class SportSqlRawModel
@@ -146,6 +164,18 @@ public class CoachSqlRawModel
 
     [Column("user_id")]
     public Guid UserId { get; set; }
+
+    [Column("specialty")]
+    public string? Specialty { get; set; }
+
+    [Column("bio")]
+    public string? Bio { get; set; }
+
+    [Column("experience_years")]
+    public int? ExperienceYears { get; set; }
+
+    [Column("rating")]
+    public decimal? Rating { get; set; }
 }
 
 public class UserSqlRawModel
@@ -158,6 +188,9 @@ public class UserSqlRawModel
 
     [Column("phone_number")]
     public string PhoneNumber { get; set; } = string.Empty;
+
+    [Column("avatar_url")]
+    public string? AvatarUrl { get; set; }
 }
 
 public class PtSessionMemberSqlDto

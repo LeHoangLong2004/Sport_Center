@@ -90,9 +90,10 @@ CREATE TABLE Classes (
     capacity INT NOT NULL, -- Sức chứa tối đa
     current_enrolled INT DEFAULT 0,
     
-    schedule_time DATETIME NOT NULL,
-    duration_minutes INT NOT NULL, -- Thời lượng (Vd: 60 phút)
-    status BIT DEFAULT 1
+     schedule_time DATETIME NOT NULL,
+     duration_minutes INT NOT NULL, -- Thời lượng (Vd: 60 phút)
+     status BIT DEFAULT 1,
+     approval_status VARCHAR(20) NOT NULL DEFAULT 'approved'
 );
 
 -- BẢNG ĐĂNG KÝ LỚP HỌC (Class Bookings)

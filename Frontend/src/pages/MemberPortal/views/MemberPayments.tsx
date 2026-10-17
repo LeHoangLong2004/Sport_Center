@@ -31,6 +31,7 @@ export default function MemberPayments({ onNavigate }: Props) {
   const [loading, setLoading] = useState(true);
   const [activePaymentModal, setActivePaymentModal] = useState<MemberPaymentItem | null>(null);
   const [receiptModal, setReceiptModal] = useState<MemberPaymentItem | null>(null);
+  const [refCode, setRefCode] = useState("");
   const [bankMethod, setBankMethod] = useState<"Chuyển khoản" | "Tiền mặt tại quầy">("Chuyển khoản");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"invoices" | "wallet">("invoices");

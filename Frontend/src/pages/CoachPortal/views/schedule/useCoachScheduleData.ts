@@ -25,6 +25,8 @@ export function useCoachScheduleData(weekDates: string[]) {
   }, []);
 
   useEffect(() => {
+    let disposed = false;
+
     async function loadData() {
       setLoading(true);
       try {
@@ -33,16 +35,33 @@ export function useCoachScheduleData(weekDates: string[]) {
           CoachAPI.getScheduleRequests(),
           CoachAPI.getAvailabilitySlots(),
         ]);
+        if (disposed) return;
         setRawSessions(schData);
         setRequests(reqData);
         setAvailabilitySlots(availData);
       } catch (err) {
         console.error("Lỗi nạp dữ liệu lịch:", err);
       } finally {
-        setLoading(false);
+        if (!disposed) setLoading(false);
       }
+
     }
-    loadData();
+
+    const refreshSchedule = () => {
+      void loadData();
+    };
+
+    void loadData();
+    window.addEventListener("focus", refreshSchedule);
+    window.addEventListener("coach-schedule-updated", refreshSchedule);
+    const refreshTimer = window.setInterval(refreshSchedule, 30000);
+
+    return () => {
+      disposed = true;
+      window.removeEventListener("focus", refreshSchedule);
+      window.removeEventListener("coach-schedule-updated", refreshSchedule);
+      window.clearInterval(refreshTimer);
+    }
   }, []);
 
   const allUnifiedSessions: UnifiedScheduleItem[] = useMemo(() => {
@@ -61,6 +80,7 @@ export function useCoachScheduleData(weekDates: string[]) {
       capacity: s.capacity,
       registeredCount: Array.isArray(s.registeredMemberIds) ? s.registeredMemberIds.length : 0,
       status: s.status,
+      approvalStatus: s.approvalStatus,
     }));
 
     const ptItems: UnifiedScheduleItem[] = availabilitySlots

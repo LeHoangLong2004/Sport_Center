@@ -16,6 +16,9 @@ public sealed partial class SupabaseGroupClassRepository
 {
     public async Task<bool> HasCoachAvailabilityConflictAsync(Guid coachId, DateTime startTime, DateTime endTime)
     {
+        startTime = AsUtc(startTime);
+        endTime = AsUtc(endTime);
+
         var conflicts = await _dbContext.Database.SqlQueryRaw<int>(
             @"SELECT 1 AS ""Value""
               FROM coach_availability_slots
@@ -56,6 +59,7 @@ public sealed partial class SupabaseGroupClassRepository
             Capacity = groupClass.Capacity,
             CurrentEnrolled = groupClass.CurrentEnrolled,
             Status = groupClass.Status,
+            ApprovalStatus = groupClass.ApprovalStatus,
         };
 
         await _client.From<GroupClassModel>().Insert(model);
@@ -75,6 +79,7 @@ public sealed partial class SupabaseGroupClassRepository
             Capacity = groupClass.Capacity,
             CurrentEnrolled = groupClass.CurrentEnrolled,
             Status = groupClass.Status,
+            ApprovalStatus = groupClass.ApprovalStatus,
         };
 
         await _client.From<GroupClassModel>().Update(model);
@@ -83,7 +88,7 @@ public sealed partial class SupabaseGroupClassRepository
     public async Task<(bool IsSuccess, string? ErrorMessage)> BookClassTransactionAsync(
         Guid userId,
         Guid classId,
-        Guid subscriptionId
+        Guid? subscriptionId = null
     )
     {
         var strategy = _dbContext.Database.CreateExecutionStrategy();
@@ -108,7 +113,7 @@ public sealed partial class SupabaseGroupClassRepository
 
                 var targetTime = await _dbContext.Database
                     .SqlQueryRaw<ClassTimeConflictRawModel>(
-                        "SELECT schedule_time, duration_minutes FROM classes WHERE id = {0} AND status = true",
+                        "SELECT schedule_time, duration_minutes FROM classes WHERE id = {0} AND status = true AND approval_status = 'approved'",
                         classId
                     )
                     .FirstOrDefaultAsync();
@@ -128,7 +133,8 @@ public sealed partial class SupabaseGroupClassRepository
                           WHERE b.user_id = {0}
                             AND b.class_id <> {1}
                             AND LOWER(b.status) IN ('confirmed', 'pending', 'approved')
-                            AND c.status = true",
+                            AND c.status = true
+                            AND c.approval_status = 'approved'",
                         userId,
                         classId
                     )
@@ -161,6 +167,7 @@ public sealed partial class SupabaseGroupClassRepository
                     @"UPDATE classes 
                   SET current_enrolled = current_enrolled + 1
                   WHERE id = {0} AND status = true 
+                    AND approval_status = 'approved'
                     AND current_enrolled < capacity AND schedule_time > now()",
                     classId
                 );
@@ -174,15 +181,29 @@ public sealed partial class SupabaseGroupClassRepository
                     );
                 }
 
-                await _dbContext.Database.ExecuteSqlRawAsync(
-                    @"INSERT INTO class_bookings (user_id, class_id, subscription_id, status)
-                  VALUES ({0}, {1}, {2}, 'pending')
-                  ON CONFLICT (user_id, class_id) 
-                  DO UPDATE SET status = 'pending', subscription_id = {2}",
-                    userId,
-                    classId,
-                    subscriptionId
-                );
+                if (subscriptionId.HasValue)
+                {
+                    await _dbContext.Database.ExecuteSqlRawAsync(
+                        @"INSERT INTO class_bookings (user_id, class_id, subscription_id, status)
+                      VALUES ({0}, {1}, {2}, 'confirmed')
+                      ON CONFLICT (user_id, class_id) 
+                      DO UPDATE SET status = 'confirmed', subscription_id = {2}",
+                        userId,
+                        classId,
+                        subscriptionId.Value
+                    );
+                }
+                else
+                {
+                    await _dbContext.Database.ExecuteSqlRawAsync(
+                        @"INSERT INTO class_bookings (user_id, class_id, subscription_id, status)
+                      VALUES ({0}, {1}, NULL, 'confirmed')
+                      ON CONFLICT (user_id, class_id) 
+                      DO UPDATE SET status = 'confirmed', subscription_id = NULL",
+                        userId,
+                        classId
+                    );
+                }
 
                 await transaction.CommitAsync();
                 return (true, null);
@@ -247,14 +268,88 @@ public sealed partial class SupabaseGroupClassRepository
         });
     }
 
+    public async Task<(bool IsSuccess, string? ErrorMessage)> ApproveClassAsync(Guid classId)
+    {
+        var classToApprove = await _dbContext.Database
+            .SqlQueryRaw<ClassApprovalRawModel>(
+                "SELECT id, coach_id, class_name, approval_status FROM classes WHERE id = {0}",
+                classId)
+            .FirstOrDefaultAsync();
+
+        if (classToApprove == null || !string.Equals(classToApprove.ApprovalStatus, "pending", StringComparison.OrdinalIgnoreCase))
+            return (false, "Không tìm thấy đề xuất lớp hoặc lớp không còn ở trạng thái chờ duyệt.");
+
+        var affected = await _dbContext.Database.ExecuteSqlRawAsync(
+            "UPDATE classes SET approval_status = 'approved', status = true WHERE id = {0} AND approval_status = 'pending'",
+            classId);
+
+        if (affected == 0)
+            return (false, "Đề xuất lớp đã được xử lý trước đó.");
+
+        if (classToApprove.CoachId.HasValue)
+        {
+            await NotifyCoachAsync(
+                classToApprove.CoachId.Value,
+                "Đề xuất lớp học đã được duyệt",
+                $"Lớp {classToApprove.ClassName} đã được Manager duyệt và sẽ hiển thị cho hội viên.",
+                "class",
+                classId);
+        }
+
+        return (true, null);
+    }
+
+    public async Task<(bool IsSuccess, string? ErrorMessage)> RejectClassAsync(Guid classId)
+    {
+        var classToReject = await _dbContext.Database
+            .SqlQueryRaw<ClassApprovalRawModel>(
+                "SELECT id, coach_id, class_name, approval_status FROM classes WHERE id = {0}",
+                classId)
+            .FirstOrDefaultAsync();
+
+        if (classToReject == null || !string.Equals(classToReject.ApprovalStatus, "pending", StringComparison.OrdinalIgnoreCase))
+            return (false, "Không tìm thấy đề xuất lớp hoặc lớp không còn ở trạng thái chờ duyệt.");
+
+        var affected = await _dbContext.Database.ExecuteSqlRawAsync(
+            "UPDATE classes SET approval_status = 'rejected' WHERE id = {0} AND approval_status = 'pending'",
+            classId);
+
+        if (affected == 0)
+            return (false, "Đề xuất lớp đã được xử lý trước đó.");
+
+        if (classToReject.CoachId.HasValue)
+        {
+            await NotifyCoachAsync(
+                classToReject.CoachId.Value,
+                "Đề xuất lớp học bị từ chối",
+                $"Đề xuất lớp {classToReject.ClassName} đã bị Manager từ chối.",
+                "class",
+                classId);
+        }
+
+        return (true, null);
+    }
+
     public async Task<(bool IsSuccess, string? ErrorMessage)> ApproveBookingAsync(Guid bookingId)
     {
         try
         {
             var affected = await _dbContext.Database.ExecuteSqlRawAsync(
-                @"UPDATE class_bookings 
-                  SET status = 'confirmed' 
-                  WHERE id = {0} AND status = 'pending'",
+                @"WITH approved_booking AS (
+                    UPDATE class_bookings
+                    SET status = 'confirmed'
+                    WHERE id = {0} AND status = 'pending'
+                    RETURNING user_id, class_id
+                  )
+                  INSERT INTO notifications (user_id, title, message, type, target_type, target_id)
+                  SELECT approved_booking.user_id,
+                         'Yêu cầu đặt lớp đã được duyệt',
+                         'Yêu cầu đặt lớp ' || COALESCE(classes.class_name, 'lớp học') || ' của bạn đã được Manager duyệt.',
+                         'booking_event',
+                         'class',
+                         approved_booking.class_id
+                  FROM approved_booking
+                  LEFT JOIN classes ON classes.id = approved_booking.class_id",
                 bookingId
             );
 
@@ -290,9 +385,21 @@ public sealed partial class SupabaseGroupClassRepository
                 }
 
                 await _dbContext.Database.ExecuteSqlRawAsync(
-                    @"UPDATE class_bookings 
-                      SET status = 'rejected' 
-                      WHERE id = {0}",
+                    @"WITH rejected_booking AS (
+                        UPDATE class_bookings
+                        SET status = 'rejected'
+                        WHERE id = {0}
+                        RETURNING user_id, class_id
+                      )
+                      INSERT INTO notifications (user_id, title, message, type, target_type, target_id)
+                      SELECT rejected_booking.user_id,
+                             'Yêu cầu đặt lớp bị từ chối',
+                             'Yêu cầu đặt lớp ' || COALESCE(classes.class_name, 'lớp học') || ' của bạn đã bị Manager từ chối.',
+                             'booking_event',
+                             'class',
+                             rejected_booking.class_id
+                      FROM rejected_booking
+                      LEFT JOIN classes ON classes.id = rejected_booking.class_id",
                     bookingId
                 );
 

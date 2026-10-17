@@ -30,7 +30,7 @@ namespace SmartGym.Api.Endpoints
                         return Results.Ok(new { totalSessions = 0, completedSessions = 0, totalMembers = 0, upcomingClasses = 0 });
 
                     var classes = await db.Database.SqlQueryRaw<ClassSqlRawModel>(
-                        "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status FROM classes WHERE coach_id = {0}",
+                        "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status FROM classes WHERE coach_id = {0}",
                         coachId).ToListAsync();
                     var classIds = classes.Select(c => c.Id).ToHashSet();
                     var bookings = classIds.Count == 0
@@ -76,19 +76,21 @@ namespace SmartGym.Api.Endpoints
                     {
                         // classes.coach_id references coaches.id, while the JWT contains users.id.
                         var coachProfileId = await CoachProfileResolver.FindByUserIdAsync(db, coachUserId);
-
-                        if (coachProfileId == null)
-                            return Results.Ok(Array.Empty<object>());
+                        // Older class records may contain either the Coach profile ID
+                        // or the authenticated User ID. Query both so approved classes
+                        // remain visible after the approval flow changes.
+                        var coachProfileKey = coachProfileId ?? coachUserId;
 
                         var coachUser = await db.Database.SqlQueryRaw<UserSqlRawModel>(
-                            "SELECT id, full_name, phone_number FROM users WHERE id = {0}",
+                            "SELECT id, full_name, phone_number, avatar_url FROM users WHERE id = {0}",
                             coachUserId
                         ).FirstOrDefaultAsync();
 
                         // Query real classes from DB
                         var query = db.Database.SqlQueryRaw<ClassSqlRawModel>(
-                            "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status FROM classes WHERE coach_id = {0}",
-                            coachProfileId.Value
+                            "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status FROM classes WHERE coach_id = {0} OR coach_id = {1}",
+                            coachProfileKey,
+                            coachUserId
                         );
 
                         var dbClasses = await query.ToListAsync();
@@ -133,7 +135,8 @@ namespace SmartGym.Api.Endpoints
                                     capacity = c.Capacity,
                                     registeredCount = registeredIds.Length,
                                     registeredMemberIds = registeredIds,
-                                    status = statusStr,
+                                     status = statusStr,
+                                     approvalStatus = c.ApprovalStatus,
                                     attendanceStatus = "chưa điểm danh",
                                     coachNote = "",
                                 };
@@ -162,6 +165,7 @@ namespace SmartGym.Api.Endpoints
                                         registeredCount = s.RegisteredCount,
                                         registeredMemberIds = new string[] { s.MemberId ?? "m1" },
                                         status = s.Status,
+                                        approvalStatus = "approved",
                                         attendanceStatus = s.AttendanceStatus,
                                         coachNote = s.CoachNote,
                                     });
@@ -227,7 +231,7 @@ namespace SmartGym.Api.Endpoints
                     if (Guid.TryParse(sessionId, out var classGuid))
                     {
                         var cls = await db.Database.SqlQueryRaw<ClassSqlRawModel>(
-                            "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status FROM classes WHERE id = {0}",
+                            "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status FROM classes WHERE id = {0}",
                             classGuid
                         ).FirstOrDefaultAsync();
 
@@ -322,7 +326,7 @@ namespace SmartGym.Api.Endpoints
                         return Results.Ok(Array.Empty<object>());
 
                     var coachClasses = await db.Database.SqlQueryRaw<ClassSqlRawModel>(
-                        "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status FROM classes WHERE coach_id = {0} AND status = TRUE",
+                        "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status FROM classes WHERE coach_id = {0} AND status = TRUE",
                         coachProfileId.Value
                     ).ToListAsync();
 

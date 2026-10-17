@@ -95,6 +95,9 @@ export const CoachAPI = {
             if (Array.isArray(res)) {
                 return res.map((s: any) => ({
                     ...s,
+                    date: typeof s.date === 'string' ? s.date.slice(0, 10) : s.date,
+                    startTime: typeof s.startTime === 'string' ? s.startTime.slice(0, 5) : s.startTime,
+                    endTime: typeof s.endTime === 'string' ? s.endTime.slice(0, 5) : s.endTime,
                     registeredMemberIds: Array.isArray(s.registeredMemberIds)
                         ? s.registeredMemberIds
                         : (s.memberId ? [s.memberId] : []),
