@@ -98,6 +98,15 @@ export default function MemberBooking({ onNavigate }: Props) {
         setCoaches(coachesList);
       }
 
+      // Lớp học và danh sách Coach có thể lấy dữ liệu từ hai truy vấn khác nhau.
+      // Dùng hồ sơ Coach làm nguồn bổ sung để avatar account luôn được đồng bộ.
+      const coachById = new Map(
+        (Array.isArray(coachesList) ? coachesList : []).map((coach: any) => [
+          String(coach.id),
+          coach,
+        ]),
+      );
+
       const mappedClasses = (Array.isArray(availableClasses) ? availableClasses : []).map((item: any) => {
         const start = new Date(item.scheduleTime);
         const end = new Date(start.getTime() + Number(item.durationMinutes || 60) * 60000);
@@ -109,8 +118,13 @@ export default function MemberBooking({ onNavigate }: Props) {
         const time = (value: Date) =>
           `${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}`;
 
-        const coachName = item.coachName || "HLV Chuyên Nghiệp";
-        const coachAvatar = getRealCoachAvatar(coachName, item.coachAvatar, item.coachId);
+        const coachAccount = coachById.get(String(item.coachId));
+        const coachName = item.coachName || coachAccount?.fullName || "HLV Chuyên Nghiệp";
+        const coachAvatar = getRealCoachAvatar(
+          coachName,
+          item.coachAvatar || coachAccount?.avatarUrl,
+          item.coachId,
+        );
 
         return {
           ...item,
@@ -151,8 +165,13 @@ export default function MemberBooking({ onNavigate }: Props) {
           String(start.getMonth() + 1).padStart(2, "0"),
           String(start.getDate()).padStart(2, "0"),
         ].join("-");
-        const coachName = booking.coachName || "Huấn luyện viên phụ trách";
-        const coachAvatar = getRealCoachAvatar(coachName, booking.coachAvatar, booking.coachId);
+        const coachAccount = coachById.get(String(booking.coachId));
+        const coachName = booking.coachName || coachAccount?.fullName || "Huấn luyện viên phụ trách";
+        const coachAvatar = getRealCoachAvatar(
+          coachName,
+          booking.coachAvatar || coachAccount?.avatarUrl,
+          booking.coachId,
+        );
 
         return {
           id: booking.classId,
@@ -190,7 +209,8 @@ export default function MemberBooking({ onNavigate }: Props) {
           String(start.getMonth() + 1).padStart(2, "0"),
           String(start.getDate()).padStart(2, "0"),
         ].join("-");
-        const coachName = session.coachName || "Personal Trainer";
+        const coachAccount = coachById.get(String(session.coachId));
+        const coachName = session.coachName || coachAccount?.fullName || "Personal Trainer";
 
         return {
           id: session.sessionId,
@@ -204,7 +224,11 @@ export default function MemberBooking({ onNavigate }: Props) {
           room: "Khu vực PT 1-1",
           coachId: session.coachId || "",
           coachName: coachName,
-          coachAvatar: getRealCoachAvatar(coachName, session.coachAvatar, session.coachId),
+          coachAvatar: getRealCoachAvatar(
+            coachName,
+            session.coachAvatar || coachAccount?.avatarUrl,
+            session.coachId,
+          ),
           coachSpecialty: session.coachSpecialty || "Chuyên gia HLV Thể hình 1-1",
           coachPhone: session.coachPhone || "0901 234 567",
           coachRating: session.coachRating || 4.9,

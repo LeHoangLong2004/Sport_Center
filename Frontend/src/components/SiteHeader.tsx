@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react"
-import { SiteRoute } from "../SiteApp"
+import { UserAvatar } from "./UserAvatar"
+import { useUserProfile } from "../hooks/useUserProfile"
 
 const navItems = [
   "Trang chủ",
@@ -24,6 +25,18 @@ export function SiteHeader({
     const userStr = localStorage.getItem("user")
     return userStr ? JSON.parse(userStr) : null
   })
+  const { profile } = useUserProfile()
+
+  const currentUser = profile
+    ? {
+        ...user,
+        id: profile.id,
+        fullName: profile.fullName || user?.fullName,
+        email: profile.email || user?.email,
+        avatarUrl: profile.avatarUrl,
+        roleName: profile.roleName || user?.roleName,
+      }
+    : user
 
   useEffect(() => {
     const handleScroll = () => {
@@ -41,9 +54,11 @@ export function SiteHeader({
     }
     window.addEventListener("storage", handleStorage)
     window.addEventListener("local-storage-update", handleStorage)
+    window.addEventListener("user-profile-updated", handleStorage)
     return () => {
       window.removeEventListener("storage", handleStorage)
       window.removeEventListener("local-storage-update", handleStorage)
+      window.removeEventListener("user-profile-updated", handleStorage)
     }
   }, [])
 
@@ -145,7 +160,7 @@ export function SiteHeader({
 
       {!hideNav && (
         <div className="flex gap-[12px] items-center shrink-0">
-          {user ? (
+          {currentUser ? (
             (() => {
               return (
                 <div className="flex items-center gap-4">
@@ -153,7 +168,9 @@ export function SiteHeader({
                     className="flex items-center gap-2 group"
                     onClick={(e) => {
                       e.stopPropagation()
-                      const roleStr = user?.role?.toLowerCase() || ""
+                      const roleStr = String(
+                        currentUser?.roleName || currentUser?.role || "",
+                      ).toLowerCase()
                       if (roleStr === "admin" || roleStr === "manager") {
                         window.location.hash = "dashboard"
                       } else if (roleStr === "coach") {
@@ -166,11 +183,15 @@ export function SiteHeader({
                     }}
                     title="Vào Bảng điều khiển"
                   >
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-teal-500 to-indigo-500 flex items-center justify-center shadow-md text-white font-bold text-[15px] border-2 border-white/20">
-                      {user?.fullName
-                        ? user.fullName.charAt(0).toUpperCase()
-                        : "U"}
-                    </div>
+                    <UserAvatar
+                      src={
+                        currentUser?.avatarUrl ||
+                        currentUser?.avatar ||
+                        currentUser?.imageUrl
+                      }
+                      name={currentUser?.fullName || currentUser?.name || "Người dùng"}
+                      className="w-10 h-10 rounded-full object-cover shadow-md text-[15px] border-2 border-white/20"
+                    />
                     <div className="flex flex-col items-start hidden sm:flex">
                       <span
                         className={`text-sm font-bold ${
@@ -181,7 +202,7 @@ export function SiteHeader({
                               : "text-slate-800 lg:text-white"
                         }`}
                       >
-                        {user?.fullName || "Người dùng"}
+                        {currentUser?.fullName || currentUser?.name || "Người dùng"}
                       </span>
                       <span
                         className={`text-[10px] font-semibold uppercase tracking-wider ${

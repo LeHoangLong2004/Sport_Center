@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using SmartGym.Application.Interfaces;
+using SmartGym.Application.Services;
 using SmartGym.Api.Services;
 
 namespace SmartGym.Api.Endpoints
@@ -33,6 +35,64 @@ namespace SmartGym.Api.Endpoints
 
         private static void MapMemberChatEndpoints(RouteGroupBuilder group)
         {
+            // Directory data is loaded from the database. The member portal must
+            // not expose a hardcoded list of staff, members, or classes.
+            group.MapGet("/chat/directory", async (
+                HttpContext context,
+                IUserRepository userRepository,
+                ClassService classService) =>
+            {
+                if (GetUserId(context) == null) return Results.Unauthorized();
+
+                var users = (await userRepository.GetAllUsersAsync())
+                    .Where(user => user.Status)
+                    .ToList();
+
+                var managers = users
+                    .Where(user => IsRole(user.Role?.Name, "manager", "admin", "center_manager", "center manager", "centermanager", "receptionist", "reception", "staff"))
+                    .Select(user => new
+                    {
+                        id = user.Id.ToString(),
+                        name = user.FullName,
+                        role = IsRole(user.Role?.Name, "receptionist", "reception", "staff") ? "reception" : "manager",
+                        roleTag = IsRole(user.Role?.Name, "receptionist", "reception", "staff") ? "LỄ TÂN" : "QUẢN LÝ",
+                        subtitle = user.Role?.Name ?? "Nhân sự SportCenter",
+                        avatar = user.AvatarUrl
+                    })
+                    .ToList();
+
+                var members = users
+                    .Where(user => IsRole(user.Role?.Name, "member", "user"))
+                    .Where(user => user.Id.ToString() != GetUserId(context))
+                    .Select(user => new
+                    {
+                        id = user.Id.ToString(),
+                        name = user.FullName,
+                        role = "member",
+                        roleTag = "HỘI VIÊN",
+                        subtitle = "Hội viên SportCenter",
+                        avatar = user.AvatarUrl
+                    })
+                    .ToList();
+
+                var classes = (await classService.GetAvailableClassesAsync())
+                    .Where(item => item.Status && !string.Equals(item.ApprovalStatus, "rejected", StringComparison.OrdinalIgnoreCase))
+                    .Select(item => new
+                    {
+                        id = item.Id.ToString(),
+                        name = item.ClassName,
+                        role = "class",
+                        roleTag = "NHÓM LỚP",
+                        subtitle = $"{item.SportName} · {item.CoachName ?? "Chưa phân công HLV"} · {item.FacilityName}",
+                        avatar = item.CoachAvatar
+                    })
+                    .ToList();
+
+                return Results.Ok(new { managers, members, classes });
+            })
+            .WithTags("Member Portal")
+            .WithSummary("Get chat directory from database");
+
             // 7. GET /api/member/chat/conversations
             group.MapGet("/chat/conversations", (ChatStoreService chatStore, HttpContext context, string? memberId) =>
             {
@@ -108,5 +168,9 @@ namespace SmartGym.Api.Endpoints
             .WithTags("Member Portal")
             .WithSummary("Start direct chat with a coach, member, or staff");
         }
+
+        private static bool IsRole(string? role, params string[] acceptedRoles) =>
+            !string.IsNullOrWhiteSpace(role) && acceptedRoles.Any(accepted =>
+                string.Equals(role, accepted, StringComparison.OrdinalIgnoreCase));
     }
 }

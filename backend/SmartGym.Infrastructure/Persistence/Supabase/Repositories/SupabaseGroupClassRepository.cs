@@ -53,8 +53,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
 
         var sport = sports.FirstOrDefault(s => s.Id == c.SportId);
         var facility = facilities.FirstOrDefault(f => f.Id == c.FacilityId);
-        var coach = coaches.FirstOrDefault(co => co.Id == c.CoachId);
-        var coachUser = coach != null ? users.FirstOrDefault(u => u.Id == coach.UserId) : null;
+        var (coach, coachUser) = ResolveCoach(c.CoachId, coaches, users);
 
         var bookings = await _dbContext
             .Database.SqlQueryRaw<ClassBookingRawModel>(
@@ -197,8 +196,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             {
                 var sport = sports.FirstOrDefault(s => s.Id == c.SportId);
                 var facility = facilities.FirstOrDefault(f => f.Id == c.FacilityId);
-                var coach = coaches.FirstOrDefault(co => co.Id == c.CoachId);
-                var user = coach != null ? users.FirstOrDefault(u => u.Id == coach.UserId) : null;
+                var (coach, user) = ResolveCoach(c.CoachId, coaches, users);
 
                 return new ClassResponse(
                     Id: c.Id,
@@ -261,8 +259,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             {
                 var sport = sports.FirstOrDefault(s => s.Id == c.SportId);
                 var facility = facilities.FirstOrDefault(f => f.Id == c.FacilityId);
-                var coach = coaches.FirstOrDefault(co => co.Id == c.CoachId);
-                var user = coach != null ? users.FirstOrDefault(u => u.Id == coach.UserId) : null;
+                var (coach, user) = ResolveCoach(c.CoachId, coaches, users);
 
                 return new ClassResponse(
                     Id: c.Id,
@@ -291,6 +288,24 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             })
             .OrderBy(x => x.ScheduleTime)
             .ToList();
+    }
+
+    private static (CoachSqlRawModel? Coach, UserSqlRawModel? User) ResolveCoach(
+        Guid? coachId,
+        IReadOnlyCollection<CoachSqlRawModel> coaches,
+        IReadOnlyCollection<UserSqlRawModel> users
+    )
+    {
+        if (!coachId.HasValue)
+            return (null, null);
+
+        // Legacy class records may store either coaches.id or users.id in coach_id.
+        // Resolve both forms so the account profile (including avatar_url) is always used.
+        var coach = coaches.FirstOrDefault(c => c.Id == coachId.Value || c.UserId == coachId.Value);
+        var userId = coach?.UserId ?? coachId.Value;
+        var user = users.FirstOrDefault(u => u.Id == userId);
+
+        return (coach, user);
     }
 
 }
