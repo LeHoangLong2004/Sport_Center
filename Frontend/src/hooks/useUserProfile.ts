@@ -58,6 +58,23 @@ function mapUser(data: any): UserProfile {
   };
 }
 
+function syncStoredUser(profile: UserProfile) {
+  const storedUser = getStoredUser();
+  if (!storedUser) return;
+
+  localStorage.setItem(
+    'user',
+    JSON.stringify({
+      ...storedUser,
+      id: profile.id || storedUser.id,
+      fullName: profile.fullName || storedUser.fullName,
+      email: profile.email || storedUser.email,
+      avatarUrl: profile.avatarUrl,
+      roleName: profile.roleName || storedUser.roleName,
+    }),
+  );
+}
+
 export function detectPortalRole(portalRoleHint?: 'coach' | 'member'): 'coach' | 'member' {
   if (portalRoleHint) return portalRoleHint;
   const hash = window.location.hash.toLowerCase();
@@ -101,7 +118,9 @@ export function useUserProfile(portalRoleHint?: 'coach' | 'member') {
       }
 
       if (!response.ok) throw new Error(`Profile request failed: ${response.status}`);
-      setProfile(mapUser(await response.json()));
+      const nextProfile = mapUser(await response.json());
+      setProfile(nextProfile);
+      syncStoredUser(nextProfile);
     } catch (error) {
       console.error('Không thể tải hồ sơ từ database:', error);
       setProfile(null);
