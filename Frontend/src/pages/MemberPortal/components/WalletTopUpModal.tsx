@@ -32,7 +32,7 @@ export default function WalletTopUpModal({
   phone = "0901234567",
   onSuccess,
 }: Props) {
-  const [selectedAmount, setSelectedAmount] = useState<number>(500000);
+  const [selectedAmount, setSelectedAmount] = useState<number>(100000);
   const [customAmount, setCustomAmount] = useState<string>("");
   const [method, setMethod] = useState<"qr" | "card" | "counter">("qr");
   const [loading, setLoading] = useState(false);
@@ -218,7 +218,7 @@ export default function WalletTopUpModal({
                       const digits = e.target.value.replace(/\D/g, "");
                       setCustomAmount(digits ? Number(digits).toLocaleString("vi-VN") : "");
                     }}
-                    placeholder="Hoặc tự nhập số tiền khác..."
+                    placeholder="Nhập số tiền khác..."
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                   {customAmount && (

@@ -42,7 +42,7 @@ export default function MemberDashboard({ onNavigate }: Props) {
     getSavedMemberData(`member_tasks_${userId}`, [])
   );
   const [balance, setBalance] = useState<number>(() => {
-    return WalletService.getLocalWallet().balance;
+    return WalletService.getLocalWallet(userId).balance;
   });
 
   useEffect(() => {

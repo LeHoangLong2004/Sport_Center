@@ -38,20 +38,32 @@ namespace SmartGym.Api.Endpoints
             // 1. GET /api/member/wallet - Lấy số dư và lịch sử giao dịch ví
             wallet.MapGet("/", (HttpContext context) =>
             {
-                var userId = GetUserId(context) ?? "m-demo";
-                var balance = _memberWallets.GetOrAdd(userId, _ => 500000m); // Khởi tạo số dư mẫu 500.000 đ
-                var transactions = _memberWalletTransactions.GetOrAdd(userId, _ => new List<WalletTransactionDto>
+                var userId = GetUserId(context);
+                if (string.IsNullOrWhiteSpace(userId))
                 {
-                    new(
-                        $"WTX-{DateTime.UtcNow:yyyyMMdd}-001",
-                        "topup",
-                        500000m,
-                        "VietQR",
-                        "Nạp tiền ví hội viên SportCenter",
-                        DateTime.UtcNow.AddDays(-2),
-                        "completed"
-                    )
-                });
+                    userId = context.Request.Query["userId"].FirstOrDefault()
+                          ?? context.Request.Headers["X-User-Id"].FirstOrDefault()
+                          ?? "m-default";
+                }
+
+                // Mặc định tài khoản mới tạo luôn là 0 đ và chưa có giao dịch
+                var transactions = _memberWalletTransactions.GetOrAdd(userId, _ => new List<WalletTransactionDto>());
+                lock (transactions)
+                {
+                    // Loại bỏ triệt để bất kỳ giao dịch mẫu 500k trước đây
+                    transactions.RemoveAll(t => t.Id == "WTX-INIT-01" 
+                                             || t.Id.EndsWith("-001") 
+                                             || t.Note.Contains("ban đầu") 
+                                             || (t.Amount == 500000m && t.Note == "Nạp tiền ví hội viên SportCenter"));
+                }
+
+                // Nếu không có giao dịch thực tế, số dư bắt buộc là 0 đ
+                var balance = _memberWallets.GetOrAdd(userId, _ => 0m);
+                if (transactions.Count == 0)
+                {
+                    balance = 0m;
+                    _memberWallets[userId] = 0m;
+                }
 
                 return Results.Ok(new
                 {
@@ -77,7 +89,14 @@ namespace SmartGym.Api.Endpoints
                     return Results.BadRequest(new { message = "Số tiền nạp một lần không được vượt quá 100.000.000 đ." });
                 }
 
-                var userId = GetUserId(context) ?? "m-demo";
+                var userId = GetUserId(context);
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    userId = context.Request.Query["userId"].FirstOrDefault()
+                          ?? context.Request.Headers["X-User-Id"].FirstOrDefault()
+                          ?? "m-default";
+                }
+
                 var method = string.IsNullOrWhiteSpace(request.Method) ? "VietQR" : request.Method;
                 var note = string.IsNullOrWhiteSpace(request.Note) ? "Nạp tiền vào tài khoản SportCenter" : request.Note;
 
@@ -113,6 +132,61 @@ namespace SmartGym.Api.Endpoints
             })
             .WithTags("Member Portal")
             .WithSummary("Nạp tiền vào tài khoản/ví của hội viên");
+
+            // 3. POST /api/member/wallet/pay - Trừ tiền từ ví hội viên khi mua dịch vụ
+            wallet.MapPost("/pay", (HttpContext context, [FromBody] TopUpRequest request) =>
+            {
+                if (request.Amount <= 0)
+                {
+                    return Results.BadRequest(new { message = "Số tiền thanh toán phải lớn hơn 0." });
+                }
+
+                var userId = GetUserId(context);
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    userId = context.Request.Query["userId"].FirstOrDefault()
+                          ?? context.Request.Headers["X-User-Id"].FirstOrDefault()
+                          ?? "m-default";
+                }
+
+                var currentBalance = _memberWallets.GetOrAdd(userId, _ => 0m);
+                if (currentBalance < request.Amount)
+                {
+                    return Results.BadRequest(new { message = "Số dư ví không đủ để thanh toán. Vui lòng nạp thêm tiền." });
+                }
+
+                var newBalance = _memberWallets.AddOrUpdate(
+                    userId,
+                    0m,
+                    (_, current) => current - request.Amount
+                );
+
+                var tx = new WalletTransactionDto(
+                    $"WTX-{DateTime.UtcNow:yyyyMMddHHmmss}-{Random.Shared.Next(100, 999)}",
+                    "payment",
+                    request.Amount,
+                    request.Method ?? "Ví điện tử",
+                    request.Note ?? "Thanh toán dịch vụ SportCenter",
+                    DateTime.UtcNow,
+                    "completed"
+                );
+
+                var txList = _memberWalletTransactions.GetOrAdd(userId, _ => new List<WalletTransactionDto>());
+                lock (txList)
+                {
+                    txList.Insert(0, tx);
+                }
+
+                return Results.Ok(new
+                {
+                    success = true,
+                    message = $"Thanh toán thành công {request.Amount:N0} đ từ ví.",
+                    balance = newBalance,
+                    transaction = tx
+                });
+            })
+            .WithTags("Member Portal")
+            .WithSummary("Trừ tiền ví khi thanh toán dịch vụ");
         }
     }
 }

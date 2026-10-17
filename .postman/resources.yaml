@@ -1,0 +1,13 @@
+# Use this workspace to collaborate
+workspace:
+  id: 63e3c6e5-6077-4cd9-bb0a-4aa73a4f9fb4
+
+cloudResources:
+  collections:
+    ../postman/collections/SmartGym Sport Center API: 22685cee-23dd-4a95-b515-7d62268885ff
+
+# All resources in the `postman/` folder are automatically registered in Local View.
+# Point to additional files outside the `postman/` folder to register them individually. Example:
+#localResources:
+#  collections:
+#    - ../tests/E2E Test Collection/

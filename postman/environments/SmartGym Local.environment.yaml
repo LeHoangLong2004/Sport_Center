@@ -1,0 +1,6 @@
+name: SmartGym Local
+values:
+  - key: base_url
+    value: 'http://localhost:5000'
+  - key: token
+    value: ''

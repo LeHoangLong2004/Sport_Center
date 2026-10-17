@@ -1,0 +1,19 @@
+$kind: http-request
+description: Nạp thêm tiền vào ví hội viên qua VietQR.
+url: "{{base_url}}/api/member/wallet/topup"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "amount": 200000,
+      "method": "VietQR",
+      "note": "Nạp tiền ví test Postman"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+order: 2000

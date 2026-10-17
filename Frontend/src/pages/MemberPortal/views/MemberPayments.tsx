@@ -34,8 +34,8 @@ export default function MemberPayments({ onNavigate }: Props) {
   const [bankMethod, setBankMethod] = useState<"Chuyển khoản" | "Tiền mặt tại quầy">("Chuyển khoản");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"invoices" | "wallet">("invoices");
-  const [balance, setBalance] = useState<number>(() => WalletService.getLocalWallet().balance);
-  const [transactions, setTransactions] = useState<WalletTransaction[]>(() => WalletService.getLocalWallet().transactions);
+  const [balance, setBalance] = useState<number>(() => WalletService.getLocalWallet(user?.id).balance);
+  const [transactions, setTransactions] = useState<WalletTransaction[]>(() => WalletService.getLocalWallet(user?.id).transactions);
   const [showWalletModal, setShowWalletModal] = useState(false);
 
   useEffect(() => {

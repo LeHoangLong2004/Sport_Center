@@ -1,0 +1,5 @@
+$kind: http-request
+description: Xem toàn bộ gói thành viên (Basic, Plus, Premium) và các gói môn tập (Gym, Yoga, Boxing, Bơi lội).
+url: "{{base_url}}/api/package-catalog"
+method: GET
+order: 1000

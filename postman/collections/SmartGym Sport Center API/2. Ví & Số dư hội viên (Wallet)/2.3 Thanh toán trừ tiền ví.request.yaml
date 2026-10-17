@@ -1,0 +1,19 @@
+$kind: http-request
+description: Trừ tiền từ ví khi hội viên thanh toán gói môn hoặc nước uống.
+url: "{{base_url}}/api/member/wallet/pay"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "amount": 50000,
+      "method": "Ví điện tử",
+      "note": "Thanh toán dịch vụ SportCenter"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+order: 3000
