@@ -196,7 +196,7 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
   }
   userName = userName || "Hội viên";
   userEmail = userEmail || "";
-  const userTier = profile?.memberTier || "Hội viên Mới";
+  const userTier = profile?.memberTier || "Thành viên mới";
   memberCode = memberCode ? `MEM-${memberCode}` : "MEM-OFFICIAL";
 
   const showToast = (text: string) => {

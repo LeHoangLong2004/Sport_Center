@@ -24,7 +24,8 @@ import {
 } from "lucide-react";
 import { MemberAPI } from "../services/api";
 import type { MemberScreen } from "../types";
-import { saveMemberData } from "../services/memberData";
+import { getSavedMemberData, saveMemberData } from "../services/memberData";
+import { CoachAvatar, getRealCoachAvatar } from "../utils/coachAvatar";
 
 export interface ChatMessage {
   id: string;
@@ -238,8 +239,13 @@ export default function MemberChat({ onNavigate }: Props) {
   const memberId = user?.id || "";
   const storageKey = memberId ? `member_chats_${memberId}` : "member_chats";
 
-  const [conversations, setConversations] = useState<ChatConversation[]>([]);
-  const [activeId, setActiveId] = useState<string>("");
+  const [conversations, setConversations] = useState<ChatConversation[]>(() => {
+    return getSavedMemberData(storageKey, INITIAL_CONVERSATIONS);
+  });
+  const [activeId, setActiveId] = useState<string>(() => {
+    const saved = getSavedMemberData(storageKey, INITIAL_CONVERSATIONS);
+    return saved[0]?.id || "";
+  });
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState<"all" | "coach" | "member" | "manager" | "class">("all");
   const [inputText, setInputText] = useState("");
@@ -249,7 +255,16 @@ export default function MemberChat({ onNavigate }: Props) {
   // Modal state
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [modalTab, setModalTab] = useState<"coaches" | "managers" | "members" | "classes">("coaches");
-  const [coachContacts, setCoachContacts] = useState<typeof DIRECTORY_CONTACTS.coaches>([]);
+  const [coachContacts, setCoachContacts] = useState<
+    Array<{
+      id: string;
+      name: string;
+      role: string;
+      roleTag: string;
+      subtitle: string;
+      avatar?: string | null;
+    }>
+  >([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -258,13 +273,13 @@ export default function MemberChat({ onNavigate }: Props) {
     MemberAPI.getCoaches()
       .then((coaches) => {
         if (!mounted || !Array.isArray(coaches)) return;
-        setCoachContacts(coaches.map((coach: { id: string; fullName?: string; email?: string }) => ({
+        setCoachContacts(coaches.map((coach: any) => ({
           id: coach.id,
           name: coach.fullName || coach.email || "Huấn luyện viên",
           role: "coach",
           roleTag: "HLV",
-          subtitle: "Huấn luyện viên SportCenter",
-          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(coach.fullName || "HLV")}&background=f97316&color=fff`,
+          subtitle: coach.specialty || "Huấn luyện viên SportCenter",
+          avatar: getRealCoachAvatar(coach.fullName, coach.avatarUrl, coach.id) || "",
         })));
       })
       .catch(() => {
@@ -283,12 +298,20 @@ export default function MemberChat({ onNavigate }: Props) {
       if (memberId) {
         const res = await MemberAPI.getMemberConversations(memberId);
         if (Array.isArray(res)) {
-          setConversations(res);
-          saveMemberData(storageKey, res);
+          const existingIds = new Set(res.map((c: any) => c.id));
+          const merged = [...res];
+          // Preserve initial channels (Quản lý, Lễ tân) if not yet returned from server
+          for (const initConv of INITIAL_CONVERSATIONS) {
+            if (!existingIds.has(initConv.id)) {
+              merged.push(initConv);
+            }
+          }
+          setConversations(merged);
+          saveMemberData(storageKey, merged);
           setActiveId((current) =>
-            res.some((conversation) => conversation.id === current)
+            merged.some((conversation) => conversation.id === current)
               ? current
-              : (res[0]?.id || "")
+              : (merged[0]?.id || "")
           );
         }
       }
@@ -314,6 +337,76 @@ export default function MemberChat({ onNavigate }: Props) {
 
     return () => clearInterval(interval);
   }, [memberId]);
+
+  // Auto-connect with coach when member navigates from class booking
+  useEffect(() => {
+    const targetCoachStr = localStorage.getItem("chat_target_coach");
+    if (!targetCoachStr) return;
+
+    try {
+      localStorage.removeItem("chat_target_coach");
+      const targetCoach = JSON.parse(targetCoachStr);
+      if (!targetCoach || !targetCoach.coachName) return;
+
+      const coachName = targetCoach.coachName;
+      const coachId = targetCoach.coachId || `coach-${Date.now()}`;
+      const coachAvatar = targetCoach.coachAvatar || "";
+
+      // Check if conversation already exists in state
+      const existing = conversations.find(
+        (c) =>
+          (targetCoach.coachId && (c.coachId === targetCoach.coachId || c.id.includes(targetCoach.coachId))) ||
+          c.title.toLowerCase().includes(coachName.toLowerCase())
+      );
+
+      if (existing) {
+        setActiveId(existing.id);
+      } else {
+        const newCoachConv: ChatConversation = {
+          id: `conv-coach-${coachId}-${memberId || "new"}`,
+          type: "direct",
+          category: "coach",
+          roleTag: "HLV",
+          badgeColor: "orange",
+          title: coachName,
+          subtitle: "Huấn luyện viên phụ trách lớp học",
+          avatar: coachAvatar,
+          lastMessage: "Bắt đầu cuộc trò chuyện với Huấn luyện viên.",
+          lastTime: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
+          unreadCount: 0,
+          online: true,
+          coachId,
+          coachName,
+          messages: [
+            {
+              id: `init-${Date.now()}`,
+              sender: "coach",
+              senderName: coachName,
+              text: `Chào ${memberName}! Rất vui được đồng hành cùng bạn trong lớp học sắp tới. Bạn có thắc mắc gì về bài tập, trang phục hay cần lưu ý gì trước buổi tập không?`,
+              timestamp: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
+            },
+          ],
+        };
+
+        setConversations((prev) => [newCoachConv, ...prev.filter((c) => c.id !== newCoachConv.id)]);
+        setActiveId(newCoachConv.id);
+
+        if (memberId) {
+          MemberAPI.startConversation({
+            targetId: coachId,
+            targetName: coachName,
+            role: "coach",
+            memberId,
+            memberName,
+            avatar: coachAvatar,
+            subtitle: "Huấn luyện viên phụ trách lớp học",
+          }).catch(() => {});
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to consume chat_target_coach:", e);
+    }
+  }, [memberId, memberName, conversations]);
 
   const activeConv = useMemo(
     () => conversations.find((c) => c.id === activeId) || conversations[0],
@@ -373,6 +466,20 @@ export default function MemberChat({ onNavigate }: Props) {
     setIsSending(true);
 
     try {
+      if (activeConv.id.startsWith("conv-manager") || activeConv.id.startsWith("conv-reception")) {
+        try {
+          await MemberAPI.startConversation({
+            targetId: activeConv.coachId || activeConv.id,
+            targetName: activeConv.title,
+            role: activeConv.category || "manager",
+            memberId,
+            memberName,
+            avatar: activeConv.avatar,
+            subtitle: activeConv.subtitle,
+          });
+        } catch {}
+      }
+
       const res = await MemberAPI.sendMemberMessage({
         conversationId: activeConv.id,
         text: textToSend,
@@ -387,13 +494,6 @@ export default function MemberChat({ onNavigate }: Props) {
         }
       }
     } catch (err) {
-      setConversations((prev) =>
-        prev.map((conversation) =>
-          conversation.id === activeConv.id
-            ? { ...conversation, messages: conversation.messages.filter((message) => message.id !== newMsg.id) }
-            : conversation
-        )
-      );
       console.warn("Không thể lưu tin nhắn lên máy chủ:", err);
     } finally {
       setIsSending(false);
@@ -406,7 +506,7 @@ export default function MemberChat({ onNavigate }: Props) {
     role: string;
     roleTag: string;
     subtitle: string;
-    avatar: string;
+    avatar?: string | null;
   }) => {
     try {
       const res = await MemberAPI.startConversation({
@@ -415,7 +515,7 @@ export default function MemberChat({ onNavigate }: Props) {
         role: contact.role,
         memberId,
         memberName,
-        avatar: contact.avatar,
+        avatar: contact.avatar || undefined,
         subtitle: contact.subtitle,
       });
 
@@ -610,11 +710,11 @@ export default function MemberChat({ onNavigate }: Props) {
                     )}
 
                     <div className="relative shrink-0 mt-0.5">
-                      {c.avatar ? (
-                        <img
+                      {c.avatar || c.category === "coach" ? (
+                        <CoachAvatar
                           src={c.avatar}
-                          alt={c.title}
-                          className="w-10 h-10 rounded-xl object-cover ring-2 ring-slate-100 dark:ring-slate-800"
+                          name={c.title}
+                          className="w-10 h-10 rounded-xl object-cover ring-2 ring-slate-100 dark:ring-slate-800 shrink-0"
                         />
                       ) : (
                         <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs ring-2 ring-slate-100 dark:ring-slate-800">
@@ -687,11 +787,11 @@ export default function MemberChat({ onNavigate }: Props) {
               <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 shrink-0">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="relative shrink-0">
-                    {activeConv.avatar ? (
-                      <img
+                    {activeConv.avatar || activeConv.category === "coach" ? (
+                      <CoachAvatar
                         src={activeConv.avatar}
-                        alt={activeConv.title}
-                        className="w-10 h-10 rounded-xl object-cover ring-2 ring-slate-100 dark:ring-slate-800"
+                        name={activeConv.title}
+                        className="w-10 h-10 rounded-xl object-cover ring-2 ring-slate-100 dark:ring-slate-800 shrink-0"
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs ring-2 ring-slate-100 dark:ring-slate-800">
@@ -956,7 +1056,7 @@ export default function MemberChat({ onNavigate }: Props) {
                     className="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 hover:border-emerald-500/60 dark:hover:border-emerald-500/60 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 transition-all flex items-center justify-between gap-3 cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
-                      <img src={c.avatar} alt={c.name} className="w-11 h-11 rounded-xl object-cover ring-2 ring-slate-100 dark:ring-slate-800" />
+                      <CoachAvatar src={c.avatar} name={c.name} className="w-11 h-11 rounded-xl ring-2 ring-slate-100 dark:ring-slate-800 shrink-0" />
                       <div>
                         <div className="flex items-center gap-1.5">
                           <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100">{c.name}</h4>

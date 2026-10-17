@@ -68,7 +68,7 @@ export const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
   const [formPhone, setFormPhone] = useState(initialPhone);
   const [formEmail, setFormEmail] = useState(initialEmail);
   const [formDob, setFormDob] = useState(initialDob);
-  const [formGender, setFormGender] = useState(initialGender);
+  const [formGender, setFormGender] = useState((initialGender && initialGender !== "Chưa cập nhật") ? initialGender : "");
   const [formPreferredTime, setFormPreferredTime] = useState(initialPreferredTime);
   const [formEmergencyContact, setFormEmergencyContact] = useState(initialEmergencyContact);
   const [formFitnessGoal, setFormFitnessGoal] = useState(initialFitnessGoal);
@@ -84,7 +84,7 @@ export const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
       setFormPhone(profile?.phone || initialPhone || storedUser?.phoneNumber || storedUser?.phone || "");
       setFormEmail(profile?.email || initialEmail || storedUser?.email || "");
       setFormDob(profile?.dob ? profile.dob.split("T")[0] : initialDob);
-      setFormGender(profile?.gender || initialGender || "Nam");
+      setFormGender((profile?.gender && profile.gender !== "Chưa cập nhật") ? profile.gender : (initialGender && initialGender !== "Chưa cập nhật") ? initialGender : "");
       setFormPreferredTime(profile?.preferredTime || initialPreferredTime);
       setFormEmergencyContact(profile?.emergencyContact || initialEmergencyContact);
       setFormFitnessGoal(profile?.fitnessGoal || initialFitnessGoal);
@@ -197,7 +197,7 @@ export const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
               <span>Giới tính</span>
             </div>
             <p className="font-bold text-slate-900 dark:text-white text-sm">
-              {profile?.gender || initialGender || "Chưa cập nhật"}
+              {(profile?.gender && profile.gender !== "Chưa cập nhật") ? profile.gender : (initialGender && initialGender !== "Chưa cập nhật") ? initialGender : "Chưa cập nhật"}
             </p>
           </div>
 
@@ -240,7 +240,7 @@ export const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
             </div>
           </div>
           <span className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-emerald-600 text-white shadow-xs">
-            {profile?.memberTier || (hasPaid ? "Hội viên" : "Hội viên Mới")}
+            {profile?.memberTier || (hasPaid ? "Hội viên" : "Thành viên mới")}
           </span>
         </div>
       </div>
@@ -336,10 +336,11 @@ export const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
                         Giới tính:
                       </label>
                       <select
-                        value={formGender}
+                        value={formGender || ""}
                         onChange={(e) => setFormGender(e.target.value)}
                         className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
                       >
+                        <option value="">Chọn giới tính</option>
                         <option value="Nam">Nam</option>
                         <option value="Nữ">Nữ</option>
                         <option value="Khác">Khác</option>

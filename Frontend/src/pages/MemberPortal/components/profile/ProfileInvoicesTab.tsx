@@ -194,7 +194,7 @@ export const ProfileInvoicesTab: React.FC<ProfileInvoicesTabProps> = ({
           </div>
           <div className="mt-3">
             <div className="text-2xl font-bold text-slate-900 dark:text-white">
-              {profile?.memberTier || (invoices.some((i) => i.status === "paid") ? "Hội viên Hoạt động" : "Hội viên Mới")}
+              {profile?.memberTier || (invoices.some((i) => i.status === "paid") ? "Hội viên Hoạt động" : "Thành viên mới")}
             </div>
             <div className="text-xs text-purple-600 dark:text-purple-400 mt-1 font-medium">
               {invoices.some((i) => i.status === "paid") ? "Gói tập đang kích hoạt" : "Chưa đăng ký gói tập"}

@@ -10,7 +10,15 @@ public class MemberClassBookingDto
     public string ClassName { get; set; } = string.Empty;
     public string SportName { get; set; } = string.Empty;
     public string FacilityName { get; set; } = string.Empty;
+    public Guid? CoachId { get; set; }
     public string CoachName { get; set; } = string.Empty;
+    public string? CoachAvatar { get; set; }
+    public string? CoachSpecialty { get; set; }
+    public string? CoachPhone { get; set; }
+    public string? CoachBio { get; set; }
+    public decimal? CoachRating { get; set; }
+    public int? CoachExperienceYears { get; set; }
+    public decimal Price { get; set; } = 150000;
     public DateTime ScheduleTime { get; set; }
     public int DurationMinutes { get; set; }
     public string Status { get; set; } = string.Empty;
@@ -19,7 +27,12 @@ public class MemberClassBookingDto
 public class MemberPtSessionDto
 {
     public Guid SessionId { get; set; }
+    public Guid? CoachId { get; set; }
     public string CoachName { get; set; } = string.Empty;
+    public string? CoachAvatar { get; set; }
+    public string? CoachSpecialty { get; set; }
+    public string? CoachPhone { get; set; }
+    public decimal? CoachRating { get; set; }
     public DateTime ScheduleTime { get; set; }
     public int DurationMinutes { get; set; }
     public string Status { get; set; } = string.Empty;
