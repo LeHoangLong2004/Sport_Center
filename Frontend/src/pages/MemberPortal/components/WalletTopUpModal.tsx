@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import {
   Wallet, X, CheckCircle2, QrCode, CreditCard, Building, ArrowRight,
-  ShieldCheck, Sparkles, Copy, Check, Settings, AlertCircle,
+  ShieldCheck, Sparkles, Copy, Check, AlertCircle,
 } from "lucide-react";
 import { WalletService } from "../services/walletService";
-import { BankConfigService, POPULAR_BANKS, BankConfig } from "../services/bankConfig";
+import { BankConfigService, BankConfig } from "../services/bankConfig";
 
 interface Props {
   isOpen: boolean;
@@ -28,11 +28,7 @@ export default function WalletTopUpModal({
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Bank config & Card form
-  const [bankConfig, setBankConfig] = useState<BankConfig>(() => BankConfigService.getConfig());
-  const [showBankSettings, setShowBankSettings] = useState(false);
-  const [editBankBin, setEditBankBin] = useState(bankConfig.bankBin);
-  const [editAccNum, setEditAccNum] = useState(bankConfig.accountNumber);
-  const [editAccName, setEditAccName] = useState(bankConfig.accountName);
+  const [bankConfig] = useState<BankConfig>(() => BankConfigService.getConfig());
   const [card, setCard] = useState({ number: "", name: "", exp: "", cvv: "" });
   const [successResult, setSuccessResult] = useState<{ amount: number; newBalance: number } | null>(null);
 
@@ -47,21 +43,6 @@ export default function WalletTopUpModal({
     navigator.clipboard?.writeText(text);
     setCopiedKey(key);
     setTimeout(() => setCopiedKey(null), 2000);
-  };
-
-  const handleSaveBankConfig = (e: React.FormEvent) => {
-    e.preventDefault();
-    const b = POPULAR_BANKS.find((x) => x.bin === editBankBin);
-    const updated = {
-      bankBin: editBankBin,
-      bankCode: b?.code || "BANK",
-      bankName: b?.name || "Ngân hàng",
-      accountNumber: editAccNum.trim(),
-      accountName: editAccName.trim().toUpperCase() || "SPORTCENTER VIET NAM",
-    };
-    BankConfigService.saveConfig(updated);
-    setBankConfig(updated);
-    setShowBankSettings(false);
   };
 
   const handleConfirmQrOrCard = async () => {
@@ -81,7 +62,6 @@ export default function WalletTopUpModal({
 
   const handleClose = () => {
     setSuccessResult(null);
-    setShowBankSettings(false);
     onClose();
   };
 
@@ -193,25 +173,8 @@ export default function WalletTopUpModal({
                 <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3">
                   <div className="flex items-center justify-between pb-1.5 border-b border-slate-200 dark:border-slate-700 text-xs">
                     <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">{bankConfig.bankCode} • {bankConfig.accountNumber}</span>
-                    <button type="button" onClick={() => setShowBankSettings(!showBankSettings)} className="px-2 py-0.5 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 cursor-pointer">
-                      <Settings className="w-3 h-3" /><span>{showBankSettings ? "Đóng" : "Cài STK thật"}</span>
-                    </button>
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">VietQR 24/7</span>
                   </div>
-
-                  {showBankSettings && (
-                    <form onSubmit={handleSaveBankConfig} className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-emerald-500/30 space-y-2 text-xs animate-in slide-in-from-top-1">
-                      <p className="text-[11px] text-slate-500">Điền STK thật của bạn để điện thoại nhận diện khi quét QR:</p>
-                      <select value={editBankBin} onChange={(e) => setEditBankBin(e.target.value)} className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold">
-                        {POPULAR_BANKS.map((b) => <option key={b.bin} value={b.bin}>{b.name}</option>)}
-                      </select>
-                      <input type="text" value={editAccNum} onChange={(e) => setEditAccNum(e.target.value)} placeholder="Số tài khoản thật..." required className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs" />
-                      <input type="text" value={editAccName} onChange={(e) => setEditAccName(e.target.value.toUpperCase())} placeholder="TÊN CHỦ TÀI KHOẢN..." required className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs uppercase" />
-                      <div className="flex justify-end gap-1.5 pt-1">
-                        <button type="button" onClick={() => setShowBankSettings(false)} className="px-2.5 py-1 text-slate-400 text-xs">Hủy</button>
-                        <button type="submit" className="px-3 py-1 bg-emerald-600 text-white rounded-lg font-bold text-xs">Lưu & Tạo mã QR</button>
-                      </div>
-                    </form>
-                  )}
 
                   <div className="text-center space-y-1">
                     <img src={vietQrUrl} alt="VietQR" className="w-36 h-36 object-contain mx-auto rounded-xl bg-white p-2 border border-slate-200 shadow-xs" />
