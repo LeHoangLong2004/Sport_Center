@@ -15,6 +15,7 @@ public sealed record ClassResponse(
     int CurrentEnrolled,
     int AvailableSpots,
     bool Status,
+    string ApprovalStatus = "approved",
     string? CoachAvatar = null,
     string? CoachSpecialty = null,
     string? CoachPhone = null,

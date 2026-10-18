@@ -147,6 +147,8 @@ function isAdminHash(hash: string) {
 }
 
 function isCoachHash(hash: string) {
+  // `#coach` is the public coach directory page. Only the explicit portal
+  // hashes should render the authenticated Coach Portal.
   return hash.startsWith("#coach-") || coachHashes.has(hash)
 }
 

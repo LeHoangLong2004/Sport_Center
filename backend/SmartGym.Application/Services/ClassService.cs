@@ -31,9 +31,16 @@ public sealed partial class ClassService
     }
 
     public async Task<(bool IsSuccess, string? ErrorMessage)> CreateClassAsync(
-        CreateClassRequest request
+        CreateClassRequest request,
+        string approvalStatus = "approved"
     )
     {
+        approvalStatus = approvalStatus.Trim().ToLowerInvariant();
+        if (approvalStatus is not ("approved" or "pending"))
+        {
+            return (false, "Trạng thái phê duyệt lớp học không hợp lệ.");
+        }
+
         if (request.Capacity <= 0)
         {
             return (false, "Capacity must be greater than 0.");
@@ -61,7 +68,7 @@ public sealed partial class ClassService
             request.ScheduleTime
         );
 
-        foreach (var c in existingClasses.Where(c => c.Status))
+        foreach (var c in existingClasses.Where(c => c.Status && c.ApprovalStatus != "rejected"))
         {
             if (Overlaps(newStart, newEnd, c.ScheduleTime, c.DurationMinutes))
             {
@@ -89,7 +96,7 @@ public sealed partial class ClassService
             request.FacilityId,
             request.ScheduleTime
         );
-        foreach (var c in existingFacilityClasses.Where(c => c.Status))
+        foreach (var c in existingFacilityClasses.Where(c => c.Status && c.ApprovalStatus != "rejected"))
         {
             if (Overlaps(newStart, newEnd, c.ScheduleTime, c.DurationMinutes))
             {
@@ -107,11 +114,23 @@ public sealed partial class ClassService
             durationMinutes: request.DurationMinutes,
             capacity: request.Capacity,
             currentEnrolled: 0,
-            status: true
+            status: true,
+            approvalStatus: approvalStatus
         );
 
         await _classRepository.AddAsync(newClass);
 
+        if (approvalStatus == "pending")
+        {
+            await _classRepository.NotifyManagersAsync(
+                "Có đề xuất lớp học mới cần duyệt",
+                $"Coach vừa gửi đề xuất lớp {request.ClassName} vào {CenterTime.ToLocal(request.ScheduleTime):dd/MM/yyyy HH:mm}.",
+                "class",
+                newClass.Id
+            );
+        }
+        else
+        {
         await _classRepository.NotifyCoachAsync(
             request.CoachId,
             "Bạn được phân công lớp học mới",
@@ -119,6 +138,7 @@ public sealed partial class ClassService
             "class",
             newClass.Id
         );
+        }
 
         return (true, null);
     }
@@ -151,6 +171,11 @@ public sealed partial class ClassService
         }
 
         // 2. Kiểm tra trạng thái tài khoản hội viên (UserStatus)
+        if (!targetClass.Status || !string.Equals(targetClass.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase))
+        {
+            return (false, "Lớp học chưa được Manager phê duyệt hoặc đã ngừng hoạt động.");
+        }
+
         var user = await _userRepository.GetByIdAsync(userId);
         if (user == null)
         {
@@ -314,7 +339,7 @@ public sealed partial class ClassService
             targetClass.FacilityId,
             targetClass.ScheduleTime
         );
-        foreach (var existingClass in restoreFacilityClasses.Where(c => c.Status))
+        foreach (var existingClass in restoreFacilityClasses.Where(c => c.Status && c.ApprovalStatus != "rejected"))
         {
             if (existingClass.Id != classId
                 && Overlaps(restoreStart, restoreEnd, existingClass.ScheduleTime, existingClass.DurationMinutes))
@@ -332,7 +357,7 @@ public sealed partial class ClassService
                 targetClass.ScheduleTime
             );
 
-            foreach (var existingClass in existingClasses.Where(c => c.Status))
+            foreach (var existingClass in existingClasses.Where(c => c.Status && c.ApprovalStatus != "rejected"))
             {
                 if (existingClass.Id == classId || !existingClass.Status)
                     continue;
@@ -368,7 +393,7 @@ public sealed partial class ClassService
                 targetClass.FacilityId,
                 targetClass.ScheduleTime
             );
-            foreach (var existingClass in existingFacilityClasses.Where(c => c.Status))
+            foreach (var existingClass in existingFacilityClasses.Where(c => c.Status && c.ApprovalStatus != "rejected"))
             {
                 if (existingClass.Id != classId
                     && Overlaps(newStart, newEnd, existingClass.ScheduleTime, existingClass.DurationMinutes))
@@ -399,6 +424,78 @@ public sealed partial class ClassService
     public async Task<(bool IsSuccess, string? ErrorMessage)> RejectBookingAsync(Guid bookingId)
     {
         return await _classRepository.RejectBookingAsync(bookingId);
+    }
+
+    public async Task<(bool IsSuccess, string? ErrorMessage)> ApproveClassAsync(Guid classId)
+    {
+        var targetClass = await _classRepository.GetByIdAsync(classId);
+        if (targetClass == null)
+        {
+            return (false, "Không tìm thấy đề xuất lớp học.");
+        }
+
+        if (!string.Equals(targetClass.ApprovalStatus, "pending", StringComparison.OrdinalIgnoreCase))
+        {
+            return (false, "Đề xuất lớp học không còn ở trạng thái chờ duyệt.");
+        }
+
+        var newStart = targetClass.ScheduleTime;
+        var newEnd = newStart.AddMinutes(targetClass.DurationMinutes);
+
+        if (targetClass.CoachId.HasValue)
+        {
+            var existingClasses = await _classRepository.GetClassesByCoachAndDateAsync(
+                targetClass.CoachId.Value,
+                targetClass.ScheduleTime
+            );
+            if (existingClasses.Any(c =>
+                c.Id != classId &&
+                c.Status &&
+                c.ApprovalStatus != "rejected" &&
+                Overlaps(newStart, newEnd, c.ScheduleTime, c.DurationMinutes)))
+            {
+                return (false, "Không thể duyệt: huấn luyện viên đã có lịch khác trùng thời gian.");
+            }
+
+            var existingPtSessions = await _ptSessionRepository.GetSessionsByCoachAndDateAsync(
+                targetClass.CoachId.Value,
+                targetClass.ScheduleTime
+            );
+            if (existingPtSessions.Any(p =>
+                IsBlockingPtSession(p) &&
+                Overlaps(newStart, newEnd, p.ScheduleTime, p.DurationMinutes)))
+            {
+                return (false, "Không thể duyệt: huấn luyện viên đã có buổi PT trùng thời gian.");
+            }
+
+            if (await _classRepository.HasCoachAvailabilityConflictAsync(
+                targetClass.CoachId.Value,
+                newStart,
+                newEnd))
+            {
+                return (false, "Không thể duyệt: lịch trống 1-1 của huấn luyện viên bị trùng thời gian.");
+            }
+        }
+
+        var existingFacilityClasses = await _classRepository.GetClassesByFacilityAndDateAsync(
+            targetClass.FacilityId,
+            targetClass.ScheduleTime
+        );
+        if (existingFacilityClasses.Any(c =>
+            c.Id != classId &&
+            c.Status &&
+            c.ApprovalStatus != "rejected" &&
+            Overlaps(newStart, newEnd, c.ScheduleTime, c.DurationMinutes)))
+        {
+            return (false, "Không thể duyệt: phòng tập đã có lớp khác trùng thời gian.");
+        }
+
+        return await _classRepository.ApproveClassAsync(classId);
+    }
+
+    public async Task<(bool IsSuccess, string? ErrorMessage)> RejectClassAsync(Guid classId)
+    {
+        return await _classRepository.RejectClassAsync(classId);
     }
 
     public async Task<(bool IsSuccess, string? ErrorMessage)> UpdateClassAsync(
@@ -449,7 +546,7 @@ public sealed partial class ClassService
                     request.ScheduleTime
                 );
 
-                foreach (var c in existingClasses.Where(c => c.Status))
+                foreach (var c in existingClasses.Where(c => c.Status && c.ApprovalStatus != "rejected"))
                 {
                     if (c.Id == classId)
                         continue;
@@ -479,7 +576,7 @@ public sealed partial class ClassService
                     request.FacilityId,
                     request.ScheduleTime
                 );
-                foreach (var c in existingFacilityClasses.Where(c => c.Status))
+                foreach (var c in existingFacilityClasses.Where(c => c.Status && c.ApprovalStatus != "rejected"))
                 {
                     if (c.Id != classId && Overlaps(newStart, newEnd, c.ScheduleTime, c.DurationMinutes))
                     {

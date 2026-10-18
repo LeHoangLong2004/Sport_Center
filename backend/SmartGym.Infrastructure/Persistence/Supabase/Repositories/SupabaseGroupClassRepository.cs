@@ -53,8 +53,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
 
         var sport = sports.FirstOrDefault(s => s.Id == c.SportId);
         var facility = facilities.FirstOrDefault(f => f.Id == c.FacilityId);
-        var coach = coaches.FirstOrDefault(co => co.Id == c.CoachId);
-        var coachUser = coach != null ? users.FirstOrDefault(u => u.Id == coach.UserId) : null;
+        var (coach, coachUser) = ResolveCoach(c.CoachId, coaches, users);
 
         var bookings = await _dbContext
             .Database.SqlQueryRaw<ClassBookingRawModel>(
@@ -92,7 +91,8 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             CurrentEnrolled: c.CurrentEnrolled,
             AvailableSpots: c.Capacity - c.CurrentEnrolled,
             Status: c.Status,
-            EnrolledMembers: enrolledMembers
+            EnrolledMembers: enrolledMembers,
+            ApprovalStatus: c.ApprovalStatus
         );
     }
 
@@ -101,14 +101,14 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
         DateTime date
     )
     {
-        var startOfDay = date.Date;
+        var startOfDay = AsUtc(date).Date;
         var endOfDay = startOfDay.AddDays(1);
 
         var models = await _dbContext.Database
             .SqlQueryRaw<ClassSqlRawModel>(
                 @"SELECT id, sport_id, facility_id, coach_id, class_name,
                          schedule_time, duration_minutes, capacity,
-                         current_enrolled, status
+                         current_enrolled, status, approval_status
                   FROM classes
                   WHERE coach_id = {0}
                     AND schedule_time >= {1}
@@ -127,14 +127,14 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
         DateTime date
     )
     {
-        var startOfDay = date.Date;
+        var startOfDay = AsUtc(date).Date;
         var endOfDay = startOfDay.AddDays(1);
 
         var models = await _dbContext.Database
             .SqlQueryRaw<ClassSqlRawModel>(
                 @"SELECT id, sport_id, facility_id, coach_id, class_name,
                          schedule_time, duration_minutes, capacity,
-                         current_enrolled, status
+                         current_enrolled, status, approval_status
                   FROM classes
                   WHERE facility_id = {0}
                     AND schedule_time >= {1}
@@ -159,8 +159,17 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             model.DurationMinutes,
             model.Capacity,
             model.CurrentEnrolled,
-            model.Status
+            model.Status,
+            model.ApprovalStatus
         );
+
+    private static DateTime AsUtc(DateTime value)
+        => value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Local => value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Utc),
+        };
 
     public async Task<IEnumerable<ClassResponse>> GetAllClassesAsync()
     {
@@ -187,8 +196,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             {
                 var sport = sports.FirstOrDefault(s => s.Id == c.SportId);
                 var facility = facilities.FirstOrDefault(f => f.Id == c.FacilityId);
-                var coach = coaches.FirstOrDefault(co => co.Id == c.CoachId);
-                var user = coach != null ? users.FirstOrDefault(u => u.Id == coach.UserId) : null;
+                var (coach, user) = ResolveCoach(c.CoachId, coaches, users);
 
                 return new ClassResponse(
                     Id: c.Id,
@@ -205,6 +213,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                     CurrentEnrolled: c.CurrentEnrolled,
                     AvailableSpots: c.Capacity - c.CurrentEnrolled,
                     Status: c.Status,
+                    ApprovalStatus: c.ApprovalStatus,
                     CoachAvatar: SmartGym.Domain.Common.CoachAvatarHelper.GetRealCoachAvatar(user?.FullName, user?.AvatarUrl, c.CoachId),
                     CoachSpecialty: coach?.Specialty ?? "Huấn luyện viên Thể hình",
                     CoachPhone: user?.PhoneNumber ?? "",
@@ -226,7 +235,9 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             .Where(x => x.ScheduleTime > DateTime.UtcNow)
             .Get();
 
-        var classModels = classResponse.Models;
+        var classModels = classResponse.Models
+            .Where(c => c.Status && string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase))
+            .ToList();
         if (!classModels.Any())
             return Enumerable.Empty<ClassResponse>();
 
@@ -248,8 +259,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             {
                 var sport = sports.FirstOrDefault(s => s.Id == c.SportId);
                 var facility = facilities.FirstOrDefault(f => f.Id == c.FacilityId);
-                var coach = coaches.FirstOrDefault(co => co.Id == c.CoachId);
-                var user = coach != null ? users.FirstOrDefault(u => u.Id == coach.UserId) : null;
+                var (coach, user) = ResolveCoach(c.CoachId, coaches, users);
 
                 return new ClassResponse(
                     Id: c.Id,
@@ -266,6 +276,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                     CurrentEnrolled: c.CurrentEnrolled,
                     AvailableSpots: c.Capacity - c.CurrentEnrolled,
                     Status: c.Status,
+                    ApprovalStatus: c.ApprovalStatus,
                     CoachAvatar: SmartGym.Domain.Common.CoachAvatarHelper.GetRealCoachAvatar(user?.FullName, user?.AvatarUrl, c.CoachId),
                     CoachSpecialty: coach?.Specialty ?? "Huấn luyện viên Thể hình",
                     CoachPhone: user?.PhoneNumber ?? "",
@@ -277,6 +288,24 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             })
             .OrderBy(x => x.ScheduleTime)
             .ToList();
+    }
+
+    private static (CoachSqlRawModel? Coach, UserSqlRawModel? User) ResolveCoach(
+        Guid? coachId,
+        IReadOnlyCollection<CoachSqlRawModel> coaches,
+        IReadOnlyCollection<UserSqlRawModel> users
+    )
+    {
+        if (!coachId.HasValue)
+            return (null, null);
+
+        // Legacy class records may store either coaches.id or users.id in coach_id.
+        // Resolve both forms so the account profile (including avatar_url) is always used.
+        var coach = coaches.FirstOrDefault(c => c.Id == coachId.Value || c.UserId == coachId.Value);
+        var userId = coach?.UserId ?? coachId.Value;
+        var user = users.FirstOrDefault(u => u.Id == userId);
+
+        return (coach, user);
     }
 
 }

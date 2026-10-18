@@ -21,6 +21,7 @@ export interface UnifiedScheduleItem {
   capacity?: number;
   registeredCount: number;
   status: SessionStatus;
+  approvalStatus?: "pending" | "approved" | "rejected";
   // PT specific
   memberId?: string;
   memberName?: string;
@@ -51,4 +52,8 @@ export const REQUEST_STATUS_BADGE: Record<string, { label: string; bg: string; t
 };
 
 export const DAYS_NAMES = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
-export const TIME_ROWS = ["06:00", "07:00", "08:00", "09:00", "14:00", "15:00", "17:00", "18:00", "19:00"];
+// Render every hourly row so classes starting at times such as 10:30, 11:15
+// or 16:00 are not silently omitted from the weekly calendar.
+export const TIME_ROWS = Array.from({ length: 17 }, (_, index) =>
+  `${String(index + 6).padStart(2, "0")}:00`,
+);

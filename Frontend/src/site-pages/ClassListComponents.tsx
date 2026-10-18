@@ -10,6 +10,8 @@ export type ClassStatus = "available" | "full" | "almost";
 export interface ClassItem {
   id: string;
   title: string;
+  sportName: string;
+  scheduleTime: string;
   status: ClassStatus;
   statusLabel: string;
   trainer: string;

@@ -18,7 +18,7 @@ public sealed class SupabasePtSessionRepository : IPtSessionRepository
         DateTime date
     )
     {
-        var startOfDay = date.Date;
+        var startOfDay = AsUtc(date).Date;
         var endOfDay = startOfDay.AddDays(1);
 
         // 1. Get enrollments for this coach
@@ -46,4 +46,12 @@ public sealed class SupabasePtSessionRepository : IPtSessionRepository
 
         return sessionsResponse.Models.Select(x => x.ToDomain(coachId));
     }
+
+    private static DateTime AsUtc(DateTime value)
+        => value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Local => value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Utc),
+        };
 }

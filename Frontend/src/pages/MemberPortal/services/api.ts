@@ -131,6 +131,9 @@ export const MemberAPI = {
         const query = memberId ? `?memberId=${encodeURIComponent(memberId)}` : '';
         return fetchApi(`/member/chat/conversations${query}`);
     },
+    getChatDirectory: async () => {
+        return fetchApi('/member/chat/directory');
+    },
     getMemberMessages: async (conversationId: string) => {
         return fetchApi(`/member/chat/messages/${conversationId}`);
     },

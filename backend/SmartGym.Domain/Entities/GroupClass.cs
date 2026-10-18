@@ -12,7 +12,8 @@ public sealed class GroupClass
         int durationMinutes,
         int capacity,
         int currentEnrolled,
-        bool status)
+        bool status,
+        string approvalStatus = "approved")
     {
         Id = id;
         SportId = sportId;
@@ -24,6 +25,7 @@ public sealed class GroupClass
         Capacity = capacity;
         CurrentEnrolled = currentEnrolled;
         Status = status;
+        ApprovalStatus = string.IsNullOrWhiteSpace(approvalStatus) ? "approved" : approvalStatus;
     }
 
     public Guid Id { get; }
@@ -36,6 +38,7 @@ public sealed class GroupClass
     public int Capacity { get; }
     public int CurrentEnrolled { get; private set; }
     public bool Status { get; }
+    public string ApprovalStatus { get; }
 
     public void IncrementEnrolled() => CurrentEnrolled++;
     public void DecrementEnrolled() => CurrentEnrolled = Math.Max(0, CurrentEnrolled - 1);
