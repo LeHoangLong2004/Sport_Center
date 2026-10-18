@@ -55,14 +55,17 @@ export function sanitizeWalletData(raw: any): MemberWalletData {
   // Loại bỏ toàn bộ giao dịch mẫu 500k ban đầu
   const cleanTransactions = rawTransactions.filter(tx => !isMockTransaction(tx));
 
-  // Tính toán lại số dư thực tế dựa trên các giao dịch nạp/thanh toán thật
+  // Tính toán lại số dư thực tế dựa trên các giao dịch nạp/thanh toán thật (CHỈ tính completed, KHÔNG tính pending)
   let calculatedBalance = 0;
   for (const tx of cleanTransactions) {
     const amt = Number(tx.amount) || 0;
-    if (tx.type === "topup" || tx.type === "refund") {
-      calculatedBalance += amt;
-    } else if (tx.type === "payment") {
-      calculatedBalance -= amt;
+    const isCompleted = tx.status === "completed" || (!tx.status && tx.status !== "pending");
+    if (isCompleted) {
+      if (tx.type === "topup" || tx.type === "refund") {
+        calculatedBalance += amt;
+      } else if (tx.type === "payment") {
+        calculatedBalance -= amt;
+      }
     }
   }
 
@@ -231,6 +234,121 @@ export const WalletService = {
       success: true,
       newBalance,
       transaction: tx,
+    };
+  },
+
+  async createPendingTopUp(
+    amount: number,
+    method: string = "Tiền mặt tại quầy",
+    note: string = "Phiếu nạp tiền tại quầy",
+    ticketCode?: string,
+    userId?: string
+  ): Promise<{ success: boolean; transaction: WalletTransaction }> {
+    const user = getStoredUser();
+    const targetUserId = userId || user?.id || user?.email;
+    const txId = ticketCode || `TOPUP-Q${Math.floor(1000 + Math.random() * 9000)}`;
+
+    try {
+      const queryParam = targetUserId ? `?userId=${encodeURIComponent(targetUserId)}` : "";
+      const res = await fetch(`/api/member/wallet/topup${queryParam}`, {
+        method: "POST",
+        headers: getAuthHeaders(targetUserId),
+        body: JSON.stringify({ amount, method, note, status: "pending", id: txId }),
+      });
+      if (res.ok) {
+        const result = await res.json();
+        const current = this.getLocalWallet(targetUserId);
+        const updated: MemberWalletData = {
+          balance: current.balance, // Số dư không tăng khi đang pending
+          currency: "VND",
+          transactions: [result.transaction, ...(current.transactions || [])],
+        };
+        this.saveLocalWallet(updated, targetUserId);
+        return { success: true, transaction: result.transaction };
+      }
+    } catch (e) {
+      console.warn("Backend createPendingTopUp failed, saving locally:", e);
+    }
+
+    const current = this.getLocalWallet(targetUserId);
+    const tx: WalletTransaction = {
+      id: txId,
+      type: "topup",
+      amount,
+      method,
+      note,
+      createdAt: new Date().toISOString(),
+      status: "pending",
+    };
+    const updated: MemberWalletData = {
+      balance: current.balance, // Số dư giữ nguyên
+      currency: "VND",
+      transactions: [tx, ...(current.transactions || [])],
+    };
+    this.saveLocalWallet(updated, targetUserId);
+    return { success: true, transaction: tx };
+  },
+
+  async confirmPendingTopUp(
+    txId: string,
+    userId?: string
+  ): Promise<{ success: boolean; newBalance: number; transaction?: WalletTransaction }> {
+    const user = getStoredUser();
+    const targetUserId = userId || user?.id || user?.email;
+
+    try {
+      const queryParam = targetUserId ? `?userId=${encodeURIComponent(targetUserId)}` : "";
+      const res = await fetch(`/api/member/wallet/confirm-pending/${encodeURIComponent(txId)}${queryParam}`, {
+        method: "POST",
+        headers: getAuthHeaders(targetUserId),
+      });
+      if (res.ok) {
+        const result = await res.json();
+        const current = this.getLocalWallet(targetUserId);
+        const updatedTransactions = (current.transactions || []).map((t) =>
+          t.id === txId ? { ...t, status: "completed" as const } : t
+        );
+        const updated: MemberWalletData = {
+          balance: Number(result.balance) || current.balance + (result.transaction?.amount || 0),
+          currency: "VND",
+          transactions: updatedTransactions,
+        };
+        this.saveLocalWallet(updated, targetUserId);
+        return {
+          success: true,
+          newBalance: updated.balance,
+          transaction: result.transaction,
+        };
+      }
+    } catch (e) {
+      console.warn("Backend confirmPendingTopUp failed, updating local:", e);
+    }
+
+    // Local fallback
+    const current = this.getLocalWallet(targetUserId);
+    let targetAmount = 0;
+    let foundTx: WalletTransaction | undefined;
+
+    const updatedTransactions = (current.transactions || []).map((t) => {
+      if (t.id === txId && t.status === "pending") {
+        targetAmount = t.amount;
+        foundTx = { ...t, status: "completed" as const };
+        return foundTx;
+      }
+      return t;
+    });
+
+    const newBalance = current.balance + targetAmount;
+    const updated: MemberWalletData = {
+      balance: newBalance,
+      currency: "VND",
+      transactions: updatedTransactions,
+    };
+    this.saveLocalWallet(updated, targetUserId);
+    return {
+      success: true,
+      newBalance,
+      transaction: foundTx,
     };
   },
 

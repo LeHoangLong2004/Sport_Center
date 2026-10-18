@@ -28,7 +28,9 @@ namespace SmartGym.Api.Endpoints
         public record TopUpRequest(
             decimal Amount,
             string? Method,
-            string? Note
+            string? Note,
+            string? Status = "completed",
+            string? Id = null
         );
 
         private static void MapMemberWalletEndpoints(RouteGroupBuilder group)
@@ -57,9 +59,10 @@ namespace SmartGym.Api.Endpoints
                                              || (t.Amount == 500000m && t.Note == "Nạp tiền ví hội viên SportCenter"));
                 }
 
-                // Nếu không có giao dịch thực tế, số dư bắt buộc là 0 đ
+                // Nếu không có giao dịch nạp thành công thực tế, số dư bắt buộc là 0 đ
                 var balance = _memberWallets.GetOrAdd(userId, _ => 0m);
-                if (transactions.Count == 0)
+                var hasCompleted = transactions.Any(t => t.Status == "completed" && (t.Type == "topup" || t.Type == "refund"));
+                if (!hasCompleted && transactions.All(t => t.Type != "refund"))
                 {
                     balance = 0m;
                     _memberWallets[userId] = 0m;
@@ -99,21 +102,35 @@ namespace SmartGym.Api.Endpoints
 
                 var method = string.IsNullOrWhiteSpace(request.Method) ? "VietQR" : request.Method;
                 var note = string.IsNullOrWhiteSpace(request.Note) ? "Nạp tiền vào tài khoản SportCenter" : request.Note;
+                var isPending = string.Equals(request.Status, "pending", StringComparison.OrdinalIgnoreCase);
 
-                var newBalance = _memberWallets.AddOrUpdate(
-                    userId,
-                    request.Amount,
-                    (_, current) => current + request.Amount
-                );
+                var txId = !string.IsNullOrWhiteSpace(request.Id)
+                    ? request.Id
+                    : (isPending
+                        ? $"TOPUP-{DateTime.UtcNow:yyyyMMddHHmmss}-{Random.Shared.Next(100, 999)}"
+                        : $"WTX-{DateTime.UtcNow:yyyyMMddHHmmss}-{Random.Shared.Next(100, 999)}");
+
+                decimal currentBalance = _memberWallets.GetOrAdd(userId, _ => 0m);
+                decimal newBalance = currentBalance;
+
+                // CHỈ cộng vào số dư ví nếu không phải là pending (chờ thanh toán tại quầy)
+                if (!isPending)
+                {
+                    newBalance = _memberWallets.AddOrUpdate(
+                        userId,
+                        request.Amount,
+                        (_, current) => current + request.Amount
+                    );
+                }
 
                 var tx = new WalletTransactionDto(
-                    $"WTX-{DateTime.UtcNow:yyyyMMddHHmmss}-{Random.Shared.Next(100, 999)}",
+                    txId,
                     "topup",
                     request.Amount,
                     method,
                     note,
                     DateTime.UtcNow,
-                    "completed"
+                    isPending ? "pending" : "completed"
                 );
 
                 var txList = _memberWalletTransactions.GetOrAdd(userId, _ => new List<WalletTransactionDto>());
@@ -125,13 +142,61 @@ namespace SmartGym.Api.Endpoints
                 return Results.Ok(new
                 {
                     success = true,
-                    message = $"Nạp thành công {request.Amount:N0} đ vào tài khoản.",
+                    message = isPending
+                        ? $"Đã tạo phiếu nạp tại quầy {request.Amount:N0} đ. Vui lòng thanh toán tại quầy lễ tân."
+                        : $"Nạp thành công {request.Amount:N0} đ vào tài khoản.",
                     balance = newBalance,
                     transaction = tx
                 });
             })
             .WithTags("Member Portal")
             .WithSummary("Nạp tiền vào tài khoản/ví của hội viên");
+
+            // 2.1 POST /api/member/wallet/confirm-pending/{txId} - Xác nhận đã thu tiền phiếu nạp tại quầy
+            wallet.MapPost("/confirm-pending/{txId}", (HttpContext context, string txId) =>
+            {
+                var userId = GetUserId(context);
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    userId = context.Request.Query["userId"].FirstOrDefault()
+                          ?? context.Request.Headers["X-User-Id"].FirstOrDefault()
+                          ?? "m-default";
+                }
+
+                var txList = _memberWalletTransactions.GetOrAdd(userId, _ => new List<WalletTransactionDto>());
+                WalletTransactionDto? targetTx = null;
+                lock (txList)
+                {
+                    var idx = txList.FindIndex(t => t.Id == txId && t.Status == "pending");
+                    if (idx >= 0)
+                    {
+                        var old = txList[idx];
+                        targetTx = old with { Status = "completed" };
+                        txList[idx] = targetTx;
+                    }
+                }
+
+                if (targetTx == null)
+                {
+                    return Results.NotFound(new { message = "Không tìm thấy giao dịch chờ xử lý phù hợp." });
+                }
+
+                var newBalance = _memberWallets.AddOrUpdate(
+                    userId,
+                    targetTx.Amount,
+                    (_, current) => current + targetTx.Amount
+                );
+
+                return Results.Ok(new
+                {
+                    success = true,
+                    message = $"Xác nhận nạp thành công {targetTx.Amount:N0} đ vào tài khoản.",
+                    balance = newBalance,
+                    transaction = targetTx
+                });
+            })
+            .WithTags("Member Portal")
+            .WithSummary("Xác nhận phiếu nạp tiền tại quầy của hội viên");
 
             // 3. POST /api/member/wallet/pay - Trừ tiền từ ví hội viên khi mua dịch vụ
             wallet.MapPost("/pay", (HttpContext context, [FromBody] TopUpRequest request) =>
