@@ -1,0 +1,44 @@
+Total: 33
+
+Role            | Email                               | Full Name                      | Password Hash
+--------------------------------------------------------------------------------------------------------------
+member          | thuanpham@gmail.com                 | Phạm Quang Thuần               | $2a$11$Ghu4iylEvnquNBveDLnCKOZPU/V7.3fjUDig0mBiXSSuO2TLxZ2HS
+manager         | manager_3874@smartgym.com           | Test Manager                   | $2a$11$NrCG1aSppvnXewrYEY7u0urpZmFf3Qvng6dZcIc2aVAn27SHsgOYm
+manager         | manager_9765@smartgym.com           | Test Manager                   | $2a$11$D6Sl3qZKsmLSLs9JNJsIFOzDAJMWkhrTleiJjNakOnu12kAV.zgL2
+member          | member_test_book@smartgym.com       | Hội Viên Test Book             | $2a$11$gM1z1s76ZWi6KtOVItW6e.jPq0ZO3EjB33607eWYe4UbT.TZvCvT2
+receptionist    | receptionist01@smartgym.com         | Nguyễn Văn Lễ Tân              | $2a$11$Gl9jW9x1gaycAoMrvA2.E.tB1WrtY1yNgPMW5RLukc/RkcjJ76hOi
+manager         | manager@test.com                    | Manager Test                   | $2a$11$FpPNxPtqb46EAp.E2TFV9Og0Y64ufc0iqvE9A7CnXi/AJ2dvfFRH.
+coach           | coach_flow2@smartgym.com            | Coach Đỗ Hoàng E               | $2a$11$ntitydPtZwu4dTFcd2bq4.mnd.jUAtgOn7B6nnMfD15No7Eh4QMOC
+coach           | coach_3874@smartgym.com             | Coach Phạm Văn C               | $2a$11$AdkrSzqg/L5FYJHX0ydqiuTvMvL7GoEk2RRyOJDRahfpOTBmB9Riq
+coach           | coach_9765@smartgym.com             | Coach Lê Thị D                 | $2a$11$78.nFUD/7GD5aACL5QsmCOe9hkBcoc199NBudu4eln9vFHIu5r1bC
+member          | hoxuananhnam@gmail.com              | Anam1                          | $2a$11$v7o13vCqT2DH1IzG53oDNeQ1wb88X3tYYsWWnstvdfbmUmf8UKimC
+receptionist    | mynguyen123@gmail.com               | Nguyễn Thị Trà My              | $2a$11$TIM51d.oZzQGOtC9e2V0tewj6ckE6.fT4lZfJprLLuonuaib7HgL.
+member          | phamphuong2910204@gmail.com         | Phạm Đức Thanh Phương          | $2a$11$BpomQlVHTg0BstGoEWP3DerCkGYnNiqUszYfShktymdgTOSvqTFqy
+member          | nganlang9377@gmail.com              | Long Le                        | $2a$11$VVAiDAzmNRnLFh7LCdN2a.c3Ii0.xNFL3wkZJTJsWwbqTk3nxAm9a
+member          | test3@gmail.com                     | Test                           | $2a$11$/eaXVF3Niw.iNI/eTQpXIuTEKs.nMdwcUooPidDiAKoPFQFuYY7cm
+manager         | qa.tester@smartgym.local            | QA Tester                      | $2a$11$HBBpLlY9i29kndE9PTL9XukqtnQnd816tgtM9jtERF1vB7oIimmau
+member          | qa.member@smartgym.local            | QA Member                      | $2a$11$OldfZ4qD3v6A44VMyND3sOXQYGa3aU3NKo2Nq58qESjwuSBGlC7kW
+member          | qa.renew@smartgym.local             | QA Renew                       | $2a$11$lNgCI17qzMJRK1Qp5e0cqevZs8FHdDennMFUjpRWgSJO3yLyB6j6e
+member          | qa.profile.check@smartgym.local     | Member Two Updated             | $2a$11$m61830k6V5cxG8fmDgl.ge/eu0kEYMukiYmjf62qrIkYLDE72HMGy
+manager         | manager_abc@smartgym.com            | Manager ABC_123                | $2a$11$LWUh84cOm7z4wa3pGUyhN.5Q40tAK1LHrwKIPVNjRVNXsAQoD6fLy
+member          | member2@test.com                    | Member Two                     | $2a$11$6O10kdn5U30vyyFgczb2TOcTG.5BO31sSMUSISCCq4Mb.UVwA0Q2S
+manager         | manager@gmail.com                   | Trần Thị B                     | $2a$11$8UKMhXUnunfTc3N8EEtUA.wQkfBGwkd.eRBscoEr4vGn00eNX4jFi
+member          | thuan@test.com                      | Thuan                          | $2a$11$brj1EMX2yBKVoSCDt2JJz.xNwy0WahP85A22WnItQeW0lX8L.SV9q
+member          | minhanh.member.test@gmail.com       | Nguyen Minh Anh                | $2a$11$SqKwnNr4BImreUS2rSB1SuKqOLIm1UiHs6osOvoiJWibiKmVpo/Z2
+manager         | manager_moi@smartgym.com            | Manager Test 1                 | $2a$11$DBA5esYktfx39ljzBV4rLeisxWsgnhHqVdRVLXo5a8B7CzAs1QDBq
+coach           | member_test@smartgym.com            | Pham Vu                        | $2a$11$3.aB7YsaKBZAJw1FkuXZwOuKTmcDC2/nuf5iGCuAGbqw8RvWmPM4m
+coach           | hoxuananhnam1@gmail.com             | Anam2                          | $2a$11$orcHqTlXIXLTgUo08ZZJEupFN0v7q4TMlAiNQk.VQLz.9ee/ObrNK
+member          | phuongcrp@gmail.com                 | Phạm Đức Thanh Phương          | $2a$11$LhJgmSirCF.KWLGXPdVk9.03Bmu1amScznuk7L1qu2DJGOLzDwXC.
+coach           | coach_test@smartgym.com             | Coach Nguyễn Văn A             | $2a$11$isQz./Q/nYrfuqprqLi7Ce.TxG7oF.hIl2o6M5V9bx5pbjHHDdm.G
+member          | member_test123@gmail.com            | Pham Vu                        | $2a$11$81sGQRqq4FnN6er7nqDtD.CZOSGSl./gqM.aMo/2RpuPgV9RPLydi
+member          | nguyenminhthu.test2026@gmail.com    | Nguyễn Minh Thu                | $2a$11$XnBlMLO.dugToasRx7KGburr8WtH9sAQz6zPnmlopcPEV2wJmVs4y
+member          | thienngan210510@gmail.com           | Bùi Ngọc Thiên Ngân            | $2a$11$PJSL/ov6o93lVunmylqkq.KDEBuSvxxAy3tAA/ivvLZcxVh2tRtWO
+member          | tranquochuy.test2026@gmail.com      | Trần Quốc Huy                  | $2a$11$vTIKGKwO02xfmaz4sqhuI.UGHUUwe5vnugCy3onlyCmUthvuPncRi
+manager         | manager_flow2@smartgym.com          | Manager Flow2                  | $2a$11$G5dImMbeBNgyVI3VGHXy3eJsFvp3C.vrbUb.W.wrYRBP4CfYxRZQC
+
+Role Counts: {
+  "member": 17,
+  "manager": 8,
+  "receptionist": 2,
+  "coach": 6
+}

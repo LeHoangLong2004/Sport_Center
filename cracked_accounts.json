@@ -1,0 +1,233 @@
+[
+  {
+    "role": "member",
+    "email": "thuanpham@gmail.com",
+    "name": "Phạm Quang Thuần",
+    "password": null,
+    "hash": "$2a$11$Ghu4iylEvnquNBveDLnCKOZPU/V7.3fjUDig0mBiXSSuO2TLxZ2HS"
+  },
+  {
+    "role": "manager",
+    "email": "manager_3874@smartgym.com",
+    "name": "Test Manager",
+    "password": null,
+    "hash": "$2a$11$NrCG1aSppvnXewrYEY7u0urpZmFf3Qvng6dZcIc2aVAn27SHsgOYm"
+  },
+  {
+    "role": "manager",
+    "email": "manager_9765@smartgym.com",
+    "name": "Test Manager",
+    "password": null,
+    "hash": "$2a$11$D6Sl3qZKsmLSLs9JNJsIFOzDAJMWkhrTleiJjNakOnu12kAV.zgL2"
+  },
+  {
+    "role": "member",
+    "email": "member_test_book@smartgym.com",
+    "name": "Hội Viên Test Book",
+    "password": null,
+    "hash": "$2a$11$gM1z1s76ZWi6KtOVItW6e.jPq0ZO3EjB33607eWYe4UbT.TZvCvT2"
+  },
+  {
+    "role": "receptionist",
+    "email": "receptionist01@smartgym.com",
+    "name": "Nguyễn Văn Lễ Tân",
+    "password": null,
+    "hash": "$2a$11$Gl9jW9x1gaycAoMrvA2.E.tB1WrtY1yNgPMW5RLukc/RkcjJ76hOi"
+  },
+  {
+    "role": "manager",
+    "email": "manager@test.com",
+    "name": "Manager Test",
+    "password": null,
+    "hash": "$2a$11$FpPNxPtqb46EAp.E2TFV9Og0Y64ufc0iqvE9A7CnXi/AJ2dvfFRH."
+  },
+  {
+    "role": "coach",
+    "email": "coach_flow2@smartgym.com",
+    "name": "Coach Đỗ Hoàng E",
+    "password": null,
+    "hash": "$2a$11$ntitydPtZwu4dTFcd2bq4.mnd.jUAtgOn7B6nnMfD15No7Eh4QMOC"
+  },
+  {
+    "role": "coach",
+    "email": "coach_3874@smartgym.com",
+    "name": "Coach Phạm Văn C",
+    "password": null,
+    "hash": "$2a$11$AdkrSzqg/L5FYJHX0ydqiuTvMvL7GoEk2RRyOJDRahfpOTBmB9Riq"
+  },
+  {
+    "role": "coach",
+    "email": "coach_9765@smartgym.com",
+    "name": "Coach Lê Thị D",
+    "password": null,
+    "hash": "$2a$11$78.nFUD/7GD5aACL5QsmCOe9hkBcoc199NBudu4eln9vFHIu5r1bC"
+  },
+  {
+    "role": "member",
+    "email": "hoxuananhnam@gmail.com",
+    "name": "Anam1",
+    "password": "123456",
+    "hash": "$2a$11$v7o13vCqT2DH1IzG53oDNeQ1wb88X3tYYsWWnstvdfbmUmf8UKimC"
+  },
+  {
+    "role": "receptionist",
+    "email": "mynguyen123@gmail.com",
+    "name": "Nguyễn Thị Trà My",
+    "password": null,
+    "hash": "$2a$11$TIM51d.oZzQGOtC9e2V0tewj6ckE6.fT4lZfJprLLuonuaib7HgL."
+  },
+  {
+    "role": "member",
+    "email": "phamphuong2910204@gmail.com",
+    "name": "Phạm Đức Thanh Phương",
+    "password": null,
+    "hash": "$2a$11$BpomQlVHTg0BstGoEWP3DerCkGYnNiqUszYfShktymdgTOSvqTFqy"
+  },
+  {
+    "role": "member",
+    "email": "nganlang9377@gmail.com",
+    "name": "Long Le",
+    "password": null,
+    "hash": "$2a$11$VVAiDAzmNRnLFh7LCdN2a.c3Ii0.xNFL3wkZJTJsWwbqTk3nxAm9a"
+  },
+  {
+    "role": "member",
+    "email": "test3@gmail.com",
+    "name": "Test",
+    "password": null,
+    "hash": "$2a$11$/eaXVF3Niw.iNI/eTQpXIuTEKs.nMdwcUooPidDiAKoPFQFuYY7cm"
+  },
+  {
+    "role": "manager",
+    "email": "qa.tester@smartgym.local",
+    "name": "QA Tester",
+    "password": null,
+    "hash": "$2a$11$HBBpLlY9i29kndE9PTL9XukqtnQnd816tgtM9jtERF1vB7oIimmau"
+  },
+  {
+    "role": "member",
+    "email": "qa.member@smartgym.local",
+    "name": "QA Member",
+    "password": null,
+    "hash": "$2a$11$OldfZ4qD3v6A44VMyND3sOXQYGa3aU3NKo2Nq58qESjwuSBGlC7kW"
+  },
+  {
+    "role": "member",
+    "email": "qa.renew@smartgym.local",
+    "name": "QA Renew",
+    "password": null,
+    "hash": "$2a$11$lNgCI17qzMJRK1Qp5e0cqevZs8FHdDennMFUjpRWgSJO3yLyB6j6e"
+  },
+  {
+    "role": "member",
+    "email": "qa.profile.check@smartgym.local",
+    "name": "Member Two Updated",
+    "password": null,
+    "hash": "$2a$11$m61830k6V5cxG8fmDgl.ge/eu0kEYMukiYmjf62qrIkYLDE72HMGy"
+  },
+  {
+    "role": "manager",
+    "email": "manager_abc@smartgym.com",
+    "name": "Manager ABC_123",
+    "password": null,
+    "hash": "$2a$11$LWUh84cOm7z4wa3pGUyhN.5Q40tAK1LHrwKIPVNjRVNXsAQoD6fLy"
+  },
+  {
+    "role": "member",
+    "email": "member2@test.com",
+    "name": "Member Two",
+    "password": null,
+    "hash": "$2a$11$6O10kdn5U30vyyFgczb2TOcTG.5BO31sSMUSISCCq4Mb.UVwA0Q2S"
+  },
+  {
+    "role": "manager",
+    "email": "manager@gmail.com",
+    "name": "Trần Thị B",
+    "password": null,
+    "hash": "$2a$11$8UKMhXUnunfTc3N8EEtUA.wQkfBGwkd.eRBscoEr4vGn00eNX4jFi"
+  },
+  {
+    "role": "member",
+    "email": "thuan@test.com",
+    "name": "Thuan",
+    "password": null,
+    "hash": "$2a$11$brj1EMX2yBKVoSCDt2JJz.xNwy0WahP85A22WnItQeW0lX8L.SV9q"
+  },
+  {
+    "role": "member",
+    "email": "minhanh.member.test@gmail.com",
+    "name": "Nguyen Minh Anh",
+    "password": null,
+    "hash": "$2a$11$SqKwnNr4BImreUS2rSB1SuKqOLIm1UiHs6osOvoiJWibiKmVpo/Z2"
+  },
+  {
+    "role": "manager",
+    "email": "manager_moi@smartgym.com",
+    "name": "Manager Test 1",
+    "password": null,
+    "hash": "$2a$11$DBA5esYktfx39ljzBV4rLeisxWsgnhHqVdRVLXo5a8B7CzAs1QDBq"
+  },
+  {
+    "role": "coach",
+    "email": "member_test@smartgym.com",
+    "name": "Pham Vu",
+    "password": null,
+    "hash": "$2a$11$3.aB7YsaKBZAJw1FkuXZwOuKTmcDC2/nuf5iGCuAGbqw8RvWmPM4m"
+  },
+  {
+    "role": "coach",
+    "email": "hoxuananhnam1@gmail.com",
+    "name": "Anam2",
+    "password": "123456",
+    "hash": "$2a$11$orcHqTlXIXLTgUo08ZZJEupFN0v7q4TMlAiNQk.VQLz.9ee/ObrNK"
+  },
+  {
+    "role": "member",
+    "email": "phuongcrp@gmail.com",
+    "name": "Phạm Đức Thanh Phương",
+    "password": null,
+    "hash": "$2a$11$LhJgmSirCF.KWLGXPdVk9.03Bmu1amScznuk7L1qu2DJGOLzDwXC."
+  },
+  {
+    "role": "coach",
+    "email": "coach_test@smartgym.com",
+    "name": "Coach Nguyễn Văn A",
+    "password": null,
+    "hash": "$2a$11$isQz./Q/nYrfuqprqLi7Ce.TxG7oF.hIl2o6M5V9bx5pbjHHDdm.G"
+  },
+  {
+    "role": "member",
+    "email": "member_test123@gmail.com",
+    "name": "Pham Vu",
+    "password": "Password123",
+    "hash": "$2a$11$81sGQRqq4FnN6er7nqDtD.CZOSGSl./gqM.aMo/2RpuPgV9RPLydi"
+  },
+  {
+    "role": "member",
+    "email": "nguyenminhthu.test2026@gmail.com",
+    "name": "Nguyễn Minh Thu",
+    "password": null,
+    "hash": "$2a$11$XnBlMLO.dugToasRx7KGburr8WtH9sAQz6zPnmlopcPEV2wJmVs4y"
+  },
+  {
+    "role": "member",
+    "email": "thienngan210510@gmail.com",
+    "name": "Bùi Ngọc Thiên Ngân",
+    "password": null,
+    "hash": "$2a$11$PJSL/ov6o93lVunmylqkq.KDEBuSvxxAy3tAA/ivvLZcxVh2tRtWO"
+  },
+  {
+    "role": "member",
+    "email": "tranquochuy.test2026@gmail.com",
+    "name": "Trần Quốc Huy",
+    "password": null,
+    "hash": "$2a$11$vTIKGKwO02xfmaz4sqhuI.UGHUUwe5vnugCy3onlyCmUthvuPncRi"
+  },
+  {
+    "role": "manager",
+    "email": "manager_flow2@smartgym.com",
+    "name": "Manager Flow2",
+    "password": null,
+    "hash": "$2a$11$G5dImMbeBNgyVI3VGHXy3eJsFvp3C.vrbUb.W.wrYRBP4CfYxRZQC"
+  }
+]

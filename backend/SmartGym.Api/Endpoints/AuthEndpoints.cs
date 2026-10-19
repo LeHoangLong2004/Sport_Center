@@ -68,6 +68,7 @@ public static class AuthEndpoints
                             token = token,
                             fullName = coachUser.FullName,
                             email = coachUser.Email,
+                            phoneNumber = coachUser.PhoneNumber,
                             role = "coach",
                             roleName = "coach"
                         });
@@ -90,6 +91,7 @@ public static class AuthEndpoints
                             token = token,
                             fullName = memberUser.FullName,
                             email = memberUser.Email,
+                            phoneNumber = memberUser.PhoneNumber,
                             role = "member",
                             roleName = "member"
                         });
