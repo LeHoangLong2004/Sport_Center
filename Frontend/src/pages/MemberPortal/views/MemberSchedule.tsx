@@ -52,7 +52,10 @@ type SportFilter = "all" | string;
 type StatusFilter = "all" | "sắp diễn ra" | "đang diễn ra" | "hoàn thành" | "đã hủy";
 
 const DAYS_NAMES = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
-const TIME_ROWS = ["06:00", "07:00", "08:00", "09:00", "14:00", "15:00", "17:00", "18:00"];
+// Khung giờ hoạt động chuẩn từ 06:00 đến 22:00
+const DEFAULT_TIME_ROWS = Array.from({ length: 17 }, (_, index) =>
+  `${String(index + 6).padStart(2, "0")}:00`
+);
 
 const SPORT_OPTIONS = ["all", "Gym", "Yoga", "Boxing", "Pilates", "Zumba", "Bơi", "Cardio"];
 
@@ -272,6 +275,26 @@ export default function MemberSchedule({ onNavigate }: Props) {
     const weekIsoSet = new Set(weekDates.map((w) => w.dateStr));
     return filteredSessions.filter((s) => weekIsoSet.has(s.date));
   }, [filteredSessions, weekDates]);
+
+  // Dynamic time rows covering 06:00 - 22:00, expanding if there are sessions outside standard hours
+  const activeTimeRows = useMemo(() => {
+    const hoursSet = new Set<number>();
+    for (let h = 6; h <= 22; h++) {
+      hoursSet.add(h);
+    }
+    weekSessions.forEach((s) => {
+      const match = s.startTime?.match(/^(\d{1,2})/);
+      if (match) {
+        const h = parseInt(match[1], 10);
+        if (!isNaN(h) && h >= 0 && h <= 23) {
+          hoursSet.add(h);
+        }
+      }
+    });
+    return Array.from(hoursSet)
+      .sort((a, b) => a - b)
+      .map((h) => `${String(h).padStart(2, "0")}:00`);
+  }, [weekSessions]);
 
   const todayStr = useMemo(() => formatDateISO(new Date()), []);
 
@@ -533,85 +556,92 @@ export default function MemberSchedule({ onNavigate }: Props) {
             </div>
 
             {/* Grid Rows by Time */}
-            {TIME_ROWS.map((hour) => (
-              <div
-                key={hour}
-                className="grid grid-cols-8 min-h-[92px] border-b border-slate-100 dark:border-slate-800/60 last:border-0"
-              >
-                <div className="p-2 text-xs text-slate-400 font-medium border-r border-slate-200 dark:border-slate-800 flex items-center justify-center">
-                  {hour}
+            {activeTimeRows.map((hour) => {
+              const rowHour = parseInt(hour.split(":")[0], 10);
+              return (
+                <div
+                  key={hour}
+                  className="grid grid-cols-8 min-h-[92px] border-b border-slate-100 dark:border-slate-800/60 last:border-0"
+                >
+                  <div className="p-2 text-xs text-slate-400 font-medium border-r border-slate-200 dark:border-slate-800 flex items-center justify-center">
+                    {hour}
+                  </div>
+
+                  {DAYS_NAMES.map((_, di) => {
+                    const colDate = weekDates[di]?.dateStr;
+                    const cellSessions = weekSessions.filter((s) => {
+                      const isSameDay = s.date === colDate;
+                      const match = s.startTime?.match(/^(\d{1,2})/);
+                      const sHour = match ? parseInt(match[1], 10) : -1;
+                      return isSameDay && sHour === rowHour;
+                    });
+
+                    // Sắp xếp các buổi tập trong cùng ô theo giờ bắt đầu
+                    cellSessions.sort((a, b) => (a.startTime || "").localeCompare(b.startTime || ""));
+
+                    return (
+                      <div
+                        key={di}
+                        className="p-1.5 border-r border-slate-100 dark:border-slate-800/60 last:border-0 relative space-y-1.5"
+                      >
+                        {cellSessions.map((s) => {
+                          const isPT = s.type === "pt";
+                          const isCancelled = s.status === "đã hủy";
+
+                          return (
+                            <button
+                              key={s.id}
+                              type="button"
+                              onClick={() => setSelectedSession(s)}
+                              className={`w-full text-left p-2.5 rounded-xl border transition-all flex flex-col justify-between shadow-xs hover:shadow-md cursor-pointer ${
+                                isPT
+                                  ? "bg-amber-50/70 border-amber-200 hover:border-amber-300 dark:bg-amber-950/30 dark:border-amber-800/60"
+                                  : isCancelled
+                                  ? "opacity-60 bg-slate-50 border-slate-200 dark:bg-slate-800/40 dark:border-slate-700"
+                                  : "bg-emerald-50/70 border-emerald-200 hover:border-emerald-300 dark:bg-emerald-950/30 dark:border-emerald-800/60"
+                              }`}
+                            >
+                              <div>
+                                <div className="flex items-center justify-between gap-1 mb-1">
+                                  <span
+                                    className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                                      isPT
+                                        ? "bg-amber-200/80 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200"
+                                        : "bg-emerald-200/80 text-emerald-900 dark:bg-emerald-900/60 dark:text-emerald-200"
+                                    }`}
+                                  >
+                                    {isPT ? "PT 1–1" : s.sport.toUpperCase()}
+                                  </span>
+                                  <span className="text-[10px] text-slate-500 font-mono font-medium">
+                                    {s.startTime}{s.endTime ? ` – ${s.endTime}` : ""}
+                                  </span>
+                                </div>
+                                <div className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1">
+                                  {s.name}
+                                </div>
+                              </div>
+
+                              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5 pt-1.5 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between">
+                                <span className="truncate max-w-[85px]">{s.room}</span>
+                                {isPT ? (
+                                  <span className="text-amber-700 dark:text-amber-400 font-semibold truncate max-w-[80px]">
+                                    {s.goal || s.coachName}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-600 dark:text-slate-300 font-medium">
+                                    {s.registeredCount || 8} HV
+                                  </span>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
                 </div>
-
-                {DAYS_NAMES.map((_, di) => {
-                  const colDate = weekDates[di]?.dateStr;
-                  const cellSessions = weekSessions.filter((s) => {
-                    const isSameDay = s.date === colDate;
-                    const isSameHour = s.startTime.startsWith(hour.slice(0, 2));
-                    return isSameDay && isSameHour;
-                  });
-
-                  return (
-                    <div
-                      key={di}
-                      className="p-1.5 border-r border-slate-100 dark:border-slate-800/60 last:border-0 relative space-y-1.5"
-                    >
-                      {cellSessions.map((s) => {
-                        const isPT = s.type === "pt";
-                        const isCancelled = s.status === "đã hủy";
-
-                        return (
-                          <button
-                            key={s.id}
-                            type="button"
-                            onClick={() => setSelectedSession(s)}
-                            className={`w-full text-left p-2.5 rounded-xl border transition-all flex flex-col justify-between shadow-xs hover:shadow-md cursor-pointer ${
-                              isPT
-                                ? "bg-amber-50/70 border-amber-200 hover:border-amber-300 dark:bg-amber-950/30 dark:border-amber-800/60"
-                                : isCancelled
-                                ? "opacity-60 bg-slate-50 border-slate-200 dark:bg-slate-800/40 dark:border-slate-700"
-                                : "bg-emerald-50/70 border-emerald-200 hover:border-emerald-300 dark:bg-emerald-950/30 dark:border-emerald-800/60"
-                            }`}
-                          >
-                            <div>
-                              <div className="flex items-center justify-between gap-1 mb-1">
-                                <span
-                                  className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
-                                    isPT
-                                      ? "bg-amber-200/80 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200"
-                                      : "bg-emerald-200/80 text-emerald-900 dark:bg-emerald-900/60 dark:text-emerald-200"
-                                  }`}
-                                >
-                                  {isPT ? "PT 1–1" : s.sport.toUpperCase()}
-                                </span>
-                                <span className="text-[10px] text-slate-500 font-mono font-medium">
-                                  {s.startTime}
-                                </span>
-                              </div>
-                              <div className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1">
-                                {s.name}
-                              </div>
-                            </div>
-
-                            <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5 pt-1.5 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between">
-                              <span className="truncate max-w-[85px]">{s.room}</span>
-                              {isPT ? (
-                                <span className="text-amber-700 dark:text-amber-400 font-semibold truncate max-w-[80px]">
-                                  {s.goal || s.coachName}
-                                </span>
-                              ) : (
-                                <span className="text-slate-600 dark:text-slate-300 font-medium">
-                                  {s.registeredCount || 8} HV
-                                </span>
-                              )}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

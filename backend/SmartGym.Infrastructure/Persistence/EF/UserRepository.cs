@@ -139,10 +139,48 @@ public class UserRepository : IUserRepository
     {
         await _dbContext.Users.AddAsync(user);
         await _dbContext.SaveChangesAsync();
+
+        var isCoach = (user.Role != null && string.Equals(user.Role.Name, "coach", System.StringComparison.OrdinalIgnoreCase))
+            || user.CoachProfile != null;
+        if (isCoach)
+        {
+            await SyncCoachRecordAsync(user);
+        }
     }
 
     public async Task UpdateAsync(User user)
     {
         await _dbContext.SaveChangesAsync();
+
+        var isCoach = (user.Role != null && string.Equals(user.Role.Name, "coach", System.StringComparison.OrdinalIgnoreCase))
+            || user.CoachProfile != null;
+        if (isCoach)
+        {
+            await SyncCoachRecordAsync(user);
+        }
+    }
+
+    private async Task SyncCoachRecordAsync(User user)
+    {
+        try
+        {
+            var specialty = user.CoachProfile?.Specialties ?? "Huấn luyện viên";
+            var bio = user.CoachProfile?.Bio ?? "Huấn luyện viên thể thao chuyên nghiệp";
+            var expYears = user.CoachProfile?.ExperienceYears ?? 1;
+
+            await _dbContext.Database.ExecuteSqlInterpolatedAsync($@"
+                INSERT INTO coaches (id, user_id, specialty, bio, experience_years, rating, status)
+                VALUES ({user.Id}, {user.Id}, {specialty}, {bio}, {expYears}, 5.0, TRUE)
+                ON CONFLICT (user_id) DO UPDATE 
+                SET specialty = EXCLUDED.specialty,
+                    bio = EXCLUDED.bio,
+                    experience_years = EXCLUDED.experience_years,
+                    status = TRUE;
+            ");
+        }
+        catch
+        {
+            // Ignore if coaches table schema does not match or transient error
+        }
     }
 }

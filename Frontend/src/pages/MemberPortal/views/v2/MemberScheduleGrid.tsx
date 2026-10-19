@@ -21,17 +21,9 @@ interface Props {
   onSelect: (event: ScheduleEvent) => void;
 }
 
-const TIME_ROWS = [
-  "06:00",
-  "07:00",
-  "08:00",
-  "09:00",
-  "14:00",
-  "15:00",
-  "17:00",
-  "18:00",
-  "19:00",
-];
+const TIME_ROWS = Array.from({ length: 17 }, (_, index) =>
+  `${String(index + 6).padStart(2, "0")}:00`
+);
 
 const TONE_STYLES = {
   teal: {
