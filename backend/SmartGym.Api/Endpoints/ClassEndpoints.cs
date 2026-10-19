@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SmartGym.Application.DTOs.Classes;
 using SmartGym.Application.Services;
@@ -48,6 +49,23 @@ public static class ClassEndpoints
                     var coachId = await CoachProfileResolver.FindByUserIdAsync(db, userId, activeOnly: true);
                     if (coachId == null)
                         return Results.BadRequest(new { message = "Tài khoản Coach chưa có hồ sơ hoạt động." });
+
+                    // Ensure coach is assigned to this sport in coach_sports so students can find classes & coaches by sport
+                    if (request.SportId != Guid.Empty)
+                    {
+                        try
+                        {
+                            await db.Database.ExecuteSqlInterpolatedAsync(
+                                $@"INSERT INTO coach_sports (coach_id, sport_id)
+                                   VALUES ({coachId.Value}, {request.SportId})
+                                   ON CONFLICT (coach_id, sport_id) DO NOTHING"
+                            );
+                        }
+                        catch
+                        {
+                            // Ignore if sport assignment fails or already exists
+                        }
+                    }
 
                     // The coach identity must come from the authenticated account,
                     // never from a client-controlled coachId field.
