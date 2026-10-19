@@ -5,6 +5,8 @@ namespace SmartGym.Application.DTOs.WorkoutPlans;
 public class AssignHomeworkRequest
 {
     public Guid MemberId { get; set; }
+    public Guid? ClassId { get; set; }
+    public string? Type { get; set; } // "class" | "member"
     public Guid PlanId { get; set; }
     public DateTime? DueDate { get; set; }
     public string? Notes { get; set; }

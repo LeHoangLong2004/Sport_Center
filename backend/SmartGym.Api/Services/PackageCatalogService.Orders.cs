@@ -91,15 +91,17 @@ public sealed partial class PackageCatalogService
             DiscountPct = discountPct,
             DiscountAmount = discountAmount,
             PackageSnapshotJson = JsonSerializer.Serialize(snapshot, JsonOptions),
+            PaymentMethod = PaymentMethod.CashAtCounter,
             PaymentStatus = PaymentStatus.Pending,
             StartDate = start,
             EndDate = end,
             CreatedAt = now,
             AutoRenew = false,
         };
+
         db.Subscriptions.Add(subscription);
         await db.SaveChangesAsync(cancellationToken);
-        return MapOrder(subscription, user.FullName, user.Email, snapshot);
+        return MapOrder(subscription, user.FullName, user.Email, user.PhoneNumber ?? string.Empty, snapshot);
     }
 
     public async Task<PackageCheckoutResponse> CheckoutAsync(
@@ -125,12 +127,17 @@ public sealed partial class PackageCatalogService
         var paidAt = isOnlinePaid ? DateTime.UtcNow : (DateTime?)null;
 
         var subscription = await db.Subscriptions.FirstOrDefaultAsync(s => s.Id == order.Id, cancellationToken);
-        if (subscription != null && isOnlinePaid)
+        if (subscription != null)
         {
-            subscription.PaymentStatus = paymentStatus;
-            subscription.PaidAt = paidAt;
-            order.Status = "paid";
-            order.PaidAt = paidAt;
+            subscription.PaymentMethod = paymentMethod;
+            if (isOnlinePaid)
+            {
+                subscription.PaymentStatus = paymentStatus;
+                subscription.PaidAt = paidAt;
+                order.Status = "paid";
+                order.PaidAt = paidAt;
+            }
+            order.PaymentMethod = paymentMethod.ToDbValue();
         }
 
         var invoice = new Invoice
@@ -152,80 +159,6 @@ public sealed partial class PackageCatalogService
             Order = order,
             InvoiceId = invoice.Id,
         };
-    }
-
-    public async Task<IReadOnlyList<PackageOrderResponse>> GetOrdersAsync(
-        Guid? memberId,
-        CancellationToken cancellationToken
-    )
-    {
-        IQueryable<Subscription> query = db
-            .Subscriptions.AsNoTracking()
-            .Include(subscription => subscription.User)
-            .Include(subscription => subscription.Package);
-        if (memberId.HasValue)
-            query = query.Where(subscription => subscription.UserId == memberId.Value);
-
-        var subscriptions = await query
-            .OrderByDescending(subscription => subscription.CreatedAt)
-            .ToListAsync(cancellationToken);
-        return subscriptions
-            .Select(subscription =>
-                MapOrder(
-                    subscription,
-                    subscription.User?.FullName ?? string.Empty,
-                    subscription.User?.Email ?? string.Empty,
-                    DeserializeSnapshot(subscription)
-                )
-            )
-            .ToArray();
-    }
-
-    public async Task<PackageOrderResponse> ConfirmPaymentAsync(
-        Guid orderId,
-        CancellationToken cancellationToken
-    )
-    {
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
-        var subscription = await db
-            .Subscriptions.FromSqlInterpolated(
-                $"SELECT * FROM subscriptions WHERE id = {orderId} FOR UPDATE"
-            )
-            .Include(item => item.User)
-            .Include(item => item.Package)
-            .FirstOrDefaultAsync(cancellationToken);
-        if (subscription?.PackageSnapshotJson is null)
-            throw new PackageCatalogException(
-                StatusCodes.Status404NotFound,
-                "Không tìm thấy đơn gói tập."
-            );
-        if (subscription.PaymentStatus != PaymentStatus.Pending)
-            throw new PackageCatalogException(
-                StatusCodes.Status409Conflict,
-                "Đơn đã được xử lý, không thể xác nhận thanh toán lần nữa."
-            );
-
-        var snapshot = DeserializeSnapshot(subscription);
-        var (start, end) = await GetProjectedPeriodAsync(
-            subscription.UserId,
-            snapshot,
-            subscription.DurationMonths ?? ParseDuration(subscription.BillingPeriod),
-            DateTime.UtcNow,
-            cancellationToken
-        );
-        subscription.StartDate = start;
-        subscription.EndDate = end;
-        subscription.PaymentStatus = PaymentStatus.Completed;
-        subscription.PaidAt = DateTime.UtcNow;
-        await db.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
-
-        return MapOrder(
-            subscription,
-            subscription.User?.FullName ?? string.Empty,
-            subscription.User?.Email ?? string.Empty,
-            snapshot
-        );
     }
 
     public async Task<bool> HasActiveSportAccessAsync(
@@ -258,4 +191,3 @@ public sealed partial class PackageCatalogService
             );
     }
 }
-

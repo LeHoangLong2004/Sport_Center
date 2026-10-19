@@ -1,0 +1,332 @@
+[
+  {
+    "id": "236a7669-e44d-49ac-a17a-9f9b343edfe4",
+    "email": "thuanpham@gmail.com",
+    "full_name": "Phạm Quang Thuần",
+    "status": true,
+    "password_hash": "$2a$11$Ghu4iylEvnquNBveDLnCKOZPU/V7.3fjUDig0mBiXSSuO2TLxZ2HS",
+    "roles": {
+      "name": "member"
+    }
+  },
+  {
+    "id": "4a144de4-1102-458a-b363-77f28df8b248",
+    "email": "manager_3874@smartgym.com",
+    "full_name": "Test Manager",
+    "status": true,
+    "password_hash": "$2a$11$NrCG1aSppvnXewrYEY7u0urpZmFf3Qvng6dZcIc2aVAn27SHsgOYm",
+    "roles": {
+      "name": "manager"
+    }
+  },
+  {
+    "id": "935e1a3a-280e-4e3b-ad3f-4e1bfee37ed8",
+    "email": "manager_9765@smartgym.com",
+    "full_name": "Test Manager",
+    "status": true,
+    "password_hash": "$2a$11$D6Sl3qZKsmLSLs9JNJsIFOzDAJMWkhrTleiJjNakOnu12kAV.zgL2",
+    "roles": {
+      "name": "manager"
+    }
+  },
+  {
+    "id": "c94c39ae-7767-467d-afc2-64beac09a3c2",
+    "email": "member_test_book@smartgym.com",
+    "full_name": "Hội Viên Test Book",
+    "status": true,
+    "password_hash": "$2a$11$gM1z1s76ZWi6KtOVItW6e.jPq0ZO3EjB33607eWYe4UbT.TZvCvT2",
+    "roles": {
+      "name": "member"
+    }
+  },
+  {
+    "id": "2a9af409-08f9-4582-bac4-a888eb7e8269",
+    "email": "receptionist01@smartgym.com",
+    "full_name": "Nguyễn Văn Lễ Tân",
+    "status": true,
+    "password_hash": "$2a$11$Gl9jW9x1gaycAoMrvA2.E.tB1WrtY1yNgPMW5RLukc/RkcjJ76hOi",
+    "roles": {
+      "name": "receptionist"
+    }
+  },
+  {
+    "id": "35d53195-582b-4f96-be54-46209065aa9e",
+    "email": "manager@test.com",
+    "full_name": "Manager Test",
+    "status": true,
+    "password_hash": "$2a$11$FpPNxPtqb46EAp.E2TFV9Og0Y64ufc0iqvE9A7CnXi/AJ2dvfFRH.",
+    "roles": {
+      "name": "manager"
+    }
+  },
+  {
+    "id": "d426d2a7-f099-4377-9673-160e02f8dc1b",
+    "email": "coach_flow2@smartgym.com",
+    "full_name": "Coach Đỗ Hoàng E",
+    "status": true,
+    "password_hash": "$2a$11$ntitydPtZwu4dTFcd2bq4.mnd.jUAtgOn7B6nnMfD15No7Eh4QMOC",
+    "roles": {
+      "name": "coach"
+    }
+  },
+  {
+    "id": "6eb564bb-1d6a-41fe-80b7-367a4e23731b",
+    "email": "coach_3874@smartgym.com",
+    "full_name": "Coach Phạm Văn C",
+    "status": true,
+    "password_hash": "$2a$11$AdkrSzqg/L5FYJHX0ydqiuTvMvL7GoEk2RRyOJDRahfpOTBmB9Riq",
+    "roles": {
+      "name": "coach"
+    }
+  },
+  {
+    "id": "04aa0a14-1304-493b-ab5b-3b64bca0ff6d",
+    "email": "coach_9765@smartgym.com",
+    "full_name": "Coach Lê Thị D",
+    "status": true,
+    "password_hash": "$2a$11$78.nFUD/7GD5aACL5QsmCOe9hkBcoc199NBudu4eln9vFHIu5r1bC",
+    "roles": {
+      "name": "coach"
+    }
+  },
+  {
+    "id": "20b3338a-808a-44a7-b65a-ebdd52deb5ff",
+    "email": "hoxuananhnam@gmail.com",
+    "full_name": "Anam1",
+    "status": true,
+    "password_hash": "$2a$11$v7o13vCqT2DH1IzG53oDNeQ1wb88X3tYYsWWnstvdfbmUmf8UKimC",
+    "roles": {
+      "name": "member"
+    }
+  },
+  {
+    "id": "170e920b-5f36-41d1-8aff-4c5530dc1526",
+    "email": "mynguyen123@gmail.com",
+    "full_name": "Nguyễn Thị Trà My",
+    "status": true,
+    "password_hash": "$2a$11$TIM51d.oZzQGOtC9e2V0tewj6ckE6.fT4lZfJprLLuonuaib7HgL.",
+    "roles": {
+      "name": "receptionist"
+    }
+  },
+  {
+    "id": "4911931c-3a6f-4f01-9d92-b1c42157b928",
+    "email": "phamphuong2910204@gmail.com",
+    "full_name": "Phạm Đức Thanh Phương",
+    "status": true,
+    "password_hash": "$2a$11$BpomQlVHTg0BstGoEWP3DerCkGYnNiqUszYfShktymdgTOSvqTFqy",
+    "roles": {
+      "name": "member"
+    }
+  },
+  {
+    "id": "47523373-ea1f-4586-8b1e-9b3aaca2dcfc",
+    "email": "nganlang9377@gmail.com",
+    "full_name": "Long Le",
+    "status": true,
+    "password_hash": "$2a$11$VVAiDAzmNRnLFh7LCdN2a.c3Ii0.xNFL3wkZJTJsWwbqTk3nxAm9a",
+    "roles": {
+      "name": "member"
+    }
+  },
+  {
+    "id": "8dfc9174-afef-425c-87b8-34661a4377be",
+    "email": "test3@gmail.com",
+    "full_name": "Test",
+    "status": true,
+    "password_hash": "$2a$11$/eaXVF3Niw.iNI/eTQpXIuTEKs.nMdwcUooPidDiAKoPFQFuYY7cm",
+    "roles": {
+      "name": "member"
+    }
+  },
+  {
+    "id": "d533f49c-60d1-454b-92cd-e5db2dd35ebf",
+    "email": "qa.tester@smartgym.local",
+    "full_name": "QA Tester",
+    "status": true,
+    "password_hash": "$2a$11$HBBpLlY9i29kndE9PTL9XukqtnQnd816tgtM9jtERF1vB7oIimmau",
+    "roles": {
+      "name": "manager"
+    }
+  },
+  {
+    "id": "a8f92073-2c05-48fb-ae67-f61438d44cf8",
+    "email": "qa.member@smartgym.local",
+    "full_name": "QA Member",
+    "status": true,
+    "password_hash": "$2a$11$OldfZ4qD3v6A44VMyND3sOXQYGa3aU3NKo2Nq58qESjwuSBGlC7kW",
+    "roles": {
+      "name": "member"
+    }
+  },
+  {
+    "id": "e813299d-33d8-49d5-8c5b-d25271a063d9",
+    "email": "qa.renew@smartgym.local",
+    "full_name": "QA Renew",
+    "status": true,
+    "password_hash": "$2a$11$lNgCI17qzMJRK1Qp5e0cqevZs8FHdDennMFUjpRWgSJO3yLyB6j6e",
+    "roles": {
+      "name": "member"
+    }
+  },
+  {
+    "id": "1cb65a51-5ed5-47d5-9237-f650ffd25c56",
+    "email": "qa.profile.check@smartgym.local",
+    "full_name": "Member Two Updated",
+    "status": true,
+    "password_hash": "$2a$11$m61830k6V5cxG8fmDgl.ge/eu0kEYMukiYmjf62qrIkYLDE72HMGy",
+    "roles": {
+      "name": "member"
+    }
+  },
+  {
+    "id": "192d8fe9-42da-4e7d-a028-8268a11acf24",
+    "email": "manager_abc@smartgym.com",
+    "full_name": "Manager ABC_123",
+    "status": true,
+    "password_hash": "$2a$11$LWUh84cOm7z4wa3pGUyhN.5Q40tAK1LHrwKIPVNjRVNXsAQoD6fLy",
+    "roles": {
+      "name": "manager"
+    }
+  },
+  {
+    "id": "cbcec42b-7cff-425c-9c62-2c5c15a2bd29",
+    "email": "member2@test.com",
+    "full_name": "Member Two",
+    "status": true,
+    "password_hash": "$2a$11$6O10kdn5U30vyyFgczb2TOcTG.5BO31sSMUSISCCq4Mb.UVwA0Q2S",
+    "roles": {
+      "name": "member"
+    }
+  },
+  {
+    "id": "fec2a757-6b06-4b2f-b976-ee75ce3f22b4",
+    "email": "manager@gmail.com",
+    "full_name": "Trần Thị B",
+    "status": true,
+    "password_hash": "$2a$11$8UKMhXUnunfTc3N8EEtUA.wQkfBGwkd.eRBscoEr4vGn00eNX4jFi",
+    "roles": {
+      "name": "manager"
+    }
+  },
+  {
+    "id": "50b94a8e-ef91-4dec-8c67-aee01f20cef8",
+    "email": "thuan@test.com",
+    "full_name": "Thuan",
+    "status": true,
+    "password_hash": "$2a$11$brj1EMX2yBKVoSCDt2JJz.xNwy0WahP85A22WnItQeW0lX8L.SV9q",
+    "roles": {
+      "name": "member"
+    }
+  },
+  {
+    "id": "4771461d-29fd-4d4b-941a-ffb59ee7bb3d",
+    "email": "minhanh.member.test@gmail.com",
+    "full_name": "Nguyen Minh Anh",
+    "status": true,
+    "password_hash": "$2a$11$SqKwnNr4BImreUS2rSB1SuKqOLIm1UiHs6osOvoiJWibiKmVpo/Z2",
+    "roles": {
+      "name": "member"
+    }
+  },
+  {
+    "id": "9c25cf91-491e-427b-b0b9-01915456bd38",
+    "email": "manager_moi@smartgym.com",
+    "full_name": "Manager Test 1",
+    "status": true,
+    "password_hash": "$2a$11$DBA5esYktfx39ljzBV4rLeisxWsgnhHqVdRVLXo5a8B7CzAs1QDBq",
+    "roles": {
+      "name": "manager"
+    }
+  },
+  {
+    "id": "11733f68-2021-4b71-9b4d-4a25a47eb01a",
+    "email": "member_test@smartgym.com",
+    "full_name": "Pham Vu",
+    "status": true,
+    "password_hash": "$2a$11$3.aB7YsaKBZAJw1FkuXZwOuKTmcDC2/nuf5iGCuAGbqw8RvWmPM4m",
+    "roles": {
+      "name": "coach"
+    }
+  },
+  {
+    "id": "25f50fba-506a-4edf-9db7-43f77f6741a4",
+    "email": "hoxuananhnam1@gmail.com",
+    "full_name": "Anam2",
+    "status": true,
+    "password_hash": "$2a$11$orcHqTlXIXLTgUo08ZZJEupFN0v7q4TMlAiNQk.VQLz.9ee/ObrNK",
+    "roles": {
+      "name": "coach"
+    }
+  },
+  {
+    "id": "d5261c46-7fd2-4d49-aada-fd4d8712ffa4",
+    "email": "phuongcrp@gmail.com",
+    "full_name": "Phạm Đức Thanh Phương",
+    "status": true,
+    "password_hash": "$2a$11$LhJgmSirCF.KWLGXPdVk9.03Bmu1amScznuk7L1qu2DJGOLzDwXC.",
+    "roles": {
+      "name": "member"
+    }
+  },
+  {
+    "id": "9dedb261-2758-42ea-9656-2d106cd15da6",
+    "email": "coach_test@smartgym.com",
+    "full_name": "Coach Nguyễn Văn A",
+    "status": true,
+    "password_hash": "$2a$11$isQz./Q/nYrfuqprqLi7Ce.TxG7oF.hIl2o6M5V9bx5pbjHHDdm.G",
+    "roles": {
+      "name": "coach"
+    }
+  },
+  {
+    "id": "c0546125-12e2-4b19-9ba2-da06fd9d439e",
+    "email": "member_test123@gmail.com",
+    "full_name": "Pham Vu",
+    "status": true,
+    "password_hash": "$2a$11$81sGQRqq4FnN6er7nqDtD.CZOSGSl./gqM.aMo/2RpuPgV9RPLydi",
+    "roles": {
+      "name": "member"
+    }
+  },
+  {
+    "id": "97114201-1a52-4fbf-8e7e-3970295db61c",
+    "email": "nguyenminhthu.test2026@gmail.com",
+    "full_name": "Nguyễn Minh Thu",
+    "status": true,
+    "password_hash": "$2a$11$XnBlMLO.dugToasRx7KGburr8WtH9sAQz6zPnmlopcPEV2wJmVs4y",
+    "roles": {
+      "name": "member"
+    }
+  },
+  {
+    "id": "36aeb5ba-6ba9-403c-aac2-10dfc293d95e",
+    "email": "thienngan210510@gmail.com",
+    "full_name": "Bùi Ngọc Thiên Ngân",
+    "status": true,
+    "password_hash": "$2a$11$PJSL/ov6o93lVunmylqkq.KDEBuSvxxAy3tAA/ivvLZcxVh2tRtWO",
+    "roles": {
+      "name": "member"
+    }
+  },
+  {
+    "id": "8c4401fd-aeea-497e-8556-fd45f0ced42e",
+    "email": "tranquochuy.test2026@gmail.com",
+    "full_name": "Trần Quốc Huy",
+    "status": true,
+    "password_hash": "$2a$11$vTIKGKwO02xfmaz4sqhuI.UGHUUwe5vnugCy3onlyCmUthvuPncRi",
+    "roles": {
+      "name": "member"
+    }
+  },
+  {
+    "id": "ca4174ee-da01-41ef-861f-74ebb040efcb",
+    "email": "manager_flow2@smartgym.com",
+    "full_name": "Manager Flow2",
+    "status": true,
+    "password_hash": "$2a$11$G5dImMbeBNgyVI3VGHXy3eJsFvp3C.vrbUb.W.wrYRBP4CfYxRZQC",
+    "roles": {
+      "name": "manager"
+    }
+  }
+]

@@ -29,12 +29,13 @@ export default function CoachReviews() {
       return;
     }
 
+    const coachId = profile.id;
     let active = true;
 
     async function loadReviews() {
       setLoading(true);
       try {
-        const list = await fetchCoachReviews(profile.id);
+        const list = await fetchCoachReviews(coachId);
         if (active) setReviews(list);
       } catch (err) {
         console.error("Lỗi tải đánh giá:", err);

@@ -92,6 +92,20 @@
 - **Gia cố Minimal API `/api/upload/image`**: Đọc file an toàn qua `HttpRequest request`, bổ sung validation MIME type ảnh (`image/*`) và giới hạn kích thước 10MB.
 - **Tự động khởi tạo thư mục tĩnh**: Tự động kiểm tra và tạo thư mục `wwwroot/uploads/sports` và `wwwroot/uploads/avatars` ngay khi ứng dụng khởi động để middleware `app.UseStaticFiles()` luôn phục vụ được ảnh tĩnh.
 
+### 1.16. Chuẩn Hóa Luồng Thanh Toán Tại Quầy & Hợp Nhất 3 Loại Đơn (Task 65 - 68) - **HOÀN THÀNH**
+- **Sửa triệt để logic thanh toán tại quầy của Hội viên (Task 65)**: Khi chọn "Thanh toán tại quầy lễ tân", hệ thống chuyển thành trạng thái giữ chỗ (`⏳ Giữ chỗ · Chờ thanh toán tại quầy` / `pending`) thay vì báo thanh toán thành công ngay lập tức.
+- **Hợp nhất đầy đủ 3 loại đơn cho Lễ tân (Task 65)**: Gói thành viên (`membership`), Gói tập thể thao (`sport`), và Vé đặt lớp học (`class`).
+- **Tối ưu Backend API `GetOrdersAsync`, `ConfirmPaymentAsync` & `CancelOrderAsync` (Task 65)**: Hợp nhất dữ liệu giữa `subscriptions` và `class_bookings`, loại bỏ bộ lọc sai `subscription_id IS NULL`, bổ sung `COALESCE` chống lỗi ánh xạ NULL trong EF Core.
+- **Màn hình Lễ tân thời gian thực (Task 65)**: Tách `CounterPaymentsPage.tsx` có bộ lọc 3 loại đơn, nhãn vé lớp học, nút "Thu tiền & Vào lớp" và đồng bộ `BroadcastChannel` tức thì.
+- **Đồng hồ số và ca trực thời gian thực Lễ tân (Task 66)**: Lập trình đồng hồ số đếm giây và logic tự động phân bổ ca trực (Ca Sáng: 06:00 - 14:00, Ca Chiều: 14:00 - 22:00) hiển thị trực tiếp trên TopBar Lễ tân.
+- **Khắc phục sạch 100% lỗi đỏ TypeScript Frontend (Task 67)**: Rà soát và sửa sạch toàn bộ cảnh báo và lỗi đỏ TypeScript (`tsc --noEmit` đạt 0 lỗi), xử lý các điểm null-check `profile.id`, kiểu dữ liệu `PackageCategory`, `durationMonths`.
+- **Chuẩn hóa tệp cấu hình `.gitignore` (Task 68)**: Chuẩn hóa file `.gitignore`, loại trừ thư mục cache của .NET CLI (`.dotnet*`, `.dotnet_temp/`) và các file tạm của IDE.
+
+### 1.17. Tự Động Khởi Tạo Hội Thoại Với HLV Khi Đăng Ký Lớp (Task 69) - **HOÀN THÀNH**
+- **Loại bỏ trạng thái trống (Empty State) & Tìm kiếm thủ công**: Tự động tạo phòng trò chuyện trực tiếp 1-1 giữa Hội viên và Huấn luyện viên phụ trách lớp học ngay thời điểm hội viên hoàn tất đăng ký lớp nhóm hoặc đặt lịch PT 1-1.
+- **Tự động gửi tin nhắn chào mừng & xác nhận buổi học**: Khởi tạo ngay tin nhắn mở đầu từ HLV thông báo thông tin lớp, ca học, lời chào mừng và sẵn sàng giải đáp thắc mắc về trang phục, dụng cụ, thể lực.
+- **Backend `ChatStoreService.cs` đồng bộ thông minh**: Bổ sung cơ chế `EnsureMemberBookedCoachConversations` tự động quét các lớp học đã đặt của hội viên và bảo đảm tất cả HLV phụ trách đều có sẵn trong danh sách hội thoại của hội viên mà không cần thao tác thêm thủ công.
+
 ---
 
 ## 2. Các Công Việc Đang Thực Hiện (In Progress)

@@ -26,6 +26,21 @@ export function MemberInfoScreen({
 
   const isLoggedIn = typeof window !== "undefined" && !!(localStorage.getItem("token") || localStorage.getItem("accessToken"))
 
+  React.useEffect(() => {
+    if (!formData.phone) {
+      try {
+        const userStr = localStorage.getItem("user");
+        if (userStr) {
+          const u = JSON.parse(userStr);
+          const p = u.phoneNumber || u.phone;
+          if (p) {
+            setFormData((prev: any) => ({ ...prev, phone: p }));
+          }
+        }
+      } catch {}
+    }
+  }, [formData.phone, setFormData]);
+
   return (
     <div className="bg-[#f8fafc] flex flex-col items-center w-full min-h-screen pb-20">
       <Stepper active={2} />

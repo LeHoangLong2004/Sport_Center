@@ -14,6 +14,7 @@ public sealed partial class PackageCatalogService
         Subscription subscription,
         string userName,
         string userEmail,
+        string userPhone,
         CatalogPackageDto snapshot
     )
     {
@@ -24,6 +25,7 @@ public sealed partial class PackageCatalogService
             UserId = subscription.UserId,
             UserName = userName,
             UserEmail = userEmail,
+            UserPhone = userPhone,
             PackageId = subscription.PackageId ?? snapshot.Id,
             PackageSnapshot = snapshot,
             DurationMonths = duration,
@@ -31,6 +33,7 @@ public sealed partial class PackageCatalogService
             DiscountPct = subscription.DiscountPct,
             DiscountAmount = subscription.DiscountAmount,
             Total = subscription.TotalAmount,
+            PaymentMethod = subscription.PaymentMethod?.ToDbValue() ?? "counter",
             Status = subscription.PaymentStatus switch
             {
                 PaymentStatus.Completed => "paid",

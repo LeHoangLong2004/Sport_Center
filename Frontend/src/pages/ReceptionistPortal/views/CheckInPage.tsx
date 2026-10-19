@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { A } from '../shared';
 import StatusBadge from '../components/StatusBadge';
+import { WalletService } from '../../MemberPortal/services/walletService';
 
 export function CheckInPage() {
   const [scanValue, setScanValue] = useState("")
@@ -44,10 +45,32 @@ export function CheckInPage() {
     fetchHistory();
   }, []);
 
-  const foundMember = members.find(m => m.memberCode === scanValue || m.phoneNumber === scanValue)
+  const isTopUpTicket = scanValue.trim().toUpperCase().startsWith("TOPUP-");
+  const foundMember = members.find(m => m.memberCode === scanValue || m.phoneNumber === scanValue);
   const openCheckIn = foundMember
     ? historyRows.find(row => row.memberId === foundMember.id && !row.checkOutTime)
-    : null
+    : null;
+
+  const handleConfirmTopUp = async () => {
+    setProcessing(true);
+    try {
+      const ticketId = scanValue.trim().toUpperCase();
+      const res = await WalletService.confirmPendingTopUp(ticketId);
+      if (res.success) {
+        setNotice({
+          type: "success",
+          text: `Thu ngân đã xác nhận thu tiền thành công cho phiếu ${ticketId}! Số dư đã được cộng vào ví hội viên.`
+        });
+        setScanValue("");
+      } else {
+        setNotice({ type: "error", text: "Không tìm thấy phiếu nạp hoặc phiếu đã được xử lý trước đó." });
+      }
+    } catch {
+      setNotice({ type: "error", text: "Lỗi kết nối khi xác nhận phiếu nạp." });
+    } finally {
+      setProcessing(false);
+    }
+  };
 
   const handleCheckIn = async () => {
     if (!foundMember) return;
@@ -138,31 +161,49 @@ export function CheckInPage() {
       <div className="flex gap-[20px] items-start shrink-0 w-full">
         {/* Scanner */}
         <div className="bg-white border border-[#e2e8f0] flex flex-1 flex-col gap-[16px] items-start min-w-0 p-[24px] rounded-[12px]">
-          <span className="font-['Manrope:ExtraBold'] font-extrabold text-[#0f172a] text-[16px]">Nhập mã hoặc quét thẻ hội viên</span>
+          <span className="font-['Manrope:ExtraBold'] font-extrabold text-[#0f172a] text-[16px]">Nhập mã hoặc quét thẻ hội viên / phiếu nạp ví</span>
           <div className="bg-[#f1f5f9] flex gap-[12px] items-center p-[16px] rounded-[8px] shrink-0 w-full">
             <img src={`${A}/f6f1f.svg`} alt="" className="size-[20px] shrink-0" />
             <input
               className="flex-1 bg-transparent font-['Manrope:Regular'] text-[#0f172a] text-[15px] outline-none min-w-0"
               value={scanValue}
               onChange={(e) => { setScanValue(e.target.value); setConfirmed(false) }}
-              placeholder="Nhập mã hội viên hoặc SĐT..."
+              placeholder="Nhập mã thẻ, SĐT hoặc mã phiếu nạp (TOPUP-...)"
             />
-            <span className="bg-[#3b82f6] font-['Manrope:Bold'] font-bold px-[8px] py-[2px] rounded-[4px] text-[11px] text-white whitespace-nowrap shrink-0">
-              {foundMember ? "ĐÃ NHẬN DIỆN" : "ĐANG CHỜ QUÉT"}
+            <span className={`font-['Manrope:Bold'] font-bold px-[8px] py-[2px] rounded-[4px] text-[11px] text-white whitespace-nowrap shrink-0 ${isTopUpTicket ? "bg-amber-500" : "bg-[#3b82f6]"}`}>
+              {isTopUpTicket ? "PHIẾU NẠP VÍ" : foundMember ? "ĐÃ NHẬN DIỆN" : "ĐANG CHỜ QUÉT"}
             </span>
           </div>
           <span className="font-['Manrope:Regular'] font-normal text-[#64748b] text-[13px]">
-            Gợi ý: Quét vân tay hoặc barcode từ thẻ cứng hội viên của khách để check-in tức thì.
+            Gợi ý: Quét mã QR phiếu nạp tiền hoặc mã thẻ hội viên để thực hiện nghiệp vụ tức thì.
           </span>
         </div>
 
-        {/* Member result */}
+        {/* Member / Ticket result */}
         <div className="bg-white border border-[#e2e8f0] flex flex-col gap-[20px] items-start p-[24px] rounded-[12px] shrink-0 w-[480px]">
-          <div className="flex items-center justify-between shrink-0 w-full">
-            <span className="font-['Manrope:Bold'] font-bold text-[#94a3b8] text-[13px]">HỘI VIÊN TÌM THẤY</span>
-            {foundMember ? <span className="bg-[#dcfce7] font-['Manrope:Bold'] font-bold px-[10px] py-[4px] rounded-[99px] text-[#15803d] text-[12px]">{foundMember.status}</span> : null}
-          </div>
-          {foundMember ? (
+          {isTopUpTicket ? (
+            <>
+              <div className="flex items-center justify-between shrink-0 w-full">
+                <span className="font-['Manrope:Bold'] font-bold text-[#94a3b8] text-[13px]">PHIẾU NẠP TIỀN TẠI QUẦY</span>
+                <span className="bg-amber-100 font-['Manrope:Bold'] font-bold px-[10px] py-[4px] rounded-[99px] text-amber-800 text-[12px]">CHỜ THU TIỀN</span>
+              </div>
+              <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-xl w-full space-y-2">
+                <span className="text-xs text-amber-700 font-bold block">MÃ PHIẾU NẠP HỘI VIÊN:</span>
+                <span className="text-xl font-mono font-black text-amber-900 block">{scanValue.trim().toUpperCase()}</span>
+                <p className="text-xs text-amber-800">
+                  Hội viên xuất trình phiếu này để nộp tiền mặt/quẹt thẻ nạp tiền vào ví SportCenter.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleConfirmTopUp}
+                disabled={processing}
+                className="flex gap-[8px] items-center justify-center p-[14px] rounded-[8px] shrink-0 w-full bg-emerald-600 hover:bg-emerald-500 font-bold text-white transition-colors cursor-pointer"
+              >
+                <span>{processing ? "Đang xử lý..." : "XÁC NHẬN ĐÃ THU TIỀN & NẠP VÀO VÍ"}</span>
+              </button>
+            </>
+          ) : foundMember ? (
             <>
               <div className="flex gap-[16px] items-center shrink-0 w-full">
                 <img src={foundMember.avatarUrl || `${A}/87fb4.png`} alt="" className="shrink-0 size-[64px] rounded-full object-cover" />

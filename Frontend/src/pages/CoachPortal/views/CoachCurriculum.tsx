@@ -126,9 +126,11 @@ export default function CoachCurriculum() {
       setAssignTarget(null);
       setFeedback({ type: "success", msg: `Đã giao giáo án "${assignTarget.curricName}" cho ${name} thành công!` });
       setTimeout(() => setFeedback(null), 3500);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to assign coach curriculum", error);
-      setFeedback({ type: "error", msg: "Không thể giao giáo án. Vui lòng thử lại." });
+      const errMsg = error?.message || "Không thể giao giáo án. Vui lòng thử lại.";
+      setFeedback({ type: "error", msg: errMsg });
+      setTimeout(() => setFeedback(null), 4000);
     }
   };
 
