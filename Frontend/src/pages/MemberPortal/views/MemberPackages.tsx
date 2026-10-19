@@ -238,7 +238,7 @@ const FALLBACK_CATALOG: CatalogPackage[] = [
 export default function MemberPackages({ onNavigate, onCheckout }: Props) {
   // State
   const [activeTab, setActiveTab] = useState<"membership" | "sport">("membership");
-  const [catalog, setCatalog] = useState<CatalogPackage[]>(FALLBACK_CATALOG);
+  const [catalog, setCatalog] = useState<CatalogPackage[]>([]);
   const [orders, setOrders] = useState<PackageOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDuration, setSelectedDuration] = useState<PackagePeriod>(1);
@@ -257,16 +257,14 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
     try {
       setLoading(true);
       const [apiCatalog, apiOrders] = await Promise.all([
-        PackageAPI.getPackages().catch(() => FALLBACK_CATALOG),
+        PackageAPI.getPackages().catch(() => []),
         PackageAPI.getMyOrders().catch(() => []),
       ]);
 
-      if (apiCatalog && apiCatalog.length > 0) {
-        setCatalog(apiCatalog);
-      }
+      setCatalog(apiCatalog || []);
       setOrders(apiOrders || []);
     } catch (err) {
-      console.warn("Failed to load packages from API, using fallback", err);
+      console.warn("Failed to load packages from API", err);
     } finally {
       setLoading(false);
     }

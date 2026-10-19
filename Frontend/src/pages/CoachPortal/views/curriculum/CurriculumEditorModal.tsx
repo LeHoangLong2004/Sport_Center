@@ -1,7 +1,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import { X, Plus, Trash2 } from "lucide-react";
-import type { MockCurriculum } from "../../services/api";
+import type { MockCurriculum, SportOption } from "../../services/api";
 import { EMPTY_EXERCISE } from "./types";
 
 interface CurriculumEditorModalProps {
@@ -9,6 +9,7 @@ interface CurriculumEditorModalProps {
   draft: MockCurriculum | null;
   setDraft: React.Dispatch<React.SetStateAction<MockCurriculum | null>>;
   isSaving: boolean;
+  sports: SportOption[];
   onClose: () => void;
   onSave: () => void;
 }
@@ -18,6 +19,7 @@ export const CurriculumEditorModal: React.FC<CurriculumEditorModalProps> = ({
   draft,
   setDraft,
   isSaving,
+  sports,
   onClose,
   onSave,
 }) => {
@@ -60,15 +62,26 @@ export const CurriculumEditorModal: React.FC<CurriculumEditorModalProps> = ({
                 Bộ môn:
               </label>
               <select
-                value={draft.sport}
-                onChange={(e) => setDraft({ ...draft, sport: e.target.value })}
+                value={draft.sportId || ""}
+                onChange={(e) => {
+                  const selected = sports.find((sport) => sport.id === e.target.value);
+                  setDraft({
+                    ...draft,
+                    sportId: selected?.id || null,
+                    sport: selected?.name || "",
+                  });
+                }}
                 className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
               >
-                {["Gym", "Yoga", "Pilates", "Boxing", "Bơi", "CrossFit"].map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
+                {sports.length === 0 ? (
+                  <option value="">Chưa có bộ môn</option>
+                ) : (
+                  sports.map((sport) => (
+                    <option key={sport.id} value={sport.id}>
+                      {sport.name}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
             <div>

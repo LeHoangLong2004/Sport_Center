@@ -6,7 +6,6 @@
  */
 import { useState, useEffect } from "react";
 
-const SPORT_OPTIONS = ["Yoga", "Gym", "Bơi", "CrossFit", "Cầu lông"];
 const LEVEL_OPTIONS = ["Cơ bản", "Trung cấp", "Nâng cao"];
 const EQUIPMENT_OPTIONS = ["Thảm tập", "Tạ tay", "Hồ bơi", "Xà đơn", "Dây kháng lực", "Không dụng cụ"];
 
@@ -43,7 +42,8 @@ const AI_SUGGESTIONS: Record<string, { name: string; reps: string; note: string 
 };
 
 export default function CoachAI() {
-  const [sport, setSport] = useState("Yoga");
+  const [sport, setSport] = useState("");
+  const [sportOptions, setSportOptions] = useState<{ id: string; name: string }[]>([]);
   const [level, setLevel] = useState("Cơ bản");
   const [goal, setGoal] = useState("");
   const [equipment, setEquipment] = useState<string[]>([]);
@@ -53,15 +53,17 @@ export default function CoachAI() {
   const [draft, setDraft] = useState<{ name: string; reps: string; note: string }[] | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     import("../services/api").then(({ CoachAPI }) => {
-      CoachAPI.getMembers().then(mem => {
+      Promise.all([CoachAPI.getMembers(), CoachAPI.getSports()]).then(([mem, sports]) => {
         setMembers(mem);
+        setSportOptions(sports);
         if (mem.length > 0) setTargetId(mem[0].id);
-        setLoading(false);
-      });
+        if (sports.length > 0) setSport(sports[0].name);
+      }).finally(() => setLoading(false));
     });
   }, []);
 
@@ -76,14 +78,37 @@ export default function CoachAI() {
     setFeedback(null);
     // Giả lập delay AI (chưa có backend)
     await new Promise((r) => setTimeout(r, 1500));
-    setDraft(AI_SUGGESTIONS[sport] || AI_SUGGESTIONS.Yoga);
+    setDraft(null);
+    setFeedback("Tính năng AI chưa được kết nối với backend nên chưa thể tạo gợi ý thật. Vui lòng tạo giáo án trực tiếp trong mục Giáo án.");
     setIsGenerating(false);
   };
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = async () => {
     if (!draft) return;
+    setIsSaving(true);
+    try {
+      const { CoachAPI } = await import("../services/api");
+      const selectedSport = sportOptions.find((item) => item.name === sport);
+      await CoachAPI.saveCurriculum({
+        name: `${sport} - Giáo án gợi ý`,
+        sportId: selectedSport?.id ?? null,
+        goal,
+        level,
+        duration: 60,
+        description: equipment.length > 0
+          ? `Thiết bị: ${equipment.join(", ")}`
+          : "Giáo án được tạo từ bản gợi ý, cần coach xem lại trước khi giao.",
+        exercises: draft,
+      });
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Không thể lưu giáo án vào hệ thống.");
+      setIsSaving(false);
+      return;
+    }
     setSaved(true);
     setFeedback("Gợi ý đã được lưu thành Nháp giáo án. Bạn có thể vào Giáo án để sửa và giao.");
+    setIsSaving(false);
+    setFeedback("Đã lưu giáo án vào hệ thống. Bạn có thể vào Giáo án để xem, chỉnh sửa và giao.");
   };
 
   if (loading) return <div className="py-20 text-center text-slate-400">Đang tải...</div>;
@@ -111,7 +136,7 @@ export default function CoachAI() {
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Môn</label>
             <select value={sport} onChange={(e) => { setSport(e.target.value); setDraft(null); }} className={selectCls}>
-              {SPORT_OPTIONS.map((s) => <option key={s}>{s}</option>)}
+              {sportOptions.map((s) => <option key={s.id} value={s.name}>{s.name}</option>)}
             </select>
           </div>
           <div className="flex flex-col gap-1">
@@ -178,7 +203,7 @@ export default function CoachAI() {
               {/* Step 3: Coach action */}
               {!saved ? (
                 <div className="flex gap-3 flex-wrap pt-2">
-                  <button type="button" onClick={handleSaveDraft}
+                  <button type="button" onClick={handleSaveDraft} disabled={isSaving}
                     className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-md shadow-teal-500/20">
                     Lưu thành Nháp giáo án
                   </button>

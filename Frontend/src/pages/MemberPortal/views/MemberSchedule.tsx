@@ -253,9 +253,21 @@ export default function MemberSchedule({ onNavigate }: Props) {
     return formatDateISO(currentMonday) === formatDateISO(getMonday(new Date()));
   }, [currentMonday]);
 
+  const isCancelledSession = (session: MemberSessionItem) => {
+    const normalizedStatus = String(session.status ?? "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d");
+
+    return ["da huy", "cancelled", "canceled", "rejected", "class_cancelled"].includes(normalizedStatus);
+  };
+
   // Filtered Sessions
   const filteredSessions = useMemo(() => {
     return sessions.filter((s) => {
+      if (isCancelledSession(s)) return false;
       if (typeFilter !== "all" && s.type !== typeFilter) return false;
       if (sportFilter !== "all" && s.sport.toLowerCase() !== sportFilter.toLowerCase()) return false;
       if (statusFilter !== "all" && s.status !== statusFilter) return false;

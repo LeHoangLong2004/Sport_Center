@@ -29,8 +29,11 @@ namespace SmartGym.Api.Endpoints
                     if (!Guid.TryParse(coachIdValue, out var coachId))
                         return Results.Ok(new { totalSessions = 0, completedSessions = 0, totalMembers = 0, upcomingClasses = 0 });
 
+                    var coachProfileId = await CoachProfileResolver.FindByUserIdAsync(db, coachId);
+                    var coachKey = coachProfileId ?? coachId;
                     var classes = await db.Database.SqlQueryRaw<ClassSqlRawModel>(
-                        "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status FROM classes WHERE coach_id = {0}",
+                        "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status FROM classes WHERE coach_id = {0} OR coach_id = {1}",
+                        coachKey,
                         coachId).ToListAsync();
                     var classIds = classes.Select(c => c.Id).ToHashSet();
                     var bookings = classIds.Count == 0
@@ -39,7 +42,9 @@ namespace SmartGym.Api.Endpoints
                             "SELECT id, user_id, class_id, status, created_at FROM class_bookings WHERE status NOT IN ('cancelled', 'rejected', 'class_cancelled')").ToListAsync();
                     var now = DateTime.UtcNow;
                     var coachBookings = bookings.Where(b => classIds.Contains(b.ClassId)).ToList();
-                    var reviews = await db.Reviews.Where(r => r.CoachId == coachId).ToListAsync();
+                    var reviews = await db.Reviews
+                        .Where(r => r.CoachId == coachKey || r.CoachId == coachId)
+                        .ToListAsync();
 
                     return Results.Ok(
                         new
@@ -62,8 +67,7 @@ namespace SmartGym.Api.Endpoints
                     [FromQuery] string? startDate,
                     [FromQuery] string? endDate,
                     HttpContext context,
-                    SmartGymDbContext db,
-                    ScheduleStoreService scheduleStore
+                    SmartGymDbContext db
                 ) =>
                 {
                     var coachUserIdClaim = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
@@ -142,36 +146,6 @@ namespace SmartGym.Api.Endpoints
                                 };
                             }).ToList();
 
-                            // Also append in-memory store sessions (e.g. 1-1 PT booked)
-                            var storeSessions = scheduleStore.GetSessionsForCoach(coachUserId.ToString());
-                            foreach (var s in storeSessions)
-                            {
-                                if (!result.Any(r => r.id == s.Id))
-                                {
-                                    result.Add(new
-                                    {
-                                        id = s.Id,
-                                        classId = s.ClassId ?? "",
-                                        className = s.ClassName,
-                                        sport = s.Sport,
-                                        level = s.Level,
-                                        type = s.Type,
-                                        date = s.Date,
-                                        startTime = s.StartTime,
-                                        endTime = s.EndTime,
-                                        room = s.Room,
-                                        coachName = s.CoachName,
-                                        capacity = s.Capacity,
-                                        registeredCount = s.RegisteredCount,
-                                        registeredMemberIds = new string[] { s.MemberId ?? "m1" },
-                                        status = s.Status,
-                                        approvalStatus = "approved",
-                                        attendanceStatus = s.AttendanceStatus,
-                                        coachNote = s.CoachNote,
-                                    });
-                                }
-                            }
-
                             if (!string.IsNullOrWhiteSpace(startDate) && DateTime.TryParse(startDate, out var sDate))
                             {
                                 result = result.Where(r => DateTime.Parse(r.date) >= sDate.Date).ToList();
@@ -186,40 +160,7 @@ namespace SmartGym.Api.Endpoints
                     }
                     catch { }
 
-                    // Fallback to ScheduleStoreService and default sessions
-                    var fallbackStoreSessions = scheduleStore.GetSessionsForCoach(coachUserId.ToString());
-                    var list = new List<object>();
-
-                    foreach (var s in fallbackStoreSessions)
-                    {
-                        list.Add(new
-                        {
-                            id = s.Id,
-                            classId = s.ClassId ?? "",
-                            className = s.ClassName,
-                            sport = s.Sport,
-                            level = s.Level,
-                            type = s.Type,
-                            date = s.Date,
-                            startTime = s.StartTime,
-                            endTime = s.EndTime,
-                            room = s.Room,
-                            coachName = s.CoachName,
-                            capacity = s.Capacity,
-                            registeredCount = s.RegisteredCount,
-                            registeredMemberIds = new string[] { s.MemberId ?? "m1" },
-                            status = s.Status,
-                            attendanceStatus = s.AttendanceStatus,
-                            coachNote = s.CoachNote,
-                            memberName = s.MemberName,
-                            memberPhone = s.MemberPhone,
-                            memberEmail = s.MemberEmail,
-                            goal = s.Goal,
-                            cancelReason = s.CancelReason
-                        });
-                    }
-
-                    return Results.Ok(list);
+                    return Results.Ok(Array.Empty<object>());
                 }
             );
 
@@ -477,4 +418,7 @@ public class AttendanceRecordRawModel
 
     [System.ComponentModel.DataAnnotations.Schema.Column("status")]
     public string? Status { get; set; }
+
+    [System.ComponentModel.DataAnnotations.Schema.Column("note")]
+    public string? Note { get; set; }
 }
