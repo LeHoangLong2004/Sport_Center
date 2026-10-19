@@ -19,7 +19,7 @@ export type PaymentMethodId = "qr" | "card" | "wallet" | "counter"
 
 export type FlowPackage = {
   id: string
-  category?: "membership" | "sport"
+  category?: "membership" | "sport" | "class"
   name: string
   tagline: string
   monthly: number

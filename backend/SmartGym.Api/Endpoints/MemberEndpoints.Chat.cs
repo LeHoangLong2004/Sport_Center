@@ -31,6 +31,7 @@ namespace SmartGym.Api.Endpoints
             public string? MemberName { get; set; }
             public string? Avatar { get; set; }
             public string? Subtitle { get; set; }
+            public string? InitialMessage { get; set; }
         }
 
         private static void MapMemberChatEndpoints(RouteGroupBuilder group)
@@ -159,7 +160,8 @@ namespace SmartGym.Api.Endpoints
                     memberId,
                     memberName,
                     req.Avatar,
-                    req.Subtitle
+                    req.Subtitle,
+                    req.InitialMessage
                 );
                 return conv == null
                     ? Results.BadRequest(new { message = "Không thể tạo cuộc trò chuyện" })
