@@ -323,8 +323,8 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
       return true;
     } catch (error) {
       console.error("Class approval action failed:", error);
-      return false;
       window.alert(error instanceof Error ? error.message : "Không thể xử lý đề xuất lớp học.");
+      return false;
     }
   };
 

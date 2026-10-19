@@ -169,12 +169,12 @@ app.MapGet(
                     id = reader.GetGuid(0),
                     fullName = fullName,
                     email = reader.IsDBNull(2) ? null : reader.GetString(2),
-                    phoneNumber = reader.IsDBNull(3) ? "0901 234 567" : reader.GetString(3),
+                    phoneNumber = reader.IsDBNull(3) ? null : reader.GetString(3),
                     avatarUrl = avatarUrl,
                     specialty = reader.IsDBNull(5) ? "Huấn luyện viên Thể hình" : reader.GetString(5),
                     bio = reader.IsDBNull(6) ? "Huấn luyện viên chuyên nghiệp tại Sport Center." : reader.GetString(6),
-                    experienceYears = reader.IsDBNull(7) ? 5 : reader.GetInt32(7),
-                    rating = reader.IsDBNull(8) ? 4.9m : reader.GetDecimal(8),
+                    experienceYears = reader.IsDBNull(7) ? (int?)null : reader.GetInt32(7),
+                    rating = reader.IsDBNull(8) ? (decimal?)null : reader.GetDecimal(8),
                 }
             );
         }

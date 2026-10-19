@@ -1,7 +1,31 @@
+import { useEffect, useState } from "react";
 import { FadeUp } from "../../components/Motion";
-import { stats } from "../homePageData";
 
 export function HomePageStatsStrip() {
+  const [stats, setStats] = useState([
+    { value: "—", label: "Thành viên hoạt động" },
+    { value: "—", label: "Huấn luyện viên" },
+    { value: "—", label: "Đánh giá trung bình" },
+    { value: "—", label: "Kinh nghiệm cao nhất" },
+  ]);
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/coaches").then((response) => response.ok ? response.json() : []),
+      fetch("/api/classes/available").then((response) => response.ok ? response.json() : []),
+    ]).then(([coaches]) => {
+      const rows = Array.isArray(coaches) ? coaches : [];
+      const ratings = rows.map((coach: any) => Number(coach.rating)).filter((rating: number) => Number.isFinite(rating) && rating > 0);
+      const experiences = rows.map((coach: any) => Number(coach.experienceYears)).filter((years: number) => Number.isFinite(years) && years >= 0);
+      setStats([
+        { value: "—", label: "Thành viên hoạt động" },
+        { value: String(rows.length), label: "Huấn luyện viên" },
+        { value: ratings.length ? (ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length).toFixed(1) : "—", label: "Đánh giá trung bình" },
+        { value: experiences.length ? `${Math.max(...experiences)}+` : "—", label: "Kinh nghiệm cao nhất" },
+      ]);
+    }).catch(() => undefined);
+  }, []);
+
   return (
     <section className="bg-[#0f172a] flex gap-[0px] items-stretch w-full shrink-0">
       {stats.map(({ value, label }, index) => (

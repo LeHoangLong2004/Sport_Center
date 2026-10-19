@@ -58,6 +58,7 @@ public class WorkoutPlanService : IWorkoutPlanService
             return null;
 
         plan.PlanName = request.PlanName;
+        plan.SportId = request.SportId;
         plan.Description = request.Description;
         plan.Goal = request.Goal;
         plan.Level = request.Level;
