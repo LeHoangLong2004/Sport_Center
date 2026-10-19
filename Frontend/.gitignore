@@ -1,5 +1,31 @@
+# ==============================================================================
+# .gitignore — Frontend (React + Vite + TypeScript + Tailwind)
+# ==============================================================================
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production build outputs
+dist/
+dist-ssr/
+build/
+out/
+
+# Cache & temporary directories
+.vite/
+.eslintcache
+.stylelintcache
+.cache/
+
+# Environment files (Chứa secret API keys không đưa lên Git)
+.env
+.env.*
+!.env.example
+
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -7,30 +33,25 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Dependencies
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
+# Editor & OS files
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
+Thumbs.db
 *.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+*.user
+*.swp
+*~
 
-# Env files
-.env
-.env.*
-!.env.example
+# Build cache & TypeScript
+*.tsbuildinfo
 
-# Misc
+# AI Assistant & Tooling
 .gemini/
+**/.gemini/
+.agents/
+**/.agents/

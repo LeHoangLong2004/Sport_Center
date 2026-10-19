@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { CoachAPI, type AttendanceRecord, type AttendanceStatus, type MockSession, type MockMember } from "../../services/api";
-import { FALLBACK_SESSIONS, FALLBACK_MEMBERS, DEFAULT_ATTENDANCE_MAP } from "./constants";
 
 export function useCoachAttendanceData(initialSessionId: string | null) {
-  const [activeSessions, setActiveSessions] = useState<MockSession[]>(FALLBACK_SESSIONS);
-  const [selectedSessionId, setSelectedSessionId] = useState<string>(initialSessionId || "s1");
+  const [activeSessions, setActiveSessions] = useState<MockSession[]>([]);
+  const [selectedSessionId, setSelectedSessionId] = useState<string>(initialSessionId || "");
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [savedRecords, setSavedRecords] = useState<AttendanceRecord[]>([]);
   const [members, setMembers] = useState<MockMember[]>([]);
@@ -13,14 +12,24 @@ export function useCoachAttendanceData(initialSessionId: string | null) {
     async function loadSessions() {
       try {
         const sessions = await CoachAPI.getSchedule();
-        if (Array.isArray(sessions) && sessions.length > 0) {
-          const active = sessions.filter((s: MockSession) => s.status !== "đã hủy");
-          if (active.length > 0) {
-            setActiveSessions(active);
-            if (!initialSessionId) setSelectedSessionId(active[0].id);
+        const active = Array.isArray(sessions)
+          ? sessions.filter((s: MockSession) => s.status !== "đã hủy")
+          : [];
+
+        setActiveSessions(active);
+        setSelectedSessionId((currentId) => {
+          if (initialSessionId && active.some((s) => s.id === initialSessionId)) {
+            return initialSessionId;
           }
-        }
-      } catch {}
+          if (currentId && active.some((s) => s.id === currentId)) {
+            return currentId;
+          }
+          return active[0]?.id || "";
+        });
+      } catch {
+        setActiveSessions([]);
+        setSelectedSessionId("");
+      }
     }
     loadSessions();
   }, [initialSessionId]);
@@ -35,25 +44,21 @@ export function useCoachAttendanceData(initialSessionId: string | null) {
           CoachAPI.getSessionMembers(selectedSessionId).catch(() => []),
         ]);
 
-        const isMockSession = FALLBACK_SESSIONS.some((session) => session.id === selectedSessionId);
-        let usableMembers = Array.isArray(sessionMembers) && sessionMembers.length > 0
-          ? sessionMembers
-          : isMockSession
-            ? FALLBACK_MEMBERS.filter((m) => m.classIds.includes(selectedSessionId))
-            : [];
+        const usableMembers = Array.isArray(sessionMembers) ? sessionMembers : [];
 
         const localKey = `coach_attendance_${selectedSessionId}`;
         const localSaved = localStorage.getItem(localKey);
         const baseRecords: AttendanceRecord[] = localSaved
           ? JSON.parse(localSaved)
-          : (DEFAULT_ATTENDANCE_MAP[selectedSessionId] || []);
+          : [];
 
         const initialized: AttendanceRecord[] = usableMembers.map((m: MockMember) => {
           const exist = (Array.isArray(attRecords) && attRecords.find((r) => r.memberId === m.id))
             || baseRecords.find((r) => r.memberId === m.id);
           
-          const rawStatus = exist?.status;
-          const status: AttendanceStatus = rawStatus === "no_show" ? "no_show" : "attended";
+          // Thành viên chưa có bản ghi điểm danh phải giữ trạng thái chưa điểm danh.
+          // Không coi lớp trong tương lai là đã có mặt.
+          const status: AttendanceStatus = exist?.status || "chưa điểm danh";
 
           return {
             sessionId: selectedSessionId,
@@ -66,6 +71,15 @@ export function useCoachAttendanceData(initialSessionId: string | null) {
         setRecords(initialized);
         setSavedRecords(initialized);
         setMembers(usableMembers);
+
+        // Đồng bộ lại registeredMemberIds cho buổi học đang chọn để sĩ số trên Header luôn chuẩn xác
+        setActiveSessions((prev) =>
+          prev.map((s) =>
+            s.id === selectedSessionId
+              ? { ...s, registeredMemberIds: usableMembers.map((m) => m.id) }
+              : s
+          )
+        );
       } catch (err) {
         console.error("Lỗi nạp điểm danh:", err);
       }

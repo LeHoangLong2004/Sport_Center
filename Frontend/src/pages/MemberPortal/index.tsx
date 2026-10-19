@@ -11,11 +11,12 @@ import MemberReviews from "./views/MemberReviews";
 import MemberChat from "./views/MemberChat";
 import MemberSupport from "./views/MemberSupport";
 import MemberProfileModern from "./views/MemberProfileModern";
-import { ProductShopPage } from "./views/ProductShopPage";
+import { ProductShopPage, type ProductOrder } from "./views/ProductShopPage";
+import { ProductPaymentFlow } from "../PaymentFlow/ProductPaymentFlow";
 import { CatalogPackage, PackagePeriod } from "../../services/packageApi";
 import PaymentFlow from "../PaymentFlow";
 
-type CheckoutSelection = {
+export type CheckoutSelection = {
   item: CatalogPackage;
   duration: PackagePeriod;
   discountPct: number;
@@ -23,8 +24,12 @@ type CheckoutSelection = {
 
 export default function MemberPortal({
   initialPage = "dashboard",
+  onCheckout: onExternalCheckout,
+  onProductPayment: onExternalProductPayment,
 }: {
   initialPage?: string;
+  onCheckout?: (selection: CheckoutSelection) => void;
+  onProductPayment?: (order: ProductOrder) => void;
 }) {
   const getInitialScreen = (): MemberScreen => {
     const raw = (window.location.hash || "").replace("#member-", "").replace("#", "");
@@ -48,7 +53,7 @@ export default function MemberPortal({
       message: "chat",
       ai: "support",
       support: "support",
-      shop: "dashboard",
+      shop: "shop",
       profile: "profile",
     };
     if (map[raw]) return map[raw];
@@ -58,6 +63,7 @@ export default function MemberPortal({
 
   const [screen, setScreen] = useState<MemberScreen>(getInitialScreen);
   const [checkout, setCheckout] = useState<CheckoutSelection | null>(null);
+  const [productPaymentOrder, setProductPaymentOrder] = useState<ProductOrder | null>(null);
 
   // Sync hashchange with screen state
   useEffect(() => {
@@ -83,11 +89,15 @@ export default function MemberPortal({
         message: "chat",
         ai: "support",
         support: "support",
-        shop: "dashboard",
+        shop: "shop",
         profile: "profile",
       };
       if (map[raw]) {
         setScreen(map[raw]);
+        // Checkout is an in-memory flow. When the browser Back button
+        // changes the hash, leave that flow as well so the rendered UI
+        // follows the URL without requiring a full page refresh.
+        setCheckout(null);
       }
     };
     window.addEventListener("hashchange", onHashChange);
@@ -110,6 +120,24 @@ export default function MemberPortal({
     );
   }
 
+  if (productPaymentOrder) {
+    return (
+      <ProductPaymentFlow
+        order={productPaymentOrder}
+        onBack={() => {
+          setProductPaymentOrder(null);
+          setScreen("shop");
+          window.location.hash = "#member-shop";
+        }}
+        onCompleted={() => {
+          setProductPaymentOrder(null);
+          setScreen("shop");
+          window.location.hash = "#member-shop";
+        }}
+      />
+    );
+  }
+
   const screenNodes: Record<MemberScreen, ReactNode> = {
     dashboard: <MemberDashboard onNavigate={navigateTo} />,
     booking: <MemberBooking onNavigate={navigateTo} />,
@@ -117,9 +145,14 @@ export default function MemberPortal({
     packages: (
       <MemberPackages
         onNavigate={navigateTo}
-        onCheckout={(item, duration, discountPct) =>
-          setCheckout({ item, duration, discountPct })
-        }
+        onCheckout={(item, duration, discountPct) => {
+          const selection = { item, duration, discountPct };
+          if (onExternalCheckout) {
+            onExternalCheckout(selection);
+            return;
+          }
+          setCheckout(selection);
+        }}
       />
     ),
     payments: <MemberPayments onNavigate={navigateTo} />,
@@ -127,19 +160,24 @@ export default function MemberPortal({
     reviews: <MemberReviews onNavigate={navigateTo} />,
     chat: <MemberChat onNavigate={navigateTo} />,
     support: <MemberSupport onNavigate={navigateTo} />,
-    profile: <MemberProfileModern onNavigate={navigateTo} />,
-  };
-
-  if ((window.location.hash || "").includes("shop")) {
-    return (
+    shop: (
       <ProductShopPage
+        embedded
+        onOnlinePayment={(order) => {
+          if (onExternalProductPayment) {
+            onExternalProductPayment(order);
+            return;
+          }
+          setProductPaymentOrder(order);
+        }}
         onNavigate={() => {
-          window.location.hash = "#member-dashboard";
           navigateTo("dashboard");
+          window.location.hash = "#member-dashboard";
         }}
       />
-    );
-  }
+    ),
+    profile: <MemberProfileModern onNavigate={navigateTo} />,
+  };
 
   return (
     <MemberShellModern currentScreen={screen} onNavigate={navigateTo}>

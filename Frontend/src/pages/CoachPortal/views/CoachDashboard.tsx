@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Star,
   CalendarDays,
+  Sparkles,
 } from "lucide-react";
 import { TodaySessionsList } from "./dashboard/TodaySessionsList";
 import { DashboardSidebar } from "./dashboard/DashboardSidebar";
@@ -42,16 +43,27 @@ export default function CoachDashboard({ navigateTo }: Props) {
 
   const [todaySessions, setTodaySessions] = useState<MockSession[]>([]);
   const [attendances, setAttendances] = useState<Record<string, AttendanceRecord[]>>({});
+  const [dashboardStats, setDashboardStats] = useState<{ averageRating: number | null; reviewCount: number }>({
+    averageRating: null,
+    reviewCount: 0,
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
       setLoading(true);
       try {
-        const allSessions = await CoachAPI.getSchedule();
+        const [allSessions, stats] = await Promise.all([
+          CoachAPI.getSchedule(),
+          CoachAPI.getDashboardStats(),
+        ]);
         const todayStr = new Date().toISOString().split("T")[0];
         const todays = allSessions.filter((s: MockSession) => s.date === todayStr);
         setTodaySessions(todays);
+        setDashboardStats({
+          averageRating: typeof stats?.averageRating === "number" ? stats.averageRating : null,
+          reviewCount: Number(stats?.reviewCount || 0),
+        });
 
         const atts: Record<string, AttendanceRecord[]> = {};
         for (const s of todays) {
@@ -165,8 +177,8 @@ export default function CoachDashboard({ navigateTo }: Props) {
         <StatCard
           icon={<Star className="w-5 h-5 text-amber-500 fill-amber-500" />}
           label="Đánh giá trung bình"
-          value="4.9"
-          sub="Dựa trên 142 lượt nhận xét"
+          value={dashboardStats.averageRating === null ? "—" : dashboardStats.averageRating.toFixed(1)}
+          sub={`Dựa trên ${dashboardStats.reviewCount} lượt nhận xét`}
           onClick={() => navigateTo("reviews")}
         />
       </div>

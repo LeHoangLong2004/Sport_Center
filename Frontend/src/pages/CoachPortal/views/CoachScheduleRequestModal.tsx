@@ -1,5 +1,6 @@
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
+import { DateInput } from "../../../components/DateInput";
 
 interface Props {
   isRequestModalOpen: any;
@@ -7,7 +8,7 @@ interface Props {
   handleSubmitRequest: any;
   selectedSessionForRequest: any;
   setSelectedSessionForRequest: any;
-  allUnifiedSessions: any;
+  allUnifiedSessions: Array<{ id: string; date: string; startTime: string; endTime: string; className: string }>;
   requestType: any;
   setRequestType: any;
   substituteCoach: any;
@@ -124,12 +125,10 @@ export default function CoachScheduleRequestModal(props: Props) {
                         <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
                           Ngày mới đề xuất:
                         </label>
-                        <input
-                          type="date"
+                        <DateInput
                           value={newDate}
-                          onChange={(e) => setNewDate(e.target.value)}
+                          onChange={setNewDate}
                           className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-
                         />
                       </div>
                       <div>

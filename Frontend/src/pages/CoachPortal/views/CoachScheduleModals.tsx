@@ -1,6 +1,7 @@
 import { createPortal } from "react-dom";
 import { Trash2, X } from "lucide-react";
 import CoachScheduleRequestModal from "./CoachScheduleRequestModal";
+import { DateInput } from "../../../components/DateInput";
 interface Props {
   isRequestModalOpen: any;
   setIsRequestModalOpen: any;
@@ -28,7 +29,7 @@ interface Props {
   setOpenSlotStartTime: any;
   openSlotEndTime: any;
   setOpenSlotEndTime: any;
-  TIME_ROWS: any;
+  TIME_ROWS: string[];
   openSlotSport: any;
   setOpenSlotSport: any;
   openSlotRoom: any;
@@ -122,11 +123,10 @@ export default function CoachScheduleModals(props: Props) {
                     <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
                       Ngày mở ca trống: <span className="text-rose-500">*</span>
                     </label>
-                    <input
-                      type="date"
+                    <DateInput
                       required
                       value={openSlotDate}
-                      onChange={(e) => setOpenSlotDate(e.target.value)}
+                      onChange={setOpenSlotDate}
                       className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400 font-medium"
                     />
                   </div>

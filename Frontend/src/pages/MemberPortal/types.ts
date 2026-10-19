@@ -8,7 +8,8 @@ export type MemberScreen =
   | "reviews"     // 7. Đánh giá HLV
   | "chat"        // 8. Tin nhắn trao đổi với HLV
   | "support"     // 9. Trợ lý AI & Hỗ trợ
-  | "profile";    // 10. Hồ sơ cá nhân & Đổi mật khẩu
+  | "shop"        // 10. Cửa hàng sản phẩm
+  | "profile";    // 11. Hồ sơ cá nhân & Đổi mật khẩu
 
 export interface MemberSessionItem {
   id: string;
@@ -22,12 +23,21 @@ export interface MemberSessionItem {
   room: string;
   coachId: string;
   coachName: string;
+  coachAvatar?: string;
+  coachSpecialty?: string;
+  coachPhone?: string;
+  coachBio?: string;
+  coachRating?: number;
+  coachExperienceYears?: number;
+  price?: number;
+  paymentStatus?: string;
   capacity: number;
   registeredCount: number;
   status: "sắp diễn ra" | "đang diễn ra" | "hoàn thành" | "đã hủy";
   attendanceStatus?: "có mặt" | "đi muộn" | "vắng" | "chưa điểm danh";
   cancelReason?: string;
   coachNote?: string;
+  goal?: string;
 }
 
 export interface MemberPackageItem {

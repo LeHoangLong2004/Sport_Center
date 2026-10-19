@@ -37,6 +37,9 @@ public class GroupClassModel : BaseModel
     [Column("status")]
     public bool Status { get; set; }
 
+    [Column("approval_status")]
+    public string ApprovalStatus { get; set; } = "approved";
+
     public GroupClass ToDomain()
     {
         return new GroupClass(
@@ -49,6 +52,7 @@ public class GroupClassModel : BaseModel
             DurationMinutes,
             Capacity,
             CurrentEnrolled,
-            Status);
+            Status,
+            ApprovalStatus);
     }
 }

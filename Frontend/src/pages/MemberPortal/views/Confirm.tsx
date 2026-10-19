@@ -33,10 +33,6 @@ export function Confirm({
   }, [selectedClass.sportName]);
 
   const handleConfirm = async () => {
-    if (access !== "allowed") {
-      setError("Bạn cần có gói môn đang hiệu lực phù hợp mới có thể đặt lớp này.");
-      return;
-    }
     if (!selectedClass.id) {
       setError("Không tìm thấy ID lớp học. Vui lòng thử lại.");
       return;
@@ -46,18 +42,16 @@ export function Confirm({
     setError(null);
 
     try {
-      import('../services/api').then(async ({ MemberAPI }) => {
-        try {
-          await MemberAPI.bookClass(selectedClass.id as string);
-          onNavigate("success");
-        } catch (err: any) {
-          setError(err.message || "Đã xảy ra lỗi khi đặt lớp. Vui lòng thử lại.");
-        } finally {
-          setIsSubmitting(false);
-        }
-      });
+      const { MemberAPI } = await import('../services/api');
+      if (access === "allowed") {
+        await MemberAPI.bookClass(selectedClass.id as string);
+      } else {
+        await MemberAPI.payAndBookClass(selectedClass.id as string, "vietqr");
+      }
+      onNavigate("booking" as any);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "Đã xảy ra lỗi khi đặt lớp. Vui lòng thử lại.");
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -116,9 +110,9 @@ export function Confirm({
           </div>
 
           {access === "denied" && (
-            <div className="mt-4 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950 sm:flex-row sm:items-center sm:justify-between">
-              <span>Hạng thành viên không cấp quyền vào lớp. Mua gói môn phù hợp trước khi đặt chỗ.</span>
-              <button type="button" onClick={() => onNavigate("payment")} className="shrink-0 font-semibold text-teal-800 underline">Xem gói tập của tôi</button>
+            <div className="mt-4 flex flex-col gap-3 rounded-xl border border-teal-200 bg-teal-50 p-4 text-sm text-teal-950 sm:flex-row sm:items-center sm:justify-between">
+              <span>Hội viên cơ bản / Chưa có gói môn: Áp dụng thanh toán theo giá gốc <strong>150.000 đ</strong> cho buổi học này.</span>
+              <button type="button" onClick={() => onNavigate("packages" as any)} className="shrink-0 font-semibold text-teal-800 underline">Đăng ký gói tiết kiệm hơn</button>
             </div>
           )}
 
@@ -130,9 +124,9 @@ export function Confirm({
               className="confirm"
               onClick={handleConfirm}
               type="button"
-              disabled={isSubmitting || access !== "allowed"}
+              disabled={isSubmitting}
             >
-              {isSubmitting ? "Đang xử lý..." : access === "checking" ? "Đang kiểm tra quyền..." : "Xác nhận đặt chỗ"}
+              {isSubmitting ? "Đang xử lý..." : access === "allowed" ? "Xác nhận đặt chỗ (Miễn phí)" : "Thanh toán giá gốc (150.000 đ) & Đặt chỗ"}
             </button>
           </div>
           {error && (

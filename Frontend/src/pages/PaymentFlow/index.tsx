@@ -49,7 +49,7 @@ export default function PaymentFlow({
       phone: "",
       email: "",
       dob: "",
-      gender: "Nữ",
+      gender: "",
       emergencyContact: "",
       startDate: (() => {
         const today = new Date();
@@ -66,17 +66,63 @@ export default function PaymentFlow({
         const u = JSON.parse(userStr);
         return {
           ...defaultData,
-          fullName: u.fullName || "",
-          phone: u.phoneNumber || "",
+          fullName: u.fullName || u.name || "",
+          phone: u.phoneNumber || u.phone || "",
           email: u.email || "",
-          dob: u.dateOfBirth ? u.dateOfBirth.split('T')[0] : "",
-          gender: u.gender || "Nữ"
+          dob: u.dateOfBirth ? u.dateOfBirth.split('T')[0] : (u.dob ? u.dob.split('T')[0] : ""),
+          gender: u.gender || "",
+          emergencyContact: u.emergencyContact || ""
         };
       }
     } catch {}
 
     return defaultData;
   });
+
+  // Always fetch latest profile from backend to ensure all fields (phone, etc.) are up to date
+  React.useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("user");
+      if (!userStr) return;
+      const u = JSON.parse(userStr);
+      if (!u?.id) return;
+
+      const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
+      fetch(`/api/users/${u.id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((userData) => {
+          if (!userData) return;
+          const userPhone = userData.phoneNumber || userData.phone || "";
+          setFormData((prev: any) => ({
+            ...prev,
+            fullName: prev.fullName || userData.fullName || "",
+            phone: prev.phone || userPhone,
+            email: prev.email || userData.email || "",
+            dob: prev.dob || (userData.dateOfBirth ? userData.dateOfBirth.split("T")[0] : ""),
+            gender: prev.gender || userData.gender || "",
+            emergencyContact: prev.emergencyContact || userData.emergencyContact || "",
+          }));
+
+          // Synchronize localStorage
+          localStorage.setItem(
+            "user",
+            JSON.stringify({
+              ...u,
+              fullName: userData.fullName || u.fullName,
+              email: userData.email || u.email,
+              phoneNumber: userPhone || u.phoneNumber || u.phone || "",
+              phone: userPhone || u.phone || u.phoneNumber || "",
+              dateOfBirth: userData.dateOfBirth || u.dateOfBirth || "",
+              gender: userData.gender || u.gender || "",
+              emergencyContact: userData.emergencyContact || u.emergencyContact || "",
+            })
+          );
+        })
+        .catch(() => {});
+    } catch {}
+  }, []);
 
   React.useEffect(() => {
     if (initialPackage) {
@@ -210,7 +256,13 @@ export default function PaymentFlow({
             method={method}
             setMethod={setMethod}
             formData={formData}
-            onNext={() => setScreen("otp")}
+            onNext={() => {
+              if (method === "card") {
+                setScreen("otp");
+              } else {
+                void goProcessing();
+              }
+            }}
             onBack={() => setScreen("member-info")}
           />
         </div>
@@ -226,6 +278,9 @@ export default function PaymentFlow({
           <OTPScreen
             pkg={pkgData}
             period={period}
+            formData={formData}
+            phone={formData.phone}
+            email={formData.email}
             onConfirm={goProcessing}
             onCancel={() => setScreen("failed")}
           />

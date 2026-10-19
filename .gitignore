@@ -1,65 +1,136 @@
-# ==================================
-# DÀNH CHO TOÀN BỘ PROJECT
-# ==================================
-.DS_Store
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
+# ==============================================================================
+# .gitignore — SWP391 Sport Center (Fullstack .NET 10 + React Vite)
+# ==============================================================================
 
-# IDE / Trình chỉnh sửa code
+# ------------------------------------------------------------------------------
+# 1. Hệ điều hành (Operating System Files)
+# ------------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ------------------------------------------------------------------------------
+# 2. Trình soạn thảo & IDE (IDEs & Code Editors)
+# ------------------------------------------------------------------------------
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
 .idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
 *.swp
+*.bak
+*.tmp
 *~
 
-# ==================================
-# BACKEND (.NET)
-# ==================================
+# ------------------------------------------------------------------------------
+# 3. Backend (.NET 10 / ASP.NET Core / C#)
+# ------------------------------------------------------------------------------
+# Build outputs
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
 backend/bin/
 backend/obj/
 backend/*/bin/
 backend/*/obj/
+backend/SmartGym.Api/bin/
+backend/SmartGym.Api/obj/
+backend/SmartGym.Application/bin/
+backend/SmartGym.Application/obj/
+backend/SmartGym.Domain/bin/
+backend/SmartGym.Domain/obj/
+backend/SmartGym.Infrastructure/bin/
+backend/SmartGym.Infrastructure/obj/
 
-# File cấu hình cục bộ (chứa chuỗi kết nối DB thật, secret thật) không được đưa lên Git
+# Visual Studio Cache
+.vs/
+*.pdb
+*.opendb
+*.VC.db
+
+# File cấu hình cục bộ & Bảo mật (Secrets)
 backend/**/appsettings.Development.json
 backend/**/appsettings.Local.json
 backend/**/secrets.json
+**/*.pfx
+**/*.p12
+**/*.key
+**/*.cer
 
-# Log
+# Thư mục upload ảnh cục bộ (fallback khi không dùng Cloudinary CDN)
+**/wwwroot/uploads/**
+!**/wwwroot/uploads/
+!**/wwwroot/uploads/**/.gitkeep
+
+# Logs & Test Results
 backend/**/*.log
+*.log
+[Tt]est[Rr]esult*/
+coverage*/
+*.trx
+*.coverage
 
-# ==================================
-# FRONTEND (Node.js / React / Vue)
-# ==================================
+# ------------------------------------------------------------------------------
+# 4. Frontend (React / Vite / TypeScript / Tailwind)
+# ------------------------------------------------------------------------------
 Frontend/node_modules/
+node_modules/
 Frontend/dist/
+Frontend/dist-ssr/
 Frontend/build/
-Frontend/.next/
-Frontend/out/
+Frontend/.vite/
+dist/
+dist-ssr/
 
-# Biến môi trường cục bộ
+# Biến môi trường Frontend (Chứa API keys nhạy cảm)
 Frontend/.env
 Frontend/.env.local
-Frontend/.env.development.localA
+Frontend/.env.development.local
 Frontend/.env.test.local
 Frontend/.env.production.local
+Frontend/.env.*.local
+!.env.example
+!Frontend/.env.example
 
-# Logs
+# Logs gói cài đặt Node
 Frontend/npm-debug.log*
 Frontend/yarn-debug.log*
 Frontend/yarn-error.log*
 Frontend/pnpm-debug.log*
 
-# Bộ nhớ đệm (Cache)
+# Cache linting & build tools
 Frontend/.eslintcache
 Frontend/.stylelintcache
-Frontend/.vite/
+Frontend/.cache/
+.eslintcache
+*.tsbuildinfo
 
-dist/
-node_modules/
+# ------------------------------------------------------------------------------
+# 5. Antigravity, AI Assistants & .NET Tooling Cache
+# ------------------------------------------------------------------------------
+.gemini/
+**/.gemini/
+.agents/
+**/.agents/
 .dotnet/
+**/.dotnet/
+.dotnet*
+.dotnet*/
+.dotnet_temp/
+*.dotnetUserLevelCache
+*.toolpath.sentinel
+.cursor/
+.windsurf/
+.claude/
+.copilot/

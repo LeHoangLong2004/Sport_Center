@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { DateInput } from '../../../components/DateInput';
 
-export function CreateClassModal({ onClose, editData }: { onClose: () => void, editData?: any }) {
+export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager" }: { onClose: () => void, onSuccess?: () => void, editData?: any, mode?: "manager" | "coach" }) {
+  const isCoachMode = mode === "coach";
   const [formData, setFormData] = useState(() => {
     if (editData) {
       const d = new Date(editData.scheduleTime);
@@ -37,6 +39,17 @@ export function CreateClassModal({ onClose, editData }: { onClose: () => void, e
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [currentCoachName, setCurrentCoachName] = useState('Coach hiện tại');
+
+  useEffect(() => {
+    try {
+      const storedUser = localStorage.getItem('user');
+      const user = storedUser ? JSON.parse(storedUser) : null;
+      setCurrentCoachName(user?.fullName || user?.name || user?.email || 'Coach hiện tại');
+    } catch {
+      setCurrentCoachName('Coach hiện tại');
+    }
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -106,20 +119,37 @@ export function CreateClassModal({ onClose, editData }: { onClose: () => void, e
 
     try {
       // Combine date and time
-      const startDateTime = new Date(`${formData.scheduleDate}T${formData.scheduleTime}:00`);
+      const scheduleDate = formData.scheduleDate;
+      const scheduleTime = formData.scheduleTime;
+
+      if (!scheduleDate || !scheduleTime) {
+        throw new Error('Vui lòng chọn đầy đủ ngày và giờ học.');
+      }
+
+      const startDateTime = new Date(`${scheduleDate}T${scheduleTime}:00`);
+      if (Number.isNaN(startDateTime.getTime())) {
+        throw new Error('Ngày hoặc giờ học không hợp lệ.');
+      }
       
       const payload = {
         sportId: formData.sportId,
         facilityId: formData.facilityId,
-        coachId: formData.coachId,
         className: formData.className,
         scheduleTime: startDateTime.toISOString(),
         durationMinutes: Number(formData.durationMinutes),
         capacity: Number(formData.capacity)
       };
 
-      const url = editData ? `/api/classes/${editData.id}` : "/api/classes";
-      const method = editData ? "PUT" : "POST";
+      const requestPayload = isCoachMode
+        ? payload
+        : { ...payload, coachId: formData.coachId };
+
+      const url = isCoachMode
+        ? "/api/classes/proposals"
+        : editData
+          ? `/api/classes/${editData.id}`
+          : "/api/classes";
+      const method = isCoachMode || !editData ? "POST" : "PUT";
 
       const token = localStorage.getItem("token");
 
@@ -129,7 +159,7 @@ export function CreateClassModal({ onClose, editData }: { onClose: () => void, e
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(requestPayload)
       });
 
       let data: any = {};
@@ -151,7 +181,8 @@ export function CreateClassModal({ onClose, editData }: { onClose: () => void, e
         throw new Error(data.message || `Lỗi khi ${editData ? 'cập nhật' : 'tạo'} lớp học`);
       }
 
-      setSuccess(data.message || (editData ? "Cập nhật thành công!" : "Tạo lớp học thành công!"));
+      setSuccess(data.message || (isCoachMode ? "Đề xuất đã được gửi để Manager duyệt!" : editData ? "Cập nhật thành công!" : "Tạo lớp học thành công!"));
+      onSuccess?.();
       setTimeout(() => {
         onClose();
       }, 1500);
@@ -167,7 +198,7 @@ export function CreateClassModal({ onClose, editData }: { onClose: () => void, e
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white rounded-xl shadow-lg w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-slate-50 shrink-0">
-          <h2 className="text-lg font-bold text-slate-800">{editData ? "Cập nhật thông tin lớp học" : "Tạo lớp học mới"}</h2>
+          <h2 className="text-lg font-bold text-slate-800">{isCoachMode ? "Đề xuất lớp học mới" : editData ? "Cập nhật thông tin lớp học" : "Tạo lớp học mới"}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
         </div>
 
@@ -184,7 +215,7 @@ export function CreateClassModal({ onClose, editData }: { onClose: () => void, e
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Ngày học</label>
-                <input required type="date" name="scheduleDate" value={formData.scheduleDate} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" />
+                <DateInput required value={formData.scheduleDate} onChange={(value) => setFormData((prev) => ({ ...prev, scheduleDate: value }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Giờ học</label>
@@ -211,12 +242,23 @@ export function CreateClassModal({ onClose, editData }: { onClose: () => void, e
 
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Huấn luyện viên</label>
-              <select required name="coachId" value={formData.coachId} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 bg-white">
-                <option value="">-- Chọn HLV --</option>
-                {coaches.map(c => <option key={c.id} value={c.id}>{c.fullName || c.email}</option>)}
-              </select>
-              {loadingData && <p className="text-xs text-amber-600 mt-1">Đang tải dữ liệu...</p>}
-              {!loadingData && coaches.length === 0 && <p className="text-xs text-red-600 mt-1">Chưa có HLV nào trong hệ thống.</p>}
+              {isCoachMode ? (
+                <>
+                  <div className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                    {currentCoachName}
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">Đề xuất sẽ được gắn với tài khoản Coach đang đăng nhập.</p>
+                </>
+              ) : (
+                <>
+                  <select required name="coachId" value={formData.coachId} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 bg-white">
+                    <option value="">-- Chọn HLV --</option>
+                    {coaches.map(c => <option key={c.id} value={c.id}>{c.fullName || c.email}</option>)}
+                  </select>
+                  {loadingData && <p className="text-xs text-amber-600 mt-1">Đang tải dữ liệu...</p>}
+                  {!loadingData && coaches.length === 0 && <p className="text-xs text-red-600 mt-1">Chưa có HLV nào trong hệ thống.</p>}
+                </>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -235,7 +277,7 @@ export function CreateClassModal({ onClose, editData }: { onClose: () => void, e
                 Hủy
               </button>
               <button type="submit" disabled={loading} className="px-5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50">
-                {loading ? 'Đang xử lý...' : (editData ? 'Lưu thay đổi' : 'Xác nhận tạo')}
+                {loading ? 'Đang xử lý...' : (isCoachMode ? 'Xác nhận tạo' : editData ? 'Lưu thay đổi' : 'Xác nhận tạo')}
               </button>
             </div>
           </form>

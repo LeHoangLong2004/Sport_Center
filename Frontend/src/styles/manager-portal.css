@@ -1,0 +1,140 @@
+/*
+ * Manager Portal visual layer
+ *
+ * The manager keeps its original rose/slate palette. This layer only brings
+ * the Member Portal's visual rhythm over: Manrope typography, softer cards,
+ * consistent 16px radii, quiet borders, and predictable spacing.
+ */
+.manager-portal-shell {
+  --manager-radius-card: 1rem;
+  --manager-radius-control: 0.75rem;
+  --manager-shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.035);
+  font-family: var(--font-regular, "Manrope:Regular", Manrope, ui-sans-serif, system-ui, sans-serif);
+  letter-spacing: -0.01em;
+}
+
+.manager-portal-shell .font-sans,
+.manager-portal-shell input,
+.manager-portal-shell select,
+.manager-portal-shell textarea,
+.manager-portal-shell button {
+  font-family: inherit;
+}
+
+.manager-portal-shell .manager-sidebar {
+  width: 250px;
+}
+
+.manager-portal-shell .manager-sidebar nav {
+  gap: 4px;
+}
+
+.manager-portal-shell .manager-sidebar nav button {
+  border-radius: 0.625rem;
+  padding-block: 0.6875rem;
+}
+
+.manager-portal-shell .manager-sidebar > div:first-child {
+  margin-bottom: 0.25rem;
+}
+
+.manager-portal-shell .manager-sidebar > div:nth-last-child(2) {
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+.manager-portal-shell .manager-sidebar > div:last-child {
+  border-top: 1px solid #1e293b;
+  padding-top: 0.5rem;
+}
+
+.manager-portal-shell .manager-sidebar > div:last-child > div {
+  margin-inline: -0.75rem;
+  border-radius: 0.75rem;
+}
+
+.manager-portal-shell .manager-topbar {
+  min-height: 80px;
+}
+
+.manager-portal-shell .manager-topbar input {
+  font-size: 0.75rem;
+}
+
+.manager-portal-shell .manager-page-content {
+  scroll-behavior: smooth;
+}
+
+/* View roots previously added a second p-4/p-6/p-8 inside the shell. */
+.manager-portal-shell .manager-page-content > div[class~="p-8"],
+.manager-portal-shell .manager-page-content > div[class~="p-6"],
+.manager-portal-shell .manager-page-content > div[class~="p-4"] {
+  padding: 0 !important;
+}
+
+/* Member-style cards: preserve every existing color, only soften the surface. */
+.manager-portal-shell .manager-page-content section.rounded-xl,
+.manager-portal-shell .manager-page-content section.rounded-2xl,
+.manager-portal-shell .manager-page-content div.bg-white.rounded-xl,
+.manager-portal-shell .manager-page-content div.bg-white.rounded-2xl,
+.manager-portal-shell .manager-page-content div.bg-white[class*="rounded-["] {
+  border-radius: var(--manager-radius-card);
+  box-shadow: var(--manager-shadow-card);
+}
+
+.manager-portal-shell .manager-page-content input:not([type="checkbox"]):not([type="radio"]),
+.manager-portal-shell .manager-page-content select,
+.manager-portal-shell .manager-page-content textarea {
+  border-radius: var(--manager-radius-control);
+}
+
+.manager-portal-shell .manager-page-content button:not([class*="rounded-full"]),
+.manager-portal-shell .manager-page-content a[class*="rounded-lg"] {
+  border-radius: var(--manager-radius-control);
+}
+
+.manager-portal-shell .manager-page-content table,
+.manager-portal-shell .manager-page-content [role="table"] {
+  border-radius: var(--manager-radius-card);
+  overflow: hidden;
+}
+
+.manager-portal-shell .manager-page-content [class*="border-[#e2e8f0]"],
+.manager-portal-shell .manager-page-content [class*="border-slate-200"] {
+  border-color: #e2e8f0;
+}
+
+.manager-portal-shell .manager-page-content [class*="shadow-xl"],
+.manager-portal-shell .manager-page-content [class*="shadow-2xl"] {
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
+}
+
+@media (max-width: 1023px) {
+  .manager-portal-shell .manager-sidebar {
+    width: 224px;
+  }
+}
+
+@media (max-width: 767px) {
+  .manager-portal-shell .manager-sidebar {
+    width: 76px;
+    padding-inline: 0.75rem;
+  }
+
+  .manager-portal-shell .manager-sidebar > div:first-child > div:last-child,
+  .manager-portal-shell .manager-sidebar nav button span,
+  .manager-portal-shell .manager-sidebar > div:nth-last-child(2),
+  .manager-portal-shell .manager-sidebar > div:last-child strong,
+  .manager-portal-shell .manager-sidebar > div:last-child small {
+    display: none;
+  }
+
+  .manager-portal-shell .manager-sidebar nav button {
+    justify-content: center;
+    padding-inline: 0.75rem;
+  }
+
+  .manager-portal-shell .manager-sidebar nav button img {
+    margin: 0;
+  }
+}

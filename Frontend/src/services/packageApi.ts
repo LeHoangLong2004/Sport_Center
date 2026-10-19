@@ -1,4 +1,4 @@
-export type PackageCategory = "membership" | "sport"
+export type PackageCategory = "membership" | "sport" | "class"
 
 export type MembershipTier = "basic" | "plus" | "premium"
 
@@ -38,13 +38,15 @@ export interface PackageOrder {
   userId: string
   userName: string
   userEmail: string
+  userPhone?: string
   packageId: string
   packageSnapshot: CatalogPackage
-  durationMonths: PackagePeriod
+  durationMonths: number
   subtotal: number
   discountPct: number
   discountAmount: number
   total: number
+  paymentMethod?: string
   status: "pending" | "paid" | "failed"
   createdAt: string
   paidAt?: string
@@ -199,9 +201,18 @@ export const PackageAPI = {
       body: JSON.stringify({ packageId, durationMonths, paymentMethod, startDate }),
     }),
 
-  confirmPayment: (orderId: string) =>
+  confirmPayment: (orderId: string, paymentMethod?: string) =>
     request<PackageOrder>(
       `/package-orders/${encodeURIComponent(orderId)}/confirm-payment`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ paymentMethod }),
+      },
+    ),
+
+  cancelOrder: (orderId: string) =>
+    request<PackageOrder>(
+      `/package-orders/${encodeURIComponent(orderId)}/cancel`,
       {
         method: "PUT",
       },

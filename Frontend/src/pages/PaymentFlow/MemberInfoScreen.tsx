@@ -24,6 +24,23 @@ export function MemberInfoScreen({
 
 
 
+  const isLoggedIn = typeof window !== "undefined" && !!(localStorage.getItem("token") || localStorage.getItem("accessToken"))
+
+  React.useEffect(() => {
+    if (!formData.phone) {
+      try {
+        const userStr = localStorage.getItem("user");
+        if (userStr) {
+          const u = JSON.parse(userStr);
+          const p = u.phoneNumber || u.phone;
+          if (p) {
+            setFormData((prev: any) => ({ ...prev, phone: p }));
+          }
+        }
+      } catch {}
+    }
+  }, [formData.phone, setFormData]);
+
   return (
     <div className="bg-[#f8fafc] flex flex-col items-center w-full min-h-screen pb-20">
       <Stepper active={2} />
@@ -35,6 +52,24 @@ export function MemberInfoScreen({
         <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-base max-w-2xl">
           Vui lòng kiểm tra thông tin cá nhân và thời gian kích hoạt trước khi thanh toán.
         </p>
+
+        {!isLoggedIn && (
+          <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-amber-900 w-full max-w-2xl mt-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">⚠️</span>
+              <p className="text-sm font-medium">
+                Bạn chưa đăng nhập. Vui lòng đăng nhập để liên kết gói tập vào tài khoản hội viên của bạn.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => { window.location.hash = "login" }}
+              className="shrink-0 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-4 py-2 rounded-xl shadow transition-all cursor-pointer"
+            >
+              Đăng nhập ngay
+            </button>
+          </div>
+        )}
       </FadeUp>
 
       <div className="flex items-start justify-center w-full px-4 md:px-8">
@@ -68,10 +103,15 @@ export function MemberInfoScreen({
                 
                 <div className="flex flex-col gap-[8px] min-w-0">
                   <label className="font-['Inter:Semi_Bold'] font-semibold text-[#1e293b] text-[14px]">Giới tính</label>
-                  <select value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})} className="bg-white border border-[#cbd5e1] focus:border-[#2563eb] outline-none px-[16px] py-[12px] rounded-[10px] w-full font-['Inter:Medium'] font-medium text-[#0f172a] text-[14px]">
-                    <option>Nam</option>
-                    <option>Nữ</option>
-                    <option>Khác</option>
+                  <select
+                    value={formData.gender || ""}
+                    onChange={e => setFormData({...formData, gender: e.target.value})}
+                    className="bg-white border border-[#cbd5e1] focus:border-[#2563eb] outline-none px-[16px] py-[12px] rounded-[10px] w-full font-['Inter:Medium'] font-medium text-[#0f172a] text-[14px]"
+                  >
+                    <option value="">Chọn giới tính</option>
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
+                    <option value="Khác">Khác</option>
                   </select>
                 </div>
                 
@@ -121,67 +161,77 @@ export function MemberInfoScreen({
           </FadeUp>
 
           <FadeUp delay={0.3} className="flex flex-col items-start w-full lg:w-[400px] shrink-0">
-            <div className="bg-white border border-[#e2e8f0] flex flex-col gap-[24px] items-start p-[32px] rounded-[16px] w-full shadow-lg shadow-blue-900/5 sticky top-24">
-              <h2 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[20px] w-full">
+            <div className="bg-white border border-[#e2e8f0] flex flex-col gap-4 items-start p-6 rounded-[16px] w-full shadow-lg shadow-blue-900/5 sticky top-24">
+              <div className="flex items-center justify-between gap-3 w-full">
+                <h2 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[20px]">
                 Tóm tắt gói tập
-              </h2>
+                </h2>
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Chi tiết</span>
+              </div>
               
-              <div className="flex items-center justify-between w-full bg-[#f8fafc] p-[16px] rounded-[12px] border border-[#e2e8f0]">
-                <div>
+              <div className="flex items-start justify-between gap-3 w-full bg-[#f8fafc] p-4 rounded-[12px] border border-[#e2e8f0]">
+                <div className="min-w-0 flex-1">
                   <p className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[18px]">{pkg.name}</p>
-                  <p className="mt-1 text-sm text-slate-500">{pkg.tagline}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">{pkg.tagline}</p>
                 </div>
-                <div className="bg-teal-50 text-teal-600 flex items-start px-[12px] py-[4px] rounded-full border border-teal-200">
+                <div className="bg-teal-50 text-teal-600 flex items-start px-3 py-1 rounded-full border border-teal-200 shrink-0">
                   <p className="font-['Inter:Bold'] font-bold text-[12px] uppercase tracking-wider">{periodLabel}</p>
                 </div>
               </div>
 
-              {pkg.description && <p className="w-full text-sm leading-6 text-slate-600">{pkg.description}</p>}
+              {pkg.description && <p className="w-full text-[13px] leading-5 text-slate-600">{pkg.description}</p>}
 
               {pkg.details && pkg.details.length > 0 && (
-                <dl className="grid w-full grid-cols-1 gap-2 rounded-xl bg-slate-50 p-4 text-sm sm:grid-cols-2">
+                <dl className="grid w-full grid-cols-2 gap-x-4 gap-y-3 rounded-xl bg-slate-50 p-4 text-[13px]">
                   {pkg.details.map(({ label, value }) => (
-                    <div key={label} className="flex justify-between gap-3">
-                      <dt className="text-slate-500">{label}</dt>
-                      <dd className="text-right font-semibold text-slate-800">{value}</dd>
+                    <div key={label} className="flex min-w-0 flex-col gap-0.5">
+                      <dt className="text-xs text-slate-500">{label}</dt>
+                      <dd className="break-words font-semibold leading-5 text-slate-800">{value}</dd>
                     </div>
                   ))}
                 </dl>
               )}
               
-              <div className="flex flex-col gap-[12px] w-full">
-                {pkg.features.map((f: string, i: number) => (
-                  <div key={i} className="flex gap-[12px] items-start w-full">
-                    <div className="bg-[#dcfce7] p-[4px] rounded-full mt-[2px]">
-                      <svg className="w-[12px] h-[12px] text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+              <div className="w-full rounded-xl border border-slate-100 bg-white p-4">
+                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Quyền lợi</p>
+                <div className="flex flex-col gap-2.5 w-full">
+                  {pkg.features.map((f: string, i: number) => (
+                    <div key={i} className="flex gap-2 items-start w-full">
+                      <div className="bg-[#dcfce7] p-1 rounded-full mt-0.5 shrink-0">
+                        <svg className="w-3 h-3 text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                      </div>
+                      <p className="font-['Inter:Medium'] font-medium text-[#475569] text-[13px] flex-1 leading-5">{f}</p>
                     </div>
-                    <p className="font-['Inter:Medium'] font-medium text-[#475569] text-[14px] flex-1 leading-relaxed">{f}</p>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
               {pkg.terms && pkg.terms.length > 0 && (
-                <ul className="w-full list-disc space-y-1 pl-5 text-xs leading-5 text-slate-500">
-                  {pkg.terms.map((term, index) => <li key={`${term}-${index}`}>{term}</li>)}
-                </ul>
+                <div className="w-full border-t border-slate-200 pt-3">
+                  <p className="mb-1.5 text-xs font-semibold text-slate-500">Lưu ý gói tập</p>
+                  <ul className="w-full list-disc space-y-1 pl-5 text-xs leading-5 text-slate-500">
+                    {pkg.terms.map((term, index) => <li key={`${term}-${index}`}>{term}</li>)}
+                  </ul>
+                </div>
               )}
               
-              <div className="w-full h-px bg-[#e2e8f0] my-[8px]" />
+              <div className="w-full border-t border-slate-200 pt-4" />
               
-              <div className="flex flex-col gap-[12px] w-full text-[14px]">
-                <div className="flex items-start justify-between w-full">
+              <div className="flex flex-col gap-2.5 w-full text-[13px]">
+                <div className="flex items-start justify-between gap-3 w-full">
                   <span className="font-['Inter:Medium'] font-medium text-[#64748b]">Giá niêm yết</span>
-                  <span className="font-['Inter:Semi_Bold'] font-semibold text-[#0f172a]">{fmt(listPrice)}</span>
+                  <span className="font-['Inter:Semi_Bold'] font-semibold text-right text-[#0f172a]">{fmt(listPrice)}</span>
                 </div>
-                <div className="flex items-start justify-between w-full">
+                <div className="flex items-start justify-between gap-3 w-full">
                   <span className="font-['Inter:Medium'] font-medium text-[#64748b]">Ưu đãi thanh toán</span>
-                  <span className="font-['Inter:Bold'] font-bold text-[#10b981]">-{fmt(discount)}</span>
+                  <span className="font-['Inter:Bold'] font-bold text-right text-[#10b981]">-{fmt(discount)}</span>
                 </div>
               </div>
               
-              <div className="w-full border-t-2 border-dashed border-[#e2e8f0] my-[8px]" />
-              
-              <div className="flex items-end justify-between w-full">
-                <span className="font-['Inter:Semi_Bold'] font-semibold text-[#0f172a] text-[16px]">Tổng thanh toán</span>
+              <div className="flex items-end justify-between gap-3 w-full border-t border-dashed border-[#e2e8f0] pt-4">
+                <div>
+                  <span className="block font-['Inter:Semi_Bold'] font-semibold text-[#0f172a] text-[16px]">Tổng thanh toán</span>
+                  <span className="mt-1 block text-[11px] text-slate-400">Đã bao gồm ưu đãi</span>
+                </div>
                 <span className="font-['Inter:Extra_Bold'] font-extrabold text-teal-600 text-[28px] tracking-tight">{fmt(total)}</span>
               </div>
               
@@ -205,7 +255,12 @@ export function MemberInfoScreen({
 
                   try {
                     const userStr = localStorage.getItem("user");
-                    if (!userStr) throw new Error("Không tìm thấy phiên đăng nhập. Vui lòng đăng nhập lại.")
+                    if (!userStr) {
+                      if (window.confirm("Bạn cần đăng nhập tài khoản để tiến hành thanh toán và liên kết gói tập. Bạn có muốn chuyển đến trang Đăng nhập ngay bây giờ?")) {
+                        window.location.hash = "login";
+                      }
+                      return;
+                    }
                     const user = JSON.parse(userStr)
                     const token = localStorage.getItem("accessToken") || localStorage.getItem("token")
                     const response = await fetch(`/api/users/${user.id}/profile`, {
@@ -248,7 +303,7 @@ export function MemberInfoScreen({
                 disabled={!agreed}
                 className={`bg-teal-500 flex items-center justify-center py-[16px] rounded-[12px] w-full font-['Inter:Bold'] font-bold text-white text-[16px] transition-all ${agreed ? 'hover:bg-teal-600' : 'opacity-50 cursor-not-allowed grayscale'}`}
               >
-                Tiến hành thanh toán →
+                Tiếp tục đến thanh toán →
               </button>
               
               <div className="flex gap-[8px] items-center justify-center w-full bg-[#f8fafc] py-[8px] rounded-[8px] border border-[#e2e8f0]">

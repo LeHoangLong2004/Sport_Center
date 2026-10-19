@@ -25,6 +25,18 @@ public class WorkoutPlanRepository : IWorkoutPlanRepository
         return plan;
     }
 
+    public async Task<WorkoutPlan> UpdateAsync(WorkoutPlan plan)
+    {
+        var existingExercises = await _context.WorkoutPlanExercises
+            .Where(e => e.PlanId == plan.Id)
+            .ToListAsync();
+
+        _context.WorkoutPlanExercises.RemoveRange(existingExercises);
+        _context.WorkoutPlans.Update(plan);
+        await _context.SaveChangesAsync();
+        return await GetByIdAsync(plan.Id) ?? plan;
+    }
+
     public async Task<WorkoutPlan?> GetByIdAsync(Guid id)
     {
         return await _context.WorkoutPlans

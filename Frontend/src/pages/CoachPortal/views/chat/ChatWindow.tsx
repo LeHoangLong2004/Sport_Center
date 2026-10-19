@@ -1,13 +1,15 @@
 import React from "react";
 import { Users, Send } from "lucide-react";
+import { UserAvatar } from "../../../../components/UserAvatar";
 import type { Conversation } from "./types";
 
 interface ChatWindowProps {
-  activeConv: Conversation;
+  activeConv?: Conversation;
   inputText: string;
   setInputText: (t: string) => void;
   onSendMessage: (e?: React.FormEvent) => void;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
+  errorMessage?: string | null;
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
@@ -16,7 +18,29 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   setInputText,
   onSendMessage,
   messagesEndRef,
+  errorMessage,
 }) => {
+  if (!activeConv) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-slate-50/40 dark:bg-slate-900/60 p-8 text-center">
+        <div>
+          <Users className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600" />
+          <p className="mt-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+            Chưa có cuộc trò chuyện nào
+          </p>
+          <p className="mt-1 text-xs text-slate-400">
+            Tin nhắn với học viên hoặc lớp được phân công sẽ xuất hiện ở đây.
+          </p>
+          {errorMessage && (
+            <p className="mt-4 max-w-md rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-600 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-300">
+              {errorMessage}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col min-w-0 bg-slate-50/40 dark:bg-slate-900/60">
       {/* Active conversation header */}
@@ -28,9 +52,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 <Users className="w-5 h-5" />
               </div>
             ) : (
-              <img
+              <UserAvatar
                 src={activeConv.avatar}
-                alt={activeConv.title}
+                name={activeConv.title}
                 className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700"
               />
             )}

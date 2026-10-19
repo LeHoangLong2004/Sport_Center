@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { iSearch2, iDownload, mAvatar0, mAvatar1, mAvatar2, mAvatar3, mAvatar4, iEye, iRotateCcw, iMore } from '../shared';
+import { iSearch2, iDownload, iMore } from '../shared';
+import { UserAvatar } from '../../../components/UserAvatar';
+import { LockKeyhole, UnlockKeyhole } from 'lucide-react';
 
 export function StaffPage() {
   const [query, setQuery] = useState("")
@@ -7,6 +9,7 @@ export function StaffPage() {
   const [staffList, setStaffList] = useState<any[]>([])
 
   const [showAddModal, setShowAddModal] = useState(false)
+  const [statusConfirmation, setStatusConfirmation] = useState<{ realId: string; currentStatus: boolean } | null>(null)
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -25,8 +28,7 @@ export function StaffPage() {
       if (Array.isArray(data)) {
         const mapped = data
           .filter((u: any) => u.roleName && u.roleName.toLowerCase() !== "member")
-          .map((u: any, index: number) => {
-            const avatars = [mAvatar0, mAvatar1, mAvatar2, mAvatar3, mAvatar4];
+          .map((u: any) => {
             return {
               id: u.id.substring(0, 8).toUpperCase(),
               realId: u.id,
@@ -37,7 +39,7 @@ export function StaffPage() {
               status: u.status ? "Đang hoạt động" : "Tạm khóa",
               statusRaw: u.status,
               joined: new Date(u.createdAt).toLocaleDateString('vi-VN'),
-              avatar: u.avatarUrl || avatars[index % avatars.length],
+              avatar: u.avatarUrl || null,
             };
           });
         setStaffList(mapped);
@@ -50,8 +52,14 @@ export function StaffPage() {
     fetchStaff();
   }, []);
 
-  const handleToggleStatus = async (realId: string, currentStatus: boolean) => {
-    if (!window.confirm(`Bạn có chắc muốn ${currentStatus ? "KHÓA" : "MỞ KHÓA"} tài khoản này không?`)) return;
+  const handleToggleStatus = (realId: string, currentStatus: boolean) => {
+    setStatusConfirmation({ realId, currentStatus })
+  }
+
+  const confirmToggleStatus = async () => {
+    if (!statusConfirmation) return
+    const { realId, currentStatus } = statusConfirmation
+    setStatusConfirmation(null)
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`/api/users/${realId}/status`, {
@@ -77,7 +85,10 @@ export function StaffPage() {
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
         body: JSON.stringify(formData)
       });
       const data = await res.json();
@@ -192,6 +203,28 @@ export function StaffPage() {
         </div>
       )}
 
+      {statusConfirmation && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/45 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="status-confirmation-title">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start gap-4">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+                <span className="text-xl font-bold">!</span>
+              </div>
+              <div>
+                <h2 id="status-confirmation-title" className="text-lg font-bold text-slate-900">Xác nhận thay đổi trạng thái</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Bạn có chắc muốn {statusConfirmation.currentStatus ? "khóa" : "mở khóa"} tài khoản này không?
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button type="button" onClick={() => setStatusConfirmation(null)} className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">Hủy</button>
+              <button type="button" onClick={confirmToggleStatus} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Xác nhận</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* filters */}
       <div className="flex gap-3 items-center mt-2">
         <div className="bg-white border border-[#cbd5e1] flex gap-2 items-center px-3 py-2 rounded-lg flex-1 max-w-[320px]">
@@ -220,7 +253,7 @@ export function StaffPage() {
         {filtered.map(m=>(
           <div key={m.id} className="border-b border-[#f1f5f9] flex h-16 items-center px-6">
             <div className="flex gap-2.5 items-center flex-1">
-              <img src={m.avatar} alt="" className="rounded-full size-9 object-cover" />
+              <UserAvatar src={m.avatar} name={m.name} className="rounded-full size-9 object-cover" />
               <div>
                 <p className="font-semibold text-[#0f172a] text-sm">{m.name}</p>
                 <p className="text-[#64748b] text-[12px]">{m.id}</p>
@@ -237,13 +270,17 @@ export function StaffPage() {
               <span className={`font-semibold px-2.5 py-1 rounded-full text-[12px] ${statusStyle[m.status]}`}>{m.status}</span>
             </div>
             <div className="w-[140px]"><p className="text-[#0f172a] text-sm">{m.joined}</p></div>
-            <div className="flex gap-2 items-center justify-end w-[100px]">
+            <div className="flex items-center justify-end w-[100px]">
               <button 
                 onClick={() => handleToggleStatus(m.realId, m.statusRaw)} 
                 title={m.statusRaw ? "Khóa tài khoản" : "Mở khóa tài khoản"}
-                className={`flex items-center justify-center rounded-md size-8 border ${m.statusRaw ? 'bg-white border-[#e2e8f0] hover:bg-red-50' : 'bg-red-100 border-red-200 hover:bg-green-100'}`}
+                aria-label={m.statusRaw ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                className={`inline-flex min-w-[72px] items-center justify-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-xs font-semibold shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 ${m.statusRaw
+                  ? 'border-rose-200 bg-rose-50 text-rose-600 hover:border-rose-300 hover:bg-rose-100 focus:ring-rose-300'
+                  : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 focus:ring-emerald-300'}`}
               >
-                <img src={m.statusRaw ? iEye : iRotateCcw} alt="Toggle Status" className="size-4" />
+                {m.statusRaw ? <LockKeyhole size={14} strokeWidth={2.2} /> : <UnlockKeyhole size={14} strokeWidth={2.2} />}
+                <span>{m.statusRaw ? "Khóa" : "Mở khóa"}</span>
               </button>
             </div>
           </div>

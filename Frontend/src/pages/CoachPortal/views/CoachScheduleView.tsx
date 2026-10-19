@@ -1,4 +1,4 @@
-﻿import { createPortal } from "react-dom";
+import { createPortal } from "react-dom";
 import {
   Calendar,
   List,
@@ -22,6 +22,7 @@ import {
   Target,
 } from "lucide-react";
 import type { UnifiedScheduleItem } from "./coachScheduleData";
+import type { TypeFilter, StatusFilter } from "./schedule/types";
 import CoachScheduleModals from "./CoachScheduleModals";
 
 interface CoachScheduleViewProps {
@@ -35,11 +36,11 @@ interface CoachScheduleViewProps {
   setSportFilter: any;
   statusFilter: any;
   setStatusFilter: any;
-  weekOffset: any;
-  setWeekOffset: any;
-  requests: any;
+  weekOffset: number;
+  setWeekOffset: React.Dispatch<React.SetStateAction<number>>;
+  requests: any[];
   setRequests: any;
-  availabilitySlots: any;
+  availabilitySlots: any[];
   setAvailabilitySlots: any;
   loading: any;
   isRequestModalOpen: any;
@@ -76,11 +77,11 @@ interface CoachScheduleViewProps {
   setOpenSlotNote: any;
   selectedOpenSlot: any;
   setSelectedOpenSlot: any;
-  weekDates: any;
-  allUnifiedSessions: any;
-  SPORT_OPTIONS: any;
-  filteredSessions: any;
-  byDate: any;
+  weekDates: string[];
+  allUnifiedSessions: any[];
+  SPORT_OPTIONS: string[];
+  filteredSessions: UnifiedScheduleItem[];
+  byDate: [string, UnifiedScheduleItem[]][];
   todayStr: any;
   navigateTo: any;
   handleOpenRequestModal: any;
@@ -88,11 +89,11 @@ interface CoachScheduleViewProps {
   handleCreateOpenSlot: any;
   handleDeleteOpenSlot: any;
   handleToggleSlot: any;
-  STATUS_OPTIONS: any;
+  STATUS_OPTIONS: Array<{ value: any; label: string }>;
   STATUS_BADGE: any;
   REQUEST_STATUS_BADGE: any;
-  DAYS_NAMES: any;
-  TIME_ROWS: any;
+  DAYS_NAMES: string[];
+  TIME_ROWS: string[];
 }
 
 export default function CoachScheduleView(props: CoachScheduleViewProps) {

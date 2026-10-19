@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import type { CoachScreen } from "../types";
 import { CoachAPI } from "../services/api";
 import { Send, CalendarPlus, CheckCircle2 } from "lucide-react";
@@ -20,6 +20,7 @@ import OpenPtSlotModal from "./schedule/OpenPtSlotModal";
 import OpenPtDetailModal from "./schedule/OpenPtDetailModal";
 import PtSessionDetailModal from "./schedule/PtSessionDetailModal";
 import { useCoachScheduleData } from "./schedule/useCoachScheduleData";
+import { CreateClassModal } from "../../AdminDashboard/components/CreateClassModal";
 
 export type { UnifiedScheduleItem } from "./schedule/types";
 
@@ -40,8 +41,23 @@ export default function CoachSchedule({ navigateTo }: Props) {
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
 
   const [isOpenSlotModalOpen, setIsOpenSlotModalOpen] = useState(false);
+  const [isClassProposalModalOpen, setIsClassProposalModalOpen] = useState(false);
   const [selectedOpenSlot, setSelectedOpenSlot] = useState<UnifiedScheduleItem | null>(null);
   const [selectedPtSession, setSelectedPtSession] = useState<UnifiedScheduleItem | null>(null);
+  const [sportOptions, setSportOptions] = useState<string[]>([]);
+  const [roomOptions, setRoomOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    Promise.all([CoachAPI.getSports(), CoachAPI.getFacilities()])
+      .then(([sports, facilities]) => {
+        setSportOptions(sports.map((sport) => sport.name));
+        setRoomOptions(facilities.map((facility) => facility.name));
+      })
+      .catch(() => {
+        setSportOptions([]);
+        setRoomOptions([]);
+      });
+  }, []);
 
   const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
 
@@ -84,6 +100,16 @@ export default function CoachSchedule({ navigateTo }: Props) {
     });
   }, [allUnifiedSessions, sportFilter, typeFilter, statusFilter]);
 
+  const byDate = useMemo(() => {
+    const map = new Map<string, UnifiedScheduleItem[]>();
+    for (const s of filteredSessions) {
+      const arr = map.get(s.date) || [];
+      arr.push(s);
+      map.set(s.date, arr);
+    }
+    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b)) as [string, UnifiedScheduleItem[]][];
+  }, [filteredSessions]);
+
   const handleSubmitRequest = async (data: any) => {
     try {
       const res = await CoachAPI.createScheduleRequest(data);
@@ -95,14 +121,14 @@ export default function CoachSchedule({ navigateTo }: Props) {
     }
   };
 
-  const handleCreateOpenSlotSuccess = (newItem: UnifiedScheduleItem) => {
-    addOpenSlot(newItem);
+  const handleCreateOpenSlotSuccess = async (newItem: UnifiedScheduleItem) => {
+    await addOpenSlot(newItem);
     setFeedbackMsg(`Đã đăng lịch trống 1-1 (${newItem.sport} ngày ${newItem.date}) thành công!`);
     setTimeout(() => setFeedbackMsg(null), 4000);
   };
 
-  const handleDeleteOpenSlot = (slotId: string) => {
-    removeOpenSlot(slotId);
+  const handleDeleteOpenSlot = async (slotId: string) => {
+    await removeOpenSlot(slotId);
     setSelectedOpenSlot(null);
     setFeedbackMsg("Đã đóng/hủy lịch trống 1-1 này.");
     setTimeout(() => setFeedbackMsg(null), 4000);
@@ -123,6 +149,15 @@ export default function CoachSchedule({ navigateTo }: Props) {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setIsClassProposalModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all shadow-sm hover:shadow-md"
+          >
+            <CalendarPlus className="w-4 h-4" />
+            Đề xuất lớp học
+          </button>
+
           <button
             type="button"
             onClick={() => setIsOpenSlotModalOpen(true)}
@@ -151,6 +186,19 @@ export default function CoachSchedule({ navigateTo }: Props) {
           <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
           <span>{feedbackMsg}</span>
         </div>
+      )}
+
+      {isClassProposalModalOpen && (
+        <CreateClassModal
+          mode="coach"
+          onSuccess={() => {
+            setFeedbackMsg("Đề xuất lớp học đã được gửi để Manager duyệt.");
+            setTimeout(() => setFeedbackMsg(null), 4000);
+          }}
+          onClose={() => {
+            setIsClassProposalModalOpen(false);
+          }}
+        />
       )}
 
       {/* Tabs */}
@@ -219,9 +267,15 @@ export default function CoachSchedule({ navigateTo }: Props) {
 
           {view === "list" && (
             <ScheduleListView
-              filteredSessions={filteredSessions}
+              byDate={byDate}
+              todayStr={todayStr}
+              loading={loading}
               onSelectOpenSlot={setSelectedOpenSlot}
               onSelectPtSession={setSelectedPtSession}
+              onOpenRequestModal={(sessionId) => {
+                setSelectedSessionForRequest(sessionId || allUnifiedSessions[0]?.id || "");
+                setIsRequestModalOpen(true);
+              }}
               navigateTo={navigateTo}
             />
           )}
@@ -238,7 +292,7 @@ export default function CoachSchedule({ navigateTo }: Props) {
       {activeTab === "requests" && (
         <CoachRequestsTab
           requests={requests}
-          onOpenNewRequest={() => {
+          onOpenCreateRequest={() => {
             setSelectedSessionForRequest(allUnifiedSessions[0]?.id || "");
             setIsRequestModalOpen(true);
           }}
@@ -250,8 +304,7 @@ export default function CoachSchedule({ navigateTo }: Props) {
         isOpen={isRequestModalOpen}
         onClose={() => setIsRequestModalOpen(false)}
         sessions={allUnifiedSessions}
-        selectedSessionId={selectedSessionForRequest}
-        setSelectedSessionId={setSelectedSessionForRequest}
+        initialSessionId={selectedSessionForRequest}
         onSubmit={handleSubmitRequest}
       />
 
@@ -259,6 +312,8 @@ export default function CoachSchedule({ navigateTo }: Props) {
         isOpen={isOpenSlotModalOpen}
         onClose={() => setIsOpenSlotModalOpen(false)}
         onSuccess={handleCreateOpenSlotSuccess}
+        sportOptions={sportOptions}
+        roomOptions={roomOptions}
       />
 
       <OpenPtDetailModal

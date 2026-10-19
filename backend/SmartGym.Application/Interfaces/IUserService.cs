@@ -12,6 +12,7 @@ public interface IUserService
     Task<bool> UpdateUserRoleAsync(Guid userId, Guid roleId);
     Task<bool> UpdateUserStatusAsync(Guid userId, bool status);
     Task<bool> UpdateUserProfileAsync(Guid userId, UpdateUserProfileRequest request);
+    Task<UserResponse> CreateMemberAsync(CreateMemberRequest request);
     
     Task<IEnumerable<RoleResponse>> GetAllRolesAsync();
 }

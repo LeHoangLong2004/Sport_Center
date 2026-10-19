@@ -64,6 +64,7 @@ public class AuthService : IAuthService
             Token = token,
             FullName = user.FullName,
             Email = user.Email,
+            PhoneNumber = user.PhoneNumber,
             Role = role.Name
         };
     }
@@ -91,6 +92,7 @@ public class AuthService : IAuthService
             Token = token,
             FullName = user.FullName,
             Email = user.Email,
+            PhoneNumber = user.PhoneNumber,
             Role = roleName
         };
     }

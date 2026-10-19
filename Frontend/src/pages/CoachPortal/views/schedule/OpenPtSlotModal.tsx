@@ -2,37 +2,46 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { TIME_ROWS, type UnifiedScheduleItem } from "./types";
+import { DateInput } from "../../../../components/DateInput";
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (newItem: UnifiedScheduleItem) => void;
+  onSuccess: (newItem: UnifiedScheduleItem) => void | Promise<void>;
+  sportOptions: string[];
+  roomOptions: string[];
 }
 
-export default function OpenPtSlotModal({ isOpen, onClose, onSuccess }: Props) {
+export default function OpenPtSlotModal({ isOpen, onClose, onSuccess, sportOptions, roomOptions }: Props) {
   const [openSlotDate, setOpenSlotDate] = useState("");
   const [openSlotStartTime, setOpenSlotStartTime] = useState("08:00");
   const [openSlotEndTime, setOpenSlotEndTime] = useState("09:30");
-  const [openSlotSport, setOpenSlotSport] = useState("Gym");
-  const [openSlotRoom, setOpenSlotRoom] = useState("Khu PT 1-1");
+  const [openSlotSport, setOpenSlotSport] = useState("");
+  const [openSlotRoom, setOpenSlotRoom] = useState("");
   const [openSlotNote, setOpenSlotNote] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const selectedSport = openSlotSport || sportOptions[0] || "";
+  const selectedRoom = openSlotRoom || roomOptions[0] || "";
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!openSlotDate) return;
+    setError("");
 
     const newItem: UnifiedScheduleItem = {
       id: "custom-open-" + Date.now(),
       type: "open_pt",
-      className: `Lịch trống 1–1: ${openSlotSport}`,
-      sport: openSlotSport,
+      className: `Lịch trống 1–1: ${selectedSport}`,
+      sport: selectedSport,
       level: "1-1 PT",
       date: openSlotDate,
       startTime: openSlotStartTime,
       endTime: openSlotEndTime,
-      room: openSlotRoom,
+      room: selectedRoom,
       coachName: "HLV",
       registeredCount: 0,
       capacity: 1,
@@ -40,9 +49,16 @@ export default function OpenPtSlotModal({ isOpen, onClose, onSuccess }: Props) {
       note: openSlotNote,
     };
 
-    onSuccess(newItem);
-    setOpenSlotNote("");
-    onClose();
+    setSubmitting(true);
+    try {
+      await onSuccess(newItem);
+      setOpenSlotNote("");
+      onClose();
+    } catch (submitError: any) {
+      setError(submitError?.message || "Không thể đăng lịch trống. Vui lòng thử lại.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return createPortal(
@@ -63,15 +79,19 @@ export default function OpenPtSlotModal({ isOpen, onClose, onSuccess }: Props) {
 
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
           <div className="p-5 overflow-y-auto flex flex-col gap-4 text-xs">
+            {error && (
+              <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2.5 text-rose-700 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-300">
+                {error}
+              </div>
+            )}
             <div>
               <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
                 Ngày mở ca trống: <span className="text-rose-500">*</span>
               </label>
-              <input
-                type="date"
+              <DateInput
                 required
                 value={openSlotDate}
-                onChange={(e) => setOpenSlotDate(e.target.value)}
+                onChange={setOpenSlotDate}
                 className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400 font-medium"
               />
             </div>
@@ -117,11 +137,11 @@ export default function OpenPtSlotModal({ isOpen, onClose, onSuccess }: Props) {
                   Bộ môn nhận dạy:
                 </label>
                 <select
-                  value={openSlotSport}
+                  value={selectedSport}
                   onChange={(e) => setOpenSlotSport(e.target.value)}
                   className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
                 >
-                  {["Gym", "Boxing", "Yoga", "Swimming", "Pilates", "Zumba", "Fitness"].map((s) => (
+                  {sportOptions.map((s) => (
                     <option key={s} value={s}>
                       {s}
                     </option>
@@ -133,11 +153,11 @@ export default function OpenPtSlotModal({ isOpen, onClose, onSuccess }: Props) {
                   Phòng / Khu vực:
                 </label>
                 <select
-                  value={openSlotRoom}
+                  value={selectedRoom}
                   onChange={(e) => setOpenSlotRoom(e.target.value)}
                   className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
                 >
-                  {["Khu PT 1-1", "Võ Đài", "Studio 1", "Studio 2", "Hồ Bơi", "Khu Thể Lực", "Khu Tạ Tự Do"].map((r) => (
+                  {roomOptions.map((r) => (
                     <option key={r} value={r}>
                       {r}
                     </option>
@@ -164,15 +184,17 @@ export default function OpenPtSlotModal({ isOpen, onClose, onSuccess }: Props) {
             <button
               type="button"
               onClick={onClose}
+              disabled={submitting}
               className="px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               Hủy
             </button>
             <button
               type="submit"
-              className="px-5 py-2 font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 rounded-lg shadow-sm transition-colors"
+              disabled={submitting}
+              className="px-5 py-2 font-semibold text-white bg-slate-900 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-slate-900 rounded-lg shadow-sm transition-colors"
             >
-              Đăng lịch trống
+              {submitting ? "Đang kiểm tra..." : "Đăng lịch trống"}
             </button>
           </div>
         </form>

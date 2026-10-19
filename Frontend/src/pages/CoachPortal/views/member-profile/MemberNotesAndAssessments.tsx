@@ -1,12 +1,14 @@
 import React from "react";
 import { FileText, Check, Award } from "lucide-react";
+import type { MemberFitnessTest } from "./types";
 
 interface MemberNotesAndAssessmentsProps {
-  notes: string[];
+  notes: { id: string; comment: string; nextStep: string; completion: number; createdAt: string }[];
   newNote: string;
   setNewNote: (n: string) => void;
   noteSaved: boolean;
   onAddNote: (e: React.FormEvent) => void;
+  fitnessTests: MemberFitnessTest[];
 }
 
 export const MemberNotesAndAssessments: React.FC<MemberNotesAndAssessmentsProps> = ({
@@ -15,6 +17,7 @@ export const MemberNotesAndAssessments: React.FC<MemberNotesAndAssessmentsProps>
   setNewNote,
   noteSaved,
   onAddNote,
+  fitnessTests,
 }) => {
   return (
     <div className="space-y-6">
@@ -62,10 +65,11 @@ export const MemberNotesAndAssessments: React.FC<MemberNotesAndAssessmentsProps>
               className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 leading-relaxed"
             >
               <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
-                <span>Huấn luyện viên Enam</span>
-                <span>{index === 0 ? "Hôm nay" : `${index + 1} tuần trước`}</span>
+                <span>Đánh giá từ hệ thống</span>
+                <span>{new Date(notes[index].createdAt).toLocaleDateString("vi-VN")}</span>
               </div>
-              <p>{note}</p>
+              <p>{note.comment}</p>
+              {note.nextStep && <p className="mt-1 text-slate-500">Bước tiếp theo: {note.nextStep}</p>}
             </div>
           ))}
         </div>
@@ -82,30 +86,18 @@ export const MemberNotesAndAssessments: React.FC<MemberNotesAndAssessmentsProps>
         </div>
 
         <div className="mt-4 space-y-3">
-          <div className="flex items-center justify-between text-xs p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-            <span className="text-slate-600 dark:text-slate-300 font-medium">Chống đẩy (Push-up test)</span>
-            <span className="font-bold text-slate-900 dark:text-white">
-              25 cái / phút <span className="text-emerald-600 font-semibold">(Tốt)</span>
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-xs p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-            <span className="text-slate-600 dark:text-slate-300 font-medium">Plank giữ cốt lõi</span>
-            <span className="font-bold text-slate-900 dark:text-white">
-              90 giây <span className="text-emerald-600 font-semibold">(Đạt)</span>
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-xs p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-            <span className="text-slate-600 dark:text-slate-300 font-medium">Bodyweight Squat</span>
-            <span className="font-bold text-slate-900 dark:text-white">
-              35 lần / phút <span className="text-emerald-600 font-semibold">(Tốt)</span>
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-xs p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-            <span className="text-slate-600 dark:text-slate-300 font-medium">Độ dẻo chạm mũi chân</span>
-            <span className="font-bold text-slate-900 dark:text-white">
-              +4 cm <span className="text-blue-600 font-semibold">(Cải thiện)</span>
-            </span>
-          </div>
+          {fitnessTests.length === 0 ? (
+            <div className="p-4 text-xs text-slate-400 text-center border border-dashed border-slate-200 rounded-lg">
+              Chưa có dữ liệu kiểm tra thể lực.
+            </div>
+          ) : fitnessTests.map((test) => (
+            <div key={`${test.metricName}-${test.recordedAt}`} className="flex items-center justify-between text-xs p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+              <span className="text-slate-600 dark:text-slate-300 font-medium">{test.metricName}</span>
+              <span className="font-bold text-slate-900 dark:text-white">
+                {test.value} {test.unit || ""}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
     </div>

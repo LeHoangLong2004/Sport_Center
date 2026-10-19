@@ -7,6 +7,7 @@ import { TopBar } from './components/TopBar';
 import { OverviewPage } from './views/OverviewPage';
 import { PackagesPage } from './views/PackagesPage';
 import { SchedulePage } from './views/SchedulePage';
+import type { ScheduleTab } from './views/ScheduleHeader';
 import { PaymentPage } from './views/PaymentPage';
 import { ReportsPage } from './views/ReportsPage';
 import { BudgetPage } from './views/BudgetPage';
@@ -19,12 +20,44 @@ import { StaffPage } from './views/StaffPage';
 import { FacilitiesPage } from './views/FacilitiesPage';
 import { SettingsPage } from './views/SettingsPage';
 import { ProfileSettings } from '../../components/ProfileSettings';
+import { type ManagerNotification } from '../../hooks/notificationApi';
 
 export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [page, setPage] = useState<AdminPage>("overview")
+  const [scheduleTab, setScheduleTab] = useState<ScheduleTab>("calendar")
   const [selectedMember, setSelectedMember] = useState<any>(null)
-  const { profile } = useUserProfile()
+  const { profile, uploadAvatar } = useUserProfile()
   const [error, setError] = useState<string>("");
+
+  const handleNotificationClick = (notification: ManagerNotification) => {
+    const targetType = notification.targetType?.toLowerCase();
+    const notificationType = notification.type?.toLowerCase();
+    const text = `${notification.title} ${notification.message ?? ""}`.toLowerCase();
+
+    if (targetType === "payment" || notificationType === "payment" || text.includes("giao dịch") || text.includes("hóa đơn")) {
+      setPage("payment");
+      return;
+    }
+
+    // Proposal notifications are currently stored with the shared booking_event
+    // type, so check the business meaning before the generic event type.
+    if (text.includes("đề xuất lớp") || (targetType === "class" && notificationType === "coach_event")) {
+      setScheduleTab("proposals");
+      setPage("schedule");
+      return;
+    }
+
+    if (targetType === "booking" || notificationType === "booking_event" || text.includes("đặt lớp") || text.includes("hủy đặt lớp")) {
+      setScheduleTab("bookings");
+      setPage("schedule");
+      return;
+    }
+
+    if (targetType === "class") {
+      setScheduleTab("calendar");
+      setPage("schedule");
+    }
+  };
 
   const handleSave = async (data: any) => {
     setError("");
@@ -95,14 +128,14 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [bc, title] = breadcrumbs[page] || ["", ""]
 
   return (
-    <div className="flex w-full h-screen bg-slate-50 dark:bg-[#0f172a] transition-colors duration-300 font-sans text-slate-900 dark:text-white selection:bg-rose-500 selection:text-white overflow-hidden">
+    <div className="manager-portal-shell flex w-full h-screen bg-slate-50 dark:bg-[#0f172a] transition-colors duration-300 font-sans text-slate-900 dark:text-white selection:bg-rose-500 selection:text-white overflow-hidden">
       <Sidebar page={page} setPage={setPage} />
       <div className="flex flex-col flex-1 min-w-0 h-full">
-        <TopBar breadcrumb={bc} title={title} onProfileClick={() => setPage("profile")} />
-        <div className="flex-1 overflow-y-auto p-6 lg:p-8">
+        <TopBar breadcrumb={bc} title={title} onProfileClick={() => setPage("profile")} onNotificationClick={handleNotificationClick} />
+        <div className="manager-page-content flex-1 overflow-y-auto p-6 lg:p-8">
           {page === "overview"   && <OverviewPage />}
           {page === "packages"   && <PackagesPage />}
-          {page === "schedule"   && <SchedulePage />}
+          {page === "schedule"   && <SchedulePage initialTab={scheduleTab} />}
           {page === "members"    && <MembersPage onEditMember={(member) => { setSelectedMember(member); setPage("member-edit"); }} />}
           {page === "staff"      && <StaffPage />}
           {page === "facilities" && <FacilitiesPage />}
@@ -132,6 +165,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                   avatarUrl: profile.avatarUrl,
                 } : undefined}
                 onSave={handleSave}
+                onAvatarUpload={uploadAvatar}
               />
             </div>
           )}

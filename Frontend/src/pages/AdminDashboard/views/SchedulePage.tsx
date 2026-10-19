@@ -3,19 +3,12 @@ import { CreateClassModal } from "../components/CreateClassModal";
 import { ClassDetailModal } from "../components/ClassDetailModal";
 import { ScheduleFilters } from "./ScheduleFilters";
 import { ScheduleBookings } from "./ScheduleBookings";
-import { ScheduleHeader } from "./ScheduleHeader";
+import { ScheduleHeader, type ScheduleTab } from "./ScheduleHeader";
 import { ScheduleCalendarView } from "./ScheduleCalendarView";
+import { ScheduleProposalsSection } from "./ScheduleProposalsSection";
 
-export function SchedulePage() {
-  const days = [
-    "Thứ 2",
-    "Thứ 3",
-    "Thứ 4",
-    "Thứ 5",
-    "Thứ 6",
-    "Thứ 7",
-    "Chủ nhật",
-  ];
+export function SchedulePage({ initialTab = "calendar" }: { initialTab?: ScheduleTab } = {}) {
+  const days = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
   const hours = Array.from({ length: 15 }, (_, index) =>
     `${String(index + 6).padStart(2, "0")}:00`,
   );
@@ -24,29 +17,24 @@ export function SchedulePage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [editClassData, setEditClassData] = useState<any>(null);
-
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<"calendar" | "bookings">("calendar");
+  const [activeTab, setActiveTab] = useState<ScheduleTab>(initialTab);
   const [bookings, setBookings] = useState<any[]>([]);
-  const facilities = [
-    "Studio 1 (Yoga/Pilates)",
-    "Studio 2 (Dance)",
-    "Studio 3 (Cycling)",
-    "Gym Area",
-  ];
+  const [facilities, setFacilities] = useState<string[]>([]);
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   const handleRoomChange = (room: string) => {
-    if (room === "Tất cả") {
+    if (!room || room === "Tất cả") {
       setSelectedRooms([]);
     } else {
-      setSelectedRooms((prev) =>
-        prev.includes(room) ? prev.filter((r) => r !== room) : [...prev, room],
-      );
+      setSelectedRooms([room]);
     }
   };
 
-  // Lấy ngày bắt đầu của tuần hiện tại (Thứ 2)
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     const d = new Date();
     const day = d.getDay();
@@ -59,10 +47,8 @@ export function SchedulePage() {
   const getWeekString = () => {
     const end = new Date(currentWeekStart);
     end.setDate(end.getDate() + 6);
-
-    const formatDate = (date: Date) => {
-      return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")}`;
-    };
+    const formatDate = (date: Date) =>
+      `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")}`;
     return `${formatDate(currentWeekStart)} - ${formatDate(end)}, ${end.getFullYear()}`;
   };
 
@@ -71,26 +57,22 @@ export function SchedulePage() {
     date.setDate(date.getDate() + index);
     return {
       label,
-      date: `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
-        .toString()
-        .padStart(2, "0")}`,
-      iso: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
-        date.getDate(),
-      ).padStart(2, "0")}`,
+      date: `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")}`,
+      iso: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`,
     };
   });
 
   const fetchClasses = async () => {
     try {
-      const res = await fetch("/api/classes/all");
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/classes/all", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (res.ok) {
         const data = await res.json();
         const formattedClasses = data.map((c: any, i: number) => {
           const start = new Date(c.scheduleTime);
-          const end = new Date(
-            start.getTime() + (c.durationMinutes || 60) * 60000,
-          );
-
+          const end = new Date(start.getTime() + (c.durationMinutes || 60) * 60000);
           const day = start.getDay() === 0 ? 6 : start.getDay() - 1;
           const startHour = start.getHours() + start.getMinutes() / 60;
           const endHour = end.getHours() + end.getMinutes() / 60;
@@ -99,7 +81,6 @@ export function SchedulePage() {
 
           let colorBg = "";
           let colorText = "";
-
           if (c.status === false) {
             colorBg = "bg-gray-100 border-gray-300 border-l-gray-400 opacity-60";
             colorText = "text-gray-500 line-through";
@@ -123,7 +104,7 @@ export function SchedulePage() {
             room: c.facilityName || "Studio",
             coach: c.coachName,
             enrolled: `${c.currentEnrolled || 0}/${c.capacity || 0}`,
-            day: day,
+            day,
             hour: hourIndex,
             duration: durationIndex,
             durationMinutes: c.durationMinutes || 60,
@@ -131,12 +112,36 @@ export function SchedulePage() {
             text: colorText,
             rawStart: start,
             isCancelled: c.status === false,
+            approvalStatus: c.approvalStatus || "approved",
           };
         });
         setClasses(formattedClasses);
+        const roomsFromClasses = Array.from(
+          new Set(formattedClasses.map((item: any) => item.room?.trim()).filter(Boolean)),
+        ) as string[];
+        setFacilities((current) => (current.length ? current : roomsFromClasses));
       }
     } catch (error) {
       console.error("Failed to fetch classes:", error);
+    }
+  };
+
+  const fetchFacilities = async () => {
+    try {
+      const res = await fetch("/api/facilities");
+      if (res.ok) {
+        const data = await res.json();
+        const roomNames = Array.from(
+          new Set(
+            (Array.isArray(data) ? data : [])
+              .map((facility: any) => facility.name?.trim())
+              .filter(Boolean),
+          ),
+        ) as string[];
+        if (roomNames.length > 0) setFacilities(roomNames);
+      }
+    } catch (error) {
+      console.error("Failed to fetch facilities:", error);
     }
   };
 
@@ -146,9 +151,7 @@ export function SchedulePage() {
       const res = await fetch("/api/bookings/all", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) {
-        setBookings(await res.json());
-      }
+      if (res.ok) setBookings(await res.json());
     } catch (error) {
       console.error("Failed to fetch bookings:", error);
     }
@@ -156,7 +159,17 @@ export function SchedulePage() {
 
   useEffect(() => {
     fetchClasses();
+    fetchFacilities();
     fetchBookings();
+    const refreshBookings = () => {
+      if (document.visibilityState === "visible") void fetchBookings();
+    };
+    const interval = window.setInterval(refreshBookings, 15000);
+    window.addEventListener("focus", refreshBookings);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshBookings);
+    };
   }, []);
 
   const handlePrevWeek = () => {
@@ -181,7 +194,6 @@ export function SchedulePage() {
     setCurrentWeekStart(monday);
   };
 
-  // Lọc các lớp trong tuần đang chọn
   const weekEnd = new Date(currentWeekStart);
   weekEnd.setDate(weekEnd.getDate() + 6);
   weekEnd.setHours(23, 59, 59, 999);
@@ -193,15 +205,17 @@ export function SchedulePage() {
   if (searchQuery.trim()) {
     const q = searchQuery.toLowerCase();
     classesThisWeek = classesThisWeek.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        (c.coach && c.coach.toLowerCase().includes(q)),
+      (c) => c.name.toLowerCase().includes(q) || (c.coach && c.coach.toLowerCase().includes(q)),
     );
   }
 
   if (selectedRooms.length > 0) {
     classesThisWeek = classesThisWeek.filter((c) =>
-      selectedRooms.some((r) => c.room.includes(r.split(" (")[0])),
+      selectedRooms.some((r) => {
+        const classRoom = String(c.room || "").trim().toLowerCase();
+        const selectedRoom = r.trim().toLowerCase();
+        return classRoom === selectedRoom || classRoom.split(" (")[0] === selectedRoom.split(" (")[0];
+      }),
     );
   }
 
@@ -212,9 +226,7 @@ export function SchedulePage() {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) {
-        fetchBookings();
-      }
+      if (res.ok) fetchBookings();
     } catch (error) {
       console.error("Approve failed:", error);
     }
@@ -227,13 +239,37 @@ export function SchedulePage() {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) {
-        fetchBookings();
-      }
+      if (res.ok) fetchBookings();
     } catch (error) {
       console.error("Reject failed:", error);
     }
   };
+
+  const handleClassApproval = async (id: string, action: "approve" | "reject"): Promise<boolean> => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/classes/${id}/${action}`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const contentType = res.headers.get("content-type") || "";
+        const body = contentType.includes("application/json")
+          ? await res.json().catch(() => ({}))
+          : {};
+        const errorMessage = body.message || body.detail || body.title;
+        throw new Error(errorMessage || `Không thể xử lý đề xuất lớp học (HTTP ${res.status}).`);
+      }
+      await fetchClasses();
+      return true;
+    } catch (error) {
+      console.error("Class approval action failed:", error);
+      window.alert(error instanceof Error ? error.message : "Không thể xử lý đề xuất lớp học.");
+      return false;
+    }
+  };
+
+  const pendingClassProposals = classes.filter((item) => item.approvalStatus === "pending");
 
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
@@ -241,6 +277,7 @@ export function SchedulePage() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         onCreate={() => setShowCreateModal(true)}
+        proposalCount={pendingClassProposals.length}
       />
 
       {showCreateModal && (
@@ -271,10 +308,18 @@ export function SchedulePage() {
             setEditClassData(data);
             setSelectedClassId(null);
           }}
+          onApproval={(action) => handleClassApproval(selectedClassId, action)}
         />
       )}
 
-      {activeTab === "calendar" ? (
+      {activeTab === "proposals" ? (
+        <ScheduleProposalsSection
+          classes={classes}
+          pendingProposals={pendingClassProposals}
+          onSelectClass={setSelectedClassId}
+          onClassApproval={handleClassApproval}
+        />
+      ) : activeTab === "calendar" ? (
         <div className="flex flex-col gap-4 pt-2 min-w-0">
           <ScheduleFilters
             searchQuery={searchQuery}
@@ -287,7 +332,6 @@ export function SchedulePage() {
             onNextWeek={handleNextWeek}
             onToday={handleCurrentWeek}
           />
-
           <ScheduleCalendarView
             hours={hours}
             weekDates={weekDates}

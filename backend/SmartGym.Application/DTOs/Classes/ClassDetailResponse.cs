@@ -14,5 +14,7 @@ public sealed record ClassDetailResponse(
     int Capacity,
     int CurrentEnrolled,
     int AvailableSpots,
-    List<EnrolledMemberDto> EnrolledMembers
+    bool Status,
+    List<EnrolledMemberDto> EnrolledMembers,
+    string ApprovalStatus = "approved"
 );

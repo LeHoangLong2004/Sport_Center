@@ -45,6 +45,7 @@ public sealed class PackageOrderResponse
     public Guid UserId { get; set; }
     public string UserName { get; set; } = string.Empty;
     public string UserEmail { get; set; } = string.Empty;
+    public string UserPhone { get; set; } = string.Empty;
     public string PackageId { get; set; } = string.Empty;
     public CatalogPackageDto PackageSnapshot { get; set; } = new();
     public int DurationMonths { get; set; }
@@ -52,11 +53,17 @@ public sealed class PackageOrderResponse
     public decimal DiscountPct { get; set; }
     public decimal DiscountAmount { get; set; }
     public decimal Total { get; set; }
+    public string PaymentMethod { get; set; } = "counter";
     public string Status { get; set; } = "pending";
     public DateTime CreatedAt { get; set; }
     public DateTime? PaidAt { get; set; }
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
+}
+
+public sealed class ConfirmPaymentRequest
+{
+    public string? PaymentMethod { get; set; }
 }
 
 public sealed class PackageCheckoutResponse

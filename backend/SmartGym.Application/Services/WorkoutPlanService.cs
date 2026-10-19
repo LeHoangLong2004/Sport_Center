@@ -47,6 +47,36 @@ public class WorkoutPlanService : IWorkoutPlanService
         return MapToResponse(created);
     }
 
+    public async Task<WorkoutPlanResponse?> UpdatePlanAsync(
+        Guid coachId,
+        Guid planId,
+        CreateWorkoutPlanRequest request
+    )
+    {
+        var plan = await _repository.GetByIdAsync(planId);
+        if (plan == null || plan.CoachId != coachId)
+            return null;
+
+        plan.PlanName = request.PlanName;
+        plan.SportId = request.SportId;
+        plan.Description = request.Description;
+        plan.Goal = request.Goal;
+        plan.Level = request.Level;
+        plan.DurationMinutes = request.DurationMinutes;
+        plan.UpdatedAt = DateTime.UtcNow;
+        plan.Exercises = request.Exercises.Select(e => new WorkoutPlanExercise
+        {
+            PlanId = plan.Id,
+            Name = e.Name,
+            Reps = e.Reps,
+            Rest = e.Rest,
+            Note = e.Note
+        }).ToList();
+
+        var updated = await _repository.UpdateAsync(plan);
+        return MapToResponse(updated);
+    }
+
     public async Task<WorkoutPlanResponse?> GetPlanByIdAsync(Guid id)
     {
         var plan = await _repository.GetByIdAsync(id);

@@ -9,9 +9,32 @@ export interface MockMember {
   goal: string;
   level: string;
   sport: string;
+  className?: string;
+  classNames?: string[];
   phone: string;
   email: string;
   classIds: string[];
+  attendanceRate?: number | null;
+  attendedSessions?: number;
+  totalSessions?: number;
+}
+
+export interface CoachClassOverview {
+  id: string;
+  className: string;
+  sport: string;
+  scheduleTime: string;
+  durationMinutes: number;
+  capacity: number;
+  enrolledCount: number;
+  status: boolean;
+}
+
+export interface CoachMembersOverview {
+  totalClasses: number;
+  totalMembers: number;
+  classes: CoachClassOverview[];
+  members: MockMember[];
 }
 
 export interface MockSession {
@@ -28,6 +51,7 @@ export interface MockSession {
   capacity: number;
   registeredMemberIds: string[];
   status: SessionStatus;
+  approvalStatus?: "pending" | "approved" | "rejected";
 }
 
 export interface AttendanceRecord {
@@ -41,6 +65,7 @@ export interface MockCurriculum {
   id: string;
   name: string;
   sport: string;
+  sportId?: string | null;
   goal: string;
   level: string;
   duration: number; // phút
@@ -49,6 +74,16 @@ export interface MockCurriculum {
   description: string;
   exercises: { name: string; reps: string; rest: string; note: string }[];
   assignedTo: { type: "class" | "member"; id: string; name: string }[];
+}
+
+export interface SportOption {
+  id: string;
+  name: string;
+}
+
+export interface FacilityOption {
+  id: string;
+  name: string;
 }
 
 export interface MockNotification {
@@ -90,11 +125,18 @@ export interface ScheduleChangeRequest {
 
 export interface AvailabilitySlot {
   id: string;
-  dayOfWeek: number; // 1: T2, 2: T3, ... 7: CN
-  period: "Sáng" | "Chiều" | "Tối";
+  date?: string; // YYYY-MM-DD for a concrete coach-published slot
+  dayOfWeek?: number; // legacy recurring availability: 1: T2, ... 7: CN
+  period?: "Sáng" | "Chiều" | "Tối";
   startTime: string;
   endTime: string;
   isOpen: boolean;
+  status?: string;
+  sport?: string;
+  room?: string;
+  note?: string;
+  coachId?: string;
+  coachName?: string;
   memberId?: string;
   bookedMemberName?: string;
   bookedMemberPhone?: string;

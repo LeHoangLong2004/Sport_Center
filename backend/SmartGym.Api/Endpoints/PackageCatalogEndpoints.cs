@@ -8,7 +8,8 @@ namespace SmartGym.Api.Endpoints;
 public static class PackageCatalogEndpoints
 {
     private static readonly string[] ManagerRoles = ["manager", "CenterManager", "center_manager"];
-    private static readonly string[] MemberRoles = ["member", "Member"];
+    private static readonly string[] OrderManagementRoles = ["manager", "CenterManager", "center_manager", "receptionist", "Receptionist", "admin", "Admin"];
+    private static readonly string[] MemberRoles = ["member", "Member", "admin", "Admin", "manager", "Manager"];
 
     public static void MapPackageCatalogEndpoints(this IEndpointRouteBuilder app)
     {
@@ -171,6 +172,39 @@ public static class PackageCatalogEndpoints
                     }
                 }
             )
+            .RequireAuthorization();
+
+
+        orders
+            .MapPost(
+                "/checkout",
+                async (
+                    HttpContext context,
+                    [FromBody] CreatePackageCheckoutRequest request,
+                    PackageCatalogService service,
+                    CancellationToken cancellationToken
+                ) =>
+                {
+                    if (!TryGetUserId(context, out var userId))
+                        return Results.Unauthorized();
+                    try
+                    {
+                        var result = await service.CheckoutAsync(
+                            userId,
+                            request,
+                            cancellationToken
+                        );
+                        return Results.Ok(result);
+                    }
+                    catch (PackageCatalogException exception)
+                    {
+                        return Results.Json(
+                            new { message = exception.Message },
+                            statusCode: exception.StatusCode
+                        );
+                    }
+                }
+            )
             .RequireAuthorization(policy => policy.RequireRole(MemberRoles));
 
         orders
@@ -182,20 +216,21 @@ public static class PackageCatalogEndpoints
                     return Results.Ok(result);
                 }
             )
-            .RequireAuthorization(policy => policy.RequireRole(ManagerRoles));
+            .RequireAuthorization(policy => policy.RequireRole(OrderManagementRoles));
 
         orders
             .MapPut(
                 "/{id:guid}/confirm-payment",
                 async (
                     Guid id,
+                    [FromBody(EmptyBodyBehavior = Microsoft.AspNetCore.Mvc.ModelBinding.EmptyBodyBehavior.Allow)] ConfirmPaymentRequest? request,
                     PackageCatalogService service,
                     CancellationToken cancellationToken
                 ) =>
                 {
                     try
                     {
-                        var order = await service.ConfirmPaymentAsync(id, cancellationToken);
+                        var order = await service.ConfirmPaymentAsync(id, request?.PaymentMethod, cancellationToken);
                         return Results.Ok(order);
                     }
                     catch (PackageCatalogException exception)
@@ -207,7 +242,32 @@ public static class PackageCatalogEndpoints
                     }
                 }
             )
-            .RequireAuthorization(policy => policy.RequireRole(ManagerRoles));
+            .RequireAuthorization(policy => policy.RequireRole(OrderManagementRoles));
+
+        orders
+            .MapPut(
+                "/{id:guid}/cancel",
+                async (
+                    Guid id,
+                    PackageCatalogService service,
+                    CancellationToken cancellationToken
+                ) =>
+                {
+                    try
+                    {
+                        var order = await service.CancelOrderAsync(id, cancellationToken);
+                        return Results.Ok(order);
+                    }
+                    catch (PackageCatalogException exception)
+                    {
+                        return Results.Json(
+                            new { message = exception.Message },
+                            statusCode: exception.StatusCode
+                        );
+                    }
+                }
+            )
+            .RequireAuthorization(policy => policy.RequireRole(OrderManagementRoles));
 
         orders
             .MapGet(

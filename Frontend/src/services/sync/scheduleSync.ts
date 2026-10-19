@@ -1,112 +1,15 @@
-export interface SyncedSession {
-  id: string;
-  type: "group" | "pt" | "open_pt";
-  classId?: string;
-  className: string;
-  sport: string;
-  level: string;
-  date: string; // YYYY-MM-DD
-  startTime: string; // HH:mm
-  endTime: string;
-  room: string;
-  coachId: string;
-  coachName: string;
-  capacity: number;
-  registeredCount: number;
-  status: "sắp diễn ra" | "đang diễn ra" | "hoàn thành" | "đã hủy";
-  attendanceStatus?: "chưa điểm danh" | "có mặt" | "vắng" | "có phép" | "đi muộn";
-  coachNote?: string;
-  memberId?: string;
-  memberName?: string;
-  memberPhone?: string;
-  memberEmail?: string;
-  goal?: string;
-  userNote?: string;
-  cancelReason?: string;
-  updatedAt?: string;
-}
+import {
+  type SyncedSession,
+  pushBookingToBackend,
+  cancelBookingOnBackend,
+  finalizeAttendanceOnBackend,
+} from "./scheduleSyncApi";
+
+export type { SyncedSession };
 
 const STORAGE_KEY = "synced_schedule_sessions";
-const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api';
 
-// Initial seed open PT slots & sample bookings
-export const INITIAL_SYNCED_SESSIONS: SyncedSession[] = [
-  {
-    id: "pt-open-nam-01",
-    type: "open_pt",
-    className: "Lịch trống 1–1 (HLV Nam)",
-    sport: "Gym",
-    level: "1-1 PT",
-    date: "2026-10-14",
-    startTime: "08:30",
-    endTime: "09:30",
-    room: "Khu PT 1-1 - Tầng 1",
-    coachId: "25f50fba-506a-4edf-9db7-43f77f6741a4",
-    coachName: "HLV Hồ Xuân Ánh Nam",
-    capacity: 1,
-    registeredCount: 0,
-    status: "sắp diễn ra",
-    attendanceStatus: "chưa điểm danh",
-    coachNote: "Nhận kèm cá nhân siết mỡ, tăng cơ ngực và thể lực",
-  },
-  {
-    id: "pt-open-nam-02",
-    type: "open_pt",
-    className: "Lịch trống 1–1 (HLV Nam)",
-    sport: "Boxing",
-    level: "1-1 PT",
-    date: "2026-10-15",
-    startTime: "14:00",
-    endTime: "15:30",
-    room: "Ring PT 1-1",
-    coachId: "25f50fba-506a-4edf-9db7-43f77f6741a4",
-    coachName: "HLV Hồ Xuân Ánh Nam",
-    capacity: 1,
-    registeredCount: 0,
-    status: "sắp diễn ra",
-    attendanceStatus: "chưa điểm danh",
-    coachNote: "Kèm boxing cardio, rèn phản xạ và thể lực chiến đấu",
-  },
-  {
-    id: "pt-open-nam-03",
-    type: "open_pt",
-    className: "Lịch trống 1–1 (HLV Nam)",
-    sport: "Gym",
-    level: "1-1 PT",
-    date: "2026-10-16",
-    startTime: "18:00",
-    endTime: "19:00",
-    room: "Khu PT 1-1 - Tầng 1",
-    coachId: "25f50fba-506a-4edf-9db7-43f77f6741a4",
-    coachName: "HLV Hồ Xuân Ánh Nam",
-    capacity: 1,
-    registeredCount: 0,
-    status: "sắp diễn ra",
-    attendanceStatus: "chưa điểm danh",
-    coachNote: "Tập chân mông và siết nét cơ lõi (Core & Leg day)",
-  },
-  {
-    id: "pt-booked-sample",
-    type: "pt",
-    className: "Kèm 1-1: Nguyễn Văn An",
-    sport: "Gym",
-    level: "1-1 PT",
-    date: "2026-10-13",
-    startTime: "07:00",
-    endTime: "08:30",
-    room: "Khu PT 1-1",
-    coachId: "25f50fba-506a-4edf-9db7-43f77f6741a4",
-    coachName: "HLV Hồ Xuân Ánh Nam",
-    capacity: 1,
-    registeredCount: 1,
-    status: "hoàn thành",
-    attendanceStatus: "có mặt",
-    memberName: "Nguyễn Văn An",
-    memberPhone: "0912345678",
-    goal: "Tăng cơ giảm mỡ",
-    coachNote: "Đã hoàn thành tốt 5 hiệp Bench Press và Barbell Row. Form chuẩn.",
-  }
-];
+export const INITIAL_SYNCED_SESSIONS: SyncedSession[] = [];
 
 class ScheduleSyncService {
   private listeners: (() => void)[] = [];
@@ -144,9 +47,7 @@ class ScheduleSyncService {
         }
       }
     } catch {}
-    // Seed default
-    this.saveSyncedSessions(INITIAL_SYNCED_SESSIONS);
-    return INITIAL_SYNCED_SESSIONS;
+    return [];
   }
 
   public saveSyncedSessions(sessions: SyncedSession[]): void {
@@ -162,7 +63,6 @@ class ScheduleSyncService {
     const all = this.getSyncedSessions();
     const openFromAll = all.filter((s) => s.type === "open_pt" && s.status === "sắp diễn ra" && s.registeredCount === 0);
 
-    // Merge any coach custom open pt slots from localStorage for 100% seamless cross-portal sync
     try {
       const customStr = localStorage.getItem("coach_custom_open_pt_slots");
       if (customStr) {
@@ -240,7 +140,7 @@ class ScheduleSyncService {
     this.saveSyncedSessions(updated);
   }
 
-  public bookPtSlot(params: {
+  public async bookPtSlot(params: {
     slotId: string;
     memberId: string;
     memberName: string;
@@ -248,8 +148,10 @@ class ScheduleSyncService {
     memberEmail: string;
     goal: string;
     userNote?: string;
-  }): SyncedSession {
+  }): Promise<SyncedSession> {
     const all = this.getSyncedSessions();
+    const previousAll = all.map((session) => ({ ...session }));
+    const previousMemberStorage = localStorage.getItem("member_sessions");
     const slotIndex = all.findIndex((s) => s.id === params.slotId);
 
     const nowStr = new Date().toISOString();
@@ -331,7 +233,17 @@ class ScheduleSyncService {
       localStorage.setItem("member_sessions", JSON.stringify([newMemberSession, ...memSessions]));
     } catch {}
 
-    this.pushBookingToBackend(bookedSession);
+    const backendResult = await pushBookingToBackend(bookedSession);
+    if (!backendResult.ok) {
+      this.saveSyncedSessions(previousAll);
+      if (previousMemberStorage === null) {
+        localStorage.removeItem("member_sessions");
+      } else {
+        localStorage.setItem("member_sessions", previousMemberStorage);
+      }
+      throw new Error(backendResult.message || "Không thể đặt lịch PT.");
+    }
+
     return bookedSession;
   }
 
@@ -362,7 +274,7 @@ class ScheduleSyncService {
       }
     } catch {}
 
-    this.cancelBookingOnBackend(sessionId, reason);
+    void cancelBookingOnBackend(sessionId, reason);
   }
 
   public recordAttendance(sessionId: string, attendanceStatus: "có mặt" | "vắng" | "có phép", coachNote: string): void {
@@ -401,72 +313,7 @@ class ScheduleSyncService {
       }
     } catch {}
 
-    this.finalizeAttendanceOnBackend(sessionId, attendanceStatus, coachNote);
-  }
-
-  private async pushBookingToBackend(session: SyncedSession) {
-    try {
-      const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
-      await fetch(`${BASE_URL}/member/bookings`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          slotId: session.id,
-          name: session.className,
-          sport: session.sport,
-          level: session.level,
-          type: session.type,
-          date: session.date,
-          startTime: session.startTime,
-          endTime: session.endTime,
-          room: session.room,
-          coachName: session.coachName,
-          coachId: session.coachId,
-          memberName: session.memberName,
-          memberPhone: session.memberPhone,
-          memberEmail: session.memberEmail,
-          goal: session.goal,
-          coachNote: session.coachNote,
-        }),
-      });
-    } catch {}
-  }
-
-  private async cancelBookingOnBackend(sessionId: string, reason: string) {
-    try {
-      const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
-      await fetch(`${BASE_URL}/member/bookings/${encodeURIComponent(sessionId)}?reason=${encodeURIComponent(reason)}`, {
-        method: "DELETE",
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
-    } catch {}
-  }
-
-  private async finalizeAttendanceOnBackend(sessionId: string, status: string, note: string) {
-    try {
-      const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
-      await fetch(`${BASE_URL}/coach/sessions/${encodeURIComponent(sessionId)}/attendance/finalize`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          records: [
-            {
-              memberId: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-              status,
-              note,
-            },
-          ],
-        }),
-      });
-    } catch {}
+    void finalizeAttendanceOnBackend(sessionId, attendanceStatus, coachNote);
   }
 }
 

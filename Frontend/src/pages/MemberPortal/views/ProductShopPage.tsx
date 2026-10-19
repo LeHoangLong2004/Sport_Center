@@ -12,10 +12,10 @@ type Product = {
 }
 
 type CartItem = Product & { quantity: number }
-type CheckoutPaymentMethod = "counter" | "vnpay"
+type CheckoutPaymentMethod = "counter" | "online"
 type FulfillmentStatus = "pending" | "preparing" | "ready" | "delivering" | "delivered" | "cancelled"
 
-type ProductOrder = {
+export type ProductOrder = {
   id: string
   totalAmount: number
   status: string
@@ -44,7 +44,7 @@ const fulfillmentLabels: Record<FulfillmentStatus, string> = {
   cancelled: "Đã hủy",
 }
 
-function authHeaders() {
+function authHeaders(): Record<string, string> {
   const token = localStorage.getItem("token") || localStorage.getItem("accessToken")
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
@@ -57,7 +57,7 @@ async function readResponse(response: Response) {
   return body
 }
 
-export function ProductShopPage({ onNavigate }: { onNavigate: (page: MemberPage) => void }) {
+export function ProductShopPage({ onNavigate, onOnlinePayment, embedded = false }: { onNavigate: (page: MemberPage) => void; onOnlinePayment?: (order: ProductOrder) => void; embedded?: boolean }) {
   const [products, setProducts] = useState<Product[]>([])
   const [orders, setOrders] = useState<ProductOrder[]>([])
   const [cart, setCart] = useState<CartItem[]>([])
@@ -149,20 +149,15 @@ export function ProductShopPage({ onNavigate }: { onNavigate: (page: MemberPage)
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({
-          paymentMethod: paymentMethod === "vnpay" ? "qr" : "counter",
+          paymentMethod: paymentMethod === "online" ? "qr" : "counter",
           fulfillmentMethod,
           deliveryLocation: fulfillmentMethod === "in_center_delivery" ? deliveryLocation.trim() : null,
           items: cart.map((item) => ({ productId: item.id, quantity: item.quantity })),
         }),
       }))
-      if (paymentMethod === "vnpay") {
-        const onlinePayment = await readResponse(await fetch(`/api/payments/${order.id}/pay-online`, {
-          method: "POST",
-          headers: authHeaders(),
-        }))
-        if (!onlinePayment.paymentUrl) throw new Error("Backend không trả về URL thanh toán VNPay.")
+      if (paymentMethod === "online") {
         setCart([])
-        window.location.assign(onlinePayment.paymentUrl)
+        onOnlinePayment?.(order)
         return
       }
       setCart([])
@@ -202,8 +197,7 @@ export function ProductShopPage({ onNavigate }: { onNavigate: (page: MemberPage)
     }
   }
 
-  return (
-    <MemberShell page="shop" onNavigate={onNavigate}>
+  const content = (
       <div className="flex flex-col gap-6 p-6 lg:p-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#0f9f94]">Mua sắm tại SportCenter</p><h1 className="mt-2 text-2xl font-extrabold text-[#0f172a]">Cửa hàng sản phẩm</h1><p className="mt-1 text-sm text-[#64748b]">Đặt trước sản phẩm, thanh toán và nhận hàng tại trung tâm.</p></div>
@@ -223,13 +217,14 @@ export function ProductShopPage({ onNavigate }: { onNavigate: (page: MemberPage)
             <div className="flex items-center justify-between"><h2 className="font-extrabold text-[#0f172a]">Giỏ hàng</h2><span className="rounded-full bg-[#eef2ff] px-2 py-1 text-xs font-bold text-[#4f46e5]">{itemCount} món</span></div>
             <div className="max-h-64 overflow-y-auto">{cart.length === 0 ? <p className="py-8 text-center text-sm text-[#94a3b8]">Chưa có sản phẩm trong giỏ.</p> : cart.map((item) => <div key={item.id} className="flex items-center gap-3 border-b border-[#e2e8f0] py-3 last:border-b-0"><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-[#0f172a]">{item.name}</p><p className="text-xs text-[#64748b]">{money(item.price)}</p></div><div className="flex items-center gap-2"><button type="button" onClick={() => changeQuantity(item.id, -1)} className="h-7 w-7 rounded border border-[#e2e8f0] text-[#64748b]">−</button><span className="w-5 text-center text-sm font-bold text-[#0f172a]">{item.quantity}</span><button type="button" onClick={() => changeQuantity(item.id, 1)} className="h-7 w-7 rounded border border-[#e2e8f0] text-[#64748b]">+</button></div></div>)}</div>
             {cart.length > 0 && <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-sm font-bold text-slate-800">Cách nhận hàng</p><label className="mt-3 flex cursor-pointer items-start gap-2 text-sm text-slate-600"><input type="radio" checked={fulfillmentMethod === "counter_pickup"} onChange={() => setFulfillmentMethod("counter_pickup")} className="mt-1" />Nhận tại quầy lễ tân</label><label className="mt-2 flex cursor-pointer items-start gap-2 text-sm text-slate-600"><input type="radio" checked={fulfillmentMethod === "in_center_delivery"} onChange={() => setFulfillmentMethod("in_center_delivery")} className="mt-1" />Giao đến vị trí trong trung tâm</label>{fulfillmentMethod === "in_center_delivery" && <input value={deliveryLocation} onChange={(event) => setDeliveryLocation(event.target.value)} placeholder="Ví dụ: Gym Area, Studio 1..." className="mt-3 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#0f9f94]" />}</div>}
-            {cart.length > 0 && <div className="rounded-xl border border-teal-100 bg-teal-50 p-3"><p className="text-sm font-bold text-slate-800">Phương thức thanh toán</p><label className="mt-3 flex cursor-pointer items-start gap-2 text-sm text-slate-600"><input type="radio" checked={paymentMethod === "counter"} onChange={() => setPaymentMethod("counter")} className="mt-1" />Thanh toán tại quầy</label><label className="mt-2 flex cursor-pointer items-start gap-2 text-sm text-slate-600"><input type="radio" checked={paymentMethod === "vnpay"} onChange={() => setPaymentMethod("vnpay")} className="mt-1" />VNPay Sandbox (thanh toán online)</label></div>}
-            <div className="border-t border-[#e2e8f0] pt-4"><div className="flex items-center justify-between text-sm text-[#64748b]"><span>Tạm tính</span><strong className="text-[#0f172a]">{money(total)}</strong></div><button type="button" disabled={cart.length === 0 || submitting} onClick={() => void submitOrder()} className="mt-4 w-full rounded-xl bg-[#0f9f94] px-4 py-3 text-sm font-extrabold text-white transition hover:bg-[#0d8b82] disabled:cursor-not-allowed disabled:opacity-50">{submitting ? "Đang gửi đơn..." : paymentMethod === "vnpay" ? "Thanh toán qua VNPay Sandbox" : "Đặt hàng, thanh toán tại quầy"}</button></div>
+            {cart.length > 0 && <div className="rounded-xl border border-teal-100 bg-teal-50 p-3"><p className="text-sm font-bold text-slate-800">Phương thức thanh toán</p><label className="mt-3 flex cursor-pointer items-start gap-2 text-sm text-slate-600"><input type="radio" checked={paymentMethod === "counter"} onChange={() => setPaymentMethod("counter")} className="mt-1" />Thanh toán tại quầy</label><label className="mt-2 flex cursor-pointer items-start gap-2 text-sm text-slate-600"><input type="radio" checked={paymentMethod === "online"} onChange={() => setPaymentMethod("online")} className="mt-1" />Thanh toán online</label></div>}
+            <div className="border-t border-[#e2e8f0] pt-4"><div className="flex items-center justify-between text-sm text-[#64748b]"><span>Tạm tính</span><strong className="text-[#0f172a]">{money(total)}</strong></div><button type="button" disabled={cart.length === 0 || submitting} onClick={() => void submitOrder()} className="mt-4 w-full rounded-xl bg-[#0f9f94] px-4 py-3 text-sm font-extrabold text-white transition hover:bg-[#0d8b82] disabled:cursor-not-allowed disabled:opacity-50">{submitting ? "Đang gửi đơn..." : paymentMethod === "online" ? "Tiếp tục thanh toán" : "Đặt hàng, thanh toán tại quầy"}</button></div>
           </aside>
         </div>
 
         <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm"><div className="mb-4 flex flex-wrap items-center justify-between gap-2"><div><h2 className="font-extrabold text-[#0f172a]">Đơn hàng của tôi</h2><p className="mt-1 text-xs text-[#64748b]">Tin nhắn với lễ tân nằm trong từng đơn hàng. Bấm <strong>Xem tin nhắn</strong> để mở trao đổi.</p></div><span className="text-xs text-[#64748b]">{orders.length} đơn</span></div>{orders.length === 0 ? <p className="text-sm text-[#94a3b8]">Bạn chưa có đơn mua sản phẩm nào.</p> : <div className="grid gap-3 md:grid-cols-2">{orders.map((order) => <div key={order.id} className="rounded-xl border border-[#e2e8f0] p-4"><div className="flex items-center justify-between gap-3"><p className="text-sm font-bold text-[#0f172a]">#{order.id.slice(0, 8).toUpperCase()}</p><span className={`rounded-full px-2 py-1 text-xs font-bold ${order.status === "completed" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>{order.status === "completed" ? "Đã thanh toán" : "Chờ thanh toán"}</span></div><p className="mt-2 text-xs font-semibold text-[#64748b]">{fulfillmentLabels[order.fulfillmentStatus]} · {order.fulfillmentMethod === "in_center_delivery" ? `Giao tại ${order.deliveryLocation || "vị trí đã chọn"}` : "Nhận tại quầy"}</p><p className="mt-2 text-xs text-[#64748b]">{new Date(order.createdAt).toLocaleString("vi-VN")} · {order.items.map((item) => `${item.name} × ${item.quantity}`).join(", ")}</p><div className="mt-3 flex items-center justify-between"><p className="font-extrabold text-[#0f9f94]">{money(order.totalAmount)}</p><button type="button" onClick={() => void toggleChat(order.id)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:border-[#0f9f94] hover:text-[#0f9f94]">{openChatId === order.id ? "Đóng trao đổi" : order.messageCount > 0 ? `Xem tin nhắn (${order.messageCount})` : "Nhắn lễ tân"}</button></div>{openChatId === order.id && <div className="mt-3 rounded-xl bg-slate-50 p-3"><div className="max-h-40 space-y-2 overflow-y-auto">{(messages[order.id] || []).length === 0 ? <p className="text-xs text-slate-400">Chưa có tin nhắn từ lễ tân.</p> : messages[order.id].map((item) => <div key={item.id} className="rounded-lg bg-white p-2 text-xs"><p className="font-bold text-slate-700">{item.senderName}</p><p className="mt-1 text-slate-600">{item.message}</p><p className="mt-1 text-slate-400">{new Date(item.createdAt).toLocaleString("vi-VN")}</p></div>)}</div><div className="mt-2 flex gap-2"><input value={drafts[order.id] || ""} onChange={(event) => setDrafts((current) => ({ ...current, [order.id]: event.target.value }))} onKeyDown={(event) => { if (event.key === "Enter") void sendMessage(order.id) }} placeholder="Nhắn lễ tân..." className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs outline-none focus:border-[#0f9f94]" /><button type="button" onClick={() => void sendMessage(order.id)} className="rounded-lg bg-[#0f9f94] px-3 py-2 text-xs font-bold text-white">Gửi</button></div></div>}</div>)}</div>}</section>
       </div>
-    </MemberShell>
   )
+
+  return embedded ? content : <MemberShell page="shop" onNavigate={onNavigate}>{content}</MemberShell>
 }

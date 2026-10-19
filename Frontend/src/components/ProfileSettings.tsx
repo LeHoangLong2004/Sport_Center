@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { ProfileSummary } from "./ProfileSummary";
 import type { ProfileData } from "./profileTypes";
+import { DateInput } from "./DateInput";
 export function ProfileSettings({
   initialData,
   roleLabel,
   onSave,
+  onAvatarUpload,
   extraInfo,
   tierColor = "blue",
 }: {
   initialData?: Partial<ProfileData>;
   roleLabel: string;
-  onSave?: (data: ProfileData) => void;
+  onSave?: (data: ProfileData) => void | Promise<void>;
+  onAvatarUpload?: (file: File) => Promise<string>;
   extraInfo?: React.ReactNode;
   tierColor?: "blue" | "gold" | "black" | "teal";
 }) {
@@ -24,6 +27,8 @@ export function ProfileSettings({
     address: initialData?.address || "",
   });
   const [showToast, setShowToast] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
   useEffect(() => {
     if (initialData) {
       setData((prev) => ({
@@ -37,9 +42,33 @@ export function ProfileSettings({
   ) => {
     setData({ ...data, [e.target.name]: e.target.value });
   };
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleAvatarChange = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setAvatarError("Vui lòng chọn file hình ảnh.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError("Ảnh đại diện không được vượt quá 5MB.");
+      return;
+    }
+    if (!onAvatarUpload) return;
+
+    setAvatarError("");
+    setAvatarUploading(true);
+    try {
+      const url = await onAvatarUpload(file);
+      setData((prev) => ({ ...prev, avatarUrl: url }));
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    } catch (error) {
+      setAvatarError(error instanceof Error ? error.message : "Tải ảnh đại diện thất bại.");
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (onSave) onSave(data);
+    if (onSave) await onSave(data);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
   };
@@ -72,7 +101,10 @@ export function ProfileSettings({
             roleLabel={roleLabel}
             tierColor={tierColor}
             extraInfo={extraInfo}
+            onAvatarChange={handleAvatarChange}
+            avatarUploading={avatarUploading}
           />
+          {avatarError && <p className="text-sm text-rose-600 mt-2">{avatarError}</p>}
           {/* Right Column: Form */}
           <div className="flex-1">
             <form
@@ -131,11 +163,10 @@ export function ProfileSettings({
                   <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Ngày sinh
                   </label>
-                  <input
-                    type="date"
+                  <DateInput
                     name="dob"
                     value={data.dob}
-                    onChange={handleChange}
+                    onChange={(value) => setData((prev) => ({ ...prev, dob: value }))}
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium [&::-webkit-calendar-picker-indicator]:dark:invert"
                   />
                 </div>
@@ -146,13 +177,14 @@ export function ProfileSettings({
                   <div className="relative">
                     <select
                       name="gender"
-                      value={data.gender}
+                      value={data.gender || ""}
                       onChange={handleChange}
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium appearance-none cursor-pointer"
                     >
-                      <option value="male">Nam</option>
-                      <option value="female">Nữ</option>
-                      <option value="other">Khác</option>
+                      <option value="">Chọn giới tính</option>
+                      <option value="Nam">Nam</option>
+                      <option value="Nữ">Nữ</option>
+                      <option value="Khác">Khác</option>
                     </select>
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                       <svg

@@ -14,5 +14,13 @@ public sealed record ClassResponse(
     int Capacity,
     int CurrentEnrolled,
     int AvailableSpots,
-    bool Status
+    bool Status,
+    string ApprovalStatus = "approved",
+    string? CoachAvatar = null,
+    string? CoachSpecialty = null,
+    string? CoachPhone = null,
+    string? CoachBio = null,
+    decimal? CoachRating = null,
+    int? CoachExperienceYears = null,
+    decimal Price = 150000
 );

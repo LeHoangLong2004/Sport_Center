@@ -4,17 +4,36 @@ import { A, BillingPeriod, Stepper, OrderSummarySidebar } from "./shared";
 export function OTPScreen({
   pkg,
   period,
+  phone,
+  email,
+  formData,
   onConfirm,
   onCancel,
 }: {
   pkg: any
   period: BillingPeriod
+  phone?: string
+  email?: string
+  formData?: any
   onConfirm: () => void
   onCancel: () => void
 }) {
-  const [digits, setDigits] = useState(["8", "5", "2", "0", "", ""])
+  const [digits, setDigits] = useState(["", "", "", "", "", ""])
   const [seconds, setSeconds] = useState(45)
   const inputs = useRef<Array<HTMLInputElement | null>>([])
+
+  let memberEmail = email || formData?.email;
+  let memberPhone = phone || formData?.phone;
+  if (!memberEmail || !memberPhone) {
+    try {
+      const uStr = localStorage.getItem("user");
+      if (uStr) {
+        const u = JSON.parse(uStr);
+        if (!memberEmail) memberEmail = u.email;
+        if (!memberPhone) memberPhone = u.phoneNumber;
+      }
+    } catch {}
+  }
 
   useEffect(() => {
     const t = window.setInterval(() => setSeconds((s) => Math.max(0, s - 1)), 1000)
@@ -42,9 +61,13 @@ export function OTPScreen({
               <div className="flex flex-col gap-2 w-full">
                 <p className="font-['Inter'] font-bold text-[#0b1f3a] text-[24px]">Xác minh mã giao dịch OTP</p>
                 <p className="font-['Inter'] font-normal text-[#64748b] text-sm leading-[20px]">
-                  Chúng tôi đã gửi mã xác thực giao dịch OTP gồm 6 chữ số đến số điện thoại{" "}
-                  <strong className="text-[#0f172a]">0901 234 567</strong> và email{" "}
-                  <strong className="text-[#0f172a]">lananh.nguyen@email.com</strong>
+                  Mã xác thực giao dịch OTP gồm 6 chữ số đã được gửi đến số điện thoại{" "}
+                  <strong className="text-[#0f172a]">{memberPhone || "số điện thoại của bạn"}</strong>
+                  {memberEmail ? (
+                    <>
+                      {" "}và email <strong className="text-[#0f172a]">{memberEmail}</strong>
+                    </>
+                  ) : null}
                 </p>
               </div>
 
@@ -107,7 +130,7 @@ export function OTPScreen({
             </div>
           </div>
 
-          <OrderSummarySidebar pkg={pkg} period={period} screen="otp" />
+          <OrderSummarySidebar pkg={pkg} period={period} formData={formData} screen="otp" />
         </div>
       </div>
     </div>

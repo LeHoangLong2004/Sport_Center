@@ -19,7 +19,8 @@ app.MapGet(
         var classes = await service.GetAllClassesAsync();
         return Results.Ok(classes);
     }
-);
+)
+.RequireAuthorization(policy => policy.RequireRole("admin", "manager", "receptionist"));
 app.MapGet(
         "/api/bookings/all",
         async (ClassService service) =>
@@ -158,6 +159,18 @@ app.MapPost(
             if (!isSuccess)
                 return Results.BadRequest(new { message = errorMessage });
             return Results.Ok(new { message = "Class cancelled successfully" });
+        }
+    )
+    .RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
+
+app.MapPost(
+        "/api/classes/{id}/restore",
+        async (Guid id, ClassService service) =>
+        {
+            var (isSuccess, errorMessage) = await service.RestoreClassAsync(id);
+            if (!isSuccess)
+                return Results.BadRequest(new { message = errorMessage });
+            return Results.Ok(new { message = "Class restored successfully" });
         }
     )
     .RequireAuthorization(policy => policy.RequireRole("manager", "admin"));

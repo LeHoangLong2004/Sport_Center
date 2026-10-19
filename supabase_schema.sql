@@ -54,6 +54,7 @@ CREATE TABLE users (
 CREATE TABLE facilities (
     id      UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     name    TEXT        NOT NULL,
+    image_url TEXT,
     address TEXT        NOT NULL,
     hotline VARCHAR(20),
     status  BOOLEAN     DEFAULT true
@@ -303,6 +304,7 @@ CREATE TABLE classes (
     capacity         INT         NOT NULL,
     current_enrolled INT         DEFAULT 0,
     status           BOOLEAN     DEFAULT true,
+    approval_status   VARCHAR(20) NOT NULL DEFAULT 'approved',
     created_at       TIMESTAMPTZ DEFAULT now()
 );
 
@@ -492,6 +494,40 @@ CREATE TABLE class_attendance_records (
     note       TEXT,
     PRIMARY KEY (session_id, member_id)
 );
+
+-- Kết quả đánh giá/tiến độ do Coach ghi nhận trong từng buổi học
+CREATE TABLE coach_assessments (
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    coach_id     UUID NOT NULL REFERENCES coaches(id) ON DELETE CASCADE,
+    session_id   UUID REFERENCES classes(id) ON DELETE CASCADE,
+    member_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    completion   INT NOT NULL DEFAULT 0 CHECK (completion >= 0 AND completion <= 100),
+    metrics_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+    comment      TEXT,
+    next_step    TEXT,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_coach_assessments_coach_created
+    ON coach_assessments(coach_id, created_at DESC);
+
+-- Yêu cầu đổi lịch, dạy thay hoặc báo vắng của Coach
+CREATE TABLE coach_schedule_requests (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    coach_id            UUID NOT NULL REFERENCES coaches(id) ON DELETE CASCADE,
+    session_id          UUID REFERENCES classes(id) ON DELETE SET NULL,
+    request_type        VARCHAR(30) NOT NULL,
+    substitute_coach_id UUID REFERENCES coaches(id) ON DELETE SET NULL,
+    new_date            DATE,
+    new_time            VARCHAR(50),
+    reason              TEXT NOT NULL,
+    status              VARCHAR(30) NOT NULL DEFAULT 'pending',
+    manager_note        TEXT,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_coach_schedule_requests_coach_created
+    ON coach_schedule_requests(coach_id, created_at DESC);
 
 -- Bảng lưu lịch sử chỉnh sửa điểm danh sau khi đã chốt (Audit log)
 CREATE TABLE class_attendance_audits (

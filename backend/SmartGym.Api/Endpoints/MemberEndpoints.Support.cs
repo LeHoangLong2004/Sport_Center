@@ -53,11 +53,11 @@ namespace SmartGym.Api.Endpoints
 
                 if (query.Contains("lịch") || query.Contains("buổi") || query.Contains("ngày mai") || query.Contains("hôm nay"))
                 {
-                    answer = "📅 Bạn có ca tập gần nhất là lớp **Yoga Cân Bằng Cột Sống** vào ngày mai lúc 07:00 tại Studio 2 với HLV Minh Tuấn, và ca **Kèm 1-1 PT Gym** vào 08:30.";
+                    answer = "📅 Bạn có thể tra cứu lịch tập chi tiết của mình tại mục 'Lịch tập' trên thanh điều hướng. Nếu chưa đăng ký ca tập nào, bạn có thể chọn ca PT 1-1 hoặc lớp tập phù hợp bất kỳ lúc nào!";
                 }
                 else if (query.Contains("gói") || query.Contains("hạn") || query.Contains("hạn dùng"))
                 {
-                    answer = "💳 Bạn đang có 2 gói còn hiệu lực:\n1. **Gói Yoga Chuyên Sâu 3 Tháng** (Hạn đến 30/11/2026, còn 49 ngày).\n2. **Gói Gym & Thể Lực 1 Tháng** (Hạn đến 31/10/2026, còn 19 ngày).";
+                    answer = "💳 Bạn có thể kiểm tra danh sách gói tập và hạn sử dụng cập nhật tại trang 'Gói tập' hoặc 'Hồ sơ cá nhân'. Trung tâm luôn cập nhật theo thời gian thực đơn hàng của bạn.";
                 }
                 else if (query.Contains("thực đơn") || query.Contains("đạm") || query.Contains("dinh dưỡng") || query.Contains("ăn"))
                 {

@@ -61,6 +61,7 @@ export default function CoachPortal() {
     window.location.hash = "#coach-" + (s === "dashboard" ? "portal" : s);
     if (extra?.sessionId !== undefined) setSelectedSessionId(extra.sessionId);
     if (extra?.memberId !== undefined) setSelectedMemberId(extra.memberId);
+    else if (s === "chat") setSelectedMemberId(null);
   };
 
   const screenNode: Record<CoachScreen, ReactNode> = {
@@ -71,7 +72,7 @@ export default function CoachPortal() {
     members: <CoachMembers navigateTo={navigateTo} />,
     "member-profile": <CoachMemberProfile memberId={selectedMemberId} navigateTo={navigateTo} />,
     curriculum: <CoachCurriculum />,
-    chat: <CoachChat />,
+    chat: <CoachChat initialMemberId={selectedMemberId} />,
     reviews: <CoachReviews />,
     notifications: <CoachNotifications />,
     ai: <CoachAI />,

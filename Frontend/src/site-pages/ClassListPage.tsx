@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { FadeUp, FadeIn } from "../components/Motion";
 import { ClassCard } from "./ClassListComponents";
-import type { ClassItem } from "./ClassListComponents";
+import type { ClassItem, ClassStatus } from "./ClassListComponents";
 
 const A = "/assets";
 
@@ -26,9 +26,13 @@ const classImages = [
   `${A}/ff25a.png`,
 ];
 
-const formatSchedule = (isoString: string) => {
+const formatSchedule = (isoString?: string) => {
   try {
+    if (!isoString) return "Lịch chưa cập nhật";
+
     const d = new Date(isoString);
+    if (Number.isNaN(d.getTime())) return "Lịch chưa cập nhật";
+
     const dayNames = [
       "Chủ Nhật",
       "Thứ Hai",
@@ -73,7 +77,19 @@ export default function ClassListPage() {
         const data = await res.json();
 
         const mapped: ClassItem[] = data.map((d: any, index: number) => {
-          const avail = d.maxCapacity - d.currentBookings;
+          // /api/classes/available returns ClassResponse fields. Keep the
+          // legacy aliases as a fallback for older seeded data.
+          const scheduleTime = d.scheduleTime ?? d.startTime;
+          const capacity = Number(d.capacity ?? d.maxCapacity ?? 0);
+          const currentEnrolled = Number(
+            d.currentEnrolled ?? d.currentBookings ?? 0,
+          );
+          const avail = Math.max(
+            0,
+            Number(d.availableSpots ?? capacity - currentEnrolled),
+          );
+          const title = d.className ?? d.name ?? "Lớp học";
+          const sportName = d.sportName ?? "";
           let status: ClassStatus = "available";
           let statusLabel = "Còn chỗ";
           let spots = `Còn ${avail} suất trống`;
@@ -89,12 +105,14 @@ export default function ClassListPage() {
 
           return {
             id: d.id,
-            title: d.name,
+            title,
+            sportName,
+            scheduleTime,
             status,
             statusLabel,
-            trainer: d.coachName || "N/A",
-            schedule: formatSchedule(d.startTime),
-            location: d.roomName || "N/A",
+            trainer: d.coachName || "Đang cập nhật",
+            schedule: formatSchedule(scheduleTime),
+            location: d.facilityName || d.roomName || "Đang cập nhật",
             spots,
             img: classImages[index % classImages.length],
           };
@@ -110,8 +128,30 @@ export default function ClassListPage() {
   }, []);
 
   const filtered = classes.filter((c) => {
-    if (subject && !c.title.toLowerCase().includes(subject.toLowerCase()))
+    if (
+      subject &&
+      !`${c.title} ${c.sportName}`.toLowerCase().includes(subject.toLowerCase())
+    )
       return false;
+
+    if (day) {
+      const date = new Date(c.scheduleTime);
+      if (Number.isNaN(date.getTime())) return false;
+      const selectedDay = day === "cn" ? 0 : Number(day) - 1;
+      if (date.getDay() !== selectedDay) return false;
+    }
+
+    if (shift) {
+      const date = new Date(c.scheduleTime);
+      if (Number.isNaN(date.getTime())) return false;
+      const hour = date.getHours();
+      const matchesShift =
+        (shift === "sang" && hour >= 6 && hour < 12) ||
+        (shift === "chieu" && hour >= 12 && hour < 18) ||
+        (shift === "toi" && hour >= 18 && hour < 22);
+      if (!matchesShift) return false;
+    }
+
     return true;
   });
 

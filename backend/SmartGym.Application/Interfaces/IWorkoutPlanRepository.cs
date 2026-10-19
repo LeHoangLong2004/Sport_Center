@@ -8,6 +8,7 @@ namespace SmartGym.Application.Interfaces;
 public interface IWorkoutPlanRepository
 {
     Task<WorkoutPlan> CreateAsync(WorkoutPlan plan);
+    Task<WorkoutPlan> UpdateAsync(WorkoutPlan plan);
     Task<WorkoutPlan?> GetByIdAsync(Guid id);
     Task<IEnumerable<WorkoutPlan>> GetByCoachIdAsync(Guid coachId);
 }

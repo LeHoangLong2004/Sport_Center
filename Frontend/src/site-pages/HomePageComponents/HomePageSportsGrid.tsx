@@ -1,7 +1,26 @@
+import { useEffect, useState } from "react";
 import { FadeUp } from "../../components/Motion";
-import { sports } from "../homePageData";
+import { imgSport1, imgSport2, imgSport3, imgSport4, imgSport5, imgSport6 } from "../homePageData";
+
+type HomeSport = { id: string; img: string; label: string };
 
 export default function HomePageSportsGrid() {
+  const [sports, setSports] = useState<HomeSport[]>([]);
+
+  useEffect(() => {
+    fetch("/api/sports")
+      .then((response) => response.ok ? response.json() : [])
+      .then((items) => {
+        const images = [imgSport1, imgSport2, imgSport3, imgSport4, imgSport5, imgSport6];
+        setSports((Array.isArray(items) ? items : []).slice(0, 6).map((item: any, index: number) => ({
+          id: String(item.id),
+          img: images[index % images.length],
+          label: item.name || "Bộ môn",
+        })));
+      })
+      .catch(() => setSports([]));
+  }, []);
+
   return (
     <section className="bg-white w-full px-[80px] py-[80px] shrink-0">
       <FadeUp className="flex flex-col gap-[12px] items-center text-center mb-[48px]">

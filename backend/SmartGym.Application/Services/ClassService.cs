@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using SmartGym.Application.DTOs.Classes;
 using SmartGym.Application.Interfaces;
 using SmartGym.Application.Interfaces.Repositories;
-using SmartGym.Domain.Entities;
 
 namespace SmartGym.Application.Services;
 
@@ -29,73 +27,6 @@ public sealed partial class ClassService
         _userRepository = userRepository;
     }
 
-    public async Task<(bool IsSuccess, string? ErrorMessage)> CreateClassAsync(
-        CreateClassRequest request
-    )
-    {
-        if (request.Capacity <= 0)
-        {
-            return (false, "Capacity must be greater than 0.");
-        }
-
-        if (request.ScheduleTime <= DateTime.UtcNow)
-        {
-            return (false, "Schedule time must be in the future.");
-        }
-
-        var newStart = request.ScheduleTime;
-        var newEnd = newStart.AddMinutes(request.DurationMinutes);
-
-        var existingClasses = await _classRepository.GetClassesByCoachAndDateAsync(
-            request.CoachId,
-            request.ScheduleTime
-        );
-        var existingPtSessions = await _ptSessionRepository.GetSessionsByCoachAndDateAsync(
-            request.CoachId,
-            request.ScheduleTime
-        );
-
-        foreach (var c in existingClasses)
-        {
-            var existingStart = c.ScheduleTime;
-            var existingEnd = existingStart.AddMinutes(c.DurationMinutes);
-            if (newStart < existingEnd && existingStart < newEnd)
-            {
-                return (
-                    false,
-                    $"Coach is already scheduled for class '{c.ClassName}' at this time."
-                );
-            }
-        }
-
-        foreach (var p in existingPtSessions)
-        {
-            var existingStart = p.ScheduleTime;
-            var existingEnd = existingStart.AddMinutes(p.DurationMinutes);
-            if (newStart < existingEnd && existingStart < newEnd)
-            {
-                return (false, "Coach is already scheduled for a PT session at this time.");
-            }
-        }
-
-        var newClass = new GroupClass(
-            id: Guid.NewGuid(),
-            sportId: request.SportId,
-            coachId: request.CoachId,
-            facilityId: request.FacilityId,
-            className: request.ClassName,
-            scheduleTime: request.ScheduleTime,
-            durationMinutes: request.DurationMinutes,
-            capacity: request.Capacity,
-            currentEnrolled: 0,
-            status: true
-        );
-
-        await _classRepository.AddAsync(newClass);
-
-        return (true, null);
-    }
-
     public async Task<IEnumerable<ClassResponse>> GetAllClassesAsync()
     {
         return await _classRepository.GetAllClassesAsync();
@@ -111,197 +42,18 @@ public sealed partial class ClassService
         return await _classRepository.GetClassDetailByIdAsync(classId);
     }
 
-    public async Task<(bool IsSuccess, string? ErrorMessage)> BookClassAsync(
-        Guid userId,
-        Guid classId
-    )
+    private static bool Overlaps(DateTime start, DateTime end, DateTime otherStart, int otherDurationMinutes)
     {
-        // 1. Kiểm tra tồn tại lớp học
-        var targetClass = await _classRepository.GetByIdAsync(classId);
-        if (targetClass == null)
-        {
-            return (false, "Không tìm thấy lớp học.");
-        }
-
-        // 2. Kiểm tra trạng thái tài khoản hội viên (UserStatus)
-        var user = await _userRepository.GetByIdAsync(userId);
-        if (user == null)
-        {
-            return (false, "Không tìm thấy thông tin hội viên.");
-        }
-        if (!user.Status)
-        {
-            return (false, "Tài khoản hội viên đang bị tạm khóa hoặc ngưng hoạt động.");
-        }
-
-        // 3. Lấy danh sách subscription của User và kiểm tra còn hạn tại thời điểm diễn ra lớp học
-        var userSubs = await _subscriptionRepository.GetByUserIdAsync(userId);
-
-        var validSub = userSubs.FirstOrDefault(s =>
-            s.PaymentStatus == SmartGym.Domain.Enums.PaymentStatus.Completed
-            && s.StartDate <= targetClass.ScheduleTime
-            && targetClass.ScheduleTime <= s.EndDate
-        );
-
-        if (validSub == null)
-        {
-            return (false, "Hội viên chưa có gói tập hợp lệ hoặc gói tập đã hết hạn.");
-        }
-
-        // 4. Gọi hàm thực thi Transaction ở tầng Data (nguyên tử)
-        return await _classRepository.BookClassTransactionAsync(userId, classId, validSub.Id);
+        var otherEnd = otherStart.AddMinutes(Math.Max(1, otherDurationMinutes));
+        return start < otherEnd && otherStart < end;
     }
 
-    public async Task<(bool IsSuccess, string? ErrorMessage)> CancelBookingAsync(
-        Guid userId,
-        Guid classId
-    )
-    {
-        var targetClass = await _classRepository.GetByIdAsync(classId);
-        if (targetClass == null)
-        {
-            return (false, "Class not found.");
-        }
+    private static bool IsBlockingPtSession(SmartGym.Domain.Entities.PtSession session)
+        => IsBlockingPtSession(session.Status);
 
-        // Logic check time (e.g. at least 2 hours before)
-        if (DateTime.UtcNow.AddHours(2) > targetClass.ScheduleTime)
-        {
-            return (false, "Chỉ có thể hủy lớp trước 2 tiếng so với giờ bắt đầu.");
-        }
+    private static bool IsBlockingPtSession(string? status)
+        => status?.Trim().ToLowerInvariant() is "scheduled" or "pending" or "confirmed" or "sắp diễn ra";
 
-        return await _classRepository.CancelBookingTransactionAsync(userId, classId);
-    }
-
-    public async Task<(bool IsSuccess, string? ErrorMessage)> CancelClassAsync(Guid classId)
-    {
-        var targetClass = await _classRepository.GetByIdAsync(classId);
-        if (targetClass == null)
-        {
-            return (false, "Class not found.");
-        }
-
-        var result = await _classRepository.CancelClassTransactionAsync(classId);
-        if (result.IsSuccess)
-        {
-            await _classRepository.NotifyAffectedMembersAsync(
-                classId,
-                "Lớp học đã bị hủy",
-                $"Lớp học {targetClass.ClassName} đã bị hủy."
-            );
-        }
-        return result;
-    }
-
-    public async Task<(bool IsSuccess, string? ErrorMessage)> ApproveBookingAsync(Guid bookingId)
-    {
-        return await _classRepository.ApproveBookingAsync(bookingId);
-    }
-
-    public async Task<(bool IsSuccess, string? ErrorMessage)> RejectBookingAsync(Guid bookingId)
-    {
-        return await _classRepository.RejectBookingAsync(bookingId);
-    }
-
-    public async Task<(bool IsSuccess, string? ErrorMessage)> UpdateClassAsync(
-        Guid classId,
-        CreateClassRequest request
-    )
-    {
-        try
-        {
-            var targetClass = await _classRepository.GetByIdAsync(classId);
-            if (targetClass == null)
-            {
-                return (false, "Class not found.");
-            }
-
-            if (request.Capacity <= 0)
-            {
-                return (false, "Capacity must be greater than 0.");
-            }
-
-            if (request.ScheduleTime <= DateTime.UtcNow)
-            {
-                return (false, "Schedule time must be in the future.");
-            }
-
-            // Check overlap if schedule or coach changed
-            if (
-                targetClass.ScheduleTime != request.ScheduleTime
-                || targetClass.CoachId != request.CoachId
-                || targetClass.DurationMinutes != request.DurationMinutes
-            )
-            {
-                var newStart = request.ScheduleTime;
-                var newEnd = newStart.AddMinutes(request.DurationMinutes);
-
-                var existingClasses = await _classRepository.GetClassesByCoachAndDateAsync(
-                    request.CoachId,
-                    request.ScheduleTime
-                );
-                var existingPtSessions = await _ptSessionRepository.GetSessionsByCoachAndDateAsync(
-                    request.CoachId,
-                    request.ScheduleTime
-                );
-
-                foreach (var c in existingClasses)
-                {
-                    if (c.Id == classId)
-                        continue;
-                    var existingStart = c.ScheduleTime;
-                    var existingEnd = existingStart.AddMinutes(c.DurationMinutes);
-                    if (newStart < existingEnd && existingStart < newEnd)
-                    {
-                        return (
-                            false,
-                            $"Coach is already scheduled for class '{c.ClassName}' at this time."
-                        );
-                    }
-                }
-
-                foreach (var p in existingPtSessions)
-                {
-                    var existingStart = p.ScheduleTime;
-                    var existingEnd = existingStart.AddMinutes(p.DurationMinutes);
-                    if (newStart < existingEnd && existingStart < newEnd)
-                    {
-                        return (false, "Coach is already scheduled for a PT session at this time.");
-                    }
-                }
-            }
-
-            var updatedClass = new GroupClass(
-                id: classId,
-                sportId: request.SportId,
-                coachId: request.CoachId,
-                facilityId: request.FacilityId,
-                className: request.ClassName,
-                scheduleTime: request.ScheduleTime,
-                durationMinutes: request.DurationMinutes,
-                capacity: request.Capacity,
-                currentEnrolled: targetClass.CurrentEnrolled,
-                status: targetClass.Status
-            );
-
-            await _classRepository.UpdateAsync(updatedClass);
-
-            await _classRepository.NotifyAffectedMembersAsync(
-                classId,
-                "Thông tin lớp học thay đổi",
-                $"Lớp học {targetClass.ClassName} đã được cập nhật thông tin."
-            );
-
-            return (true, null);
-        }
-        catch (Exception ex)
-        {
-            return (
-                false,
-                "System Error: "
-                    + ex.Message
-                    + (ex.InnerException != null ? " - " + ex.InnerException.Message : "")
-            );
-        }
-    }
-
+    private static bool IsBlockingMemberBooking(string? status)
+        => status?.Trim().ToLowerInvariant() is "pending" or "confirmed" or "approved";
 }

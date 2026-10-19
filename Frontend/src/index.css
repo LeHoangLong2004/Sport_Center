@@ -21,4 +21,5 @@
 @import "./styles/global-20.css";
 @import "./styles/global-21.css";
 @import "./styles/global-22.css";
+@import "./styles/manager-portal.css";
 @custom-variant dark (&:where(.dark, .dark *));

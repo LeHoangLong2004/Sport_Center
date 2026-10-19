@@ -6,12 +6,14 @@ import type { MemberAttendanceHistoryItem, MemberWorkoutItem } from "./types";
 interface MemberHistoryAndWorkoutsProps {
   attendanceHistory: MemberAttendanceHistoryItem[];
   assignedWorkouts: MemberWorkoutItem[];
+  attendanceRate?: number | null;
   navigateTo: (s: CoachScreen, extra?: { memberId?: string; sessionId?: string }) => void;
 }
 
 export const MemberHistoryAndWorkouts: React.FC<MemberHistoryAndWorkoutsProps> = ({
   attendanceHistory,
   assignedWorkouts,
+  attendanceRate,
   navigateTo,
 }) => {
   return (
@@ -27,7 +29,7 @@ export const MemberHistoryAndWorkouts: React.FC<MemberHistoryAndWorkoutsProps> =
             </span>
           </div>
           <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-            Tỷ lệ tham dự: 92%
+            Tỷ lệ tham dự: {attendanceRate == null ? "Chưa có dữ liệu" : `${attendanceRate}%`}
           </span>
         </div>
 

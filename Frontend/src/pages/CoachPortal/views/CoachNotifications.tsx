@@ -6,6 +6,7 @@ import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { CoachAPI } from "../services/api";
 import type { MockNotification, MockSession, MockMember } from "../services/api";
+import { DateInput } from "../../../components/DateInput";
 
 type NType = "Thông báo" | "Bài tập về nhà";
 
@@ -85,10 +86,10 @@ export default function CoachNotifications() {
         </div>
       )}
 
-      {/* Lịch sử */}
+      {/* Thông báo đã nhận */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
-          <h2 className="font-semibold text-slate-800 dark:text-slate-100 text-sm">Lịch sử gửi</h2>
+          <h2 className="font-semibold text-slate-800 dark:text-slate-100 text-sm">Thông báo đã nhận</h2>
         </div>
         {notifications.length === 0 ? (
           <div className="px-4 py-8 text-center text-slate-400 text-sm">Chưa có thông báo nào.</div>
@@ -169,7 +170,7 @@ export default function CoachNotifications() {
             {type === "Bài tập về nhà" && (
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Hạn thực hiện</label>
-                <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className={inputCls} />
+                <DateInput value={deadline} onChange={setDeadline} className={inputCls} />
               </div>
             )}
 

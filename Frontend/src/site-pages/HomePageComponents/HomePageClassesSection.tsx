@@ -1,7 +1,44 @@
+import { useEffect, useState } from "react";
 import { FadeUp } from "../../components/Motion";
-import { classes } from "../homePageData";
+import { imgClass1, imgClass2, imgClass3, imgClass4 } from "../homePageData";
+
+type HomeClass = {
+  id: string;
+  img: string;
+  name: string;
+  coach: string;
+  time: string;
+  slots: string;
+  tag: string;
+};
 
 export default function HomePageClassesSection() {
+  const [classes, setClasses] = useState<HomeClass[]>([]);
+
+  useEffect(() => {
+    fetch("/api/classes/available")
+      .then((response) => response.ok ? response.json() : [])
+      .then((items) => {
+        const images = [imgClass1, imgClass2, imgClass3, imgClass4];
+        const mapped = (Array.isArray(items) ? items : []).slice(0, 4).map((item: any, index: number) => {
+          const start = new Date(item.scheduleTime);
+          const end = new Date(start.getTime() + Number(item.durationMinutes || 60) * 60000);
+          const available = Math.max(0, Number(item.capacity || 0) - Number(item.currentEnrolled || 0));
+          return {
+            id: String(item.id),
+            img: images[index % images.length],
+            name: item.className || "Lớp học",
+            coach: item.coachName || "Huấn luyện viên chưa cập nhật",
+            time: `${start.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} – ${end.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`,
+            slots: available > 0 ? `${available} chỗ trống` : "Đã đủ chỗ",
+            tag: available > 0 && available <= 3 ? "SẮP ĐẦY" : "",
+          };
+        });
+        setClasses(mapped);
+      })
+      .catch(() => setClasses([]));
+  }, []);
+
   return (
     <section className="bg-[#f8fafc] w-full px-[80px] py-[80px] shrink-0">
       <FadeUp className="flex items-end justify-between mb-[40px]">
@@ -30,10 +67,10 @@ export default function HomePageClassesSection() {
       </FadeUp>
 
       <div className="grid grid-cols-4 gap-[20px]">
-        {classes.map(({ img, name, coach, time, slots, tag }, index) => (
+        {classes.map(({ id, img, name, coach, time, slots, tag }, index) => (
           <FadeUp
             delay={index * 0.1}
-            key={name}
+            key={id}
             onClick={(e) => {
               e.stopPropagation();
               window.location.hash = "#chitietlophoc";
