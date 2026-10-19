@@ -3,12 +3,12 @@ import type { FlowPackage } from "./shared";
 
 export function toFlowPackage(
   item: CatalogPackage,
-  duration: PackagePeriod,
+  duration: PackagePeriod | number,
   discountPct: number,
   order?: PackageOrder,
   selectionQuote = false,
 ): FlowPackage {
-  const listPrice = item.prices[duration]
+  const listPrice = (item.prices as Record<number, number>)[duration] ?? item.prices[1] ?? 0
   const discount = Math.round((listPrice * discountPct) / 100)
   const details = [
     { label: "Loáº¡i gÃ³i", value: item.category === "membership" ? "GÃ³i thÃ nh viÃªn" : "GÃ³i mÃ´n táº­p" },

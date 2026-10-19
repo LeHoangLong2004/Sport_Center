@@ -9,12 +9,32 @@ export interface MockMember {
   goal: string;
   level: string;
   sport: string;
+  className?: string;
+  classNames?: string[];
   phone: string;
   email: string;
   classIds: string[];
   attendanceRate?: number | null;
   attendedSessions?: number;
   totalSessions?: number;
+}
+
+export interface CoachClassOverview {
+  id: string;
+  className: string;
+  sport: string;
+  scheduleTime: string;
+  durationMinutes: number;
+  capacity: number;
+  enrolledCount: number;
+  status: boolean;
+}
+
+export interface CoachMembersOverview {
+  totalClasses: number;
+  totalMembers: number;
+  classes: CoachClassOverview[];
+  members: MockMember[];
 }
 
 export interface MockSession {

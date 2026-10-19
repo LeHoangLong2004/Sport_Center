@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore;
 using SmartGym.Application.DTOs.WorkoutPlans;
 using SmartGym.Application.Interfaces;
 using SmartGym.Infrastructure.Persistence.EF;
@@ -59,16 +60,71 @@ public static partial class CoachEndpoints
                 var coachId = await ResolveCoachIdAsync(context, db);
                 if (coachId == null)
                     return Results.Unauthorized();
-                if (!Guid.TryParse(GetString(request, "memberId") ?? GetString(request, "id"), out var memberId))
-                    return Results.BadRequest(new { message = "Học viên nhận giáo án không hợp lệ." });
+
+                var rawTargetId = GetString(request, "memberId") ?? GetString(request, "classId") ?? GetString(request, "id");
+                if (!Guid.TryParse(rawTargetId, out var targetId))
+                    return Results.BadRequest(new { message = "Đối tượng nhận giáo án không hợp lệ." });
                 if (await planService.GetPlanByIdAsync(id) == null)
                     return Results.NotFound(new { message = "Không tìm thấy giáo án." });
 
+                var type = GetString(request, "type");
+                var note = GetString(request, "note") ?? GetString(request, "notes") ?? "Vui lòng hoàn thành đúng tiến độ";
+                DateTime? dueDate = null;
+                var rawDeadline = GetString(request, "deadline") ?? GetString(request, "dueDate");
+                if (!string.IsNullOrWhiteSpace(rawDeadline) && DateTime.TryParse(rawDeadline, out var parsedDeadline))
+                {
+                    dueDate = parsedDeadline;
+                }
+
+                var isExplicitClass = string.Equals(type, "class", StringComparison.OrdinalIgnoreCase);
+                var isClassInDb = (await db.Database.SqlQueryRaw<Guid>(
+                    "SELECT id FROM classes WHERE id = {0} LIMIT 1",
+                    targetId
+                ).ToListAsync()).Any();
+                var isClass = isExplicitClass || (!await db.Users.AnyAsync(u => u.Id == targetId) && isClassInDb);
+
+                if (isClass)
+                {
+                    var studentUserIds = await db.Database.SqlQueryRaw<Guid>(
+                        @"SELECT DISTINCT user_id FROM class_bookings 
+                          WHERE class_id = {0} AND status NOT IN ('cancelled', 'rejected', 'class_cancelled')",
+                        targetId
+                    ).ToListAsync();
+
+                    if (studentUserIds.Count == 0)
+                    {
+                        return Results.BadRequest(new { message = "Lớp học này hiện chưa có học viên nào đăng ký để giao giáo án." });
+                    }
+
+                    var assignedList = new List<HomeworkProgressResponse>();
+                    foreach (var studentId in studentUserIds)
+                    {
+                        var res = await homeworkService.AssignHomeworkAsync(coachId.Value, new AssignHomeworkRequest
+                        {
+                            MemberId = studentId,
+                            PlanId = id,
+                            DueDate = dueDate,
+                            Notes = note
+                        });
+                        assignedList.Add(res);
+                    }
+
+                    return Results.Ok(new { success = true, assignedCount = assignedList.Count, data = assignedList });
+                }
+
+                // Member assignment
+                var userExists = await db.Users.AnyAsync(u => u.Id == targetId);
+                if (!userExists)
+                {
+                    return Results.BadRequest(new { message = "Không tìm thấy học viên hoặc lớp học tương ứng trong hệ thống." });
+                }
+
                 var result = await homeworkService.AssignHomeworkAsync(coachId.Value, new AssignHomeworkRequest
                 {
-                    MemberId = memberId,
+                    MemberId = targetId,
                     PlanId = id,
-                    Notes = "Vui lòng hoàn thành đúng tiến độ"
+                    DueDate = dueDate,
+                    Notes = note
                 });
                 return Results.Ok(new { success = true, data = result });
             }
