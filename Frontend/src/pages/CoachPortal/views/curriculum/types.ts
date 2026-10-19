@@ -1,4 +1,4 @@
-import type { MockCurriculum } from "../../services/api";
+import type { MockCurriculum, SportOption } from "../../services/api";
 
 export type CurriculumStatus = "Nháp" | "Đã giao" | "Lưu trữ";
 
@@ -10,11 +10,14 @@ export const STATUS_STYLE: Record<CurriculumStatus, { label: string; bg: string;
 
 export const EMPTY_EXERCISE = { name: "", reps: "", rest: "", note: "" };
 
-export function makeDraft(): MockCurriculum {
+export function makeDraft(sports: SportOption[] = []): MockCurriculum {
+  const firstSport = sports[0];
+
   return {
     id: `cur_${Date.now()}`,
     name: "",
-    sport: "Gym",
+    sport: firstSport?.name || "",
+    sportId: firstSport?.id || null,
     goal: "",
     level: "Cơ bản",
     duration: 60,

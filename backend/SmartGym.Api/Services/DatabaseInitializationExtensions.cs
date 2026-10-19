@@ -269,6 +269,69 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine($"coach availability schema sync error: {ex.Message}");
     }
 
+    // Persist Coach operational data that used to live in static in-memory
+    // collections. These tables are idempotent so existing databases can be
+    // upgraded simply by restarting the API.
+    try
+    {
+        db.Database.ExecuteSqlRaw(
+            @"
+            CREATE TABLE IF NOT EXISTS class_attendance_sheets (
+                session_id UUID PRIMARY KEY REFERENCES classes(id) ON DELETE CASCADE,
+                state VARCHAR(20) NOT NULL DEFAULT 'unmarked',
+                version INT NOT NULL DEFAULT 1,
+                finalized_at TIMESTAMPTZ,
+                finalized_by UUID REFERENCES users(id) ON DELETE SET NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            );
+
+            CREATE TABLE IF NOT EXISTS class_attendance_records (
+                session_id UUID NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+                member_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                status VARCHAR(30),
+                note TEXT,
+                PRIMARY KEY (session_id, member_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS coach_assessments (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                coach_id UUID NOT NULL REFERENCES coaches(id) ON DELETE CASCADE,
+                session_id UUID REFERENCES classes(id) ON DELETE CASCADE,
+                member_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                completion INT NOT NULL DEFAULT 0 CHECK (completion >= 0 AND completion <= 100),
+                metrics_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+                comment TEXT,
+                next_step TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            );
+            CREATE INDEX IF NOT EXISTS idx_coach_assessments_coach_created
+                ON coach_assessments(coach_id, created_at DESC);
+
+            CREATE TABLE IF NOT EXISTS coach_schedule_requests (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                coach_id UUID NOT NULL REFERENCES coaches(id) ON DELETE CASCADE,
+                session_id UUID REFERENCES classes(id) ON DELETE SET NULL,
+                request_type VARCHAR(30) NOT NULL,
+                substitute_coach_id UUID REFERENCES coaches(id) ON DELETE SET NULL,
+                new_date DATE,
+                new_time VARCHAR(50),
+                reason TEXT NOT NULL,
+                status VARCHAR(30) NOT NULL DEFAULT 'pending',
+                manager_note TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            );
+            CREATE INDEX IF NOT EXISTS idx_coach_schedule_requests_coach_created
+                ON coach_schedule_requests(coach_id, created_at DESC);
+            "
+        );
+        app.Logger.LogInformation("Coach attendance, assessment, and schedule request tables are ready.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Coach operational schema sync error: {ex.Message}");
+    }
+
     // Keep the review table compatible with both the original EF migration
     // (member_id) and the running Supabase schema (user_id). Review data is
     // always stored in PostgreSQL; this block only aligns legacy column names

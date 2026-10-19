@@ -1,5 +1,6 @@
 import React from "react";
 import { Search, Users } from "lucide-react";
+import { UserAvatar } from "../../../../components/UserAvatar";
 import type { Conversation } from "./types";
 
 interface ChatConversationListProps {
@@ -76,9 +77,9 @@ export const ChatConversationList: React.FC<ChatConversationListProps> = ({
                     <Users className="w-5 h-5" />
                   </div>
                 ) : (
-                  <img
+                  <UserAvatar
                     src={conv.avatar}
-                    alt={conv.title}
+                    name={conv.title}
                     className="w-11 h-11 rounded-full object-cover border border-slate-200 dark:border-slate-700"
                   />
                 )}

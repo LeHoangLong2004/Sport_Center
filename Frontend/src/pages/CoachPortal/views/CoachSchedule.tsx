@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import type { CoachScreen } from "../types";
 import { CoachAPI } from "../services/api";
 import { Send, CalendarPlus, CheckCircle2 } from "lucide-react";
@@ -44,6 +44,20 @@ export default function CoachSchedule({ navigateTo }: Props) {
   const [isClassProposalModalOpen, setIsClassProposalModalOpen] = useState(false);
   const [selectedOpenSlot, setSelectedOpenSlot] = useState<UnifiedScheduleItem | null>(null);
   const [selectedPtSession, setSelectedPtSession] = useState<UnifiedScheduleItem | null>(null);
+  const [sportOptions, setSportOptions] = useState<string[]>([]);
+  const [roomOptions, setRoomOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    Promise.all([CoachAPI.getSports(), CoachAPI.getFacilities()])
+      .then(([sports, facilities]) => {
+        setSportOptions(sports.map((sport) => sport.name));
+        setRoomOptions(facilities.map((facility) => facility.name));
+      })
+      .catch(() => {
+        setSportOptions([]);
+        setRoomOptions([]);
+      });
+  }, []);
 
   const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
 
@@ -298,6 +312,8 @@ export default function CoachSchedule({ navigateTo }: Props) {
         isOpen={isOpenSlotModalOpen}
         onClose={() => setIsOpenSlotModalOpen(false)}
         onSuccess={handleCreateOpenSlotSuccess}
+        sportOptions={sportOptions}
+        roomOptions={roomOptions}
       />
 
       <OpenPtDetailModal

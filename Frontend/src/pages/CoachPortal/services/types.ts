@@ -45,6 +45,7 @@ export interface MockCurriculum {
   id: string;
   name: string;
   sport: string;
+  sportId?: string | null;
   goal: string;
   level: string;
   duration: number; // phút
@@ -53,6 +54,16 @@ export interface MockCurriculum {
   description: string;
   exercises: { name: string; reps: string; rest: string; note: string }[];
   assignedTo: { type: "class" | "member"; id: string; name: string }[];
+}
+
+export interface SportOption {
+  id: string;
+  name: string;
+}
+
+export interface FacilityOption {
+  id: string;
+  name: string;
 }
 
 export interface MockNotification {

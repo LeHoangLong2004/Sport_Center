@@ -8,19 +8,24 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (newItem: UnifiedScheduleItem) => void | Promise<void>;
+  sportOptions: string[];
+  roomOptions: string[];
 }
 
-export default function OpenPtSlotModal({ isOpen, onClose, onSuccess }: Props) {
+export default function OpenPtSlotModal({ isOpen, onClose, onSuccess, sportOptions, roomOptions }: Props) {
   const [openSlotDate, setOpenSlotDate] = useState("");
   const [openSlotStartTime, setOpenSlotStartTime] = useState("08:00");
   const [openSlotEndTime, setOpenSlotEndTime] = useState("09:30");
-  const [openSlotSport, setOpenSlotSport] = useState("Gym");
-  const [openSlotRoom, setOpenSlotRoom] = useState("Khu PT 1-1");
+  const [openSlotSport, setOpenSlotSport] = useState("");
+  const [openSlotRoom, setOpenSlotRoom] = useState("");
   const [openSlotNote, setOpenSlotNote] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   if (!isOpen) return null;
+
+  const selectedSport = openSlotSport || sportOptions[0] || "";
+  const selectedRoom = openSlotRoom || roomOptions[0] || "";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,13 +35,13 @@ export default function OpenPtSlotModal({ isOpen, onClose, onSuccess }: Props) {
     const newItem: UnifiedScheduleItem = {
       id: "custom-open-" + Date.now(),
       type: "open_pt",
-      className: `Lịch trống 1–1: ${openSlotSport}`,
-      sport: openSlotSport,
+      className: `Lịch trống 1–1: ${selectedSport}`,
+      sport: selectedSport,
       level: "1-1 PT",
       date: openSlotDate,
       startTime: openSlotStartTime,
       endTime: openSlotEndTime,
-      room: openSlotRoom,
+      room: selectedRoom,
       coachName: "HLV",
       registeredCount: 0,
       capacity: 1,
@@ -132,11 +137,11 @@ export default function OpenPtSlotModal({ isOpen, onClose, onSuccess }: Props) {
                   Bộ môn nhận dạy:
                 </label>
                 <select
-                  value={openSlotSport}
+                  value={selectedSport}
                   onChange={(e) => setOpenSlotSport(e.target.value)}
                   className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
                 >
-                  {["Gym", "Boxing", "Yoga", "Swimming", "Pilates", "Zumba", "Fitness"].map((s) => (
+                  {sportOptions.map((s) => (
                     <option key={s} value={s}>
                       {s}
                     </option>
@@ -148,11 +153,11 @@ export default function OpenPtSlotModal({ isOpen, onClose, onSuccess }: Props) {
                   Phòng / Khu vực:
                 </label>
                 <select
-                  value={openSlotRoom}
+                  value={selectedRoom}
                   onChange={(e) => setOpenSlotRoom(e.target.value)}
                   className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
                 >
-                  {["Khu PT 1-1", "Võ Đài", "Studio 1", "Studio 2", "Hồ Bơi", "Khu Thể Lực", "Khu Tạ Tự Do"].map((r) => (
+                  {roomOptions.map((r) => (
                     <option key={r} value={r}>
                       {r}
                     </option>

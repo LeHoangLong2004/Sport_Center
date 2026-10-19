@@ -86,8 +86,8 @@ export default function CoachDashboardView(props: Props) {
         <StatCard
           icon={<Star className="w-5 h-5 text-amber-500 fill-amber-500" />}
           label="Đánh giá trung bình"
-          value="4.9"
-          sub="Dựa trên 142 lượt nhận xét"
+          value="—"
+          sub="Chưa có dữ liệu đánh giá"
           onClick={() => navigateTo("reviews")}
         />
       </div>

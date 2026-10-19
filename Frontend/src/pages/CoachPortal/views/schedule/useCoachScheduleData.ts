@@ -1,29 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { type SessionStatus, type MockSession, type ScheduleChangeRequest, type AvailabilitySlot, CoachAPI } from "../../services/api";
 import type { UnifiedScheduleItem } from "./types";
-import { scheduleSync } from "../../../../services/sync/scheduleSync";
 
 export function useCoachScheduleData(weekDates: string[]) {
   const [rawSessions, setRawSessions] = useState<MockSession[]>([]);
   const [requests, setRequests] = useState<ScheduleChangeRequest[]>([]);
   const [availabilitySlots, setAvailabilitySlots] = useState<AvailabilitySlot[]>([]);
   const [loading, setLoading] = useState(true);
-  const [syncedSessions, setSyncedSessions] = useState(() => scheduleSync.getSyncedSessions());
-
-  const currentCoachId = useMemo(() => {
-    try {
-      const storedUser = JSON.parse(localStorage.getItem("user") || "null");
-      return typeof storedUser?.id === "string" ? storedUser.id : "";
-    } catch {
-      return "";
-    }
-  }, []);
-  useEffect(() => {
-    return scheduleSync.subscribe(() => {
-      setSyncedSessions(scheduleSync.getSyncedSessions());
-    });
-  }, []);
-
   useEffect(() => {
     let disposed = false;
 
@@ -130,41 +113,14 @@ export function useCoachScheduleData(weekDates: string[]) {
         };
       });
 
-    const syncedItems: UnifiedScheduleItem[] = syncedSessions
-      .filter(
-        (s) =>
-          s.type !== "open_pt" &&
-          Boolean(currentCoachId) &&
-          s.coachId?.toLowerCase() === currentCoachId.toLowerCase()
-      )
-      .map((s) => ({
-      id: s.id,
-      type: s.type === "pt" ? ("pt" as const) : ("group" as const),
-      classId: s.classId,
-      className: s.className || (s.type === "pt" ? `Kèm 1-1: ${s.memberName}` : "Lớp học"),
-      sport: s.sport,
-      level: s.level || "Cơ bản",
-      date: s.date,
-      startTime: s.startTime,
-      endTime: s.endTime,
-      room: s.room || "Khu PT 1-1",
-      coachName: s.coachName,
-      capacity: s.capacity || 1,
-      registeredCount: s.registeredCount || 1,
-      status: s.status as any,
-      memberName: s.memberName,
-      memberPhone: s.memberPhone,
-      note: s.userNote || s.coachNote,
-    }));
-
-    const combined = [...groupItems, ...ptItems, ...openItems, ...syncedItems];
+    const combined = [...groupItems, ...ptItems, ...openItems];
     const seen = new Set<string>();
     return combined.filter((item) => {
       if (seen.has(item.id)) return false;
       seen.add(item.id);
       return true;
     });
-  }, [rawSessions, availabilitySlots, weekDates, syncedSessions, currentCoachId]);
+  }, [rawSessions, availabilitySlots, weekDates]);
 
   const addOpenSlot = async (newItem: UnifiedScheduleItem) => {
     const created = await CoachAPI.createAvailabilitySlot({

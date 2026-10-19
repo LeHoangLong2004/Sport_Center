@@ -1,5 +1,6 @@
 import React from "react";
 import { Users, Send } from "lucide-react";
+import { UserAvatar } from "../../../../components/UserAvatar";
 import type { Conversation } from "./types";
 
 interface ChatWindowProps {
@@ -51,9 +52,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 <Users className="w-5 h-5" />
               </div>
             ) : (
-              <img
+              <UserAvatar
                 src={activeConv.avatar}
-                alt={activeConv.title}
+                name={activeConv.title}
                 className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700"
               />
             )}

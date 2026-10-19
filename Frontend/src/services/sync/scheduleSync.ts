@@ -29,84 +29,9 @@ export interface SyncedSession {
 const STORAGE_KEY = "synced_schedule_sessions";
 const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api';
 
-// Initial seed open PT slots & sample bookings
-export const INITIAL_SYNCED_SESSIONS: SyncedSession[] = [
-  {
-    id: "pt-open-nam-01",
-    type: "open_pt",
-    className: "Lịch trống 1–1 (HLV Nam)",
-    sport: "Gym",
-    level: "1-1 PT",
-    date: "2026-10-14",
-    startTime: "08:30",
-    endTime: "09:30",
-    room: "Khu PT 1-1 - Tầng 1",
-    coachId: "25f50fba-506a-4edf-9db7-43f77f6741a4",
-    coachName: "HLV Hồ Xuân Ánh Nam",
-    capacity: 1,
-    registeredCount: 0,
-    status: "sắp diễn ra",
-    attendanceStatus: "chưa điểm danh",
-    coachNote: "Nhận kèm cá nhân siết mỡ, tăng cơ ngực và thể lực",
-  },
-  {
-    id: "pt-open-nam-02",
-    type: "open_pt",
-    className: "Lịch trống 1–1 (HLV Nam)",
-    sport: "Boxing",
-    level: "1-1 PT",
-    date: "2026-10-15",
-    startTime: "14:00",
-    endTime: "15:30",
-    room: "Ring PT 1-1",
-    coachId: "25f50fba-506a-4edf-9db7-43f77f6741a4",
-    coachName: "HLV Hồ Xuân Ánh Nam",
-    capacity: 1,
-    registeredCount: 0,
-    status: "sắp diễn ra",
-    attendanceStatus: "chưa điểm danh",
-    coachNote: "Kèm boxing cardio, rèn phản xạ và thể lực chiến đấu",
-  },
-  {
-    id: "pt-open-nam-03",
-    type: "open_pt",
-    className: "Lịch trống 1–1 (HLV Nam)",
-    sport: "Gym",
-    level: "1-1 PT",
-    date: "2026-10-16",
-    startTime: "18:00",
-    endTime: "19:00",
-    room: "Khu PT 1-1 - Tầng 1",
-    coachId: "25f50fba-506a-4edf-9db7-43f77f6741a4",
-    coachName: "HLV Hồ Xuân Ánh Nam",
-    capacity: 1,
-    registeredCount: 0,
-    status: "sắp diễn ra",
-    attendanceStatus: "chưa điểm danh",
-    coachNote: "Tập chân mông và siết nét cơ lõi (Core & Leg day)",
-  },
-  {
-    id: "pt-booked-sample",
-    type: "pt",
-    className: "Kèm 1-1: Nguyễn Văn An",
-    sport: "Gym",
-    level: "1-1 PT",
-    date: "2026-10-13",
-    startTime: "07:00",
-    endTime: "08:30",
-    room: "Khu PT 1-1",
-    coachId: "25f50fba-506a-4edf-9db7-43f77f6741a4",
-    coachName: "HLV Hồ Xuân Ánh Nam",
-    capacity: 1,
-    registeredCount: 1,
-    status: "hoàn thành",
-    attendanceStatus: "có mặt",
-    memberName: "Nguyễn Văn An",
-    memberPhone: "0912345678",
-    goal: "Tăng cơ giảm mỡ",
-    coachNote: "Đã hoàn thành tốt 5 hiệp Bench Press và Barbell Row. Form chuẩn.",
-  }
-];
+// Cross-page sync cache. It only contains records explicitly created by the
+// user; it is never seeded with demo sessions.
+export const INITIAL_SYNCED_SESSIONS: SyncedSession[] = [];
 
 class ScheduleSyncService {
   private listeners: (() => void)[] = [];
@@ -144,9 +69,7 @@ class ScheduleSyncService {
         }
       }
     } catch {}
-    // Seed default
-    this.saveSyncedSessions(INITIAL_SYNCED_SESSIONS);
-    return INITIAL_SYNCED_SESSIONS;
+    return [];
   }
 
   public saveSyncedSessions(sessions: SyncedSession[]): void {

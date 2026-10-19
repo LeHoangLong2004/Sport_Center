@@ -66,6 +66,7 @@ export default function MemberBooking({ onNavigate }: Props) {
   const [classToBook, setClassToBook] = useState<any | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<"qr" | "card" | "counter">("qr");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const [bookingSuccessInfo, setBookingSuccessInfo] = useState<any | null>(null);
   const [cancelTarget, setCancelTarget] = useState<{ classId: string; className: string } | null>(null);
   const [bookingPtSlot, setBookingPtSlot] = useState<any | null>(null);
@@ -143,9 +144,9 @@ export default function MemberBooking({ onNavigate }: Props) {
           coachBio:
             item.coachBio ||
             "Huấn luyện viên giàu kinh nghiệm, tận tâm hướng dẫn học viên cải thiện vóc dáng và thể lực toàn diện.",
-          coachRating: item.coachRating || 4.9,
-          coachExperienceYears: item.coachExperienceYears || 5,
-          price: item.price || 150000,
+          coachRating: item.coachRating ?? null,
+          coachExperienceYears: item.coachExperienceYears ?? null,
+          price: item.price ?? 0,
           capacity: item.capacity,
           registeredCount: item.currentEnrolled || 0,
           availableSpots: item.availableSpots ?? Math.max(0, item.capacity - (item.currentEnrolled || 0)),
@@ -191,9 +192,9 @@ export default function MemberBooking({ onNavigate }: Props) {
           coachSpecialty: booking.coachSpecialty || "Huấn luyện viên Thể hình",
           coachPhone: booking.coachPhone || "0901 234 567",
           coachBio: booking.coachBio || "Huấn luyện viên phụ trách lớp học.",
-          coachRating: booking.coachRating || 4.9,
-          coachExperienceYears: booking.coachExperienceYears || 5,
-          price: booking.price || 150000,
+          coachRating: booking.coachRating ?? null,
+          coachExperienceYears: booking.coachExperienceYears ?? null,
+          price: booking.price ?? 0,
           capacity: 0,
           registeredCount: 0,
           status: booking.status || "confirmed",
@@ -231,7 +232,7 @@ export default function MemberBooking({ onNavigate }: Props) {
           ),
           coachSpecialty: session.coachSpecialty || "Chuyên gia HLV Thể hình 1-1",
           coachPhone: session.coachPhone || "0901 234 567",
-          coachRating: session.coachRating || 4.9,
+          coachRating: session.coachRating ?? null,
           capacity: 1,
           registeredCount: 1,
           status: session.status || "confirmed",
@@ -326,6 +327,7 @@ export default function MemberBooking({ onNavigate }: Props) {
       return;
     }
     setSelectedClassDetail(null);
+    setPaymentError(null);
     setClassToBook(item);
   };
 
@@ -333,6 +335,7 @@ export default function MemberBooking({ onNavigate }: Props) {
   const handleConfirmPaymentAndBook = async () => {
     if (!classToBook) return;
     setIsProcessingPayment(true);
+    setPaymentError(null);
     try {
       const priceToPay = classToBook.price || 150000;
       await MemberAPI.payAndBookClass(classToBook.id, paymentMethod, priceToPay);
@@ -390,6 +393,7 @@ export default function MemberBooking({ onNavigate }: Props) {
       setClassToBook(null);
       void loadGroupClasses(true);
     } catch (error: any) {
+      setPaymentError(error?.message || "Không thể hoàn tất thanh toán và đặt lớp. Vui lòng thử lại.");
       showFeedback(error?.message || "Không thể hoàn tất thanh toán và đặt lớp. Vui lòng thử lại.", "error");
     } finally {
       setIsProcessingPayment(false);
@@ -861,7 +865,7 @@ export default function MemberBooking({ onNavigate }: Props) {
                           </div>
                           <div className="flex items-center gap-1 text-[11px] font-bold text-amber-500 bg-white dark:bg-slate-900 px-2 py-1 rounded-lg border border-slate-100 dark:border-slate-800 shrink-0">
                             <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                            <span>{item.coachRating || 4.9}</span>
+                            <span>{item.coachRating ?? "—"}</span>
                           </div>
                         </div>
 
@@ -1134,7 +1138,7 @@ export default function MemberBooking({ onNavigate }: Props) {
                           </span>
                           <span className="flex items-center gap-1 text-[11px] font-bold text-amber-500 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-md border border-teal-100 dark:border-slate-700">
                             <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                            {booking.coachRating || 4.9}
+                            {booking.coachRating ?? "—"}
                           </span>
                         </div>
 
@@ -1271,7 +1275,7 @@ export default function MemberBooking({ onNavigate }: Props) {
                     </span>
                     <span className="flex items-center gap-1 text-xs font-black text-amber-500 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-lg border border-teal-100">
                       <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                      {selectedClassDetail.coachRating || 4.9}
+                      {selectedClassDetail.coachRating ?? "—"}
                     </span>
                   </div>
 
@@ -1392,6 +1396,19 @@ export default function MemberBooking({ onNavigate }: Props) {
 
               {/* Body */}
               <div className="p-6 overflow-y-auto space-y-4 text-xs">
+                {paymentError && (
+                  <div
+                    role="alert"
+                    className="flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200"
+                  >
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
+                    <div>
+                      <p className="font-extrabold">Không thể đặt lớp</p>
+                      <p className="mt-0.5 leading-relaxed">{paymentError}</p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Lớp & Coach info box */}
                 <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
@@ -1641,7 +1658,7 @@ export default function MemberBooking({ onNavigate }: Props) {
                     </span>
                     <span className="flex items-center gap-1 text-xs font-black text-amber-500 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-lg border border-teal-100">
                       <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                      {bookingSuccessInfo.classItem.coachRating || 4.9}
+                      {bookingSuccessInfo.classItem.coachRating ?? "—"}
                     </span>
                   </div>
 

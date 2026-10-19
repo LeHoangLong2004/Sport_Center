@@ -218,7 +218,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                     CoachSpecialty: coach?.Specialty ?? "Huấn luyện viên Thể hình",
                     CoachPhone: user?.PhoneNumber ?? "",
                     CoachBio: coach?.Bio ?? "Huấn luyện viên phụ trách lớp học.",
-                    CoachRating: coach?.Rating ?? 4.9m,
+                    CoachRating: coach?.Rating,
                     CoachExperienceYears: coach?.ExperienceYears ?? 5,
                     Price: 150000m
                 );
@@ -281,7 +281,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                     CoachSpecialty: coach?.Specialty ?? "Huấn luyện viên Thể hình",
                     CoachPhone: user?.PhoneNumber ?? "",
                     CoachBio: coach?.Bio ?? "Huấn luyện viên phụ trách lớp học.",
-                    CoachRating: coach?.Rating ?? 4.9m,
+                    CoachRating: coach?.Rating,
                     CoachExperienceYears: coach?.ExperienceYears ?? 5,
                     Price: 150000m
                 );

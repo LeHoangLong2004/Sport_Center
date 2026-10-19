@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { CoachAPI } from "../services/api";
-import type { MockCurriculum, MockSession, MockMember } from "../services/api";
+import type { MockCurriculum, MockSession, MockMember, SportOption } from "../services/api";
 import { CheckCircle2 } from "lucide-react";
 import { makeDraft } from "./curriculum/types";
 import { CurriculumHeader } from "./curriculum/CurriculumHeader";
@@ -12,6 +12,7 @@ export default function CoachCurriculum() {
   const [curricula, setCurricula] = useState<MockCurriculum[]>([]);
   const [sessions, setSessions] = useState<MockSession[]>([]);
   const [members, setMembers] = useState<MockMember[]>([]);
+  const [sports, setSports] = useState<SportOption[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<MockCurriculum | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -29,10 +30,12 @@ export default function CoachCurriculum() {
     setLoading(true);
 
     // The API scopes curricula by the coach id in the authenticated token.
-    Promise.all([CoachAPI.getCurricula(), CoachAPI.getSchedule(), CoachAPI.getMembers()])
-      .then(([cur, sch, mem]) => {
+    Promise.all([CoachAPI.getCurricula(), CoachAPI.getSchedule(), CoachAPI.getMembers(), CoachAPI.getSports()])
+      .then(([cur, sch, mem, sportOptions]) => {
         if (cancelled) return;
-        setCurricula(Array.isArray(cur) ? cur : []);
+        const loadedSports = Array.isArray(sportOptions) ? sportOptions : [];
+        setSports(loadedSports);
+        setCurricula(normalizeCurricula(Array.isArray(cur) ? cur : [], loadedSports));
         setSessions(Array.isArray(sch) ? sch : []);
         setMembers(Array.isArray(mem) ? mem : []);
       })
@@ -54,16 +57,24 @@ export default function CoachCurriculum() {
 
   const reloadCurricula = async () => {
     const data = await CoachAPI.getCurricula();
-    setCurricula(Array.isArray(data) ? data : []);
+    setCurricula(normalizeCurricula(Array.isArray(data) ? data : [], sports));
   };
 
   const openNew = () => {
-    setDraft(makeDraft());
+    setDraft(makeDraft(sports));
     setEditingId("new");
   };
 
   const openEdit = (curriculum: MockCurriculum) => {
-    setDraft({ ...curriculum, exercises: curriculum.exercises.map((exercise) => ({ ...exercise })) });
+    const selectedSport = sports.find(
+      (sport) => sport.id === curriculum.sportId || sport.name === curriculum.sport
+    );
+    setDraft({
+      ...curriculum,
+      sportId: selectedSport?.id || curriculum.sportId || null,
+      sport: selectedSport?.name || curriculum.sport,
+      exercises: curriculum.exercises.map((exercise) => ({ ...exercise })),
+    });
     setEditingId(curriculum.id);
   };
 
@@ -144,8 +155,21 @@ export default function CoachCurriculum() {
   }, [curricula, searchQuery, sportFilter]);
 
   const sportsList = useMemo(() => {
-    return ["all", ...Array.from(new Set(curricula.map((curriculum) => curriculum.sport)))];
-  }, [curricula]);
+    return ["all", ...sports.map((sport) => sport.name)];
+  }, [sports]);
+
+  function normalizeCurricula(items: MockCurriculum[], sportOptions: SportOption[]) {
+    return items.map((curriculum) => {
+      const selectedSport = sportOptions.find(
+        (sport) => sport.id === curriculum.sportId || sport.name === curriculum.sport
+      );
+      return {
+        ...curriculum,
+        sportId: selectedSport?.id || curriculum.sportId || null,
+        sport: selectedSport?.name || curriculum.sport || "Chưa xác định",
+      };
+    });
+  }
 
   return (
     <div className="flex flex-col gap-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-300">
@@ -184,6 +208,7 @@ export default function CoachCurriculum() {
         draft={draft}
         setDraft={setDraft}
         isSaving={isSaving}
+        sports={sports}
         onClose={closeEdit}
         onSave={handleSave}
       />

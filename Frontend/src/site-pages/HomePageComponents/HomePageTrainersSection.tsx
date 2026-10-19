@@ -1,8 +1,37 @@
+import { useEffect, useState } from "react";
 import { FadeUp } from "../../components/Motion";
 import { StarRow } from "./StarRow";
-import { trainers, imgFlame } from "../homePageData";
+import { imgFlame, imgTrainer1, imgTrainer2, imgTrainer3, imgTrainer4 } from "../homePageData";
+
+type HomeTrainer = {
+  id: string;
+  img: string;
+  name: string;
+  specialty: string;
+  exp: string;
+  rating: number | null;
+};
 
 export default function HomePageTrainersSection() {
+  const [trainers, setTrainers] = useState<HomeTrainer[]>([]);
+
+  useEffect(() => {
+    fetch("/api/coaches")
+      .then((response) => response.ok ? response.json() : [])
+      .then((items) => {
+        const images = [imgTrainer1, imgTrainer2, imgTrainer3, imgTrainer4];
+        setTrainers((Array.isArray(items) ? items : []).slice(0, 4).map((item: any, index: number) => ({
+          id: String(item.id),
+          img: item.avatarUrl || images[index % images.length],
+          name: item.fullName || "Huấn luyện viên",
+          specialty: item.specialty || "Chưa cập nhật chuyên môn",
+          exp: item.experienceYears == null ? "Chưa cập nhật" : `${item.experienceYears} năm`,
+          rating: typeof item.rating === "number" ? item.rating : null,
+        })));
+      })
+      .catch(() => setTrainers([]));
+  }, []);
+
   return (
     <section className="bg-white w-full px-[80px] py-[80px] shrink-0">
       <FadeUp className="flex flex-col gap-[12px] items-center text-center mb-[48px]">
@@ -21,10 +50,10 @@ export default function HomePageTrainersSection() {
       </FadeUp>
 
       <div className="grid grid-cols-4 gap-[24px]">
-        {trainers.map(({ img, name, specialty, exp, rating }, index) => (
+        {trainers.map(({ id, img, name, specialty, exp, rating }, index) => (
           <FadeUp
             delay={index * 0.1}
-            key={name}
+            key={id}
             onClick={(e) => {
               e.stopPropagation();
               window.location.hash = "#coach";
@@ -46,11 +75,15 @@ export default function HomePageTrainersSection() {
                 {specialty}
               </p>
             </div>
-            <StarRow rating={rating} />
+            {rating === null ? (
+              <p className="text-xs text-slate-400">Chưa có đánh giá</p>
+            ) : (
+              <StarRow rating={rating} />
+            )}
             <div className="flex gap-[8px] items-center">
               <img alt="" src={imgFlame} style={{ width: 14, height: 14 }} />
               <p className="font-['Inter:Semi_Bold'] font-semibold text-[#1e293b] text-[13px] m-0">
-                {exp} kinh nghiệm
+                {exp}
               </p>
             </div>
           </FadeUp>

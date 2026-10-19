@@ -9,7 +9,10 @@ import type {
   AssessmentRecord,
   ScheduleChangeRequest,
   AvailabilitySlot,
+  SportOption,
+  FacilityOption,
 } from "./types";
+import type { MemberProfileData } from "../views/member-profile/types";
 
 export type {
   SessionStatus,
@@ -22,6 +25,8 @@ export type {
   AssessmentRecord,
   ScheduleChangeRequest,
   AvailabilitySlot,
+  SportOption,
+  FacilityOption,
 };
 
 const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api';
@@ -133,6 +138,17 @@ export const CoachAPI = {
         }
     },
 
+    getMemberProfile: async (memberId: string): Promise<MemberProfileData> => {
+        return fetchApi(`/coach/members/${encodeURIComponent(memberId)}/profile`);
+    },
+
+    saveMemberNote: async (memberId: string, data: { comment: string; completion?: number; sessionId?: string }) => {
+        return fetchApi(`/coach/members/${encodeURIComponent(memberId)}/notes`, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
     // 5. Điểm danh
     getAttendance: async (sessionId: string): Promise<AttendanceRecord[]> => {
         try {
@@ -162,7 +178,8 @@ export const CoachAPI = {
             return plans.map((p: any) => ({
                 id: p.id,
                 name: p.planName,
-                sport: "Gym",
+                sportId: p.sportId || null,
+                sport: "",
                 goal: p.goal || "",
                 level: p.level || "",
                 duration: p.durationMinutes || 60,
@@ -180,10 +197,35 @@ export const CoachAPI = {
             return [];
         }
     },
+    getSports: async (): Promise<SportOption[]> => {
+        try {
+            const sports = await fetchApi('/sports');
+            return Array.isArray(sports)
+                ? sports
+                    .filter((sport: any) => sport?.id && sport?.name)
+                    .map((sport: any) => ({ id: String(sport.id), name: String(sport.name).trim() }))
+                : [];
+        } catch {
+            return [];
+        }
+    },
+    getFacilities: async (): Promise<FacilityOption[]> => {
+        try {
+            const facilities = await fetchApi('/facilities');
+            return Array.isArray(facilities)
+                ? facilities
+                    .filter((facility: any) => facility?.id && facility?.name)
+                    .map((facility: any) => ({ id: String(facility.id), name: String(facility.name).trim() }))
+                : [];
+        } catch {
+            return [];
+        }
+    },
     saveCurriculum: async (curriculum: any) => {
         // Map frontend structure to backend CreateWorkoutPlanRequest
         const payload = {
             planName: curriculum.name,
+            sportId: curriculum.sportId || null,
             description: curriculum.description,
             goal: curriculum.goal,
             level: curriculum.level,
@@ -203,6 +245,7 @@ export const CoachAPI = {
     updateCurriculum: async (id: string, curriculum: any) => {
         const payload = {
             planName: curriculum.name,
+            sportId: curriculum.sportId || null,
             description: curriculum.description,
             goal: curriculum.goal,
             level: curriculum.level,
