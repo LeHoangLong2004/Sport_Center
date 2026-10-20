@@ -36,3 +36,4 @@ export const ProfileStatsBadges: React.FC<ProfileStatsBadgesProps> = ({
     </div>
   );
 };
+

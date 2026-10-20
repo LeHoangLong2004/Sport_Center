@@ -295,3 +295,4 @@ export default function MemberChat({ onNavigate }: Props) {
     </div>
   );
 }
+

@@ -322,3 +322,4 @@ export const scheduleSync = new ScheduleSyncService();
 export function getStoredSyncedSessions(): SyncedSession[] {
   return scheduleSync.getSyncedSessions();
 }
+

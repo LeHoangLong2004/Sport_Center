@@ -57,3 +57,4 @@ public sealed partial class ClassService
     private static bool IsBlockingMemberBooking(string? status)
         => status?.Trim().ToLowerInvariant() is "pending" or "confirmed" or "approved";
 }
+
