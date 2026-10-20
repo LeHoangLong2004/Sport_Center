@@ -32,23 +32,29 @@ public static class SportFacilityEndpoints
 
         app.MapPost(
             "/api/sports",
-            async (SportModel request, global::Supabase.Client client) =>
+            async (SportSaveRequest request, global::Supabase.Client client) =>
             {
-                request.Id = Guid.NewGuid();
-                await client.From<SportModel>().Insert(request);
+                var model = new SportModel
+                {
+                    Id = Guid.NewGuid(),
+                    Name = request.Name?.Trim() ?? string.Empty,
+                    ImageUrl = request.ImageUrl,
+                    Description = request.Description,
+                };
+                await client.From<SportModel>().Insert(model);
                 return Results.Ok(new
                 {
-                    id = request.Id,
-                    name = request.Name,
-                    imageUrl = request.ImageUrl,
-                    description = request.Description,
+                    id = model.Id,
+                    name = model.Name,
+                    imageUrl = model.ImageUrl,
+                    description = model.Description,
                 });
             }
         ).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
 
         app.MapPut(
             "/api/sports/{id:guid}",
-            async (Guid id, SportModel request, global::Supabase.Client client) =>
+            async (Guid id, SportSaveRequest request, global::Supabase.Client client) =>
             {
                 var response = await client.From<SportModel>().Where(s => s.Id == id).Get();
                 var existing = response.Models.FirstOrDefault();
@@ -108,7 +114,7 @@ public static class SportFacilityEndpoints
                 var form = await request.ReadFormAsync();
                 var file = form.Files.GetFile("file") ?? form.Files.FirstOrDefault();
                 var requestedFolder = form["folder"].FirstOrDefault();
-                var uploadFolder = requestedFolder is "sports" or "facilities" ? requestedFolder : "sports";
+                var uploadFolder = requestedFolder is "sports" or "facilities" or "products" ? requestedFolder : "sports";
 
                 if (file == null || file.Length == 0)
                 {
@@ -157,17 +163,23 @@ public static class SportFacilityEndpoints
 
         app.MapPost(
             "/api/facilities",
-            async (FacilityModel request, global::Supabase.Client client) =>
+            async (FacilitySaveRequest request, global::Supabase.Client client) =>
             {
-                request.Id = Guid.NewGuid();
-                await client.From<FacilityModel>().Insert(request);
-                return Results.Ok(new { id = request.Id, name = request.Name, imageUrl = request.ImageUrl, address = request.Address });
+                var model = new FacilityModel
+                {
+                    Id = Guid.NewGuid(),
+                    Name = request.Name?.Trim() ?? string.Empty,
+                    ImageUrl = request.ImageUrl,
+                    Address = string.IsNullOrWhiteSpace(request.Address) ? "Chưa cập nhật" : request.Address.Trim(),
+                };
+                await client.From<FacilityModel>().Insert(model);
+                return Results.Ok(new { id = model.Id, name = model.Name, imageUrl = model.ImageUrl, address = model.Address });
             }
         ).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
 
         app.MapPut(
             "/api/facilities/{id:guid}",
-            async (Guid id, FacilityModel request, global::Supabase.Client client) =>
+            async (Guid id, FacilitySaveRequest request, global::Supabase.Client client) =>
             {
                 var response = await client.From<FacilityModel>().Where(f => f.Id == id).Get();
                 var existing = response.Models.FirstOrDefault();
@@ -209,3 +221,6 @@ public static class SportFacilityEndpoints
         ).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
     }
 }
+
+public record SportSaveRequest(string Name, string? ImageUrl, string? Description);
+public record FacilitySaveRequest(string Name, string? ImageUrl, string? Address);
