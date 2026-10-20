@@ -7,6 +7,7 @@ import MemberSchedule from "./views/MemberSchedule";
 import MemberPackages from "./views/MemberPackages";
 import MemberPayments from "./views/MemberPayments";
 import MemberWorkouts from "./views/MemberWorkouts";
+import MemberAttendance from "./views/MemberAttendance";
 import MemberReviews from "./views/MemberReviews";
 import MemberChat from "./views/MemberChat";
 import MemberSupport from "./views/MemberSupport";
@@ -45,6 +46,9 @@ export default function MemberPortal({
       payments: "profile",
       workout: "workouts",
       workouts: "workouts",
+      attendance: "attendance",
+      diemdanh: "attendance",
+      "diem-danh": "attendance",
       reports: "dashboard",
       progress: "dashboard",
       reviews: "reviews",
@@ -81,6 +85,9 @@ export default function MemberPortal({
         payments: "profile",
         workout: "workouts",
         workouts: "workouts",
+        attendance: "attendance",
+        diemdanh: "attendance",
+        "diem-danh": "attendance",
         reports: "dashboard",
         progress: "dashboard",
         reviews: "reviews",
@@ -142,6 +149,7 @@ export default function MemberPortal({
     dashboard: <MemberDashboard onNavigate={navigateTo} />,
     booking: <MemberBooking onNavigate={navigateTo} />,
     schedule: <MemberSchedule onNavigate={navigateTo} />,
+    attendance: <MemberAttendance onNavigate={navigateTo} />,
     packages: (
       <MemberPackages
         onNavigate={navigateTo}
