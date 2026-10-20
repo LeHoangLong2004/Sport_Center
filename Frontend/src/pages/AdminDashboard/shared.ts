@@ -81,7 +81,7 @@ export const memberEditAvatar = `${A}/b49d6.png`
 // ─── types ───────────────────────────────────────────────────────────────────
 export type AdminPage =
   | "overview" | "members" | "staff" | "facilities" | "classes"
-  | "schedule" | "packages" | "payment" | "reports" | "permissions"
+  | "schedule" | "packages" | "products" | "payment" | "reports" | "permissions"
   | "audit-log" | "check-ins" | "support" | "budget" | "expenses"
   | "payroll" | "pl-report" | "settings" | "member-edit" | "profile"
 

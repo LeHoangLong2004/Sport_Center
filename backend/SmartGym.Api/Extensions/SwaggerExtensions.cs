@@ -13,6 +13,8 @@ public static class SwaggerExtensions
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(c =>
         {
+            c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
+            c.CustomSchemaIds(type => type.FullName?.Replace("+", ".") ?? type.Name);
             c.SchemaFilter<PaymentEnumSchemaFilter>();
 
             c.SwaggerDoc(

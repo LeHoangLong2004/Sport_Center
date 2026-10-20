@@ -134,3 +134,9 @@ Frontend/.cache/
 .windsurf/
 .claude/
 .copilot/
+
+# ------------------------------------------------------------------------------
+# 6. Scratch & Thư mục kiểm thử tạm thời (Temporary Workspace / Scripts)
+# ------------------------------------------------------------------------------
+scratch/
+**/scratch/
