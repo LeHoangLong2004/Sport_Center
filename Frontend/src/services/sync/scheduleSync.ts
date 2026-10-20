@@ -1,3 +1,5 @@
+import { cancelBookingOnBackend, finalizeAttendanceOnBackend, pushBookingToBackend } from "./scheduleSyncBackend";
+
 export interface SyncedSession {
   id: string;
   type: "group" | "pt" | "open_pt";
@@ -26,9 +28,9 @@ export interface SyncedSession {
   updatedAt?: string;
 }
 
-const STORAGE_KEY = "synced_schedule_sessions";
-const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api';
+export const scheduleSync = new ScheduleSyncService();
 
+const STORAGE_KEY = "synced_schedule_sessions";
 // Cross-page sync cache. It only contains records explicitly created by the
 // user; it is never seeded with demo sessions.
 export const INITIAL_SYNCED_SESSIONS: SyncedSession[] = [];
@@ -256,7 +258,7 @@ class ScheduleSyncService {
       localStorage.setItem("member_sessions", JSON.stringify([newMemberSession, ...memSessions]));
     } catch {}
 
-    const backendResult = await this.pushBookingToBackend(bookedSession);
+    const backendResult = await pushBookingToBackend(bookedSession);
     if (!backendResult.ok) {
       this.saveSyncedSessions(previousAll);
       if (previousMemberStorage === null) {
@@ -297,7 +299,7 @@ class ScheduleSyncService {
       }
     } catch {}
 
-    this.cancelBookingOnBackend(sessionId, reason);
+    void cancelBookingOnBackend(sessionId, reason);
   }
 
   public recordAttendance(sessionId: string, attendanceStatus: "có mặt" | "vắng" | "có phép", coachNote: string): void {
@@ -336,87 +338,10 @@ class ScheduleSyncService {
       }
     } catch {}
 
-    this.finalizeAttendanceOnBackend(sessionId, attendanceStatus, coachNote);
+    void finalizeAttendanceOnBackend(sessionId, attendanceStatus, coachNote);
   }
 
-  private async pushBookingToBackend(session: SyncedSession): Promise<{ ok: boolean; message?: string }> {
-    try {
-      const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
-      const response = await fetch(`${BASE_URL}/member/bookings`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          slotId: session.id,
-          name: session.className,
-          sport: session.sport,
-          level: session.level,
-          type: session.type,
-          date: session.date,
-          startTime: session.startTime,
-          endTime: session.endTime,
-          room: session.room,
-          coachName: session.coachName,
-          coachId: session.coachId,
-          memberName: session.memberName,
-          memberPhone: session.memberPhone,
-          memberEmail: session.memberEmail,
-          goal: session.goal,
-          coachNote: session.coachNote,
-        }),
-      });
-      if (response.ok) return { ok: true };
 
-      let message = "Khung giờ PT không còn khả dụng.";
-      try {
-        const payload = await response.json();
-        if (payload?.message) message = payload.message;
-      } catch {}
-      return { ok: false, message };
-    } catch {
-      return { ok: false, message: "Không thể kết nối máy chủ để kiểm tra xung đột lịch." };
-    }
-  }
-
-  private async cancelBookingOnBackend(sessionId: string, reason: string) {
-    try {
-      const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
-      await fetch(`${BASE_URL}/member/bookings/${encodeURIComponent(sessionId)}?reason=${encodeURIComponent(reason)}`, {
-        method: "DELETE",
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
-    } catch {}
-  }
-
-  private async finalizeAttendanceOnBackend(sessionId: string, status: string, note: string) {
-    try {
-      const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
-      await fetch(`${BASE_URL}/coach/sessions/${encodeURIComponent(sessionId)}/attendance/finalize`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          records: [
-            {
-              memberId: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-              status,
-              note,
-            },
-          ],
-        }),
-      });
-    } catch {}
-  }
 }
 
-export const scheduleSync = new ScheduleSyncService();
 
-export function getStoredSyncedSessions(): SyncedSession[] {
-  return scheduleSync.getSyncedSessions();
-}

@@ -29,57 +29,7 @@ export type {
   FacilityOption,
 };
 
-const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api';
-
-async function fetchApi(endpoint: string, options: RequestInit = {}) {
-  // Keep Coach APIs on the same authenticated account as the rest of the
-  // portal. Some login flows store the access token under accessToken.
-  let token = localStorage.getItem('token') || localStorage.getItem('accessToken');
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string> || {})
-  };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  let response = await fetch(`${BASE_URL}${endpoint}`, {
-    ...options,
-    headers
-  });
-  
-  if (response.status === 401 && !token) {
-    // Only use the demo token when no account token exists. Never replace an
-    // authenticated coach with the default demo coach after a 401 response.
-    try {
-      const refRes = await fetch(`${BASE_URL}/auth/dev-token`, { method: 'POST' });
-      if (refRes.ok) {
-        const refData = await refRes.json();
-        if (refData.token) {
-          localStorage.setItem('token', refData.token);
-          headers['Authorization'] = `Bearer ${refData.token}`;
-          response = await fetch(`${BASE_URL}${endpoint}`, {
-            ...options,
-            headers
-          });
-        }
-      }
-    } catch {}
-  }
-
-  if (!response.ok) {
-    let message = `API error: ${response.status}`;
-    try {
-      const errorBody = await response.json();
-      if (typeof errorBody?.message === 'string' && errorBody.message.trim()) {
-        message = errorBody.message;
-      }
-    } catch {}
-    throw new Error(message);
-  }
-  
-  return response.json();
-}
+import { fetchApi } from "./apiClient";
 
 export const CoachAPI = {
   // 1. Dashboard
@@ -389,3 +339,5 @@ export const CoachAPI = {
 };
 
 export const coachApi = CoachAPI;
+
+

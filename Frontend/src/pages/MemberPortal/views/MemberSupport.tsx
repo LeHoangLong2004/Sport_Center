@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { createPortal } from "react-dom";
 import type { MemberScreen, MemberSupportTicketItem } from "../types";
 import { getSavedMemberData, saveMemberData } from "../services/memberData";
 import {
@@ -15,26 +14,21 @@ import {
   Shield,
   User,
 } from "lucide-react";
-
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
 }
-
 interface ChatMessage {
   sender: "user" | "ai";
   text: string;
   time: string;
 }
-
 export default function MemberSupport({ onNavigate }: Props) {
   const userStr = localStorage.getItem("user");
   const user = userStr ? JSON.parse(userStr) : null;
   const userId = user?.id || "";
   const userName = user?.fullName || user?.name || "Hội viên";
   const storageKey = userId ? `member_support_tickets_${userId}` : "member_support_tickets";
-
   const [activeTab, setActiveTab] = useState<"ai" | "tickets">("ai");
-
   // AI Chat State
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -44,7 +38,6 @@ export default function MemberSupport({ onNavigate }: Props) {
     },
   ]);
   const [inputQuestion, setInputQuestion] = useState("");
-
   // Support Tickets State
   const [tickets, setTickets] = useState<MemberSupportTicketItem[]>(() =>
     getSavedMemberData(storageKey, [])
@@ -54,7 +47,6 @@ export default function MemberSupport({ onNavigate }: Props) {
   const [ticketSubject, setTicketSubject] = useState("");
   const [ticketContent, setTicketContent] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
-
   // Quick questions
   const quickQuestions = [
     "Lịch tập của tôi xem ở đâu?",
@@ -62,17 +54,13 @@ export default function MemberSupport({ onNavigate }: Props) {
     "Gợi ý thực đơn giàu đạm cho ngày tập nặng",
     "Cách giảm đau cơ sau buổi tập chân (Leg day)",
   ];
-
   const handleSendQuestion = (questionText: string) => {
     const q = questionText.trim();
     if (!q) return;
-
     const now = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
     const userMsg: ChatMessage = { sender: "user", text: q, time: now };
-
     let aiReply = "Tôi đã ghi nhận câu hỏi của bạn. ";
     const lower = q.toLowerCase();
-
     if (lower.includes("lịch") || lower.includes("buổi") || lower.includes("hôm nay") || lower.includes("ngày mai")) {
       aiReply = "📅 Bạn có thể theo dõi và quản lý toàn bộ các ca học nhóm cũng như ca kèm 1-1 tại mục **Lịch tập cá nhân** trên thanh điều hướng. Tại đó bạn cũng có thể đổi ca hoặc hủy lịch trước giờ tập.";
     } else if (lower.includes("gói") || lower.includes("hạn") || lower.includes("đăng ký") || lower.includes("mua")) {
@@ -84,19 +72,16 @@ export default function MemberSupport({ onNavigate }: Props) {
     } else {
       aiReply = `Dạ với câu hỏi "${q}", bạn có thể trao đổi trực tiếp với Huấn luyện viên hoặc gửi phiếu yêu cầu hỗ trợ (Ticket) tại tab bên cạnh để bộ phận Lễ tân & CSKH hỗ trợ bạn nhanh nhất!`;
     }
-
     const aiMsg: ChatMessage = { sender: "ai", text: aiReply, time: now };
     setMessages((prev) => [...prev, userMsg, aiMsg]);
     setInputQuestion("");
   };
-
   const handleCreateTicket = (e: React.FormEvent) => {
     e.preventDefault();
     if (!ticketSubject.trim() || !ticketContent.trim()) {
       alert("Vui lòng nhập đầy đủ tiêu đề và nội dung yêu cầu.");
       return;
     }
-
     const nowStr = new Date().toLocaleString("vi-VN");
     const newTicket: MemberSupportTicketItem = {
       id: `TCK-${Math.floor(100 + Math.random() * 900)}`,
@@ -106,18 +91,15 @@ export default function MemberSupport({ onNavigate }: Props) {
       createdAt: nowStr,
       status: "open",
     };
-
     const updated = [newTicket, ...tickets];
     setTickets(updated);
     saveMemberData(storageKey, updated);
-
     setIsTicketModalOpen(false);
     setTicketSubject("");
     setTicketContent("");
     setFeedback("Đã gửi yêu cầu hỗ trợ thành công! Nhân viên CSKH sẽ phản hồi trong 2-4 giờ làm việc.");
     setTimeout(() => setFeedback(null), 4000);
   };
-
   return (
     <div className="space-y-6">
       {feedback && (
@@ -131,7 +113,6 @@ export default function MemberSupport({ onNavigate }: Props) {
           </button>
         </div>
       )}
-
       {/* Header */}
       <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between flex-wrap gap-4">
         <div>
@@ -140,7 +121,6 @@ export default function MemberSupport({ onNavigate }: Props) {
             Trợ lý AI thể thao 24/7 và hệ thống tiếp nhận yêu cầu CSKH từ hội viên
           </p>
         </div>
-
         {/* Tab switchers */}
         <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
           <button
@@ -169,7 +149,6 @@ export default function MemberSupport({ onNavigate }: Props) {
           </button>
         </div>
       </div>
-
       {/* 1. AI ASSISTANT VIEW */}
       {activeTab === "ai" && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden flex flex-col h-[560px]">
@@ -189,7 +168,6 @@ export default function MemberSupport({ onNavigate }: Props) {
               </button>
             ))}
           </div>
-
           {/* Messages Log */}
           <div className="flex-1 p-5 overflow-y-auto space-y-4 text-xs">
             {messages.map((m, idx) => {
@@ -210,7 +188,6 @@ export default function MemberSupport({ onNavigate }: Props) {
                   >
                     {isAi ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
                   </div>
-
                   <div className="space-y-1">
                     <div
                       className={`p-3.5 rounded-2xl leading-relaxed whitespace-pre-line ${
@@ -227,7 +204,6 @@ export default function MemberSupport({ onNavigate }: Props) {
               );
             })}
           </div>
-
           {/* Input Bar */}
           <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850">
             <form
@@ -254,7 +230,6 @@ export default function MemberSupport({ onNavigate }: Props) {
           </div>
         </div>
       )}
-
       {/* 2. TICKETS VIEW */}
       {activeTab === "tickets" && (
         <div className="space-y-4">
@@ -271,7 +246,6 @@ export default function MemberSupport({ onNavigate }: Props) {
               <span>Gửi yêu cầu mới</span>
             </button>
           </div>
-
           {tickets.length === 0 ? (
             <div className="bg-white dark:bg-slate-900 p-12 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center">
               <MessageSquare className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
@@ -314,10 +288,8 @@ export default function MemberSupport({ onNavigate }: Props) {
                       )}
                     </span>
                   </div>
-
                   <h4 className="font-bold text-xs text-slate-900 dark:text-white">{t.subject}</h4>
                   <p className="text-xs text-slate-600 dark:text-slate-400">{t.content}</p>
-
                   {t.reply && (
                     <div className="p-3 rounded-xl bg-orange-50/60 dark:bg-orange-950/30 border border-orange-200/60 dark:border-orange-800/40 text-xs text-orange-950 dark:text-orange-200 mt-2">
                       <div className="font-bold flex items-center gap-1.5 mb-1">
@@ -327,7 +299,6 @@ export default function MemberSupport({ onNavigate }: Props) {
                       <p>{t.reply}</p>
                     </div>
                   )}
-
                   <div className="text-[10px] text-slate-400 pt-1">Ngày gửi: {t.createdAt}</div>
                 </div>
               ))}
@@ -335,87 +306,17 @@ export default function MemberSupport({ onNavigate }: Props) {
           )}
         </div>
       )}
-
-      {/* CREATE TICKET MODAL (PORTAL) */}
-      {isTicketModalOpen &&
-        createPortal(
-          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden flex flex-col">
-              <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                  Gửi yêu cầu hỗ trợ đến Ban Quản lý
-                </h3>
-                <button
-                  onClick={() => setIsTicketModalOpen(false)}
-                  className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <form onSubmit={handleCreateTicket} className="p-5 space-y-4 text-xs">
-                <div>
-                  <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                    Danh mục vấn đề:
-                  </label>
-                  <select
-                    value={ticketCategory}
-                    onChange={(e) => setTicketCategory(e.target.value as any)}
-                    className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                  >
-                    <option value="Tư vấn dịch vụ">Tư vấn dịch vụ & Gia hạn gói</option>
-                    <option value="Lịch tập & HLV">Thắc mắc Lịch tập & Đổi Huấn luyện viên</option>
-                    <option value="Thanh toán & Hóa đơn">Thanh toán, Hóa đơn & Đối soát</option>
-                    <option value="Cơ sở vật chất">Góp ý Cơ sở vật chất & Thiết bị</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                    Tiêu đề yêu cầu:
-                  </label>
-                  <input
-                    type="text"
-                    value={ticketSubject}
-                    onChange={(e) => setTicketSubject(e.target.value)}
-                    placeholder="VD: Nhờ hỗ trợ dời hạn gói tập do đi công tác"
-                    className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                    Nội dung chi tiết:
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={ticketContent}
-                    onChange={(e) => setTicketContent(e.target.value)}
-                    placeholder="Mô tả cụ thể thông tin để nhân viên CSKH hỗ trợ bạn thuận tiện nhất..."
-                    className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white resize-none"
-                  />
-                </div>
-
-                <div className="pt-2 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => setIsTicketModalOpen(false)}
-                    className="px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold cursor-pointer"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold cursor-pointer transition-colors shadow-xs"
-                  >
-                    Gửi yêu cầu
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>,
-          document.body
-        )}
+      <SupportTicketModal
+        isOpen={isTicketModalOpen}
+        category={ticketCategory}
+        subject={ticketSubject}
+        content={ticketContent}
+        onClose={() => setIsTicketModalOpen(false)}
+        onSubmit={handleCreateTicket}
+        onCategoryChange={setTicketCategory}
+        onSubjectChange={setTicketSubject}
+        onContentChange={setTicketContent}
+      />
     </div>
   );
 }

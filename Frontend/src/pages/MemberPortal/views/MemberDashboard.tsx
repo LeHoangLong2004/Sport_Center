@@ -21,18 +21,15 @@ import {
   Wallet,
 } from "lucide-react";
 import { WalletService, MEMBER_WALLET_UPDATED_EVENT } from "../services/walletService";
-
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
 }
-
 export default function MemberDashboard({ onNavigate }: Props) {
   const { profile } = useUserProfile("member");
   const userStr = localStorage.getItem("user");
   const user = userStr ? JSON.parse(userStr) : null;
   const userId = user?.id || profile?.id || "";
   const userName = user?.fullName || user?.name || profile?.fullName || "Hội viên";
-
   // Data states
   const [orders, setOrders] = useState<PackageOrder[]>([]);
   const [sessions, setSessions] = useState<MemberSessionItem[]>(() =>
@@ -44,13 +41,11 @@ export default function MemberDashboard({ onNavigate }: Props) {
   const [balance, setBalance] = useState<number>(() => {
     return WalletService.getLocalWallet().balance;
   });
-
   useEffect(() => {
     let cancelled = false;
     WalletService.getWallet(userId).then((w) => {
       if (!cancelled && typeof w.balance === "number") setBalance(w.balance);
     });
-
     const handleUpdate = (e: any) => {
       if (e?.detail?.balance !== undefined) {
         setBalance(e.detail.balance);
@@ -64,7 +59,6 @@ export default function MemberDashboard({ onNavigate }: Props) {
       window.removeEventListener(MEMBER_WALLET_UPDATED_EVENT, handleUpdate);
     };
   }, [userId]);
-
   // Load user package orders
   useEffect(() => {
     let cancelled = false;
@@ -77,7 +71,6 @@ export default function MemberDashboard({ onNavigate }: Props) {
       cancelled = true;
     };
   }, []);
-
   // Compute active packages
   const activePackages = useMemo(() => {
     if (orders.length > 0) {
@@ -98,7 +91,6 @@ export default function MemberDashboard({ onNavigate }: Props) {
     }
     return [];
   }, [orders]);
-
   const upcomingSessions = useMemo(
     () => sessions.filter((s) => s.status === "sắp diễn ra" || s.status === "đang diễn ra"),
     [sessions]
@@ -108,13 +100,11 @@ export default function MemberDashboard({ onNavigate }: Props) {
   const attendanceRate = completedSessions.length > 0
     ? `${Math.round((completedSessions.filter((s) => s.attendanceStatus === "có mặt").length / completedSessions.length) * 100)}%`
     : "--%";
-
   const handleToggleTask = (taskId: string) => {
     const updated = tasks.map((t) => (t.id === taskId ? { ...t, completed: !t.completed } : t));
     setTasks(updated);
     saveMemberData(`member_tasks_${userId || "default"}`, updated);
   };
-
   const kpis = [
     {
       label: "Gói còn hiệu lực",
@@ -145,7 +135,6 @@ export default function MemberDashboard({ onNavigate }: Props) {
       color: "purple",
     },
   ];
-
   return (
     <div className="space-y-6">
       {/* 1. WELCOME BANNER */}
@@ -162,7 +151,6 @@ export default function MemberDashboard({ onNavigate }: Props) {
                 ? `Chào mừng bạn trở lại! Bạn có ${upcomingSessions.length} buổi tập được xếp lịch trong tuần này. Hãy duy trì năng lượng và tập luyện đều đặn nhé!`
                 : "Chào mừng bạn đến với SportCenter! Hãy bắt đầu hành trình nâng cao sức khỏe bằng việc khám phá các gói tập và lớp học nhé!"}
             </p>
-
             {/* Wallet quick balance widget */}
             <div className="pt-2 flex items-center gap-3">
               <div className="inline-flex items-center gap-3 p-2 px-3.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 shadow-xs">
@@ -203,7 +191,6 @@ export default function MemberDashboard({ onNavigate }: Props) {
           </div>
         </div>
       </div>
-
       {/* 2. STAT CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {kpis.map((k, idx) => {
@@ -222,7 +209,6 @@ export default function MemberDashboard({ onNavigate }: Props) {
           );
         })}
       </div>
-
       {/* 3. MAIN SECTION */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* LEFT COLUMN: SESSIONS & TASKS */}
@@ -247,7 +233,6 @@ export default function MemberDashboard({ onNavigate }: Props) {
                 <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
               </button>
             </div>
-
             {upcomingSessions.length === 0 ? (
               <div className="text-center py-10 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
                 <Calendar className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
@@ -293,7 +278,6 @@ export default function MemberDashboard({ onNavigate }: Props) {
               </div>
             )}
           </section>
-
           {/* Bài tập Coach giao */}
           <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs">
             <div className="flex items-center justify-between mb-4">
@@ -314,7 +298,6 @@ export default function MemberDashboard({ onNavigate }: Props) {
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
-
             {tasks.length === 0 ? (
               <div className="text-center py-6 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-slate-500 text-xs">
                 Chưa có nhiệm vụ bài tập riêng từ HLV. Khi bạn tập luyện cùng HLV, bài tập sẽ hiển thị tại đây.
@@ -346,68 +329,7 @@ export default function MemberDashboard({ onNavigate }: Props) {
             )}
           </section>
         </div>
-
-        {/* RIGHT COLUMN: ACTIVE PACKAGES & SHORTCUT */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* Gói tập đang dùng */}
-          <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">Gói tập đang dùng</h2>
-              <button
-                onClick={() => onNavigate("packages")}
-                className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
-              >
-                {activePackages.length > 0 ? "Gia hạn" : "Khám phá"}
-              </button>
-            </div>
-
-            {activePackages.length === 0 ? (
-              <div className="text-center py-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-4">
-                <CreditCard className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Bạn chưa đăng ký gói tập nào</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">Đăng ký gói tập môn hoặc thẻ hội viên để bắt đầu luyện tập</p>
-                <button
-                  onClick={() => onNavigate("packages")}
-                  className="mt-3.5 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-500 transition-colors shadow-sm"
-                >
-                  <span>Xem các gói tập</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {activePackages.map((pkg) => (
-                  <div key={pkg.id} className="p-3.5 rounded-xl bg-gradient-to-br from-slate-50 to-emerald-50/30 dark:from-slate-800 dark:to-emerald-950/20 border border-slate-200 dark:border-slate-700/80">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-full">
-                        {pkg.sport}
-                      </span>
-                      <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">Còn {pkg.daysRemaining} ngày</span>
-                    </div>
-                    <h3 className="text-xs font-bold text-slate-900 dark:text-white mt-1.5">{pkg.name}</h3>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Hạn đến: {pkg.endDate}</p>
-                    <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full mt-2.5 overflow-hidden">
-                      <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${Math.min(100, (pkg.daysRemaining / 90) * 100)}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* Quick shortcut */}
-          <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-slate-950 shadow-md">
-            <h3 className="font-extrabold text-sm text-slate-950">Bạn muốn tập luyện hôm nay?</h3>
-            <p className="text-xs text-slate-900/80 mt-1">Khám phá hơn 10 bộ môn thể thao và đặt lịch lớp yêu thích ngay.</p>
-            <button
-              onClick={() => onNavigate("booking")}
-              className="mt-3.5 w-full py-2.5 px-3 rounded-xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs shadow-sm transition-colors flex items-center justify-center gap-2"
-            >
-              <span>Đặt lịch lớp ngay</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
+        <MemberDashboardAside activePackages={activePackages} onNavigate={onNavigate} />
       </div>
     </div>
   );
