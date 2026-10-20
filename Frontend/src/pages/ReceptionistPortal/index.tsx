@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { breadcrumbs, Page, avatarByPage } from './shared';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
@@ -15,8 +15,46 @@ import { ProfileSettings } from '../../components/ProfileSettings';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { toast } from 'sonner';
 
+const VALID_RECEPTIONIST_PAGES: Page[] = [
+  "checkin", "counter-payments", "register", "classes", "schedule",
+  "pos", "orders", "lookup", "detail", "profile"
+];
+
+function getReceptionistPageFromHash(): Page {
+  const hash = window.location.hash || "";
+  if (!hash.startsWith("#receptionist")) return "checkin";
+
+  let clean = hash.replace(/^#receptionist/, "");
+  if (clean.startsWith("/")) clean = clean.slice(1);
+  if (clean.startsWith("-")) clean = clean.slice(1);
+  if (clean.startsWith("?tab=")) clean = clean.slice(5);
+  clean = clean.split("?")[0].split("/")[0].trim().toLowerCase();
+
+  if (VALID_RECEPTIONIST_PAGES.includes(clean as Page)) {
+    return clean as Page;
+  }
+  return "checkin";
+}
+
 export default function ReceptionistPortal({ onExit }: { onExit: () => void }) {
-  const [page, setPage] = useState<Page>("checkin")
+  const [page, setPageState] = useState<Page>(getReceptionistPageFromHash);
+
+  const setPage = (newPage: Page) => {
+    setPageState(newPage);
+    const targetHash = `#receptionist/${newPage}`;
+    if (window.location.hash !== targetHash) {
+      window.location.hash = targetHash;
+    }
+  };
+
+  useEffect(() => {
+    const onHashChange = () => {
+      const parsed = getReceptionistPageFromHash();
+      setPageState(parsed);
+    };
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
   const [selectedMember, setSelectedMember] = useState<any>(null)
   const { profile, loading, uploadAvatar } = useUserProfile()
   const [error, setError] = useState<string>("");

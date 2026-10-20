@@ -1,4 +1,5 @@
 import React, { useState } from "react"
+import { toast } from "sonner"
 import { A } from "../shared"
 
 type CartItem = { id: string; name: string; unitPrice: number; stockQuantity: number; qty: number }
@@ -210,9 +211,17 @@ export function PosPage() {
         <button
           type="button"
           disabled={cart.length === 0 || paid}
-          onClick={() => setPaid(true)}
-          className={`flex gap-[8px] items-center justify-center p-[16px] rounded-[8px] shrink-0 w-full transition-colors ${
-            paid ? "bg-[#16a34a]" : "bg-[#22c55e]"
+          onClick={() => {
+            if (cart.length === 0) return;
+            setPaid(true);
+            toast.success(`Thanh toán đơn hàng ${total.toLocaleString("vi-VN")}₫ thành công!`);
+            setTimeout(() => {
+              setCart([]);
+              setPaid(false);
+            }, 1800);
+          }}
+          className={`flex gap-[8px] items-center justify-center p-[16px] rounded-[8px] shrink-0 w-full transition-all cursor-pointer ${
+            paid ? "bg-[#16a34a] scale-[0.99]" : "bg-[#22c55e] hover:bg-[#16a34a] active:scale-95"
           } disabled:cursor-not-allowed disabled:opacity-50`}
         >
           <img src={`${A}/43093.svg`} alt="" className="size-[18px] shrink-0" />
