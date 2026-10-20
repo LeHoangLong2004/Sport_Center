@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Screen, BillingPeriod, PaymentMethodId } from "./shared";
-import { SiteHeader } from "../../components/SiteHeader";
-import { SiteFooter } from "../../components/SiteFooter";
+import { CheckoutHeader, CheckoutFooter } from "./CheckoutHeader";
 import { PackageScreen } from "./PackageScreen";
 import { MemberInfoScreen } from "./MemberInfoScreen";
 import { PaymentMethodScreen } from "./PaymentMethodScreen";
@@ -30,7 +29,7 @@ export default function PaymentFlow({
   initialDuration?: PackagePeriod;
   initialDiscountPct?: number;
 }) {
-  const [screen, setScreen] = useState<Screen>(initialPackage || initialPlan ? "member-info" : "package");
+  const [screen, setScreen] = useState<Screen>(initialPackage || initialPlan ? "payment-method" : "package");
   const [period, setPeriod] = useState<BillingPeriod>((initialPeriod as BillingPeriod) || "yearly");
   const [pkg, setPkg] = useState<string>(initialPackage?.id || initialPlan || "");
   const [method, setMethod] = useState<PaymentMethodId>("qr");
@@ -208,26 +207,26 @@ export default function PaymentFlow({
   if (screen === "package") {
     return (
       <div className="flex flex-col min-h-screen bg-[#f8fafc]">
-        <SiteHeader currentRoute="pricing" forceSolidDark={true} />
-        <div className="flex-1 pt-[72px]">
+        <CheckoutHeader onExit={() => onExit("member")} />
+        <div className="flex-1">
           <PackageScreen
             allPackages={allPackages}
             period={period}
             setPeriod={setPeriod}
             selected={pkg}
             setSelected={setPkg}
-            onNext={() => setScreen("member-info")}
+            onNext={() => setScreen("payment-method")}
           />
         </div>
-        <SiteFooter />
+        <CheckoutFooter />
       </div>
     );
   }
   if (screen === "member-info") {
     return (
       <div className="flex flex-col min-h-screen bg-[#f8fafc]">
-        <SiteHeader currentRoute="pricing" forceSolidDark={true} />
-        <div className="flex-1 pt-[72px]">
+        <CheckoutHeader onExit={() => onExit("member")} />
+        <div className="flex-1">
           <MemberInfoScreen
             pkg={pkgData}
             period={period}
@@ -241,21 +240,22 @@ export default function PaymentFlow({
             }}
           />
         </div>
-        <SiteFooter />
+        <CheckoutFooter />
       </div>
     );
   }
   if (screen === "payment-method") {
     return (
       <div className="flex flex-col min-h-screen bg-[#f8fafc]">
-        <SiteHeader currentRoute="pricing" forceSolidDark={true} />
-        <div className="flex-1 pt-[72px]">
+        <CheckoutHeader onExit={() => onExit("member")} />
+        <div className="flex-1">
           <PaymentMethodScreen
             pkg={pkgData}
             period={period}
             method={method}
             setMethod={setMethod}
             formData={formData}
+            setFormData={setFormData}
             onNext={() => {
               if (method === "card") {
                 setScreen("otp");
@@ -263,18 +263,22 @@ export default function PaymentFlow({
                 void goProcessing();
               }
             }}
-            onBack={() => setScreen("member-info")}
+            onBack={() => {
+              if (initialPackage) onExit("member");
+              else if (initialPlan) onExit("pricing");
+              else setScreen("package");
+            }}
           />
         </div>
-        <SiteFooter />
+        <CheckoutFooter />
       </div>
     );
   }
   if (screen === "otp") {
     return (
       <div className="flex flex-col min-h-screen bg-[#f8fafc]">
-        <SiteHeader currentRoute="pricing" forceSolidDark={true} />
-        <div className="flex-1 pt-[72px]">
+        <CheckoutHeader onExit={() => onExit("member")} />
+        <div className="flex-1">
           <OTPScreen
             pkg={pkgData}
             period={period}
@@ -285,7 +289,7 @@ export default function PaymentFlow({
             onCancel={() => setScreen("failed")}
           />
         </div>
-        <SiteFooter />
+        <CheckoutFooter />
       </div>
     );
   }
@@ -295,8 +299,8 @@ export default function PaymentFlow({
   if (screen === "success") {
     return (
       <div className="flex flex-col min-h-screen bg-[#f8fafc]">
-        <SiteHeader currentRoute="pricing" forceSolidDark={true} />
-        <div className="flex-1 pt-[72px]">
+        <CheckoutHeader onExit={() => onExit("member")} />
+        <div className="flex-1">
           <SuccessScreen
             pkg={pkgData}
             period={period}
@@ -306,22 +310,22 @@ export default function PaymentFlow({
             onInvoice={() => setScreen("invoice")}
           />
         </div>
-        <SiteFooter />
+        <CheckoutFooter />
       </div>
     );
   }
   if (screen === "failed") {
     return (
       <div className="flex flex-col min-h-screen bg-[#f8fafc]">
-        <SiteHeader currentRoute="pricing" forceSolidDark={true} />
-        <div className="flex-1 pt-[72px]">
+        <CheckoutHeader onExit={() => onExit("member")} />
+        <div className="flex-1">
           <FailedScreen
             onRetry={goProcessing}
             onChangeMethod={() => setScreen("payment-method")}
             error={paymentError}
           />
         </div>
-        <SiteFooter />
+        <CheckoutFooter />
       </div>
     );
   }

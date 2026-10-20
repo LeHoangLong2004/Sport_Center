@@ -78,55 +78,73 @@ export function CustomDatePicker({ value, onChange, placeholder = "dd/mm/yyyy" }
 
 
 export function Stepper({ active }: { active: 1 | 2 | 3 | 4 }) {
+  // Normalize active state for 3-step display:
+  // active 1 -> step 1 active
+  // active 2 or 3 -> step 2 active (step 1 done)
+  // active 4 -> step 3 active (step 1 & 2 done)
+  const currentStep = active === 1 ? 1 : active === 4 ? 3 : 2;
+
+  const steps = [
+    { n: 1, label: "1. Xác nhận gói tập" },
+    null,
+    { n: 2, label: "2. Thông tin & Thanh toán" },
+    null,
+    { n: 3, label: "3. Hoàn tất" },
+  ];
+
   return (
-    <div className="flex items-center justify-center py-8 w-full">
-      <div className="flex gap-4 items-center">
-        {([
-          { n: 1, label: "1. Chọn gói tập" },
-          null,
-          { n: 2, label: "2. Hồ sơ hội viên" },
-          null,
-          { n: 3, label: "3. Thanh toán" },
-          null,
-          { n: 4, label: "4. Hoàn tất" },
-        ] as ({ n: number; label: string } | null)[]).map((item, i) => {
+    <div className="flex items-center justify-center py-6 w-full px-4 overflow-x-auto">
+      <div className="flex gap-3 md:gap-4 items-center shrink-0">
+        {steps.map((item, i) => {
           if (!item) {
             return (
-              <div key={i} className="h-0 w-16 relative">
-                <div className="absolute inset-[-1px_0_0_0]">
-                  <img src={`${A}/19e1f.svg`} className="block w-full" alt="" />
-                </div>
+              <div key={i} className="h-0.5 w-8 md:w-16 bg-slate-200 relative shrink-0">
+                <div
+                  className={`absolute inset-0 bg-teal-500 transition-all ${
+                    (i === 1 && currentStep >= 2) || (i === 3 && currentStep >= 3)
+                      ? "w-full"
+                      : "w-0"
+                  }`}
+                />
               </div>
-            )
+            );
           }
-          const done = item.n < active
-          const isActive = item.n === active
+          const done = item.n < currentStep;
+          const isActive = item.n === currentStep;
           return (
             <div key={i} className="flex gap-2 items-center">
               {done ? (
-                <div className="bg-[#f0fdf4] border border-[#16a34a] flex items-center justify-center rounded-[12px] size-6">
-                  <img src={`${A}/33974.svg`} className="size-3" alt="" />
+                <div className="bg-emerald-500 text-white flex items-center justify-center rounded-full size-6 shadow-xs">
+                  <svg className="w-3.5 h-3.5 stroke-current stroke-[3]" fill="none" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
                 </div>
               ) : isActive ? (
-                <div className="bg-teal-500 flex items-center justify-center rounded-[12px] size-6">
-                  <span className="font-['Inter'] font-semibold text-white text-[12px]">{item.n}</span>
+                <div className="bg-teal-500 text-white flex items-center justify-center rounded-full size-6 shadow-sm ring-4 ring-teal-100">
+                  <span className="font-['Inter'] font-bold text-xs">{item.n}</span>
                 </div>
               ) : (
-                <div className="border border-[#cbd5e1] flex items-center justify-center rounded-[12px] size-6">
-                  <span className="font-['Inter'] font-semibold text-[#64748b] text-[12px]">{item.n}</span>
+                <div className="border border-slate-300 text-slate-400 bg-white flex items-center justify-center rounded-full size-6">
+                  <span className="font-['Inter'] font-semibold text-xs">{item.n}</span>
                 </div>
               )}
-              <span className={`font-['Inter'] text-sm whitespace-nowrap ${
-                isActive ? "font-bold text-teal-600" : "font-semibold text-[#64748b]"
-              }`}>
+              <span
+                className={`font-['Inter'] text-xs md:text-sm whitespace-nowrap transition-colors ${
+                  isActive
+                    ? "font-bold text-teal-700"
+                    : done
+                    ? "font-medium text-slate-700"
+                    : "font-medium text-slate-400"
+                }`}
+              >
                 {item.label}
               </span>
             </div>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }
 
 export function OrderSummarySidebar({
