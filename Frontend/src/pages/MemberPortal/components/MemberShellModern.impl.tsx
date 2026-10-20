@@ -3,7 +3,7 @@ LayoutDashboard, Compass, CalendarCheck, CreditCard, Receipt, Dumbbell,
 Star, MessageSquare, Bot, User, Sun, Moon,
 Bell, QrCode, Ticket, Activity, Lock, Globe,
 LogOut, ChevronRight, CheckCircle2, Shield, X, Sparkles,
-Crown, KeyRound, FileText, ShoppingBag, Wallet, } from "lucide-react";
+Crown, KeyRound, FileText, ShoppingBag, Wallet, ClipboardCheck, } from "lucide-react";
 import { WalletService, MEMBER_WALLET_UPDATED_EVENT } from "../services/walletService"; import WalletTopUpModal from "./WalletTopUpModal"; import { notificationApi, type ManagerNotification } from "../../../hooks/notificationApi"; interface Props { currentScreen: MemberScreen; onNavigate: (screen: MemberScreen) => void;
 children: React.ReactNode; } export default function MemberShellModern({ currentScreen, onNavigate, children }: Props) { const [isDark, setIsDark] = useState(() => { return ( document.documentElement.classList.contains("dark") ||
 localStorage.getItem("theme") === "dark" ); }); const [notifications, setNotifications] = useState<ManagerNotification[]>([]); const [notificationsError, setNotificationsError] = useState(false); const [showNotifications, setShowNotifications] = useState(false);
@@ -41,11 +41,11 @@ onNavigate("profile");
 setTimeout(() => { window.dispatchEvent(new CustomEvent("switch-profile-tab", { detail: "payments" })); }, 50); }; const handleSwitchToSecurity = () => { setShowUserMenu(false);
 onNavigate("profile"); setTimeout(() => { window.dispatchEvent(new CustomEvent("switch-profile-tab", { detail: "security" })); }, 50); };
 // Core menu items on the sidebar (Thanh toán & Hóa đơn đã được đưa vào Profile)
-const menuItems: { id: MemberScreen; label: string; icon: any }[] = [ { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard }, { id: "booking", label: "Khám phá & Đặt lịch", icon: Compass }, { id: "schedule", label: "Lịch của tôi", icon: CalendarCheck }, { id: "packages", label: "Gói tập của tôi", icon: CreditCard }, { id: "shop", label: "Cửa hàng", icon: ShoppingBag },
+const menuItems: { id: MemberScreen; label: string; icon: any }[] = [ { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard }, { id: "booking", label: "Khám phá & Đặt lịch", icon: Compass }, { id: "schedule", label: "Lịch của tôi", icon: CalendarCheck }, { id: "attendance", label: "Điểm danh & Thẻ QR", icon: ClipboardCheck }, { id: "packages", label: "Gói tập của tôi", icon: CreditCard }, { id: "shop", label: "Cửa hàng", icon: ShoppingBag },
 { id: "workouts", label: "Giáo án & Bài tập", icon: Dumbbell }, { id: "reviews", label: "Đánh giá HLV", icon: Star }, { id: "chat", label: "Tin nhắn", icon: MessageSquare }, { id: "support", label: "Trợ lý AI & Hỗ trợ", icon: Bot }, { id: "profile", label: "Hồ sơ cá nhân", icon: User }, ];
-const breadcrumbs: Record<MemberScreen, string> = { dashboard: "HỘI VIÊN / TỔNG QUAN", booking: "HỘI VIÊN / KHÁM PHÁ & ĐẶT LỊCH", schedule: "HỘI VIÊN / LỊCH CỦA TÔI", packages: "HỘI VIÊN / GÓI TẬP & DỊCH VỤ", payments: "HỘI VIÊN / HỒ SƠ & HÓA ĐƠN",
+const breadcrumbs: Record<MemberScreen, string> = { dashboard: "HỘI VIÊN / TỔNG QUAN", booking: "HỘI VIÊN / KHÁM PHÁ & ĐẶT LỊCH", schedule: "HỘI VIÊN / LỊCH CỦA TÔI", attendance: "HỘI VIÊN / ĐIỂM DANH & THẺ QR", packages: "HỘI VIÊN / GÓI TẬP & DỊCH VỤ", payments: "HỘI VIÊN / HỒ SƠ & HÓA ĐƠN",
 workouts: "HỘI VIÊN / GIÁO ÁN & BÀI TẬP", reviews: "HỘI VIÊN / ĐÁNH GIÁ HLV", chat: "HỘI VIÊN / TIN NHẮN TRAO ĐỔI", support: "HỘI VIÊN / TRỢ LÝ AI & HỖ TRỢ", shop: "HỘI VIÊN / CỬA HÀNG SẢN PHẨM", profile: "HỘI VIÊN / HỒ SƠ CÁ NHÂN",
-}; const pageTitles: Record<MemberScreen, string> = { dashboard: "Tổng quan hôm nay", booking: "Khám phá & Đặt lịch tập", schedule: "Lịch tập của tôi", packages: "Gói tập & Dịch vụ",
+}; const pageTitles: Record<MemberScreen, string> = { dashboard: "Tổng quan hôm nay", booking: "Khám phá & Đặt lịch tập", schedule: "Lịch tập của tôi", attendance: "Lịch sử Điểm danh & Thẻ QR", packages: "Gói tập & Dịch vụ",
 payments: "Hồ sơ & Lịch sử giao dịch", workouts: "Giáo án & Bài tập", reviews: "Đánh giá Huấn luyện viên", chat: "Tin nhắn & Trao đổi", support: "Trợ lý AI & Hỗ trợ", shop: "Cửa hàng sản phẩm & Đồ tập",
 profile: "Hồ sơ cá nhân", }; return ( <div className="flex w-full min-h-screen bg-slate-50 dark:bg-[#0f172a] transition-colors duration-300 font-sans text-slate-900 dark:text-white selection:bg-emerald-500 selection:text-white"> {/* Toast popup */} {toastMessage && (
 <div className="fixed bottom-6 right-6 z-[100] px-4 py-3 rounded-2xl bg-slate-900 text-white dark:bg-emerald-500 dark:text-slate-950 font-bold text-xs shadow-2xl flex items-center gap-2.5 animate-fadeIn"> <Sparkles className="w-4 h-4 shrink-0 text-amber-400 dark:text-slate-950" /> <span>{toastMessage}</span> </div> )} {/* SIDEBAR */}
