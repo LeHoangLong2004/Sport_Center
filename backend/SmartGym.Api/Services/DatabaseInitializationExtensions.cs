@@ -364,3 +364,4 @@ public static partial class DatabaseInitializationExtensions
         SeedInitialData(db, app);
     }
 }
+

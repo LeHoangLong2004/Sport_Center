@@ -231,3 +231,4 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
     </div>
   );
 }
+

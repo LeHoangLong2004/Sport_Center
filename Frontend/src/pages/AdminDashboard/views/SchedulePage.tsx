@@ -349,3 +349,4 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
     </div>
   );
 }
+
