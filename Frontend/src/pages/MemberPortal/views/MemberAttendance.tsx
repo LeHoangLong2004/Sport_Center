@@ -53,7 +53,7 @@ interface AttendanceSession {
 }
 
 interface AttendanceSummary {
-  attendanceRate: number;
+  attendanceRate: number | null;
   totalSessions: number;
   attendedCount: number;
   absentCount: number;
@@ -79,7 +79,7 @@ export default function MemberAttendance({ onNavigate }: Props) {
   const [sessions, setSessions] = useState<AttendanceSession[]>([]);
   const [gateCheckIns, setGateCheckIns] = useState<GateCheckInRecord[]>([]);
   const [summary, setSummary] = useState<AttendanceSummary>({
-    attendanceRate: 100,
+    attendanceRate: null,
     totalSessions: 0,
     attendedCount: 0,
     absentCount: 0,
@@ -191,7 +191,7 @@ export default function MemberAttendance({ onNavigate }: Props) {
         const absent = fallbackSessions.filter((s) => s.status === "vắng").length;
         const late = fallbackSessions.filter((s) => s.status === "đi muộn").length;
         const evaluated = attended + absent + late;
-        const rate = evaluated > 0 ? Math.round((attended / evaluated) * 100) : 100;
+        const rate = evaluated > 0 ? Math.round((attended / evaluated) * 100) : null;
 
         setSummary({
           attendanceRate: rate,
@@ -367,16 +367,24 @@ export default function MemberAttendance({ onNavigate }: Props) {
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-extrabold text-slate-900 dark:text-white">
-              {summary.attendanceRate}%
+              {summary.attendanceRate !== null && summary.attendanceRate !== undefined
+                ? `${summary.attendanceRate}%`
+                : "--%"}
             </span>
             <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-              {summary.attendanceRate >= 80 ? "Xuất sắc" : "Cần cố gắng"}
+              {summary.attendanceRate === null || summary.attendanceRate === undefined
+                ? "Chưa đánh giá"
+                : summary.attendanceRate >= 80
+                ? "Xuất sắc"
+                : "Cần cố gắng"}
             </span>
           </div>
           <div className="mt-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
             <div
               className="bg-gradient-to-r from-teal-500 to-emerald-500 h-2 rounded-full transition-all duration-500"
-              style={{ width: `${Math.min(100, summary.attendanceRate)}%` }}
+              style={{
+                width: `${summary.attendanceRate !== null && summary.attendanceRate !== undefined ? Math.min(100, summary.attendanceRate) : 0}%`,
+              }}
             />
           </div>
         </div>
@@ -443,11 +451,13 @@ export default function MemberAttendance({ onNavigate }: Props) {
               {summary.currentStreak}
             </span>
             <span className="text-xs font-semibold text-orange-500">
-              buổi liên tiếp 🔥
+              {summary.currentStreak > 0 ? "buổi liên tiếp 🔥" : "buổi • Khởi động ✨"}
             </span>
           </div>
           <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-            Giữ phong độ để đạt huy hiệu Hội Viên Gương Mẫu!
+            {summary.currentStreak > 0
+              ? "Giữ phong độ để đạt huy hiệu Hội Viên Gương Mẫu!"
+              : "Hoàn thành buổi tập đầu tiên để kích hoạt chuỗi chuyên cần!"}
           </p>
         </div>
       </div>

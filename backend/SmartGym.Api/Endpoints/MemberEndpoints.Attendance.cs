@@ -97,37 +97,53 @@ public static partial class MemberEndpoints
             }
 
             // Format class attendance items
-            var classItems = classRows.Select(r => new
+            // Helper for Vietnam Time (GMT+7)
+            static DateTime ToVnTime(DateTime utcTime)
             {
-                id = r.SessionId.ToString(),
-                className = r.ClassName,
-                sport = string.IsNullOrWhiteSpace(r.Sport) ? "Gym" : r.Sport,
-                coachName = r.CoachName,
-                coachAvatar = r.CoachAvatar,
-                room = string.IsNullOrWhiteSpace(r.Room) ? "Studio Sport Center" : r.Room,
-                date = r.ScheduleTime.ToString("yyyy-MM-dd"),
-                startTime = r.ScheduleTime.ToString("HH:mm"),
-                endTime = r.ScheduleTime.AddMinutes(r.DurationMinutes).ToString("HH:mm"),
-                status = NormalizeAttendanceStatus(r.AttendanceStatus),
-                coachNote = r.CoachNote,
-                type = "group"
+                var dt = DateTime.SpecifyKind(utcTime, DateTimeKind.Utc);
+                return dt.AddHours(7);
+            }
+
+            // Format class attendance items
+            var classItems = classRows.Select(r =>
+            {
+                var localTime = ToVnTime(r.ScheduleTime);
+                return new
+                {
+                    id = r.SessionId.ToString(),
+                    className = r.ClassName,
+                    sport = string.IsNullOrWhiteSpace(r.Sport) ? "Gym" : r.Sport,
+                    coachName = r.CoachName,
+                    coachAvatar = r.CoachAvatar,
+                    room = string.IsNullOrWhiteSpace(r.Room) ? "Studio Sport Center" : r.Room,
+                    date = localTime.ToString("yyyy-MM-dd"),
+                    startTime = localTime.ToString("HH:mm"),
+                    endTime = localTime.AddMinutes(r.DurationMinutes).ToString("HH:mm"),
+                    status = NormalizeAttendanceStatus(r.AttendanceStatus),
+                    coachNote = r.CoachNote,
+                    type = "group"
+                };
             }).ToList();
 
             // Format PT items
-            var ptItems = ptRows.Select(r => new
+            var ptItems = ptRows.Select(r =>
             {
-                id = r.SessionId.ToString(),
-                className = $"Kèm 1-1 ({r.Sport})",
-                sport = r.Sport,
-                coachName = r.CoachName,
-                coachAvatar = r.CoachAvatar,
-                room = r.Room,
-                date = r.ScheduleTime.ToString("yyyy-MM-dd"),
-                startTime = r.ScheduleTime.ToString("HH:mm"),
-                endTime = r.ScheduleTime.AddMinutes(r.DurationMinutes).ToString("HH:mm"),
-                status = r.ScheduleTime <= DateTime.UtcNow ? "có mặt" : "chưa diễn ra",
-                coachNote = string.IsNullOrWhiteSpace(r.Goal) ? "Buổi tập cá nhân theo mục tiêu" : $"Mục tiêu: {r.Goal}",
-                type = "pt"
+                var localTime = ToVnTime(r.ScheduleTime);
+                return new
+                {
+                    id = r.SessionId.ToString(),
+                    className = $"Kèm 1-1 ({r.Sport})",
+                    sport = r.Sport,
+                    coachName = r.CoachName,
+                    coachAvatar = r.CoachAvatar,
+                    room = r.Room,
+                    date = localTime.ToString("yyyy-MM-dd"),
+                    startTime = localTime.ToString("HH:mm"),
+                    endTime = localTime.AddMinutes(r.DurationMinutes).ToString("HH:mm"),
+                    status = r.ScheduleTime <= DateTime.UtcNow ? "có mặt" : "chưa diễn ra",
+                    coachNote = string.IsNullOrWhiteSpace(r.Goal) ? "Buổi tập cá nhân theo mục tiêu" : $"Mục tiêu: {r.Goal}",
+                    type = "pt"
+                };
             }).ToList();
 
             var allSessionItems = classItems.Concat(ptItems).OrderByDescending(x => x.date).ThenByDescending(x => x.startTime).ToList();
@@ -150,9 +166,9 @@ public static partial class MemberEndpoints
             var absentCount = allSessionItems.Count(s => s.status == "vắng");
             var lateCount = allSessionItems.Count(s => s.status == "đi muộn");
             var completedOrPastCount = allSessionItems.Count(s => s.status != "chưa diễn ra");
-            var attendanceRate = completedOrPastCount > 0
+            double? attendanceRate = completedOrPastCount > 0
                 ? Math.Round((double)attendedCount / completedOrPastCount * 100, 0)
-                : 100;
+                : null;
 
             var totalGateMinutes = gateItems.Where(g => g.durationMinutes.HasValue).Sum(g => g.durationMinutes!.Value);
             var totalHours = Math.Round((double)totalGateMinutes / 60, 1);
