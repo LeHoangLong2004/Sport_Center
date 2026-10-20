@@ -10,8 +10,24 @@ interface Props {
 }
 
 export function ProductCard({ product, onEdit, onDelete, onToggleStatus }: Props) {
+  const [imageError, setImageError] = React.useState(false);
   const isLowStock = product.stockQuantity <= 5;
   const isOutOfStock = product.stockQuantity === 0;
+
+  const getCategoryFallbackImage = (category?: string) => {
+    switch (category) {
+      case 'Đồ uống':
+        return '/assets/c5e97.png';
+      case 'Bánh năng lượng':
+      case 'Thực phẩm':
+      case 'Đồ ăn nhẹ':
+        return '/assets/28ab4.png';
+      case 'Phụ kiện':
+        return '/assets/235a3.png';
+      default:
+        return '/assets/cf835.png';
+    }
+  };
 
   return (
     <div
@@ -24,19 +40,23 @@ export function ProductCard({ product, onEdit, onDelete, onToggleStatus }: Props
       <div>
         {/* Product Image Area */}
         <div className="h-44 w-full bg-slate-100 dark:bg-slate-800/80 relative flex items-center justify-center p-3 overflow-hidden border-b border-slate-100 dark:border-slate-800">
-          {product.imageUrl ? (
+          {product.imageUrl && !imageError ? (
             <img
               src={product.imageUrl}
               alt={product.name}
               className="h-full w-full object-contain group-hover:scale-105 transition-transform duration-300"
-              onError={(e) => {
-                (e.target as any).style.display = 'none';
-              }}
+              onError={() => setImageError(true)}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center text-slate-300 dark:text-slate-600">
-              <ShoppingBag className="w-10 h-10 mb-1" />
-              <span className="text-[10px] font-medium">Chưa có ảnh</span>
+            <div className="flex flex-col items-center justify-center">
+              <img
+                src={getCategoryFallbackImage(product.category)}
+                alt={product.name}
+                className="h-28 w-28 object-contain opacity-80 group-hover:scale-105 transition-transform duration-300"
+                onError={(e) => {
+                  (e.target as any).style.display = 'none';
+                }}
+              />
             </div>
           )}
 
