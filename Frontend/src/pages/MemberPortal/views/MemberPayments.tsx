@@ -242,3 +242,4 @@ export default function MemberPayments({ onNavigate }: Props) {
     </div>
   );
 }
+

@@ -173,3 +173,4 @@ public static partial class ClassEndpoints
         MapClassBookingEndpoints(classGroup);
     }
 }
+

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -24,6 +25,11 @@ public static partial class CoachEndpoints
             if (coachId == null)
                 return Results.Unauthorized();
 
+            var rawCoachUserId = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? context.User.FindFirstValue("sub");
+            if (!Guid.TryParse(rawCoachUserId, out var coachUserId))
+                return Results.Unauthorized();
+
             var member = await db.Users.AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == memberId);
             if (member == null)
@@ -41,10 +47,10 @@ public static partial class CoachEndpoints
                   LEFT JOIN class_attendance_records car
                          ON car.session_id = c.id AND car.member_id = b.user_id
                   WHERE b.user_id = {0}
-                    AND c.coach_id = {1}
+                    AND (c.coach_id = {1} OR c.coach_id = {2})
                     AND b.status NOT IN ('cancelled', 'rejected', 'class_cancelled')
                     AND c.schedule_time <= NOW()
-                  ORDER BY c.schedule_time DESC", memberId, coachId.Value).ToListAsync();
+                  ORDER BY c.schedule_time DESC", memberId, coachId.Value, coachUserId).ToListAsync();
 
             var totalSessions = attendance.Count;
             var attendedSessions = attendance.Count(x => IsAttendedStatus(x.Status));

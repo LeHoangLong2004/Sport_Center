@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using SmartGym.Application.DTOs.WorkoutPlans;
 using SmartGym.Application.Interfaces;
 using SmartGym.Infrastructure.Persistence.EF;
@@ -47,8 +48,31 @@ public static class WorkoutPlanEndpoints
                     if (coachId == null)
                         return Results.BadRequest(new { message = "Coach profile not found." });
 
-                    var result = await service.CreatePlanAsync(coachId.Value, request);
-                    return Results.Ok(result);
+                    if (string.IsNullOrWhiteSpace(request.PlanName))
+                        return Results.BadRequest(new { message = "Tên giáo án không được để trống." });
+
+                    if (request.Exercises == null || request.Exercises.Count == 0 || request.Exercises.Any(e => string.IsNullOrWhiteSpace(e.Name)))
+                        return Results.BadRequest(new { message = "Giáo án phải có ít nhất một bài tập hợp lệ." });
+
+                    try
+                    {
+                        var result = await service.CreatePlanAsync(coachId.Value, request);
+                        return Results.Ok(result);
+                    }
+                    catch (DbUpdateException ex)
+                    {
+                        return Results.Problem(
+                            title: "Không thể lưu giáo án",
+                            detail: GetDatabaseError(ex),
+                            statusCode: StatusCodes.Status400BadRequest);
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem(
+                            title: "Không thể lưu giáo án",
+                            detail: ex.InnerException?.Message ?? ex.Message,
+                            statusCode: StatusCodes.Status500InternalServerError);
+                    }
                 }
             )
             .WithTags("Workout Plans")
@@ -85,8 +109,28 @@ public static class WorkoutPlanEndpoints
                     if (coachId == null)
                         return Results.BadRequest(new { message = "Coach profile not found." });
 
-                    var result = await service.UpdatePlanAsync(coachId.Value, id, request);
-                    return result == null ? Results.NotFound() : Results.Ok(result);
+                    if (string.IsNullOrWhiteSpace(request.PlanName))
+                        return Results.BadRequest(new { message = "Tên giáo án không được để trống." });
+
+                    try
+                    {
+                        var result = await service.UpdatePlanAsync(coachId.Value, id, request);
+                        return result == null ? Results.NotFound() : Results.Ok(result);
+                    }
+                    catch (DbUpdateException ex)
+                    {
+                        return Results.Problem(
+                            title: "Không thể cập nhật giáo án",
+                            detail: GetDatabaseError(ex),
+                            statusCode: StatusCodes.Status400BadRequest);
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem(
+                            title: "Không thể cập nhật giáo án",
+                            detail: ex.InnerException?.Message ?? ex.Message,
+                            statusCode: StatusCodes.Status500InternalServerError);
+                    }
                 }
             )
             .WithTags("Workout Plans")
@@ -163,5 +207,12 @@ public static class WorkoutPlanEndpoints
     private static async Task<Guid?> ResolveCoachIdAsync(SmartGymDbContext db, Guid userId)
     {
         return await CoachProfileResolver.FindByUserIdAsync(db, userId);
+    }
+
+    private static string GetDatabaseError(DbUpdateException exception)
+    {
+        if (exception.InnerException is PostgresException postgres)
+            return postgres.MessageText;
+        return exception.InnerException?.Message ?? exception.Message;
     }
 }
