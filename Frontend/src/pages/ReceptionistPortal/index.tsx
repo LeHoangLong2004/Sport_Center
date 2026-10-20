@@ -16,7 +16,10 @@ import { useUserProfile } from '../../hooks/useUserProfile';
 import { toast } from 'sonner';
 
 export default function ReceptionistPortal({ onExit }: { onExit: () => void }) {
-  const [page, setPage] = useState<Page>("checkin")
+  const [page, setPage] = useState<Page>(() => {
+    const p = new URLSearchParams(window.location.search).get("subpage") as Page;
+    return p || "checkin";
+  })
   const [selectedMember, setSelectedMember] = useState<any>(null)
   const { profile, loading, uploadAvatar } = useUserProfile()
   const [error, setError] = useState<string>("");

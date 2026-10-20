@@ -23,29 +23,24 @@ export function Login({
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
 
-  async function submit(event: FormEvent) {
-    event.preventDefault()
+  async function executeLogin(targetEmail: string, targetPass: string) {
     setLoading(true)
     setError("")
-
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email: targetEmail, password: targetPass })
       })
-      
       const data = await res.json().catch(() => ({}))
-      
       if (!res.ok) {
         setError(data.message || data.title || "Đăng nhập thất bại. Hãy kiểm tra thông tin.")
         setLoading(false)
         return
       }
-      
       localStorage.setItem("token", data.token)
       localStorage.setItem("user", JSON.stringify(data))
-      
+
       if (onLoginAs) {
         const roleStr = data.role?.toLowerCase() || ""
         if (roleStr === "manager" || roleStr === "admin") onLoginAs("admin")
@@ -55,10 +50,29 @@ export function Login({
       } else {
         onLogin()
       }
-    } catch (err) {
+    } catch {
       setError("Lỗi kết nối đến server API.")
       setLoading(false)
     }
+  }
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const demo = params.get("demo")?.toLowerCase()
+    if (demo === "member") {
+      executeLogin("hoxuananhnam@gmail.com", "123456")
+    } else if (demo === "coach") {
+      executeLogin("hoxuananhnam1@gmail.com", "123456")
+    } else if (demo === "receptionist") {
+      executeLogin("receptionist01@smartgym.com", "123456")
+    } else if (demo === "manager" || demo === "admin") {
+      executeLogin("manager@test.com", "123456")
+    }
+  }, [])
+
+  async function submit(event: FormEvent) {
+    event.preventDefault()
+    await executeLogin(email, password)
   }
 
   return (
@@ -194,7 +208,41 @@ export function Login({
               )}
             </button>
 
-            <div className="mt-8 text-center text-sm font-medium text-slate-500 dark:text-slate-400">
+            <div className="mt-6 pt-5 border-t border-slate-200 dark:border-slate-800">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 text-center">Đăng nhập nhanh theo kịch bản Demo</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => executeLogin("hoxuananhnam@gmail.com", "123456")}
+                  className="px-3 py-2 text-xs font-semibold rounded-lg bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 hover:bg-teal-100 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <span>👤</span> Hội viên (Member)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => executeLogin("hoxuananhnam1@gmail.com", "123456")}
+                  className="px-3 py-2 text-xs font-semibold rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <span>🏋️</span> HLV (Coach)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => executeLogin("receptionist01@smartgym.com", "123456")}
+                  className="px-3 py-2 text-xs font-semibold rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <span>🛎️</span> Lễ tân (Reception)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => executeLogin("manager@test.com", "123456")}
+                  className="px-3 py-2 text-xs font-semibold rounded-lg bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-100 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <span>📊</span> Quản lý (Manager)
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-6 text-center text-sm font-medium text-slate-500 dark:text-slate-400">
               <span>Chưa có tài khoản?</span>{" "}
               <button 
                 type="button" 

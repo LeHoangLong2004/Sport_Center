@@ -23,7 +23,10 @@ import { ProfileSettings } from '../../components/ProfileSettings';
 import { type ManagerNotification } from '../../hooks/notificationApi';
 
 export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
-  const [page, setPage] = useState<AdminPage>("overview")
+  const [page, setPage] = useState<AdminPage>(() => {
+    const p = new URLSearchParams(window.location.search).get("subpage") as AdminPage;
+    return p || "overview";
+  })
   const [scheduleTab, setScheduleTab] = useState<ScheduleTab>("calendar")
   const [selectedMember, setSelectedMember] = useState<any>(null)
   const { profile, uploadAvatar } = useUserProfile()
