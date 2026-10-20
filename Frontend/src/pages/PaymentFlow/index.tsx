@@ -188,6 +188,7 @@ export default function PaymentFlow({
         formData.startDate || undefined,
       );
       window.localStorage.setItem("latestInvoiceId", checkout.invoiceId);
+      window.localStorage.setItem("latestPackageName", checkout.order.packageSnapshot?.name || pkgData.name || "Gói hội viên");
       const checkedPackage = toFlowPackage(
         checkout.order.packageSnapshot,
         checkout.order.durationMonths,
