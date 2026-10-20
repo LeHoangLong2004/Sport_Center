@@ -149,7 +149,7 @@ export const MemberAPI = {
             body: JSON.stringify(data)
         });
     },
-    startConversation: async (data: { targetId: string; targetName: string; role: string; memberId?: string; memberName?: string; avatar?: string; subtitle?: string }) => {
+    startConversation: async (data: { targetId: string; targetName: string; role: string; memberId?: string; memberName?: string; avatar?: string; subtitle?: string; initialMessage?: string }) => {
         return fetchApi('/member/chat/start', {
             method: 'POST',
             body: JSON.stringify(data)

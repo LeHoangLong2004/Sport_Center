@@ -9,86 +9,117 @@ namespace SmartGym.Application.Services;
 
 public sealed partial class ClassService
 {
-    public async Task<(bool IsSuccess, string? ErrorMessage)> ApproveBookingAsync(Guid bookingId)
+    public async Task<(bool IsSuccess, string? ErrorMessage)> CreateClassAsync(
+        CreateClassRequest request,
+        string approvalStatus = "approved"
+    )
     {
-        return await _classRepository.ApproveBookingAsync(bookingId);
-    }
-
-    public async Task<(bool IsSuccess, string? ErrorMessage)> RejectBookingAsync(Guid bookingId)
-    {
-        return await _classRepository.RejectBookingAsync(bookingId);
-    }
-
-    public async Task<(bool IsSuccess, string? ErrorMessage)> ApproveClassAsync(Guid classId)
-    {
-        var targetClass = await _classRepository.GetByIdAsync(classId);
-        if (targetClass == null)
+        approvalStatus = approvalStatus.Trim().ToLowerInvariant();
+        if (approvalStatus is not ("approved" or "pending"))
         {
-            return (false, "Không tìm thấy đề xuất lớp học.");
+            return (false, "Trạng thái phê duyệt lớp học không hợp lệ.");
         }
 
-        if (!string.Equals(targetClass.ApprovalStatus, "pending", StringComparison.OrdinalIgnoreCase))
+        if (request.Capacity <= 0)
         {
-            return (false, "Đề xuất lớp học không còn ở trạng thái chờ duyệt.");
+            return (false, "Capacity must be greater than 0.");
         }
 
-        var newStart = targetClass.ScheduleTime;
-        var newEnd = newStart.AddMinutes(targetClass.DurationMinutes);
-
-        if (targetClass.CoachId.HasValue)
+        if (request.DurationMinutes <= 0)
         {
-            var existingClasses = await _classRepository.GetClassesByCoachAndDateAsync(
-                targetClass.CoachId.Value,
-                targetClass.ScheduleTime
-            );
-            if (existingClasses.Any(c =>
-                c.Id != classId &&
-                c.Status &&
-                c.ApprovalStatus != "rejected" &&
-                Overlaps(newStart, newEnd, c.ScheduleTime, c.DurationMinutes)))
-            {
-                return (false, "Không thể duyệt: huấn luyện viên đã có lịch khác trùng thời gian.");
-            }
+            return (false, "Thời lượng lớp học phải lớn hơn 0 phút.");
+        }
 
-            var existingPtSessions = await _ptSessionRepository.GetSessionsByCoachAndDateAsync(
-                targetClass.CoachId.Value,
-                targetClass.ScheduleTime
-            );
-            if (existingPtSessions.Any(p =>
-                IsBlockingPtSession(p) &&
-                Overlaps(newStart, newEnd, p.ScheduleTime, p.DurationMinutes)))
-            {
-                return (false, "Không thể duyệt: huấn luyện viên đã có buổi PT trùng thời gian.");
-            }
+        if (request.ScheduleTime <= DateTime.UtcNow)
+        {
+            return (false, "Thời gian học phải lớn hơn thời điểm hiện tại.");
+        }
 
-            if (await _classRepository.HasCoachAvailabilityConflictAsync(
-                targetClass.CoachId.Value,
-                newStart,
-                newEnd))
+        var newStart = request.ScheduleTime;
+        var newEnd = newStart.AddMinutes(request.DurationMinutes);
+
+        var existingClasses = await _classRepository.GetClassesByCoachAndDateAsync(
+            request.CoachId,
+            request.ScheduleTime
+        );
+        var existingPtSessions = await _ptSessionRepository.GetSessionsByCoachAndDateAsync(
+            request.CoachId,
+            request.ScheduleTime
+        );
+
+        foreach (var c in existingClasses.Where(c => c.Status && c.ApprovalStatus != "rejected"))
+        {
+            if (Overlaps(newStart, newEnd, c.ScheduleTime, c.DurationMinutes))
             {
-                return (false, "Không thể duyệt: lịch trống 1-1 của huấn luyện viên bị trùng thời gian.");
+                return (
+                    false,
+                    $"Huấn luyện viên đã có lớp '{c.ClassName}' vào thời gian này."
+                );
             }
+        }
+
+        foreach (var p in existingPtSessions.Where(IsBlockingPtSession))
+        {
+            if (Overlaps(newStart, newEnd, p.ScheduleTime, p.DurationMinutes))
+            {
+                return (false, "Huấn luyện viên đã có buổi PT vào thời gian này.");
+            }
+        }
+
+        if (request.CoachId != Guid.Empty && await _classRepository.HasCoachAvailabilityConflictAsync(request.CoachId, newStart, newEnd))
+        {
+            return (false, "Huấn luyện viên đã đăng lịch trống 1-1 trùng hoặc chồng lấn thời gian này.");
         }
 
         var existingFacilityClasses = await _classRepository.GetClassesByFacilityAndDateAsync(
-            targetClass.FacilityId,
-            targetClass.ScheduleTime
+            request.FacilityId,
+            request.ScheduleTime
         );
-        if (existingFacilityClasses.Any(c =>
-            c.Id != classId &&
-            c.Status &&
-            c.ApprovalStatus != "rejected" &&
-            Overlaps(newStart, newEnd, c.ScheduleTime, c.DurationMinutes)))
+        foreach (var c in existingFacilityClasses.Where(c => c.Status && c.ApprovalStatus != "rejected"))
         {
-            return (false, "Không thể duyệt: phòng tập đã có lớp khác trùng thời gian.");
+            if (Overlaps(newStart, newEnd, c.ScheduleTime, c.DurationMinutes))
+            {
+                return (false, $"Phòng tập đã được sử dụng bởi lớp '{c.ClassName}' vào thời gian này.");
+            }
         }
 
-        return await _classRepository.ApproveClassAsync(classId);
-    }
+        var newClass = new GroupClass(
+            id: Guid.NewGuid(),
+            sportId: request.SportId,
+            coachId: request.CoachId,
+            facilityId: request.FacilityId,
+            className: request.ClassName,
+            scheduleTime: request.ScheduleTime,
+            durationMinutes: request.DurationMinutes,
+            capacity: request.Capacity,
+            currentEnrolled: 0,
+            status: true,
+            approvalStatus: approvalStatus
+        );
 
-    public async Task<(bool IsSuccess, string? ErrorMessage)> RejectClassAsync(Guid classId)
-    {
-        return await _classRepository.RejectClassAsync(classId);
+        await _classRepository.AddAsync(newClass);
+
+        if (approvalStatus == "pending")
+        {
+            await _classRepository.NotifyManagersAsync(
+                "Có đề xuất lớp học mới cần duyệt",
+                $"Coach vừa gửi đề xuất lớp {request.ClassName} vào {CenterTime.ToLocal(request.ScheduleTime):dd/MM/yyyy HH:mm}.",
+                "class",
+                newClass.Id
+            );
+        }
+        else
+        {
+            await _classRepository.NotifyCoachAsync(
+                request.CoachId,
+                "Bạn được phân công lớp học mới",
+                $"Bạn vừa được phân công lớp {request.ClassName} vào {CenterTime.ToLocal(request.ScheduleTime):dd/MM/yyyy HH:mm}.",
+                "class",
+                newClass.Id
+            );
+        }
+
+        return (true, null);
     }
 
     public async Task<(bool IsSuccess, string? ErrorMessage)> UpdateClassAsync(
@@ -231,4 +262,3 @@ public sealed partial class ClassService
         }
     }
 }
-

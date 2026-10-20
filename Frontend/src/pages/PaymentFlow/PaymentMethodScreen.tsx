@@ -141,12 +141,27 @@ export function PaymentMethodScreen({
 
             {method === "counter" && (
               <div className="bg-white border border-[#e2e8f0] flex flex-col gap-4 p-6 rounded-[16px] w-full shadow-sm">
-                <p className="font-['Inter:Bold'] font-bold text-[#0f172a] text-lg">Thanh toán trực tiếp tại quầy lễ tân</p>
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 text-sm text-slate-600 flex flex-col gap-2.5">
-                  <p>Bạn đã chọn thanh toán trực tiếp tại cơ sở: <strong className="text-slate-800">{formData.branch}</strong>.</p>
-                  <p>Số tiền cần thanh toán tại quầy: <strong className="text-teal-600 font-bold">{fmt(total)}</strong>.</p>
-                  <p className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
-                    Đơn hàng sẽ được lưu tạm ở trạng thái chờ thanh toán trong <strong>24 giờ</strong>. Lễ tân sẽ kích hoạt ngay khi nhận thanh toán tại quầy.
+                <div className="flex items-center justify-between">
+                  <p className="font-['Inter:Bold'] font-bold text-[#0f172a] text-lg">Thanh toán trực tiếp tại quầy lễ tân</p>
+                  <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-full border border-amber-300">
+                    Thanh toán sau tại quầy
+                  </span>
+                </div>
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 text-sm text-slate-600 flex flex-col gap-3">
+                  <div className="flex items-start gap-2.5">
+                    <span className="text-teal-600 font-bold shrink-0">🏢 Cơ sở:</span>
+                    <span className="text-slate-800 font-semibold">{formData.branch || "SportCenter Main Center"}</span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <span className="text-teal-600 font-bold shrink-0">💵 Số tiền cần thanh toán:</span>
+                    <strong className="text-teal-600 font-extrabold text-base">{fmt(total)}</strong>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <span className="text-teal-600 font-bold shrink-0">💳 Hình thức thu tại quầy:</span>
+                    <span>Tiền mặt, Quẹt thẻ POS (Visa/Master/ATM) hoặc Chuyển khoản trực tiếp với Lễ tân</span>
+                  </div>
+                  <p className="text-xs text-amber-800 bg-amber-50/80 p-3 rounded-lg border border-amber-200 leading-5">
+                    💡 Đơn đăng ký sẽ được lưu ở trạng thái <strong>Chờ thanh toán trong 24 giờ</strong>. Khi đến quầy, bạn chỉ cần đọc Số điện thoại hoặc đưa Mã đơn để Lễ tân thu tiền và kích hoạt gói ngay.
                   </p>
                 </div>
               </div>
@@ -155,7 +170,11 @@ export function PaymentMethodScreen({
             <div className="bg-[#fffbeb] border border-[#fcd34d] flex gap-3 items-start p-4 rounded-[12px] w-full shadow-sm">
               <span className="text-[#d97706] text-lg">⏳</span>
               <p className="font-['Inter:Medium'] font-medium text-[#92400e] text-sm leading-[20px] flex-1">
-                <strong>Lưu ý:</strong> Thông tin thanh toán có hiệu lực trong <strong>15 phút</strong>. Vui lòng hoàn tất giao dịch trước khi hết hạn.
+                {method === "counter" ? (
+                  <><strong>Lưu ý:</strong> Phiếu hẹn giữ chỗ tại quầy có hiệu lực trong <strong>24 giờ</strong>. Sau thời gian này, nếu chưa thanh toán, hệ thống sẽ tự động hủy đơn.</>
+                ) : (
+                  <><strong>Lưu ý:</strong> Thông tin thanh toán trực tuyến có hiệu lực trong <strong>15 phút</strong>. Vui lòng hoàn tất giao dịch trước khi hết hạn.</>
+                )}
               </p>
             </div>
 
@@ -253,7 +272,11 @@ export function PaymentMethodScreen({
               <div className="bg-[#fffbeb] border border-[#fcd34d] flex gap-2 items-start p-3 rounded-[8px] w-full shadow-sm">
                 <span className="text-[#d97706] text-sm shrink-0">⏰</span>
                 <p className="font-['Inter:Medium'] font-medium text-[#92400e] text-[12px] flex-1 leading-[16px]">
-                  Hoàn tất trước <strong>15:00 hôm nay</strong> để nhận kích hoạt ngay
+                  {method === "counter" ? (
+                    <>Giữ chỗ và mức giá ưu đãi trong <strong>24 giờ</strong> tại quầy</>
+                  ) : (
+                    <>Hoàn tất trước <strong>15:00 hôm nay</strong> để nhận kích hoạt ngay</>
+                  )}
                 </p>
               </div>
               <button
@@ -261,7 +284,7 @@ export function PaymentMethodScreen({
                 onClick={onNext}
                 className="bg-teal-500 flex items-center justify-center py-[15px] rounded-[12px] w-full font-['Inter:Bold'] font-bold text-white text-[16px] hover:bg-teal-600 transition-colors cursor-pointer"
               >
-                {method === "counter" ? "Xác nhận đăng ký tại quầy →" : "Tiến hành thanh toán →"}
+                {method === "counter" ? "Xác nhận đặt lịch & Thanh toán tại quầy →" : "Tiến hành thanh toán →"}
               </button>
               <div className="flex gap-[8px] items-center justify-center w-full">
                 <img src={`${A}/ce483.svg`} className="size-3 mt-0.5 shrink-0" alt="" />

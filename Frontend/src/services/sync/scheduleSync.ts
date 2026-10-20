@@ -1,38 +1,14 @@
-import { cancelBookingOnBackend, finalizeAttendanceOnBackend, pushBookingToBackend } from "./scheduleSyncBackend";
+import {
+  type SyncedSession,
+  pushBookingToBackend,
+  cancelBookingOnBackend,
+  finalizeAttendanceOnBackend,
+} from "./scheduleSyncApi";
 
-export interface SyncedSession {
-  id: string;
-  type: "group" | "pt" | "open_pt";
-  classId?: string;
-  className: string;
-  sport: string;
-  level: string;
-  date: string; // YYYY-MM-DD
-  startTime: string; // HH:mm
-  endTime: string;
-  room: string;
-  coachId: string;
-  coachName: string;
-  capacity: number;
-  registeredCount: number;
-  status: "sắp diễn ra" | "đang diễn ra" | "hoàn thành" | "đã hủy";
-  attendanceStatus?: "chưa điểm danh" | "có mặt" | "vắng" | "có phép" | "đi muộn";
-  coachNote?: string;
-  memberId?: string;
-  memberName?: string;
-  memberPhone?: string;
-  memberEmail?: string;
-  goal?: string;
-  userNote?: string;
-  cancelReason?: string;
-  updatedAt?: string;
-}
-
-export const scheduleSync = new ScheduleSyncService();
+export type { SyncedSession };
 
 const STORAGE_KEY = "synced_schedule_sessions";
-// Cross-page sync cache. It only contains records explicitly created by the
-// user; it is never seeded with demo sessions.
+
 export const INITIAL_SYNCED_SESSIONS: SyncedSession[] = [];
 
 class ScheduleSyncService {
@@ -87,7 +63,6 @@ class ScheduleSyncService {
     const all = this.getSyncedSessions();
     const openFromAll = all.filter((s) => s.type === "open_pt" && s.status === "sắp diễn ra" && s.registeredCount === 0);
 
-    // Merge any coach custom open pt slots from localStorage for 100% seamless cross-portal sync
     try {
       const customStr = localStorage.getItem("coach_custom_open_pt_slots");
       if (customStr) {
@@ -340,8 +315,11 @@ class ScheduleSyncService {
 
     void finalizeAttendanceOnBackend(sessionId, attendanceStatus, coachNote);
   }
-
-
 }
 
+export const scheduleSync = new ScheduleSyncService();
+
+export function getStoredSyncedSessions(): SyncedSession[] {
+  return scheduleSync.getSyncedSessions();
+}
 

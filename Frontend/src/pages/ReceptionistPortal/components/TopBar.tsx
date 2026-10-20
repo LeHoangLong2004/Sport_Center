@@ -1,14 +1,65 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { breadcrumbs, A } from '../shared';
+import { breadcrumbs, A, Page } from '../shared';
 import { UserAvatar } from '../../../components/UserAvatar';
 import { notificationApi, type ManagerNotification } from '../../../hooks/notificationApi';
 
-export function TopBar({ breadcrumb, title, shiftLabel, onProfileClick }: { breadcrumb: string; title: string; shiftLabel?: string; onProfileClick?: () => void }) {
+const DERIVED_READ_KEY = 'receptionist_read_derived_notifications';
+
+function getReadDerivedIds(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(DERIVED_READ_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function saveReadDerivedId(id: string) {
+  try {
+    const list = getReadDerivedIds();
+    if (!list.includes(id)) {
+      list.push(id);
+      localStorage.setItem(DERIVED_READ_KEY, JSON.stringify(list));
+    }
+  } catch {}
+}
+
+function getRealtimeShift(): string {
+  const hour = new Date().getHours();
+  if (hour >= 6 && hour < 12) {
+    return "Ca sáng • Trực tuyến";
+  } else if (hour >= 12 && hour < 18) {
+    return "Ca chiều • Trực tuyến";
+  } else if (hour >= 18 && hour < 22) {
+    return "Ca tối • Trực tuyến";
+  } else {
+    return "Ca đêm • Trực tuyến";
+  }
+}
+
+interface TopBarProps {
+  breadcrumb: string;
+  title: string;
+  shiftLabel?: string;
+  onProfileClick?: () => void;
+  onNavigate?: (page: Page) => void;
+}
+
+export function TopBar({ breadcrumb, title, shiftLabel, onProfileClick, onNavigate }: TopBarProps) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<ManagerNotification[]>([]);
   const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
   const [notificationsError, setNotificationsError] = useState(false);
+  const [currentShift, setCurrentShift] = useState(getRealtimeShift());
   const notificationsRef = useRef<HTMLDivElement>(null);
+
+  // Cập nhật ca làm việc thời gian thực mỗi phút
+  useEffect(() => {
+    setCurrentShift(getRealtimeShift());
+    const interval = setInterval(() => {
+      setCurrentShift(getRealtimeShift());
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const unreadCount = notifications.filter(notification => !notification.isRead).length;
 
@@ -19,7 +70,14 @@ export function TopBar({ breadcrumb, title, shiftLabel, onProfileClick }: { brea
 
     notificationApi.list()
       .then(data => {
-        if (!cancelled) setNotifications(data);
+        if (!cancelled) {
+          const readDerived = getReadDerivedIds();
+          const mapped = data.map(item => ({
+            ...item,
+            isRead: item.isRead || (item.id.startsWith('derived-') && readDerived.includes(item.id))
+          }));
+          setNotifications(mapped);
+        }
       })
       .catch(() => {
         if (!cancelled) setNotificationsError(true);
@@ -44,26 +102,61 @@ export function TopBar({ breadcrumb, title, shiftLabel, onProfileClick }: { brea
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
-  const markAsRead = async (notification: ManagerNotification) => {
-    if (notification.isRead || notification.id.startsWith('derived-')) return;
+  const handleNotificationClick = async (notification: ManagerNotification) => {
+    // Đánh dấu đã đọc
+    if (!notification.isRead) {
+      if (notification.id.startsWith('derived-')) {
+        saveReadDerivedId(notification.id);
+        setNotifications(current => current.map(item =>
+          item.id === notification.id ? { ...item, isRead: true } : item
+        ));
+      } else {
+        try {
+          await notificationApi.markRead(notification.id);
+          setNotifications(current => current.map(item =>
+            item.id === notification.id ? { ...item, isRead: true } : item
+          ));
+        } catch {
+          // Giữ trạng thái chưa đọc nếu thất bại
+        }
+      }
+    }
 
-    try {
-      await notificationApi.markRead(notification.id);
-      setNotifications(current => current.map(item =>
-        item.id === notification.id ? { ...item, isRead: true } : item
-      ));
-    } catch {
-      // Giữ trạng thái chưa đọc nếu cập nhật thất bại.
+    // Đóng dropdown
+    setIsNotificationsOpen(false);
+
+    // Điều hướng đến đúng nghiệp vụ
+    const lowerTitle = notification.title.toLowerCase();
+    const lowerMsg = (notification.message || '').toLowerCase();
+    if (
+      notification.type === 'payment' ||
+      notification.id === 'derived-pending-invoices' ||
+      lowerTitle.includes('giao dịch') ||
+      lowerTitle.includes('hóa đơn') ||
+      lowerMsg.includes('hóa đơn') ||
+      lowerMsg.includes('thanh toán')
+    ) {
+      onNavigate?.('counter-payments');
+    } else if (notification.type === 'class' || notification.type === 'booking') {
+      onNavigate?.('classes');
+    } else if (notification.type === 'member') {
+      onNavigate?.('lookup');
     }
   };
 
   const markAllAsRead = async () => {
     try {
       await notificationApi.markAllRead();
-      setNotifications(current => current.map(item => ({ ...item, isRead: true })));
     } catch {
-      // Không làm gián đoạn thao tác của lễ tân.
+      // Không làm gián đoạn
     }
+    // Ghi nhận tất cả derived notifications là đã đọc
+    notifications.forEach(n => {
+      if (n.id.startsWith('derived-')) {
+        saveReadDerivedId(n.id);
+      }
+    });
+    setNotifications(current => current.map(item => ({ ...item, isRead: true })));
   };
 
   const formatNotificationTime = (value: string) => {
@@ -92,7 +185,7 @@ export function TopBar({ breadcrumb, title, shiftLabel, onProfileClick }: { brea
       <div className="flex items-center gap-4">
         <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold text-xs rounded-full border border-emerald-200/50 dark:border-emerald-500/20">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          {shiftLabel ?? "Ca sáng • Trực tuyến"}
+          {currentShift}
         </div>
         <div ref={notificationsRef} className="relative">
         <button
@@ -117,7 +210,7 @@ export function TopBar({ breadcrumb, title, shiftLabel, onProfileClick }: { brea
                 type="button"
                 onClick={() => void markAllAsRead()}
                 disabled={unreadCount === 0}
-                className="text-xs font-semibold text-purple-500 transition-colors hover:text-purple-600 disabled:cursor-not-allowed disabled:text-slate-400"
+                className="text-xs font-semibold text-purple-600 dark:text-purple-400 hover:underline transition-colors disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
               >
                 Đánh dấu đã đọc
               </button>
@@ -129,20 +222,33 @@ export function TopBar({ breadcrumb, title, shiftLabel, onProfileClick }: { brea
             ) : notifications.length === 0 ? (
               <div className="px-4 py-8 text-center text-sm text-slate-400">Chưa có thông báo mới.</div>
             ) : (
-              <div className="max-h-96 overflow-y-auto">
+              <div className="max-h-96 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
                 {notifications.map(notification => (
                   <button
                     type="button"
                     key={notification.id}
-                    onClick={() => void markAsRead(notification)}
-                    className={`block w-full border-b border-slate-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/70 ${notification.isRead ? '' : 'bg-purple-50/60 dark:bg-purple-950/20'}`}
+                    onClick={() => void handleNotificationClick(notification)}
+                    className={`block w-full px-4 py-3 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/70 group ${notification.isRead ? '' : 'bg-purple-50/60 dark:bg-purple-950/20'}`}
                   >
                     <div className="flex items-start gap-3">
-                      <span className={`mt-1.5 size-2 shrink-0 rounded-full ${notification.isRead ? 'bg-slate-300' : 'bg-purple-500'}`} />
-                      <span className="min-w-0">
-                        <span className="block text-sm font-semibold text-slate-800 dark:text-white">{notification.title}</span>
-                        {notification.message && <span className="mt-1 block text-xs leading-5 text-slate-500 dark:text-slate-400">{notification.message}</span>}
-                        <span className="mt-1 block text-[11px] text-slate-400">{formatNotificationTime(notification.createdAt)}</span>
+                      <span className={`mt-1.5 size-2 shrink-0 rounded-full ${notification.isRead ? 'bg-slate-300 dark:bg-slate-600' : 'bg-purple-500 ring-4 ring-purple-100 dark:ring-purple-950/40'}`} />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center justify-between gap-2">
+                          <span className={`text-sm font-semibold ${notification.isRead ? 'text-slate-700 dark:text-slate-300' : 'text-slate-900 dark:text-white font-bold'}`}>
+                            {notification.title}
+                          </span>
+                          <span className="text-[11px] text-purple-600 dark:text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                            Xem ngay &rarr;
+                          </span>
+                        </span>
+                        {notification.message && (
+                          <span className="mt-1 block text-xs leading-5 text-slate-500 dark:text-slate-400">
+                            {notification.message}
+                          </span>
+                        )}
+                        <span className="mt-1 block text-[11px] text-slate-400">
+                          {formatNotificationTime(notification.createdAt)}
+                        </span>
                       </span>
                     </div>
                   </button>

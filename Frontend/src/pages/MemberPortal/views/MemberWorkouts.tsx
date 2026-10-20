@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { MemberScreen } from "../types";
 import { MemberAPI } from "../services/api";
-import { HomeworkDetails } from "../components/HomeworkDetails";
 import {
   CheckCircle2,
   Circle,
@@ -10,48 +9,8 @@ import {
   Flame,
   MessageSquare,
 } from "lucide-react";
-
-interface HomeworkExercise {
-  id?: string;
-  name: string;
-  reps?: string | null;
-  rest?: string | null;
-  note?: string | null;
-}
-
-interface HomeworkPlan {
-  id: string;
-  planName: string;
-  description?: string | null;
-  goal?: string | null;
-  level?: string | null;
-  durationMinutes?: number | null;
-  exercises: HomeworkExercise[];
-}
-
-interface MemberHomework {
-  id: string;
-  memberId: string;
-  planId: string;
-  assignedBy?: string | null;
-  status: string;
-  progressPct?: number | null;
-  assignedDate: string;
-  dueDate?: string | null;
-  notes?: string | null;
-  plan?: HomeworkPlan | null;
-}
-
-interface HomeworkTask {
-  id: string;
-  homeworkId: string;
-  exerciseIndex: number;
-  title: string;
-  description: string;
-  dueDate?: string | null;
-  assignedDate: string;
-  completed: boolean;
-}
+import type { MemberHomework, HomeworkExercise, HomeworkTask } from "./workouts/workoutTypes";
+import { HomeworkDetailModal } from "./workouts/HomeworkDetailModal";
 
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
@@ -339,11 +298,13 @@ export default function MemberWorkouts({ onNavigate }: Props) {
         )}
       </div>
 
-      <HomeworkDetails homework={selectedHomework} onClose={() => setSelectedHomework(null)} />
+      <HomeworkDetailModal
+        homework={selectedHomework}
+        onClose={() => setSelectedHomework(null)}
+      />
 
       {updatingTaskId && <span className="sr-only">Đang cập nhật tiến độ</span>}
     </div>
   );
 }
-
 

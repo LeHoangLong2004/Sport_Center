@@ -1,42 +1,23 @@
-export interface WalletTransaction {
-  id: string;
-  type: "topup" | "payment" | "refund";
-  amount: number;
-  method: string;
-  note: string;
-  createdAt: string;
-  status: "completed" | "pending";
-}
+import {
+  type WalletTransaction,
+  type MemberWalletData,
+  MEMBER_WALLET_UPDATED_EVENT,
+  getStoredUser,
+  getAuthHeaders,
+  sanitizeWalletData,
+  cleanAllLocalWallets,
+} from "./walletUtils";
 
-export interface MemberWalletData {
-  balance: number;
-  currency: string;
-  transactions: WalletTransaction[];
-}
+export type { WalletTransaction, MemberWalletData };
+export { MEMBER_WALLET_UPDATED_EVENT, sanitizeWalletData, cleanAllLocalWallets };
 
-export const MEMBER_WALLET_UPDATED_EVENT = "member-wallet-updated";
-
-function getAuthHeaders(): Record<string, string> {
-  const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
-
-function getStoredUser(): any | null {
-  const raw = localStorage.getItem("user");
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
+// Chạy dọn dẹp ngay khi load file
+cleanAllLocalWallets();
 
 export const WalletService = {
   getStorageKey(userId?: string): string {
-    const u = userId || getStoredUser()?.id || "default";
+    const user = getStoredUser();
+    const u = userId || user?.id || user?.email || "default";
     return `member_wallet_${u}`;
   },
 
@@ -45,27 +26,24 @@ export const WalletService = {
     try {
       const saved = localStorage.getItem(key);
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        const sanitized = sanitizeWalletData(parsed);
+        if (
+          sanitized.balance !== parsed.balance ||
+          sanitized.transactions.length !== (parsed.transactions?.length || 0)
+        ) {
+          localStorage.setItem(key, JSON.stringify(sanitized));
+        }
+        return sanitized;
       }
     } catch (e) {
       console.warn("Failed to read local wallet:", e);
     }
 
-    // Default starting balance
     const defaultData: MemberWalletData = {
-      balance: 500000,
+      balance: 0,
       currency: "VND",
-      transactions: [
-        {
-          id: `WTX-INIT-01`,
-          type: "topup",
-          amount: 500000,
-          method: "Chuyển khoản QR",
-          note: "Số dư khả dụng ban đầu",
-          createdAt: new Date().toISOString(),
-          status: "completed",
-        },
-      ],
+      transactions: [],
     };
     try {
       localStorage.setItem(key, JSON.stringify(defaultData));
@@ -75,10 +53,11 @@ export const WalletService = {
 
   saveLocalWallet(data: MemberWalletData, userId?: string) {
     const key = this.getStorageKey(userId);
+    const sanitized = sanitizeWalletData(data);
     try {
-      localStorage.setItem(key, JSON.stringify(data));
+      localStorage.setItem(key, JSON.stringify(sanitized));
       window.dispatchEvent(
-        new CustomEvent(MEMBER_WALLET_UPDATED_EVENT, { detail: data })
+        new CustomEvent(MEMBER_WALLET_UPDATED_EVENT, { detail: sanitized })
       );
     } catch (e) {
       console.warn("Failed to save local wallet:", e);
@@ -86,25 +65,24 @@ export const WalletService = {
   },
 
   async getWallet(userId?: string): Promise<MemberWalletData> {
+    const user = getStoredUser();
+    const targetUserId = userId || user?.id || user?.email;
     try {
-      const res = await fetch("/api/member/wallet", {
-        headers: getAuthHeaders(),
+      const queryParam = targetUserId ? `?userId=${encodeURIComponent(targetUserId)}` : "";
+      const res = await fetch(`/api/member/wallet${queryParam}`, {
+        headers: getAuthHeaders(targetUserId),
       });
       if (res.ok) {
         const data = await res.json();
-        const mapped: MemberWalletData = {
-          balance: Number(data.balance) || 0,
-          currency: data.currency || "VND",
-          transactions: Array.isArray(data.transactions) ? data.transactions : [],
-        };
-        this.saveLocalWallet(mapped, userId);
-        return mapped;
+        const sanitized = sanitizeWalletData(data);
+        this.saveLocalWallet(sanitized, targetUserId);
+        return sanitized;
       }
     } catch (e) {
       console.warn("Backend getWallet failed, falling back to local:", e);
     }
 
-    return this.getLocalWallet(userId);
+    return this.getLocalWallet(targetUserId);
   },
 
   async topUp(
@@ -113,22 +91,25 @@ export const WalletService = {
     note: string = "Nạp tiền vào tài khoản",
     userId?: string
   ): Promise<{ success: boolean; newBalance: number; transaction: WalletTransaction }> {
+    const user = getStoredUser();
+    const targetUserId = userId || user?.id || user?.email;
     try {
-      const res = await fetch("/api/member/wallet/topup", {
+      const queryParam = targetUserId ? `?userId=${encodeURIComponent(targetUserId)}` : "";
+      const res = await fetch(`/api/member/wallet/topup${queryParam}`, {
         method: "POST",
-        headers: getAuthHeaders(),
+        headers: getAuthHeaders(targetUserId),
         body: JSON.stringify({ amount, method, note }),
       });
       if (res.ok) {
         const result = await res.json();
         const newBalance = Number(result.balance) || 0;
-        const current = this.getLocalWallet(userId);
+        const current = this.getLocalWallet(targetUserId);
         const updated: MemberWalletData = {
           balance: newBalance,
           currency: "VND",
-          transactions: [result.transaction, ...current.transactions],
+          transactions: [result.transaction, ...(current.transactions || [])],
         };
-        this.saveLocalWallet(updated, userId);
+        this.saveLocalWallet(updated, targetUserId);
         return {
           success: true,
           newBalance,
@@ -139,8 +120,7 @@ export const WalletService = {
       console.warn("Backend topup failed, using offline store:", e);
     }
 
-    // Local fallback
-    const current = this.getLocalWallet(userId);
+    const current = this.getLocalWallet(targetUserId);
     const newBalance = current.balance + amount;
     const tx: WalletTransaction = {
       id: `WTX-${Date.now()}`,
@@ -154,14 +134,186 @@ export const WalletService = {
     const updated: MemberWalletData = {
       balance: newBalance,
       currency: "VND",
-      transactions: [tx, ...current.transactions],
+      transactions: [tx, ...(current.transactions || [])],
     };
-    this.saveLocalWallet(updated, userId);
+    this.saveLocalWallet(updated, targetUserId);
 
     return {
       success: true,
       newBalance,
       transaction: tx,
     };
+  },
+
+  async createPendingTopUp(
+    amount: number,
+    method: string = "Tiền mặt tại quầy",
+    note: string = "Phiếu nạp tiền tại quầy",
+    ticketCode?: string,
+    userId?: string
+  ): Promise<{ success: boolean; transaction: WalletTransaction }> {
+    const user = getStoredUser();
+    const targetUserId = userId || user?.id || user?.email;
+    const txId = ticketCode || `TOPUP-Q${Math.floor(1000 + Math.random() * 9000)}`;
+
+    try {
+      const queryParam = targetUserId ? `?userId=${encodeURIComponent(targetUserId)}` : "";
+      const res = await fetch(`/api/member/wallet/topup${queryParam}`, {
+        method: "POST",
+        headers: getAuthHeaders(targetUserId),
+        body: JSON.stringify({ amount, method, note, status: "pending", id: txId }),
+      });
+      if (res.ok) {
+        const result = await res.json();
+        const current = this.getLocalWallet(targetUserId);
+        const updated: MemberWalletData = {
+          balance: current.balance,
+          currency: "VND",
+          transactions: [result.transaction, ...(current.transactions || [])],
+        };
+        this.saveLocalWallet(updated, targetUserId);
+        return { success: true, transaction: result.transaction };
+      }
+    } catch (e) {
+      console.warn("Backend createPendingTopUp failed, saving locally:", e);
+    }
+
+    const current = this.getLocalWallet(targetUserId);
+    const tx: WalletTransaction = {
+      id: txId,
+      type: "topup",
+      amount,
+      method,
+      note,
+      createdAt: new Date().toISOString(),
+      status: "pending",
+    };
+    const updated: MemberWalletData = {
+      balance: current.balance,
+      currency: "VND",
+      transactions: [tx, ...(current.transactions || [])],
+    };
+    this.saveLocalWallet(updated, targetUserId);
+    return { success: true, transaction: tx };
+  },
+
+  async confirmPendingTopUp(
+    txId: string,
+    userId?: string
+  ): Promise<{ success: boolean; newBalance: number; transaction?: WalletTransaction }> {
+    const user = getStoredUser();
+    const targetUserId = userId || user?.id || user?.email;
+
+    try {
+      const queryParam = targetUserId ? `?userId=${encodeURIComponent(targetUserId)}` : "";
+      const res = await fetch(`/api/member/wallet/confirm-pending/${encodeURIComponent(txId)}${queryParam}`, {
+        method: "POST",
+        headers: getAuthHeaders(targetUserId),
+      });
+      if (res.ok) {
+        const result = await res.json();
+        const current = this.getLocalWallet(targetUserId);
+        const updatedTransactions = (current.transactions || []).map((t) =>
+          t.id === txId ? { ...t, status: "completed" as const } : t
+        );
+        const updated: MemberWalletData = {
+          balance: Number(result.balance) || current.balance + (result.transaction?.amount || 0),
+          currency: "VND",
+          transactions: updatedTransactions,
+        };
+        this.saveLocalWallet(updated, targetUserId);
+        return {
+          success: true,
+          newBalance: updated.balance,
+          transaction: result.transaction,
+        };
+      }
+    } catch (e) {
+      console.warn("Backend confirmPendingTopUp failed, updating local:", e);
+    }
+
+    const current = this.getLocalWallet(targetUserId);
+    let targetAmount = 0;
+    let foundTx: WalletTransaction | undefined;
+
+    const updatedTransactions = (current.transactions || []).map((t) => {
+      if (t.id === txId && t.status === "pending") {
+        targetAmount = t.amount;
+        foundTx = { ...t, status: "completed" as const };
+        return foundTx;
+      }
+      return t;
+    });
+
+    const newBalance = current.balance + targetAmount;
+    const updated: MemberWalletData = {
+      balance: newBalance,
+      currency: "VND",
+      transactions: updatedTransactions,
+    };
+    this.saveLocalWallet(updated, targetUserId);
+    return {
+      success: true,
+      newBalance,
+      transaction: foundTx,
+    };
+  },
+
+  async pay(
+    amount: number,
+    note: string = "Thanh toán dịch vụ",
+    method: string = "Ví điện tử",
+    userId?: string
+  ): Promise<{ success: boolean; newBalance: number; message?: string }> {
+    const user = getStoredUser();
+    const targetUserId = userId || user?.id || user?.email;
+    try {
+      const queryParam = targetUserId ? `?userId=${encodeURIComponent(targetUserId)}` : "";
+      const res = await fetch(`/api/member/wallet/pay${queryParam}`, {
+        method: "POST",
+        headers: getAuthHeaders(targetUserId),
+        body: JSON.stringify({ amount, method, note }),
+      });
+      if (res.ok) {
+        const result = await res.json();
+        const newBalance = Number(result.balance) || 0;
+        const current = this.getLocalWallet(targetUserId);
+        const updated: MemberWalletData = {
+          balance: newBalance,
+          currency: "VND",
+          transactions: [result.transaction, ...(current.transactions || [])],
+        };
+        this.saveLocalWallet(updated, targetUserId);
+        return { success: true, newBalance };
+      } else {
+        const err = await res.json().catch(() => ({}));
+        return { success: false, newBalance: 0, message: err.message || "Thanh toán thất bại" };
+      }
+    } catch (e) {
+      console.warn("Backend pay failed, falling back to local:", e);
+    }
+
+    const current = this.getLocalWallet(targetUserId);
+    if (current.balance < amount) {
+      return { success: false, newBalance: current.balance, message: "Số dư ví không đủ" };
+    }
+
+    const newBalance = current.balance - amount;
+    const tx: WalletTransaction = {
+      id: `WTX-${Date.now()}`,
+      type: "payment",
+      amount,
+      method,
+      note,
+      createdAt: new Date().toISOString(),
+      status: "completed",
+    };
+    const updated: MemberWalletData = {
+      balance: newBalance,
+      currency: "VND",
+      transactions: [tx, ...(current.transactions || [])],
+    };
+    this.saveLocalWallet(updated, targetUserId);
+    return { success: true, newBalance };
   },
 };

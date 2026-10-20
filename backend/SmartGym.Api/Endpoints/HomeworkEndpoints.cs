@@ -49,6 +49,52 @@ public static class HomeworkEndpoints
 
                     try
                     {
+                        var isExplicitClass = string.Equals(request.Type, "class", StringComparison.OrdinalIgnoreCase) || request.ClassId.HasValue;
+                        var targetClassId = request.ClassId ?? request.MemberId;
+
+                        var isClassInDb = (await db.Database.SqlQueryRaw<Guid>(
+                            "SELECT id FROM classes WHERE id = {0} LIMIT 1",
+                            targetClassId
+                        ).ToListAsync()).Any();
+                        var isClass = isExplicitClass || (!await db.Users.AnyAsync(u => u.Id == request.MemberId) && isClassInDb);
+
+                        if (isClass)
+                        {
+                            var studentUserIds = await db.Database.SqlQueryRaw<Guid>(
+                                @"SELECT DISTINCT user_id FROM class_bookings 
+                                  WHERE class_id = {0} AND status NOT IN ('cancelled', 'rejected', 'class_cancelled')",
+                                targetClassId
+                            ).ToListAsync();
+
+                            if (studentUserIds.Count == 0)
+                            {
+                                return Results.BadRequest(new { message = "Lớp học này hiện chưa có học viên nào đăng ký để giao giáo án." });
+                            }
+
+                            var assignedList = new List<HomeworkProgressResponse>();
+                            foreach (var studentId in studentUserIds)
+                            {
+                                var subRequest = new AssignHomeworkRequest
+                                {
+                                    MemberId = studentId,
+                                    PlanId = request.PlanId,
+                                    DueDate = request.DueDate,
+                                    Notes = request.Notes
+                                };
+                                var res = await service.AssignHomeworkAsync(coachId.Value, subRequest);
+                                assignedList.Add(res);
+                            }
+
+                            return Results.Ok(new { success = true, assignedCount = assignedList.Count, data = assignedList });
+                        }
+
+                        // Single member assignment: ensure user exists
+                        var userExists = await db.Users.AnyAsync(u => u.Id == request.MemberId);
+                        if (!userExists)
+                        {
+                            return Results.BadRequest(new { message = "Không tìm thấy học viên hoặc lớp học tương ứng trong hệ thống." });
+                        }
+
                         var result = await service.AssignHomeworkAsync(coachId.Value, request);
                         return Results.Ok(result);
                     }

@@ -27,7 +27,9 @@ export function SupportTicketModal({
   const ticketCategory = category;
   const ticketSubject = subject;
   const ticketContent = content;
-  return {/* CREATE TICKET MODAL (PORTAL) */}
+  return (
+    <>
+      {/* CREATE TICKET MODAL (PORTAL) */}
       {isOpen &&
         createPortal(
           <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -106,6 +108,8 @@ export function SupportTicketModal({
             </div>
           </div>,
           document.body
-        )};
+        )}
+    </>
+  );
 }
 

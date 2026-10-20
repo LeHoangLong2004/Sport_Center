@@ -13,12 +13,13 @@ using SmartGym.Infrastructure.Persistence.EF;
 
 namespace SmartGym.Api.Endpoints;
 
-public static class ClassEndpoints
+public static partial class ClassEndpoints
 {
     public static void MapClassEndpoints(this IEndpointRouteBuilder app)
     {
         var classGroup = app.MapGroup("/api/classes").WithTags("Classes");
 
+        // 1. Create Class (Admin/Manager)
         classGroup
             .MapPost(
                 "/",
@@ -32,6 +33,7 @@ public static class ClassEndpoints
             )
             .RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
 
+        // 2. Propose Class (Coach)
         classGroup
             .MapPost(
                 "/proposals",
@@ -50,7 +52,6 @@ public static class ClassEndpoints
                     if (coachId == null)
                         return Results.BadRequest(new { message = "Tài khoản Coach chưa có hồ sơ hoạt động." });
 
-                    // Ensure coach is assigned to this sport in coach_sports so students can find classes & coaches by sport
                     if (request.SportId != Guid.Empty)
                     {
                         try
@@ -61,14 +62,9 @@ public static class ClassEndpoints
                                    ON CONFLICT (coach_id, sport_id) DO NOTHING"
                             );
                         }
-                        catch
-                        {
-                            // Ignore if sport assignment fails or already exists
-                        }
+                        catch { }
                     }
 
-                    // The coach identity must come from the authenticated account,
-                    // never from a client-controlled coachId field.
                     var createRequest = new CreateClassRequest
                     {
                         SportId = request.SportId,
@@ -88,6 +84,7 @@ public static class ClassEndpoints
             )
             .RequireAuthorization(policy => policy.RequireRole("coach"));
 
+        // 3. Approve Class Proposal
         classGroup
             .MapPut(
                 "/{id:guid}/approve",
@@ -112,6 +109,7 @@ public static class ClassEndpoints
             )
             .RequireAuthorization(policy => policy.RequireRole("manager", "admin", "center_manager", "centermanager"));
 
+        // 4. Reject Class Proposal
         classGroup
             .MapPut(
                 "/{id:guid}/reject",
@@ -136,6 +134,7 @@ public static class ClassEndpoints
             )
             .RequireAuthorization(policy => policy.RequireRole("manager", "admin", "center_manager", "centermanager"));
 
+        // 5. Available Classes
         classGroup.MapGet(
             "/available",
             async (ClassService service, ILoggerFactory loggerFactory) =>
@@ -158,153 +157,20 @@ public static class ClassEndpoints
             }
         );
 
+        // 6. Class Detail
         classGroup.MapGet(
-                "/{id:guid}",
-                async (Guid id, ClassService service) =>
-                {
-                    var classDetail = await service.GetClassDetailAsync(id);
-                    if (classDetail == null)
-                        return Results.NotFound(new { message = "Không tìm thấy lớp học" });
-                    return Results.Ok(classDetail);
-                }
-            );
+            "/{id:guid}",
+            async (Guid id, ClassService service) =>
+            {
+                var classDetail = await service.GetClassDetailAsync(id);
+                if (classDetail == null)
+                    return Results.NotFound(new { message = "Không tìm thấy lớp học" });
+                return Results.Ok(classDetail);
+            }
+        );
 
-        classGroup.MapPost(
-                "/{id:guid}/book",
-                async (Guid id, HttpContext context, ClassService service) =>
-                {
-                    var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                    if (!Guid.TryParse(userIdClaim, out var userId))
-                        return Results.Unauthorized();
-
-                    var (isSuccess, errorMessage) = await service.BookClassAsync(userId, id);
-                    if (!isSuccess)
-                    {
-                        if (errorMessage != null && (errorMessage.Contains("đã đặt chỗ") || errorMessage.Contains("đã đăng ký")))
-                        {
-                            ClassDetailResponse? existingDetail = null;
-                            try { existingDetail = await service.GetClassDetailAsync(id); } catch { }
-                            return Results.Ok(new
-                            {
-                                success = true,
-                                alreadyBooked = true,
-                                message = "Bạn đã đăng ký lớp học này trước đó rồi.",
-                                classInfo = existingDetail
-                            });
-                        }
-                        return Results.BadRequest(new { message = errorMessage });
-                    }
-
-                    ClassDetailResponse? classDetail = null;
-                    try
-                    {
-                        classDetail = await service.GetClassDetailAsync(id);
-                    }
-                    catch
-                    {
-                        // Safe fallback so transient fetch error doesn't break response
-                    }
-
-                    return Results.Ok(new
-                    {
-                        message = "Đặt lớp thành công.",
-                        classInfo = classDetail
-                    });
-                }
-            )
-            .RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
-
-        classGroup.MapPost(
-                "/{id:guid}/pay-and-book",
-                async (Guid id, [FromBody] PayAndBookClassRequest? request, HttpContext context, ClassService service, SmartGym.Infrastructure.Persistence.EF.SmartGymDbContext db) =>
-                {
-                    var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                    if (!Guid.TryParse(userIdClaim, out var userId))
-                        return Results.Unauthorized();
-
-                    var method = request?.PaymentMethod ?? "qr";
-                    var amount = request?.Amount ?? 150000m;
-
-                    var (isSuccess, errorMessage) = await service.BookClassAsync(userId, id);
-                    if (!isSuccess)
-                    {
-                        if (errorMessage != null && (errorMessage.Contains("đã đặt chỗ") || errorMessage.Contains("đã đăng ký")))
-                        {
-                            ClassDetailResponse? existingDetail = null;
-                            try { existingDetail = await service.GetClassDetailAsync(id); } catch { }
-                            return Results.Ok(new
-                            {
-                                success = true,
-                                alreadyBooked = true,
-                                message = "Bạn đã hoàn tất đặt chỗ lớp học này trước đó rồi.",
-                                classInfo = existingDetail
-                            });
-                        }
-                        return Results.BadRequest(new { message = errorMessage });
-                    }
-
-                    var invoice = new SmartGym.Domain.Entities.Invoice
-                    {
-                        Id = Guid.NewGuid(),
-                        UserId = userId,
-                        TotalAmount = amount,
-                        PaymentMethod = method.ToLower() switch
-                        {
-                            "card" or "creditcard" or "credit_card" => SmartGym.Domain.Enums.PaymentMethod.CreditCard,
-                            "counter" or "cashatcounter" => SmartGym.Domain.Enums.PaymentMethod.CashAtCounter,
-                            "wallet" or "ewallet" => SmartGym.Domain.Enums.PaymentMethod.EWallet,
-                            "bank_transfer" or "banktransfer" => SmartGym.Domain.Enums.PaymentMethod.BankTransfer,
-                            _ => SmartGym.Domain.Enums.PaymentMethod.QRCode
-                        },
-                        Status = SmartGym.Domain.Enums.PaymentStatus.Completed,
-                        PaidAt = DateTime.UtcNow,
-                        CreatedAt = DateTime.UtcNow
-                    };
-                    await db.Invoices.AddAsync(invoice);
-                    await db.SaveChangesAsync();
-
-                    ClassDetailResponse? classDetail = null;
-                    try
-                    {
-                        classDetail = await service.GetClassDetailAsync(id);
-                    }
-                    catch
-                    {
-                        // Safe fallback so transient fetch error doesn't break payment response
-                    }
-
-                    return Results.Ok(new
-                    {
-                        success = true,
-                        message = "Thanh toán với giá gốc và đặt lịch thành công!",
-                        invoiceId = invoice.Id,
-                        amount = amount,
-                        classInfo = classDetail
-                    });
-                }
-            )
-            .RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
-
-        classGroup.MapPost(
-                "/{id:guid}/cancel-booking",
-                async (Guid id, HttpContext context, ClassService service) =>
-                {
-                    var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                    if (!Guid.TryParse(userIdClaim, out var userId))
-                        return Results.Unauthorized();
-
-                    var (isSuccess, errorMessage) = await service.CancelBookingAsync(userId, id);
-                    return isSuccess
-                        ? Results.Ok(new { message = "Hủy đặt lớp thành công." })
-                        : Results.BadRequest(new { message = errorMessage });
-                }
-            )
-            .RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
-
-        var scheduleGroup = app.MapGroup("/api/schedule").WithTags("Schedules");
-
+        // 7. Booking & Cancellation Endpoints
+        MapClassBookingEndpoints(classGroup);
     }
 }
-
-public record PayAndBookClassRequest(string? PaymentMethod = "qr", decimal Amount = 150000);
 

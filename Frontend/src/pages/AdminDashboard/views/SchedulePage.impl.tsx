@@ -53,7 +53,7 @@ const res = await fetch(`/api/bookings/${id}/reject`, { method: "PUT", headers: 
 .filter(Boolean) .some((value) => String(value).toLowerCase().includes(query)); }); const handleClassApproval = async (id: string, action: "approve" | "reject"): Promise<boolean> => { try { const token = localStorage.getItem("token");
 const res = await fetch(`/api/classes/${id}/${action}`, { method: "PUT", headers: { Authorization: `Bearer ${token}` }, }); if (!res.ok) { const contentType = res.headers.get("content-type") || "";
 const body = contentType.includes("application/json") ? await res.json().catch(() => ({})) : {}; const errorMessage = body.message || body.detail || body.title; throw new Error(errorMessage || `Không thể xử lý đề xuất lớp học (HTTP ${res.status}).`); }
-await fetchClasses(); return true; } catch (error) { console.error("Class approval action failed:", error); return false; window.alert(error instanceof Error ? error.message : "Không thể xử lý đề xuất lớp học.");
+await fetchClasses(); return true; } catch (error) { console.error("Class approval action failed:", error); window.alert(error instanceof Error ? error.message : "Không thể xử lý đề xuất lớp học."); return false;
 } }; return ( <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto"> <ScheduleHeader activeTab={activeTab}
 onTabChange={setActiveTab} onCreate={() => setShowCreateModal(true)} proposalCount={pendingClassProposals.length} /> {showCreateModal && ( <CreateClassModal
 onClose={() => { setShowCreateModal(false); fetchClasses(); }} /> )}

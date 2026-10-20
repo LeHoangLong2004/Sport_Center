@@ -7,7 +7,9 @@ interface MemberDashboardAsideProps {
 }
 
 export function MemberDashboardAside({ activePackages, onNavigate }: MemberDashboardAsideProps) {
-  return {/* RIGHT COLUMN: ACTIVE PACKAGES & SHORTCUT */}
+  return (
+    <>
+      {/* RIGHT COLUMN: ACTIVE PACKAGES & SHORTCUT */}
         <div className="lg:col-span-4 space-y-6">
           {/* Gói tập đang dùng */}
           <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs">
@@ -67,6 +69,8 @@ export function MemberDashboardAside({ activePackages, onNavigate }: MemberDashb
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
-        </div>;
+        </div>
+    </>
+  );
 }
 

@@ -27,7 +27,9 @@ export function ReviewModal({
   onToggleTag,
   onCommentChange,
 }: ReviewModalProps) {
-  return /* REVIEW MODAL (PORTAL) */}
+  return (
+    <>
+      {/* REVIEW MODAL (PORTAL) */}
       {activeReviewSession &&
         createPortal(
           <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -130,6 +132,8 @@ export function ReviewModal({
             </div>
           </div>,
           document.body
-        );
+        )}
+    </>
+  );
 }
 

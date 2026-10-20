@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { createPortal } from "react-dom";
+import { useState, useEffect, useMemo } from "react";
 import type { MemberScreen, MemberCoachReviewItem } from "../types";
 import { fetchMyReviews, submitCoachReview } from "../services/reviewSync";
 import { scheduleSync } from "../services/scheduleSync";
@@ -11,17 +10,20 @@ import {
   X,
   MessageSquare,
 } from "lucide-react";
+import { ReviewModal, type ReviewSessionTarget } from "./reviews/ReviewModal";
 
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
 }
 
-export default function MemberReviews({ onNavigate }: Props) {
+export default function MemberReviews({ onNavigate: _onNavigate }: Props) {
   const userStr = localStorage.getItem("user");
   const user = userStr ? JSON.parse(userStr) : null;
   const userId = user?.id || "";
   const memberName = user?.fullName || user?.name || "Hội viên";
   const [reviews, setReviews] = useState<MemberCoachReviewItem[]>([]);
+  const [activeReviewSession, setActiveReviewSession] = useState<ReviewSessionTarget | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -51,13 +53,6 @@ export default function MemberReviews({ onNavigate }: Props) {
     };
   }, [userId]);
 
-  const [activeReviewSession, setActiveReviewSession] = useState<any | null>(null);
-  const [rating, setRating] = useState(5);
-  const [selectedTags, setSelectedTags] = useState<string[]>(["Nhiệt tình", "Sửa form kỹ"]);
-  const [comment, setComment] = useState("");
-  const [feedback, setFeedback] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   // Available sessions to review from user's real completed sessions
   const availableSessions = useMemo(() => {
     const fromSchedule = scheduleSync.getSyncedSessions()
@@ -85,71 +80,41 @@ export default function MemberReviews({ onNavigate }: Props) {
     return Array.from(unique.values());
   }, [reviews, userId, memberName]);
 
-  const TAGS_LIST = [
-    "Nhiệt tình",
-    "Sửa form kỹ",
-    "Đúng giờ",
-    "Âm nhạc thư giãn",
-    "Bài tập đa dạng",
-    "Động viên tích cực",
-    "Giảng dạy dễ hiểu",
-  ];
+  const handleReviewSubmit = async (data: {
+    sessionId: string;
+    sessionName: string;
+    coachId: string;
+    coachName: string;
+    rating: number;
+    tags: string[];
+    comment: string;
+  }) => {
+    const reviewRes = await submitCoachReview({
+      coachId: data.coachId,
+      coachName: data.coachName,
+      sessionId: data.sessionId,
+      sessionName: data.sessionName,
+      rating: data.rating,
+      comment: data.comment,
+      tags: data.tags,
+      memberName,
+    });
 
-  const toggleTag = (tag: string) => {
-    if (selectedTags.includes(tag)) {
-      setSelectedTags(selectedTags.filter((t) => t !== tag));
-    } else {
-      setSelectedTags([...selectedTags, tag]);
-    }
-  };
+    const newReview: MemberCoachReviewItem = {
+      id: reviewRes.id,
+      sessionId: data.sessionId,
+      sessionName: data.sessionName,
+      coachId: reviewRes.coachId,
+      coachName: reviewRes.coachName || data.coachName || "Coach",
+      date: new Date().toISOString().split("T")[0],
+      rating: data.rating,
+      tags: data.tags,
+      comment: data.comment,
+    };
 
-  const handleSubmitReview = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeReviewSession) return;
-    if (!comment.trim()) {
-      alert("Vui lòng nhập cảm nhận hoặc góp ý cho Huấn luyện viên.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const reviewRes = await submitCoachReview({
-        coachId: activeReviewSession.coachId || "",
-        coachName: activeReviewSession.coachName || "HLV Thể thao",
-        sessionId: activeReviewSession.sessionId,
-        sessionName: activeReviewSession.sessionName,
-        rating,
-        comment: comment.trim(),
-        tags: selectedTags,
-        memberName,
-      });
-
-      const newReview: MemberCoachReviewItem = {
-        id: reviewRes.id,
-        sessionId: activeReviewSession.sessionId,
-        sessionName: activeReviewSession.sessionName,
-        coachId: reviewRes.coachId,
-        coachName: reviewRes.coachName || activeReviewSession.coachName || "Coach",
-        date: new Date().toISOString().split("T")[0],
-        rating,
-        tags: selectedTags,
-        comment: comment.trim(),
-      };
-
-      const updated = [newReview, ...reviews];
-      setReviews(updated);
-
-      setActiveReviewSession(null);
-      setComment("");
-      setSelectedTags(["Nhiệt tình", "Sửa form kỹ"]);
-      setRating(5);
-      setFeedback("Cảm ơn bạn đã gửi đánh giá! Đóng góp của bạn giúp HLV hoàn thiện chất lượng giảng dạy.");
-      setTimeout(() => setFeedback(null), 4000);
-    } catch {
-      alert("Có lỗi xảy ra khi lưu đánh giá. Vui lòng thử lại!");
-    } finally {
-      setIsSubmitting(false);
-    }
+    setReviews((prev) => [newReview, ...prev]);
+    setFeedback("Cảm ơn bạn đã gửi đánh giá! Đóng góp của bạn giúp HLV hoàn thiện chất lượng giảng dạy.");
+    setTimeout(() => setFeedback(null), 4000);
   };
 
   return (
@@ -209,11 +174,7 @@ export default function MemberReviews({ onNavigate }: Props) {
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    setActiveReviewSession(s);
-                    setRating(5);
-                    setComment("");
-                  }}
+                  onClick={() => setActiveReviewSession(s)}
                   className="px-3 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-xs cursor-pointer transition-colors shrink-0"
                 >
                   Viết đánh giá
@@ -276,22 +237,13 @@ export default function MemberReviews({ onNavigate }: Props) {
         )}
       </div>
 
+      {/* REVIEW MODAL */}
       <ReviewModal
-        activeReviewSession={activeReviewSession}
-        rating={rating}
-        selectedTags={selectedTags}
-        comment={comment}
-        isSubmitting={isSubmitting}
-        tagsList={TAGS_LIST}
+        session={activeReviewSession}
         onClose={() => setActiveReviewSession(null)}
-        onSubmit={handleSubmitReview}
-        onRatingChange={setRating}
-        onToggleTag={toggleTag}
-        onCommentChange={setComment}
+        onSubmit={handleReviewSubmit}
       />
-
     </div>
   );
 }
-
 

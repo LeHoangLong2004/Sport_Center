@@ -23,7 +23,8 @@ export default function CoachAvailabilityTab({
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
           {availabilitySlots.map((slot) => {
-            const dayName = DAYS_NAMES[slot.dayOfWeek - 1] || `Thứ ${slot.dayOfWeek + 1}`;
+            const dayNum = slot.dayOfWeek ?? 1;
+            const dayName = DAYS_NAMES[dayNum - 1] || `Thứ ${dayNum + 1}`;
             const hasBooking = !!slot.bookedMemberName;
             return (
               <div

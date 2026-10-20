@@ -32,7 +32,7 @@ export function HomeworkDetails({ homework, onClose }: HomeworkDetailsProps) {
                 <div className="space-y-2">
                   <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px]">Danh sách bài tập ({selectedHomework.plan.exercises.length})</h4>
                   <div className="space-y-2">
-                    {selectedHomework.plan.exercises.map((exercise, index) => (
+                    {selectedHomework.plan.exercises.map((exercise: any, index: number) => (
                       <div key={exercise.id || index} className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-850">
                         <p className="font-bold text-slate-900 dark:text-white">{index + 1}. {exercise.name}</p>
                         <p className="text-[11px] text-slate-500 mt-1">{exercise.reps || "Theo hướng dẫn"}{exercise.rest ? ` • Nghỉ ${exercise.rest}` : ""}</p>
