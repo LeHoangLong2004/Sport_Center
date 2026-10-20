@@ -43,8 +43,19 @@ export default function PaymentFlow({
   const [paymentError, setPaymentError] = useState("");
 
   React.useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+    const resetScroll = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+    resetScroll();
+    const raf = requestAnimationFrame(resetScroll);
+    const timer = setTimeout(resetScroll, 60);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+    };
+  }, [loading, screen]);
 
   const [formData, setFormData] = useState(() => {
     const defaultData = {
@@ -162,7 +173,7 @@ export default function PaymentFlow({
   }, [initialPlan, initialPackage, initialDuration, initialDiscountPct]);
 
   if (loading) {
-    return <div className="flex h-screen w-full items-center justify-center bg-[#f8fafc]">Đang tải dữ liệu...</div>;
+    return <div className="flex min-h-[400px] w-full items-center justify-center bg-[#f8fafc] text-sm text-slate-500">Đang tải dữ liệu...</div>;
   }
 
   const pkgData = allPackages[pkg] || Object.values(allPackages)[0];

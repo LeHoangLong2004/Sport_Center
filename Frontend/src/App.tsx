@@ -210,6 +210,14 @@ export default function App() {
   }, [paymentOpen, selectedPlanId, selectedPackage, selectedProductOrder]);
 
   useEffect(() => {
+    if (paymentOpen) {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+  }, [paymentOpen]);
+
+  useEffect(() => {
     const sync = () => {
       setAdminOpen(isAdminHash(window.location.hash))
       setCoachOpen(isCoachHash(window.location.hash))
@@ -326,6 +334,9 @@ export default function App() {
                       : "overview"
         }
         onMemberCheckout={(selection) => {
+          window.scrollTo({ top: 0, left: 0, behavior: "instant" })
+          document.documentElement.scrollTop = 0
+          document.body.scrollTop = 0
           setSelectedPlanId(undefined)
           setSelectedPeriod(undefined)
           setSelectedPackage(selection.item)
@@ -336,6 +347,9 @@ export default function App() {
           setPaymentOpen(true)
         }}
         onMemberProductPayment={(order) => {
+          window.scrollTo({ top: 0, left: 0, behavior: "instant" })
+          document.documentElement.scrollTop = 0
+          document.body.scrollTop = 0
           setSelectedPlanId(undefined)
           setSelectedPeriod(undefined)
           setSelectedPackage(undefined)
@@ -366,6 +380,9 @@ export default function App() {
         setAdminOpen(true)
       }}
       onOpenPayment={(planId, periodId) => {
+        window.scrollTo({ top: 0, left: 0, behavior: "instant" })
+        document.documentElement.scrollTop = 0
+        document.body.scrollTop = 0
         setSelectedPlanId(planId)
         setSelectedPeriod(periodId)
         setSelectedPackage(undefined)

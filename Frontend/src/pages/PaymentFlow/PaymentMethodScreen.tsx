@@ -26,7 +26,18 @@ export function PaymentMethodScreen({
   const fmt = (n: number) => n.toLocaleString("vi-VN") + " đ";
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    const resetScroll = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+    resetScroll();
+    const raf = requestAnimationFrame(resetScroll);
+    const timer = setTimeout(resetScroll, 60);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+    };
   }, []);
 
   // Copy to clipboard helper
@@ -171,7 +182,7 @@ export function PaymentMethodScreen({
   const isProduct = pkg.periodLabel === "Đơn hàng" || (!pkg.details && !pkg.terms);
 
   return (
-    <div className="bg-[#f8fafc] flex flex-col items-center w-full min-h-screen">
+    <div className="bg-[#f8fafc] flex flex-col items-center w-full">
       {/* Sleek Stepper */}
       <Stepper active={2} />
 

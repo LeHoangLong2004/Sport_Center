@@ -80,8 +80,8 @@ export function CheckoutHeader({ onExit }: Props) {
 
 export function CheckoutFooter() {
   return (
-    <footer className="w-full py-6 border-t border-slate-200/80 bg-slate-50 text-center text-xs text-slate-400">
-      <div className="max-w-[1280px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+    <footer className="w-full py-2.5 border-t border-slate-200/80 bg-slate-50 text-center text-[11px] text-slate-400">
+      <div className="max-w-[1240px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-1.5">
         <p>© 2026 SportCenter Việt Nam. Bảo lưu mọi quyền.</p>
         <p className="flex items-center gap-2">
           <span>Giao dịch an toàn & bảo mật</span>
