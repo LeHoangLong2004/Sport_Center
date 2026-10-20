@@ -42,6 +42,10 @@ export default function PaymentFlow({
   const [loadError, setLoadError] = useState("");
   const [paymentError, setPaymentError] = useState("");
 
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const [formData, setFormData] = useState(() => {
     const defaultData = {
       fullName: "",

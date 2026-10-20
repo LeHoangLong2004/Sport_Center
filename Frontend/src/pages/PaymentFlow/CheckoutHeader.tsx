@@ -19,8 +19,8 @@ export function CheckoutHeader({ onExit }: Props) {
   const userAvatar = user?.avatarUrl || user?.avatar;
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
-      <div className="max-w-[1280px] mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-2xs">
+      <div className="max-w-[1240px] mx-auto px-4 md:px-8 h-12 flex items-center justify-between">
         {/* Brand & Security Badge */}
         <div className="flex items-center gap-3">
           <div className="bg-[#10b981] flex items-center justify-center rounded-xl size-9 shadow-md shadow-emerald-500/20 text-white font-extrabold text-sm">

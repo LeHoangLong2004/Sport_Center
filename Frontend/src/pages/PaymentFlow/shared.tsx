@@ -93,7 +93,7 @@ export function Stepper({ active }: { active: 1 | 2 | 3 | 4 }) {
   ];
 
   return (
-    <div className="flex items-center justify-center py-6 w-full px-4 overflow-x-auto">
+    <div className="flex items-center justify-center py-2.5 w-full px-4 overflow-x-auto">
       <div className="flex gap-3 md:gap-4 items-center shrink-0">
         {steps.map((item, i) => {
           if (!item) {
