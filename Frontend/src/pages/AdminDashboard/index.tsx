@@ -89,6 +89,12 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       return;
     }
 
+    if (targetType === "schedule_request" || notificationType === "schedule_request" || text.includes("ca dạy") || text.includes("dạy thay")) {
+      setScheduleTab("shift-requests");
+      setPage("schedule");
+      return;
+    }
+
     if (targetType === "booking" || notificationType === "booking_event" || text.includes("đặt lớp") || text.includes("hủy đặt lớp")) {
       setScheduleTab("bookings");
       setPage("schedule");

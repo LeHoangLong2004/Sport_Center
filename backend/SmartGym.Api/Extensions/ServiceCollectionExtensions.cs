@@ -14,6 +14,7 @@ using SmartGym.Infrastructure.Authentication;
 using SmartGym.Infrastructure.Persistence.EF;
 using SmartGym.Infrastructure.Persistence.EF.Repositories;
 using SmartGym.Infrastructure.Persistence.Supabase.Repositories;
+using SmartGym.Infrastructure.Persistence.InMemory;
 using SmartGym.Infrastructure.Services;
 
 namespace SmartGym.Api.Extensions;
@@ -77,6 +78,7 @@ public static class ServiceCollectionExtensions
 
         // ── Application Services ──
         services.AddScoped<IAuthService, AuthService>();
+        services.AddSingleton<IAccountTokenRepository, AccountTokenRepository>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IPackageService, PackageService>();
         services.AddScoped<ISubscriptionService, SubscriptionService>();

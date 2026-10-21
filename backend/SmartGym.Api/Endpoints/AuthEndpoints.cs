@@ -3,7 +3,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using SmartGym.Application.DTOs;
 using SmartGym.Application.Interfaces;
+using IAccountTokenRepository = SmartGym.Application.Interfaces.Repositories.IAccountTokenRepository;
+using AuthForgotPasswordRequest = SmartGym.Application.DTOs.Auth.ForgotPasswordRequest;
+using AuthResetPasswordRequest = SmartGym.Application.DTOs.Auth.ResetPasswordRequest;
 using System;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace SmartGym.Api.Endpoints;
@@ -99,6 +103,106 @@ public static class AuthEndpoints
                 }
                 return Results.BadRequest(new { message = ex.Message });
             }
+        });
+
+        group.MapPost("/forgot-password", async (
+            AuthForgotPasswordRequest request,
+            IUserRepository userRepository,
+            IAccountTokenRepository tokenRepository,
+            IEmailService emailService,
+            IWebHostEnvironment environment) =>
+        {
+            var email = request.Email?.Trim();
+            if (string.IsNullOrWhiteSpace(email))
+                return Results.BadRequest(new { message = "Vui lòng nhập email đã đăng ký." });
+
+            var user = await userRepository.GetByEmailAsync(email);
+            var response = new
+            {
+                message = "Nếu email tồn tại, mã đặt lại mật khẩu đã được gửi.",
+                resetToken = (string?)null
+            };
+
+            // Do not reveal whether an email exists. This also keeps the endpoint
+            // safe against account-enumeration attempts.
+            if (user is null)
+                return Results.Ok(response);
+
+            var token = await tokenRepository.CreatePasswordResetTokenAsync(email);
+            var resetUrl = "http://localhost:5173/#reset-password";
+            var html = $"""
+                <h2>Đặt lại mật khẩu SmartGym</h2>
+                <p>Xin chào {WebUtility.HtmlEncode(user.FullName)},</p>
+                <p>Mã đặt lại mật khẩu của bạn là:</p>
+                <p style='font-size:28px;font-weight:bold;letter-spacing:8px'>{token}</p>
+                <p>Mã có hiệu lực trong 15 phút và chỉ được sử dụng một lần.</p>
+                <p>Nếu bạn không yêu cầu thao tác này, hãy bỏ qua email.</p>
+                <p>Truy cập: <a href='{resetUrl}'>{resetUrl}</a></p>
+                """;
+
+            var sent = await emailService.SendAsync(
+                email,
+                "Mã đặt lại mật khẩu SmartGym",
+                html);
+
+            // SMTP is optional for local/demo environments. Returning the short-lived
+            // token only in Development keeps the local flow testable without email
+            // while avoiding token disclosure in production responses.
+            if (environment.IsDevelopment() && !sent)
+            {
+                return Results.Ok(new
+                {
+                    message = response.message,
+                    resetToken = token
+                });
+            }
+
+            return Results.Ok(response);
+        });
+
+        group.MapPost("/reset-password", async (
+            AuthResetPasswordRequest request,
+            IUserRepository userRepository,
+            IAccountTokenRepository tokenRepository) =>
+        {
+            var email = request.Email?.Trim();
+            var token = request.Token?.Trim();
+            var newPassword = request.NewPassword ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(token))
+                return Results.BadRequest(new { message = "Email và mã xác minh là bắt buộc." });
+
+            if (newPassword.Length < 6)
+                return Results.BadRequest(new { message = "Mật khẩu mới phải có tối thiểu 6 ký tự." });
+
+            var tokenValid = await tokenRepository.TryConsumePasswordResetTokenAsync(email, token);
+            if (!tokenValid)
+                return Results.BadRequest(new { message = "Mã đặt lại mật khẩu không chính xác hoặc đã hết hạn." });
+
+            var user = await userRepository.GetByEmailAsync(email);
+            if (user is null)
+                return Results.BadRequest(new { message = "Mã đặt lại mật khẩu không chính xác hoặc đã hết hạn." });
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            await userRepository.UpdateAsync(user);
+
+            return Results.Ok(new { message = "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập lại." });
+        });
+
+        group.MapPost("/verify-reset-token", async (
+            AuthResetPasswordRequest request,
+            IAccountTokenRepository tokenRepository) =>
+        {
+            var email = request.Email?.Trim();
+            var token = request.Token?.Trim();
+
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(token))
+                return Results.BadRequest(new { message = "Email và mã OTP là bắt buộc." });
+
+            var isValid = await tokenRepository.ValidatePasswordResetTokenAsync(email, token);
+            return isValid
+                ? Results.Ok(new { message = "Mã OTP hợp lệ." })
+                : Results.BadRequest(new { message = "Mã OTP không chính xác hoặc đã hết hạn." });
         });
 
         // Auto-refresh dev token for Coach or Member

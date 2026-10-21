@@ -5,6 +5,32 @@ import { SportsTableCard, FacilitiesTableCard, SportItem, FacilityItem } from '.
 import { FacilityFormModal, FacilityDeleteModal } from './FacilitiesModals';
 import { CoachSportAssignmentModal } from './CoachSportAssignmentModal';
 
+function getAuthToken() {
+  return localStorage.getItem('token') || localStorage.getItem('accessToken') || '';
+}
+
+async function persistImageUrl(imageUrl: string, folder: 'sports' | 'facilities', token: string) {
+  if (!imageUrl.startsWith('data:image/')) return imageUrl;
+
+  const response = await fetch(imageUrl);
+  const blob = await response.blob();
+  const formData = new FormData();
+  formData.append('file', blob, `uploaded-${Date.now()}.jpg`);
+  formData.append('folder', folder);
+
+  const uploadResponse = await fetch('/api/upload/image', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  const uploadData = await uploadResponse.json().catch(() => null);
+  if (!uploadResponse.ok || !uploadData?.url) {
+    throw new Error(uploadData?.message || 'Không thể lưu ảnh lên server.');
+  }
+
+  return uploadData.url as string;
+}
+
 export function FacilitiesPage() {
   const [sports, setSports] = useState<SportItem[]>([]);
   const [facilities, setFacilities] = useState<FacilityItem[]>([]);
@@ -78,7 +104,7 @@ export function FacilitiesPage() {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('folder', activeType === 'sport' ? 'sports' : 'facilities');
-      const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+      const token = getAuthToken();
       const res = await fetch('/api/upload/image', {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -103,15 +129,20 @@ export function FacilitiesPage() {
     if (!name.trim() || !activeType) return;
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
+      if (!token) {
+        toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+        return;
+      }
       const isSport = activeType === 'sport';
       const isEdit = modalMode === 'edit';
       const endpoint = isSport ? `/api/sports${isEdit ? `/${editingId}` : ''}` : `/api/facilities${isEdit ? `/${editingId}` : ''}`;
       const method = isEdit ? 'PUT' : 'POST';
 
+      const savedImageUrl = await persistImageUrl(imageUrl.trim(), isSport ? 'sports' : 'facilities', token);
       const body = isSport
-        ? { name: name.trim(), imageUrl: imageUrl.trim() }
-        : { name: name.trim(), imageUrl: imageUrl.trim(), address: address.trim() };
+        ? { name: name.trim(), imageUrl: savedImageUrl }
+        : { name: name.trim(), imageUrl: savedImageUrl, address: address.trim() };
 
       const res = await fetch(endpoint, {
         method,
@@ -151,7 +182,7 @@ export function FacilitiesPage() {
     if (!deleteTarget) return;
     setIsDeleting(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       const endpoint = deleteTarget.type === 'sport' ? `/api/sports/${deleteTarget.id}` : `/api/facilities/${deleteTarget.id}`;
       const res = await fetch(endpoint, {
         method: 'DELETE',

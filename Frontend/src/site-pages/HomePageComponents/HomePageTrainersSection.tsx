@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { FadeUp } from "../../components/Motion";
 import { StarRow } from "./StarRow";
-import { imgFlame, imgTrainer1, imgTrainer2, imgTrainer3, imgTrainer4 } from "../homePageData";
+import { imgFlame, imgHeroBg } from "../homePageData";
 
 type HomeTrainer = {
   id: string;
@@ -19,10 +19,9 @@ export default function HomePageTrainersSection() {
     fetch("/api/coaches")
       .then((response) => response.ok ? response.json() : [])
       .then((items) => {
-        const images = [imgTrainer1, imgTrainer2, imgTrainer3, imgTrainer4];
-        setTrainers((Array.isArray(items) ? items : []).slice(0, 4).map((item: any, index: number) => ({
+        setTrainers((Array.isArray(items) ? items : []).slice(0, 4).map((item: any) => ({
           id: String(item.id),
-          img: item.avatarUrl || images[index % images.length],
+          img: item.avatarUrl || imgHeroBg,
           name: item.fullName || "Huấn luyện viên",
           specialty: item.specialty || "Chưa cập nhật chuyên môn",
           exp: item.experienceYears == null ? "Chưa cập nhật" : `${item.experienceYears} năm`,
