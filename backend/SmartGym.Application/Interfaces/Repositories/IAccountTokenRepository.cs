@@ -4,6 +4,7 @@ public interface IAccountTokenRepository
 {
     Task<string> CreatePasswordResetTokenAsync(string email);
     Task<string> CreateEmailVerificationTokenAsync(string email);
+    Task<bool> ValidatePasswordResetTokenAsync(string email, string token);
     Task<bool> TryConsumePasswordResetTokenAsync(string email, string token);
     Task<bool> TryConsumeEmailVerificationTokenAsync(string email, string token);
 }

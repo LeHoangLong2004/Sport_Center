@@ -86,25 +86,11 @@ export const CoachAPI = {
 
   // 4c. Thống kê học viên & lớp học theo thời gian thực
   getMembersOverview: async (): Promise<CoachMembersOverview> => {
-    try {
-      const res = await fetchApi('/coach/members-overview');
-      if (res && Array.isArray(res.classes) && Array.isArray(res.members)) {
-        return res as CoachMembersOverview;
-      }
-      return {
-        totalClasses: 0,
-        totalMembers: 0,
-        classes: [],
-        members: []
-      };
-    } catch {
-      return {
-        totalClasses: 0,
-        totalMembers: 0,
-        classes: [],
-        members: []
-      };
+    const res = await fetchApi('/coach/members-overview');
+    if (res && Array.isArray(res.classes) && Array.isArray(res.members)) {
+      return res as CoachMembersOverview;
     }
+    throw new Error('Dữ liệu học viên phụ trách không hợp lệ.');
   },
 
   getMemberProfile: async (memberId: string): Promise<MemberProfileData> => {

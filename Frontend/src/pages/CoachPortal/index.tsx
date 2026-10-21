@@ -14,9 +14,9 @@ import CoachNotifications from "./views/CoachNotifications";
 import CoachAI from "./views/CoachAI";
 import CoachProfile from "./views/CoachProfile";
 import CoachSettings from "./views/CoachSettings";
+import { PageTransition } from "../../components/PageTransition";
 
-
-export default function CoachPortal() {
+export default function CoachPortal({ onExit }: { onExit?: () => void } = {}) {
   const getInitialScreen = (): CoachScreen => {
     const hash = window.location.hash.replace("#coach-", "");
     const validScreens: CoachScreen[] = [
@@ -64,26 +64,45 @@ export default function CoachPortal() {
     else if (s === "chat") setSelectedMemberId(null);
   };
 
-  const screenNode: Record<CoachScreen, ReactNode> = {
-    dashboard: <CoachDashboard navigateTo={navigateTo} />,
-    schedule: <CoachSchedule navigateTo={navigateTo} />,
-    "class-detail": <CoachClassDetail sessionId={selectedSessionId} navigateTo={navigateTo} />,
-    attendance: <CoachAttendance initialSessionId={selectedSessionId} navigateTo={navigateTo} />,
-    members: <CoachMembers navigateTo={navigateTo} />,
-    "member-profile": <CoachMemberProfile memberId={selectedMemberId} navigateTo={navigateTo} />,
-    curriculum: <CoachCurriculum />,
-    chat: <CoachChat initialMemberId={selectedMemberId} />,
-    reviews: <CoachReviews />,
-    notifications: <CoachNotifications />,
-    ai: <CoachAI />,
-    profile: <CoachProfile navigateTo={navigateTo} />,
-    settings: <CoachSettings />,
+  const renderCoachScreen = (s: CoachScreen) => {
+    switch (s) {
+      case "dashboard":
+        return <CoachDashboard navigateTo={navigateTo} />;
+      case "schedule":
+        return <CoachSchedule navigateTo={navigateTo} />;
+      case "class-detail":
+        return <CoachClassDetail sessionId={selectedSessionId} navigateTo={navigateTo} />;
+      case "attendance":
+        return <CoachAttendance initialSessionId={selectedSessionId} navigateTo={navigateTo} />;
+      case "members":
+        return <CoachMembers navigateTo={navigateTo} />;
+      case "member-profile":
+        return <CoachMemberProfile memberId={selectedMemberId} navigateTo={navigateTo} />;
+      case "curriculum":
+        return <CoachCurriculum />;
+      case "chat":
+        return <CoachChat initialMemberId={selectedMemberId} />;
+      case "reviews":
+        return <CoachReviews />;
+      case "notifications":
+        return <CoachNotifications />;
+      case "ai":
+        return <CoachAI />;
+      case "profile":
+        return <CoachProfile navigateTo={navigateTo} />;
+      case "settings":
+        return <CoachSettings />;
+      default:
+        return <CoachDashboard navigateTo={navigateTo} />;
+    }
   };
 
   return (
     <div className="theme-coach flex w-full h-full min-h-screen">
-      <CoachShell screen={screen} onNavigate={(s) => navigateTo(s)}>
-        {screenNode[screen]}
+      <CoachShell screen={screen} onNavigate={(s) => navigateTo(s)} onExit={onExit}>
+        <PageTransition pageKey={screen}>
+          {renderCoachScreen(screen)}
+        </PageTransition>
       </CoachShell>
     </div>
   );

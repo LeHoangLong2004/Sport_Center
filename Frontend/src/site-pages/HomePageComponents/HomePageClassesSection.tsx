@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { FadeUp } from "../../components/Motion";
-import { imgClass1, imgClass2, imgClass3, imgClass4 } from "../homePageData";
+import { imgHeroBg } from "../homePageData";
 
 type HomeClass = {
   id: string;
@@ -19,14 +19,13 @@ export default function HomePageClassesSection() {
     fetch("/api/classes/available")
       .then((response) => response.ok ? response.json() : [])
       .then((items) => {
-        const images = [imgClass1, imgClass2, imgClass3, imgClass4];
-        const mapped = (Array.isArray(items) ? items : []).slice(0, 4).map((item: any, index: number) => {
+        const mapped = (Array.isArray(items) ? items : []).slice(0, 4).map((item: any) => {
           const start = new Date(item.scheduleTime);
           const end = new Date(start.getTime() + Number(item.durationMinutes || 60) * 60000);
           const available = Math.max(0, Number(item.capacity || 0) - Number(item.currentEnrolled || 0));
           return {
             id: String(item.id),
-            img: images[index % images.length],
+            img: item.imageUrl || imgHeroBg,
             name: item.className || "Lớp học",
             coach: item.coachName || "Huấn luyện viên chưa cập nhật",
             time: `${start.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} – ${end.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`,

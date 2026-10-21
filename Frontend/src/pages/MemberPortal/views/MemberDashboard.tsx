@@ -100,11 +100,58 @@ export default function MemberDashboard({ onNavigate }: Props) {
     saveMemberData(`member_tasks_${userId || "default"}`, updated);
   };
 
+  const [realAttendanceRate, setRealAttendanceRate] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
+    fetch("/api/member/attendance", {
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.summary?.attendanceRate !== undefined) {
+          setRealAttendanceRate(`${data.summary.attendanceRate}%`);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const kpis = [
-    { label: "Gói còn hiệu lực", val: `${activePackages.length} gói`, sub: activePackages.length > 0 ? "Đang hoạt động" : "Chưa kích hoạt gói", icon: CreditCard },
-    { label: "Buổi đã đặt sắp tới", val: `${upcomingSessions.length} buổi`, sub: upcomingSessions.length > 0 ? "Đã xác nhận giữ chỗ" : "Chưa có lịch đặt", icon: CalendarCheck },
-    { label: "Bài tập cần làm", val: `${pendingTasks.length} nhiệm vụ`, sub: pendingTasks.length > 0 ? "Coach đã giao riêng" : "Chưa có bài tập", icon: Dumbbell },
-    { label: "Tỷ lệ tham dự", val: attendanceRate, sub: completedSessions.length > 0 ? "Chuyên cần" : "Chưa có lịch sử", icon: CheckCircle2 },
+    {
+      label: "Gói còn hiệu lực",
+      val: `${activePackages.length} gói`,
+      sub: activePackages.length > 0 ? "Đang hoạt động" : "Chưa kích hoạt gói",
+      icon: CreditCard,
+      onClick: () => onNavigate("packages"),
+    },
+    {
+      label: "Buổi đã đặt sắp tới",
+      val: `${upcomingSessions.length} buổi`,
+      sub: upcomingSessions.length > 0 ? "Đã xác nhận giữ chỗ" : "Chưa có lịch đặt",
+      icon: CalendarCheck,
+      onClick: () => onNavigate("schedule"),
+    },
+    {
+      label: "Bài tập cần làm",
+      val: `${pendingTasks.length} nhiệm vụ`,
+      sub: pendingTasks.length > 0 ? "Coach đã giao riêng" : "Chưa có bài tập",
+      icon: Dumbbell,
+      onClick: () => onNavigate("workouts"),
+    },
+    {
+      label: "Tỷ lệ tham dự",
+      val: realAttendanceRate || attendanceRate,
+      sub: "Xem chi tiết điểm danh →",
+      icon: CheckCircle2,
+      onClick: () => onNavigate("attendance"),
+    },
   ];
 
   return (
@@ -122,14 +169,18 @@ export default function MemberDashboard({ onNavigate }: Props) {
         {kpis.map((k, idx) => {
           const Icon = k.icon;
           return (
-            <div key={idx} className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300 shrink-0">
+            <div
+              key={idx}
+              onClick={k.onClick}
+              className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-4 hover:border-teal-500/50 hover:shadow-md transition-all duration-200 cursor-pointer group"
+            >
+              <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300 shrink-0 group-hover:scale-105 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-all">
                 <Icon className="w-6 h-6" />
               </div>
               <div>
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{k.label}</span>
                 <div className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">{k.val}</div>
-                <span className="text-[11px] text-slate-500 font-medium">{k.sub}</span>
+                <span className="text-[11px] text-teal-600 dark:text-teal-400 font-medium">{k.sub}</span>
               </div>
             </div>
           );

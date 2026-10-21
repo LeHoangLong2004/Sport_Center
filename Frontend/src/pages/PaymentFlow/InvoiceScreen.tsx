@@ -6,6 +6,7 @@ import { apiPost, formatDateTime, formatVnd } from "../../hooks/apiClient";
 
 export function InvoiceScreen({ onBack }: { onBack: () => void }) {
   const invoiceId = typeof window !== "undefined" ? window.localStorage.getItem("latestInvoiceId") : null;
+  const packageName = typeof window !== "undefined" ? window.localStorage.getItem("latestPackageName") : null;
   const invoice = useApiResource<InvoiceResponse>(invoiceId ? `/api/payments/${invoiceId}` : null);
 
   const data = invoice.data;
@@ -132,7 +133,9 @@ export function InvoiceScreen({ onBack }: { onBack: () => void }) {
             </div>
             <div className="border-b border-[#e2e8f0] flex items-start py-4 w-full">
               <div className="flex flex-1 flex-col gap-1 items-start min-w-0">
-                <p className="font-['Inter'] font-bold text-[#0f172a] text-sm">Đăng ký / Gia hạn gói tập</p>
+                <p className="font-['Inter'] font-bold text-[#0f172a] text-sm">
+                  {packageName ? `Đăng ký gói: ${packageName}` : "Đăng ký / Gia hạn gói tập"}
+                </p>
                 <p className="font-['Inter'] font-normal text-[#64748b] text-[12px]">
                   Thanh toán qua {data.paymentMethodName}
                 </p>

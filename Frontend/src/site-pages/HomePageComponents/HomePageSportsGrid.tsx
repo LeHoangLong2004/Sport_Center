@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { FadeUp } from "../../components/Motion";
-import { imgSport1, imgSport2, imgSport3, imgSport4, imgSport5, imgSport6 } from "../homePageData";
+import { imgHeroBg } from "../homePageData";
 
 type HomeSport = { id: string; img: string; label: string };
 
@@ -11,10 +11,9 @@ export default function HomePageSportsGrid() {
     fetch("/api/sports")
       .then((response) => response.ok ? response.json() : [])
       .then((items) => {
-        const images = [imgSport1, imgSport2, imgSport3, imgSport4, imgSport5, imgSport6];
-        setSports((Array.isArray(items) ? items : []).slice(0, 6).map((item: any, index: number) => ({
+        setSports((Array.isArray(items) ? items : []).slice(0, 6).map((item: any) => ({
           id: String(item.id),
-          img: images[index % images.length],
+          img: item.imageUrl || imgHeroBg,
           label: item.name || "Bộ môn",
         })));
       })
@@ -26,7 +25,7 @@ export default function HomePageSportsGrid() {
       <FadeUp className="flex flex-col gap-[12px] items-center text-center mb-[48px]">
         <div className="bg-[rgba(37,99,235,0.08)] border border-[#2563eb] flex items-center px-[12px] py-[6px] rounded-[100px] shrink-0">
           <p className="font-['Inter:Bold'] font-bold text-[#2563eb] text-[11px] uppercase tracking-wider">
-            12 BỘ MÔN
+            {sports.length} BỘ MÔN
           </p>
         </div>
         <h2 className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[36px] m-0 leading-[1.2]">

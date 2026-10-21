@@ -127,18 +127,26 @@ export function SuccessScreen({
             <button
               type="button"
               onClick={onHome}
-              className="bg-white border border-[#cbd5e1] flex flex-1 items-center justify-center py-[16px] rounded-[12px] font-['Inter:Bold'] font-bold text-[#0f172a] text-[15px] hover:bg-[#f8fafc] transition-colors"
+              className="bg-white border border-[#cbd5e1] flex flex-1 items-center justify-center py-[16px] rounded-[12px] font-['Inter:Bold'] font-bold text-[#0f172a] text-[15px] hover:bg-[#f8fafc] transition-colors cursor-pointer"
             >
-              Về trang chủ
+              Về Member Portal
             </button>
             {pkg.orderStatus === "paid" ? (
-              pkg.category !== "sport" && (
+              pkg.category !== "sport" ? (
                 <button
                   type="button"
                   onClick={onActivate}
-                  className="bg-teal-500 flex flex-1 items-center justify-center py-[16px] rounded-[12px] font-['Inter:Bold'] font-bold text-white text-[15px] hover:bg-teal-600 transition-colors"
+                  className="bg-teal-500 flex flex-1 items-center justify-center py-[16px] rounded-[12px] font-['Inter:Bold'] font-bold text-white text-[15px] hover:bg-teal-600 transition-colors cursor-pointer"
                 >
                   Kích hoạt thẻ thành viên ngay →
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onHome}
+                  className="bg-teal-500 flex flex-1 items-center justify-center py-[16px] rounded-[12px] font-['Inter:Bold'] font-bold text-white text-[15px] hover:bg-teal-600 transition-colors cursor-pointer"
+                >
+                  Vào xem lịch tập ngay →
                 </button>
               )
             ) : (
@@ -147,7 +155,7 @@ export function SuccessScreen({
                 onClick={onHome}
                 className="bg-amber-600 flex flex-1 items-center justify-center py-[16px] rounded-[12px] font-['Inter:Bold'] font-bold text-white text-[15px] hover:bg-amber-700 transition-colors cursor-pointer"
               >
-                Đã hiểu, về trang chủ →
+                Đã hiểu, về Member Portal →
               </button>
             )}
           </div>

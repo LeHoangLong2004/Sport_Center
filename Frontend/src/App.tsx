@@ -14,6 +14,7 @@ import { Registration } from "./components/Auth/Registration";
 import { Login } from "./components/Auth/Login";
 import { ForgotPassword } from "./components/Auth/ForgotPassword";
 import { Verification } from "./components/Auth/Verification";
+import { ResetPassword } from "./components/Auth/ResetPassword";
 import { MemberPage } from "./pages/MemberPortal/shared";
 
 function AdminPortal({
@@ -22,15 +23,17 @@ function AdminPortal({
   initialMemberPage = "overview",
   onMemberCheckout,
   onMemberProductPayment,
+  onRoleSwitch,
 }: {
   onExit: () => void
-  initialStep?: "register" | "login" | "verify" | "forgotPassword" | "member" | "dashboard"
+  initialStep?: "register" | "login" | "verify" | "forgotPassword" | "resetPassword" | "member" | "dashboard"
   initialMemberPage?: MemberPage
   onMemberCheckout?: (selection: CheckoutSelection) => void
   onMemberProductPayment?: (order: ProductOrder) => void
+  onRoleSwitch?: (role: "admin" | "coach" | "receptionist" | "member") => void
 }) {
   const [step, setStep] = useState<
-    "register" | "login" | "verify" | "forgotPassword" | "member" | "dashboard"
+    "register" | "login" | "verify" | "forgotPassword" | "resetPassword" | "member" | "dashboard"
   >(initialStep)
   const [verifyTarget, setVerifyTarget] = useState<"member" | "login">("member")
 
@@ -67,12 +70,29 @@ function AdminPortal({
         initialPage={initialMemberPage}
         onCheckout={onMemberCheckout}
         onProductPayment={onMemberProductPayment}
+        onLogout={() => {
+          localStorage.removeItem("token")
+          localStorage.removeItem("accessToken")
+          localStorage.removeItem("user")
+          window.location.hash = "login"
+          setStep("login")
+        }}
       />
     )
   }
 
   if (step === "dashboard") {
-    return <AdminDashboard onLogout={onExit} />
+    return (
+      <AdminDashboard
+        onLogout={() => {
+          localStorage.removeItem("token")
+          localStorage.removeItem("accessToken")
+          localStorage.removeItem("user")
+          window.location.hash = "login"
+          setStep("login")
+        }}
+      />
+    )
   }
 
   if (step === "register") {
@@ -92,12 +112,13 @@ function AdminPortal({
     return (
       <ForgotPassword
         onLogin={() => setStep("login")}
-        onSubmit={() => {
-          setVerifyTarget("login")
-          setStep("verify")
-        }}
+        onSubmit={() => setStep("resetPassword")}
       />
     )
+  }
+
+  if (step === "resetPassword") {
+    return <ResetPassword onLogin={() => setStep("login")} />
   }
 
   if (step === "verify") {
@@ -111,21 +132,25 @@ function AdminPortal({
       onLogin={() => {
         window.location.hash = "member"
         setStep("member")
+        onRoleSwitch?.("member")
       }}
       onLoginAs={(role) => {
         if (role === "admin") {
           window.location.hash = "dashboard"
           setStep("dashboard")
+          onRoleSwitch?.("admin")
         } else if (role === "coach") {
           window.location.hash = "coach-portal"
-          window.location.reload()
+          onRoleSwitch?.("coach")
         } else if (role === "receptionist") {
           window.location.hash = "receptionist"
-          window.location.reload()
+          onRoleSwitch?.("receptionist")
         } else {
           window.location.hash = "member"
           setStep("member")
+          onRoleSwitch?.("member")
         }
+        window.dispatchEvent(new HashChangeEvent("hashchange"))
       }}
       onRegister={() => setStep("register")}
       onForgotPassword={() => setStep("forgotPassword")}
@@ -210,6 +235,14 @@ export default function App() {
   }, [paymentOpen, selectedPlanId, selectedPackage, selectedProductOrder]);
 
   useEffect(() => {
+    if (paymentOpen) {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+  }, [paymentOpen]);
+
+  useEffect(() => {
     const sync = () => {
       setAdminOpen(isAdminHash(window.location.hash))
       setCoachOpen(isCoachHash(window.location.hash))
@@ -221,13 +254,32 @@ export default function App() {
   }, [])
 
   if (receptionistOpen) {
+    const userStr = localStorage.getItem("user")
+    const user = userStr ? JSON.parse(userStr) : null
+    const role = user?.role?.toLowerCase()
+    if (!user || (role !== "receptionist" && role !== "admin" && role !== "manager")) {
+      const demoRec = {
+        id: "rec-01",
+        fullName: "Lễ tân Mai Anh",
+        role: "Receptionist",
+        email: "receptionist01@smartgym.com",
+        avatarUrl: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=256&q=80",
+      }
+      localStorage.setItem("user", JSON.stringify(demoRec))
+      if (!localStorage.getItem("token")) {
+        localStorage.setItem("token", "mock-valid-token-demo")
+      }
+    }
+
     return (
       <ReceptionistPortal
         onExit={() => {
           localStorage.removeItem("token")
+          localStorage.removeItem("accessToken")
           localStorage.removeItem("user")
           window.location.hash = "home"
           setReceptionistOpen(false)
+          window.dispatchEvent(new HashChangeEvent("hashchange"))
         }}
       />
     )
@@ -281,16 +333,60 @@ export default function App() {
     const userStr = localStorage.getItem("user")
     const user = userStr ? JSON.parse(userStr) : null
     const role = user?.role?.toLowerCase()
-    if (!user || role !== "coach") {
-      window.location.hash = "login"
-      return null
+    if (!user || (role !== "coach" && role !== "admin" && role !== "manager")) {
+      const demoCoach = {
+        id: "coach-01",
+        fullName: "HLV Nam Hồ",
+        role: "Coach",
+        email: "hoxuananhnam1@gmail.com",
+        avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80",
+      }
+      localStorage.setItem("user", JSON.stringify(demoCoach))
+      if (!localStorage.getItem("token")) {
+        localStorage.setItem("token", "mock-valid-token-demo")
+      }
     }
-    return <CoachPortal />
+    return (
+      <CoachPortal
+        onExit={() => {
+          localStorage.removeItem("token")
+          localStorage.removeItem("accessToken")
+          localStorage.removeItem("user")
+          window.location.hash = "login"
+          setCoachOpen(false)
+          setAdminOpen(true)
+          window.dispatchEvent(new HashChangeEvent("hashchange"))
+        }}
+      />
+    )
   }
 
   if (adminOpen) {
     return (
       <AdminPortal
+        onRoleSwitch={(role) => {
+          if (role === "coach") {
+            setCoachOpen(true)
+            setAdminOpen(false)
+            setReceptionistOpen(false)
+            setPaymentOpen(false)
+          } else if (role === "receptionist") {
+            setReceptionistOpen(true)
+            setCoachOpen(false)
+            setAdminOpen(false)
+            setPaymentOpen(false)
+          } else if (role === "admin") {
+            setAdminOpen(true)
+            setCoachOpen(false)
+            setReceptionistOpen(false)
+            setPaymentOpen(false)
+          } else {
+            setAdminOpen(true)
+            setCoachOpen(false)
+            setReceptionistOpen(false)
+            setPaymentOpen(false)
+          }
+        }}
         initialStep={
           window.location.hash.startsWith("#dashboard")
             ? "dashboard"
@@ -326,6 +422,9 @@ export default function App() {
                       : "overview"
         }
         onMemberCheckout={(selection) => {
+          window.scrollTo({ top: 0, left: 0, behavior: "instant" })
+          document.documentElement.scrollTop = 0
+          document.body.scrollTop = 0
           setSelectedPlanId(undefined)
           setSelectedPeriod(undefined)
           setSelectedPackage(selection.item)
@@ -336,6 +435,9 @@ export default function App() {
           setPaymentOpen(true)
         }}
         onMemberProductPayment={(order) => {
+          window.scrollTo({ top: 0, left: 0, behavior: "instant" })
+          document.documentElement.scrollTop = 0
+          document.body.scrollTop = 0
           setSelectedPlanId(undefined)
           setSelectedPeriod(undefined)
           setSelectedPackage(undefined)
@@ -366,6 +468,9 @@ export default function App() {
         setAdminOpen(true)
       }}
       onOpenPayment={(planId, periodId) => {
+        window.scrollTo({ top: 0, left: 0, behavior: "instant" })
+        document.documentElement.scrollTop = 0
+        document.body.scrollTop = 0
         setSelectedPlanId(planId)
         setSelectedPeriod(periodId)
         setSelectedPackage(undefined)
