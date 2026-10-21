@@ -208,40 +208,6 @@ export function Login({
               )}
             </button>
 
-            <div className="mt-6 pt-5 border-t border-slate-200 dark:border-slate-800">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 text-center">Đăng nhập nhanh theo kịch bản Demo</p>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => executeLogin("hoxuananhnam@gmail.com", "123456")}
-                  className="px-3 py-2 text-xs font-semibold rounded-lg bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 hover:bg-teal-100 transition-colors flex items-center justify-center gap-1.5"
-                >
-                  <span>👤</span> Hội viên (Member)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => executeLogin("hoxuananhnam1@gmail.com", "123456")}
-                  className="px-3 py-2 text-xs font-semibold rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 transition-colors flex items-center justify-center gap-1.5"
-                >
-                  <span>🏋️</span> HLV (Coach)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => executeLogin("receptionist01@smartgym.com", "123456")}
-                  className="px-3 py-2 text-xs font-semibold rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 transition-colors flex items-center justify-center gap-1.5"
-                >
-                  <span>🛎️</span> Lễ tân (Reception)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => executeLogin("manager@test.com", "123456")}
-                  className="px-3 py-2 text-xs font-semibold rounded-lg bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-100 transition-colors flex items-center justify-center gap-1.5"
-                >
-                  <span>📊</span> Quản lý (Manager)
-                </button>
-              </div>
-            </div>
-
             <div className="mt-6 text-center text-sm font-medium text-slate-500 dark:text-slate-400">
               <span>Chưa có tài khoản?</span>{" "}
               <button 
