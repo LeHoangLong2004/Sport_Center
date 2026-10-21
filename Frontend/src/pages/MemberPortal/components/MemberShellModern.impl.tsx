@@ -78,7 +78,9 @@ import { WalletService, MEMBER_WALLET_UPDATED_EVENT } from "../services/walletSe
         setToastMessage(text); setTimeout(() => setToastMessage(null), 3000);
     }; const handleLogout = () => {
         localStorage.removeItem("user"); localStorage.removeItem("accessToken");
-        localStorage.removeItem("token"); window.location.hash = "login"; window.location.reload();
+        localStorage.removeItem("token"); window.location.hash = "login";
+        window.dispatchEvent(new Event("local-storage-update"));
+        window.dispatchEvent(new HashChangeEvent("hashchange"));
     }; const handleSwitchToInvoices = () => {
         setShowUserMenu(false);
         onNavigate("profile");

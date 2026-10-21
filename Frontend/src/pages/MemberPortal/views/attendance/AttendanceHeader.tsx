@@ -9,10 +9,13 @@ import {
   RefreshCw,
 } from "lucide-react";
 
+import type { ActivePackageInfo } from "./types";
+
 interface AttendanceHeaderProps {
   sessionsCount: number;
   gateCheckInsCount: number;
   absentCount: number;
+  activePackages?: ActivePackageInfo[];
   refreshing: boolean;
   onRefresh: () => void;
   onOpenQrModal: () => void;
@@ -22,6 +25,7 @@ export default function AttendanceHeader({
   sessionsCount,
   gateCheckInsCount,
   absentCount,
+  activePackages = [],
   refreshing,
   onRefresh,
   onOpenQrModal,
@@ -64,6 +68,19 @@ export default function AttendanceHeader({
                 Đầy đủ buổi học
               </span>
             )}
+            {activePackages.map((pkg) => (
+              <span
+                key={pkg.id}
+                className="px-3 py-1 rounded-full bg-teal-400/20 backdrop-blur-md border border-teal-300/40 text-teal-200 font-semibold flex items-center gap-1.5"
+                title={`Hạn sử dụng: ${pkg.startDate} đến ${pkg.endDate}`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-teal-300" />
+                {pkg.packageName}
+                <span className="opacity-80 text-[10px]">
+                  ({pkg.daysLeft > 0 ? `còn ${pkg.daysLeft} ngày` : "hết hạn"})
+                </span>
+              </span>
+            ))}
           </div>
         </div>
 

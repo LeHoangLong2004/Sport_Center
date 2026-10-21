@@ -27,6 +27,13 @@ public static partial class MemberEndpoints
                 return Results.Unauthorized();
             }
 
+            // 0. Get member's active subscriptions to synchronize package information
+            var activeSubs = await db.Subscriptions
+                .Include(s => s.Package)
+                .Where(s => s.UserId == memberGuid && (s.PaymentStatus == SmartGym.Domain.Enums.PaymentStatus.Completed || (int)s.PaymentStatus == 1))
+                .OrderByDescending(s => s.CreatedAt)
+                .ToListAsync();
+
             // 1. Get class attendance records
             List<MemberClassAttendanceRow> classRows = new();
             try
@@ -35,13 +42,21 @@ public static partial class MemberEndpoints
                     @"SELECT c.id AS ""SessionId"",
                              c.class_name AS ""ClassName"",
                              COALESCE(s.name, '') AS ""Sport"",
+                             c.sport_id AS ""SportId"",
+                             b.subscription_id AS ""SubscriptionId"",
                              COALESCE(f.name, '') AS ""Room"",
                              c.schedule_time AS ""ScheduleTime"",
                              c.duration_minutes AS ""DurationMinutes"",
                              COALESCE(u.full_name, 'HLV Trung tâm') AS ""CoachName"",
                              COALESCE(u.avatar_url, '') AS ""CoachAvatar"",
-                             COALESCE(car.status, CASE WHEN c.schedule_time > NOW() THEN 'chưa diễn ra' ELSE 'chưa điểm danh' END) AS ""AttendanceStatus"",
-                             COALESCE(car.note, '') AS ""CoachNote""
+                             CASE 
+                                 WHEN c.schedule_time > NOW() THEN 'chưa diễn ra'
+                                 ELSE COALESCE(car.status, 'chưa điểm danh')
+                             END AS ""AttendanceStatus"",
+                             CASE 
+                                 WHEN c.schedule_time > NOW() THEN ''
+                                 ELSE COALESCE(car.note, '')
+                             END AS ""CoachNote""
                       FROM class_bookings b
                       INNER JOIN classes c ON c.id = b.class_id
                       LEFT JOIN sports s ON s.id = c.sport_id
@@ -96,7 +111,6 @@ public static partial class MemberEndpoints
             {
             }
 
-            // Format class attendance items
             // Helper for Vietnam Time (GMT+7)
             static DateTime ToVnTime(DateTime utcTime)
             {
@@ -105,50 +119,87 @@ public static partial class MemberEndpoints
             }
 
             // Format class attendance items
+            var nowUtc = DateTime.UtcNow;
             var classItems = classRows.Select(r =>
             {
                 var localTime = ToVnTime(r.ScheduleTime);
+                var isFuture = r.ScheduleTime > nowUtc;
+
+                // Synchronize package name from member active packages (prioritize matching sport)
+                var matchedSub = activeSubs.FirstOrDefault(s => !string.IsNullOrWhiteSpace(r.Sport) && (
+                        (s.SportId.HasValue && r.SportId.HasValue && s.SportId.Value == r.SportId.Value) ||
+                        (s.Package != null && s.Package.Name.Contains(r.Sport, StringComparison.OrdinalIgnoreCase)) ||
+                        (!string.IsNullOrWhiteSpace(s.PackageId) && s.PackageId.Contains(r.Sport, StringComparison.OrdinalIgnoreCase))
+                    ))
+                    ?? activeSubs.FirstOrDefault(s => r.SubscriptionId.HasValue && s.Id == r.SubscriptionId.Value)
+                    ?? activeSubs.FirstOrDefault(s => s.Package != null && s.Package.PackageType == "sport")
+                    ?? activeSubs.FirstOrDefault();
+
+                var pkgName = matchedSub?.Package?.Name
+                    ?? (matchedSub?.PackageId switch
+                    {
+                        "yoga_pack" => "Gói Tập Yoga",
+                        "sport-gym-self" => "Gym tự tập",
+                        "sport-boxing-coach" => "Boxing Coach 1–1",
+                        "membership-plus" => "Hội viên Plus",
+                        "membership-basic" => "Hội viên Basic",
+                        "membership-premium" => "Hội viên Premium",
+                        _ => matchedSub?.PackageId
+                    })
+                    ?? (string.IsNullOrWhiteSpace(r.Sport) ? "Gói môn tập" : $"Gói Tập {r.Sport}");
+
                 return new
                 {
                     id = r.SessionId.ToString(),
                     className = r.ClassName,
                     sport = string.IsNullOrWhiteSpace(r.Sport) ? "Gym" : r.Sport,
+                    packageName = pkgName,
                     coachName = r.CoachName,
                     coachAvatar = r.CoachAvatar,
                     room = string.IsNullOrWhiteSpace(r.Room) ? "Studio Sport Center" : r.Room,
                     date = localTime.ToString("yyyy-MM-dd"),
                     startTime = localTime.ToString("HH:mm"),
                     endTime = localTime.AddMinutes(r.DurationMinutes).ToString("HH:mm"),
-                    status = NormalizeAttendanceStatus(r.AttendanceStatus),
-                    coachNote = r.CoachNote,
+                    status = isFuture ? "chưa diễn ra" : NormalizeAttendanceStatus(r.AttendanceStatus),
+                    coachNote = isFuture ? string.Empty : r.CoachNote,
                     type = "group"
                 };
             }).ToList();
 
             // Format PT items
+            var ptSub = activeSubs.FirstOrDefault(s => s.Package != null && (s.Package.Name.Contains("Coach", StringComparison.OrdinalIgnoreCase) || s.Package.Name.Contains("PT", StringComparison.OrdinalIgnoreCase)))
+                ?? activeSubs.FirstOrDefault();
+            var ptPackageName = ptSub?.Package?.Name ?? "Gói kèm 1-1 PT";
+
             var ptItems = ptRows.Select(r =>
             {
                 var localTime = ToVnTime(r.ScheduleTime);
+                var isFuture = r.ScheduleTime > nowUtc;
                 return new
                 {
                     id = r.SessionId.ToString(),
                     className = $"Kèm 1-1 ({r.Sport})",
                     sport = r.Sport,
+                    packageName = ptPackageName,
                     coachName = r.CoachName,
                     coachAvatar = r.CoachAvatar,
                     room = r.Room,
                     date = localTime.ToString("yyyy-MM-dd"),
                     startTime = localTime.ToString("HH:mm"),
                     endTime = localTime.AddMinutes(r.DurationMinutes).ToString("HH:mm"),
-                    status = r.ScheduleTime <= DateTime.UtcNow ? "có mặt" : "chưa diễn ra",
-                    coachNote = string.IsNullOrWhiteSpace(r.Goal) ? "Buổi tập cá nhân theo mục tiêu" : $"Mục tiêu: {r.Goal}",
+                    status = isFuture ? "chưa diễn ra" : (r.ScheduleTime <= nowUtc ? "có mặt" : "chưa diễn ra"),
+                    coachNote = isFuture ? string.Empty : (string.IsNullOrWhiteSpace(r.Goal) ? "Buổi tập cá nhân theo mục tiêu" : $"Mục tiêu: {r.Goal}"),
                     type = "pt"
                 };
             }).ToList();
 
             var allSessionItems = classItems.Concat(ptItems).OrderByDescending(x => x.date).ThenByDescending(x => x.startTime).ToList();
 
-            // Format gate check-in items
+            // Format gate check-in items with synchronized active package
+            var gateSub = activeSubs.FirstOrDefault(s => s.Package != null && (s.Package.PackageType == "membership" || s.Package.Name.Contains("Gym", StringComparison.OrdinalIgnoreCase)))
+                ?? activeSubs.FirstOrDefault();
+            var gatePackageName = gateSub?.Package?.Name ?? "Thẻ hội viên Sport Center";
+
             var gateItems = gateRecords.Select(g => new
             {
                 id = g.Id.ToString(),
@@ -158,6 +209,7 @@ public static partial class MemberEndpoints
                     ? Math.Max(0, (int)Math.Round((g.CheckOutTime.Value - g.CheckInTime).TotalMinutes))
                     : (int?)null,
                 gate = "Cổng chính Sport Center",
+                packageName = gatePackageName,
                 status = g.CheckOutTime.HasValue ? "CHECKED_OUT" : "APPROVED"
             }).ToList();
 
@@ -173,6 +225,17 @@ public static partial class MemberEndpoints
             var totalGateMinutes = gateItems.Where(g => g.durationMinutes.HasValue).Sum(g => g.durationMinutes!.Value);
             var totalHours = Math.Round((double)totalGateMinutes / 60, 1);
 
+            // Active packages for UI synchronization
+            var activePackagesDto = activeSubs.Select(s => new
+            {
+                id = s.Id.ToString(),
+                packageName = s.Package?.Name ?? s.PackageId ?? "Gói tập",
+                packageType = s.Package?.PackageType ?? "sport",
+                startDate = s.StartDate.ToString("yyyy-MM-dd"),
+                endDate = s.EndDate.ToString("yyyy-MM-dd"),
+                daysLeft = Math.Max(0, (int)Math.Ceiling((s.EndDate - DateTime.UtcNow).TotalDays))
+            }).ToList();
+
             return Results.Ok(new
             {
                 summary = new
@@ -184,10 +247,12 @@ public static partial class MemberEndpoints
                     lateCount,
                     gateCheckInsCount = gateItems.Count,
                     currentStreak = Math.Min(attendedCount + gateItems.Count, 7),
-                    totalHoursTrained = totalHours > 0 ? totalHours : (attendedCount * 1.5)
+                    totalHoursTrained = totalHours > 0 ? totalHours : (attendedCount * 1.5),
+                    activePackages = activePackagesDto
                 },
                 sessions = allSessionItems,
-                gateCheckIns = gateItems
+                gateCheckIns = gateItems,
+                activePackages = activePackagesDto
             });
         })
         .WithTags("Member Portal")
@@ -209,6 +274,8 @@ public static partial class MemberEndpoints
         public Guid SessionId { get; set; }
         public string ClassName { get; set; } = string.Empty;
         public string Sport { get; set; } = string.Empty;
+        public Guid? SportId { get; set; }
+        public Guid? SubscriptionId { get; set; }
         public string Room { get; set; } = string.Empty;
         public DateTime ScheduleTime { get; set; }
         public int DurationMinutes { get; set; }

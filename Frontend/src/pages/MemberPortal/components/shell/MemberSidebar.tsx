@@ -51,13 +51,16 @@ export default function MemberSidebar({
               key={item.id}
               type="button"
               onClick={() => onNavigate(item.id)}
-              className={`flex gap-[12px] items-center px-[16px] py-[11px] rounded-[10px] shrink-0 w-full text-left transition-all duration-200 cursor-pointer ${
+              className={`sidebar-nav-btn btn-tactile group relative flex gap-[12px] items-center px-[16px] py-[11px] rounded-[10px] shrink-0 w-full text-left cursor-pointer ${
                 isActive
-                  ? "bg-[#10b981] text-white shadow-md shadow-emerald-500/25 font-bold"
+                  ? "bg-gradient-to-r from-[#10b981] to-[#059669] text-white shadow-lg shadow-emerald-500/25 font-bold"
                   : "bg-transparent text-[#94a3b8] hover:bg-white/5 hover:text-white font-medium"
               }`}
             >
-              <div className="shrink-0 size-5 flex items-center justify-center">
+              {isActive && (
+                <span className="absolute left-1 top-2 bottom-2 w-1 bg-white rounded-full shadow-sm" />
+              )}
+              <div className="shrink-0 size-5 flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
                 <Icon className="w-[18px] h-[18px]" strokeWidth={isActive ? 2.2 : 1.8} />
               </div>
               <span className="flex-1 text-[13px] leading-normal tracking-wide whitespace-nowrap">

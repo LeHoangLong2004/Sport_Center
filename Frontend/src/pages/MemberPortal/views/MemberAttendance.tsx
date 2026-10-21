@@ -106,22 +106,31 @@ export default function MemberAttendance({ onNavigate }: Props) {
 
         const bookings = await MemberBackendAPI.getBookings();
         const fallbackSessions: AttendanceSession[] = bookings.map((b) => {
-          let attStatus: AttendanceSession["status"] = "chưa điểm danh";
-          if (b.attendanceStatus) {
-            const raw = b.attendanceStatus.toLowerCase();
-            if (raw.includes("có mặt") || raw.includes("present") || raw.includes("attended")) attStatus = "có mặt";
-            else if (raw.includes("vắng") || raw.includes("absent")) attStatus = "vắng";
-            else if (raw.includes("muộn") || raw.includes("late")) attStatus = "đi muộn";
-          } else if (b.status === "hoàn thành") {
-            attStatus = "có mặt";
-          } else if (b.date && new Date(b.date) > new Date()) {
-            attStatus = "chưa diễn ra";
+          let isFuture = false;
+          try {
+            if (b.date) {
+              const dt = new Date(`${b.date}T${b.startTime || "00:00"}`);
+              isFuture = !isNaN(dt.getTime()) && dt.getTime() > Date.now();
+            }
+          } catch {}
+
+          let attStatus: AttendanceSession["status"] = isFuture ? "chưa diễn ra" : "chưa điểm danh";
+          if (!isFuture) {
+            if (b.attendanceStatus) {
+              const raw = b.attendanceStatus.toLowerCase();
+              if (raw.includes("có mặt") || raw.includes("present") || raw.includes("attended")) attStatus = "có mặt";
+              else if (raw.includes("vắng") || raw.includes("absent")) attStatus = "vắng";
+              else if (raw.includes("muộn") || raw.includes("late")) attStatus = "đi muộn";
+            } else if (b.status === "hoàn thành") {
+              attStatus = "có mặt";
+            }
           }
 
           return {
             id: b.id,
             className: b.name,
             sport: b.sport,
+            packageName: b.sport ? `Gói ${b.sport}` : "Gói môn tập",
             coachName: b.coachName || "HLV Trung tâm",
             coachAvatar: b.coachAvatar,
             room: b.room || "Studio Sport Center",
@@ -129,7 +138,7 @@ export default function MemberAttendance({ onNavigate }: Props) {
             startTime: b.startTime,
             endTime: b.endTime,
             status: attStatus,
-            coachNote: b.coachNote || "",
+            coachNote: isFuture ? "" : (b.coachNote || ""),
             type: b.type,
           };
         });
@@ -172,7 +181,8 @@ export default function MemberAttendance({ onNavigate }: Props) {
         searchQuery === "" ||
         s.className.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.coachName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.sport.toLowerCase().includes(searchQuery.toLowerCase());
+        s.sport.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (s.packageName || "").toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesStatus = statusFilter === "all" || s.status === statusFilter;
       const matchesType = typeFilter === "all" || s.type === typeFilter;
@@ -188,6 +198,7 @@ export default function MemberAttendance({ onNavigate }: Props) {
         sessionsCount={sessions.length}
         gateCheckInsCount={gateCheckIns.length}
         absentCount={summary.absentCount}
+        activePackages={summary.activePackages}
         refreshing={refreshing}
         onRefresh={() => loadAttendanceData(true)}
         onOpenQrModal={() => setShowQrModal(true)}

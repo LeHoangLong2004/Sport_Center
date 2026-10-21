@@ -81,10 +81,15 @@ export default function AttendanceGateList({
                   </div>
 
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="font-bold text-sm text-slate-900 dark:text-white">
                         {item.gate}
                       </span>
+                      {item.packageName && (
+                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
+                          {item.packageName}
+                        </span>
+                      )}
                       {item.status === "CHECKED_OUT" ? (
                         <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                           Đã hoàn thành buổi tập

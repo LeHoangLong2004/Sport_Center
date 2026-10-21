@@ -13,6 +13,7 @@ import type { ManagerNotification } from "../../../../hooks/notificationApi";
 import MemberNotificationDropdown from "./MemberNotificationDropdown";
 import MemberUserDropdown from "./MemberUserDropdown";
 import { BREADCRUMBS, PAGE_TITLES } from "./shellConstants";
+import { RoleSwitcher } from "../../../../components/RoleSwitcher";
 
 interface MemberTopBarProps {
   currentScreen: MemberScreen;
@@ -98,6 +99,7 @@ export function MemberTopBar({
       </div>
 
       <div className="relative flex items-center gap-3">
+        <RoleSwitcher currentRole="member" />
         {/* Quick Check-in Button */}
         <button
           id="btn-quick-checkin"

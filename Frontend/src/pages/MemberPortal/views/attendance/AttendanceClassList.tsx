@@ -97,6 +97,16 @@ export default function AttendanceClassList({
     }
   };
 
+  const isFutureSession = (dateStr: string, startTimeStr: string) => {
+    if (!dateStr || !startTimeStr) return false;
+    try {
+      const sessionDateTime = new Date(`${dateStr}T${startTimeStr}:00`);
+      return !isNaN(sessionDateTime.getTime()) && sessionDateTime.getTime() > Date.now();
+    } catch {
+      return false;
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Search & Filter Bar */}
@@ -169,78 +179,91 @@ export default function AttendanceClassList({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredSessions.map((session) => (
-            <div
-              key={session.id}
-              onClick={() => onSelectSession(session)}
-              className="group relative flex flex-col justify-between p-6 rounded-3xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-teal-500/50 transition-all duration-300 cursor-pointer"
-            >
-              <div className="space-y-4">
-                {/* Header Row: Date & Status */}
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                    <Calendar className="w-3.5 h-3.5 text-teal-500" />
-                    <span>{formatDateDisplay(session.date)}</span>
-                    <span>•</span>
-                    <span>{session.startTime} - {session.endTime}</span>
+          {filteredSessions.map((session) => {
+            const isFuture = isFutureSession(session.date, session.startTime);
+            const effectiveStatus = isFuture ? "chưa diễn ra" : session.status;
+            return (
+              <div
+                key={session.id}
+                onClick={() => onSelectSession(session)}
+                className="group relative flex flex-col justify-between p-6 rounded-3xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-teal-500/50 transition-all duration-300 cursor-pointer"
+              >
+                <div className="space-y-4">
+                  {/* Header Row: Date & Status */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                      <Calendar className="w-3.5 h-3.5 text-teal-500" />
+                      <span>{formatDateDisplay(session.date)}</span>
+                      <span>•</span>
+                      <span>{session.startTime} - {session.endTime}</span>
+                    </div>
+                    {getStatusBadge(effectiveStatus)}
                   </div>
-                  {getStatusBadge(session.status)}
-                </div>
 
-                {/* Class Title & Sport Tag */}
-                <div>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="px-2.5 py-0.5 rounded-lg text-[11px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                      {session.sport}
-                    </span>
-                    <span className="px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400">
-                      {session.type === "pt" ? "Kèm 1-1" : "Lớp nhóm"}
-                    </span>
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors line-clamp-1">
-                    {session.className}
-                  </h3>
-                </div>
-
-                {/* Coach & Room Info */}
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 font-bold flex items-center justify-center overflow-hidden border border-teal-500/20 text-xs">
-                      {session.coachAvatar ? (
-                        <img src={session.coachAvatar} alt={session.coachName} className="w-full h-full object-cover" />
-                      ) : (
-                        session.coachName.charAt(0)
+                  {/* Class Title & Sport Tag */}
+                  <div>
+                    <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+                      <span className="px-2.5 py-0.5 rounded-lg text-[11px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                        {session.sport}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400">
+                        {session.type === "pt" ? "Kèm 1-1" : "Lớp nhóm"}
+                      </span>
+                      {session.packageName && (
+                        <span className="px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                          {session.packageName}
+                        </span>
                       )}
                     </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                        {session.coachName}
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors line-clamp-1">
+                      {session.className}
+                    </h3>
+                  </div>
+
+                  {/* Coach & Room Info */}
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 font-bold flex items-center justify-center overflow-hidden border border-teal-500/20 text-xs">
+                        {session.coachAvatar ? (
+                          <img src={session.coachAvatar} alt={session.coachName} className="w-full h-full object-cover" />
+                        ) : (
+                          session.coachName.charAt(0)
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                          {session.coachName}
+                        </p>
+                        <p className="text-[11px] text-slate-400">Huấn luyện viên phụ trách</p>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                        {session.room}
                       </p>
-                      <p className="text-[11px] text-slate-400">Huấn luyện viên phụ trách</p>
+                      <p className="text-[10px] text-slate-400">Phòng tập</p>
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                      {session.room}
-                    </p>
-                    <p className="text-[10px] text-slate-400">Phòng tập</p>
-                  </div>
+                  {/* Coach's feedback note or upcoming status */}
+                  {isFuture ? (
+                    <div className="p-3 rounded-2xl bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 text-xs flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                      <Clock className="w-3.5 h-3.5 shrink-0 text-blue-500" />
+                      <span>Buổi học sắp bắt đầu. HLV sẽ điểm danh sau khi lớp học kết thúc.</span>
+                    </div>
+                  ) : session.coachNote ? (
+                    <div className="p-3 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200/50 dark:border-emerald-800/30 text-xs">
+                      <p className="font-semibold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5 mb-1">
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                        Nhận xét từ HLV:
+                      </p>
+                      <p className="text-slate-600 dark:text-slate-300 italic line-clamp-2">
+                        "{session.coachNote}"
+                      </p>
+                    </div>
+                  ) : null}
                 </div>
-
-                {/* Coach's feedback note if present */}
-                {session.coachNote && (
-                  <div className="p-3 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200/50 dark:border-emerald-800/30 text-xs">
-                    <p className="font-semibold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5 mb-1">
-                      <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
-                      Nhận xét từ HLV:
-                    </p>
-                    <p className="text-slate-600 dark:text-slate-300 italic line-clamp-2">
-                      "{session.coachNote}"
-                    </p>
-                  </div>
-                )}
-              </div>
 
               {/* Card Footer: Detail Link */}
               <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-bold text-teal-600 dark:text-teal-400 group-hover:translate-x-0.5 transition-transform">
@@ -248,8 +271,9 @@ export default function AttendanceClassList({
                 <ChevronRight className="w-4 h-4" />
               </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
+      </div>
       )}
     </div>
   );

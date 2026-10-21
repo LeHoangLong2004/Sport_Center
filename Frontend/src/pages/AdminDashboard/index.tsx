@@ -22,6 +22,7 @@ import { ProductsPage } from './views/ProductsPage';
 import { SettingsPage } from './views/SettingsPage';
 import { ProfileSettings } from '../../components/ProfileSettings';
 import { type ManagerNotification } from '../../hooks/notificationApi';
+import { PageTransition } from '../../components/PageTransition';
 
 const VALID_ADMIN_PAGES: AdminPage[] = [
   "overview", "packages", "products", "schedule", "members", "staff",
@@ -141,7 +142,8 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       }
       
       toast.success("Đã cập nhật hồ sơ thành công!");
-      setTimeout(() => window.location.reload(), 1500);
+      window.dispatchEvent(new Event("user-profile-updated"));
+      window.dispatchEvent(new Event("local-storage-update"));
     } catch (err: any) {
       setError(err.message || "Có lỗi xảy ra khi lưu.");
     }
@@ -175,47 +177,49 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
   return (
     <div className="manager-portal-shell flex w-full h-screen bg-slate-50 dark:bg-[#0f172a] transition-colors duration-300 font-sans text-slate-900 dark:text-white selection:bg-rose-500 selection:text-white overflow-hidden">
-      <Sidebar page={page} setPage={setPage} />
+      <Sidebar page={page} setPage={setPage} onLogout={onLogout} />
       <div className="flex flex-col flex-1 min-w-0 h-full">
         <TopBar breadcrumb={bc} title={title} onProfileClick={() => setPage("profile")} onNotificationClick={handleNotificationClick} />
         <div className="manager-page-content flex-1 overflow-y-auto p-6 lg:p-8">
-          {page === "overview"   && <OverviewPage onNavigate={setPage} />}
-          {page === "packages"   && <PackagesPage />}
-          {page === "products"   && <ProductsPage />}
-          {page === "schedule"   && <SchedulePage initialTab={scheduleTab} />}
-          {page === "members"    && <MembersPage onEditMember={(member) => { setSelectedMember(member); setPage("member-edit"); }} />}
-          {page === "staff"      && <StaffPage />}
-          {page === "facilities" && <FacilitiesPage />}
-          {page === "payment"    && <PaymentPage />}
-          {page === "reports"    && <ReportsPage />}
-          {page === "budget"     && <BudgetPage />}
-          {page === "expenses"   && <ExpensesPage />}
-          {page === "payroll"    && <PayrollPage />}
-          {page === "pl-report"  && <PLReportPage />}
-          {page === "settings"   && <SettingsPage />}
-          {page === "member-edit"&& <MemberEditPage memberData={selectedMember} onBack={() => setPage("members")} />}
-          {page === "profile"    && (
-            <div className="flex flex-col gap-4">
-              {error && (
-                <div className="max-w-6xl mx-auto w-full p-4 bg-red-50 text-red-600 rounded-xl border border-red-200">
-                  {error}
-                </div>
-              )}
-              <ProfileSettings 
-                roleLabel={profile?.roleName || "Quản trị viên hệ thống"} 
-                initialData={profile ? {
-                  fullName: profile.fullName,
-                  email: profile.email,
-                  phone: profile.phone,
-                  dob: profile.dob,
-                  gender: profile.gender,
-                  avatarUrl: profile.avatarUrl,
-                } : undefined}
-                onSave={handleSave}
-                onAvatarUpload={uploadAvatar}
-              />
-            </div>
-          )}
+          <PageTransition pageKey={page}>
+            {page === "overview"   && <OverviewPage onNavigate={setPage} />}
+            {page === "packages"   && <PackagesPage />}
+            {page === "products"   && <ProductsPage />}
+            {page === "schedule"   && <SchedulePage initialTab={scheduleTab} />}
+            {page === "members"    && <MembersPage onEditMember={(member) => { setSelectedMember(member); setPage("member-edit"); }} />}
+            {page === "staff"      && <StaffPage />}
+            {page === "facilities" && <FacilitiesPage />}
+            {page === "payment"    && <PaymentPage />}
+            {page === "reports"    && <ReportsPage />}
+            {page === "budget"     && <BudgetPage />}
+            {page === "expenses"   && <ExpensesPage />}
+            {page === "payroll"    && <PayrollPage />}
+            {page === "pl-report"  && <PLReportPage />}
+            {page === "settings"   && <SettingsPage />}
+            {page === "member-edit"&& <MemberEditPage memberData={selectedMember} onBack={() => setPage("members")} />}
+            {page === "profile"    && (
+              <div className="flex flex-col gap-4">
+                {error && (
+                  <div className="max-w-6xl mx-auto w-full p-4 bg-red-50 text-red-600 rounded-xl border border-red-200">
+                    {error}
+                  </div>
+                )}
+                <ProfileSettings 
+                  roleLabel={profile?.roleName || "Quản trị viên hệ thống"} 
+                  initialData={profile ? {
+                    fullName: profile.fullName,
+                    email: profile.email,
+                    phone: profile.phone,
+                    dob: profile.dob,
+                    gender: profile.gender,
+                    avatarUrl: profile.avatarUrl,
+                  } : undefined}
+                  onSave={handleSave}
+                  onAvatarUpload={uploadAvatar}
+                />
+              </div>
+            )}
+          </PageTransition>
         </div>
       </div>
     </div>

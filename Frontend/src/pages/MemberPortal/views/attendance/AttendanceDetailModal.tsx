@@ -42,6 +42,27 @@ export default function AttendanceDetailModal({
     }
   };
 
+  const isFutureSession = (dateStr: string, startTimeStr: string): boolean => {
+    try {
+      if (!dateStr) return false;
+      const [year, month, day] = dateStr.split("-").map(Number);
+      let hour = 0;
+      let minute = 0;
+      if (startTimeStr && startTimeStr.includes(":")) {
+        const parts = startTimeStr.split(":").map(Number);
+        hour = parts[0] || 0;
+        minute = parts[1] || 0;
+      }
+      const sessionDate = new Date(year, month - 1, day, hour, minute);
+      return sessionDate.getTime() > Date.now();
+    } catch {
+      return false;
+    }
+  };
+
+  const isFuture = isFutureSession(session.date, session.startTime);
+  const effectiveStatus = isFuture ? "chưa diễn ra" : session.status;
+
   const getStatusBadge = (status: AttendanceSession["status"]) => {
     switch (status) {
       case "có mặt":
@@ -87,10 +108,17 @@ export default function AttendanceDetailModal({
       <div className="relative w-full max-w-lg rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-8 space-y-6">
         <div className="flex items-start justify-between">
           <div>
-            <span className="px-2.5 py-0.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400">
-              {session.sport} • {session.type === "pt" ? "Kèm 1-1" : "Lớp nhóm"}
-            </span>
-            <h3 className="text-xl font-extrabold text-slate-900 dark:text-white mt-1.5">
+            <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+              <span className="px-2.5 py-0.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400">
+                {session.sport} • {session.type === "pt" ? "Kèm 1-1" : "Lớp nhóm"}
+              </span>
+              {session.packageName && (
+                <span className="px-2.5 py-0.5 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                  Gói: {session.packageName}
+                </span>
+              )}
+            </div>
+            <h3 className="text-xl font-extrabold text-slate-900 dark:text-white mt-1">
               {session.className}
             </h3>
           </div>
@@ -107,10 +135,10 @@ export default function AttendanceDetailModal({
           <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
             Trạng thái điểm danh:
           </span>
-          {getStatusBadge(session.status)}
+          {getStatusBadge(effectiveStatus)}
         </div>
 
-        {/* Schedule Details */}
+        {/* Schedule & Package Details */}
         <div className="grid grid-cols-2 gap-4 text-xs">
           <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80">
             <p className="text-slate-400 mb-1 flex items-center gap-1.5 font-medium">
@@ -153,8 +181,18 @@ export default function AttendanceDetailModal({
           </div>
         </div>
 
-        {/* Coach Feedback Note */}
-        {session.coachNote ? (
+        {/* Coach Feedback Note or Upcoming Notice */}
+        {isFuture ? (
+          <div className="p-4 rounded-2xl bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 text-xs space-y-1">
+            <p className="font-bold text-blue-800 dark:text-blue-300 flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-blue-500" />
+              Buổi học sắp diễn ra
+            </p>
+            <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+              Buổi học chưa đến giờ ({session.startTime} - {session.endTime}). Huấn luyện viên sẽ điểm danh và ghi nhận xét sau giờ học.
+            </p>
+          </div>
+        ) : session.coachNote ? (
           <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/50 dark:border-emerald-800/30 space-y-1">
             <p className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-emerald-500" />

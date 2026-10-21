@@ -14,6 +14,7 @@ import { DetailPage } from './views/DetailPage';
 import { ProfileSettings } from '../../components/ProfileSettings';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { toast } from 'sonner';
+import { PageTransition } from '../../components/PageTransition';
 
 const VALID_RECEPTIONIST_PAGES: Page[] = [
   "checkin", "counter-payments", "register", "classes", "schedule",
@@ -100,7 +101,8 @@ export default function ReceptionistPortal({ onExit }: { onExit: () => void }) {
       }
       
       toast.success("Đã cập nhật hồ sơ thành công!");
-      setTimeout(() => window.location.reload(), 1500);
+      window.dispatchEvent(new Event("user-profile-updated"));
+      window.dispatchEvent(new Event("local-storage-update"));
     } catch (err: any) {
       setError(err.message || "Có lỗi xảy ra khi lưu.");
     }
@@ -114,55 +116,57 @@ export default function ReceptionistPortal({ onExit }: { onExit: () => void }) {
       <div className="flex flex-col flex-1 min-w-0 h-full">
         <TopBar breadcrumb={bc} title={title} shiftLabel={shift} onProfileClick={() => setPage("profile")} onNavigate={setPage} />
         <div className="flex-1 overflow-y-auto p-6 lg:p-8">
-          {page === "checkin" && <CheckInPage />}
-          {page === "counter-payments" && <CounterPaymentsPage />}
-          {page === "register" && <RegisterPage />}
-          {page === "classes" && <ClassesPage />}
-          {page === "schedule" && <SchedulePage />}
-          {page === "pos" && <PosPage />}
-          {page === "orders" && <ProductOrdersPage />}
-          {page === "lookup" && (
-            <LookupPage
-              onDetail={(m) => {
-                setSelectedMember(m)
-                setPage("detail")
-              }}
-            />
-          )}
-          {page === "detail" && (
-            <DetailPage
-              member={selectedMember}
-              onBack={() => setPage("lookup")}
-            />
-          )}
-          {page === "profile" && (
-            loading ? (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-slate-400">Đang tải thông tin...</p>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4">
-                {error && (
-                  <div className="max-w-6xl mx-auto w-full p-4 bg-red-50 text-red-600 rounded-xl border border-red-200">
-                    {error}
-                  </div>
-                )}
-                <ProfileSettings
-                  roleLabel={profile?.roleName || "Lễ tân"}
-                  initialData={profile ? {
-                    fullName: profile.fullName,
-                    email: profile.email,
-                    phone: profile.phone,
-                    avatarUrl: profile.avatarUrl,
-                    dob: profile.dob,
-                    gender: profile.gender,
-                  } : undefined}
-                  onSave={handleSave}
-                  onAvatarUpload={uploadAvatar}
-                />
-              </div>
-            )
-          )}
+          <PageTransition pageKey={page}>
+            {page === "checkin" && <CheckInPage />}
+            {page === "counter-payments" && <CounterPaymentsPage />}
+            {page === "register" && <RegisterPage />}
+            {page === "classes" && <ClassesPage />}
+            {page === "schedule" && <SchedulePage />}
+            {page === "pos" && <PosPage />}
+            {page === "orders" && <ProductOrdersPage />}
+            {page === "lookup" && (
+              <LookupPage
+                onDetail={(m) => {
+                  setSelectedMember(m)
+                  setPage("detail")
+                }}
+              />
+            )}
+            {page === "detail" && (
+              <DetailPage
+                member={selectedMember}
+                onBack={() => setPage("lookup")}
+              />
+            )}
+            {page === "profile" && (
+              loading ? (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-slate-400">Đang tải thông tin...</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {error && (
+                    <div className="max-w-6xl mx-auto w-full p-4 bg-red-50 text-red-600 rounded-xl border border-red-200">
+                      {error}
+                    </div>
+                  )}
+                  <ProfileSettings
+                    roleLabel={profile?.roleName || "Lễ tân"}
+                    initialData={profile ? {
+                      fullName: profile.fullName,
+                      email: profile.email,
+                      phone: profile.phone,
+                      avatarUrl: profile.avatarUrl,
+                      dob: profile.dob,
+                      gender: profile.gender,
+                    } : undefined}
+                    onSave={handleSave}
+                    onAvatarUpload={uploadAvatar}
+                  />
+                </div>
+              )
+            )}
+          </PageTransition>
         </div>
       </div>
     </div>
