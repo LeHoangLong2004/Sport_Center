@@ -65,6 +65,12 @@
   scroll-behavior: smooth;
 }
 
+/* Keep every text node in the Coach schedule request view on one Manrope family. */
+.manager-portal-shell .coach-schedule-requests,
+.manager-portal-shell .coach-schedule-requests * {
+  font-family: var(--font-regular, "Manrope:Regular", Manrope, ui-sans-serif, system-ui, sans-serif);
+}
+
 /* View roots previously added a second p-4/p-6/p-8 inside the shell. */
 .manager-portal-shell .manager-page-content > div[class~="p-8"],
 .manager-portal-shell .manager-page-content > div[class~="p-6"],

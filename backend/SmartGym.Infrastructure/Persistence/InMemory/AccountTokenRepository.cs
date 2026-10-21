@@ -23,6 +23,11 @@ public sealed class AccountTokenRepository : IAccountTokenRepository
         return Task.FromResult(TryConsumeToken("password-reset", email, token));
     }
 
+    public Task<bool> ValidatePasswordResetTokenAsync(string email, string token)
+    {
+        return Task.FromResult(ValidateToken("password-reset", email, token));
+    }
+
     public Task<bool> TryConsumeEmailVerificationTokenAsync(string email, string token)
     {
         return Task.FromResult(TryConsumeToken("email-verification", email, token));
@@ -46,6 +51,13 @@ public sealed class AccountTokenRepository : IAccountTokenRepository
         }
 
         return accountToken.ExpiresAt > DateTimeOffset.UtcNow;
+    }
+
+    private bool ValidateToken(string purpose, string email, string token)
+    {
+        var key = BuildKey(purpose, NormalizeEmail(email), token.Trim());
+        return _tokens.TryGetValue(key, out var accountToken)
+            && accountToken.ExpiresAt > DateTimeOffset.UtcNow;
     }
 
     private static string NormalizeEmail(string email)

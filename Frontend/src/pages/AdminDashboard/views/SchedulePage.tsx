@@ -6,7 +6,8 @@ import { ScheduleBookings } from "./ScheduleBookings";
 import { ScheduleHeader, type ScheduleTab } from "./ScheduleHeader";
 import { ScheduleCalendarView } from "./ScheduleCalendarView";
 import { ScheduleProposalsSection } from "./ScheduleProposalsSection";
-
+import { CoachScheduleRequestsSection } from "./CoachScheduleRequestsSection";
+import { useCoachScheduleRequests } from "./useCoachScheduleRequests";
 export function SchedulePage({ initialTab = "calendar" }: { initialTab?: ScheduleTab } = {}) {
   const days = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
   const hours = Array.from({ length: 15 }, (_, index) =>
@@ -22,11 +23,9 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
   const [activeTab, setActiveTab] = useState<ScheduleTab>(initialTab);
   const [bookings, setBookings] = useState<any[]>([]);
   const [facilities, setFacilities] = useState<string[]>([]);
-
   useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab]);
-
   const handleRoomChange = (room: string) => {
     if (!room || room === "Tất cả") {
       setSelectedRooms([]);
@@ -34,7 +33,6 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
       setSelectedRooms([room]);
     }
   };
-
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     const d = new Date();
     const day = d.getDay();
@@ -43,7 +41,6 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
     monday.setHours(0, 0, 0, 0);
     return monday;
   });
-
   const getWeekString = () => {
     const end = new Date(currentWeekStart);
     end.setDate(end.getDate() + 6);
@@ -51,7 +48,6 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
       `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")}`;
     return `${formatDate(currentWeekStart)} - ${formatDate(end)}, ${end.getFullYear()}`;
   };
-
   const weekDates = days.map((label, index) => {
     const date = new Date(currentWeekStart);
     date.setDate(date.getDate() + index);
@@ -61,7 +57,6 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
       iso: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`,
     };
   });
-
   const fetchClasses = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -78,7 +73,6 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
           const endHour = end.getHours() + end.getMinutes() / 60;
           const hourIndex = (startHour - 6) / 2;
           const durationIndex = (endHour - startHour) / 2;
-
           let colorBg = "";
           let colorText = "";
           if (c.status === false) {
@@ -125,7 +119,12 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
       console.error("Failed to fetch classes:", error);
     }
   };
-
+  const {
+    requests: coachScheduleRequests,
+    loading: loadingCoachScheduleRequests,
+    pending: pendingCoachScheduleRequests,
+    handleAction: handleCoachScheduleRequestAction,
+  } = useCoachScheduleRequests(fetchClasses);
   const fetchFacilities = async () => {
     try {
       const res = await fetch("/api/facilities");
@@ -144,7 +143,6 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
       console.error("Failed to fetch facilities:", error);
     }
   };
-
   const fetchBookings = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -156,7 +154,6 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
       console.error("Failed to fetch bookings:", error);
     }
   };
-
   useEffect(() => {
     fetchClasses();
     fetchFacilities();
@@ -171,19 +168,16 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
       window.removeEventListener("focus", refreshBookings);
     };
   }, []);
-
   const handlePrevWeek = () => {
     const prev = new Date(currentWeekStart);
     prev.setDate(prev.getDate() - 7);
     setCurrentWeekStart(prev);
   };
-
   const handleNextWeek = () => {
     const next = new Date(currentWeekStart);
     next.setDate(next.getDate() + 7);
     setCurrentWeekStart(next);
   };
-
   const handleCurrentWeek = () => {
     const today = new Date();
     const day = today.getDay();
@@ -193,7 +187,6 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
     monday.setHours(0, 0, 0, 0);
     setCurrentWeekStart(monday);
   };
-
   const weekEnd = new Date(currentWeekStart);
   weekEnd.setDate(weekEnd.getDate() + 6);
   weekEnd.setHours(23, 59, 59, 999);
@@ -268,9 +261,7 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
       return false;
     }
   };
-
   const pendingClassProposals = classes.filter((item) => item.approvalStatus === "pending");
-
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
       <ScheduleHeader
@@ -278,6 +269,7 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
         onTabChange={setActiveTab}
         onCreate={() => setShowCreateModal(true)}
         proposalCount={pendingClassProposals.length}
+        shiftRequestCount={pendingCoachScheduleRequests.length}
       />
 
       {showCreateModal && (
@@ -319,6 +311,12 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
           onSelectClass={setSelectedClassId}
           onClassApproval={handleClassApproval}
         />
+      ) : activeTab === "shift-requests" ? (
+        <CoachScheduleRequestsSection
+          requests={coachScheduleRequests}
+          loading={loadingCoachScheduleRequests}
+          onAction={handleCoachScheduleRequestAction}
+        />
       ) : activeTab === "calendar" ? (
         <div className="flex flex-col gap-4 pt-2 min-w-0">
           <ScheduleFilters
@@ -349,4 +347,3 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
     </div>
   );
 }
-

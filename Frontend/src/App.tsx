@@ -14,6 +14,7 @@ import { Registration } from "./components/Auth/Registration";
 import { Login } from "./components/Auth/Login";
 import { ForgotPassword } from "./components/Auth/ForgotPassword";
 import { Verification } from "./components/Auth/Verification";
+import { ResetPassword } from "./components/Auth/ResetPassword";
 import { MemberPage } from "./pages/MemberPortal/shared";
 
 function AdminPortal({
@@ -25,14 +26,14 @@ function AdminPortal({
   onRoleSwitch,
 }: {
   onExit: () => void
-  initialStep?: "register" | "login" | "verify" | "forgotPassword" | "member" | "dashboard"
+  initialStep?: "register" | "login" | "verify" | "forgotPassword" | "resetPassword" | "member" | "dashboard"
   initialMemberPage?: MemberPage
   onMemberCheckout?: (selection: CheckoutSelection) => void
   onMemberProductPayment?: (order: ProductOrder) => void
   onRoleSwitch?: (role: "admin" | "coach" | "receptionist" | "member") => void
 }) {
   const [step, setStep] = useState<
-    "register" | "login" | "verify" | "forgotPassword" | "member" | "dashboard"
+    "register" | "login" | "verify" | "forgotPassword" | "resetPassword" | "member" | "dashboard"
   >(initialStep)
   const [verifyTarget, setVerifyTarget] = useState<"member" | "login">("member")
 
@@ -111,12 +112,13 @@ function AdminPortal({
     return (
       <ForgotPassword
         onLogin={() => setStep("login")}
-        onSubmit={() => {
-          setVerifyTarget("login")
-          setStep("verify")
-        }}
+        onSubmit={() => setStep("resetPassword")}
       />
     )
+  }
+
+  if (step === "resetPassword") {
+    return <ResetPassword onLogin={() => setStep("login")} />
   }
 
   if (step === "verify") {
