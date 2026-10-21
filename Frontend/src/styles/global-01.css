@@ -8,20 +8,17 @@
   }
   
   /* Make all interactive elements transition smoothly */
-  a, button, input, select, textarea {
-    @apply transition-all duration-200 ease-in-out;
+  a, button, input, select, textarea, [role="button"] {
+    transition-property: color, background-color, border-color, transform, box-shadow, opacity;
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  /* Subtle scale effect on hover for buttons */
-  button:not(:disabled):hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  }
-
-  /* Press effect for buttons */
-  button:not(:disabled):active {
-    transform: scale(0.96) translateY(0);
-    box-shadow: none;
+  /* Smooth press effect for interactive elements */
+  button:not(:disabled):active,
+  [role="button"]:not(:disabled):active,
+  .btn-press:active {
+    transform: scale(0.975);
   }
   
   /* Portal Table Row Hover */
@@ -44,9 +41,49 @@
   }
 }
 
+/* Fluid page and tab transition animation */
+@keyframes portalFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.996);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.portal-page-enter {
+  animation: portalFadeIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, transform;
+  width: 100%;
+}
+
+/* Button & Nav micro-interactions */
+.btn-tactile {
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  user-select: none;
+}
+.btn-tactile:active {
+  transform: scale(0.965) translateY(1px);
+}
+
+/* Sidebar active indicator animations */
+.sidebar-nav-btn {
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+.sidebar-nav-btn:hover {
+  transform: translateX(2px);
+}
+.sidebar-nav-btn:active {
+  transform: scale(0.97) translateX(1px);
+}
+
 /* Global fade-in animation to be used on page wrappers */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -55,7 +92,7 @@ main > div,
 .p-\[32px\],
 section[class*="-content"],
 .mp-content {
-  animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Add smooth hover effects to table rows and cards */

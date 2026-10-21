@@ -5,11 +5,12 @@ export type MemberScreen =
   | "packages"    // 4. Gói tập & Mua gói
   | "payments"    // 5. Thanh toán & Hóa đơn
   | "workouts"    // 6. Giáo án & Bài tập
-  | "reviews"     // 7. Đánh giá HLV
-  | "chat"        // 8. Tin nhắn trao đổi với HLV
-  | "support"     // 9. Trợ lý AI & Hỗ trợ
-  | "shop"        // 10. Cửa hàng sản phẩm
-  | "profile";    // 11. Hồ sơ cá nhân & Đổi mật khẩu
+  | "attendance"  // 7. Điểm danh & Lịch sử chuyên cần
+  | "reviews"     // 8. Đánh giá HLV
+  | "chat"        // 9. Tin nhắn trao đổi với HLV
+  | "support"     // 10. Trợ lý AI & Hỗ trợ
+  | "shop"        // 11. Cửa hàng sản phẩm
+  | "profile";    // 12. Hồ sơ cá nhân & Đổi mật khẩu
 
 export interface MemberSessionItem {
   id: string;

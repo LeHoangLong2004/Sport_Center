@@ -61,7 +61,7 @@ export function MemberSidebar({
               key={destination}
               type="button"
               onClick={() => onNavigate(destination as MemberPage)}
-              className={`flex gap-[12px] items-center px-[16px] py-[12px] rounded-[8px] shrink-0 w-full text-left ${active ? "bg-[#3b82f6]" : "bg-transparent hover:bg-white/5"}`}
+              className={`flex gap-[12px] items-center px-[16px] py-[12px] rounded-[8px] shrink-0 w-full text-left transition-all duration-200 cursor-pointer active:scale-[0.98] ${active ? "bg-[#3b82f6]" : "bg-transparent hover:bg-white/5"}`}
             >
               <img 
                 src={asset(currentVisualPage, icon)} 
@@ -99,15 +99,23 @@ export function MemberSidebar({
             <button 
               type="button" 
               onClick={(e) => { e.stopPropagation(); window.location.hash = "home"; }}
-              className="p-1.5 text-[#94a3b8] hover:text-white hover:bg-white/10 rounded-md transition-colors"
+              className="p-1.5 text-[#94a3b8] hover:text-white hover:bg-white/10 rounded-md transition-colors cursor-pointer"
               title="Trang chủ"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             </button>
             <button 
               type="button" 
-              onClick={(e) => { e.stopPropagation(); localStorage.removeItem("user"); localStorage.removeItem("accessToken"); localStorage.removeItem("token"); window.location.hash = "login"; window.location.reload(); }}
-              className="p-1.5 text-[#94a3b8] hover:text-red-400 hover:bg-red-400/10 rounded-md transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                localStorage.removeItem("user");
+                localStorage.removeItem("accessToken");
+                localStorage.removeItem("token");
+                window.location.hash = "login";
+                window.dispatchEvent(new Event("local-storage-update"));
+                window.dispatchEvent(new HashChangeEvent("hashchange"));
+              }}
+              className="p-1.5 text-[#94a3b8] hover:text-red-400 hover:bg-red-400/10 rounded-md transition-colors cursor-pointer"
               title="Đăng xuất"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>

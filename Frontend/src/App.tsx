@@ -23,12 +23,14 @@ function AdminPortal({
   initialMemberPage = "overview",
   onMemberCheckout,
   onMemberProductPayment,
+  onRoleSwitch,
 }: {
   onExit: () => void
   initialStep?: "register" | "login" | "verify" | "forgotPassword" | "resetPassword" | "member" | "dashboard"
   initialMemberPage?: MemberPage
   onMemberCheckout?: (selection: CheckoutSelection) => void
   onMemberProductPayment?: (order: ProductOrder) => void
+  onRoleSwitch?: (role: "admin" | "coach" | "receptionist" | "member") => void
 }) {
   const [step, setStep] = useState<
     "register" | "login" | "verify" | "forgotPassword" | "resetPassword" | "member" | "dashboard"
@@ -68,12 +70,29 @@ function AdminPortal({
         initialPage={initialMemberPage}
         onCheckout={onMemberCheckout}
         onProductPayment={onMemberProductPayment}
+        onLogout={() => {
+          localStorage.removeItem("token")
+          localStorage.removeItem("accessToken")
+          localStorage.removeItem("user")
+          window.location.hash = "login"
+          setStep("login")
+        }}
       />
     )
   }
 
   if (step === "dashboard") {
-    return <AdminDashboard onLogout={onExit} />
+    return (
+      <AdminDashboard
+        onLogout={() => {
+          localStorage.removeItem("token")
+          localStorage.removeItem("accessToken")
+          localStorage.removeItem("user")
+          window.location.hash = "login"
+          setStep("login")
+        }}
+      />
+    )
   }
 
   if (step === "register") {
@@ -113,21 +132,25 @@ function AdminPortal({
       onLogin={() => {
         window.location.hash = "member"
         setStep("member")
+        onRoleSwitch?.("member")
       }}
       onLoginAs={(role) => {
         if (role === "admin") {
           window.location.hash = "dashboard"
           setStep("dashboard")
+          onRoleSwitch?.("admin")
         } else if (role === "coach") {
           window.location.hash = "coach-portal"
-          window.location.reload()
+          onRoleSwitch?.("coach")
         } else if (role === "receptionist") {
           window.location.hash = "receptionist"
-          window.location.reload()
+          onRoleSwitch?.("receptionist")
         } else {
           window.location.hash = "member"
           setStep("member")
+          onRoleSwitch?.("member")
         }
+        window.dispatchEvent(new HashChangeEvent("hashchange"))
       }}
       onRegister={() => setStep("register")}
       onForgotPassword={() => setStep("forgotPassword")}
@@ -231,13 +254,32 @@ export default function App() {
   }, [])
 
   if (receptionistOpen) {
+    const userStr = localStorage.getItem("user")
+    const user = userStr ? JSON.parse(userStr) : null
+    const role = user?.role?.toLowerCase()
+    if (!user || (role !== "receptionist" && role !== "admin" && role !== "manager")) {
+      const demoRec = {
+        id: "rec-01",
+        fullName: "Lễ tân Mai Anh",
+        role: "Receptionist",
+        email: "receptionist01@smartgym.com",
+        avatarUrl: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=256&q=80",
+      }
+      localStorage.setItem("user", JSON.stringify(demoRec))
+      if (!localStorage.getItem("token")) {
+        localStorage.setItem("token", "mock-valid-token-demo")
+      }
+    }
+
     return (
       <ReceptionistPortal
         onExit={() => {
           localStorage.removeItem("token")
+          localStorage.removeItem("accessToken")
           localStorage.removeItem("user")
           window.location.hash = "home"
           setReceptionistOpen(false)
+          window.dispatchEvent(new HashChangeEvent("hashchange"))
         }}
       />
     )
@@ -291,16 +333,60 @@ export default function App() {
     const userStr = localStorage.getItem("user")
     const user = userStr ? JSON.parse(userStr) : null
     const role = user?.role?.toLowerCase()
-    if (!user || role !== "coach") {
-      window.location.hash = "login"
-      return null
+    if (!user || (role !== "coach" && role !== "admin" && role !== "manager")) {
+      const demoCoach = {
+        id: "coach-01",
+        fullName: "HLV Nam Hồ",
+        role: "Coach",
+        email: "hoxuananhnam1@gmail.com",
+        avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80",
+      }
+      localStorage.setItem("user", JSON.stringify(demoCoach))
+      if (!localStorage.getItem("token")) {
+        localStorage.setItem("token", "mock-valid-token-demo")
+      }
     }
-    return <CoachPortal />
+    return (
+      <CoachPortal
+        onExit={() => {
+          localStorage.removeItem("token")
+          localStorage.removeItem("accessToken")
+          localStorage.removeItem("user")
+          window.location.hash = "login"
+          setCoachOpen(false)
+          setAdminOpen(true)
+          window.dispatchEvent(new HashChangeEvent("hashchange"))
+        }}
+      />
+    )
   }
 
   if (adminOpen) {
     return (
       <AdminPortal
+        onRoleSwitch={(role) => {
+          if (role === "coach") {
+            setCoachOpen(true)
+            setAdminOpen(false)
+            setReceptionistOpen(false)
+            setPaymentOpen(false)
+          } else if (role === "receptionist") {
+            setReceptionistOpen(true)
+            setCoachOpen(false)
+            setAdminOpen(false)
+            setPaymentOpen(false)
+          } else if (role === "admin") {
+            setAdminOpen(true)
+            setCoachOpen(false)
+            setReceptionistOpen(false)
+            setPaymentOpen(false)
+          } else {
+            setAdminOpen(true)
+            setCoachOpen(false)
+            setReceptionistOpen(false)
+            setPaymentOpen(false)
+          }
+        }}
         initialStep={
           window.location.hash.startsWith("#dashboard")
             ? "dashboard"

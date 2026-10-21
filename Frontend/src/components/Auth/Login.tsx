@@ -23,42 +23,108 @@ export function Login({
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
 
-  async function submit(event: FormEvent) {
-    event.preventDefault()
+  async function executeLogin(targetEmail: string, targetPass: string, fallbackRole?: UserRole) {
     setLoading(true)
     setError("")
-
+    setEmail(targetEmail)
+    setPassword(targetPass)
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email: targetEmail, password: targetPass })
       })
-      
       const data = await res.json().catch(() => ({}))
-      
-      if (!res.ok) {
-        setError(data.message || data.title || "Đăng nhập thất bại. Hãy kiểm tra thông tin.")
-        setLoading(false)
+      if (res.ok && data.token) {
+        localStorage.setItem("token", data.token)
+        localStorage.setItem("user", JSON.stringify(data))
+
+        if (onLoginAs) {
+          const roleStr = data.role?.toLowerCase() || ""
+          if (roleStr === "manager" || roleStr === "admin") onLoginAs("admin")
+          else if (roleStr === "coach") onLoginAs("coach")
+          else if (roleStr === "receptionist") onLoginAs("receptionist")
+          else onLoginAs("member")
+        } else {
+          onLogin()
+        }
         return
       }
-      
-      localStorage.setItem("token", data.token)
-      localStorage.setItem("user", JSON.stringify(data))
-      
-      if (onLoginAs) {
-        const roleStr = data.role?.toLowerCase() || ""
-        if (roleStr === "manager" || roleStr === "admin") onLoginAs("admin")
-        else if (roleStr === "coach") onLoginAs("coach")
-        else if (roleStr === "receptionist") onLoginAs("receptionist")
-        else onLoginAs("member")
-      } else {
-        onLogin()
+
+      if (fallbackRole) {
+        applyDemoUser(fallbackRole)
+        return
       }
-    } catch (err) {
+
+      setError(data.message || data.title || "Đăng nhập thất bại. Hãy kiểm tra thông tin.")
+      setLoading(false)
+    } catch {
+      if (fallbackRole) {
+        applyDemoUser(fallbackRole)
+        return
+      }
       setError("Lỗi kết nối đến server API.")
       setLoading(false)
     }
+  }
+
+  function applyDemoUser(role: UserRole) {
+    const demos = {
+      admin: {
+        id: "admin-01",
+        fullName: "Quản lý SportCenter",
+        role: "Manager",
+        email: "manager@test.com",
+        avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80",
+      },
+      coach: {
+        id: "coach-01",
+        fullName: "HLV Nam Hồ",
+        role: "Coach",
+        email: "hoxuananhnam1@gmail.com",
+        avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80",
+      },
+      receptionist: {
+        id: "rec-01",
+        fullName: "Lễ tân Mai Anh",
+        role: "Receptionist",
+        email: "receptionist01@smartgym.com",
+        avatarUrl: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=256&q=80",
+      },
+      member: {
+        id: "mem-01",
+        fullName: "Hội viên Hồ Nam",
+        role: "Member",
+        email: "hoxuananhnam@gmail.com",
+        avatarUrl: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=256&q=80",
+      },
+    }
+    localStorage.setItem("token", "mock-valid-token-demo")
+    localStorage.setItem("user", JSON.stringify(demos[role]))
+    if (onLoginAs) {
+      onLoginAs(role)
+    } else {
+      onLogin()
+    }
+  }
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const demo = params.get("demo")?.toLowerCase()
+    if (demo === "member") {
+      executeLogin("hoxuananhnam@gmail.com", "123456", "member")
+    } else if (demo === "coach") {
+      executeLogin("hoxuananhnam1@gmail.com", "123456", "coach")
+    } else if (demo === "receptionist") {
+      executeLogin("receptionist01@smartgym.com", "123456", "receptionist")
+    } else if (demo === "manager" || demo === "admin") {
+      executeLogin("manager@test.com", "123456", "admin")
+    }
+  }, [])
+
+  async function submit(event: FormEvent) {
+    event.preventDefault()
+    await executeLogin(email, password)
   }
 
   return (
@@ -105,22 +171,79 @@ export function Login({
         </div>
 
         {/* Right Side: The Form */}
-        <div className="w-full lg:w-7/12 p-10 lg:p-14 bg-white dark:bg-slate-900/80">
+        <div className="w-full lg:w-7/12 p-8 lg:p-12 bg-white dark:bg-slate-900/90 max-h-[92vh] overflow-y-auto">
           <form className="w-full max-w-md mx-auto" onSubmit={submit}>
             {onHome && (
               <button
                 type="button"
                 onClick={onHome}
-                className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors mb-8 group"
+                className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors mb-6 group cursor-pointer btn-tactile"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-1 transition-transform"><path d="m15 18-6-6 6-6"/></svg>
                 Quay về trang chủ
               </button>
             )}
 
-            <div className="mb-10">
-              <span className="inline-block px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold text-xs tracking-widest uppercase rounded-full mb-4">Chào mừng trở lại</span>
+            <div className="mb-6">
+              <span className="inline-block px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold text-xs tracking-widest uppercase rounded-full mb-3">Chào mừng trở lại</span>
               <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Đăng nhập</h2>
+            </div>
+
+            {/* Quick 1-Click Role Login */}
+            <div className="mb-6 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
+              <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2 px-1">
+                Đăng nhập nhanh 4 vai trò (1-Click Demo)
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={() => executeLogin("manager@test.com", "123456", "admin")}
+                  className="btn-tactile flex items-center gap-2 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/50 hover:border-rose-500 text-left shadow-xs transition-all cursor-pointer"
+                >
+                  <span className="size-2 rounded-full bg-rose-500 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-slate-800 dark:text-white truncate">Quản lý (Admin)</p>
+                    <p className="text-[10px] text-slate-400 truncate">manager@test.com</p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={() => executeLogin("hoxuananhnam1@gmail.com", "123456", "coach")}
+                  className="btn-tactile flex items-center gap-2 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-orange-200 dark:border-orange-900/50 hover:border-orange-500 text-left shadow-xs transition-all cursor-pointer"
+                >
+                  <span className="size-2 rounded-full bg-orange-500 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-slate-800 dark:text-white truncate">HLV (Coach)</p>
+                    <p className="text-[10px] text-slate-400 truncate">hoxuananhnam1...</p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={() => executeLogin("receptionist01@smartgym.com", "123456", "receptionist")}
+                  className="btn-tactile flex items-center gap-2 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-900/50 hover:border-purple-500 text-left shadow-xs transition-all cursor-pointer"
+                >
+                  <span className="size-2 rounded-full bg-purple-500 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-slate-800 dark:text-white truncate">Lễ tân</p>
+                    <p className="text-[10px] text-slate-400 truncate">receptionist01...</p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={() => executeLogin("hoxuananhnam@gmail.com", "123456", "member")}
+                  className="btn-tactile flex items-center gap-2 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900/50 hover:border-emerald-500 text-left shadow-xs transition-all cursor-pointer"
+                >
+                  <span className="size-2 rounded-full bg-emerald-500 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-slate-800 dark:text-white truncate">Hội viên (Member)</p>
+                    <p className="text-[10px] text-slate-400 truncate">hoxuananhnam...</p>
+                  </div>
+                </button>
+              </div>
             </div>
 
             <div className="space-y-5">
@@ -194,7 +317,7 @@ export function Login({
               )}
             </button>
 
-            <div className="mt-8 text-center text-sm font-medium text-slate-500 dark:text-slate-400">
+            <div className="mt-6 text-center text-sm font-medium text-slate-500 dark:text-slate-400">
               <span>Chưa có tài khoản?</span>{" "}
               <button 
                 type="button" 

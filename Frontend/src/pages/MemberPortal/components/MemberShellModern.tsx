@@ -12,10 +12,11 @@ import { MemberTopBar } from "./shell/MemberTopBar";
 interface Props {
   currentScreen: MemberScreen;
   onNavigate: (screen: MemberScreen) => void;
+  onLogout?: () => void;
   children: React.ReactNode;
 }
 
-export default function MemberShellModern({ currentScreen, onNavigate, children }: Props) {
+export default function MemberShellModern({ currentScreen, onNavigate, onLogout, children }: Props) {
   const [isDark, setIsDark] = useState(() => {
     return (
       document.documentElement.classList.contains("dark") ||
@@ -158,7 +159,12 @@ export default function MemberShellModern({ currentScreen, onNavigate, children 
     localStorage.removeItem("accessToken");
     localStorage.removeItem("token");
     window.location.hash = "login";
-    window.location.reload();
+    if (onLogout) {
+      onLogout();
+    } else {
+      window.dispatchEvent(new Event("local-storage-update"));
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    }
   };
 
   return (

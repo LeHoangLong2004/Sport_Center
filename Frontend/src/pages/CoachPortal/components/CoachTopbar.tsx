@@ -3,6 +3,7 @@ import { CoachScreen } from "../types";
 import { breadcrumbs, pageTitles } from "../constants";
 import { IconBell } from "../Icons";
 import { notificationApi, type ManagerNotification } from "../../../hooks/notificationApi";
+import { RoleSwitcher } from "../../../components/RoleSwitcher";
 
 function getShiftName() {
   const hour = new Date().getHours();
@@ -87,6 +88,7 @@ export default function CoachTopbar({ screen }: { screen: CoachScreen }) {
         <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{pageTitles[screen]}</h1>
       </div>
       <div className="flex items-center gap-4">
+        <RoleSwitcher currentRole="coach" />
         <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 font-bold text-xs rounded-full border border-orange-200/50 dark:border-orange-500/20">
           <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
           Đang trực tuyến • {shift}

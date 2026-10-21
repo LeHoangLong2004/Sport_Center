@@ -38,10 +38,17 @@ export function Sidebar({ page, onNavigate, onLogout }: { page: Page; onNavigate
               key={item.id}
               type="button"
               onClick={() => onNavigate(item.id)}
-              className={`flex gap-[12px] items-center px-[16px] py-[12px] rounded-[8px] shrink-0 w-full text-left transition-colors duration-200 ${active ? "bg-[#a855f7] shadow-md shadow-purple-500/20" : "bg-transparent hover:bg-white/5"}`}
+              className={`sidebar-nav-btn btn-tactile group relative flex gap-[12px] items-center px-[16px] py-[11px] rounded-[10px] shrink-0 w-full text-left cursor-pointer ${
+                active 
+                  ? "bg-gradient-to-r from-[#a855f7] to-[#9333ea] text-white shadow-lg shadow-purple-500/25 font-bold" 
+                  : "bg-transparent hover:bg-white/5 text-[#cbd5e1] hover:text-white font-medium"
+              }`}
             >
-              <img src={item.icon} alt="" className={`shrink-0 size-[18px] ${active ? "brightness-200" : ""}`} />
-              <span className={`flex-1 font-['Manrope:${active ? "Bold" : "Medium"}'] ${active ? "font-bold text-white" : "font-medium text-[#cbd5e1]"} text-[14px] leading-normal`}>
+              {active && (
+                <span className="absolute left-1 top-2 bottom-2 w-1 bg-white rounded-full shadow-sm" />
+              )}
+              <img src={item.icon} alt="" className={`shrink-0 size-[18px] transition-transform duration-200 group-hover:scale-110 ${active ? "brightness-200" : "opacity-70 group-hover:opacity-100"}`} />
+              <span className={`flex-1 font-['Manrope:${active ? "Bold" : "Medium"}'] ${active ? "font-bold text-white" : "font-medium text-[#cbd5e1]"} text-[13.5px] leading-normal`}>
                 {item.label}
               </span>
             </button>
@@ -69,15 +76,27 @@ export function Sidebar({ page, onNavigate, onLogout }: { page: Page; onNavigate
             <button 
               type="button" 
               onClick={(e) => { e.stopPropagation(); window.location.hash = "home"; }}
-              className="p-1.5 text-[#94a3b8] hover:text-white hover:bg-white/10 rounded-md transition-colors"
+              className="p-1.5 text-[#94a3b8] hover:text-white hover:bg-white/10 rounded-md transition-colors cursor-pointer"
               title="Trang chủ"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             </button>
             <button 
               type="button" 
-              onClick={(e) => { e.stopPropagation(); onLogout(); localStorage.removeItem("user"); localStorage.removeItem("accessToken"); window.location.hash = "login"; window.location.reload(); }}
-              className="p-1.5 text-[#94a3b8] hover:text-red-400 hover:bg-red-400/10 rounded-md transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                localStorage.removeItem("user");
+                localStorage.removeItem("accessToken");
+                localStorage.removeItem("token");
+                window.location.hash = "login";
+                if (onLogout) {
+                  onLogout();
+                } else {
+                  window.dispatchEvent(new Event("local-storage-update"));
+                  window.dispatchEvent(new HashChangeEvent("hashchange"));
+                }
+              }}
+              className="p-1.5 text-[#94a3b8] hover:text-red-400 hover:bg-red-400/10 rounded-md transition-colors cursor-pointer"
               title="Đăng xuất"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>

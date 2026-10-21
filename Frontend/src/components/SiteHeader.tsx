@@ -228,8 +228,11 @@ export function SiteHeader({
                     onClick={(e) => {
                       e.stopPropagation()
                       localStorage.removeItem("token")
+                      localStorage.removeItem("accessToken")
                       localStorage.removeItem("user")
-                      window.location.reload()
+                      setUser(null)
+                      window.dispatchEvent(new Event("local-storage-update"))
+                      window.dispatchEvent(new Event("user-profile-updated"))
                     }}
                   >
                     Đăng xuất
