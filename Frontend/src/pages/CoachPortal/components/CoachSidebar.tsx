@@ -7,9 +7,11 @@ import { useUserProfile } from "../../../hooks/useUserProfile";
 export default function CoachSidebar({
   screen,
   onNavigate,
+  onLogout,
 }: {
   screen: CoachScreen
   onNavigate: (s: CoachScreen) => void
+  onLogout?: () => void
 }) {
   const { profile } = useUserProfile('coach');
   const userStr = typeof window !== 'undefined' ? localStorage.getItem("user") : null;
@@ -52,15 +54,18 @@ export default function CoachSidebar({
           return (
             <button
               key={key}
-              className={`flex gap-[12px] items-center px-[16px] py-[11px] rounded-[10px] shrink-0 w-full text-left transition-all duration-200 ${
+              className={`sidebar-nav-btn btn-tactile group relative flex gap-[12px] items-center px-[16px] py-[11px] rounded-[10px] shrink-0 w-full text-left cursor-pointer ${
                 isActive
-                  ? "bg-[#f97316] text-white shadow-md shadow-orange-500/25 font-bold"
+                  ? "bg-gradient-to-r from-[#f97316] to-[#ea580c] text-white shadow-lg shadow-orange-500/25 font-bold"
                   : "bg-transparent text-[#94a3b8] hover:bg-white/5 hover:text-white font-medium"
               }`}
               onClick={() => onNavigate(key)}
               type="button"
             >
-              <div className="shrink-0 size-5 flex items-center justify-center">
+              {isActive && (
+                <span className="absolute left-1 top-2 bottom-2 w-1 bg-white rounded-full shadow-sm" />
+              )}
+              <div className="shrink-0 size-5 flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
                 <Icon />
               </div>
               <span className="flex-1 text-[13px] leading-normal tracking-wide">
@@ -95,7 +100,7 @@ export default function CoachSidebar({
                 e.stopPropagation();
                 window.location.hash = "home";
               }}
-              className="p-1.5 text-[#94a3b8] hover:text-white hover:bg-white/10 rounded-md transition-colors"
+              className="p-1.5 text-[#94a3b8] hover:text-white hover:bg-white/10 rounded-md transition-colors cursor-pointer"
               title="Trang chủ"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -110,9 +115,14 @@ export default function CoachSidebar({
                 localStorage.removeItem("accessToken");
                 localStorage.removeItem("token");
                 window.location.hash = "login";
-                window.location.reload();
+                if (onLogout) {
+                  onLogout();
+                } else {
+                  window.dispatchEvent(new Event("local-storage-update"));
+                  window.dispatchEvent(new HashChangeEvent("hashchange"));
+                }
               }}
-              className="p-1.5 text-[#94a3b8] hover:text-red-400 hover:bg-red-400/10 rounded-md transition-colors"
+              className="p-1.5 text-[#94a3b8] hover:text-red-400 hover:bg-red-400/10 rounded-md transition-colors cursor-pointer"
               title="Đăng xuất"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
