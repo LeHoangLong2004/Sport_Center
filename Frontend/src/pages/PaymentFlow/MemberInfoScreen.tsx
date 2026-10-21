@@ -45,16 +45,29 @@ export function MemberInfoScreen({
     <div className="bg-[#f8fafc] flex flex-col items-center w-full min-h-screen pb-20">
       <Stepper active={2} />
       
-      <FadeUp delay={0.1} className="flex flex-col gap-3 items-center pb-8 pt-4 w-full text-center px-4">
-        <h1 className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-3xl md:text-4xl tracking-tight">
-          Xác nhận hồ sơ & Thiết lập gói tập
-        </h1>
-        <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-base max-w-2xl">
-          Vui lòng kiểm tra thông tin cá nhân và thời gian kích hoạt trước khi thanh toán.
-        </p>
+      <div className="w-full max-w-[1120px] px-4 md:px-8 pb-6 pt-2">
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={onBack}
+            className="group inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 font-bold text-xs shadow-xs transition-all cursor-pointer shrink-0"
+          >
+            <span className="text-base group-hover:-translate-x-1 transition-transform">←</span>
+            <span>Quay lại</span>
+          </button>
+
+          <div className="flex-1 min-w-0">
+            <h1 className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-2xl md:text-3xl tracking-tight">
+              Xác nhận hồ sơ & Thiết lập gói tập
+            </h1>
+            <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-xs md:text-sm mt-0.5">
+              Vui lòng kiểm tra thông tin cá nhân và thời gian kích hoạt trước khi thanh toán.
+            </p>
+          </div>
+        </div>
 
         {!isLoggedIn && (
-          <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-amber-900 w-full max-w-2xl mt-2">
+          <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-amber-900 w-full mt-4">
             <div className="flex items-center gap-2">
               <span className="text-xl">⚠️</span>
               <p className="text-sm font-medium">
@@ -70,15 +83,23 @@ export function MemberInfoScreen({
             </button>
           </div>
         )}
-      </FadeUp>
+      </div>
 
       <div className="flex items-start justify-center w-full px-4 md:px-8">
         <div className="flex flex-col lg:flex-row gap-[32px] items-start w-full max-w-[1120px]">
           <FadeUp delay={0.2} className="flex flex-1 flex-col gap-[24px] items-start min-w-0 w-full">
-            <div className="bg-white border border-[#e2e8f0] flex flex-col gap-[24px] items-start p-[32px] rounded-[16px] w-full">
-              <h2 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[20px] border-b border-[#e2e8f0] pb-[16px] w-full">
-                Thông tin cá nhân hội viên
-              </h2>
+            <div className="bg-white border border-[#e2e8f0] flex flex-col gap-[24px] items-start p-[32px] rounded-[16px] w-full shadow-xs">
+              <div className="flex items-center justify-between border-b border-[#e2e8f0] pb-[16px] w-full">
+                <h2 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[18px]">
+                  Thông tin cá nhân hội viên
+                </h2>
+                {isLoggedIn && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold text-[11px]">
+                    <span className="size-1.5 rounded-full bg-emerald-500"></span>
+                    Thông tin từ tài khoản
+                  </span>
+                )}
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px] w-full">
                 <div className="flex flex-col gap-[8px] w-full md:col-span-2">
@@ -122,42 +143,7 @@ export function MemberInfoScreen({
               </div>
             </div>
 
-            <div className="bg-white border border-[#e2e8f0] flex flex-col gap-[24px] items-start p-[32px] rounded-[16px] w-full">
-              <h2 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[20px] border-b border-[#e2e8f0] pb-[16px] w-full">
-                Thiết lập thời gian & Địa điểm
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px] w-full">
-                <div className="flex flex-col gap-[8px] min-w-0">
-                  <label className="font-['Inter:Semi_Bold'] font-semibold text-[#1e293b] text-[14px]">Ngày bắt đầu *</label>
-                  <CustomDatePicker value={formData.startDate} onChange={v => setFormData({...formData, startDate: v})} />
-                </div>
-                <div className="flex flex-col gap-[8px] min-w-0">
-                  <label className="font-['Inter:Semi_Bold'] font-semibold text-[#1e293b] text-[14px]">Cơ sở tập luyện chính *</label>
-                  <select value={formData.branch} onChange={e => setFormData({...formData, branch: e.target.value})} className="bg-white border border-[#cbd5e1] focus:border-[#2563eb] outline-none px-[16px] py-[12px] rounded-[10px] w-full font-['Inter:Medium'] font-medium text-[#0f172a] text-[14px]">
-                    <option>Chi nhánh Quận 1 - Flagship Center</option>
-                    <option>Chi nhánh Quận 2 - Premium Center</option>
-                    <option>Chi nhánh Quận 7 - Standard Center</option>
-                  </select>
-                </div>
-              </div>
-              <div className="bg-[#eff6ff] border border-[#bfdbfe] flex gap-[12px] items-center p-[16px] rounded-[12px] w-full">
-                <svg className="w-[20px] h-[20px] text-[#2563eb] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <p className="font-['Inter:Medium'] font-medium text-[#1e40af] text-[14px] flex-1 leading-relaxed">
-                  Gói tập của bạn sẽ có hiệu lực từ ngày {formData.startDate ? formData.startDate.split('-').reverse().join('/') : '...'}.
-                </p>
-              </div>
-            </div>
 
-            <div className="flex items-start w-full pt-[8px]">
-              <button
-                type="button"
-                onClick={onBack}
-                className="group flex items-center px-[24px] py-[12px] rounded-[12px] font-['Inter:Semi_Bold'] font-semibold text-[#64748b] text-[14px] hover:text-[#0f172a] hover:bg-white transition-colors"
-              >
-                <svg className="w-[16px] h-[16px] mr-[8px] group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                Quay lại chọn gói khác
-              </button>
-            </div>
           </FadeUp>
 
           <FadeUp delay={0.3} className="flex flex-col items-start w-full lg:w-[400px] shrink-0">

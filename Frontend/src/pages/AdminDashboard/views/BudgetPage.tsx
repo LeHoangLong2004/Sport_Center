@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { A, avatarSidebar, avatarTopbar, iDashboard, iUsers, iPackage, iCalendar, iReceipt, iBarChart, iSettings, iSearch, iBell, iSearch2, iDownload, iPlus, iWallet, iCheckCircle, iClock, iRotateCcw, iChevron, iEye, iPrinter, iMore, mAvatar0, mAvatar1, mAvatar2, mAvatar3, mAvatar4, iBell2, iDownload2, iKpiRevenue, iKpiMembers, iKpiClasses, iKpiRetain, iSeg1, iSeg2, iSeg3, iSeg4, iDotBlue, iDotTeal, iDotOrange, iDotPurple, iActivity0, iActivity1, iActivity2, iActivity3, iLineChart, iBarFill, coachAvatar1, coachAvatar2, coachAvatar3, coachAvatar4, hrAvatar1, hrAvatar2, hrAvatar3, hrAvatar4, iBudgetIcon, iExpenseIcon, iBudgetChevron, iPLRevIcon, memberEditAvatar, transactions, reportBarData, reportMonths, members } from '../shared';
 import KpiCard from '../components/KpiCard';
 import SimpleLineChart from '../components/SimpleLineChart';
@@ -15,7 +16,10 @@ export function BudgetPage() {
             <p className="font-extrabold text-[#0f172a] text-[28px]">Quản lý ngân sách</p>
             <p className="text-[#64748b] text-sm mt-1">Theo dõi phân bổ và thực chi ngân sách theo từng hạng mục chi tiết tại SportCenter</p>
           </div>
-          <button className="bg-[#2563eb] flex items-center px-4 py-2.5 rounded-lg">
+          <button
+            onClick={() => toast.info("Hệ thống chuẩn bị mở cổng đăng ký ngân sách cho quý tiếp theo.")}
+            className="bg-[#2563eb] hover:bg-blue-700 active:scale-95 transition-all cursor-pointer flex items-center px-4 py-2.5 rounded-lg shadow-sm"
+          >
             <span className="font-semibold text-white text-sm">+ Tạo ngân sách mới</span>
           </button>
         </div>
@@ -51,17 +55,27 @@ export function BudgetPage() {
             <span className="flex-1">CHÊNH LỆCH</span>
             <span className="w-[140px]">TRẠNG THÁI</span>
           </div>
-          {budgetItems.map(row=>(
-            <div key={row.name} className="border-b border-[#e2e8f0] flex items-center px-6 py-4">
-              <div className="w-[200px]"><p className="font-medium text-[#0f172a] text-sm">{row.name}</p></div>
-              <div className="flex-1"><p className="text-[#0f172a] text-sm">{row.budget}</p></div>
-              <div className="flex-1"><p className="text-[#0f172a] text-sm">{row.actual}</p></div>
-              <div className="flex-1"><p className={`font-semibold text-sm ${row.green?"text-[#15803d]":"text-[#dc2626]"}`}>{row.diff}</p></div>
-              <div className="w-[140px]">
-                <span className={`font-semibold px-2.5 py-1 rounded-full text-[12px] ${row.green?"bg-[#dcfce7] text-[#15803d]":"bg-[#fee2e2] text-[#b91c1c]"}`}>{row.status}</span>
+          {budgetItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+              <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 mb-3 text-xl">
+                📊
               </div>
+              <p className="font-semibold text-slate-800 text-base">Chưa có dữ liệu phân bổ ngân sách</p>
+              <p className="text-slate-500 text-sm mt-1 max-w-sm">Hệ thống đang chuẩn bị kế hoạch ngân sách cho kỳ kế toán mới.</p>
             </div>
-          ))}
+          ) : (
+            budgetItems.map(row=>(
+              <div key={row.name} className="border-b border-[#e2e8f0] flex items-center px-6 py-4">
+                <div className="w-[200px]"><p className="font-medium text-[#0f172a] text-sm">{row.name}</p></div>
+                <div className="flex-1"><p className="text-[#0f172a] text-sm">{row.budget}</p></div>
+                <div className="flex-1"><p className="text-[#0f172a] text-sm">{row.actual}</p></div>
+                <div className="flex-1"><p className={`font-semibold text-sm ${row.green?"text-[#15803d]":"text-[#dc2626]"}`}>{row.diff}</p></div>
+                <div className="w-[140px]">
+                  <span className={`font-semibold px-2.5 py-1 rounded-full text-[12px] ${row.green?"bg-[#dcfce7] text-[#15803d]":"bg-[#fee2e2] text-[#b91c1c]"}`}>{row.status}</span>
+                </div>
+              </div>
+            ))
+          )}
         </div>
         {/* Bar comparison chart */}
         <div className="bg-white border border-[#e2e8f0] flex flex-col gap-4 p-6 rounded-xl shrink-0 w-[320px]">

@@ -11,6 +11,7 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
   const [query, setQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("Tất cả")
   const [allUsers, setAllUsers] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("Thành viên")
   const [currentPage, setCurrentPage] = useState(1);
   const [showCreateMember, setShowCreateMember] = useState(false);
@@ -23,6 +24,7 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
   }, [query, statusFilter, activeTab]);
 
   const fetchUsers = () => {
+    setLoading(true);
     const token = localStorage.getItem("token");
     fetch("/api/users", {
       headers: { "Authorization": `Bearer ${token}` }
@@ -52,7 +54,8 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
         setAllUsers(mapped);
       }
     })
-    .catch(err => console.error("Failed to fetch users:", err));
+    .catch(err => console.error("Failed to fetch users:", err))
+    .finally(() => setLoading(false));
   };
 
   React.useEffect(() => {
@@ -253,50 +256,56 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
           <div className="py-3 w-[120px]">NGÀY HẾT HẠN</div>
           <div className="py-3 w-[120px] text-right">THAO TÁC</div>
         </div>
-        {paginatedList.map(m=>(
-          <div key={m.id} className="border-b border-[#f1f5f9] flex h-16 items-center px-6">
-            <div className="w-8"><input type="checkbox" /></div>
-            <div className="flex gap-2.5 items-center flex-1">
-              <UserAvatar src={m.avatar} name={m.name} className="rounded-full size-9 object-cover" />
-              <div>
-                <p className="font-semibold text-[#0f172a] text-sm">{m.name}</p>
-                <p className="text-[#64748b] text-[12px]">{m.id}</p>
-              </div>
-            </div>
-            <div className="w-[170px]">
-              <span className="text-[#0f172a] text-sm">{m.pkg}</span>
-              {m.vip && <span className="bg-[#fef3c7] font-bold ml-1.5 px-1.5 py-0.5 rounded text-[#b45309] text-[10px]">VIP</span>}
-            </div>
-            <div className="w-[180px]">
-              <p className="text-[#0f172a] text-sm">{m.phone}</p>
-              <p className="text-[#64748b] text-[12px]">{m.email}</p>
-            </div>
-            <div className="w-[140px]">
-              <span className={`font-semibold px-2.5 py-1 rounded-full text-[12px] ${statusStyle[m.status]}`}>{m.status}</span>
-            </div>
-            <div className="w-[120px]"><p className="text-[#0f172a] text-sm">{m.expiry}</p></div>
-            <div className="flex gap-2 items-center justify-end w-[120px]">
-              <button 
-                onClick={() => handleToggleStatus(m.realId, m.statusRaw)} 
-                title={m.statusRaw ? "Khóa tài khoản" : "Mở khóa tài khoản"}
-                aria-label={m.statusRaw ? "Khóa tài khoản" : "Mở khóa tài khoản"}
-                className={`inline-flex min-w-[72px] items-center justify-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-xs font-semibold shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 ${m.statusRaw
-                  ? 'border-rose-200 bg-rose-50 text-rose-600 hover:border-rose-300 hover:bg-rose-100 focus:ring-rose-300'
-                  : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 focus:ring-emerald-300'}`}
-              >
-                {m.statusRaw ? <LockKeyhole size={14} strokeWidth={2.2} /> : <UnlockKeyhole size={14} strokeWidth={2.2} />}
-                <span>{m.statusRaw ? "Khóa" : "Mở khóa"}</span>
-              </button>
-              <button onClick={() => onEditMember(m)} title="Sửa thông tin" className="bg-white border border-[#e2e8f0] hover:bg-blue-50 flex items-center justify-center rounded-md size-8">
-                <img src={iMore} alt="Edit" className="size-4" />
-              </button>
-            </div>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <div className="size-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <p className="text-[#64748b] text-sm font-medium">Đang tải danh sách hội viên...</p>
           </div>
-        ))}
-        {filtered.length === 0 && (
-          <div className="flex h-20 items-center justify-center">
+        ) : filtered.length === 0 ? (
+          <div className="flex h-24 items-center justify-center">
             <p className="text-[#64748b] text-sm">Không tìm thấy hội viên phù hợp.</p>
           </div>
+        ) : (
+          paginatedList.map(m=>(
+            <div key={m.id} className="border-b border-[#f1f5f9] flex h-16 items-center px-6">
+              <div className="w-8"><input type="checkbox" /></div>
+              <div className="flex gap-2.5 items-center flex-1">
+                <UserAvatar src={m.avatar} name={m.name} className="rounded-full size-9 object-cover" />
+                <div>
+                  <p className="font-semibold text-[#0f172a] text-sm">{m.name}</p>
+                  <p className="text-[#64748b] text-[12px]">{m.id}</p>
+                </div>
+              </div>
+              <div className="w-[170px]">
+                <span className="text-[#0f172a] text-sm">{m.pkg}</span>
+                {m.vip && <span className="bg-[#fef3c7] font-bold ml-1.5 px-1.5 py-0.5 rounded text-[#b45309] text-[10px]">VIP</span>}
+              </div>
+              <div className="w-[180px]">
+                <p className="text-[#0f172a] text-sm">{m.phone}</p>
+                <p className="text-[#64748b] text-[12px]">{m.email}</p>
+              </div>
+              <div className="w-[140px]">
+                <span className={`font-semibold px-2.5 py-1 rounded-full text-[12px] ${statusStyle[m.status]}`}>{m.status}</span>
+              </div>
+              <div className="w-[120px]"><p className="text-[#0f172a] text-sm">{m.expiry}</p></div>
+              <div className="flex gap-2 items-center justify-end w-[120px]">
+                <button 
+                  onClick={() => handleToggleStatus(m.realId, m.statusRaw)} 
+                  title={m.statusRaw ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                  aria-label={m.statusRaw ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                  className={`inline-flex min-w-[72px] items-center justify-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-xs font-semibold shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 cursor-pointer ${m.statusRaw
+                    ? 'border-rose-200 bg-rose-50 text-rose-600 hover:border-rose-300 hover:bg-rose-100 focus:ring-rose-300'
+                    : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 focus:ring-emerald-300'}`}
+                >
+                  {m.statusRaw ? <LockKeyhole size={14} strokeWidth={2.2} /> : <UnlockKeyhole size={14} strokeWidth={2.2} />}
+                  <span>{m.statusRaw ? "Khóa" : "Mở khóa"}</span>
+                </button>
+                <button onClick={() => onEditMember(m)} title="Sửa thông tin" className="bg-white border border-[#e2e8f0] hover:bg-blue-50 flex items-center justify-center rounded-md size-8 cursor-pointer transition-colors">
+                  <img src={iMore} alt="Edit" className="size-4" />
+                </button>
+              </div>
+            </div>
+          ))
         )}
         <div className="flex h-14 items-center justify-between px-6">
           <span className="text-[#64748b] text-sm">

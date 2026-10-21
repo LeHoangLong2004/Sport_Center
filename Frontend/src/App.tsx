@@ -34,6 +34,33 @@ function AdminPortal({
   >(initialStep)
   const [verifyTarget, setVerifyTarget] = useState<"member" | "login">("member")
 
+  useEffect(() => {
+    const handleHash = () => {
+      const h = window.location.hash
+      if (h.startsWith("#dashboard")) {
+        setStep("dashboard")
+      } else if (
+        h.startsWith("#member") ||
+        [
+          "#classes",
+          "#booking-confirm",
+          "#schedule",
+          "#booking-success",
+          "#workout-detail",
+          "#move-ai",
+        ].includes(h)
+      ) {
+        setStep("member")
+      } else if (h === "#login" || h === "#admin") {
+        setStep("login")
+      } else if (h === "#register") {
+        setStep("register")
+      }
+    }
+    window.addEventListener("hashchange", handleHash)
+    return () => window.removeEventListener("hashchange", handleHash)
+  }, [])
+
   if (step === "member") {
     return (
       <MemberPortal
@@ -143,7 +170,11 @@ const paymentHashes = new Set(["#payment"])
 const receptionistHashes = new Set(["#receptionist"])
 
 function isAdminHash(hash: string) {
-  return hash.startsWith("#member") || adminHashes.has(hash)
+  return hash.startsWith("#member") || hash.startsWith("#dashboard") || adminHashes.has(hash)
+}
+
+function isReceptionistHash(hash: string) {
+  return hash.startsWith("#receptionist") || receptionistHashes.has(hash)
 }
 
 function isCoachHash(hash: string) {
@@ -163,7 +194,7 @@ export default function App() {
     () => paymentHashes.has(window.location.hash),
   )
   const [receptionistOpen, setReceptionistOpen] = useState(
-    () => receptionistHashes.has(window.location.hash),
+    () => isReceptionistHash(window.location.hash),
   )
   const [selectedPlanId, setSelectedPlanId] = useState<string | undefined>()
   const [selectedPeriod, setSelectedPeriod] = useState<string | undefined>()
@@ -179,11 +210,19 @@ export default function App() {
   }, [paymentOpen, selectedPlanId, selectedPackage, selectedProductOrder]);
 
   useEffect(() => {
+    if (paymentOpen) {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+  }, [paymentOpen]);
+
+  useEffect(() => {
     const sync = () => {
       setAdminOpen(isAdminHash(window.location.hash))
       setCoachOpen(isCoachHash(window.location.hash))
       setPaymentOpen(paymentHashes.has(window.location.hash))
-      setReceptionistOpen(receptionistHashes.has(window.location.hash))
+      setReceptionistOpen(isReceptionistHash(window.location.hash))
     }
     window.addEventListener("hashchange", sync)
     return () => window.removeEventListener("hashchange", sync)
@@ -261,7 +300,7 @@ export default function App() {
     return (
       <AdminPortal
         initialStep={
-          window.location.hash === "#dashboard"
+          window.location.hash.startsWith("#dashboard")
             ? "dashboard"
             : (window.location.hash === "#admin" || window.location.hash === "#login")
               ? "login"
@@ -295,6 +334,9 @@ export default function App() {
                       : "overview"
         }
         onMemberCheckout={(selection) => {
+          window.scrollTo({ top: 0, left: 0, behavior: "instant" })
+          document.documentElement.scrollTop = 0
+          document.body.scrollTop = 0
           setSelectedPlanId(undefined)
           setSelectedPeriod(undefined)
           setSelectedPackage(selection.item)
@@ -305,6 +347,9 @@ export default function App() {
           setPaymentOpen(true)
         }}
         onMemberProductPayment={(order) => {
+          window.scrollTo({ top: 0, left: 0, behavior: "instant" })
+          document.documentElement.scrollTop = 0
+          document.body.scrollTop = 0
           setSelectedPlanId(undefined)
           setSelectedPeriod(undefined)
           setSelectedPackage(undefined)
@@ -335,6 +380,9 @@ export default function App() {
         setAdminOpen(true)
       }}
       onOpenPayment={(planId, periodId) => {
+        window.scrollTo({ top: 0, left: 0, behavior: "instant" })
+        document.documentElement.scrollTop = 0
+        document.body.scrollTop = 0
         setSelectedPlanId(planId)
         setSelectedPeriod(periodId)
         setSelectedPackage(undefined)

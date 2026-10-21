@@ -65,9 +65,20 @@ export default function CoachDashboard({ navigateTo }: Props) {
           reviewCount: Number(stats?.reviewCount || 0),
         });
 
+        // Tải danh sách điểm danh song song thay vì tuần tự để UI không bị đơ
+        const attResults = await Promise.all(
+          todays.map(async (s) => {
+            try {
+              const att = await CoachAPI.getAttendance(s.id);
+              return { id: s.id, att };
+            } catch {
+              return { id: s.id, att: [] };
+            }
+          })
+        );
         const atts: Record<string, AttendanceRecord[]> = {};
-        for (const s of todays) {
-          atts[s.id] = await CoachAPI.getAttendance(s.id);
+        for (const item of attResults) {
+          atts[item.id] = item.att;
         }
         setAttendances(atts);
       } catch (err) {

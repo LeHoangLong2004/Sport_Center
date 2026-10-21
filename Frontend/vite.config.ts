@@ -29,6 +29,11 @@ export default defineConfig(({ mode }) => {
           target: env.VITE_API_URL || 'http://127.0.0.1:5000',
           changeOrigin: true,
           secure: false
+        },
+        '/swagger': {
+          target: env.VITE_API_URL || 'http://127.0.0.1:5000',
+          changeOrigin: true,
+          secure: false
         }
       }
     },

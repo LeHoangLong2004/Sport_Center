@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
-import { SiteFooter } from "../../components/SiteFooter";
-import { SiteHeader } from "../../components/SiteHeader";
+import { CheckoutHeader, CheckoutFooter } from "./CheckoutHeader";
 import { PaymentMethodScreen } from "./PaymentMethodScreen";
 import { FlowPackage, PaymentMethodId, Stepper } from "./shared";
 
@@ -94,8 +93,8 @@ export function ProductPaymentFlow({ order, onBack, onCompleted }: Props) {
   if (completed) {
     return (
       <div className="flex min-h-screen flex-col bg-[#f8fafc]">
-        <SiteHeader currentRoute="pricing" forceSolidDark={true} />
-        <div className="flex-1 pt-[72px]">
+        <CheckoutHeader onExit={onCompleted} />
+        <div className="flex-1">
           <Stepper active={4} />
           <div className="mx-auto flex max-w-3xl justify-center px-6 pb-20 pt-8">
             <div className="w-full rounded-2xl border border-[#e2e8f0] bg-white p-10 text-center shadow-sm">
@@ -110,15 +109,15 @@ export function ProductPaymentFlow({ order, onBack, onCompleted }: Props) {
             </div>
           </div>
         </div>
-        <SiteFooter />
+        <CheckoutFooter />
       </div>
     );
   }
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f8fafc]">
-      <SiteHeader currentRoute="pricing" forceSolidDark={true} />
-      <div className="flex-1 pt-[72px]">
+      <CheckoutHeader onExit={onBack} />
+      <div className="flex-1">
         {error && <div className="mx-auto mt-4 max-w-[1280px] rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
         <PaymentMethodScreen
           pkg={productPackage}
@@ -132,7 +131,7 @@ export function ProductPaymentFlow({ order, onBack, onCompleted }: Props) {
         />
         {processing && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30"><div className="rounded-xl bg-white px-6 py-4 text-sm font-semibold text-slate-700 shadow-xl">Đang xác nhận thanh toán...</div></div>}
       </div>
-      <SiteFooter />
+      <CheckoutFooter />
     </div>
   );
 }

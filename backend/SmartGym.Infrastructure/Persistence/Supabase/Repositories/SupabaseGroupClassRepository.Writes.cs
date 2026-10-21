@@ -38,12 +38,19 @@ public sealed partial class SupabaseGroupClassRepository
     {
         if (groupClass.CoachId.HasValue)
         {
-            await _dbContext.Database.ExecuteSqlRawAsync(
-                @"INSERT INTO coaches (id, user_id, specialty, experience_years)
-                  VALUES ({0}, {0}, 'General Coach', 3)
-                  ON CONFLICT (user_id) DO NOTHING",
-                groupClass.CoachId.Value
-            );
+            try
+            {
+                await _dbContext.Database.ExecuteSqlRawAsync(
+                    @"INSERT INTO coaches (id, user_id, specialty, experience_years)
+                      SELECT {0}, {0}, 'General Coach', 3
+                      WHERE NOT EXISTS (SELECT 1 FROM coaches WHERE id = {0})",
+                    groupClass.CoachId.Value
+                );
+            }
+            catch
+            {
+                // Ignore if coach record already exists or provisioned
+            }
         }
 
         var model = new GroupClassModel

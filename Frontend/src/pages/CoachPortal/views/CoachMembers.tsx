@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import type { CoachScreen } from "../types";
 import { CoachAPI, type MockMember, type CoachClassOverview } from "../services/api";
-import { Search, Filter, RefreshCw, Users } from "lucide-react";
+import { Search, Filter, RefreshCw, Users, AlertCircle } from "lucide-react";
 import { CoachMembersStats } from "./members/CoachMembersStats";
 import { CoachClassFilterBar } from "./members/CoachClassFilterBar";
 import { CoachMemberCard } from "./members/CoachMemberCard";
@@ -18,18 +18,21 @@ export default function CoachMembers({ navigateTo }: Props) {
   const [classes, setClasses] = useState<CoachClassOverview[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const pollTimerRef = useRef<any>(null);
 
   const fetchOverview = async (isSilent = false) => {
     if (!isSilent) setIsRefreshing(true);
     try {
       const data = await CoachAPI.getMembersOverview();
+      setError(null);
       if (data) {
         setMembers(Array.isArray(data.members) ? data.members : []);
         setClasses(Array.isArray(data.classes) ? data.classes : []);
       }
     } catch (err) {
       console.error("Lỗi tải thông tin học viên & lớp học:", err);
+      setError(err instanceof Error ? err.message : "Không thể tải dữ liệu học viên phụ trách.");
     } finally {
       setLoading(false);
       if (!isSilent) setIsRefreshing(false);
@@ -142,6 +145,17 @@ export default function CoachMembers({ navigateTo }: Props) {
         <div className="p-16 text-center text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col items-center justify-center gap-3">
           <RefreshCw className="w-6 h-6 animate-spin text-emerald-500" />
           <p className="text-xs font-medium">Đang tải danh sách học viên theo thời gian thực...</p>
+        </div>
+      ) : error ? (
+        <div className="p-10 text-center text-red-600 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-2xl flex flex-col items-center justify-center gap-3">
+          <AlertCircle className="w-6 h-6" />
+          <p className="text-sm font-semibold">{error}</p>
+          <button
+            onClick={() => fetchOverview(false)}
+            className="px-4 py-2 text-xs font-semibold rounded-xl bg-white dark:bg-slate-900 border border-red-200 dark:border-red-800 hover:bg-red-50"
+          >
+            Thử tải lại
+          </button>
         </div>
       ) : filtered.length === 0 ? (
         <div className="p-16 text-center text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 border-dashed rounded-2xl flex flex-col items-center justify-center gap-3">

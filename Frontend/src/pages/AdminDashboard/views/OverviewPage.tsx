@@ -5,7 +5,9 @@ import { useApiResource } from '../../../hooks/useApiResource';
 import { type DashboardMetricsResponse, type MonthlyRevenueResponse } from '../../../hooks/flow3Api';
 import { formatVnd } from '../../../hooks/apiClient';
 
-export function OverviewPage() {
+import { toast } from 'sonner';
+
+export function OverviewPage({ onNavigate }: { onNavigate?: (page: any) => void }) {
   const activities: any[] = [];
 
   const dashboard = useApiResource<DashboardMetricsResponse>("/api/reports/dashboard");
@@ -63,8 +65,12 @@ export function OverviewPage() {
               </p>
             </div>
             <button
-              onClick={() => { dashboard.reload(); monthly.reload(); }}
-              className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-medium px-3 py-1.5 rounded-lg text-sm text-slate-900 dark:text-white"
+              onClick={() => {
+                dashboard.reload();
+                monthly.reload();
+                toast.success("Đã làm mới dữ liệu thống kê tổng quan!");
+              }}
+              className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-medium px-3 py-1.5 rounded-lg text-sm text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition-all cursor-pointer shadow-sm"
             >
               Làm mới
             </button>
@@ -123,7 +129,16 @@ export function OverviewPage() {
               </div>
             ))}
           </div>
-          <button className="mt-8 w-full py-3 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-300 text-sm hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white transition-colors">
+          <button
+            onClick={() => {
+              if (onNavigate) {
+                onNavigate("settings");
+              } else {
+                toast.info("Đang chuyển đến màn hình Cài đặt & Nhật ký hệ thống...");
+              }
+            }}
+            className="mt-8 w-full py-3 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-300 text-sm hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white active:scale-[0.99] transition-all cursor-pointer"
+          >
             Xem toàn bộ nhật ký
           </button>
         </div>

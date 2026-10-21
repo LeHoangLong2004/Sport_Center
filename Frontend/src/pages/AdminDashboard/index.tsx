@@ -18,15 +18,57 @@ import { MemberEditPage } from './views/MemberEditPage';
 import { MembersPage } from './views/MembersPage';
 import { StaffPage } from './views/StaffPage';
 import { FacilitiesPage } from './views/FacilitiesPage';
+import { ProductsPage } from './views/ProductsPage';
 import { SettingsPage } from './views/SettingsPage';
 import { ProfileSettings } from '../../components/ProfileSettings';
 import { type ManagerNotification } from '../../hooks/notificationApi';
 
+const VALID_ADMIN_PAGES: AdminPage[] = [
+  "overview", "packages", "products", "schedule", "members", "staff",
+  "facilities", "payment", "reports", "budget", "expenses", "payroll",
+  "pl-report", "settings", "member-edit", "profile", "classes",
+  "permissions", "audit-log", "check-ins", "support"
+];
+
+function getAdminPageFromHash(): AdminPage {
+  const params = new URLSearchParams(window.location.search);
+  const subpage = params.get("subpage")?.toLowerCase() as AdminPage;
+  if (subpage && VALID_ADMIN_PAGES.includes(subpage)) return subpage;
+
+  const hash = window.location.hash || "";
+  if (!hash.startsWith("#dashboard")) return "overview";
+
+  let clean = hash.replace(/^#dashboard/, "");
+  if (clean.startsWith("/")) clean = clean.slice(1);
+  if (clean.startsWith("-")) clean = clean.slice(1);
+  if (clean.startsWith("?tab=")) clean = clean.slice(5);
+  clean = clean.split("?")[0].split("/")[0].trim().toLowerCase();
+
+  if (VALID_ADMIN_PAGES.includes(clean as AdminPage)) {
+    return clean as AdminPage;
+  }
+  return "overview";
+}
+
 export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
-  const [page, setPage] = useState<AdminPage>(() => {
-    const p = new URLSearchParams(window.location.search).get("subpage") as AdminPage;
-    return p || "overview";
-  })
+  const [page, setPageState] = useState<AdminPage>(getAdminPageFromHash);
+
+  const setPage = (newPage: AdminPage) => {
+    setPageState(newPage);
+    const targetHash = `#dashboard/${newPage}`;
+    if (window.location.hash !== targetHash) {
+      window.location.hash = targetHash;
+    }
+  };
+
+  useEffect(() => {
+    const onHashChange = () => {
+      const parsed = getAdminPageFromHash();
+      setPageState(parsed);
+    };
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
   const [scheduleTab, setScheduleTab] = useState<ScheduleTab>("calendar")
   const [selectedMember, setSelectedMember] = useState<any>(null)
   const { profile, uploadAvatar } = useUserProfile()
@@ -109,6 +151,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     overview:   ["Quản lý / Tổng quan", "Tổng quan hệ thống"],
     classes:    ["Quản lý / Lớp học", "Quản lý Lớp học"],
     packages:   ["Quản lý / Gói tập", "Quản lí gói"],
+    products:   ["Quản lý / Sản phẩm bán hàng", "Quản lý sản phẩm & Hàng hóa"],
     schedule:   ["Quản lý / Lịch trình", "Lịch trình & Lớp học"],
     members:    ["Quản lý / Người dùng / Hội viên", "Quản lý người dùng"],
     staff:      ["Quản lý / Người dùng / Nhân sự", "Quản lý nhân sự"],
@@ -136,8 +179,9 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       <div className="flex flex-col flex-1 min-w-0 h-full">
         <TopBar breadcrumb={bc} title={title} onProfileClick={() => setPage("profile")} onNotificationClick={handleNotificationClick} />
         <div className="manager-page-content flex-1 overflow-y-auto p-6 lg:p-8">
-          {page === "overview"   && <OverviewPage />}
+          {page === "overview"   && <OverviewPage onNavigate={setPage} />}
           {page === "packages"   && <PackagesPage />}
+          {page === "products"   && <ProductsPage />}
           {page === "schedule"   && <SchedulePage initialTab={scheduleTab} />}
           {page === "members"    && <MembersPage onEditMember={(member) => { setSelectedMember(member); setPage("member-edit"); }} />}
           {page === "staff"      && <StaffPage />}
