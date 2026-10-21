@@ -42,6 +42,15 @@ public sealed partial class ClassService
             s.PaymentStatus == SmartGym.Domain.Enums.PaymentStatus.Completed
             && s.StartDate <= targetClass.ScheduleTime
             && targetClass.ScheduleTime <= s.EndDate
+            && (
+                (s.SportId.HasValue && s.SportId.Value == targetClass.SportId) ||
+                (s.Package != null && !string.IsNullOrWhiteSpace(targetClass.ClassName) && s.Package.Name.Contains(targetClass.ClassName, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrWhiteSpace(s.PackageId) && !string.IsNullOrWhiteSpace(targetClass.ClassName) && targetClass.ClassName.Contains(s.PackageId, StringComparison.OrdinalIgnoreCase))
+            )
+        ) ?? userSubs.FirstOrDefault(s =>
+            s.PaymentStatus == SmartGym.Domain.Enums.PaymentStatus.Completed
+            && s.StartDate <= targetClass.ScheduleTime
+            && targetClass.ScheduleTime <= s.EndDate
         );
 
         // Thành viên ở mọi hạng (kể cả Basic / chưa mua gói tháng) đều được đặt lớp:

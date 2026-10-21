@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { breadcrumbs, A, Page } from '../shared';
 import { UserAvatar } from '../../../components/UserAvatar';
 import { notificationApi, type ManagerNotification } from '../../../hooks/notificationApi';
+import { RoleSwitcher } from '../../../components/RoleSwitcher';
 
 const DERIVED_READ_KEY = 'receptionist_read_derived_notifications';
 
@@ -183,6 +184,7 @@ export function TopBar({ breadcrumb, title, shiftLabel, onProfileClick, onNaviga
         <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{title}</p>
       </div>
       <div className="flex items-center gap-4">
+        <RoleSwitcher currentRole="receptionist" />
         <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold text-xs rounded-full border border-emerald-200/50 dark:border-emerald-500/20">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           {currentShift}
