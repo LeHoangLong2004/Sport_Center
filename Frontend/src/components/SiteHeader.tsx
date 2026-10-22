@@ -85,8 +85,18 @@ export function SiteHeader({
       }`}
     >
       <div
-        className="flex gap-[10px] items-center shrink-0 cursor-pointer"
+        className="flex gap-[10px] items-center shrink-0 cursor-pointer select-none group"
         data-name="logo-group"
+        onClick={() => {
+          if (window.location.hash === "#home" || window.location.hash === "" || window.location.hash === "#") {
+            window.scrollTo({ top: 0, behavior: "smooth" })
+          } else {
+            window.location.hash = "home"
+            window.dispatchEvent(new HashChangeEvent("hashchange"))
+            window.scrollTo({ top: 0, behavior: "smooth" })
+          }
+        }}
+        title="Quay lại Trang chủ SportCenter"
       >
         <div className="bg-teal-500 flex items-center justify-center rounded-[8px] size-[36px] shadow-lg shadow-teal-500/30">
           <svg
