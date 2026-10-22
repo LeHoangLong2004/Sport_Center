@@ -65,7 +65,8 @@ public class AuthService : IAuthService
             FullName = user.FullName,
             Email = user.Email,
             PhoneNumber = user.PhoneNumber,
-            Role = role.Name
+            Role = role.Name,
+            AvatarUrl = user.AvatarUrl
         };
     }
 
@@ -93,7 +94,8 @@ public class AuthService : IAuthService
             FullName = user.FullName,
             Email = user.Email,
             PhoneNumber = user.PhoneNumber,
-            Role = roleName
+            Role = roleName,
+            AvatarUrl = user.AvatarUrl
         };
     }
 }
