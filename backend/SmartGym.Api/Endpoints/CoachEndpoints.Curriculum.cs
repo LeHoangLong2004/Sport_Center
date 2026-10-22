@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using SmartGym.Application.DTOs.WorkoutPlans;
 using SmartGym.Application.Interfaces;
+using SmartGym.Application.Services;
 using SmartGym.Infrastructure.Persistence.EF;
 
 namespace SmartGym.Api.Endpoints;
@@ -55,7 +56,7 @@ public static partial class CoachEndpoints
 
         group.MapPost(
             "/curricula/{id:guid}/assign",
-            async (Guid id, HttpContext context, SmartGymDbContext db, IWorkoutPlanService planService, IHomeworkProgressService homeworkService, [FromBody] JsonElement request) =>
+            async (Guid id, HttpContext context, SmartGymDbContext db, IWorkoutPlanService planService, IFlow5AssignmentService assignmentService, IFlow5AuthorizationService authorization, [FromBody] JsonElement request) =>
             {
                 var coachId = await ResolveCoachIdAsync(context, db);
                 if (coachId == null)
@@ -64,8 +65,17 @@ public static partial class CoachEndpoints
                 var rawTargetId = GetString(request, "memberId") ?? GetString(request, "classId") ?? GetString(request, "id");
                 if (!Guid.TryParse(rawTargetId, out var targetId))
                     return Results.BadRequest(new { message = "Đối tượng nhận giáo án không hợp lệ." });
-                if (await planService.GetPlanByIdAsync(id) == null)
+                var plan = await planService.GetPlanByIdAsync(id);
+                if (plan == null)
                     return Results.NotFound(new { message = "Không tìm thấy giáo án." });
+                if (!Flow5PlanStatus.IsApproved(plan.Status))
+                {
+                    return Results.Conflict(new
+                    {
+                        code = "plan_not_approved",
+                        message = "Only approved workout plans can be assigned."
+                    });
+                }
 
                 var type = GetString(request, "type");
                 var note = GetString(request, "note") ?? GetString(request, "notes") ?? "Vui lòng hoàn thành đúng tiến độ";
@@ -82,6 +92,21 @@ public static partial class CoachEndpoints
                     targetId
                 ).ToListAsync()).Any();
                 var isClass = isExplicitClass || (!await db.Users.AnyAsync(u => u.Id == targetId) && isClassInDb);
+                var assignmentTarget = new Flow5TargetDto
+                {
+                    Type = isClass ? Flow5TargetTypes.Class : Flow5TargetTypes.Member,
+                    Id = targetId
+                };
+                var targetAccess = await authorization.AuthorizeTargetAsync(
+                    context.User,
+                    assignmentTarget,
+                    context.RequestAborted);
+                if (!targetAccess.IsAllowed || targetAccess.Context?.CoachId != coachId.Value)
+                {
+                    return targetAccess.ErrorCode == "unauthorized"
+                        ? Results.Unauthorized()
+                        : Results.Forbid();
+                }
 
                 if (isClass)
                 {
@@ -96,20 +121,18 @@ public static partial class CoachEndpoints
                         return Results.BadRequest(new { message = "Lớp học này hiện chưa có học viên nào đăng ký để giao giáo án." });
                     }
 
-                    var assignedList = new List<HomeworkProgressResponse>();
-                    foreach (var studentId in studentUserIds)
-                    {
-                        var res = await homeworkService.AssignHomeworkAsync(coachId.Value, new AssignHomeworkRequest
+                    var classAssignment = await assignmentService.AssignAsync(
+                        coachId.Value,
+                        id,
+                        new AssignFlow5PlanRequest
                         {
-                            MemberId = studentId,
-                            PlanId = id,
-                            DueDate = dueDate,
-                            Notes = note
-                        });
-                        assignedList.Add(res);
-                    }
-
-                    return Results.Ok(new { success = true, assignedCount = assignedList.Count, data = assignedList });
+                            Target = assignmentTarget,
+                            DueDate = dueDate.HasValue ? new DateTimeOffset(dueDate.Value) : null,
+                            Notes = note,
+                            ExpectedVersion = plan.Version
+                        },
+                        context.RequestAborted);
+                    return ToLegacyAssignmentResult(classAssignment);
                 }
 
                 // Member assignment
@@ -119,14 +142,18 @@ public static partial class CoachEndpoints
                     return Results.BadRequest(new { message = "Không tìm thấy học viên hoặc lớp học tương ứng trong hệ thống." });
                 }
 
-                var result = await homeworkService.AssignHomeworkAsync(coachId.Value, new AssignHomeworkRequest
-                {
-                    MemberId = targetId,
-                    PlanId = id,
-                    DueDate = dueDate,
-                    Notes = note
-                });
-                return Results.Ok(new { success = true, data = result });
+                var memberAssignment = await assignmentService.AssignAsync(
+                    coachId.Value,
+                    id,
+                    new AssignFlow5PlanRequest
+                    {
+                        Target = assignmentTarget,
+                        DueDate = dueDate.HasValue ? new DateTimeOffset(dueDate.Value) : null,
+                        Notes = note,
+                        ExpectedVersion = plan.Version
+                    },
+                    context.RequestAborted);
+                return ToLegacyAssignmentResult(memberAssignment);
             }
         );
     }
@@ -182,6 +209,35 @@ public static partial class CoachEndpoints
             exercises = plan.Exercises.Select(e => new { name = e.Name, reps = e.Reps ?? "", rest = e.Rest ?? "", note = e.Note ?? "" }),
             assignedTo = Array.Empty<object>()
         };
+    }
+
+    private static IResult ToLegacyAssignmentResult(
+        Flow5PlanServiceResult<AssignFlow5PlanResponse> result)
+    {
+        if (result.IsSuccess)
+        {
+            return Results.Ok(new
+            {
+                success = true,
+                assignedCount = result.Data?.AssignedCount ?? 0,
+                skippedCount = result.Data?.SkippedCount ?? 0,
+                data = result.Data?.Assignments ?? new List<Flow5AssignmentItemDto>()
+            });
+        }
+
+        var status = result.ErrorCode switch
+        {
+            "not_found" => StatusCodes.Status404NotFound,
+            "forbidden" => StatusCodes.Status403Forbidden,
+            "plan_not_approved" or "version_conflict" => StatusCodes.Status409Conflict,
+            _ => StatusCodes.Status400BadRequest
+        };
+        return Results.Json(new
+        {
+            success = false,
+            code = result.ErrorCode,
+            message = result.ErrorMessage
+        }, statusCode: status);
     }
 
     private static string? GetString(JsonElement request, string property)

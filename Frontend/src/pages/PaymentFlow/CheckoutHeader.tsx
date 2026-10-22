@@ -23,17 +23,28 @@ export function CheckoutHeader({ onExit }: Props) {
       <div className="max-w-[1240px] mx-auto px-4 md:px-8 h-12 flex items-center justify-between">
         {/* Brand & Security Badge */}
         <div className="flex items-center gap-3">
-          <div className="bg-[#10b981] flex items-center justify-center rounded-xl size-9 shadow-md shadow-emerald-500/20 text-white font-extrabold text-sm">
-            SC
-          </div>
-          <div className="flex flex-col">
-            <span className="font-extrabold text-slate-900 text-sm tracking-wide leading-tight">
-              SPORTCENTER
-            </span>
-            <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest leading-none">
-              SECURE CHECKOUT
-            </span>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              window.location.hash = "home";
+              window.dispatchEvent(new HashChangeEvent("hashchange"));
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="flex items-center gap-3 text-left cursor-pointer group focus:outline-none"
+            title="Quay lại Trang chủ SportCenter"
+          >
+            <div className="bg-[#10b981] flex items-center justify-center rounded-xl size-9 shadow-md shadow-emerald-500/20 text-white font-extrabold text-sm group-hover:scale-105 transition-transform">
+              SC
+            </div>
+            <div className="flex flex-col">
+              <span className="font-extrabold text-slate-900 text-sm tracking-wide leading-tight group-hover:text-emerald-600 transition-colors">
+                SPORTCENTER
+              </span>
+              <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest leading-none">
+                SECURE CHECKOUT
+              </span>
+            </div>
+          </button>
 
           <div className="hidden sm:flex items-center gap-1.5 ml-4 pl-4 border-l border-slate-200 text-slate-500 text-xs">
             <ShieldCheck className="w-4 h-4 text-emerald-500" />
