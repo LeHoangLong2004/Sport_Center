@@ -40,11 +40,12 @@ export function Sidebar({ page, setPage, onLogout }: { page: AdminPage; setPage:
         type="button"
         className="group flex gap-[12px] items-center shrink-0 w-full cursor-pointer text-left focus:outline-none select-none"
         onClick={() => {
-          setPage("overview");
+          window.location.hash = "home";
+          window.dispatchEvent(new HashChangeEvent("hashchange"));
           window.scrollTo({ top: 0, behavior: "smooth" });
         }}
-        title="Quay lại trang Tổng quan (Overview)"
-        aria-label="Quay lại trang Tổng quan"
+        title="Quay lại Trang chủ SportCenter"
+        aria-label="Quay lại Trang chủ"
       >
         <div className="bg-[#f43f5e] flex flex-col items-center justify-center rounded-[10px] shrink-0 size-[40px] shadow-lg shadow-rose-500/25 transition-transform duration-200 group-hover:scale-105 group-hover:shadow-rose-500/40 group-active:scale-95">
           <span className="font-extrabold text-white text-[18px]">SC</span>

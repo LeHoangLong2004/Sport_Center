@@ -28,12 +28,13 @@ export default function MemberSidebar({
         type="button"
         id="btn-member-brand-home"
         onClick={() => {
-          onNavigate("dashboard");
+          window.location.hash = "home";
+          window.dispatchEvent(new HashChangeEvent("hashchange"));
           window.scrollTo({ top: 0, behavior: "smooth" });
         }}
         className="group flex gap-[12px] items-center shrink-0 w-full cursor-pointer text-left focus:outline-none transition-all select-none"
-        title="Quay lại trang Tổng quan (Overview)"
-        aria-label="Quay lại trang Tổng quan"
+        title="Quay lại Trang chủ SportCenter"
+        aria-label="Quay lại Trang chủ SportCenter"
       >
         <div className="bg-[#10b981] flex flex-col items-center justify-center rounded-[10px] shrink-0 size-[40px] shadow-lg shadow-emerald-500/20 transition-all duration-200 group-hover:scale-105 group-hover:shadow-emerald-500/40 group-active:scale-95">
           <span className="font-bold text-white text-[18px]">SC</span>

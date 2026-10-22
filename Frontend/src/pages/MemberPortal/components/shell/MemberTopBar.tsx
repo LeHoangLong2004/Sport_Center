@@ -8,6 +8,7 @@ import {
   QrCode,
   Crown,
   Wallet,
+  Home,
 } from "lucide-react";
 import type { ManagerNotification } from "../../../../hooks/notificationApi";
 import MemberNotificationDropdown from "./MemberNotificationDropdown";
@@ -94,6 +95,20 @@ export function MemberTopBar({
           <button
             type="button"
             onClick={() => {
+              window.location.hash = "home";
+              window.dispatchEvent(new HashChangeEvent("hashchange"));
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="hover:text-emerald-500 transition-colors cursor-pointer focus:outline-none flex items-center gap-1"
+            title="Quay lại Trang chủ SportCenter"
+          >
+            <Home className="w-3 h-3 text-emerald-500" />
+            <span>TRANG CHỦ</span>
+          </button>
+          <span>/</span>
+          <button
+            type="button"
+            onClick={() => {
               onNavigate("dashboard");
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
@@ -112,6 +127,21 @@ export function MemberTopBar({
 
       <div className="relative flex items-center gap-3">
         <RoleSwitcher currentRole="member" />
+        {/* Return to Home Website Button */}
+        <button
+          id="btn-return-home"
+          type="button"
+          onClick={() => {
+            window.location.hash = "home";
+            window.dispatchEvent(new HashChangeEvent("hashchange"));
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-extrabold text-xs transition-all shadow-xs cursor-pointer"
+          title="Quay lại Trang chủ website"
+        >
+          <Home className="w-3.5 h-3.5 text-emerald-500" />
+          <span>Trang chủ</span>
+        </button>
         {/* Quick Check-in Button */}
         <button
           id="btn-quick-checkin"

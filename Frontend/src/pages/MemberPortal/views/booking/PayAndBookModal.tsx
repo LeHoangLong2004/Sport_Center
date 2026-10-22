@@ -141,8 +141,8 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                     : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600 dark:text-slate-300"
                 }`}
               >
-                <QrCode className="w-5 h-5 text-teal-600 shrink-0" />
-                <span className="text-[11px] font-bold">Mã VietQR</span>
+                <QrCode className="w-5 h-5 text-red-600 shrink-0" />
+                <span className="text-[11px] font-bold">Mã VNPAY</span>
               </button>
 
               <button
@@ -176,18 +176,16 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
           {/* NỘI DUNG THANH TOÁN TƯƠNG ỨNG */}
           {paymentMethod === "qr" && (
             <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center space-y-2">
-              <p className="text-[11px] text-slate-500">Quét mã VietQR qua bất kỳ ứng dụng ngân hàng nào:</p>
-              <div className="w-36 h-36 mx-auto bg-slate-100 p-2 rounded-xl border border-slate-200 shadow-xs flex items-center justify-center">
+              <p className="text-[11px] text-slate-500">Mở App VNPAY hoặc bất kỳ ứng dụng ngân hàng nào để quét mã:</p>
+              <div className="w-36 h-auto mx-auto bg-white p-1.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-center">
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(
-                    `2|99|0901234567|SPORT CENTER|0|0|150000|SC BOOK ${classToBook.name}`
-                  )}`}
-                  alt="VietQR Code"
-                  className="w-full h-full object-contain"
+                  src="/vnpay_qr.png"
+                  alt="Mã QR VNPAY chính thức"
+                  className="w-full h-auto object-contain rounded-lg"
                 />
               </div>
               <div className="text-[11px] text-slate-600 dark:text-slate-300 font-medium">
-                <span>Ngân hàng: <strong>MB Bank</strong> • STK: <strong>8888999901</strong></span>
+                <span>Ví/TK VNPAY: <strong>0815353732</strong> • Chủ TK: <strong>Khách hàng 0815353732</strong></span>
                 <br />
                 <span>Số tiền: <strong className="text-emerald-600">{(classToBook.price || 150000).toLocaleString("vi-VN")} đ</strong></span>
               </div>

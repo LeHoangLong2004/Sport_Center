@@ -13,6 +13,7 @@ import {
   Lock,
   Bot,
   LogOut,
+  Home,
 } from "lucide-react";
 import type { MemberScreen } from "../../types";
 import { UserAvatar } from "../../../../components/UserAvatar";
@@ -217,8 +218,22 @@ export default function MemberUserDropdown({
         </button>
       </div>
 
-      {/* GROUP 4: ĐĂNG XUẤT */}
-      <div className="pt-1.5">
+      {/* GROUP 4: TRANG CHỦ & ĐĂNG XUẤT */}
+      <div className="pt-1.5 space-y-0.5">
+        <button
+          type="button"
+          onClick={() => {
+            onClose();
+            window.location.hash = "home";
+            window.dispatchEvent(new HashChangeEvent("hashchange"));
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer text-slate-700 dark:text-slate-300"
+        >
+          <Home className="w-4 h-4 text-emerald-500" />
+          <span className="flex-1">Về Trang chủ website</span>
+        </button>
+
         <button
           type="button"
           onClick={onLogout}

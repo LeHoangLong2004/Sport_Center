@@ -21,11 +21,12 @@ export function Sidebar({ page, onNavigate, onLogout }: { page: Page; onNavigate
         type="button"
         className="group flex gap-[12px] items-center shrink-0 w-full cursor-pointer text-left focus:outline-none select-none"
         onClick={() => {
-          onNavigate("checkin");
+          window.location.hash = "home";
+          window.dispatchEvent(new HashChangeEvent("hashchange"));
           window.scrollTo({ top: 0, behavior: "smooth" });
         }}
-        title="Quay lại trang Tổng quan (Overview)"
-        aria-label="Quay lại trang Tổng quan"
+        title="Quay lại Trang chủ SportCenter"
+        aria-label="Quay lại Trang chủ"
       >
         <div className="bg-[#a855f7] flex flex-col items-center justify-center rounded-[10px] shrink-0 size-[40px] shadow-lg shadow-purple-500/20 transition-all duration-200 group-hover:scale-105 group-hover:shadow-purple-500/40 group-active:scale-95">
           <span className="font-['Manrope:ExtraBold'] font-extrabold text-white text-[18px]">SC</span>

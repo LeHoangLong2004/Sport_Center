@@ -114,7 +114,7 @@ export default function ProfilePaymentReportModal({
                 onChange={(e) => onReportBankMethodChange(e.target.value)}
                 className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
               >
-                <option value="Chuyển khoản QR">Chuyển khoản QR (MB Bank / VietQR)</option>
+                <option value="Chuyển khoản QR">Chuyển khoản Ví VNPAY / QR (0815353732)</option>
                 <option value="Thanh toán trực tiếp">Nộp tiền mặt tại Quầy Lễ tân</option>
                 <option value="Thẻ tín dụng / POS">Quẹt thẻ POS tại quầy</option>
               </select>
