@@ -129,6 +129,8 @@ public static partial class DatabaseInitializationExtensions
             Console.WriteLine($"Homework schema sync error: {ex.Message}");
         }
 
+        InitializeFlow5WorkoutPlanSchema(app, db);
+
         // ── Flow 3: đồng bộ cột bảng invoices với EF Core (an toàn khi chạy lại) ──
         try
         {
