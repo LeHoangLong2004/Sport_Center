@@ -17,6 +17,7 @@ public sealed class Flow5ApiContractTests
         builder.Services.AddRouting();
         // Route metadata generation only needs service registrations; no request is executed.
         builder.Services.AddSingleton<IFlow5WorkoutPlanService>(_ => null!);
+        builder.Services.AddSingleton<IFlow5RecommendationService>(_ => null!);
         builder.Services.AddSingleton<IFlow5AssignmentService>(_ => null!);
         builder.Services.AddSingleton<IFlow5AuthorizationService>(_ => null!);
         builder.Services.AddSingleton<IFlow5ContextService>(_ => null!);

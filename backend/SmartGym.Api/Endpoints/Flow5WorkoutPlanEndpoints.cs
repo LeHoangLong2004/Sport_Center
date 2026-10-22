@@ -14,6 +14,49 @@ public static class Flow5WorkoutPlanEndpoints
     {
         var group = app.MapGroup("/api/workout-plans").RequireAuthorization();
 
+        group.MapPost("/ai-recommendation", async (
+            HttpContext http,
+            [FromBody] GenerateFlow5RecommendationRequest request,
+            IFlow5RecommendationService recommendationService,
+            IFlow5AuthorizationService authorization,
+            IFlow5ContextService contextService,
+            SmartGym.Infrastructure.Persistence.EF.SmartGymDbContext db) =>
+        {
+            var coach = await ResolveCoachAsync(http, authorization, db);
+            if (coach is null) return Results.Unauthorized();
+
+            var access = await authorization.AuthorizeTargetAsync(
+                http.User,
+                request.Target,
+                http.RequestAborted);
+            if (!access.IsAllowed || access.Context?.CoachId != coach.CoachId)
+            {
+                var status = access.ErrorCode switch
+                {
+                    "unauthorized" => StatusCodes.Status401Unauthorized,
+                    "not_found" => StatusCodes.Status404NotFound,
+                    _ => StatusCodes.Status403Forbidden
+                };
+                return Error(access.ErrorCode, access.ErrorMessage, statusCode: status);
+            }
+
+            var contextResult = await contextService.BuildAsync(
+                access.Context!,
+                request.Target,
+                request.SportId,
+                http.RequestAborted);
+            if (!contextResult.IsSuccess || contextResult.Context is null)
+                return Error(contextResult.ErrorCode, contextResult.ErrorMessage);
+
+            var result = await recommendationService.GenerateDraftAsync(
+                coach.CoachId,
+                request,
+                contextResult.Context,
+                http.RequestAborted);
+            return ToResult(result, StatusCodes.Status201Created);
+        }).WithTags("Flow 5 - Workout Plans")
+          .WithSummary("Generate and save an AI workout-plan recommendation as a draft");
+
         group.MapPost("/drafts", async (
             HttpContext http,
             [FromBody] CreateFlow5DraftRequest request,
@@ -191,6 +234,15 @@ public static class Flow5WorkoutPlanEndpoints
             "not_found" => StatusCodes.Status404NotFound,
             "version_conflict" or "plan_not_editable" or "plan_not_draft" or "plan_archived" or "already_archived" or "plan_not_approved" => StatusCodes.Status409Conflict,
             "forbidden" => StatusCodes.Status403Forbidden,
+            "ai_output_invalid" or "ai_response_empty" or "ai_json_invalid" or "ai_json_not_found"
+                or "ai_json_empty" or "ai_json_missing_plan_name" or "ai_json_missing_exercises"
+                or "ai_json_invalid_exercise"
+                => StatusCodes.Status422UnprocessableEntity,
+            "ai_quota_exceeded" => StatusCodes.Status429TooManyRequests,
+            "ai_provider_error" or "ai_provider_timeout" or "ai_provider_unavailable"
+                or "ai_provider_invalid_response"
+                => StatusCodes.Status502BadGateway,
+            "ai_provider_not_configured" => StatusCodes.Status503ServiceUnavailable,
             _ => StatusCodes.Status400BadRequest
         };
         return Error(result.ErrorCode, result.ErrorMessage, result.Issues, status);
