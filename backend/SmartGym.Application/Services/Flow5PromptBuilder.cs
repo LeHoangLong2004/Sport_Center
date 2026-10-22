@@ -13,7 +13,7 @@ namespace SmartGym.Application.Services;
 /// </summary>
 public sealed class Flow5PromptBuilder : IFlow5PromptBuilder
 {
-    private const string PromptVersion = "flow5.prompt.v1";
+    private const string PromptVersion = "flow5.prompt.v2";
 
     public string Build(
         GenerateFlow5RecommendationRequest request,
@@ -113,8 +113,17 @@ explanatory text before or after the JSON. Use exactly this shape:
 }
 
 Use the same language as the user's goal when possible. Keep dosage clear and
-separate sets, reps, duration and rest. A Coach must review the draft before it is
-approved or assigned.
+separate sets, reps, duration and rest. Follow these exact value rules so the
+Coach can edit the draft safely:
+- sets: use only a positive number such as "3" or a count format such as "3x10".
+- reps: use only a positive count or range with an optional unit, such as "10",
+  "10 reps", "10 lan" or "10-12 reps".
+- duration and rest: use only "30s", "45 sec", "2 min", "2 phut", "1 h" or
+  "00:30". Never use words such as "seconds", "minutes", "per set" or "each".
+- Set fields that do not apply to an exercise to null, and ensure every exercise
+  has at least one of sets, reps or duration. Use exactly {{exerciseCount}} exercises
+  when a requested exercise count is provided, with order values 1 through {{exerciseCount}}.
+A Coach must review the draft before it is approved or assigned.
 """;
     }
 

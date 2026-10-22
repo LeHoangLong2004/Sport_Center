@@ -103,6 +103,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFlow5AuthorizationService, Flow5AuthorizationService>();
         services.AddScoped<IFlow5ContextService, Flow5ContextService>();
         services.AddScoped<IFlow5WorkoutPlanService, Flow5WorkoutPlanService>();
+        services.AddScoped<IFlow5RecommendationService, Flow5RecommendationService>();
         services.AddScoped<IFlow5AssignmentService, Flow5AssignmentService>();
         services.AddSingleton<IFlow5WorkoutPlanValidator, Flow5WorkoutPlanValidator>();
         services.AddSingleton<IFlow5PromptBuilder, Flow5PromptBuilder>();
