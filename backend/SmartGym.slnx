@@ -3,4 +3,5 @@
   <Project Path="SmartGym.Application/SmartGym.Application.csproj" />
   <Project Path="SmartGym.Domain/SmartGym.Domain.csproj" />
   <Project Path="SmartGym.Infrastructure/SmartGym.Infrastructure.csproj" />
+  <Project Path="SmartGym.Tests/SmartGym.Tests.csproj" />
 </Solution>

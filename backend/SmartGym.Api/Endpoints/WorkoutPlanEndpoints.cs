@@ -202,6 +202,8 @@ public static class WorkoutPlanEndpoints
             )
             .WithTags("Workout Plans")
             .WithSummary("Get all workout plans created by the logged-in coach");
+
+        app.MapFlow5WorkoutPlanEndpoints();
     }
 
     private static async Task<Guid?> ResolveCoachIdAsync(SmartGymDbContext db, Guid userId)

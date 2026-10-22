@@ -7,6 +7,7 @@ import MemberSchedule from "./views/MemberSchedule";
 import MemberPackages from "./views/MemberPackages";
 import MemberPayments from "./views/MemberPayments";
 import MemberWorkouts from "./views/MemberWorkouts";
+import MemberAttendance from "./views/MemberAttendance";
 import MemberReviews from "./views/MemberReviews";
 import MemberChat from "./views/MemberChat";
 import MemberSupport from "./views/MemberSupport";
@@ -15,6 +16,7 @@ import { ProductShopPage, type ProductOrder } from "./views/ProductShopPage";
 import { ProductPaymentFlow } from "../PaymentFlow/ProductPaymentFlow";
 import { CatalogPackage, PackagePeriod } from "../../services/packageApi";
 import PaymentFlow from "../PaymentFlow";
+import { PageTransition } from "../../components/PageTransition";
 
 export type CheckoutSelection = {
   item: CatalogPackage;
@@ -26,10 +28,12 @@ export default function MemberPortal({
   initialPage = "dashboard",
   onCheckout: onExternalCheckout,
   onProductPayment: onExternalProductPayment,
+  onLogout,
 }: {
   initialPage?: string;
   onCheckout?: (selection: CheckoutSelection) => void;
   onProductPayment?: (order: ProductOrder) => void;
+  onLogout?: () => void;
 }) {
   const getInitialScreen = (): MemberScreen => {
     const raw = (window.location.hash || "").replace("#member-", "").replace("#", "");
@@ -45,6 +49,9 @@ export default function MemberPortal({
       payments: "profile",
       workout: "workouts",
       workouts: "workouts",
+      attendance: "attendance",
+      diemdanh: "attendance",
+      "diem-danh": "attendance",
       reports: "dashboard",
       progress: "dashboard",
       reviews: "reviews",
@@ -81,6 +88,9 @@ export default function MemberPortal({
         payments: "profile",
         workout: "workouts",
         workouts: "workouts",
+        attendance: "attendance",
+        diemdanh: "attendance",
+        "diem-danh": "attendance",
         reports: "dashboard",
         progress: "dashboard",
         reviews: "reviews",
@@ -138,50 +148,69 @@ export default function MemberPortal({
     );
   }
 
-  const screenNodes: Record<MemberScreen, ReactNode> = {
-    dashboard: <MemberDashboard onNavigate={navigateTo} />,
-    booking: <MemberBooking onNavigate={navigateTo} />,
-    schedule: <MemberSchedule onNavigate={navigateTo} />,
-    packages: (
-      <MemberPackages
-        onNavigate={navigateTo}
-        onCheckout={(item, duration, discountPct) => {
-          const selection = { item, duration, discountPct };
-          if (onExternalCheckout) {
-            onExternalCheckout(selection);
-            return;
-          }
-          setCheckout(selection);
-        }}
-      />
-    ),
-    payments: <MemberPayments onNavigate={navigateTo} />,
-    workouts: <MemberWorkouts onNavigate={navigateTo} />,
-    reviews: <MemberReviews onNavigate={navigateTo} />,
-    chat: <MemberChat onNavigate={navigateTo} />,
-    support: <MemberSupport onNavigate={navigateTo} />,
-    shop: (
-      <ProductShopPage
-        embedded
-        onOnlinePayment={(order) => {
-          if (onExternalProductPayment) {
-            onExternalProductPayment(order);
-            return;
-          }
-          setProductPaymentOrder(order);
-        }}
-        onNavigate={() => {
-          navigateTo("dashboard");
-          window.location.hash = "#member-dashboard";
-        }}
-      />
-    ),
-    profile: <MemberProfileModern onNavigate={navigateTo} />,
+  const renderScreen = (s: MemberScreen) => {
+    switch (s) {
+      case "dashboard":
+        return <MemberDashboard onNavigate={navigateTo} />;
+      case "booking":
+        return <MemberBooking onNavigate={navigateTo} />;
+      case "schedule":
+        return <MemberSchedule onNavigate={navigateTo} />;
+      case "attendance":
+        return <MemberAttendance onNavigate={navigateTo} />;
+      case "packages":
+        return (
+          <MemberPackages
+            onNavigate={navigateTo}
+            onCheckout={(item, duration, discountPct) => {
+              const selection = { item, duration, discountPct };
+              if (onExternalCheckout) {
+                onExternalCheckout(selection);
+                return;
+              }
+              setCheckout(selection);
+            }}
+          />
+        );
+      case "payments":
+        return <MemberPayments onNavigate={navigateTo} />;
+      case "workouts":
+        return <MemberWorkouts onNavigate={navigateTo} />;
+      case "reviews":
+        return <MemberReviews onNavigate={navigateTo} />;
+      case "chat":
+        return <MemberChat onNavigate={navigateTo} />;
+      case "support":
+        return <MemberSupport onNavigate={navigateTo} />;
+      case "shop":
+        return (
+          <ProductShopPage
+            embedded
+            onOnlinePayment={(order) => {
+              if (onExternalProductPayment) {
+                onExternalProductPayment(order);
+                return;
+              }
+              setProductPaymentOrder(order);
+            }}
+            onNavigate={() => {
+              navigateTo("dashboard");
+              window.location.hash = "#member-dashboard";
+            }}
+          />
+        );
+      case "profile":
+        return <MemberProfileModern onNavigate={navigateTo} />;
+      default:
+        return <MemberDashboard onNavigate={navigateTo} />;
+    }
   };
 
   return (
-    <MemberShellModern currentScreen={screen} onNavigate={navigateTo}>
-      {screenNodes[screen] || <MemberDashboard onNavigate={navigateTo} />}
+    <MemberShellModern currentScreen={screen} onNavigate={navigateTo} onLogout={onLogout}>
+      <PageTransition pageKey={screen}>
+        {renderScreen(screen)}
+      </PageTransition>
     </MemberShellModern>
   );
 }

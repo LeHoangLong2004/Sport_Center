@@ -11,9 +11,13 @@ using SmartGym.Application.Interfaces.Repositories;
 using SmartGym.Application.Interfaces.Services;
 using SmartGym.Application.Services;
 using SmartGym.Infrastructure.Authentication;
+using SmartGym.Infrastructure.AI;
+using SmartGym.Infrastructure.Authorization;
+using SmartGym.Infrastructure.Context;
 using SmartGym.Infrastructure.Persistence.EF;
 using SmartGym.Infrastructure.Persistence.EF.Repositories;
 using SmartGym.Infrastructure.Persistence.Supabase.Repositories;
+using SmartGym.Infrastructure.Persistence.InMemory;
 using SmartGym.Infrastructure.Services;
 
 namespace SmartGym.Api.Extensions;
@@ -74,9 +78,17 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ITokenService, TokenService>();
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
+        services.Configure<GeminiOptions>(configuration.GetSection(GeminiOptions.SectionName));
+        services.AddSingleton<IAiQuotaLimiter, InMemoryAiQuotaLimiter>();
+        services.AddHttpClient<IAiRecommendationProvider, GeminiRecommendationProvider>(client =>
+        {
+            // Per-request cancellation tokens own the AI timeout and retry budget.
+            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+        });
 
         // ── Application Services ──
         services.AddScoped<IAuthService, AuthService>();
+        services.AddSingleton<IAccountTokenRepository, AccountTokenRepository>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IPackageService, PackageService>();
         services.AddScoped<ISubscriptionService, SubscriptionService>();
@@ -88,6 +100,14 @@ public static class ServiceCollectionExtensions
         services.AddScoped<BookingService>();
         services.AddScoped<CheckInService>();
         services.AddScoped<IWorkoutPlanService, WorkoutPlanService>();
+        services.AddScoped<IFlow5AuthorizationService, Flow5AuthorizationService>();
+        services.AddScoped<IFlow5ContextService, Flow5ContextService>();
+        services.AddScoped<IFlow5WorkoutPlanService, Flow5WorkoutPlanService>();
+        services.AddScoped<IFlow5RecommendationService, Flow5RecommendationService>();
+        services.AddScoped<IFlow5AssignmentService, Flow5AssignmentService>();
+        services.AddSingleton<IFlow5WorkoutPlanValidator, Flow5WorkoutPlanValidator>();
+        services.AddSingleton<IFlow5PromptBuilder, Flow5PromptBuilder>();
+        services.AddSingleton<IFlow5RecommendationJsonParser, Flow5RecommendationJsonParser>();
         services.AddScoped<IHomeworkProgressService, HomeworkProgressService>();
         services.AddScoped<IReviewService, ReviewService>();
         services.AddScoped<PackageCatalogService>();
