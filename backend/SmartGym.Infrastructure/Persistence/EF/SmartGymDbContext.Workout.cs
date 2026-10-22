@@ -19,8 +19,18 @@ public partial class SmartGymDbContext
             entity.Property(e => e.Goal).HasColumnName("goal");
             entity.Property(e => e.Level).HasColumnName("level");
             entity.Property(e => e.DurationMinutes).HasColumnName("duration_minutes");
-            entity.Property(e => e.Status).HasColumnName("status").HasDefaultValue("Nháp");
+            entity.Property(e => e.Status).HasColumnName("status").HasDefaultValue("draft");
+            entity.Property(e => e.Source).HasColumnName("source").HasDefaultValue("manual");
             entity.Property(e => e.Version).HasColumnName("version").HasDefaultValue(1);
+            entity.Property(e => e.ParentPlanId).HasColumnName("parent_plan_id");
+            entity.Property(e => e.RecommendationTargetType).HasColumnName("recommendation_target_type");
+            entity.Property(e => e.RecommendationTargetId).HasColumnName("recommendation_target_id");
+            entity.Property(e => e.AiMetadataJson).HasColumnName("ai_metadata_json");
+            entity.Property(e => e.ApprovedAt).HasColumnName("approved_at");
+            entity.Property(e => e.ApprovedBy).HasColumnName("approved_by");
+            entity.Property(e => e.ApprovalNote).HasColumnName("approval_note");
+            entity.Property(e => e.ArchivedAt).HasColumnName("archived_at");
+            entity.Property(e => e.ArchivedBy).HasColumnName("archived_by");
             entity
                 .Property(e => e.CreatedAt)
                 .HasColumnName("created_at")
@@ -38,9 +48,12 @@ public partial class SmartGymDbContext
             entity.Property(e => e.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.PlanId).HasColumnName("plan_id");
             entity.Property(e => e.Name).HasColumnName("name").IsRequired();
+            entity.Property(e => e.Sets).HasColumnName("sets");
             entity.Property(e => e.Reps).HasColumnName("reps");
+            entity.Property(e => e.Duration).HasColumnName("duration");
             entity.Property(e => e.Rest).HasColumnName("rest");
             entity.Property(e => e.Note).HasColumnName("note");
+            entity.Property(e => e.Order).HasColumnName("exercise_order").HasDefaultValue(0);
 
             entity
                 .HasOne(d => d.Plan)

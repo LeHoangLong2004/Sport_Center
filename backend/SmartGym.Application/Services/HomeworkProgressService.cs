@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using SmartGym.Application.DTOs.WorkoutPlans;
+using SmartGym.Application.Exceptions;
 using SmartGym.Application.Interfaces;
 using SmartGym.Domain.Entities;
 
@@ -25,6 +26,12 @@ public class HomeworkProgressService : IHomeworkProgressService
         if (plan == null) throw new Exception("Workout plan not found");
         if (plan.CoachId != coachId)
             throw new UnauthorizedAccessException("You can only assign workout plans that you created.");
+        if (!Flow5PlanStatus.IsApproved(plan.Status))
+        {
+            throw new Flow5PlanAssignmentException(
+                "plan_not_approved",
+                "Only approved workout plans can be assigned.");
+        }
 
         var progress = new HomeworkProgress
         {

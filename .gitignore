@@ -140,3 +140,8 @@ Frontend/.cache/
 # ------------------------------------------------------------------------------
 scratch/
 **/scratch/
+
+# Flow 5/6 planning documents (keep the shared implementation plan)
+docs/Flow_5*.md
+docs/Flow_6*.md
+!docs/Flow_5_6_AI_Implementation_Plan.md
