@@ -24,7 +24,8 @@ public static class HomeworkEndpoints
                 async (
                     HttpContext context,
                     [FromBody] AssignHomeworkRequest request,
-                    IHomeworkProgressService service,
+                    IFlow5AssignmentService assignmentService,
+                    IFlow5AuthorizationService authorization,
                     SmartGymDbContext db
                 ) =>
                 {
@@ -57,35 +58,40 @@ public static class HomeworkEndpoints
                             targetClassId
                         ).ToListAsync()).Any();
                         var isClass = isExplicitClass || (!await db.Users.AnyAsync(u => u.Id == request.MemberId) && isClassInDb);
+                        var assignmentTarget = new Flow5TargetDto
+                        {
+                            Type = isClass ? Flow5TargetTypes.Class : Flow5TargetTypes.Member,
+                            Id = targetClassId
+                        };
+                        if (string.Equals(roleClaim, "coach", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var targetAccess = await authorization.AuthorizeTargetAsync(
+                                context.User,
+                                assignmentTarget,
+                                context.RequestAborted);
+                            if (!targetAccess.IsAllowed)
+                            {
+                                return targetAccess.ErrorCode == "unauthorized"
+                                    ? Results.Unauthorized()
+                                    : Results.Forbid();
+                            }
+                        }
 
                         if (isClass)
                         {
-                            var studentUserIds = await db.Database.SqlQueryRaw<Guid>(
-                                @"SELECT DISTINCT user_id FROM class_bookings 
-                                  WHERE class_id = {0} AND status NOT IN ('cancelled', 'rejected', 'class_cancelled')",
-                                targetClassId
-                            ).ToListAsync();
-
-                            if (studentUserIds.Count == 0)
-                            {
-                                return Results.BadRequest(new { message = "Lớp học này hiện chưa có học viên nào đăng ký để giao giáo án." });
-                            }
-
-                            var assignedList = new List<HomeworkProgressResponse>();
-                            foreach (var studentId in studentUserIds)
-                            {
-                                var subRequest = new AssignHomeworkRequest
+                            var result = await assignmentService.AssignAsync(
+                                coachId.Value,
+                                request.PlanId,
+                                new AssignFlow5PlanRequest
                                 {
-                                    MemberId = studentId,
-                                    PlanId = request.PlanId,
-                                    DueDate = request.DueDate,
+                                    Target = assignmentTarget,
+                                    DueDate = request.DueDate.HasValue
+                                        ? new DateTimeOffset(request.DueDate.Value)
+                                        : null,
                                     Notes = request.Notes
-                                };
-                                var res = await service.AssignHomeworkAsync(coachId.Value, subRequest);
-                                assignedList.Add(res);
-                            }
-
-                            return Results.Ok(new { success = true, assignedCount = assignedList.Count, data = assignedList });
+                                },
+                                context.RequestAborted);
+                            return ToAssignmentResult(result);
                         }
 
                         // Single member assignment: ensure user exists
@@ -95,8 +101,19 @@ public static class HomeworkEndpoints
                             return Results.BadRequest(new { message = "Không tìm thấy học viên hoặc lớp học tương ứng trong hệ thống." });
                         }
 
-                        var result = await service.AssignHomeworkAsync(coachId.Value, request);
-                        return Results.Ok(result);
+                        var memberResult = await assignmentService.AssignAsync(
+                            coachId.Value,
+                            request.PlanId,
+                            new AssignFlow5PlanRequest
+                            {
+                                    Target = assignmentTarget,
+                                DueDate = request.DueDate.HasValue
+                                    ? new DateTimeOffset(request.DueDate.Value)
+                                    : null,
+                                Notes = request.Notes
+                            },
+                            context.RequestAborted);
+                        return ToAssignmentResult(memberResult);
                     }
                     catch (Exception ex)
                     {
@@ -163,6 +180,35 @@ public static class HomeworkEndpoints
             )
             .WithTags("Homework")
             .WithSummary("Update progress status of a homework (Member only)");
+    }
+
+    private static IResult ToAssignmentResult(
+        Flow5PlanServiceResult<AssignFlow5PlanResponse> result)
+    {
+        if (result.IsSuccess)
+        {
+            return Results.Ok(new
+            {
+                success = true,
+                assignedCount = result.Data?.AssignedCount ?? 0,
+                skippedCount = result.Data?.SkippedCount ?? 0,
+                data = result.Data?.Assignments ?? new List<Flow5AssignmentItemDto>()
+            });
+        }
+
+        var status = result.ErrorCode switch
+        {
+            "not_found" => StatusCodes.Status404NotFound,
+            "forbidden" => StatusCodes.Status403Forbidden,
+            "plan_not_approved" or "version_conflict" => StatusCodes.Status409Conflict,
+            _ => StatusCodes.Status400BadRequest
+        };
+        return Results.Json(new
+        {
+            success = false,
+            code = result.ErrorCode,
+            message = result.ErrorMessage
+        }, statusCode: status);
     }
 
 }
