@@ -17,17 +17,26 @@ export function Sidebar({ page, onNavigate, onLogout }: { page: Page; onNavigate
   return (
     <div className="bg-[#0f172a] flex flex-col gap-[28px] items-start pb-[24px] pt-[28px] px-[18px] shrink-0 w-[230px] sticky top-0 h-screen overflow-y-auto hidden-scrollbar">
       {/* Brand */}
-      <div className="flex gap-[12px] items-center shrink-0 w-full">
-        <div className="bg-[#a855f7] flex flex-col items-center justify-center rounded-[10px] shrink-0 size-[40px] shadow-lg shadow-purple-500/20">
+      <button
+        type="button"
+        className="group flex gap-[12px] items-center shrink-0 w-full cursor-pointer text-left focus:outline-none select-none"
+        onClick={() => {
+          onNavigate("checkin");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+        title="Quay lại trang Tổng quan (Overview)"
+        aria-label="Quay lại trang Tổng quan"
+      >
+        <div className="bg-[#a855f7] flex flex-col items-center justify-center rounded-[10px] shrink-0 size-[40px] shadow-lg shadow-purple-500/20 transition-all duration-200 group-hover:scale-105 group-hover:shadow-purple-500/40 group-active:scale-95">
           <span className="font-['Manrope:ExtraBold'] font-extrabold text-white text-[18px]">SC</span>
         </div>
         <div className="flex flex-col gap-[2px] items-start shrink-0">
-          <span className="font-['Manrope:ExtraBold'] font-extrabold text-[15px] text-white whitespace-nowrap tracking-wide">SPORTCENTER</span>
+          <span className="font-['Manrope:ExtraBold'] font-extrabold text-[15px] text-white whitespace-nowrap tracking-wide group-hover:text-purple-300 transition-colors">SPORTCENTER</span>
           <div className="bg-[#1e293b] flex items-start px-[6px] py-px rounded-[4px] shrink-0">
             <span className="font-['Manrope:Bold'] font-bold text-[#a855f7] text-[9px] whitespace-nowrap tracking-wider">RECEPTIONIST</span>
           </div>
         </div>
-      </div>
+      </button>
 
       {/* Nav */}
       <div className="flex flex-col gap-[6px] items-start shrink-0 w-full">

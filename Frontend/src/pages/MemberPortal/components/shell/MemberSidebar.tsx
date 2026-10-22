@@ -24,22 +24,29 @@ export default function MemberSidebar({
   return (
     <aside className="bg-[#0f172a] flex flex-col gap-[28px] items-start pb-[24px] pt-[28px] px-[18px] shrink-0 w-[250px] sticky top-0 h-screen overflow-y-auto hidden-scrollbar z-30 select-none">
       {/* Brand */}
-      <div
-        className="flex gap-[12px] items-center shrink-0 w-full cursor-pointer"
-        onClick={() => onNavigate("dashboard")}
+      <button
+        type="button"
+        id="btn-member-brand-home"
+        onClick={() => {
+          onNavigate("dashboard");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+        className="group flex gap-[12px] items-center shrink-0 w-full cursor-pointer text-left focus:outline-none transition-all select-none"
+        title="Quay lại trang Tổng quan (Overview)"
+        aria-label="Quay lại trang Tổng quan"
       >
-        <div className="bg-[#10b981] flex flex-col items-center justify-center rounded-[10px] shrink-0 size-[40px] shadow-lg shadow-emerald-500/20">
+        <div className="bg-[#10b981] flex flex-col items-center justify-center rounded-[10px] shrink-0 size-[40px] shadow-lg shadow-emerald-500/20 transition-all duration-200 group-hover:scale-105 group-hover:shadow-emerald-500/40 group-active:scale-95">
           <span className="font-bold text-white text-[18px]">SC</span>
         </div>
         <div className="flex flex-col gap-[2px] items-start shrink-0">
-          <span className="font-extrabold text-[15px] text-white whitespace-nowrap tracking-wide">
+          <span className="font-extrabold text-[15px] text-white whitespace-nowrap tracking-wide group-hover:text-emerald-400 transition-colors">
             SPORTCENTER
           </span>
           <span className="font-bold text-[#10b981] text-[10px] whitespace-nowrap uppercase tracking-widest">
             MEMBER PORTAL
           </span>
         </div>
-      </div>
+      </button>
 
       {/* Navigation Items (10 items) */}
       <div className="flex flex-col gap-[4px] items-start shrink-0 w-full">

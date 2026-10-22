@@ -90,8 +90,20 @@ export function MemberTopBar({
   return (
     <header className="flex justify-between items-center px-6 lg:px-8 py-4 border-b border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-[#0f172a]/80 backdrop-blur-xl sticky top-0 z-30">
       <div>
-        <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-0.5">
-          {BREADCRUMBS[currentScreen]}
+        <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-0.5 flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => {
+              onNavigate("dashboard");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="hover:text-emerald-500 transition-colors cursor-pointer focus:outline-none"
+            title="Quay lại Tổng quan (Overview)"
+          >
+            HỘI VIÊN
+          </button>
+          <span>/</span>
+          <span>{BREADCRUMBS[currentScreen]?.replace(/^HỘI VIÊN\s*\/\s*/, "") || "TỔNG QUAN"}</span>
         </p>
         <h1 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
           {PAGE_TITLES[currentScreen]}
