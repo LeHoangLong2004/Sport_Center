@@ -25,7 +25,7 @@ export default function CoachSidebar({
       if (!userName) {
         userName = user.fullName || user.name || user.email?.split("@")[0];
       }
-      avatarUrl = avatarUrl || user.avatarUrl;
+      avatarUrl = (avatarUrl && avatarUrl.trim() !== "") ? avatarUrl : (user.avatarUrl || user.avatar);
     } catch (e) {}
   }
   userName = userName || "Huấn luyện viên";

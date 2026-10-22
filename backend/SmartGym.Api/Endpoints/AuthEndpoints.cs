@@ -74,7 +74,8 @@ public static class AuthEndpoints
                             email = coachUser.Email,
                             phoneNumber = coachUser.PhoneNumber,
                             role = "coach",
-                            roleName = "coach"
+                            roleName = "coach",
+                            avatarUrl = coachUser.AvatarUrl ?? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80"
                         });
                     }
                     else if (cleanEmail == "hoxuananhnam@gmail.com")
@@ -97,7 +98,8 @@ public static class AuthEndpoints
                             email = memberUser.Email,
                             phoneNumber = memberUser.PhoneNumber,
                             role = "member",
-                            roleName = "member"
+                            roleName = "member",
+                            avatarUrl = memberUser.AvatarUrl ?? "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=256&q=80"
                         });
                     }
                 }

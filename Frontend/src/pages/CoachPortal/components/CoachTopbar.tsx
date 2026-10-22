@@ -3,7 +3,8 @@ import { CoachScreen } from "../types";
 import { breadcrumbs, pageTitles } from "../constants";
 import { IconBell } from "../Icons";
 import { notificationApi, type ManagerNotification } from "../../../hooks/notificationApi";
-import { RoleSwitcher } from "../../../components/RoleSwitcher";
+import { UserAvatar } from "../../../components/UserAvatar";
+import { useUserProfile } from "../../../hooks/useUserProfile";
 
 function getShiftName() {
   const hour = new Date().getHours();
@@ -13,7 +14,21 @@ function getShiftName() {
   return "Ca đêm";
 }
 
-export default function CoachTopbar({ screen }: { screen: CoachScreen }) {
+export default function CoachTopbar({ screen, onProfileClick }: { screen: CoachScreen; onProfileClick?: () => void }) {
+  const { profile } = useUserProfile("coach");
+  const userStr = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+  let userName = profile?.fullName || "Huấn luyện viên";
+  let avatarUrl = profile?.avatarUrl;
+  if (userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      if (!profile?.fullName) {
+        userName = user.fullName || user.name || user.email?.split("@")[0] || userName;
+      }
+      avatarUrl = avatarUrl || user.avatarUrl || user.avatar;
+    } catch (e) {}
+  }
+
   const [shift, setShift] = useState(getShiftName());
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<ManagerNotification[]>([]);
@@ -88,7 +103,6 @@ export default function CoachTopbar({ screen }: { screen: CoachScreen }) {
         <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{pageTitles[screen]}</h1>
       </div>
       <div className="flex items-center gap-4">
-        <RoleSwitcher currentRole="coach" />
         <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 font-bold text-xs rounded-full border border-orange-200/50 dark:border-orange-500/20">
           <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
           Đang trực tuyến • {shift}
@@ -159,6 +173,15 @@ export default function CoachTopbar({ screen }: { screen: CoachScreen }) {
             </div>
           )}
         </div>
+        <UserAvatar
+          src={avatarUrl}
+          name={userName}
+          className="rounded-full size-10 object-cover cursor-pointer border-2 border-slate-200 dark:border-slate-700 hover:border-orange-500 dark:hover:border-orange-500 transition-colors shadow-sm"
+          onClick={() => {
+            if (onProfileClick) onProfileClick();
+            else window.location.hash = "#coach-profile";
+          }}
+        />
       </div>
     </header>
   )
