@@ -184,7 +184,18 @@ public static partial class CoachEndpoints
                     sport = sports.FirstOrDefault() ?? string.Empty,
                     level = x.Plan?.Level ?? string.Empty,
                     duration = x.Plan?.DurationMinutes ?? 0,
-                    status = x.ProgressPct >= 100 ? "Hoàn thành" : (x.ProgressPct > 0 ? "Đang tập luyện" : "Đã giao"),
+                    status = x.Status switch
+                    {
+                        "completed" => "Hoàn thành",
+                        "pending_review" => "Chờ nghiệm thu",
+                        "rejected" => "Chưa đạt",
+                        "in_progress" => "Đang tập luyện",
+                        _ => "Đã giao"
+                    },
+                    statusCode = x.Status,
+                    assignedDate = x.AssignedDate.ToString("yyyy-MM-dd"),
+                    dueDate = x.DueDate.HasValue ? x.DueDate.Value.ToString("yyyy-MM-dd") : null,
+                    notes = x.Notes,
                     progressPct = x.ProgressPct ?? 0,
                     exercises = x.Plan?.Exercises.Select(e => new
                     {

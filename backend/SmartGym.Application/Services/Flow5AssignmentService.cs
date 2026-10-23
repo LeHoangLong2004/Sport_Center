@@ -34,7 +34,7 @@ public sealed class Flow5AssignmentService : IFlow5AssignmentService
             return Failure("not_found", "Workout plan was not found.");
         if (plan.CoachId != coachId)
             return Failure("forbidden", "You can only assign plans that you created.");
-        if (!Flow5PlanStatus.IsApproved(plan.Status))
+        if (!Flow5PlanStatus.CanBeAssigned(plan.Status))
             return Failure("plan_not_approved", "Only approved workout plans can be assigned.");
         if (request.ExpectedVersion > 0 && plan.Version != request.ExpectedVersion)
             return Failure("version_conflict", "The plan version is stale.");

@@ -69,7 +69,8 @@ export interface MockCurriculum {
   goal: string;
   level: string;
   duration: number; // phút
-  status: "Nháp" | "Đã giao" | "Lưu trữ";
+  status: "Nháp" | "Đã duyệt" | "Đã giao" | "Lưu trữ";
+  source?: string;
   updatedAt: string;
   description: string;
   exercises: { name: string; reps: string; rest: string; note: string }[];

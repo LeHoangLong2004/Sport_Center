@@ -146,24 +146,41 @@ export const CoachAPI = {
     try {
       const plans = await fetchApi('/workout-plans/coach');
       if (!Array.isArray(plans)) return [];
-      return plans.map((p: any) => ({
-        id: p.id,
-        name: p.planName,
-        sportId: p.sportId || null,
-        sport: "",
-        goal: p.goal || "",
-        level: p.level || "",
-        duration: p.durationMinutes || 60,
-        status: (p.status === "Nháp" ? "Nháp" : p.status === "Lưu trữ" ? "Lưu trữ" : "Đã giao") as MockCurriculum["status"],
-        updatedAt: p.updatedAt
-          ? new Date(p.updatedAt).toISOString().split("T")[0]
-          : new Date().toISOString().split("T")[0],
-        description: p.description || "",
-        exercises: p.exercises?.map((e: any) => ({ 
-          name: e.name, reps: e.reps, rest: e.rest, note: e.note 
-        })) || [],
-        assignedTo: []
-      }));
+      return plans.map((p: any) => {
+        const rawStatus = String(p.status || "").toLowerCase().trim();
+        let mappedStatus: MockCurriculum["status"] = "Nháp";
+        if (rawStatus === "assigned" || rawStatus === "đã giao" || rawStatus === "da giao") {
+          mappedStatus = "Đã giao";
+        } else if (rawStatus === "approved" || rawStatus === "đã duyệt" || rawStatus === "da duyet") {
+          mappedStatus = "Đã duyệt";
+        } else if (rawStatus === "archived" || rawStatus === "lưu trữ" || rawStatus === "luu tru") {
+          mappedStatus = "Lưu trữ";
+        } else {
+          mappedStatus = "Nháp";
+        }
+
+        return {
+          id: p.id,
+          name: p.planName,
+          sportId: p.sportId || null,
+          sport: "",
+          goal: p.goal || "",
+          level: p.level || "",
+          duration: p.durationMinutes || 60,
+          status: mappedStatus,
+          source: p.source || (p.aiMetadata ? "ai_recommendation" : "manual"),
+          updatedAt: p.updatedAt
+            ? new Date(p.updatedAt).toISOString().split("T")[0]
+            : new Date().toISOString().split("T")[0],
+          description: p.description || "",
+          exercises: p.exercises?.map((e: any) => ({ 
+            name: e.name, reps: e.reps, rest: e.rest, note: e.note 
+          })) || [],
+          assignedTo: p.recommendationTargetId
+            ? [{ type: p.recommendationTargetType || "class", id: p.recommendationTargetId, name: p.planName || p.name }]
+            : (p.assignedTo || [])
+        };
+      });
     } catch {
       return [];
     }
@@ -200,6 +217,7 @@ export const CoachAPI = {
       goal: curriculum.goal,
       level: curriculum.level,
       durationMinutes: curriculum.duration,
+      status: curriculum.status === "Nháp" ? "draft" : "approved",
       exercises: curriculum.exercises.map((e: any) => ({
         name: e.name,
         reps: e.reps,
@@ -220,6 +238,7 @@ export const CoachAPI = {
       goal: curriculum.goal,
       level: curriculum.level,
       durationMinutes: curriculum.duration,
+      status: curriculum.status === "Nháp" ? "draft" : "approved",
       exercises: curriculum.exercises.map((e: any) => ({
         name: e.name,
         reps: e.reps,
@@ -232,17 +251,42 @@ export const CoachAPI = {
       body: JSON.stringify(payload)
     });
   },
+  approveCurriculum: async (id: string) => {
+    return fetchApi(`/coach/curricula/${id}/approve`, {
+      method: 'POST'
+    });
+  },
   assignCurriculum: async (id: string, target: any) => {
+    let parsedDueDate: string | undefined = undefined;
+    if (target.deadline) {
+      if (typeof target.deadline === "string" && target.deadline.includes("/")) {
+        const parts = target.deadline.split("/");
+        if (parts.length === 3) {
+          const d = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+          if (!isNaN(d.getTime())) parsedDueDate = d.toISOString();
+        }
+      } else {
+        const d = new Date(target.deadline);
+        if (!isNaN(d.getTime())) parsedDueDate = d.toISOString();
+      }
+    }
+
     const payload = {
       type: target.type || (target.id ? "member" : undefined),
       classId: target.type === "class" ? target.id : undefined,
       memberId: target.type === "class" ? undefined : target.id,
       planId: id,
-      dueDate: target.deadline ? new Date(target.deadline).toISOString() : undefined,
-      notes: target.note || "Vui lòng hoàn thành đúng tiến độ"
+      dueDate: parsedDueDate,
+      notes: target.note || "Tập luyện theo hướng dẫn của huấn luyện viên"
     };
     return fetchApi(`/homework/assign`, {
       method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+  verifyWorkout: async (homeworkId: string, payload: { status: "completed" | "rejected"; notes?: string }) => {
+    return fetchApi(`/homework/${homeworkId}/verify`, {
+      method: 'PUT',
       body: JSON.stringify(payload)
     });
   },

@@ -117,24 +117,36 @@ export default function ProfileDetailsSection({
           </div>
         </div>
 
-        <div className="divide-y divide-slate-100 dark:divide-slate-800">
-          {displayCerts.map((c, i) => (
-            <div key={i} className="py-3.5 first:pt-0 last:pb-0 flex items-start gap-3">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{c}</p>
-                <p className="text-xs text-slate-400">
-                  Đã kiểm tra bởi Quản lý Trung tâm SportCenter
-                </p>
+        {displayCerts.length === 0 ? (
+          <div className="py-8 px-4 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-800/20">
+            <Award className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+            <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
+              Chưa có bằng cấp hoặc chứng chỉ nào trong hồ sơ
+            </p>
+            <p className="text-xs text-slate-400 mt-1">
+              Bấm "Chỉnh sửa" hoặc "Cập nhật hồ sơ" để thêm chứng chỉ chuyên môn của bạn.
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
+            {displayCerts.map((c, i) => (
+              <div key={i} className="py-3.5 first:pt-0 last:pb-0 flex items-start gap-3">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{c}</p>
+                  <p className="text-xs text-slate-400">
+                    Đã kiểm tra bởi Quản lý Trung tâm SportCenter
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex items-start gap-3">
           <Shield className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-            Thông tin bằng cấp và chứng chỉ được đồng bộ với hồ sơ nhân sự của hệ thống. Bạn có thể thêm hoặc cập nhật các chứng chỉ mới trong phần Cập nhật hồ sơ.
+            Thông tin bằng cấp và chứng chỉ được đồng bộ trực tiếp từ cơ sở dữ liệu hệ thống. Bạn có thể thêm hoặc cập nhật các chứng chỉ mới trong phần Cập nhật hồ sơ.
           </p>
         </div>
       </div>

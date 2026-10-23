@@ -56,10 +56,16 @@ export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl">
           <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Tổng số giáo án</span>
           <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{curricula.length}</div>
+        </div>
+        <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl">
+          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Sẵn sàng giao</span>
+          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
+            {curricula.filter((c) => c.status === "Đã duyệt").length}
+          </div>
         </div>
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl">
           <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Đã giao cho học viên</span>

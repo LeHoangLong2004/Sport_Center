@@ -56,7 +56,7 @@ export const CurriculumEditorModal: React.FC<CurriculumEditorModalProps> = ({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
               <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
                 Bộ môn:
@@ -112,6 +112,19 @@ export const CurriculumEditorModal: React.FC<CurriculumEditorModalProps> = ({
                 onChange={(e) => setDraft({ ...draft, duration: Number(e.target.value) })}
                 className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
               />
+            </div>
+            <div>
+              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+                Trạng thái:
+              </label>
+              <select
+                value={draft.status === "Nháp" ? "Nháp" : "Đã duyệt"}
+                onChange={(e) => setDraft({ ...draft, status: e.target.value as any })}
+                className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium"
+              >
+                <option value="Đã duyệt">Sẵn sàng giao</option>
+                <option value="Nháp">Bản nháp</option>
+              </select>
             </div>
           </div>
 

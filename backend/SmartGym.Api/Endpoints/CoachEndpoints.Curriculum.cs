@@ -55,6 +55,33 @@ public static partial class CoachEndpoints
         );
 
         group.MapPost(
+            "/curricula/{id:guid}/approve",
+            async (Guid id, HttpContext context, SmartGymDbContext db) =>
+            {
+                var coachId = await ResolveCoachIdAsync(context, db);
+                if (coachId == null)
+                    return Results.Unauthorized();
+
+                var plan = await db.WorkoutPlans.FirstOrDefaultAsync(p => p.Id == id);
+                if (plan == null)
+                    return Results.NotFound(new { message = "Không tìm thấy giáo án." });
+
+                if (plan.CoachId == null)
+                {
+                    plan.CoachId = coachId.Value;
+                }
+
+                plan.Status = Flow5PlanStatuses.Approved;
+                plan.ApprovedAt = DateTime.UtcNow;
+                plan.ApprovedBy = coachId.Value;
+                plan.UpdatedAt = DateTime.UtcNow;
+                await db.SaveChangesAsync();
+
+                return Results.Ok(new { success = true, message = "Giáo án đã sẵn sàng giao!", status = "approved" });
+            }
+        );
+
+        group.MapPost(
             "/curricula/{id:guid}/assign",
             async (Guid id, HttpContext context, SmartGymDbContext db, IWorkoutPlanService planService, IFlow5AssignmentService assignmentService, IFlow5AuthorizationService authorization, [FromBody] JsonElement request) =>
             {
@@ -68,7 +95,26 @@ public static partial class CoachEndpoints
                 var plan = await planService.GetPlanByIdAsync(id);
                 if (plan == null)
                     return Results.NotFound(new { message = "Không tìm thấy giáo án." });
-                if (!Flow5PlanStatus.IsApproved(plan.Status))
+
+                if (!Flow5PlanStatus.CanBeAssigned(plan.Status))
+                {
+                    // If the coach owns the plan (or seeded without coach), auto-promote to approved
+                    if (plan.CoachId == null || plan.CoachId == coachId.Value)
+                    {
+                        var dbPlan = await db.WorkoutPlans.FirstOrDefaultAsync(p => p.Id == id);
+                        if (dbPlan != null)
+                        {
+                            dbPlan.Status = Flow5PlanStatuses.Approved;
+                            dbPlan.ApprovedAt = DateTime.UtcNow;
+                            dbPlan.ApprovedBy = coachId.Value;
+                            dbPlan.UpdatedAt = DateTime.UtcNow;
+                            await db.SaveChangesAsync();
+                            plan = await planService.GetPlanByIdAsync(id) ?? plan;
+                        }
+                    }
+                }
+
+                if (!Flow5PlanStatus.CanBeAssigned(plan.Status))
                 {
                     return Results.Conflict(new
                     {
@@ -188,12 +234,17 @@ public static partial class CoachEndpoints
             Goal = GetString(request, "goal"),
             Level = GetString(request, "level"),
             DurationMinutes = GetInt(request, "durationMinutes") ?? GetInt(request, "duration"),
+            Status = GetString(request, "status"),
             Exercises = exercises
         };
     }
 
     private static object ToLegacyCurriculumResponse(WorkoutPlanResponse plan)
     {
+        var assignedTo = plan.RecommendationTargetId.HasValue
+            ? new object[] { new { type = plan.RecommendationTargetType ?? "class", id = plan.RecommendationTargetId.Value.ToString(), name = plan.PlanName } }
+            : Array.Empty<object>();
+
         return new
         {
             id = plan.Id.ToString(),
@@ -207,7 +258,9 @@ public static partial class CoachEndpoints
             updatedAt = plan.UpdatedAt.ToString("yyyy-MM-dd"),
             description = plan.Description ?? string.Empty,
             exercises = plan.Exercises.Select(e => new { name = e.Name, reps = e.Reps ?? "", rest = e.Rest ?? "", note = e.Note ?? "" }),
-            assignedTo = Array.Empty<object>()
+            recommendationTargetType = plan.RecommendationTargetType,
+            recommendationTargetId = plan.RecommendationTargetId?.ToString(),
+            assignedTo = assignedTo
         };
     }
 
