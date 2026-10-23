@@ -150,7 +150,7 @@ export const CurriculumAssignModal: React.FC<CurriculumAssignModalProps> = ({
               {assignTarget.curricName}
             </h4>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Học viên sẽ tập luyện trực tiếp tại trung tâm. Sau khi tập, HLV sẽ nghiệm thu và ký xác nhận hoàn thành buổi tập.
+              Học viên sẽ nhận và xem trực tiếp các bài tập trong giáo án này trên tài khoản cá nhân để theo dõi và tập luyện.
             </p>
           </div>
 

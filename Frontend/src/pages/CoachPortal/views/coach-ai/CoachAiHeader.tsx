@@ -26,11 +26,11 @@ export const CoachAiHeader: React.FC<CoachAiHeaderProps> = ({
           <div>
             <div className="flex flex-wrap items-center gap-2 mb-1.5">
               <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-orange-500/20 border border-orange-400/40 text-orange-300">
-                Flow 5 · AI Coach Copilot
+                Flow 5 · AI Workout Recommendation
               </span>
               <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-medium">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                Gemini 1.5 Flash Connected
+                Gemini Connected
               </span>
               <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-200">
                 <ShieldCheck className="w-3.5 h-3.5" />
@@ -38,11 +38,11 @@ export const CoachAiHeader: React.FC<CoachAiHeaderProps> = ({
               </span>
             </div>
             <h1 className="text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-orange-100 to-amber-200">
-              Gợi ý giáo án thông minh bằng AI
+              Gợi ý bài tập thông minh với AI
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
-              Trợ lý AI phân tích mục tiêu, trình độ và thể trạng của học viên để tạo bản nháp bài tập. 
-              HLV xem xét, chỉnh sửa liều lượng và duyệt trước khi giao.
+              Trợ lý AI phân tích mục tiêu, trình độ và thể trạng của học viên để gợi ý danh sách bài tập tối ưu. 
+              HLV xem xét, tinh chỉnh liều lượng và duyệt trước khi giao.
             </p>
           </div>
         </div>
@@ -54,7 +54,7 @@ export const CoachAiHeader: React.FC<CoachAiHeaderProps> = ({
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 hover:border-orange-400/50 text-xs sm:text-sm font-semibold text-slate-200 hover:text-white transition-all shadow-sm cursor-pointer"
           >
             <History className="w-4 h-4 text-orange-400" />
-            <span>Lịch sử giáo án AI</span>
+            <span>Lịch sử gợi ý bài tập AI</span>
             {historyCount > 0 && (
               <span className="px-2 py-0.5 rounded-full text-xs bg-orange-500/30 text-orange-200 font-bold border border-orange-400/30">
                 {historyCount}

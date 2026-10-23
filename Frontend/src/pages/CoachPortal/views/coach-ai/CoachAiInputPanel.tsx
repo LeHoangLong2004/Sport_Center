@@ -9,6 +9,7 @@ interface CoachAiInputPanelProps {
   setTargetType: (type: "member" | "class") => void;
   targetId: string;
   setTargetId: (id: string) => void;
+  onSelectTarget?: (type: "member" | "class", id: string) => void;
   members: MockMember[];
   classes: CoachClassOverview[];
   sports: SportOption[];
@@ -33,6 +34,7 @@ export const CoachAiInputPanel: React.FC<CoachAiInputPanelProps> = ({
   setTargetType,
   targetId,
   setTargetId,
+  onSelectTarget,
   members,
   classes,
   sports,
@@ -62,10 +64,10 @@ export const CoachAiInputPanel: React.FC<CoachAiInputPanelProps> = ({
       <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
         <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <Sliders className="w-4 h-4 text-orange-500" />
-          <span>1. Thiết lập tiêu chí huấn luyện</span>
+          <span>1. Thiết lập tiêu chí bài tập</span>
         </h2>
         <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-          Dữ liệu đầu vào cho AI
+          Dữ liệu đầu vào cho AI gợi ý
         </span>
       </div>
 
@@ -75,6 +77,7 @@ export const CoachAiInputPanel: React.FC<CoachAiInputPanelProps> = ({
         setTargetType={setTargetType}
         targetId={targetId}
         setTargetId={setTargetId}
+        onSelectTarget={onSelectTarget}
         members={members}
         classes={classes}
       />
@@ -259,18 +262,18 @@ export const CoachAiInputPanel: React.FC<CoachAiInputPanelProps> = ({
         {isGenerating ? (
           <>
             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            <span>Gemini AI đang sinh giáo án...</span>
+            <span>Gemini AI đang phân tích thể trạng & gợi ý bài tập...</span>
           </>
         ) : (
           <>
             <Sparkles className="w-4 h-4 text-amber-200 animate-pulse" />
-            <span>✨ Sinh giáo án với Gemini AI (Flow 5)</span>
+            <span>✨ Gợi ý bài tập bằng Gemini AI (Flow 5)</span>
           </>
         )}
       </button>
 
       <p className="text-[11px] text-center text-slate-400 dark:text-slate-500">
-        AI sinh bản nháp an toàn theo cơ chế Coach-in-the-Loop. HLV kiểm duyệt và chỉnh sửa trước khi giao.
+        AI phân tích thể trạng học viên để đề xuất bài tập an toàn (Coach-in-the-Loop). HLV kiểm duyệt và điều chỉnh trước khi giao.
       </p>
     </div>
   );
