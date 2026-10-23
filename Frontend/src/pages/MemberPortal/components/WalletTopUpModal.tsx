@@ -136,7 +136,7 @@ export default function WalletTopUpModal({
                 <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Hình thức thanh toán</label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { id: "qr" as const, label: "VietQR", icon: QrCode, color: "text-emerald-600" },
+                    { id: "qr" as const, label: "Mã VNPAY", icon: QrCode, color: "text-red-600" },
                     { id: "card" as const, label: "Thẻ ATM / Visa", icon: CreditCard, color: "text-blue-600" },
                     { id: "counter" as const, label: "Tại quầy", icon: Building, color: "text-amber-600" },
                   ].map((m) => (
@@ -172,18 +172,18 @@ export default function WalletTopUpModal({
               {method === "qr" && (
                 <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3">
                   <div className="flex items-center justify-between pb-1.5 border-b border-slate-200 dark:border-slate-700 text-xs">
-                    <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">{bankConfig.bankCode} • {bankConfig.accountNumber}</span>
-                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">VietQR 24/7</span>
+                    <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Ví VNPAY • 0815353732</span>
+                    <span className="text-[10px] text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-red-950/60 px-2 py-0.5 rounded-md border border-red-200 dark:border-red-800">VNPAY APP / Napas 247</span>
                   </div>
 
                   <div className="text-center space-y-1">
-                    <img src={vietQrUrl} alt="VietQR" className="w-36 h-36 object-contain mx-auto rounded-xl bg-white p-2 border border-slate-200 shadow-xs" />
-                    <p className="text-[10px] text-slate-500">Mở app Ngân hàng / MoMo quét mã để chuyển khoản</p>
+                    <img src="/vnpay_qr.png" alt="Mã QR VNPAY" className="w-36 h-auto object-contain mx-auto rounded-xl bg-white p-1.5 border border-slate-200 shadow-xs" />
+                    <p className="text-[10px] text-slate-500">Mở App VNPAY hoặc bất kỳ App Ngân hàng nào để quét mã</p>
                   </div>
 
                   <div className="bg-white dark:bg-slate-900 rounded-xl p-2.5 border border-slate-200 dark:border-slate-700 text-[11px] space-y-1">
-                    <div className="flex justify-between"><span className="text-slate-500">STK:</span><span className="font-mono font-bold flex items-center gap-1">{bankConfig.accountNumber} <CopyBtn text={bankConfig.accountNumber} id="acc" /></span></div>
-                    <div className="flex justify-between"><span className="text-slate-500">Chủ TK:</span><span className="font-bold">{bankConfig.accountName}</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">Số ví / Tài khoản:</span><span className="font-mono font-bold flex items-center gap-1">0815353732 <CopyBtn text="0815353732" id="acc" /></span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">Tên người nhận:</span><span className="font-bold">Khách hàng 0815353732</span></div>
                     <div className="flex justify-between"><span className="text-slate-500">Số tiền:</span><span className="font-bold text-emerald-600 flex items-center gap-1">{actualAmount.toLocaleString("vi-VN")} đ <CopyBtn text={actualAmount.toString()} id="amt" /></span></div>
                     <div className="flex justify-between border-t pt-1"><span className="text-slate-500">Nội dung:</span><span className="font-mono font-bold text-emerald-700 flex items-center gap-1">{transferMemo} <CopyBtn text={transferMemo} id="memo" /></span></div>
                   </div>

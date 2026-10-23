@@ -106,6 +106,27 @@
 - **Tự động gửi tin nhắn chào mừng & xác nhận buổi học**: Khởi tạo ngay tin nhắn mở đầu từ HLV thông báo thông tin lớp, ca học, lời chào mừng và sẵn sàng giải đáp thắc mắc về trang phục, dụng cụ, thể lực.
 - **Backend `ChatStoreService.cs` đồng bộ thông minh**: Bổ sung cơ chế `EnsureMemberBookedCoachConversations` tự động quét các lớp học đã đặt của hội viên và bảo đảm tất cả HLV phụ trách đều có sẵn trong danh sách hội thoại của hội viên mà không cần thao tác thêm thủ công.
 
+### 1.18. Cấu Hình Ứng Dụng, Bảo Mật & Đặc Tả Quy Trình AI Giáo Án (Task 78 - 79) - **HOÀN THÀNH**
+- **Phương**: Chuẩn hóa cấu hình `appsettings.json`, thiết lập kết nối Supabase, bảo mật JWT Bearer, cấu hình Gemini API Key; biên soạn toàn bộ tài liệu đặc tả quy trình nghiệp vụ giáo án (`Quy_Trinh_Nghiep_Vu_Giao_An_Coach_Member.md`), trường hợp kiểm thử (`SWP391_Cac_Truong_Hop_Giao_An.md`) và phân tích tổng quan lịch dạy/điểm danh Coach.
+
+### 1.19. Nền Tảng Backend AI Workout Recommendation - Flow 5 & Gemini (Task 80) - **HOÀN THÀNH**
+- **Long & Phương**: Triển khai `Flow5WorkoutPlanEndpoints.cs`, `GeminiRecommendationProvider.cs`, hệ thống xây dựng prompt (`Flow5PromptBuilder.cs`), bộ bóc tách JSON nghiêm ngặt (`Flow5RecommendationJsonParser.cs`), bộ giới hạn quota, xác thực dữ liệu giáo án (`Flow5WorkoutPlanValidator.cs`), giải quyết ngữ cảnh hội viên/lớp học (`Flow5ContextService.cs`) và bộ unit/contract tests tự động `SmartGym.Tests`.
+
+### 1.20. Đồng Bộ Lịch Đặt Chỗ, Ngăn Chặn Xung Đột & Dọn Dẹp Mock Data (Task 81) - **HOÀN THÀNH**
+- **Long**: Phát hiện và xử lý xung đột giữa lịch tập cá nhân PT và lớp học nhóm; đồng bộ sĩ số và danh sách học viên đăng ký vào Coach Members; ẩn các ca học bị hủy; dọn dẹp toàn bộ dữ liệu mẫu (mock data) trên trang chủ và landing page.
+
+### 1.21. Giao Diện Điểm Danh Hội Viên & Mã Vé QR Ra Vào (Task 82) - **HOÀN THÀNH**
+- **Thuận**: Xây dựng toàn diện màn hình Điểm danh hội viên (`MemberAttendance.tsx`), hiển thị thống kê KPI, lịch sử điểm danh lớp/PT, dòng thời gian check-in tại cổng kèm mã vé QR động; chuẩn hóa múi giờ Việt Nam (GMT+7) và phân tách view thành các subcomponent gọn gàng.
+
+### 1.22. Tối Ưu Nạp Tiền Ví VietQR & One-Page Checkout (Task 83 - 84) - **HOÀN THÀNH**
+- **Thuận**: Nâng cấp luồng nạp tiền ví với mã VietQR thực tế, hướng dẫn thanh toán quầy tinh gọn, tự động điền SĐT từ hồ sơ và sửa lỗi dữ liệu fallback tĩnh trên biên nhận PDF.
+- **Nam**: Tái cấu trúc luồng thanh toán một trang hiện đại (`OnePageCheckout`), thu gọn các thẻ thông tin vừa vặn màn hình zoom 100%, chống hiện tượng auto-scroll khi tải trang và chuẩn hóa ProductCard.
+
+### 1.23. Frontend Coach AI Copilot, Đồng Bộ Avatar & Dọn Dẹp Role Switcher (Task 85 - 88) - **HOÀN THÀNH**
+- **Nam & Long**: Phát triển giao diện Coach AI Copilot (`CoachAI.tsx`) gồm 6 subcomponent độc lập (<200 dòng) và hook `useCoachAi.ts`, hỗ trợ chọn mục tiêu, sinh giáo án bằng Gemini, hiển thị dinh dưỡng, lưu bản nháp và gán giáo án.
+- **Nam**: Đồng bộ bảng màu cam/hổ phách (Amber/Orange) chuẩn Coach Portal, tích hợp timeout guard 20s triệt tiêu đơ giao diện; đồng bộ ảnh đại diện thực tế (`UserAvatar`) trên toàn bộ Topbar, Sidebar và danh bạ.
+- **Thuận & Nam**: Gỡ bỏ hoàn toàn nút demo chuyển nhanh 4 vai trò trên form đăng nhập và Topbar các Portal; xóa bỏ `RoleSwitcher.tsx` để giao diện đạt chuẩn production.
+
 ---
 
 ## 2. Các Công Việc Đang Thực Hiện (In Progress)

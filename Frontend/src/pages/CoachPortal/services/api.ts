@@ -13,6 +13,14 @@ import type {
   AvailabilitySlot,
   SportOption,
   FacilityOption,
+  Flow5Target,
+  Flow5Exercise,
+  Flow5AiMetadata,
+  Flow5WorkoutPlan,
+  GenerateFlow5RecommendationRequest,
+  UpdateFlow5DraftRequest,
+  AssignFlow5PlanRequest,
+  AssignFlow5PlanResponse,
 } from "./types";
 import type { MemberProfileData } from "../views/member-profile/types";
 import { fetchApi } from "./fetchApi";
@@ -32,6 +40,14 @@ export type {
   AvailabilitySlot,
   SportOption,
   FacilityOption,
+  Flow5Target,
+  Flow5Exercise,
+  Flow5AiMetadata,
+  Flow5WorkoutPlan,
+  GenerateFlow5RecommendationRequest,
+  UpdateFlow5DraftRequest,
+  AssignFlow5PlanRequest,
+  AssignFlow5PlanResponse,
 };
 
 export const CoachAPI = {
@@ -340,6 +356,47 @@ export const CoachAPI = {
     return fetchApi('/coach/chat/messages', {
       method: 'POST',
       body: JSON.stringify(data)
+    });
+  },
+
+  // 13. Flow 5 - AI Workout Plan Recommendation
+  generateFlow5Recommendation: async (data: GenerateFlow5RecommendationRequest): Promise<Flow5WorkoutPlan> => {
+    return fetchApi('/workout-plans/ai-recommendation', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+  getFlow5Plan: async (id: string): Promise<Flow5WorkoutPlan> => {
+    return fetchApi(`/workout-plans/${encodeURIComponent(id)}/flow5`);
+  },
+  updateFlow5Draft: async (id: string, data: UpdateFlow5DraftRequest): Promise<Flow5WorkoutPlan> => {
+    return fetchApi(`/workout-plans/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+  },
+  approveFlow5Plan: async (id: string, expectedVersion: number, note?: string): Promise<Flow5WorkoutPlan> => {
+    return fetchApi(`/workout-plans/${encodeURIComponent(id)}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ expectedVersion, note })
+    });
+  },
+  assignFlow5Plan: async (id: string, data: AssignFlow5PlanRequest): Promise<AssignFlow5PlanResponse> => {
+    return fetchApi(`/workout-plans/${encodeURIComponent(id)}/assign`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+  cloneFlow5Plan: async (id: string, expectedVersion: number, planName?: string): Promise<Flow5WorkoutPlan> => {
+    return fetchApi(`/workout-plans/${encodeURIComponent(id)}/clone`, {
+      method: 'POST',
+      body: JSON.stringify({ expectedVersion, planName })
+    });
+  },
+  archiveFlow5Plan: async (id: string, expectedVersion: number, note?: string): Promise<Flow5WorkoutPlan> => {
+    return fetchApi(`/workout-plans/${encodeURIComponent(id)}/archive`, {
+      method: 'POST',
+      body: JSON.stringify({ expectedVersion, note })
     });
   }
 };

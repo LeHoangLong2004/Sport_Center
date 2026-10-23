@@ -189,62 +189,6 @@ export function Login({
               <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Đăng nhập</h2>
             </div>
 
-            {/* Quick 1-Click Role Login */}
-            <div className="mb-6 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
-              <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2 px-1">
-                Đăng nhập nhanh 4 vai trò (1-Click Demo)
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={() => executeLogin("manager@test.com", "123456", "admin")}
-                  className="btn-tactile flex items-center gap-2 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/50 hover:border-rose-500 text-left shadow-xs transition-all cursor-pointer"
-                >
-                  <span className="size-2 rounded-full bg-rose-500 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-slate-800 dark:text-white truncate">Quản lý (Admin)</p>
-                    <p className="text-[10px] text-slate-400 truncate">manager@test.com</p>
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={() => executeLogin("hoxuananhnam1@gmail.com", "123456", "coach")}
-                  className="btn-tactile flex items-center gap-2 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-orange-200 dark:border-orange-900/50 hover:border-orange-500 text-left shadow-xs transition-all cursor-pointer"
-                >
-                  <span className="size-2 rounded-full bg-orange-500 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-slate-800 dark:text-white truncate">HLV (Coach)</p>
-                    <p className="text-[10px] text-slate-400 truncate">hoxuananhnam1...</p>
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={() => executeLogin("receptionist01@smartgym.com", "123456", "receptionist")}
-                  className="btn-tactile flex items-center gap-2 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-900/50 hover:border-purple-500 text-left shadow-xs transition-all cursor-pointer"
-                >
-                  <span className="size-2 rounded-full bg-purple-500 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-slate-800 dark:text-white truncate">Lễ tân</p>
-                    <p className="text-[10px] text-slate-400 truncate">receptionist01...</p>
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={() => executeLogin("hoxuananhnam@gmail.com", "123456", "member")}
-                  className="btn-tactile flex items-center gap-2 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900/50 hover:border-emerald-500 text-left shadow-xs transition-all cursor-pointer"
-                >
-                  <span className="size-2 rounded-full bg-emerald-500 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-slate-800 dark:text-white truncate">Hội viên (Member)</p>
-                    <p className="text-[10px] text-slate-400 truncate">hoxuananhnam...</p>
-                  </div>
-                </button>
-              </div>
-            </div>
 
             <div className="space-y-5">
               <div>

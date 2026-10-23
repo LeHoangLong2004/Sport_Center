@@ -148,16 +148,14 @@ export function PaymentMethodScreen({
   const phoneDigits = formData?.phone ? formData.phone.replace(/\D/g, "").slice(-4) : "GYM";
   const pkgCode = (pkg.id || "PKG").replace(/[^a-zA-Z0-9]/g, "").slice(0, 6).toUpperCase();
   const transferMemo = `SC ${phoneDigits} ${pkgCode}`.toUpperCase();
-  const vietQrUrl = `https://api.vietqr.io/image/970436-1234567890123-compact2.jpg?amount=${finalTotal}&addInfo=${encodeURIComponent(
-    transferMemo
-  )}&accountName=SPORTCENTER%20VIET%20NAM`;
+  const vnpayQrUrl = "/vnpay_qr.png";
 
   const methods: { id: PaymentMethodId; icon: string; label: string; sub?: string; badge?: string }[] = [
     {
       id: "qr",
       icon: `${A}/66769.svg`,
-      label: "Chuyển khoản QR (Vietcombank)",
-      badge: "Khuyên dùng ⚡",
+      label: "Mã QR VNPAY (Napas 247)",
+      badge: "Chính thức ⚡",
     },
     {
       id: "card",
@@ -423,11 +421,12 @@ export function PaymentMethodScreen({
                 <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                   <div className="flex items-center gap-1.5">
                     <span className="size-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <h3 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-xs md:text-sm">
-                      Quét mã VietQR Chuyển khoản 24/7
+                    <h3 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-xs md:text-sm flex items-center gap-1.5">
+                      <span>Quét mã VNPAY / VietQR Chuyển khoản 24/7</span>
+                      <span className="text-[10px] bg-red-50 text-red-600 font-extrabold px-1.5 py-0.2 rounded border border-red-200">VNPAY APP</span>
                     </h3>
                   </div>
-                  <span className="text-[10px] text-slate-400">Tự động kích hoạt sau khi nhận</span>
+                  <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Tự động kích hoạt sau khi nhận</span>
                 </div>
 
                 <div className="flex flex-col md:flex-row gap-3.5 items-center pt-2.5 w-full">
@@ -437,18 +436,20 @@ export function PaymentMethodScreen({
                       
                       {/* Bank Name */}
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-400 text-[11px]">Ngân hàng thụ hưởng</span>
-                        <span className="font-bold text-slate-900 text-xs">Vietcombank (VCB)</span>
+                        <span className="text-slate-400 text-[11px]">Cổng / Ứng dụng</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-slate-900 text-xs">Ví điện tử VNPAY (Napas 247)</span>
+                        </div>
                       </div>
 
                       {/* Account Number */}
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-400 text-[11px]">Số tài khoản</span>
+                        <span className="text-slate-400 text-[11px]">Số tài khoản / Số ví</span>
                         <div className="flex items-center gap-1.5">
-                          <span className="font-mono font-bold text-slate-900 text-xs">1234567890123</span>
+                          <span className="font-mono font-bold text-slate-900 text-xs">0815353732</span>
                           <button
                             type="button"
-                            onClick={() => handleCopy("1234567890123", "account")}
+                            onClick={() => handleCopy("0815353732", "account")}
                             className="px-1.5 py-0.5 rounded bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-semibold text-teal-700 transition-all cursor-pointer"
                           >
                             {copiedField === "account" ? "✓ Đã chép!" : "Sao chép"}
@@ -458,8 +459,8 @@ export function PaymentMethodScreen({
 
                       {/* Account Owner */}
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-400 text-[11px]">Chủ tài khoản</span>
-                        <span className="font-bold text-slate-900 text-xs">SPORTCENTER VIET NAM</span>
+                        <span className="text-slate-400 text-[11px]">Chủ tài khoản / Tên ví</span>
+                        <span className="font-bold text-slate-900 text-xs">Khách hàng 0815353732</span>
                       </div>
 
                       {/* Transfer Amount */}
@@ -496,24 +497,24 @@ export function PaymentMethodScreen({
                     </div>
 
                     <p className="text-[10px] text-slate-500 leading-3.5">
-                      💡 <strong>Mẹo:</strong> Nhập chính xác mã <span className="font-mono font-bold text-teal-700">{transferMemo}</span> để hệ thống SportCenter tự động đối soát và kích hoạt trong vòng 30 giây.
+                      💡 <strong>Mẹo:</strong> Mở <strong>App VNPAY</strong> hoặc bất kỳ App Ngân hàng nào (VCB, MB, Techcom, BIDV, MoMo...) quét mã QR để chuyển khoản trực tiếp.
                     </p>
                   </div>
 
-                  {/* Right: Compact VietQR Code Box */}
-                  <div className="flex flex-col gap-1 items-center shrink-0 bg-slate-50 p-2 rounded-lg border border-slate-200/80">
-                    <div className="bg-white border border-slate-200 rounded-lg size-[135px] p-1.5 flex items-center justify-center shadow-2xs overflow-hidden">
+                  {/* Right: Official VNPAY QR Code Box */}
+                  <div className="flex flex-col gap-1 items-center shrink-0 bg-slate-50 p-2 rounded-xl border border-slate-200/80">
+                    <div className="bg-white border border-slate-200 rounded-lg w-[140px] p-1 flex items-center justify-center shadow-2xs overflow-hidden">
                       <img
-                        src={vietQrUrl}
+                        src={vnpayQrUrl}
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = `${A}/cfa8b.svg`;
                         }}
-                        className="size-full object-contain rounded"
-                        alt="Mã QR Chuyển khoản"
+                        className="w-full h-auto object-contain rounded"
+                        alt="Mã QR VNPAY chính thức"
                       />
                     </div>
                     <div className="flex items-center gap-1 text-[10px] font-medium text-slate-500 text-center">
-                      <span>📱 Quét bằng app ngân hàng bất kỳ</span>
+                      <span>📱 Quét bằng VNPAY hoặc App ngân hàng</span>
                     </div>
                   </div>
                 </div>

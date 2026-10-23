@@ -25,7 +25,7 @@ export default function CoachSidebar({
       if (!userName) {
         userName = user.fullName || user.name || user.email?.split("@")[0];
       }
-      avatarUrl = avatarUrl || user.avatarUrl;
+      avatarUrl = (avatarUrl && avatarUrl.trim() !== "") ? avatarUrl : (user.avatarUrl || user.avatar);
     } catch (e) {}
   }
   userName = userName || "Huấn luyện viên";
@@ -33,15 +33,25 @@ export default function CoachSidebar({
   return (
     <div className="bg-[#0f172a] flex flex-col gap-[28px] items-start pb-[24px] pt-[28px] px-[18px] shrink-0 w-[240px] sticky top-0 h-screen overflow-y-auto hidden-scrollbar">
       {/* Brand */}
-      <div className="flex gap-[12px] items-center shrink-0 w-full">
-        <div className="bg-[#f97316] flex flex-col items-center justify-center rounded-[10px] shrink-0 size-[40px] shadow-lg shadow-orange-500/20">
+      <button
+        type="button"
+        className="group flex gap-[12px] items-center shrink-0 w-full cursor-pointer text-left focus:outline-none select-none"
+        onClick={() => {
+          window.location.hash = "home";
+          window.dispatchEvent(new HashChangeEvent("hashchange"));
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+        title="Quay lại Trang chủ SportCenter"
+        aria-label="Quay lại Trang chủ"
+      >
+        <div className="bg-[#f97316] flex flex-col items-center justify-center rounded-[10px] shrink-0 size-[40px] shadow-lg shadow-orange-500/20 transition-all duration-200 group-hover:scale-105 group-hover:shadow-orange-500/40 group-active:scale-95">
           <span className="font-bold text-white text-[18px]">SC</span>
         </div>
         <div className="flex flex-col gap-[2px] items-start shrink-0">
-          <span className="font-extrabold text-[15px] text-white whitespace-nowrap tracking-wide">SPORTCENTER</span>
+          <span className="font-extrabold text-[15px] text-white whitespace-nowrap tracking-wide group-hover:text-orange-400 transition-colors">SPORTCENTER</span>
           <span className="font-bold text-[#f97316] text-[10px] whitespace-nowrap uppercase tracking-widest">COACH PORTAL</span>
         </div>
-      </div>
+      </button>
 
       {/* Nav */}
       <div className="flex flex-col gap-[4px] items-start shrink-0 w-full">
