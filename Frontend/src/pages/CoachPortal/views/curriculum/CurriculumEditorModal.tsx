@@ -1,6 +1,6 @@
 import React from "react";
 import { createPortal } from "react-dom";
-import { X, Plus, Trash2 } from "lucide-react";
+import { X, Plus, Trash2, AlertCircle } from "lucide-react";
 import type { MockCurriculum, SportOption } from "../../services/api";
 import { EMPTY_EXERCISE } from "./types";
 
@@ -9,6 +9,7 @@ interface CurriculumEditorModalProps {
   draft: MockCurriculum | null;
   setDraft: React.Dispatch<React.SetStateAction<MockCurriculum | null>>;
   isSaving: boolean;
+  error?: string | null;
   sports: SportOption[];
   onClose: () => void;
   onSave: () => void;
@@ -19,6 +20,7 @@ export const CurriculumEditorModal: React.FC<CurriculumEditorModalProps> = ({
   draft,
   setDraft,
   isSaving,
+  error,
   sports,
   onClose,
   onSave,
@@ -42,6 +44,13 @@ export const CurriculumEditorModal: React.FC<CurriculumEditorModalProps> = ({
         </div>
 
         <div className="p-5 overflow-y-auto flex flex-col gap-4 text-xs">
+          {error && (
+            <div className="p-3.5 rounded-xl text-xs flex items-center gap-2.5 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 animate-in fade-in duration-200">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
+              <span className="font-semibold">{error}</span>
+            </div>
+          )}
+
           <div>
             <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
               Tên giáo án: <span className="text-rose-500">*</span>

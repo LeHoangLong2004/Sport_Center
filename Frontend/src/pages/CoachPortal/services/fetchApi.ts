@@ -44,6 +44,10 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
       const errorBody = await response.json();
       if (typeof errorBody?.message === 'string' && errorBody.message.trim()) {
         message = errorBody.message;
+      } else if (typeof errorBody?.detail === 'string' && errorBody.detail.trim()) {
+        message = errorBody.detail;
+      } else if (typeof errorBody?.title === 'string' && errorBody.title.trim()) {
+        message = errorBody.title;
       }
     } catch {}
     throw new Error(message);
