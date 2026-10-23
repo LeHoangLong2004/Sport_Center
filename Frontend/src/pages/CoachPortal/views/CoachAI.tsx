@@ -7,7 +7,7 @@
  * 4. Coach reviews, edits exercise dosages & approves draft (Coach-in-the-Loop).
  * 5. Approved plan can be officially assigned to member / class roster.
  */
-import { AlertCircle, CheckCircle2, Info } from "lucide-react";
+import { AlertCircle, CheckCircle2, Info, BookOpen, ArrowRight, Sparkles, X } from "lucide-react";
 import { CoachAiHeader } from "./coach-ai/CoachAiHeader";
 import { CoachAiInputPanel } from "./coach-ai/CoachAiInputPanel";
 import { CoachAiPlanWorkspace } from "./coach-ai/CoachAiPlanWorkspace";
@@ -80,27 +80,63 @@ export default function CoachAI() {
       {/* Feedback Banner */}
       {feedback && (
         <div
-          className={`px-4 py-3 rounded-xl border flex items-center justify-between text-xs sm:text-sm animate-in fade-in duration-200 ${
+          className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm animate-in fade-in slide-in-from-top-2 duration-300 shadow-sm ${
             feedback.type === "success"
-              ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200"
+              ? "bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50/70 dark:from-emerald-950/50 dark:via-teal-950/40 dark:to-emerald-950/30 border-emerald-300 dark:border-emerald-700/80 text-emerald-900 dark:text-emerald-100"
               : feedback.type === "error"
               ? "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200"
               : "bg-orange-50 dark:bg-orange-950/40 border-orange-200 dark:border-orange-800 text-orange-800 dark:text-orange-200"
           }`}
         >
-          <div className="flex items-center gap-2">
-            {feedback.type === "success" && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
-            {feedback.type === "error" && <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />}
-            {feedback.type === "info" && <Info className="w-4 h-4 text-orange-600 shrink-0" />}
-            <span>{feedback.msg}</span>
+          <div className="flex items-start sm:items-center gap-3">
+            <div
+              className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                feedback.type === "success"
+                  ? "bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-300 ring-1 ring-emerald-500/20"
+                  : feedback.type === "error"
+                  ? "bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-300"
+                  : "bg-orange-100 dark:bg-orange-900/60 text-orange-600 dark:text-orange-300"
+              }`}
+            >
+              {feedback.type === "success" && <CheckCircle2 className="w-5 h-5" />}
+              {feedback.type === "error" && <AlertCircle className="w-5 h-5" />}
+              {feedback.type === "info" && <Sparkles className="w-5 h-5" />}
+            </div>
+            <div>
+              <div className="font-bold text-sm">
+                {feedback.type === "success"
+                  ? "Lưu vào Thư viện thành công!"
+                  : feedback.type === "error"
+                  ? "Đã xảy ra lỗi"
+                  : "Thông báo trợ lý AI"}
+              </div>
+              <p className="text-xs opacity-90 mt-0.5 leading-relaxed">{feedback.msg}</p>
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setFeedback(null)}
-            className="text-xs font-bold opacity-60 hover:opacity-100 cursor-pointer ml-3"
-          >
-            Đóng
-          </button>
+
+          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0 mt-1 sm:mt-0">
+            {feedback.type === "success" && (
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.hash = "#coach-curriculum";
+                }}
+                className="px-3.5 py-1.5 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Xem Thư viện</span>
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setFeedback(null)}
+              className="p-1.5 rounded-lg opacity-60 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+              aria-label="Đóng thông báo"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 

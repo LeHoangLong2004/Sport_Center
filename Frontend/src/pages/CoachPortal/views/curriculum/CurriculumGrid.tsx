@@ -1,5 +1,5 @@
 import React from "react";
-import { Clock, Dumbbell, Users, Edit2, Send } from "lucide-react";
+import { Clock, Dumbbell, Users, Edit2, Send, Sparkles, CheckCircle2 } from "lucide-react";
 import type { MockCurriculum } from "../../services/api";
 import { STATUS_STYLE, type CurriculumStatus } from "./types";
 
@@ -8,6 +8,8 @@ interface CurriculumGridProps {
   curricula: MockCurriculum[];
   onEdit: (c: MockCurriculum) => void;
   onAssign: (c: MockCurriculum) => void;
+  onApprove?: (c: MockCurriculum) => void;
+  approvingId?: string | null;
 }
 
 export const CurriculumGrid: React.FC<CurriculumGridProps> = ({
@@ -15,6 +17,8 @@ export const CurriculumGrid: React.FC<CurriculumGridProps> = ({
   curricula,
   onEdit,
   onAssign,
+  onApprove,
+  approvingId,
 }) => {
   if (loading) {
     return (
@@ -41,6 +45,8 @@ export const CurriculumGrid: React.FC<CurriculumGridProps> = ({
           text: "text-slate-600",
         };
 
+        const isAiPlan = c.source === "ai_recommendation" || c.source === "ai";
+
         return (
           <div
             key={c.id}
@@ -49,9 +55,17 @@ export const CurriculumGrid: React.FC<CurriculumGridProps> = ({
             <div>
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div>
-                  <h3 className="font-semibold text-base text-slate-900 dark:text-white">
-                    {c.name}
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-base text-slate-900 dark:text-white">
+                      {c.name}
+                    </h3>
+                    {isAiPlan && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300 flex items-center gap-1 shrink-0">
+                        <Sparkles className="w-2.5 h-2.5 text-orange-500" />
+                        AI Gợi ý
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs font-medium px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                       {c.sport}
@@ -116,6 +130,18 @@ export const CurriculumGrid: React.FC<CurriculumGridProps> = ({
               </span>
 
               <div className="flex items-center gap-2">
+                {onApprove && (c.status === "Nháp" || (c.status as string) === "draft") && (
+                  <button
+                    type="button"
+                    disabled={approvingId === c.id}
+                    onClick={() => onApprove(c)}
+                    className="px-3 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 rounded-lg border border-blue-200 dark:border-blue-800 transition-colors flex items-center gap-1.5 shadow-sm whitespace-nowrap shrink-0"
+                    title="Đánh dấu giáo án này là sẵn sàng giao cho học viên"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                    <span className="whitespace-nowrap">{approvingId === c.id ? "Đang xử lý..." : "Sẵn sàng giao"}</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => onEdit(c)}

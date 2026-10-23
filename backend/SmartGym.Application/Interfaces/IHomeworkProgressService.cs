@@ -10,4 +10,5 @@ public interface IHomeworkProgressService
     Task<HomeworkProgressResponse> AssignHomeworkAsync(Guid coachId, AssignHomeworkRequest request);
     Task<IEnumerable<HomeworkProgressResponse>> GetMemberHomeworksAsync(Guid memberId);
     Task<bool> UpdateProgressAsync(Guid memberId, Guid homeworkId, UpdateHomeworkProgressRequest request);
+    Task<bool> VerifyProgressAsync(Guid coachId, Guid homeworkId, VerifyHomeworkProgressRequest request);
 }

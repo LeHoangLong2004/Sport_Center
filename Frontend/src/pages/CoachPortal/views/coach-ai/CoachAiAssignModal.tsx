@@ -32,10 +32,12 @@ export const CoachAiAssignModal: React.FC<CoachAiAssignModalProps> = ({
 
   if (!isOpen) return null;
 
+  const targetType = target?.type || "member";
+  const targetId = target?.id;
   const targetName =
-    target.type === "member"
-      ? members.find((m) => m.id === target.id)?.name || "Học viên được chọn"
-      : classes.find((c) => c.id === target.id)?.className || "Lớp học được chọn";
+    targetType === "member"
+      ? members.find((m) => m.id === targetId)?.name || "Học viên được chọn"
+      : classes.find((c) => c.id === targetId)?.className || "Lớp học được chọn";
 
   React.useEffect(() => {
     if (!isOpen) return;

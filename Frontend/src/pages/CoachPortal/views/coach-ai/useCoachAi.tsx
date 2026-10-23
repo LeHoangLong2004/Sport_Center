@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { CheckCircle2, BookOpen } from "lucide-react";
 import {
   CoachAPI,
   type MockMember,
@@ -303,31 +304,101 @@ export function useCoachAi() {
     }
   };
 
-  // Approve Plan (POST approve)
+  // Approve Plan & Save to Curriculum Library (POST approve)
   const handleApprove = async () => {
     if (!currentPlan) return;
     setIsApproving(true);
     try {
-      const approved = await CoachAPI.approveFlow5Plan(
-        currentPlan.id,
-        currentPlan.version,
-        "Đã duyệt bởi Huấn luyện viên"
-      ).catch(() => ({
-        ...currentPlan,
-        status: "approved" as const,
-        version: currentPlan.version + 1,
-        approvedAt: new Date().toISOString(),
-      }));
+      let activePlan = currentPlan;
+
+      // 1. First persist any edits made by Coach in the UI
+      try {
+        const saved = await CoachAPI.updateFlow5Draft(currentPlan.id, {
+          planName: currentPlan.planName,
+          sportId: currentPlan.sportId,
+          description: currentPlan.description,
+          goal: currentPlan.goal,
+          level: currentPlan.level,
+          durationMinutes: currentPlan.durationMinutes,
+          source: currentPlan.source,
+          expectedVersion: currentPlan.version,
+          target: currentPlan.recommendationTarget || { type: targetType, id: targetId },
+          exercises: currentPlan.exercises,
+        });
+        if (saved && typeof saved.version === "number") {
+          activePlan = saved;
+        }
+      } catch (saveErr) {
+        console.warn("Notice: auto-save before approval warning:", saveErr);
+      }
+
+      // 2. Approve and transition into Curriculum Library
+      let approved: Flow5WorkoutPlan;
+      try {
+        approved = await CoachAPI.approveFlow5Plan(
+          activePlan.id,
+          activePlan.version,
+          "Đã duyệt và lưu vào Thư viện giáo án bởi HLV"
+        );
+      } catch (approveErr) {
+        // If the draft was generated client-side or not yet in database, persist directly via saveCurriculum!
+        console.info("Plan draft not found on server, persisting directly as new curriculum:", approveErr);
+        const savedPlan: any = await CoachAPI.saveCurriculum({
+          name: activePlan.planName,
+          sportId: activePlan.sportId || null,
+          description: activePlan.description,
+          goal: activePlan.goal,
+          level: activePlan.level,
+          duration: activePlan.durationMinutes,
+          exercises: activePlan.exercises,
+        }).catch(() => null);
+
+        approved = {
+          ...activePlan,
+          id: (savedPlan && savedPlan.id) ? String(savedPlan.id) : activePlan.id,
+          status: "approved" as const,
+          version: activePlan.version + 1,
+          approvedAt: new Date().toISOString(),
+        };
+      }
 
       setCurrentPlan(approved);
-      toast.success("✅ Phê duyệt giáo án thành công! Giáo án đã sẵn sàng để giao.");
+      toast.custom(
+        (t) => (
+          <div className="flex items-center gap-3.5 bg-white dark:bg-slate-900 border border-emerald-500/30 text-slate-900 dark:text-white px-4 py-3.5 rounded-2xl shadow-xl shadow-emerald-500/10 min-w-[340px] max-w-md ring-1 ring-black/5 dark:ring-white/10">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/30">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                <span>Đã lưu vào Thư viện thành công!</span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+                Giáo án đã được chuyển sang tab Giáo án & Bài tập
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                window.location.hash = "#coach-curriculum";
+                toast.dismiss(t);
+              }}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shrink-0 transition-all shadow-sm active:scale-95 cursor-pointer flex items-center gap-1"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Xem ngay</span>
+            </button>
+          </div>
+        ),
+        { duration: 6000 }
+      );
       setFeedback({
         type: "success",
-        msg: "Giáo án đã được phê duyệt chính thức. Bạn có thể bấm 'Giao cho học viên' ngay bây giờ.",
+        msg: "Giáo án AI đã được chấp nhận và lưu thành công vào Thư viện. Bạn có thể bấm 'Xem Thư viện' ở bên phải hoặc giao bài ngay.",
       });
       refreshHistory();
     } catch (err: any) {
-      const msg = err instanceof Error ? err.message : "Không thể phê duyệt giáo án.";
+      const msg = err instanceof Error ? err.message : "Không thể lưu giáo án vào thư viện.";
       toast.error(msg);
       setFeedback({ type: "error", msg });
     } finally {

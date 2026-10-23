@@ -66,22 +66,74 @@ public class HomeworkProgressService : IHomeworkProgressService
 
         if (request.Status != null)
         {
-            homework.Status = request.Status;
-            if (request.Status == "completed")
+            var requestedStatus = request.Status.Trim().ToLowerInvariant();
+            if (requestedStatus == "completed" || requestedStatus == "pending_review")
             {
-                homework.CompletedAt = DateTime.UtcNow;
-                homework.ProgressPct = 100;
+                // Anti-cheating safeguard: Member cannot self-complete workout without coach verification.
+                // Requesting completion transitions workout to pending_review for Coach sign-off.
+                homework.Status = "pending_review";
+                homework.ProgressPct = request.ProgressPct ?? 100;
+            }
+            else if (requestedStatus == "in_progress")
+            {
+                if (homework.Status != "completed")
+                {
+                    homework.Status = "in_progress";
+                }
+            }
+            else if (requestedStatus == "assigned")
+            {
+                if (homework.Status != "completed")
+                {
+                    homework.Status = "assigned";
+                }
             }
         }
 
-        if (request.ProgressPct.HasValue && request.Status != "completed")
+        if (request.ProgressPct.HasValue && homework.Status != "completed")
         {
             homework.ProgressPct = request.ProgressPct.Value;
+            if (homework.ProgressPct >= 100 && homework.Status != "completed")
+            {
+                homework.Status = "pending_review";
+            }
         }
 
         if (request.Notes != null)
         {
             homework.Notes = request.Notes;
+        }
+
+        return await _repository.UpdateAsync(homework);
+    }
+
+    public async Task<bool> VerifyProgressAsync(Guid coachId, Guid homeworkId, VerifyHomeworkProgressRequest request)
+    {
+        var homework = await _repository.GetByIdAsync(homeworkId);
+        if (homework == null) return false;
+
+        var targetStatus = request.Status?.Trim().ToLowerInvariant();
+        if (targetStatus == "completed")
+        {
+            homework.Status = "completed";
+            homework.CompletedAt = DateTime.UtcNow;
+            homework.ProgressPct = 100;
+        }
+        else if (targetStatus == "rejected")
+        {
+            homework.Status = "rejected";
+            homework.CompletedAt = null;
+        }
+        else if (targetStatus == "in_progress" || targetStatus == "pending_review")
+        {
+            homework.Status = targetStatus;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Notes))
+        {
+            homework.Notes = string.IsNullOrWhiteSpace(homework.Notes)
+                ? $"[HLV: {request.Notes.Trim()}]"
+                : $"{homework.Notes} | [HLV: {request.Notes.Trim()}]";
         }
 
         return await _repository.UpdateAsync(homework);
@@ -110,14 +162,14 @@ public class HomeworkProgressService : IHomeworkProgressService
                 Goal = p.Plan.Goal,
                 Level = p.Plan.Level,
                 DurationMinutes = p.Plan.DurationMinutes,
-                Exercises = p.Plan.Exercises.Select(e => new ExerciseDto
+                Exercises = p.Plan.Exercises?.Select(e => new ExerciseDto
                 {
                     Id = e.Id,
                     Name = e.Name,
                     Reps = e.Reps,
                     Rest = e.Rest,
                     Note = e.Note
-                }).ToList()
+                }).ToList() ?? new List<ExerciseDto>()
             }
         };
     }

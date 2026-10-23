@@ -14,8 +14,14 @@ public class AssignHomeworkRequest
 
 public class UpdateHomeworkProgressRequest
 {
-    public string? Status { get; set; } // "in_progress", "completed"
+    public string? Status { get; set; } // "in_progress", "pending_review", "completed"
     public decimal? ProgressPct { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class VerifyHomeworkProgressRequest
+{
+    public string Status { get; set; } = "completed"; // "completed" | "rejected" | "in_progress"
     public string? Notes { get; set; }
 }
 

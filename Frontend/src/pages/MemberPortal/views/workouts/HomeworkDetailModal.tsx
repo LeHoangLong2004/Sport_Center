@@ -16,7 +16,7 @@ export function HomeworkDetailModal({ homework, onClose }: HomeworkDetailModalPr
         <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <div>
             <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
-              Giáo án được giao
+              Giáo án tập luyện tại trung tâm
             </span>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">
               {homework.plan.planName}
@@ -40,8 +40,8 @@ export function HomeworkDetailModal({ homework, onClose }: HomeworkDetailModalPr
               {homework.plan.goal || homework.plan.description || "Thực hiện theo hướng dẫn của huấn luyện viên."}
             </p>
             {homework.notes && (
-              <p className="mt-2 text-amber-600 dark:text-amber-400">
-                Ghi chú: {homework.notes}
+              <p className="mt-2 text-amber-600 dark:text-amber-400 font-medium">
+                Lưu ý của Coach: {homework.notes}
               </p>
             )}
           </div>

@@ -14,6 +14,12 @@ public static class Flow5PlanStatus
 
     public static bool IsApproved(string? status) => Is(status, Flow5PlanStatuses.Approved);
 
+    public static bool CanBeAssigned(string? status)
+    {
+        var norm = Normalize(status);
+        return norm == Flow5PlanStatuses.Approved || norm == Flow5PlanStatuses.Assigned;
+    }
+
     public static bool Is(string? status, string expected) =>
         string.Equals(Normalize(status), expected, StringComparison.Ordinal);
 

@@ -54,10 +54,10 @@ export const CoachAiEmptyState: React.FC<CoachAiEmptyStateProps> = ({ onQuickDem
         <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-900/50">
           <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mb-1 flex items-center gap-1.5">
             <span className="w-4 h-4 rounded-full bg-emerald-100 dark:bg-emerald-900 text-center leading-4 text-[10px]">4</span>
-            <span>Duyệt & Giao 1 chạm</span>
+            <span>Lưu Thư viện & Giao bài</span>
           </div>
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Chỉ giáo án đã được duyệt mới được giao cho học viên.
+            Giáo án sau duyệt chuyển thẳng vào tab Giáo án & bài tập để giao bất kỳ lúc nào.
           </p>
         </div>
       </div>

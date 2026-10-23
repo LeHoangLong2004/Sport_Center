@@ -93,7 +93,7 @@ public class HomeworkProgressRepository : IHomeworkProgressRepository
         var assignments = await _context.HomeworkProgresses
             .AsNoTracking()
             .Include(progress => progress.Plan)
-            .ThenInclude(plan => plan != null ? plan.Exercises : null)
+            .ThenInclude(plan => plan!.Exercises)
             .Where(progress => progress.PlanId == planId && requestedMembers.Contains(progress.MemberId))
             .OrderBy(progress => progress.MemberId)
             .ToListAsync(cancellationToken);
@@ -116,7 +116,7 @@ public class HomeworkProgressRepository : IHomeworkProgressRepository
     {
         return await _context.HomeworkProgresses
             .Include(p => p.Plan)
-                .ThenInclude(p => p != null ? p.Exercises : null)
+                .ThenInclude(p => p!.Exercises)
             .FirstOrDefaultAsync(p => p.Id == id);
     }
 
@@ -124,7 +124,7 @@ public class HomeworkProgressRepository : IHomeworkProgressRepository
     {
         return await _context.HomeworkProgresses
             .Include(p => p.Plan)
-                .ThenInclude(p => p != null ? p.Exercises : null)
+                .ThenInclude(p => p!.Exercises)
             .Where(p => p.MemberId == memberId)
             .OrderByDescending(p => p.AssignedDate)
             .ToListAsync();
