@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: { classId: string, onClose: () => void, onEdit: (data: any) => void, onApproval?: (action: 'approve' | 'reject') => Promise<boolean> }) {
+  const modalRootRef = useRef<HTMLDivElement>(null);
   const [classDetail, setClassDetail] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -10,6 +12,38 @@ export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: { cla
   const [showConfirmCancel, setShowConfirmCancel] = useState(false);
   const [showConfirmRestore, setShowConfirmRestore] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
+
+  // Lock background UI scrolling while modal is open, and restore when closed
+  useEffect(() => {
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    const modalEl = modalRootRef.current;
+    const scrollContainers = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        '.manager-page-content, .portal-page-enter, [class*="overflow-y-auto"]'
+      )
+    ).filter((el) => !modalEl || !modalEl.contains(el));
+
+    const originalContainerStyles = scrollContainers.map((el) => ({
+      el,
+      overflow: el.style.overflow,
+    }));
+
+    scrollContainers.forEach((el) => {
+      el.style.overflow = 'hidden';
+    });
+
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+      originalContainerStyles.forEach(({ el, overflow }) => {
+        el.style.overflow = overflow;
+      });
+    };
+  }, []);
 
   const handleApproval = async (action: 'approve' | 'reject') => {
     if (!onApproval) return;
@@ -97,9 +131,18 @@ export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: { cla
     )
   );
 
-  return (
-    <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
-      <div className="bg-white rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-slate-100 animate-fade-in-up">
+  const modalContent = (
+    <div
+      ref={modalRootRef}
+      className="fixed inset-0 bg-slate-900/60 z-[9999] flex items-center justify-center p-4 backdrop-blur-xs overscroll-contain"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="bg-white rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-slate-100 animate-fade-in-up"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
           <div className="flex items-center gap-3">
@@ -430,4 +473,7 @@ export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: { cla
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') return null;
+  return createPortal(modalContent, document.body);
 }
