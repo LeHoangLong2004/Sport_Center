@@ -30,15 +30,6 @@ export const CoachAiAssignModal: React.FC<CoachAiAssignModalProps> = ({
   const [notes, setNotes] = useState<string>("Vui lòng khởi động kỹ và hoàn thành đúng tiến độ.");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!isOpen) return null;
-
-  const targetType = target?.type || "member";
-  const targetId = target?.id;
-  const targetName =
-    targetType === "member"
-      ? members.find((m) => m.id === targetId)?.name || "Học viên được chọn"
-      : classes.find((c) => c.id === targetId)?.className || "Lớp học được chọn";
-
   React.useEffect(() => {
     if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => {
@@ -47,6 +38,15 @@ export const CoachAiAssignModal: React.FC<CoachAiAssignModalProps> = ({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  const targetType = target?.type || "member";
+  const targetId = target?.id;
+  const targetName =
+    targetType === "member"
+      ? members.find((m) => m.id === targetId)?.name || "Học viên được chọn"
+      : classes.find((c) => c.id === targetId)?.className || "Lớp học được chọn";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +77,7 @@ export const CoachAiAssignModal: React.FC<CoachAiAssignModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-slate-900 dark:text-white text-base">
-                Giao bài tập cho học viên (Flow 5)
+                Giao bài tập cho học viên
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Giao danh sách bài tập đã duyệt cho học viên tự luyện tập

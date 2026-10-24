@@ -62,7 +62,7 @@ export const CoachAiPlanWorkspace: React.FC<CoachAiPlanWorkspaceProps> = ({
   const handleCopyPlan = () => {
     if (!plan || !plan.exercises) return;
     const lines = [
-      `🏋️ DANH SÁCH BÀI TẬP GỢI Ý (FLOW 5 AI) - ${plan.planName}`,
+      `🏋️ DANH SÁCH BÀI TẬP GỢI Ý (AI) - ${plan.planName}`,
       `🎯 Mục tiêu: ${plan.goal || "Cải thiện thể lực"} | Trình độ: ${plan.level || "Cơ bản"} | Thời lượng: ${plan.durationMinutes || 60} phút`,
       `---------------------------------`,
       ...plan.exercises.map(

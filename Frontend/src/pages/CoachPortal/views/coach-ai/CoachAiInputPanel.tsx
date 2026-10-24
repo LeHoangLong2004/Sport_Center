@@ -267,7 +267,7 @@ export const CoachAiInputPanel: React.FC<CoachAiInputPanelProps> = ({
         ) : (
           <>
             <Sparkles className="w-4 h-4 text-amber-200 animate-pulse" />
-            <span>✨ Gợi ý bài tập bằng Gemini AI (Flow 5)</span>
+            <span>✨ Gợi ý bài tập bằng Gemini AI</span>
           </>
         )}
       </button>

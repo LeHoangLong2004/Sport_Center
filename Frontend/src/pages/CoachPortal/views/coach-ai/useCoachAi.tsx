@@ -628,9 +628,11 @@ export function useCoachAi() {
           exercises: activePlan.exercises,
         }).catch(() => null);
 
+        const realId = savedPlan?.data?.id || savedPlan?.id || activePlan.id;
+
         approved = {
           ...activePlan,
-          id: (savedPlan && savedPlan.id) ? String(savedPlan.id) : activePlan.id,
+          id: realId,
           status: "approved" as const,
           version: activePlan.version + 1,
           approvedAt: new Date().toISOString(),
@@ -693,24 +695,57 @@ export function useCoachAi() {
     const target = currentPlan.recommendationTarget || { type: targetType, id: targetId };
 
     try {
-      const res = await CoachAPI.assignFlow5Plan(currentPlan.id, {
-        target,
-        expectedVersion: currentPlan.version,
-        dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
-        notes,
-      }).catch(() => ({
-        planId: currentPlan.id,
-        assignedCount: 1,
-        skippedCount: 0,
-        assignments: [],
-      }));
+      // 1. Ensure the plan is persisted in the database with a valid UUID
+      let planIdToAssign = currentPlan.id;
+      const isGuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(planIdToAssign);
 
-      setCurrentPlan({ ...currentPlan, status: "assigned" });
-      toast.success(`Đã giao giáo án thành công cho ${res.assignedCount} học viên!`);
+      if (!isGuid) {
+        const saved: any = await CoachAPI.saveCurriculum({
+          name: currentPlan.planName,
+          sportId: currentPlan.sportId || null,
+          description: currentPlan.description,
+          goal: currentPlan.goal,
+          level: currentPlan.level,
+          duration: currentPlan.durationMinutes,
+          exercises: currentPlan.exercises,
+        });
+        const resolvedId = saved?.data?.id || saved?.id;
+        if (resolvedId) {
+          planIdToAssign = resolvedId;
+          setCurrentPlan((prev) => (prev ? { ...prev, id: resolvedId } : null));
+        }
+      }
+
+      // 2. Perform assignment: First try Flow 5 endpoint, then fallback to homework/assign
+      let assignedCount = 1;
+      try {
+        const res = await CoachAPI.assignFlow5Plan(planIdToAssign, {
+          target,
+          expectedVersion: currentPlan.version,
+          dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
+          notes,
+        });
+        assignedCount = res.assignedCount || 1;
+      } catch (flow5Err) {
+        console.warn("Flow 5 assign API returned error, trying homework/assign fallback:", flow5Err);
+        await CoachAPI.assignCurriculum(planIdToAssign, {
+          type: target.type,
+          id: target.id,
+          deadline: dueDate,
+          note: notes,
+        });
+      }
+
+      // 3. Update state & show confirmed success
+      setCurrentPlan((prev) => (prev ? { ...prev, id: planIdToAssign, status: "assigned" } : null));
+      toast.success(`Đã giao bài tập thành công cho ${assignedCount} học viên!`);
       setFeedback({
         type: "success",
-        msg: `Đã giao thành công cho ${res.assignedCount} học viên. Học viên sẽ nhìn thấy giáo án trong Member Portal.`,
+        msg: `Đã giao thành công cho ${assignedCount} học viên. Học viên sẽ nhìn thấy bài tập trong Member Portal.`,
       });
+
+      // 4. Notify open tabs to refresh
+      window.dispatchEvent(new Event("local-storage-update"));
       refreshHistory();
     } catch (err: any) {
       const msg = err instanceof Error ? err.message : "Lỗi khi giao giáo án.";

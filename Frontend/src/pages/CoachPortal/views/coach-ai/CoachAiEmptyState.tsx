@@ -13,7 +13,7 @@ export const CoachAiEmptyState: React.FC<CoachAiEmptyStateProps> = ({ onQuickDem
       </div>
 
       <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">
-        Không gian gợi ý bài tập AI (Flow 5)
+        Không gian gợi ý bài tập AI
       </h3>
       <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md leading-relaxed mb-6">
         Chọn đối tượng và mục tiêu bên trái, sau đó nhấn <strong>"Gợi ý bài tập bằng Gemini AI"</strong> để tạo bản nháp. Danh sách bài tập đề xuất sẽ xuất hiện tại đây để bạn kiểm duyệt và chỉnh sửa.
@@ -68,7 +68,7 @@ export const CoachAiEmptyState: React.FC<CoachAiEmptyStateProps> = ({ onQuickDem
           onClick={onQuickDemo}
           className="text-xs font-semibold px-4 py-2 rounded-xl text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800 hover:bg-orange-50 dark:hover:bg-orange-950/50 transition-colors cursor-pointer"
         >
-          ⚡ Thử nhanh với dữ liệu mẫu Flow 5
+          ⚡ Thử nhanh với dữ liệu mẫu
         </button>
       )}
     </div>
