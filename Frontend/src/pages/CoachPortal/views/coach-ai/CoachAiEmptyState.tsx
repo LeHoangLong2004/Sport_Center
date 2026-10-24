@@ -13,10 +13,10 @@ export const CoachAiEmptyState: React.FC<CoachAiEmptyStateProps> = ({ onQuickDem
       </div>
 
       <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">
-        Không gian duyệt giáo án AI (Flow 5)
+        Không gian gợi ý bài tập AI
       </h3>
       <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md leading-relaxed mb-6">
-        Chọn đối tượng và mục tiêu bên trái, sau đó nhấn <strong>"Sinh giáo án với Gemini AI"</strong> để tạo bản nháp. Giáo án sẽ xuất hiện tại đây để bạn kiểm duyệt và chỉnh sửa.
+        Chọn đối tượng và mục tiêu bên trái, sau đó nhấn <strong>"Gợi ý bài tập bằng Gemini AI"</strong> để tạo bản nháp. Danh sách bài tập đề xuất sẽ xuất hiện tại đây để bạn kiểm duyệt và chỉnh sửa.
       </p>
 
       {/* 4 Steps Showcase */}
@@ -27,17 +27,17 @@ export const CoachAiEmptyState: React.FC<CoachAiEmptyStateProps> = ({ onQuickDem
             <span>Cá nhân hóa ngữ cảnh</span>
           </div>
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Dựa trên BMI, lịch sử tập và thiết bị sẵn có.
+            Dựa trên thể trạng, mục tiêu & thiết bị sẵn có của học viên.
           </p>
         </div>
 
         <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-900/50">
           <div className="text-xs font-bold text-amber-600 dark:text-amber-400 mb-1 flex items-center gap-1.5">
             <span className="w-4 h-4 rounded-full bg-amber-100 dark:bg-amber-900 text-center leading-4 text-[10px]">2</span>
-            <span>Gemini 1.5 Flash</span>
+            <span>Gemini AI đề xuất</span>
           </div>
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Sinh bài tập nhanh, chuẩn JSON có số hiệp, reps & rest.
+            Sinh bài tập nhanh, chuẩn số hiệp, reps, rest & kỹ thuật động tác.
           </p>
         </div>
 
@@ -47,7 +47,7 @@ export const CoachAiEmptyState: React.FC<CoachAiEmptyStateProps> = ({ onQuickDem
             <span>Coach kiểm duyệt</span>
           </div>
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            HLV tự do chỉnh sửa hiệp, lần tập hoặc thêm bớt bài.
+            HLV tự do chỉnh sửa hiệp, lần tập hoặc thêm bớt bài trước khi giao.
           </p>
         </div>
 
@@ -57,7 +57,7 @@ export const CoachAiEmptyState: React.FC<CoachAiEmptyStateProps> = ({ onQuickDem
             <span>Lưu Thư viện & Giao bài</span>
           </div>
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Giáo án sau duyệt chuyển thẳng vào tab Giáo án & bài tập để giao bất kỳ lúc nào.
+            Lưu vào thư viện bài tập hoặc giao ngay cho học viên tự luyện tập.
           </p>
         </div>
       </div>
@@ -68,7 +68,7 @@ export const CoachAiEmptyState: React.FC<CoachAiEmptyStateProps> = ({ onQuickDem
           onClick={onQuickDemo}
           className="text-xs font-semibold px-4 py-2 rounded-xl text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800 hover:bg-orange-50 dark:hover:bg-orange-950/50 transition-colors cursor-pointer"
         >
-          ⚡ Thử nhanh với dữ liệu mẫu Flow 5
+          ⚡ Thử nhanh với dữ liệu mẫu
         </button>
       )}
     </div>

@@ -8,6 +8,7 @@ interface CoachAiTargetSelectorProps {
   setTargetType: (type: "member" | "class") => void;
   targetId: string;
   setTargetId: (id: string) => void;
+  onSelectTarget?: (type: "member" | "class", id: string) => void;
   members: MockMember[];
   classes: CoachClassOverview[];
 }
@@ -17,11 +18,21 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
   setTargetType,
   targetId,
   setTargetId,
+  onSelectTarget,
   members,
   classes,
 }) => {
   const selectedMember = members.find((m) => m.id === targetId);
   const selectedClass = classes.find((c) => c.id === targetId);
+
+  const handlePickTarget = (type: "member" | "class", id: string) => {
+    if (onSelectTarget) {
+      onSelectTarget(type, id);
+    } else {
+      setTargetType(type);
+      setTargetId(id);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-2">
@@ -34,10 +45,8 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
         <button
           type="button"
           onClick={() => {
-            setTargetType("member");
-            if (members.length > 0 && targetType !== "member") {
-              setTargetId(members[0].id);
-            }
+            const nextId = members.length > 0 ? members[0].id : "";
+            handlePickTarget("member", nextId);
           }}
           className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             targetType === "member"
@@ -52,10 +61,8 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
         <button
           type="button"
           onClick={() => {
-            setTargetType("class");
-            if (classes.length > 0 && targetType !== "class") {
-              setTargetId(classes[0].id);
-            }
+            const nextId = classes.length > 0 ? classes[0].id : "";
+            handlePickTarget("class", nextId);
           }}
           className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             targetType === "class"
@@ -73,11 +80,11 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
         <div className="flex flex-col gap-2">
           <select
             value={targetId}
-            onChange={(e) => setTargetId(e.target.value)}
+            onChange={(e) => handlePickTarget("member", e.target.value)}
             className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-orange-500 focus:outline-none"
           >
             {members.length === 0 ? (
-              <option value="">Chưa có học viên phụ trách</option>
+               <option value="">Chưa có học viên phụ trách</option>
             ) : (
               members.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -88,27 +95,33 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
           </select>
 
           {selectedMember && (
-            <div className="p-3 rounded-xl bg-orange-50/70 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900/50 flex items-center justify-between">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <UserAvatar
-                  src={selectedMember.avatar}
-                  name={selectedMember.name}
-                  className="w-9 h-9 rounded-full object-cover shrink-0 text-xs font-bold border border-orange-200 dark:border-orange-800 shadow-xs"
-                />
-                <div className="min-w-0">
-                  <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
-                    {selectedMember.name}
-                  </div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                    Mục tiêu: {selectedMember.goal || "Cải thiện thể lực"} · Trình độ: {selectedMember.level || "Cơ bản"}
+            <div className="p-3 rounded-xl bg-orange-50/70 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900/50 flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <UserAvatar
+                    src={selectedMember.avatar}
+                    name={selectedMember.name}
+                    className="w-9 h-9 rounded-full object-cover shrink-0 text-xs font-bold border border-orange-200 dark:border-orange-800 shadow-xs"
+                  />
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                      {selectedMember.name}
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                      Mục tiêu: {selectedMember.goal || "Cải thiện thể lực"} · Trình độ: {selectedMember.level || "Cơ bản"}
+                    </div>
                   </div>
                 </div>
+                {selectedMember.attendanceRate !== undefined && selectedMember.attendanceRate !== null && (
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800 shrink-0">
+                    Chuyên cần: {Math.round(selectedMember.attendanceRate * 100)}%
+                  </span>
+                )}
               </div>
-              {selectedMember.attendanceRate !== undefined && selectedMember.attendanceRate !== null && (
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800 shrink-0">
-                  Chuyên cần: {Math.round(selectedMember.attendanceRate * 100)}%
-                </span>
-              )}
+              <div className="text-[10px] text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-md flex items-center gap-1 font-medium border border-emerald-500/20">
+                <span>✓</span>
+                <span>Đã tự động điền mục tiêu & thể trạng của học viên vào dữ liệu đầu vào cho AI</span>
+              </div>
             </div>
           )}
         </div>
@@ -116,7 +129,7 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
         <div className="flex flex-col gap-2">
           <select
             value={targetId}
-            onChange={(e) => setTargetId(e.target.value)}
+            onChange={(e) => handlePickTarget("class", e.target.value)}
             className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-orange-500 focus:outline-none"
           >
             {classes.length === 0 ? (

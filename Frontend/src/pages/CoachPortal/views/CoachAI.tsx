@@ -50,9 +50,11 @@ export default function CoachAI() {
     setShowHistoryDrawer,
     feedback,
     setFeedback,
+    handleSelectTarget,
     handleGenerate,
     handleSaveDraft,
     handleApprove,
+    handleApproveAndAssign,
     handleConfirmAssign,
     handleClone,
     handleArchive,
@@ -149,6 +151,7 @@ export default function CoachAI() {
             setTargetType={setTargetType}
             targetId={targetId}
             setTargetId={setTargetId}
+            onSelectTarget={handleSelectTarget}
             members={members}
             classes={classes}
             sports={sports}
@@ -180,6 +183,7 @@ export default function CoachAI() {
             isApproving={isApproving}
             onSaveDraft={handleSaveDraft}
             onApprove={handleApprove}
+            onApproveAndAssign={handleApproveAndAssign}
             onOpenAssign={() => setShowAssignModal(true)}
             onClone={handleClone}
             onArchive={handleArchive}
