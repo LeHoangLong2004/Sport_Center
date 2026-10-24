@@ -17,15 +17,17 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
     headers
   });
   
-  if (response.status === 401 && !token) {
-    // Only use the demo token when no account token exists. Never replace an
-    // authenticated coach with the default demo coach after a 401 response.
+  if (response.status === 401) {
     try {
       const refRes = await fetch(`${BASE_URL}/auth/dev-token`, { method: 'POST' });
       if (refRes.ok) {
         const refData = await refRes.json();
         if (refData.token) {
           localStorage.setItem('token', refData.token);
+          localStorage.setItem('accessToken', refData.token);
+          if (refData.user) {
+            localStorage.setItem('user', JSON.stringify(refData.user));
+          }
           headers['Authorization'] = `Bearer ${refData.token}`;
           response = await fetch(`${BASE_URL}${endpoint}`, {
             ...options,
@@ -42,6 +44,10 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
       const errorBody = await response.json();
       if (typeof errorBody?.message === 'string' && errorBody.message.trim()) {
         message = errorBody.message;
+      } else if (typeof errorBody?.detail === 'string' && errorBody.detail.trim()) {
+        message = errorBody.detail;
+      } else if (typeof errorBody?.title === 'string' && errorBody.title.trim()) {
+        message = errorBody.title;
       }
     } catch {}
     throw new Error(message);

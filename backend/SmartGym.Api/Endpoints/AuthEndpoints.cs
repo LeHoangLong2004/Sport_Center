@@ -74,7 +74,8 @@ public static class AuthEndpoints
                             email = coachUser.Email,
                             phoneNumber = coachUser.PhoneNumber,
                             role = "coach",
-                            roleName = "coach"
+                            roleName = "coach",
+                            avatarUrl = coachUser.AvatarUrl ?? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80"
                         });
                     }
                     else if (cleanEmail == "hoxuananhnam@gmail.com")
@@ -97,7 +98,8 @@ public static class AuthEndpoints
                             email = memberUser.Email,
                             phoneNumber = memberUser.PhoneNumber,
                             role = "member",
-                            roleName = "member"
+                            roleName = "member",
+                            avatarUrl = memberUser.AvatarUrl ?? "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=256&q=80"
                         });
                     }
                 }
@@ -231,10 +233,10 @@ public static class AuthEndpoints
 
             var targetId = isMember
                 ? Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
-                : Guid.Parse("25f50fba-506a-4edf-9db7-43f77f6741a4");
+                : Guid.Parse("d426d2a7-f099-4377-9673-160e02f8dc1b");
             var targetRole = isMember ? "member" : "coach";
-            var targetEmail = isMember ? "hoxuananhnam@gmail.com" : "hoxuananhnam1@gmail.com";
-            var defaultName = isMember ? "Hồ Xuân Ánh Nam (Member)" : "Hồ Xuân Ánh Nam (Coach)";
+            var targetEmail = isMember ? "hoxuananhnam@gmail.com" : "coach_flow2@smartgym.com";
+            var defaultName = isMember ? "Hồ Xuân Ánh Nam (Member)" : "Coach Đỗ Hoàng E";
 
             var targetUser = await userRepo.GetByIdAsync(targetId);
             if (targetUser == null)

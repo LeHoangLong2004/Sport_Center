@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { avatarTopbar, iSearch, iBell } from '../shared';
 import { UserAvatar } from '../../../components/UserAvatar';
 import { notificationApi, type ManagerNotification } from '../../../hooks/notificationApi';
-import { RoleSwitcher } from '../../../components/RoleSwitcher';
 
 export function TopBar({ breadcrumb, title, onProfileClick, onNotificationClick }: { breadcrumb: string; title: string; onProfileClick?: () => void; onNotificationClick?: (notification: ManagerNotification) => void }) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -91,7 +90,6 @@ export function TopBar({ breadcrumb, title, onProfileClick, onNotificationClick 
         <p className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{title}</p>
       </div>
       <div className="flex gap-3 items-center">
-        <RoleSwitcher currentRole="admin" />
         <div className="hidden md:flex bg-slate-100 dark:bg-slate-800/80 items-center gap-2 px-3 py-2.5 rounded-xl w-[260px] border border-transparent focus-within:border-rose-500/50 focus-within:bg-white dark:focus-within:bg-slate-900 transition-all">
           <img src={iSearch} alt="" className="size-4 shrink-0 opacity-50" />
           <input 

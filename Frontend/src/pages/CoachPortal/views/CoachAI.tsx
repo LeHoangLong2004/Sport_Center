@@ -1,230 +1,214 @@
 /**
- * CO-09 — AI gợi ý bài tập
- * AI tạo bản nháp, Coach duyệt rồi mới lưu/giao.
- * Không tự giao khi AI vừa trả kết quả.
- * Dùng dữ liệu mẫu với nhãn "Gợi ý minh họa" vì chưa có AI backend.
+ * Flow 5 — AI Workout Recommendation Engine (Coach Copilot)
+ * Architecture:
+ * 1. Coach selects target (Member / Class), sport, level, goal, equipment & duration.
+ * 2. Backend injects user metrics & history context, requests structured JSON from Gemini.
+ * 3. AI draft response is saved as 'draft' with source 'ai_recommendation'.
+ * 4. Coach reviews, edits exercise dosages & approves draft (Coach-in-the-Loop).
+ * 5. Approved plan can be officially assigned to member / class roster.
  */
-import { useState, useEffect } from "react";
-
-const LEVEL_OPTIONS = ["Cơ bản", "Trung cấp", "Nâng cao"];
-const EQUIPMENT_OPTIONS = ["Thảm tập", "Tạ tay", "Hồ bơi", "Xà đơn", "Dây kháng lực", "Không dụng cụ"];
-
-const AI_SUGGESTIONS: Record<string, { name: string; reps: string; note: string }[]> = {
-  Yoga: [
-    { name: "Tư thế Núi (Tadasana)", reps: "5 phút", note: "Giữ lưng thẳng, thở đều" },
-    { name: "Tư thế Chó úp mặt (Down Dog)", reps: "3 × 30s", note: "" },
-    { name: "Tư thế Chiến binh I (Warrior I)", reps: "3 × 30s mỗi bên", note: "" },
-    { name: "Tư thế Em bé (Balasana)", reps: "2 phút", note: "Thư giãn" },
-  ],
-  Gym: [
-    { name: "Squat", reps: "4 × 12", note: "Giữ gót chân chạm sàn" },
-    { name: "Push-up", reps: "3 × 15", note: "" },
-    { name: "Plank", reps: "3 × 45s", note: "Giữ hông không sụp" },
-    { name: "Dumbbell Row", reps: "3 × 12 mỗi bên", note: "" },
-  ],
-  Bơi: [
-    { name: "Khởi động nước", reps: "200m chậm", note: "" },
-    { name: "Kick board (chân)", reps: "4 × 50m", note: "Tập trung vào cú đập chân" },
-    { name: "Freestyle kỹ thuật", reps: "4 × 100m", note: "Đếm nhịp tay" },
-  ],
-  CrossFit: [
-    { name: "Box Jump", reps: "3 × 10", note: "" },
-    { name: "Kettlebell Swing", reps: "3 × 15", note: "Hip hinge, không dùng lưng" },
-    { name: "Burpee", reps: "3 × 10", note: "" },
-    { name: "Air Squat", reps: "3 × 20", note: "" },
-  ],
-  "Cầu lông": [
-    { name: "Khởi động", reps: "10 phút", note: "" },
-    { name: "Di chuyển footwork 4 góc", reps: "5 × 2 phút", note: "" },
-    { name: "Tập cầu cao", reps: "3 × 20 cái", note: "" },
-    { name: "Tập smash", reps: "3 × 15 cái", note: "" },
-  ],
-};
+import { AlertCircle, CheckCircle2, Info, BookOpen, ArrowRight, Sparkles, X } from "lucide-react";
+import { CoachAiHeader } from "./coach-ai/CoachAiHeader";
+import { CoachAiInputPanel } from "./coach-ai/CoachAiInputPanel";
+import { CoachAiPlanWorkspace } from "./coach-ai/CoachAiPlanWorkspace";
+import { CoachAiAssignModal } from "./coach-ai/CoachAiAssignModal";
+import { CoachAiHistoryDrawer } from "./coach-ai/CoachAiHistoryDrawer";
+import { useCoachAi } from "./coach-ai/useCoachAi";
 
 export default function CoachAI() {
-  const [sport, setSport] = useState("");
-  const [sportOptions, setSportOptions] = useState<{ id: string; name: string }[]>([]);
-  const [level, setLevel] = useState("Cơ bản");
-  const [goal, setGoal] = useState("");
-  const [equipment, setEquipment] = useState<string[]>([]);
-  const [targetId, setTargetId] = useState("");
-  const [members, setMembers] = useState<{ id: string; name: string }[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [draft, setDraft] = useState<{ name: string; reps: string; note: string }[] | null>(null);
-  const [feedback, setFeedback] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const {
+    loading,
+    members,
+    classes,
+    sports,
+    historyPlans,
+    targetType,
+    setTargetType,
+    targetId,
+    setTargetId,
+    sportId,
+    setSportId,
+    level,
+    setLevel,
+    goal,
+    setGoal,
+    equipment,
+    setEquipment,
+    durationMinutes,
+    setDurationMinutes,
+    exerciseCount,
+    setExerciseCount,
+    isGenerating,
+    elapsedSeconds,
+    currentPlan,
+    setCurrentPlan,
+    isSaving,
+    isApproving,
+    showAssignModal,
+    setShowAssignModal,
+    showHistoryDrawer,
+    setShowHistoryDrawer,
+    feedback,
+    setFeedback,
+    handleGenerate,
+    handleSaveDraft,
+    handleApprove,
+    handleConfirmAssign,
+    handleClone,
+    handleArchive,
+    handleSelectPlanFromHistory,
+    handleQuickDemo,
+  } = useCoachAi();
 
-  useEffect(() => {
-    import("../services/api").then(({ CoachAPI }) => {
-      Promise.all([CoachAPI.getMembers(), CoachAPI.getSports()]).then(([mem, sports]) => {
-        setMembers(mem);
-        setSportOptions(sports);
-        if (mem.length > 0) setTargetId(mem[0].id);
-        if (sports.length > 0) setSport(sports[0].name);
-      }).finally(() => setLoading(false));
-    });
-  }, []);
-
-  const toggleEquipment = (e: string) => {
-    setEquipment((prev) => prev.includes(e) ? prev.filter((x) => x !== e) : [...prev, e]);
-  };
-
-  const handleGenerate = async () => {
-    setIsGenerating(true);
-    setDraft(null);
-    setSaved(false);
-    setFeedback(null);
-    // Giả lập delay AI (chưa có backend)
-    await new Promise((r) => setTimeout(r, 1500));
-    setDraft(null);
-    setFeedback("Tính năng AI chưa được kết nối với backend nên chưa thể tạo gợi ý thật. Vui lòng tạo giáo án trực tiếp trong mục Giáo án.");
-    setIsGenerating(false);
-  };
-
-  const handleSaveDraft = async () => {
-    if (!draft) return;
-    setIsSaving(true);
-    try {
-      const { CoachAPI } = await import("../services/api");
-      const selectedSport = sportOptions.find((item) => item.name === sport);
-      await CoachAPI.saveCurriculum({
-        name: `${sport} - Giáo án gợi ý`,
-        sportId: selectedSport?.id ?? null,
-        goal,
-        level,
-        duration: 60,
-        description: equipment.length > 0
-          ? `Thiết bị: ${equipment.join(", ")}`
-          : "Giáo án được tạo từ bản gợi ý, cần coach xem lại trước khi giao.",
-        exercises: draft,
-      });
-    } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "Không thể lưu giáo án vào hệ thống.");
-      setIsSaving(false);
-      return;
-    }
-    setSaved(true);
-    setFeedback("Gợi ý đã được lưu thành Nháp giáo án. Bạn có thể vào Giáo án để sửa và giao.");
-    setIsSaving(false);
-    setFeedback("Đã lưu giáo án vào hệ thống. Bạn có thể vào Giáo án để xem, chỉnh sửa và giao.");
-  };
-
-  if (loading) return <div className="py-20 text-center text-slate-400">Đang tải...</div>;
+  if (loading) {
+    return (
+      <div className="py-24 flex flex-col items-center justify-center text-slate-400 gap-3">
+        <div className="w-8 h-8 border-3 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
+        <span className="text-sm font-medium">Đang tải dữ liệu HLV và học viên...</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-400 max-w-3xl">
-      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">AI gợi ý bài tập</h1>
-      <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-xl px-4 py-3 text-purple-800 dark:text-purple-200 text-sm">
-        <strong>Lưu ý:</strong> Chưa có AI backend — kết quả dưới đây là{" "}
-        <strong>Gợi ý minh họa</strong>, không phải phản hồi AI thật.
-        Coach cần duyệt trước khi lưu hoặc giao.
-      </div>
+    <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-3 duration-300 max-w-7xl mx-auto pb-12">
+      {/* 1. Header Banner */}
+      <CoachAiHeader
+        onOpenHistory={() => setShowHistoryDrawer(true)}
+        historyCount={historyPlans.length}
+      />
 
-      {/* Step 1: Input */}
-      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 flex flex-col gap-4">
-        <h2 className="font-semibold text-slate-800 dark:text-slate-100">1. Thông tin gợi ý</h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Học viên / Lớp</label>
-            <select value={targetId} onChange={(e) => setTargetId(e.target.value)} className={selectCls}>
-              {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Môn</label>
-            <select value={sport} onChange={(e) => { setSport(e.target.value); setDraft(null); }} className={selectCls}>
-              {sportOptions.map((s) => <option key={s.id} value={s.name}>{s.name}</option>)}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Trình độ</label>
-            <select value={level} onChange={(e) => setLevel(e.target.value)} className={selectCls}>
-              {LEVEL_OPTIONS.map((l) => <option key={l}>{l}</option>)}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Mục tiêu</label>
-            <input type="text" value={goal} onChange={(e) => setGoal(e.target.value)}
-              placeholder="VD: Giảm cân, tăng cơ..." className={inputCls} />
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Thiết bị có sẵn</label>
-          <div className="flex flex-wrap gap-2">
-            {EQUIPMENT_OPTIONS.map((e) => (
-              <button key={e} type="button" onClick={() => toggleEquipment(e)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${equipment.includes(e) ? "bg-teal-600 text-white border-teal-600" : "border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"}`}>
-                {e}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <button type="button" onClick={handleGenerate} disabled={isGenerating}
-          className="w-full py-3 bg-gradient-to-r from-purple-600 to-teal-600 text-white rounded-xl font-semibold text-sm hover:from-purple-700 hover:to-teal-700 transition-all shadow-md disabled:opacity-60">
-          {isGenerating ? "Đang tạo gợi ý... ✨" : "✨ Tạo gợi ý bài tập"}
-        </button>
-      </div>
-
-      {/* Step 2: Draft result */}
-      {(isGenerating || draft) && (
-        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-slate-800 dark:text-slate-100">2. Bản nháp gợi ý</h2>
-            <span className="text-xs px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full border border-purple-200 dark:border-purple-700 font-semibold">
-              Gợi ý minh họa — chưa phải AI thật
-            </span>
-          </div>
-
-          {isGenerating ? (
-            <div className="flex flex-col gap-2 animate-pulse">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-10 bg-slate-100 dark:bg-slate-700 rounded-xl" />
-              ))}
+      {/* Feedback Banner */}
+      {feedback && (
+        <div
+          className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm animate-in fade-in slide-in-from-top-2 duration-300 shadow-sm ${
+            feedback.type === "success"
+              ? "bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50/70 dark:from-emerald-950/50 dark:via-teal-950/40 dark:to-emerald-950/30 border-emerald-300 dark:border-emerald-700/80 text-emerald-900 dark:text-emerald-100"
+              : feedback.type === "error"
+              ? "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200"
+              : "bg-orange-50 dark:bg-orange-950/40 border-orange-200 dark:border-orange-800 text-orange-800 dark:text-orange-200"
+          }`}
+        >
+          <div className="flex items-start sm:items-center gap-3">
+            <div
+              className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                feedback.type === "success"
+                  ? "bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-300 ring-1 ring-emerald-500/20"
+                  : feedback.type === "error"
+                  ? "bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-300"
+                  : "bg-orange-100 dark:bg-orange-900/60 text-orange-600 dark:text-orange-300"
+              }`}
+            >
+              {feedback.type === "success" && <CheckCircle2 className="w-5 h-5" />}
+              {feedback.type === "error" && <AlertCircle className="w-5 h-5" />}
+              {feedback.type === "info" && <Sparkles className="w-5 h-5" />}
             </div>
-          ) : draft && (
-            <>
-              <div className="flex flex-col gap-2">
-                {draft.map((ex, i) => (
-                  <div key={i} className="flex items-center gap-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl p-3">
-                    <span className="text-xs font-bold text-slate-400 w-5 shrink-0">{i + 1}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-slate-800 dark:text-slate-100 text-sm">{ex.name}</div>
-                      <div className="text-xs text-slate-400 mt-0.5">{ex.reps}{ex.note ? ` · ${ex.note}` : ""}</div>
-                    </div>
-                  </div>
-                ))}
+            <div>
+              <div className="font-bold text-sm">
+                {feedback.type === "success"
+                  ? "Lưu vào Thư viện thành công!"
+                  : feedback.type === "error"
+                  ? "Đã xảy ra lỗi"
+                  : "Thông báo trợ lý AI"}
               </div>
+              <p className="text-xs opacity-90 mt-0.5 leading-relaxed">{feedback.msg}</p>
+            </div>
+          </div>
 
-              {/* Step 3: Coach action */}
-              {!saved ? (
-                <div className="flex gap-3 flex-wrap pt-2">
-                  <button type="button" onClick={handleSaveDraft} disabled={isSaving}
-                    className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-md shadow-teal-500/20">
-                    Lưu thành Nháp giáo án
-                  </button>
-                  <button type="button" onClick={() => { setDraft(null); }}
-                    className="px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">
-                    Bỏ gợi ý này
-                  </button>
-                  <p className="w-full text-xs text-slate-400">
-                    ⚠ Không tự động giao. Coach cần xem lại và xác nhận từng bước.
-                  </p>
-                </div>
-              ) : (
-                <div className="text-green-600 dark:text-green-400 text-sm font-medium">{feedback}</div>
-              )}
-            </>
-          )}
+          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0 mt-1 sm:mt-0">
+            {feedback.type === "success" && (
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.hash = "#coach-curriculum";
+                }}
+                className="px-3.5 py-1.5 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Xem Thư viện</span>
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setFeedback(null)}
+              className="p-1.5 rounded-lg opacity-60 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+              aria-label="Đóng thông báo"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
+
+      {/* 2. Main Dual Panel: Input Criteria & Plan Workspace */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column: Input Form (5 cols) */}
+        <div className="lg:col-span-5 flex flex-col gap-6">
+          <CoachAiInputPanel
+            targetType={targetType}
+            setTargetType={setTargetType}
+            targetId={targetId}
+            setTargetId={setTargetId}
+            members={members}
+            classes={classes}
+            sports={sports}
+            sportId={sportId}
+            setSportId={setSportId}
+            level={level}
+            setLevel={setLevel}
+            goal={goal}
+            setGoal={setGoal}
+            equipment={equipment}
+            setEquipment={setEquipment}
+            durationMinutes={durationMinutes}
+            setDurationMinutes={setDurationMinutes}
+            exerciseCount={exerciseCount}
+            setExerciseCount={setExerciseCount}
+            isGenerating={isGenerating}
+            onGenerate={handleGenerate}
+          />
+        </div>
+
+        {/* Right Column: Interactive Plan Workspace (7 cols) */}
+        <div className="lg:col-span-7 flex flex-col gap-6">
+          <CoachAiPlanWorkspace
+            plan={currentPlan}
+            setPlan={setCurrentPlan}
+            isGenerating={isGenerating}
+            elapsedSeconds={elapsedSeconds}
+            isSaving={isSaving}
+            isApproving={isApproving}
+            onSaveDraft={handleSaveDraft}
+            onApprove={handleApprove}
+            onOpenAssign={() => setShowAssignModal(true)}
+            onClone={handleClone}
+            onArchive={handleArchive}
+            onReset={() => setCurrentPlan(null)}
+            onQuickDemo={handleQuickDemo}
+          />
+        </div>
+      </div>
+
+      {/* 3. Assign Plan Modal */}
+      {currentPlan && (
+        <CoachAiAssignModal
+          plan={currentPlan}
+          target={currentPlan.recommendationTarget || { type: targetType, id: targetId }}
+          members={members}
+          classes={classes}
+          isOpen={showAssignModal}
+          onClose={() => setShowAssignModal(false)}
+          onConfirm={handleConfirmAssign}
+        />
+      )}
+
+      {/* 4. History Drawer */}
+      <CoachAiHistoryDrawer
+        isOpen={showHistoryDrawer}
+        onClose={() => setShowHistoryDrawer(false)}
+        plans={historyPlans}
+        onSelectPlan={handleSelectPlanFromHistory}
+      />
     </div>
   );
 }
-
-const selectCls = "border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 w-full";
-const inputCls = "border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 w-full";

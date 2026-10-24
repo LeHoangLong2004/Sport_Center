@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using SmartGym.Application.DTOs.WorkoutPlans;
 using SmartGym.Application.Interfaces;
+using SmartGym.Application.Services;
 using SmartGym.Infrastructure.Persistence.EF;
 
 namespace SmartGym.Api.Endpoints;
@@ -74,6 +75,19 @@ public static class HomeworkEndpoints
                                 return targetAccess.ErrorCode == "unauthorized"
                                     ? Results.Unauthorized()
                                     : Results.Forbid();
+                            }
+                        }
+
+                        var plan = await db.WorkoutPlans.FirstOrDefaultAsync(p => p.Id == request.PlanId);
+                        if (plan != null && !Flow5PlanStatus.CanBeAssigned(plan.Status))
+                        {
+                            if (plan.CoachId == null || plan.CoachId == coachId.Value)
+                            {
+                                plan.Status = Flow5PlanStatuses.Approved;
+                                plan.ApprovedAt = DateTime.UtcNow;
+                                plan.ApprovedBy = coachId.Value;
+                                plan.UpdatedAt = DateTime.UtcNow;
+                                await db.SaveChangesAsync();
                             }
                         }
 
@@ -180,6 +194,49 @@ public static class HomeworkEndpoints
             )
             .WithTags("Homework")
             .WithSummary("Update progress status of a homework (Member only)");
+
+        // Coach verifies or rejects a member's workout progress
+        group
+            .MapPut(
+                "/{id:guid}/verify",
+                async (
+                    Guid id,
+                    HttpContext context,
+                    [FromBody] VerifyHomeworkProgressRequest request,
+                    IHomeworkProgressService service,
+                    SmartGymDbContext db
+                ) =>
+                {
+                    var roleClaim = context.User.FindFirst(ClaimTypes.Role)?.Value;
+                    if (roleClaim != "coach" && roleClaim != "manager")
+                    {
+                        return Results.Forbid();
+                    }
+
+                    var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    if (
+                        string.IsNullOrEmpty(userIdClaim)
+                        || !Guid.TryParse(userIdClaim, out var userId)
+                    )
+                    {
+                        return Results.Unauthorized();
+                    }
+
+                    var coachId = await CoachProfileResolver.FindByUserIdAsync(db, userId);
+                    if (coachId == null)
+                        return Results.BadRequest(new { message = "Coach profile not found." });
+
+                    var success = await service.VerifyProgressAsync(coachId.Value, id, request);
+                    if (!success)
+                        return Results.BadRequest(
+                            new { message = "Không tìm thấy bài tập hoặc không thể nghiệm thu." }
+                        );
+
+                    return Results.Ok(new { message = "Nghiệm thu giáo án thành công!" });
+                }
+            )
+            .WithTags("Homework")
+            .WithSummary("Coach verifies or rejects a member's workout progress");
     }
 
     private static IResult ToAssignmentResult(

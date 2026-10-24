@@ -116,6 +116,16 @@ export default function SiteApp({
 
     const label = (clickable ?? target).textContent?.trim() ?? ""
 
+    if (
+      clickable?.dataset.name === "logo-group" ||
+      clickable?.dataset.name === "logo-group-footer" ||
+      (label.includes("SPORTCENTER") && label.includes("Energy Platform"))
+    ) {
+      navigate("home")
+      window.scrollTo({ top: 0, behavior: "smooth" })
+      return
+    }
+
     for (const [text, destination] of Object.entries(labelRoutes)) {
       if (label === text || label.startsWith(text)) {
         if (destination === "admin") {

@@ -17,8 +17,18 @@ export function SiteFooter() {
           data-name="logo-group-footer"
         >
           <div
-            className="flex gap-[10px] items-center cursor-pointer"
+            className="flex gap-[10px] items-center cursor-pointer select-none group"
             data-name="menu-item-Trang chủ"
+            onClick={() => {
+              if (window.location.hash === "#home" || window.location.hash === "" || window.location.hash === "#") {
+                window.scrollTo({ top: 0, behavior: "smooth" })
+              } else {
+                window.location.hash = "home"
+                window.dispatchEvent(new HashChangeEvent("hashchange"))
+                window.scrollTo({ top: 0, behavior: "smooth" })
+              }
+            }}
+            title="Quay lại Trang chủ SportCenter"
           >
             <div className="bg-teal-500 flex items-center justify-center rounded-[8px] size-[40px] shrink-0 shadow-lg shadow-teal-500/20">
               <svg

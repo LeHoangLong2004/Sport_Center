@@ -4,14 +4,13 @@ interface ScheduleProposalsSectionProps {
   classes: any[];
   pendingProposals: any[];
   onSelectClass: (id: string) => void;
-  onClassApproval: (id: string, action: "approve" | "reject") => Promise<boolean>;
+  onClassApproval?: (id: string, action: "approve" | "reject") => Promise<boolean>;
 }
 
 export const ScheduleProposalsSection: React.FC<ScheduleProposalsSectionProps> = ({
   classes,
   pendingProposals,
   onSelectClass,
-  onClassApproval,
 }) => {
   const [proposalSearch, setProposalSearch] = useState("");
 
@@ -87,7 +86,7 @@ export const ScheduleProposalsSection: React.FC<ScheduleProposalsSectionProps> =
 
       {filteredProposals.length > 0 && (
         <div className="mb-4 overflow-hidden rounded-xl border border-slate-200">
-          <div className="hidden grid-cols-[minmax(0,1.6fr)_minmax(150px,1fr)_minmax(170px,1fr)_110px_160px] gap-4 bg-slate-50 px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-slate-500 md:grid">
+          <div className="hidden grid-cols-[minmax(0,1.8fr)_minmax(140px,1fr)_minmax(160px,1fr)_110px_130px] gap-4 bg-slate-50 px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-slate-500 md:grid">
             <span>Lớp học</span>
             <span>Coach</span>
             <span>Thời gian</span>
@@ -104,11 +103,11 @@ export const ScheduleProposalsSection: React.FC<ScheduleProposalsSectionProps> =
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") onSelectClass(item.id);
                 }}
-                className="grid cursor-pointer gap-3 px-4 py-4 transition hover:bg-emerald-50/40 md:grid-cols-[minmax(0,1.6fr)_minmax(150px,1fr)_minmax(170px,1fr)_110px_160px] md:items-center md:gap-4"
+                className="group grid cursor-pointer gap-3 px-4 py-3.5 transition hover:bg-emerald-50/40 md:grid-cols-[minmax(0,1.8fr)_minmax(140px,1fr)_minmax(160px,1fr)_110px_130px] md:items-center md:gap-4"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-bold text-slate-900">{item.name}</p>
-                  <p className="mt-1 text-xs text-slate-500">{item.sport} · {item.room}</p>
+                  <p className="truncate text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">{item.name}</p>
+                  <p className="mt-0.5 text-xs text-slate-500">{item.sport} · {item.room}</p>
                 </div>
                 <div className="text-sm text-slate-700">{item.coach || "Chưa phân công"}</div>
                 <div className="text-sm text-slate-700">{item.rawStart.toLocaleString("vi-VN")}</div>
@@ -117,33 +116,20 @@ export const ScheduleProposalsSection: React.FC<ScheduleProposalsSectionProps> =
                     Chờ duyệt
                   </span>
                 </div>
-                <div
-                  className="flex min-w-0 flex-col gap-2"
-                  onClick={(event) => event.stopPropagation()}
-                >
+                <div className="flex items-center justify-end">
                   <button
                     type="button"
-                    onClick={() => onSelectClass(item.id)}
-                    className="w-full whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onSelectClass(item.id);
+                    }}
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
                   >
-                    Xem chi tiết
+                    <span>Chi tiết</span>
+                    <svg className="h-3.5 w-3.5 text-slate-400 group-hover:text-emerald-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
                   </button>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => void onClassApproval(item.id, "approve")}
-                      className="whitespace-nowrap rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700"
-                    >
-                      Duyệt
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void onClassApproval(item.id, "reject")}
-                      className="whitespace-nowrap rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100"
-                    >
-                      Từ chối
-                    </button>
-                  </div>
                 </div>
               </div>
             ))}

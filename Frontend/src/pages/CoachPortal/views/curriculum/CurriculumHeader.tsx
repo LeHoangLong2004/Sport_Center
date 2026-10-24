@@ -1,5 +1,4 @@
-import React from "react";
-import { BookOpen, Plus, Search, Filter } from "lucide-react";
+import { BookOpen, Plus, Search, Filter, Sparkles } from "lucide-react";
 import type { MockCurriculum } from "../../services/api";
 
 interface CurriculumHeaderProps {
@@ -35,20 +34,38 @@ export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={onOpenNew}
-          className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 rounded-xl transition-colors shadow-sm self-start md:self-auto"
-        >
-          <Plus className="w-4 h-4" /> Tạo giáo án mới
-        </button>
+        <div className="flex items-center gap-2 self-start md:self-auto">
+          <button
+            type="button"
+            onClick={() => {
+              window.location.hash = "#coach-ai";
+            }}
+            className="flex items-center gap-2 px-3.5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 rounded-xl transition-all shadow-md shadow-orange-500/20 active:scale-95"
+            title="Sử dụng AI gợi ý và tạo nhanh giáo án bài tập"
+          >
+            <Sparkles className="w-4 h-4" /> Soạn với Coach AI
+          </button>
+          <button
+            type="button"
+            onClick={onOpenNew}
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 rounded-xl transition-colors shadow-sm"
+          >
+            <Plus className="w-4 h-4" /> Tạo giáo án mới
+          </button>
+        </div>
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl">
           <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Tổng số giáo án</span>
           <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{curricula.length}</div>
+        </div>
+        <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl">
+          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Sẵn sàng giao</span>
+          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
+            {curricula.filter((c) => c.status === "Đã duyệt").length}
+          </div>
         </div>
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl">
           <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Đã giao cho học viên</span>

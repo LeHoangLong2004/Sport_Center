@@ -49,31 +49,10 @@ export default function CoachClassDetail({ sessionId, navigateTo }: Props) {
 
         setAttendanceRecords(att || []);
 
-        const matchedCur = cur.filter((c: MockCurriculum) => c.assignedTo.some((t: any) => t.id === s.classId));
-        if (matchedCur.length > 0) {
-          setCurricula(matchedCur);
-        } else {
-          setCurricula([
-            {
-              id: "cur-default",
-              name: `Giáo án chuẩn buổi ${s.className || "Lớp học"}`,
-              sport: s.sport || "Thể thao",
-              goal: "Rèn luyện thể lực & kỹ thuật chuẩn",
-              level: s.level || "Cơ bản",
-              duration: 60,
-              status: "Đã giao",
-              updatedAt: new Date().toISOString().split("T")[0],
-              description: "Giáo án tập trung vào kỹ thuật kiểm soát cơ bắp và rèn luyện nhịp thở.",
-              exercises: [
-                { name: "Khởi động làm nóng khớp toàn thân", reps: "10 phút", rest: "30s", note: "Xoay kỹ cổ tay, cổ chân, khớp vai" },
-                { name: "Bài tập chính hiệp 1: Kỹ thuật căn bản", reps: "3 sets × 12 reps", rest: "60s", note: "Thực hiện đúng form chuyển động" },
-                { name: "Bài tập tăng cường: Kháng lực nâng cao", reps: "3 sets × 10 reps", rest: "75s", note: "Tập trung gồng cơ cốt lõi" },
-                { name: "Giãn cơ hồi tĩnh (Cool down)", reps: "5 phút", rest: "0s", note: "Hít thở sâu, hạ nhịp tim về bình thường" },
-              ],
-              assignedTo: [{ type: "class", id: s.classId, name: s.className }]
-            }
-          ]);
-        }
+        const matchedCur = cur.filter((c: MockCurriculum) =>
+          c.assignedTo?.some((t: any) => t.id === s.classId || t.id === s.id)
+        );
+        setCurricula(matchedCur);
         setLoading(false);
       })
       .catch((err) => {
@@ -197,7 +176,10 @@ export default function CoachClassDetail({ sessionId, navigateTo }: Props) {
         </div>
 
         <div className="space-y-6">
-          <ClassCurriculumCard curricula={curricula} />
+          <ClassCurriculumCard
+            curricula={curricula}
+            onNavigateToCurriculum={() => navigateTo("curriculum")}
+          />
         </div>
       </div>
     </div>
