@@ -114,6 +114,76 @@ public static class AppointmentEndpoints
                     status = appointment.Status,
                 });
         });
+
+        group.MapPut("/{id:guid}/status", async (
+            Guid id,
+            UpdateAppointmentStatusRequest request,
+            global::Supabase.Client supabase) =>
+        {
+            if (string.IsNullOrWhiteSpace(request.Status))
+            {
+                return Results.BadRequest(new { message = "Trạng thái không hợp lệ." });
+            }
+
+            var response = await supabase
+                .From<AppointmentModel>()
+                .Where(a => a.Id == id)
+                .Get();
+
+            var appointment = response.Models.FirstOrDefault();
+            if (appointment is null)
+            {
+                return Results.NotFound(new { message = "Không tìm thấy lịch hẹn." });
+            }
+
+            var newStatus = request.Status.Trim();
+            // If restoring back to an active state, ensure the coach doesn't have a double-booking conflict
+            if (IsActiveAppointment(newStatus)
+                && !string.IsNullOrWhiteSpace(appointment.CoachName)
+                && !string.IsNullOrWhiteSpace(appointment.Time))
+            {
+                var existingAppointments = await supabase.From<AppointmentModel>().Get();
+                var normalizedTime = appointment.Time.Trim();
+                if (existingAppointments.Models.Any(existing =>
+                    existing.Id != appointment.Id
+                    && IsActiveAppointment(existing.Status)
+                    && string.Equals(existing.Time?.Trim(), normalizedTime, StringComparison.OrdinalIgnoreCase)
+                    && NamesMatch(existing.CoachName, appointment.CoachName)))
+                {
+                    return Results.Conflict(new
+                    {
+                        message = $"HLV '{appointment.CoachName}' đã có lịch hẹn khác vào lúc {normalizedTime}. Không thể khôi phục lịch này."
+                    });
+                }
+            }
+
+            appointment.Status = newStatus;
+            await supabase
+                .From<AppointmentModel>()
+                .Update(appointment);
+
+            return Results.Ok(new
+            {
+                id = appointment.Id,
+                time = appointment.Time,
+                title = appointment.Title,
+                customerName = appointment.CustomerName,
+                coachName = appointment.CoachName,
+                status = appointment.Status,
+            });
+        });
+
+        group.MapDelete("/{id:guid}", async (
+            Guid id,
+            global::Supabase.Client supabase) =>
+        {
+            await supabase
+                .From<AppointmentModel>()
+                .Where(a => a.Id == id)
+                .Delete();
+
+            return Results.NoContent();
+        });
     }
 
     private static bool IsCoachRole(string? role)
@@ -157,4 +227,6 @@ public static class AppointmentEndpoints
         string Title,
         string CustomerName,
         string? CoachName);
+
+    public sealed record UpdateAppointmentStatusRequest(string Status);
 }
