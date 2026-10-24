@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { DateInput } from '../../../components/DateInput';
 
 export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager" }: { onClose: () => void, onSuccess?: () => void, editData?: any, mode?: "manager" | "coach" }) {
+  const modalRootRef = useRef<HTMLDivElement>(null);
   const isCoachMode = mode === "coach";
   const [formData, setFormData] = useState(() => {
     if (editData) {
@@ -40,6 +42,38 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [currentCoachName, setCurrentCoachName] = useState('Coach hiện tại');
+
+  // Lock background UI scrolling while modal is open, and restore when closed
+  useEffect(() => {
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    const modalEl = modalRootRef.current;
+    const scrollContainers = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        '.manager-page-content, .portal-page-enter, [class*="overflow-y-auto"]'
+      )
+    ).filter((el) => !modalEl || !modalEl.contains(el));
+
+    const originalContainerStyles = scrollContainers.map((el) => ({
+      el,
+      overflow: el.style.overflow,
+    }));
+
+    scrollContainers.forEach((el) => {
+      el.style.overflow = 'hidden';
+    });
+
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+      originalContainerStyles.forEach(({ el, overflow }) => {
+        el.style.overflow = overflow;
+      });
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -194,9 +228,18 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+  const modalContent = (
+    <div
+      ref={modalRootRef}
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4 overscroll-contain backdrop-blur-xs"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="bg-white rounded-xl shadow-lg w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-slate-50 shrink-0">
           <h2 className="text-lg font-bold text-slate-800">{isCoachMode ? "Đề xuất lớp học mới" : editData ? "Cập nhật thông tin lớp học" : "Tạo lớp học mới"}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
@@ -285,4 +328,7 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') return null;
+  return createPortal(modalContent, document.body);
 }
