@@ -51,6 +51,22 @@ export default function CoachMemberProfile({ memberId, navigateTo }: Props) {
     setTimeout(() => setNoteSaved(false), 2000);
   };
 
+  const handleVerifyWorkout = async (
+    homeworkId: string,
+    status: "completed" | "rejected",
+    notes?: string
+  ) => {
+    try {
+      await CoachAPI.verifyWorkout(homeworkId, { status, notes });
+      if (memberId) {
+        const updated = await CoachAPI.getMemberProfile(memberId);
+        setProfile(updated);
+      }
+    } catch (err) {
+      console.error("Failed to verify workout", err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="py-24 text-center text-slate-400 max-w-4xl mx-auto">
@@ -90,6 +106,7 @@ export default function CoachMemberProfile({ memberId, navigateTo }: Props) {
           assignedWorkouts={profile.assignedWorkouts}
           attendanceRate={profile.stats.attendanceRate}
           navigateTo={navigateTo}
+          onVerifyWorkout={handleVerifyWorkout}
         />
 
         <MemberNotesAndAssessments

@@ -15,8 +15,12 @@ export interface MemberWorkoutItem {
   sport: string;
   level: string;
   duration: number;
-  status: "Đang tập luyện" | "Hoàn thành" | "Đã giao";
+  status: string;
+  statusCode?: string;
   progressPct?: number;
+  assignedDate?: string;
+  dueDate?: string | null;
+  notes?: string | null;
   exercises: { name: string; reps: string; rest: string; note?: string }[];
 }
 

@@ -27,7 +27,7 @@ export default function CoachProfile({ navigateTo }: { navigateTo?: (screen: any
   const [dob, setDob] = useState("");
   const [gender, setGender] = useState("Nam");
   const [avatarUrl, setAvatarUrl] = useState("");
-  const [experienceYears, setExperienceYears] = useState<number>(3);
+  const [experienceYears, setExperienceYears] = useState<number>(0);
   const [specialtiesStr, setSpecialtiesStr] = useState("");
   const [certsList, setCertsList] = useState<string[]>([]);
   const [bio, setBio] = useState("");
@@ -56,22 +56,12 @@ export default function CoachProfile({ navigateTo }: { navigateTo?: (screen: any
       setGender(profile.gender || "");
       setExperienceYears(profile.experienceYears ?? 0);
       setSpecialtiesStr(profile.specialties || "");
-      setBio(
-        profile.bio ||
-          "Huấn luyện viên thể hình chuyên sâu về xây dựng cơ bắp, cải thiện vóc dáng và phục hồi chức năng vận động."
-      );
-
-      if (!profile.bio) setBio("");
+      setBio(profile.bio || "");
 
       const parsedCerts = profile.certifications
         ? profile.certifications.split(",").map((c) => c.trim()).filter(Boolean)
-        : [
-            "Chứng chỉ Huấn luyện viên Thể hình Quốc tế (ACE / NASM)",
-            "Sơ cấp cứu & Hồi sức tim phổi (CPR / AED Certified)",
-            "Chứng chỉ Dinh dưỡng Thể thao Cơ bản",
-          ];
+        : [];
       setCertsList(parsedCerts);
-      if (!profile.certifications) setCertsList([]);
     }
   }, [profile]);
 
@@ -83,15 +73,10 @@ export default function CoachProfile({ navigateTo }: { navigateTo?: (screen: any
   }, [profile?.specialties, specialtiesStr]);
 
   const displayCerts = useMemo(() => {
-    return profile?.certifications
-      ? profile.certifications.split(",").map((c) => c.trim()).filter(Boolean)
-      : certsList.length > 0
-      ? certsList
-      : [
-          "Chứng chỉ Huấn luyện viên Thể hình Quốc tế (ACE / NASM)",
-          "Sơ cấp cứu & Hồi sức tim phổi (CPR / AED Certified)",
-          "Chứng chỉ Dinh dưỡng Thể thao Cơ bản",
-        ];
+    if (profile?.certifications !== undefined && profile?.certifications !== null && profile.certifications.trim().length > 0) {
+      return profile.certifications.split(",").map((c) => c.trim()).filter(Boolean);
+    }
+    return certsList;
   }, [profile?.certifications, certsList]);
 
   const handleSaveProfile = async (formData: any) => {
@@ -107,7 +92,10 @@ export default function CoachProfile({ navigateTo }: { navigateTo?: (screen: any
       setExperienceYears(formData.experienceYears);
       setSpecialtiesStr(formData.specialties);
       setBio(formData.bio);
-      setCertsList(formData.certifications.split(",").map((c: string) => c.trim()).filter(Boolean));
+      const updatedCerts = formData.certifications
+        ? formData.certifications.split(",").map((c: string) => c.trim()).filter(Boolean)
+        : [];
+      setCertsList(updatedCerts);
 
       setProfileMsg({ type: "success", text: "Đã cập nhật hồ sơ thành công!" });
       setTimeout(() => {

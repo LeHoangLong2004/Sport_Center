@@ -16,7 +16,8 @@ export default function CoachCurriculum() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<MockCurriculum | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [assignTarget, setAssignTarget] = useState<{ curricId: string; curricName: string } | null>(null);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [assignTarget, setAssignTarget] = useState<{ curricId: string; curricName: string; sport?: string; level?: string } | null>(null);
   const [assignDeadline, setAssignDeadline] = useState("");
   const [assignNote, setAssignNote] = useState("");
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; msg: string } | null>(null);
@@ -60,12 +61,16 @@ export default function CoachCurriculum() {
     setCurricula(normalizeCurricula(Array.isArray(data) ? data : [], sports));
   };
 
+  const [modalError, setModalError] = useState<string | null>(null);
+
   const openNew = () => {
+    setModalError(null);
     setDraft(makeDraft(sports));
     setEditingId("new");
   };
 
   const openEdit = (curriculum: MockCurriculum) => {
+    setModalError(null);
     const selectedSport = sports.find(
       (sport) => sport.id === curriculum.sportId || sport.name === curriculum.sport
     );
@@ -81,31 +86,56 @@ export default function CoachCurriculum() {
   const closeEdit = () => {
     setDraft(null);
     setEditingId(null);
+    setModalError(null);
   };
 
   const handleSave = async () => {
     if (!draft) return;
+    setModalError(null);
+
     if (!draft.name.trim()) {
-      setFeedback({ type: "error", msg: "Tên giáo án không được để trống." });
+      setModalError("Tên giáo án không được để trống.");
       return;
     }
+
+    // Lọc bỏ bài tập trống hoàn toàn hoặc kiểm tra bài tập chưa điền tên
+    const validExercises = draft.exercises.filter(
+      (e) => e.name.trim() || e.reps?.trim() || e.rest?.trim() || e.note?.trim()
+    );
+
+    if (validExercises.length === 0) {
+      setModalError("Giáo án phải có ít nhất một bài tập.");
+      return;
+    }
+
+    const hasEmptyName = validExercises.some((e) => !e.name.trim());
+    if (hasEmptyName) {
+      setModalError("Vui lòng nhập tên cho tất cả các bài tập trong danh sách (hoặc xóa bài chưa dùng).");
+      return;
+    }
+
+    const cleanedDraft = {
+      ...draft,
+      exercises: validExercises,
+    };
 
     setIsSaving(true);
     setFeedback(null);
     try {
       if (editingId && editingId !== "new") {
-        await CoachAPI.updateCurriculum(editingId, draft);
+        await CoachAPI.updateCurriculum(editingId, cleanedDraft);
       } else {
-        await CoachAPI.saveCurriculum(draft);
+        await CoachAPI.saveCurriculum(cleanedDraft);
       }
 
       await reloadCurricula();
       setFeedback({ type: "success", msg: "Đã lưu giáo án thành công!" });
       closeEdit();
       setTimeout(() => setFeedback(null), 3500);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to save coach curriculum", error);
-      setFeedback({ type: "error", msg: "Không thể lưu giáo án. Vui lòng thử lại." });
+      const errorMsg = error?.message || "Không thể lưu giáo án. Vui lòng thử lại.";
+      setModalError(errorMsg);
     } finally {
       setIsSaving(false);
     }
@@ -114,6 +144,7 @@ export default function CoachCurriculum() {
   const handleAssign = async (type: "class" | "member", id: string, name: string) => {
     if (!assignTarget) return;
 
+    setIsAssigning(true);
     try {
       await CoachAPI.assignCurriculum(assignTarget.curricId, {
         type,
@@ -131,6 +162,32 @@ export default function CoachCurriculum() {
       const errMsg = error?.message || "Không thể giao giáo án. Vui lòng thử lại.";
       setFeedback({ type: "error", msg: errMsg });
       setTimeout(() => setFeedback(null), 4000);
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+
+  const handleApprove = async (curriculum: MockCurriculum) => {
+    setApprovingId(curriculum.id);
+    try {
+      await CoachAPI.approveCurriculum(curriculum.id);
+      await reloadCurricula();
+      setFeedback({
+        type: "success",
+        msg: `Giáo án "${curriculum.name}" đã được đánh dấu là Sẵn sàng giao!`
+      });
+      setTimeout(() => setFeedback(null), 3500);
+    } catch (error: any) {
+      console.error("Failed to approve curriculum", error);
+      setFeedback({
+        type: "error",
+        msg: error?.message || "Không thể phê duyệt giáo án. Vui lòng thử lại."
+      });
+      setTimeout(() => setFeedback(null), 3500);
+    } finally {
+      setApprovingId(null);
     }
   };
 
@@ -202,7 +259,16 @@ export default function CoachCurriculum() {
         loading={loading}
         curricula={filteredCurricula}
         onEdit={openEdit}
-        onAssign={(curriculum) => setAssignTarget({ curricId: curriculum.id, curricName: curriculum.name })}
+        onApprove={handleApprove}
+        approvingId={approvingId}
+        onAssign={(curriculum) =>
+          setAssignTarget({
+            curricId: curriculum.id,
+            curricName: curriculum.name,
+            sport: curriculum.sport,
+            level: curriculum.level,
+          })
+        }
       />
 
       <CurriculumEditorModal
@@ -210,6 +276,7 @@ export default function CoachCurriculum() {
         draft={draft}
         setDraft={setDraft}
         isSaving={isSaving}
+        error={modalError}
         sports={sports}
         onClose={closeEdit}
         onSave={handleSave}
@@ -225,6 +292,7 @@ export default function CoachCurriculum() {
         members={members}
         onClose={() => setAssignTarget(null)}
         onAssign={handleAssign}
+        isSubmitting={isAssigning}
       />
     </div>
   );

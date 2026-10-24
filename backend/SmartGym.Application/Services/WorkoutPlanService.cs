@@ -30,7 +30,9 @@ public class WorkoutPlanService : IWorkoutPlanService
             Goal = request.Goal,
             Level = request.Level,
             DurationMinutes = request.DurationMinutes,
-            Status = "Nháp",
+            Status = string.IsNullOrWhiteSpace(request.Status)
+                ? Flow5PlanStatuses.Approved
+                : Flow5PlanStatus.Normalize(request.Status),
             Version = 1,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
@@ -63,6 +65,16 @@ public class WorkoutPlanService : IWorkoutPlanService
         plan.Goal = request.Goal;
         plan.Level = request.Level;
         plan.DurationMinutes = request.DurationMinutes;
+        if (!string.IsNullOrWhiteSpace(request.Status))
+        {
+            var normalized = Flow5PlanStatus.Normalize(request.Status);
+            plan.Status = normalized;
+            if (Flow5PlanStatus.IsApproved(normalized))
+            {
+                plan.ApprovedAt = DateTime.UtcNow;
+                plan.ApprovedBy = coachId;
+            }
+        }
         plan.UpdatedAt = DateTime.UtcNow;
         plan.Exercises = request.Exercises.Select(e => new WorkoutPlanExercise
         {
@@ -104,6 +116,8 @@ public class WorkoutPlanService : IWorkoutPlanService
             DurationMinutes = p.DurationMinutes,
             Status = p.Status,
             Version = p.Version,
+            RecommendationTargetType = p.RecommendationTargetType,
+            RecommendationTargetId = p.RecommendationTargetId,
             CreatedAt = p.CreatedAt,
             UpdatedAt = p.UpdatedAt,
             Exercises = p.Exercises?.Select(e => new ExerciseDto

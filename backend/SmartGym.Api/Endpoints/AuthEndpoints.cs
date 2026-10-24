@@ -233,10 +233,10 @@ public static class AuthEndpoints
 
             var targetId = isMember
                 ? Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
-                : Guid.Parse("25f50fba-506a-4edf-9db7-43f77f6741a4");
+                : Guid.Parse("d426d2a7-f099-4377-9673-160e02f8dc1b");
             var targetRole = isMember ? "member" : "coach";
-            var targetEmail = isMember ? "hoxuananhnam@gmail.com" : "hoxuananhnam1@gmail.com";
-            var defaultName = isMember ? "Hồ Xuân Ánh Nam (Member)" : "Hồ Xuân Ánh Nam (Coach)";
+            var targetEmail = isMember ? "hoxuananhnam@gmail.com" : "coach_flow2@smartgym.com";
+            var defaultName = isMember ? "Hồ Xuân Ánh Nam (Member)" : "Coach Đỗ Hoàng E";
 
             var targetUser = await userRepo.GetByIdAsync(targetId);
             if (targetUser == null)

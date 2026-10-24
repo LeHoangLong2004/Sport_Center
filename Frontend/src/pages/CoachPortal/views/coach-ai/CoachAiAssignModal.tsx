@@ -30,13 +30,6 @@ export const CoachAiAssignModal: React.FC<CoachAiAssignModalProps> = ({
   const [notes, setNotes] = useState<string>("Vui lòng khởi động kỹ và hoàn thành đúng tiến độ.");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!isOpen) return null;
-
-  const targetName =
-    target.type === "member"
-      ? members.find((m) => m.id === target.id)?.name || "Học viên được chọn"
-      : classes.find((c) => c.id === target.id)?.className || "Lớp học được chọn";
-
   React.useEffect(() => {
     if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => {
@@ -45,6 +38,15 @@ export const CoachAiAssignModal: React.FC<CoachAiAssignModalProps> = ({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  const targetType = target?.type || "member";
+  const targetId = target?.id;
+  const targetName =
+    targetType === "member"
+      ? members.find((m) => m.id === targetId)?.name || "Học viên được chọn"
+      : classes.find((c) => c.id === targetId)?.className || "Lớp học được chọn";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,10 +77,10 @@ export const CoachAiAssignModal: React.FC<CoachAiAssignModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-slate-900 dark:text-white text-base">
-                Giao giáo án đã duyệt (Flow 5)
+                Giao bài tập cho học viên
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Giao chính thức cho học viên thực hiện
+                Giao danh sách bài tập đã duyệt cho học viên tự luyện tập
               </p>
             </div>
           </div>
@@ -96,7 +98,7 @@ export const CoachAiAssignModal: React.FC<CoachAiAssignModalProps> = ({
           {/* Target Summary Card */}
           <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/80 flex flex-col gap-1.5">
             <div className="text-xs text-slate-500 dark:text-slate-400">
-              Giáo án: <strong className="text-slate-800 dark:text-slate-200">{plan.planName}</strong>
+              Bài tập: <strong className="text-slate-800 dark:text-slate-200">{plan.planName}</strong>
             </div>
             <div className="text-xs text-slate-500 dark:text-slate-400">
               Đối tượng nhận:{" "}
@@ -155,7 +157,7 @@ export const CoachAiAssignModal: React.FC<CoachAiAssignModalProps> = ({
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white transition-all shadow-md shadow-orange-500/25 cursor-pointer disabled:opacity-50 active:scale-95"
             >
               <Send className="w-4 h-4" />
-              <span>{isSubmitting ? "Đang giao bài..." : "Xác nhận giao giáo án"}</span>
+              <span>{isSubmitting ? "Đang giao bài..." : "Xác nhận giao bài tập"}</span>
             </button>
           </div>
         </form>

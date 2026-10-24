@@ -74,7 +74,7 @@ export default function ProfileHeaderCard({
 
       <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-4xl">
         <span className="font-semibold text-slate-800 dark:text-slate-200 mr-1.5">Tiểu sử:</span>
-        {bio}
+        {bio || <span className="text-slate-400 italic">Chưa cập nhật tiểu sử</span>}
       </div>
     </div>
   );
