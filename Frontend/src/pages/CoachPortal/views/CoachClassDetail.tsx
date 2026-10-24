@@ -10,6 +10,7 @@ import {
   Users,
   UserCheck,
   BookOpen,
+  Award,
 } from "lucide-react";
 import { ClassRosterList } from "./class-detail/ClassRosterList";
 import { ClassCurriculumCard } from "./class-detail/ClassCurriculumCard";
@@ -154,10 +155,18 @@ export default function CoachClassDetail({ sessionId, navigateTo }: Props) {
               <button
                 type="button"
                 onClick={() => navigateTo("curriculum")}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 border border-slate-200 dark:border-slate-700 rounded-xl transition-colors shadow-sm"
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 border border-slate-200 dark:border-slate-700 rounded-xl transition-colors shadow-sm cursor-pointer"
               >
                 <BookOpen className="w-3.5 h-3.5" />
                 Soạn giáo án
+              </button>
+              <button
+                type="button"
+                onClick={() => navigateTo("assessment")}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 border border-emerald-200 dark:border-emerald-800 rounded-xl transition-colors shadow-sm cursor-pointer"
+              >
+                <Award className="w-3.5 h-3.5" />
+                Đánh giá tiến độ
               </button>
             </div>
           )}

@@ -9,6 +9,7 @@ export type CoachScreen =
   | "curriculum"     // CO-06
   | "chat"           // Tin nhắn trao đổi
   | "reviews"        // CO-07 Đánh giá từ học viên
+  | "assessment"     // CO-07 Đánh giá tiến độ & kết quả học viên
   | "notifications"  // CO-08
   | "ai"             // CO-09
   | "profile"        // CO-10
