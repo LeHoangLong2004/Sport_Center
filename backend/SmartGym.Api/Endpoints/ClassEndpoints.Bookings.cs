@@ -161,6 +161,36 @@ public static partial class ClassEndpoints
             }
         )
         .RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
+
+        // 4. Receptionist / Manager Book For Member
+        classGroup.MapPost(
+            "/{id:guid}/book-for-member",
+            async (Guid id, [FromBody] BookForMemberRequest request, ClassService service) =>
+            {
+                if (request == null || request.MemberId == Guid.Empty)
+                    return Results.BadRequest(new { message = "Vui lòng chọn hội viên cần đặt lớp." });
+
+                var (isSuccess, errorMessage) = await service.BookClassAsync(request.MemberId, id);
+                if (!isSuccess)
+                {
+                    return Results.BadRequest(new { message = errorMessage });
+                }
+
+                ClassDetailResponse? classDetail = null;
+                try
+                {
+                    classDetail = await service.GetClassDetailAsync(id);
+                }
+                catch { }
+
+                return Results.Ok(new 
+                { 
+                    message = "Đặt lớp thành công cho hội viên.",
+                    classInfo = classDetail
+                });
+            }
+        )
+        .RequireAuthorization(policy => policy.RequireRole("receptionist", "admin", "manager", "staff"));
     }
 }
 
