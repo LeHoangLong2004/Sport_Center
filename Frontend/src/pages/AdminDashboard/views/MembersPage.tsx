@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { LockKeyhole, UnlockKeyhole } from 'lucide-react';
 import { A, avatarSidebar, avatarTopbar, iDashboard, iUsers, iPackage, iCalendar, iReceipt, iBarChart, iSettings, iSearch, iBell, iSearch2, iDownload, iPlus, iWallet, iCheckCircle, iClock, iRotateCcw, iChevron, iEye, iPrinter, iMore, iBell2, iDownload2, iKpiRevenue, iKpiMembers, iKpiClasses, iKpiRetain, iSeg1, iSeg2, iSeg3, iSeg4, iDotBlue, iDotTeal, iDotOrange, iDotPurple, iActivity0, iActivity1, iActivity2, iActivity3, iLineChart, iBarFill, coachAvatar1, coachAvatar2, coachAvatar3, coachAvatar4, hrAvatar1, hrAvatar2, hrAvatar3, hrAvatar4, iBudgetIcon, iExpenseIcon, iBudgetChevron, iPLRevIcon, memberEditAvatar, transactions, reportBarData, reportMonths, members } from '../shared';
 import { UserAvatar } from '../../../components/UserAvatar';
@@ -76,11 +77,12 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
       });
       if (res.ok) {
         fetchUsers();
+        toast.success("Đã cập nhật trạng thái tài khoản!");
       } else {
-        alert("Cập nhật trạng thái thất bại.");
+        toast.error("Cập nhật trạng thái thất bại.");
       }
     } catch {
-      alert("Lỗi kết nối.");
+      toast.error("Lỗi kết nối máy chủ.");
     }
   };
 
@@ -119,7 +121,7 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
       }
       setShowCreateMember(false);
       fetchUsers();
-      alert("Đã thêm hội viên mới thành công.");
+      toast.success("Đã thêm hội viên mới thành công.");
     } catch (error: any) {
       setCreateError(error.message || "Lỗi kết nối đến máy chủ.");
     } finally {
@@ -154,7 +156,7 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
 
   const handleExportCSV = () => {
     if (filtered.length === 0) {
-      alert("Không có dữ liệu để xuất!");
+      toast.warning("Không có dữ liệu để xuất!");
       return;
     }
     

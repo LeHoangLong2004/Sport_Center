@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { A, BillingPeriod, FlowPackage, getPaymentSummary, PaymentMethodId, Stepper } from "./shared";
 
 export function PaymentMethodScreen({
@@ -72,7 +73,7 @@ export function PaymentMethodScreen({
 
   const handleSaveProfile = async () => {
     if (!editForm.fullName || !editForm.phone || !editForm.email) {
-      alert("Vui lòng điền đầy đủ Họ tên, Số điện thoại và Email.");
+      toast.error("Vui lòng điền đầy đủ Họ tên, Số điện thoại và Email.");
       return;
     }
 

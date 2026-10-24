@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
 import type { MemberSupportTicketItem } from "../../types";
 import {
   CheckCircle2,
@@ -24,7 +25,7 @@ export const SupportTickets: React.FC<SupportTicketsProps> = ({ tickets, onCreat
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!ticketSubject.trim() || !ticketContent.trim()) {
-      alert("Vui lòng nhập đầy đủ tiêu đề và nội dung yêu cầu.");
+      toast.error("Vui lòng nhập đầy đủ tiêu đề và nội dung yêu cầu.");
       return;
     }
     const nowStr = new Date().toLocaleString("vi-VN");
@@ -37,6 +38,7 @@ export const SupportTickets: React.FC<SupportTicketsProps> = ({ tickets, onCreat
       status: "open",
     };
     onCreateTicket(newTicket);
+    toast.success("Đã gửi yêu cầu hỗ trợ thành công!");
     setIsModalOpen(false);
     setTicketSubject("");
     setTicketContent("");

@@ -124,6 +124,24 @@ export interface ScheduleChangeRequest {
   managerNote?: string;
 }
 
+export interface SubstituteInvitation {
+  id: string;
+  sessionId: string;
+  coachId: string;
+  coachName: string;
+  className: string;
+  scheduleTime: string;
+  durationMinutes: number;
+  facilityName: string;
+  requestType: string;
+  newDate: string;
+  newTime: string;
+  reason: string;
+  status: string;
+  createdAt: string;
+  managerNote: string;
+}
+
 export interface AvailabilitySlot {
   id: string;
   date?: string; // YYYY-MM-DD for a concrete coach-published slot

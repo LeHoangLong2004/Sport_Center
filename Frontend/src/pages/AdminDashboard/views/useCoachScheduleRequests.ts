@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 export interface CoachScheduleRequest {
   id: string;
@@ -58,8 +59,13 @@ export function useCoachScheduleRequests(onClassesChanged: () => Promise<void>) 
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.message || "Không thể xử lý yêu cầu ca dạy.");
       await Promise.all([fetchRequests(), onClassesChanged()]);
+      toast.success(
+        action === "approve"
+          ? "Đã duyệt yêu cầu điều chỉnh ca dạy thành công."
+          : "Đã từ chối yêu cầu điều chỉnh ca dạy.",
+      );
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : "Không thể xử lý yêu cầu ca dạy.");
+      toast.error(error instanceof Error ? error.message : "Không thể xử lý yêu cầu ca dạy.");
     }
   }, [fetchRequests, onClassesChanged]);
 

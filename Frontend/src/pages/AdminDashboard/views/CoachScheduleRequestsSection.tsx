@@ -10,13 +10,23 @@ interface Props {
 
 const statusLabel: Record<string, string> = {
   pending: "Chờ duyệt",
+  substitute_accepted: "HLV thay thế đã nhận (Chờ duyệt)",
+  substitute_declined: "HLV thay thế từ chối",
   approved: "Đã duyệt",
   rejected: "Từ chối",
 };
 
 export function CoachScheduleRequestsSection({ requests, loading, onAction }: Props) {
   const [note, setNote] = useState<Record<string, string>>({});
-  const pending = useMemo(() => requests.filter((item) => item.status.toLowerCase() === "pending"), [requests]);
+  const pending = useMemo(
+    () =>
+      requests.filter(
+        (item) =>
+          item.status.toLowerCase() === "pending" ||
+          item.status.toLowerCase() === "substitute_accepted",
+      ),
+    [requests],
+  );
 
   return (
     <section className="coach-schedule-requests flex flex-col gap-5 pt-2">
@@ -31,7 +41,9 @@ export function CoachScheduleRequestsSection({ requests, loading, onAction }: Pr
       ) : (
         <div className="grid gap-4">
           {requests.map((request) => {
-            const isPending = request.status.toLowerCase() === "pending";
+            const isPending =
+              request.status.toLowerCase() === "pending" ||
+              request.status.toLowerCase() === "substitute_accepted";
             return (
               <article key={request.id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex flex-wrap items-start justify-between gap-3">

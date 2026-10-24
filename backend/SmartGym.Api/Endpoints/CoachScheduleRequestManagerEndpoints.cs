@@ -61,7 +61,7 @@ public static class CoachScheduleRequestManagerEndpoints
             var affected = await db.Database.ExecuteSqlInterpolatedAsync($@"
                 UPDATE coach_schedule_requests
                 SET status = 'rejected', manager_note = {managerNote}
-                WHERE id = {id} AND status = 'pending'");
+                WHERE id = {id} AND status IN ('pending', 'substitute_accepted')");
             if (affected == 0)
                 return Results.BadRequest(new { message = "Yêu cầu đã được xử lý trước đó." });
 
@@ -141,7 +141,7 @@ public static class CoachScheduleRequestManagerEndpoints
             var affected = await db.Database.ExecuteSqlInterpolatedAsync($@"
                 UPDATE coach_schedule_requests
                 SET status = 'approved', manager_note = {managerNote}
-                WHERE id = {request.Id} AND status = 'pending'");
+                WHERE id = {request.Id} AND status IN ('pending', 'substitute_accepted')");
             if (affected == 0) return (false, "Yêu cầu đã được xử lý trước đó.");
 
             await transaction.CommitAsync();
@@ -215,7 +215,9 @@ public static class CoachScheduleRequestManagerEndpoints
     private static string? ReadString(JsonElement body, string name) =>
         body.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
-    private static bool IsPending(string? status) => string.Equals(status, "pending", StringComparison.OrdinalIgnoreCase);
+    private static bool IsPending(string? status) =>
+        string.Equals(status, "pending", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(status, "substitute_accepted", StringComparison.OrdinalIgnoreCase);
 
     private sealed class ManagerScheduleRequestRow
     {

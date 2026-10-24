@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import type { CoachScreen } from "../types";
 import { CoachAPI } from "../services/api";
 import { Send, CalendarPlus, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   type MainTab,
   type ViewMode,
@@ -77,6 +78,7 @@ export default function CoachSchedule({ navigateTo }: Props) {
 
   const {
     requests,
+    invitations,
     availabilitySlots,
     allUnifiedSessions,
     loading,
@@ -84,7 +86,16 @@ export default function CoachSchedule({ navigateTo }: Props) {
     removeOpenSlot,
     toggleSlot,
     addRequest,
+    respondInvitation,
   } = useCoachScheduleData(weekDates);
+
+  const pendingInvitationsCount = useMemo(
+    () =>
+      invitations.filter(
+        (inv) => inv.status === "pending" || inv.status === "waiting_substitute",
+      ).length,
+    [invitations],
+  );
 
   const SPORT_OPTIONS = useMemo(() => {
     const list = Array.from(new Set(allUnifiedSessions.map((s) => s.sport).filter(Boolean)));
@@ -114,16 +125,21 @@ export default function CoachSchedule({ navigateTo }: Props) {
     try {
       const res = await CoachAPI.createScheduleRequest(data);
       if (res?.data) addRequest(res.data);
-      setFeedbackMsg(`Yêu cầu ${data.requestType} đã được gửi tới Ban Quản Lý!`);
+      const msg = `Yêu cầu ${data.requestType} đã được gửi tới Ban Quản Lý!`;
+      setFeedbackMsg(msg);
+      toast.success(msg);
       setTimeout(() => setFeedbackMsg(null), 4000);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      toast.error(err?.message || "Không thể gửi yêu cầu điều chỉnh ca dạy.");
     }
   };
 
   const handleCreateOpenSlotSuccess = async (newItem: UnifiedScheduleItem) => {
     await addOpenSlot(newItem);
-    setFeedbackMsg(`Đã đăng lịch trống 1-1 (${newItem.sport} ngày ${newItem.date}) thành công!`);
+    const msg = `Đã đăng lịch trống 1-1 (${newItem.sport} ngày ${newItem.date}) thành công!`;
+    setFeedbackMsg(msg);
+    toast.success(msg);
     setTimeout(() => setFeedbackMsg(null), 4000);
   };
 
@@ -131,6 +147,7 @@ export default function CoachSchedule({ navigateTo }: Props) {
     await removeOpenSlot(slotId);
     setSelectedOpenSlot(null);
     setFeedbackMsg("Đã đóng/hủy lịch trống 1-1 này.");
+    toast.info("Đã đóng/hủy lịch trống 1-1 này.");
     setTimeout(() => setFeedbackMsg(null), 4000);
   };
 
@@ -228,13 +245,20 @@ export default function CoachSchedule({ navigateTo }: Props) {
         <button
           type="button"
           onClick={() => setActiveTab("requests")}
-          className={`pb-3 border-b-2 transition-colors ${
+          className={`pb-3 border-b-2 transition-colors flex items-center gap-1.5 ${
             activeTab === "requests"
               ? "border-orange-500 text-orange-600 dark:text-orange-400"
               : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
           }`}
         >
-          Yêu cầu ca dạy ({requests.length})
+          <span>Yêu cầu & Lời mời</span>
+          {pendingInvitationsCount > 0 ? (
+            <span className="px-1.5 py-0.2 text-[10px] font-bold bg-rose-500 text-white rounded-full">
+              {pendingInvitationsCount}
+            </span>
+          ) : (
+            <span className="text-xs text-slate-400 font-normal">({requests.length})</span>
+          )}
         </button>
       </div>
 
@@ -292,6 +316,8 @@ export default function CoachSchedule({ navigateTo }: Props) {
       {activeTab === "requests" && (
         <CoachRequestsTab
           requests={requests}
+          invitations={invitations}
+          onRespondInvitation={respondInvitation}
           onOpenCreateRequest={() => {
             setSelectedSessionForRequest(allUnifiedSessions[0]?.id || "");
             setIsRequestModalOpen(true);

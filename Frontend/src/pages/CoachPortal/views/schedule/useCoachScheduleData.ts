@@ -1,10 +1,18 @@
 import { useState, useEffect, useMemo } from "react";
-import { type SessionStatus, type MockSession, type ScheduleChangeRequest, type AvailabilitySlot, CoachAPI } from "../../services/api";
+import {
+  type SessionStatus,
+  type MockSession,
+  type ScheduleChangeRequest,
+  type SubstituteInvitation,
+  type AvailabilitySlot,
+  CoachAPI,
+} from "../../services/api";
 import type { UnifiedScheduleItem } from "./types";
 
 export function useCoachScheduleData(weekDates: string[]) {
   const [rawSessions, setRawSessions] = useState<MockSession[]>([]);
   const [requests, setRequests] = useState<ScheduleChangeRequest[]>([]);
+  const [invitations, setInvitations] = useState<SubstituteInvitation[]>([]);
   const [availabilitySlots, setAvailabilitySlots] = useState<AvailabilitySlot[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -13,15 +21,17 @@ export function useCoachScheduleData(weekDates: string[]) {
     async function loadData() {
       setLoading(true);
       try {
-        const [schData, reqData, availData] = await Promise.all([
+        const [schData, reqData, availData, invData] = await Promise.all([
           CoachAPI.getSchedule(),
           CoachAPI.getScheduleRequests(),
           CoachAPI.getAvailabilitySlots(),
+          CoachAPI.getSubstituteInvitations(),
         ]);
         if (disposed) return;
         setRawSessions(schData);
         setRequests(reqData);
         setAvailabilitySlots(availData);
+        setInvitations(invData);
       } catch (err) {
         console.error("Lỗi nạp dữ liệu lịch:", err);
       } finally {
@@ -154,9 +164,33 @@ export function useCoachScheduleData(weekDates: string[]) {
     setRequests((prev) => [req, ...prev]);
   };
 
+  const respondInvitation = async (id: string, action: "accept" | "reject", note?: string) => {
+    await CoachAPI.respondSubstituteInvitation(id, action, note);
+    setInvitations((prev) =>
+      prev.map((inv) =>
+        inv.id === id
+          ? {
+              ...inv,
+              status: action === "accept" ? "substitute_accepted" : "substitute_declined",
+              managerNote: note
+                ? `${inv.managerNote ? inv.managerNote + " | " : ""}Bạn: ${note}`
+                : inv.managerNote,
+            }
+          : inv,
+      ),
+    );
+    if (action === "accept") {
+      try {
+        const schData = await CoachAPI.getSchedule();
+        setRawSessions(schData);
+      } catch {}
+    }
+  };
+
   return {
     rawSessions,
     requests,
+    invitations,
     availabilitySlots,
     allUnifiedSessions,
     loading,
@@ -164,5 +198,6 @@ export function useCoachScheduleData(weekDates: string[]) {
     removeOpenSlot,
     toggleSlot,
     addRequest,
+    respondInvitation,
   };
 }
