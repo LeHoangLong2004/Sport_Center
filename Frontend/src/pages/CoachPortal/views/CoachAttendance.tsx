@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import type { CoachScreen } from "../types";
 import { CoachAPI } from "../services/api";
-import { Edit3, X, Clock, Search, CheckCircle2, ShieldCheck } from "lucide-react";
+import { Edit3, X, Clock, Search, CheckCircle2, ShieldCheck, Award } from "lucide-react";
 import { toast } from "sonner";
 import AttendanceSessionSelector from "./attendance/AttendanceSessionSelector";
 import AttendanceMemberList from "./attendance/AttendanceMemberList";
@@ -151,7 +151,15 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
           </p>
         </div>
 
-        <div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigateTo("assessment", { sessionId: selectedSessionId })}
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/30 rounded-xl hover:bg-orange-100/70 transition-colors shadow-xs"
+          >
+            <Award className="w-4 h-4 text-orange-500" />
+            Đánh giá buổi tập
+          </button>
+
           {isFinalized && !isEditingThisSession && (
             <button
               onClick={() => setEditingSessionId(selectedSessionId)}
@@ -246,6 +254,14 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => navigateTo("assessment", { sessionId: selectedSessionId })}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-colors shadow-xs"
+            >
+              <Award className="w-3.5 h-3.5 text-orange-500" />
+              Đánh giá buổi học
+            </button>
             <button
               type="button"
               disabled={isSaving}

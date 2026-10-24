@@ -8,12 +8,17 @@ import { CoachAPI } from "../services/api";
 import { createPortal } from "react-dom";
 import type { AssessmentRecord, MockSession } from "../services/api";
 
-export default function CoachAssessment() {
+interface CoachAssessmentProps {
+  initialSessionId?: string | null;
+  initialMemberId?: string | null;
+}
+
+export default function CoachAssessment({ initialSessionId, initialMemberId }: CoachAssessmentProps = {}) {
   const [assessments, setAssessments] = useState<AssessmentRecord[]>([]);
   const [sessions, setSessions] = useState<MockSession[]>([]);
   const [members, setMembers] = useState<{ id: string; name: string; code: string }[]>([]);
-  const [selectedMemberId, setSelectedMemberId] = useState("");
-  const [selectedSessionId, setSelectedSessionId] = useState("");
+  const [selectedMemberId, setSelectedMemberId] = useState(initialMemberId || "");
+  const [selectedSessionId, setSelectedSessionId] = useState(initialSessionId || "");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<AssessmentRecord>>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -29,10 +34,17 @@ export default function CoachAssessment() {
       setAssessments(ass);
       setSessions(sch);
       setMembers(mem);
-      if (mem.length > 0) setSelectedMemberId(mem[0].id);
+      if (initialMemberId && mem.some(m => m.id === initialMemberId)) {
+        setSelectedMemberId(initialMemberId);
+      } else if (mem.length > 0 && !selectedMemberId) {
+        setSelectedMemberId(mem[0].id);
+      }
+      if (initialSessionId) {
+        setSelectedSessionId(initialSessionId);
+      }
     }).catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [initialMemberId, initialSessionId]);
 
   const eligibleSessions = useMemo(() => {
     if (!selectedMemberId) return [];
@@ -119,13 +131,13 @@ export default function CoachAssessment() {
           </select>
         </div>
         <button type="button" onClick={openNew}
-          className="px-4 py-2 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-md shadow-teal-500/20">
+          className="px-4 py-2 bg-orange-500 text-white rounded-xl text-sm font-semibold hover:bg-orange-600 shadow-md shadow-orange-500/20 transition-all">
           + Ghi kết quả
         </button>
       </div>
 
       {/* Tiến độ theo thời gian */}
-      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-xs">
         <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
           <h2 className="font-semibold text-slate-800 dark:text-slate-100 text-sm">Lịch sử kết quả</h2>
         </div>
@@ -138,7 +150,7 @@ export default function CoachAssessment() {
             {memberAssessments.map((a) => {
               const s = sessions.find((x) => x.id === a.sessionId);
               return (
-                <div key={a.id} className="px-4 py-4">
+                <div key={a.id} className="px-4 py-4 hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div>
                       <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{s?.className || a.sessionId}</div>
@@ -147,26 +159,26 @@ export default function CoachAssessment() {
                     <div className="flex items-center gap-2">
                       <div className="text-right">
                         <div className="text-xs text-slate-400">Hoàn thành</div>
-                        <div className={`text-lg font-black ${a.completion >= 80 ? "text-green-600" : a.completion >= 60 ? "text-amber-500" : "text-red-600"}`}>
+                        <div className={`text-lg font-black ${a.completion >= 80 ? "text-emerald-600" : a.completion >= 60 ? "text-amber-500" : "text-rose-600"}`}>
                           {a.completion}%
                         </div>
                       </div>
                       {/* Simple bar chart */}
                       <div className="w-20 h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full ${a.completion >= 80 ? "bg-green-500" : a.completion >= 60 ? "bg-amber-400" : "bg-red-500"}`}
+                        <div className={`h-full rounded-full ${a.completion >= 80 ? "bg-emerald-500" : a.completion >= 60 ? "bg-amber-400" : "bg-rose-500"}`}
                           style={{ width: `${a.completion}%` }} />
                       </div>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {a.metrics.filter((m) => m.value).map((m) => (
-                      <span key={m.label} className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full">
+                      <span key={m.label} className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full font-medium">
                         {m.label}: {m.value}{m.unit}
                       </span>
                     ))}
                   </div>
                   {a.comment && <div className="text-sm text-slate-600 dark:text-slate-300 mt-2 italic">"{a.comment}"</div>}
-                  {a.nextStep && <div className="text-xs text-teal-600 dark:text-teal-400 mt-1">→ Hướng tiếp: {a.nextStep}</div>}
+                  {a.nextStep && <div className="text-xs text-orange-600 dark:text-orange-400 font-medium mt-1">→ Hướng tiếp: {a.nextStep}</div>}
                 </div>
               );
             })}
@@ -191,21 +203,21 @@ export default function CoachAssessment() {
                 <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Mức hoàn thành (%)</label>
                 <input type="range" min={0} max={100} value={draft.completion || 0}
                   onChange={(e) => setDraft({ ...draft, completion: +e.target.value })}
-                  className="accent-teal-600" />
-                <div className="text-sm font-bold text-teal-600">{draft.completion}%</div>
+                  className="accent-orange-500" />
+                <div className="text-sm font-bold text-orange-600">{draft.completion}%</div>
               </div>
 
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Chỉ số tập luyện</label>
-                  <button type="button" className="text-xs text-teal-600 hover:underline font-medium"
+                  <button type="button" className="text-xs text-orange-600 hover:underline font-semibold"
                     onClick={() => setDraft({ ...draft, metrics: [...(draft.metrics || []), { label: "", value: "", unit: "" }] })}>
                     + Thêm chỉ số
                   </button>
                 </div>
                 {(draft.metrics || []).map((m, i) => (
                   <div key={i} className="flex gap-2 items-center bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg border border-slate-100 dark:border-slate-700">
-                    <input type="text" placeholder="Tên chỉ số (VD: Nhịp tim)" value={m.label}
+                    <input type="text" placeholder="Tên chỉ số (VD: Nhịp tim, Tạ tối đa)" value={m.label}
                       onChange={(e) => { const ms = [...(draft.metrics || [])]; ms[i] = { ...m, label: e.target.value }; setDraft({ ...draft, metrics: ms }); }}
                       className={`${inputCls} text-xs flex-1`} />
                     <input type="text" placeholder="Giá trị" value={m.value}
@@ -215,7 +227,7 @@ export default function CoachAssessment() {
                       onChange={(e) => { const ms = [...(draft.metrics || [])]; ms[i] = { ...m, unit: e.target.value }; setDraft({ ...draft, metrics: ms }); }}
                       className={`${inputCls} text-xs w-14`} />
                     <button type="button" onClick={() => { const ms = draft.metrics!.filter((_, j) => j !== i); setDraft({ ...draft, metrics: ms }); }}
-                      className="text-slate-400 hover:text-red-500 px-1">
+                      className="text-slate-400 hover:text-rose-500 px-1 transition-colors">
                       &times;
                     </button>
                   </div>
@@ -223,26 +235,26 @@ export default function CoachAssessment() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Nhận xét</label>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Nhận xét buổi tập</label>
                 <textarea value={draft.comment || ""} onChange={(e) => setDraft({ ...draft, comment: e.target.value })}
-                  rows={3} className={`${inputCls} resize-none`} placeholder="Nhận xét kết quả buổi học..." />
+                  rows={3} className={`${inputCls} resize-none`} placeholder="Nhận xét kết quả buổi học, thái độ và kỹ thuật của học viên..." />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Hướng tập tiếp theo</label>
                 <input type="text" value={draft.nextStep || ""} onChange={(e) => setDraft({ ...draft, nextStep: e.target.value })}
-                  className={inputCls} placeholder="VD: Tăng tạ, cải thiện tư thế..." />
+                  className={inputCls} placeholder="VD: Tăng tạ, cải thiện tư thế, tập cardio..." />
               </div>
             </div>
 
             {/* Footer */}
             <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 shrink-0 bg-slate-50 dark:bg-slate-900/50 rounded-b-2xl">
               <button type="button" onClick={() => { setEditingId(null); setDraft({}); }}
-                className="px-5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm">
+                className="px-5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-xs">
                 Hủy
               </button>
               <button type="button" onClick={handleSave} disabled={isSaving}
-                className="px-6 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-bold hover:bg-teal-700 disabled:bg-slate-400 dark:disabled:bg-slate-600 transition-colors shadow-md shadow-teal-500/20">
+                className="px-6 py-2.5 bg-orange-500 text-white rounded-xl text-sm font-bold hover:bg-orange-600 disabled:bg-slate-400 dark:disabled:bg-slate-600 transition-colors shadow-md shadow-orange-500/20">
                 {isSaving ? "Đang lưu..." : "Lưu kết quả"}
               </button>
             </div>
@@ -255,5 +267,5 @@ export default function CoachAssessment() {
   );
 }
 
-const selectCls = "border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500";
-const inputCls = "border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 w-full";
+const selectCls = "border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none";
+const inputCls = "border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none w-full";
