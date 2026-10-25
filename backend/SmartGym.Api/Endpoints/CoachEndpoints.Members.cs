@@ -219,12 +219,12 @@ namespace SmartGym.Api.Endpoints
                     {
                         id = u.Id.ToString(),
                         name = u.FullName ?? (u.Email != null ? u.Email.Split('@')[0] : "User"),
-                        code = "MB" + u.Id.ToString().Substring(0, 4).ToUpper(),
+                        code = !string.IsNullOrWhiteSpace(u.MemberCode) ? u.MemberCode : "MB" + u.Id.ToString().Substring(0, 4).ToUpper(),
                         avatar = string.IsNullOrWhiteSpace(u.AvatarUrl)
                             ? "https://ui-avatars.com/api/?name=" + Uri.EscapeDataString(u.FullName ?? "User")
                             : u.AvatarUrl,
-                        goal = "Sức khỏe",
-                        level = "Cơ bản",
+                        goal = !string.IsNullOrWhiteSpace(u.TrainingGoal) ? u.TrainingGoal : "Cải thiện thể lực & Sức khỏe",
+                        level = !string.IsNullOrWhiteSpace(u.TrainingLevel) ? u.TrainingLevel : "Cơ bản",
                         sport = memberSports is { Count: > 0 } ? string.Join(", ", memberSports) : "Thể thao",
                         className = primaryClass,
                         classNames = cNames.ToArray(),

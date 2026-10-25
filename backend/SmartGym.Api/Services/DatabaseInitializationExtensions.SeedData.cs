@@ -61,6 +61,10 @@ public static partial class DatabaseInitializationExtensions
                 );
                 CREATE INDEX IF NOT EXISTS idx_coach_schedule_requests_coach_created
                     ON coach_schedule_requests(coach_id, created_at DESC);
+
+                ALTER TABLE users ADD COLUMN IF NOT EXISTS member_code VARCHAR(50);
+                ALTER TABLE users ADD COLUMN IF NOT EXISTS training_goal TEXT;
+                ALTER TABLE users ADD COLUMN IF NOT EXISTS training_level VARCHAR(50);
                 "
             );
             app.Logger.LogInformation("Coach attendance, assessment, and schedule request tables are ready.");

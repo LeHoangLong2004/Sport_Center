@@ -61,7 +61,8 @@ public class UserService : IUserService
             Specialties = user.CoachProfile?.Specialties,
             Certifications = user.CoachProfile?.Certifications,
             ExperienceYears = user.CoachProfile?.ExperienceYears,
-            Bio = user.CoachProfile?.Bio
+            Bio = user.CoachProfile?.Bio,
+            FitnessGoal = user.TrainingGoal
         };
     }
 
@@ -142,6 +143,7 @@ public class UserService : IUserService
         if (request.DateOfBirth != null) user.DateOfBirth = DateTime.SpecifyKind(request.DateOfBirth.Value, DateTimeKind.Utc);
         if (request.Gender != null) user.Gender = request.Gender;
         if (request.EmergencyContact != null) user.EmergencyContact = request.EmergencyContact;
+        if (request.FitnessGoal != null) user.TrainingGoal = request.FitnessGoal;
 
         if (isCoach)
         {

@@ -67,6 +67,21 @@ export default function CoachMemberProfile({ memberId, navigateTo }: Props) {
     }
   };
 
+  const handleAddFitnessTest = async (data: {
+    metricName: string;
+    value: number;
+    unit: string;
+    effort?: number;
+    comment?: string;
+    nextStep?: string;
+  }) => {
+    if (!memberId) return;
+    await CoachAPI.saveFitnessTest(memberId, data);
+    const updated = await CoachAPI.getMemberProfile(memberId);
+    setProfile(updated);
+    setNotes(updated.notes);
+  };
+
   if (loading) {
     return (
       <div className="py-24 text-center text-slate-400 max-w-4xl mx-auto">
@@ -116,6 +131,7 @@ export default function CoachMemberProfile({ memberId, navigateTo }: Props) {
           noteSaved={noteSaved}
           onAddNote={handleAddNote}
           fitnessTests={profile.fitnessTests}
+          onAddFitnessTest={handleAddFitnessTest}
         />
       </div>
     </div>

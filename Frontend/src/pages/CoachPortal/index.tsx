@@ -12,6 +12,7 @@ import CoachChat from "./views/CoachChat";
 import CoachReviews from "./views/CoachReviews";
 import CoachNotifications from "./views/CoachNotifications";
 import CoachAI from "./views/CoachAI";
+import CoachAssessment from "./views/CoachAssessment";
 import CoachProfile from "./views/CoachProfile";
 import CoachSettings from "./views/CoachSettings";
 import { PageTransition } from "../../components/PageTransition";
@@ -29,6 +30,7 @@ export default function CoachPortal({ onExit }: { onExit?: () => void } = {}) {
       "curriculum",
       "chat",
       "reviews",
+      "assessment",
       "notifications",
       "ai",
       "profile",
@@ -48,7 +50,7 @@ export default function CoachPortal({ onExit }: { onExit?: () => void } = {}) {
       const raw = window.location.hash.replace("#coach-", "");
       if (raw === "portal") {
         setScreen("dashboard");
-      } else if (raw && ["dashboard", "schedule", "class-detail", "attendance", "members", "member-profile", "curriculum", "chat", "reviews", "notifications", "ai", "profile", "settings"].includes(raw)) {
+      } else if (raw && ["dashboard", "schedule", "class-detail", "attendance", "members", "member-profile", "curriculum", "chat", "reviews", "assessment", "notifications", "ai", "profile", "settings"].includes(raw)) {
         setScreen(raw as CoachScreen);
       }
     };
@@ -84,6 +86,8 @@ export default function CoachPortal({ onExit }: { onExit?: () => void } = {}) {
         return <CoachChat initialMemberId={selectedMemberId} />;
       case "reviews":
         return <CoachReviews />;
+      case "assessment":
+        return <CoachAssessment initialSessionId={selectedSessionId} initialMemberId={selectedMemberId} />;
       case "notifications":
         return <CoachNotifications />;
       case "ai":

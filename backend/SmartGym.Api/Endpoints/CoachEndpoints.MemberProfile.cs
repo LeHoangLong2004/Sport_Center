@@ -71,12 +71,78 @@ public static partial class CoachEndpoints
                   WHERE coach_id = {0} AND member_id = {1}
                   ORDER BY created_at DESC", coachId.Value, memberId).ToListAsync();
 
-            var trainingResults = await db.Database.SqlQueryRaw<MemberProfileTrainingResultRow>(
-                @"SELECT metric_name AS ""MetricName"", value AS ""Value"", unit AS ""Unit"",
-                         effort AS ""Effort"", comment AS ""Comment"", recorded_at AS ""RecordedAt""
-                  FROM training_results
-                  WHERE coach_id = {0} AND member_id = {1}
-                  ORDER BY recorded_at DESC", coachId.Value, memberId).ToListAsync();
+            var fitnessTestsList = new List<object>();
+            try
+            {
+                var trainingResults = await db.Database.SqlQueryRaw<MemberProfileTrainingResultRow>(
+                    @"SELECT metric_name AS ""MetricName"", value AS ""Value"", unit AS ""Unit"",
+                             effort AS ""Effort"", comment AS ""Comment"", recorded_at AS ""RecordedAt""
+                      FROM training_results
+                      WHERE coach_id = {0} AND member_id = {1}
+                      ORDER BY recorded_at DESC", coachId.Value, memberId).ToListAsync();
+
+                fitnessTestsList.AddRange(trainingResults.Select(x => (object)new
+                {
+                    metricName = x.MetricName,
+                    value = x.Value,
+                    unit = x.Unit ?? string.Empty,
+                    effort = x.Effort,
+                    comment = x.Comment ?? string.Empty,
+                    recordedAt = x.RecordedAt.ToString("yyyy-MM-ddTHH:mm:ssZ")
+                }));
+            }
+            catch
+            {
+                // Fallback gracefully if training_results table is not created
+            }
+
+            // Extract fitness tests from coach_assessments metrics_json (Zero new tables needed)
+            foreach (var asm in assessments)
+            {
+                if (string.IsNullOrWhiteSpace(asm.MetricsJson) || asm.MetricsJson == "[]")
+                    continue;
+                try
+                {
+                    using var doc = JsonDocument.Parse(asm.MetricsJson);
+                    if (doc.RootElement.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var elem in doc.RootElement.EnumerateArray())
+                        {
+                            var mName = elem.TryGetProperty("metricName", out var mProp) ? mProp.GetString() : null;
+                            if (string.IsNullOrWhiteSpace(mName)) continue;
+
+                            decimal val = 0;
+                            if (elem.TryGetProperty("value", out var vProp))
+                            {
+                                if (vProp.ValueKind == JsonValueKind.Number)
+                                    val = vProp.GetDecimal();
+                                else if (decimal.TryParse(vProp.GetString(), out var parsedVal))
+                                    val = parsedVal;
+                            }
+
+                            var unit = elem.TryGetProperty("unit", out var uProp) ? uProp.GetString() : "";
+                            int? effort = null;
+                            if (elem.TryGetProperty("effort", out var efProp))
+                            {
+                                if (efProp.ValueKind == JsonValueKind.Number) effort = efProp.GetInt32();
+                                else if (int.TryParse(efProp.GetString(), out var efParsed)) effort = efParsed;
+                            }
+                            var cmt = elem.TryGetProperty("comment", out var cProp) ? cProp.GetString() : asm.Comment;
+
+                            fitnessTestsList.Add(new
+                            {
+                                metricName = mName,
+                                value = val,
+                                unit = unit ?? string.Empty,
+                                effort = effort,
+                                comment = cmt ?? string.Empty,
+                                recordedAt = asm.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ssZ")
+                            });
+                        }
+                    }
+                }
+                catch { }
+            }
 
             var assignedPlans = await db.HomeworkProgresses.AsNoTracking()
                 .Include(x => x.Plan)
@@ -113,10 +179,10 @@ public static partial class CoachEndpoints
                 {
                     id = member.Id.ToString(),
                     name = member.FullName,
-                    code = "MB" + member.Id.ToString()[..4].ToUpperInvariant(),
+                    code = !string.IsNullOrWhiteSpace(member.MemberCode) ? member.MemberCode : "MB" + member.Id.ToString()[..4].ToUpperInvariant(),
                     avatar = member.AvatarUrl,
-                    goal = (string?)null,
-                    level = (string?)null,
+                    goal = !string.IsNullOrWhiteSpace(member.TrainingGoal) ? member.TrainingGoal : "Cải thiện thể lực & Sức khỏe",
+                    level = !string.IsNullOrWhiteSpace(member.TrainingLevel) ? member.TrainingLevel : "Cơ bản",
                     sport = sports.Count > 0 ? string.Join(", ", sports) : null,
                     phone = member.PhoneNumber,
                     email = member.Email,
@@ -168,15 +234,7 @@ public static partial class CoachEndpoints
                     nextStep = x.NextStep ?? string.Empty,
                     createdAt = x.CreatedAt
                 }),
-                fitnessTests = trainingResults.Select(x => new
-                {
-                    metricName = x.MetricName,
-                    value = x.Value,
-                    unit = x.Unit,
-                    effort = x.Effort,
-                    comment = x.Comment,
-                    recordedAt = x.RecordedAt
-                }),
+                fitnessTests = fitnessTestsList,
                 assignedWorkouts = assignedPlans.Select(x => new
                 {
                     id = x.Id.ToString(),
@@ -237,6 +295,73 @@ public static partial class CoachEndpoints
                 VALUES ({id}, {coachId.Value}, {sessionId}, {memberId}, {completion}, '[]'::jsonb, {comment}, NULL)");
 
             return Results.Ok(new { id, comment, completion, createdAt = DateTime.UtcNow });
+        });
+
+        group.MapPost("/members/{memberId:guid}/fitness-test", async (
+            Guid memberId,
+            HttpContext context,
+            SmartGymDbContext db,
+            JsonElement request) =>
+        {
+            var coachId = await ResolveAuthenticatedCoachIdAsync(context, db);
+            if (coachId == null)
+                return Results.Unauthorized();
+
+            var metricName = request.TryGetProperty("metricName", out var mnVal) ? mnVal.GetString() : null;
+            if (string.IsNullOrWhiteSpace(metricName))
+                return Results.BadRequest(new { message = "Tên chỉ số / bài kiểm tra không được để trống." });
+
+            decimal val = 0;
+            if (request.TryGetProperty("value", out var vVal))
+            {
+                if (vVal.ValueKind == JsonValueKind.Number) val = vVal.GetDecimal();
+                else if (decimal.TryParse(vVal.GetString(), out var parsedNum)) val = parsedNum;
+            }
+
+            var unit = request.TryGetProperty("unit", out var uVal) ? uVal.GetString() : "";
+            int? effort = null;
+            if (request.TryGetProperty("effort", out var efVal))
+            {
+                if (efVal.ValueKind == JsonValueKind.Number) effort = efVal.GetInt32();
+                else if (int.TryParse(efVal.GetString(), out var parsedEf)) effort = parsedEf;
+            }
+
+            var comment = request.TryGetProperty("comment", out var cVal) ? cVal.GetString() : "";
+            var nextStep = request.TryGetProperty("nextStep", out var nsVal) ? nsVal.GetString() : "";
+            Guid? sessionId = request.TryGetProperty("sessionId", out var sVal)
+                && Guid.TryParse(sVal.GetString(), out var parsedSess)
+                ? parsedSess
+                : null;
+
+            var metricArray = new[]
+            {
+                new
+                {
+                    metricName,
+                    value = val,
+                    unit = unit ?? "",
+                    effort = effort,
+                    comment = comment ?? ""
+                }
+            };
+            var metricsJson = JsonSerializer.Serialize(metricArray);
+
+            var id = Guid.NewGuid();
+            await db.Database.ExecuteSqlInterpolatedAsync($@"
+                INSERT INTO coach_assessments (id, coach_id, session_id, member_id, completion, metrics_json, comment, next_step)
+                VALUES ({id}, {coachId.Value}, {sessionId}, {memberId}, 100, {metricsJson}::jsonb, {comment}, {nextStep})");
+
+            return Results.Ok(new
+            {
+                id,
+                metricName,
+                value = val,
+                unit = unit ?? "",
+                effort,
+                comment = comment ?? "",
+                nextStep = nextStep ?? "",
+                recordedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
+            });
         });
     }
 

@@ -120,6 +120,30 @@ export const CoachAPI = {
     });
   },
 
+  saveFitnessTest: async (memberId: string, data: { metricName: string; value: number | string; unit?: string; effort?: number; comment?: string; nextStep?: string; sessionId?: string }) => {
+    return fetchApi(`/coach/members/${encodeURIComponent(memberId)}/fitness-test`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  // 4e. Đánh giá & Tiến độ
+  getAssessments: async (): Promise<AssessmentRecord[]> => {
+    try {
+      const res = await fetchApi('/coach/assessments');
+      return Array.isArray(res) ? res : [];
+    } catch {
+      return [];
+    }
+  },
+
+  saveAssessment: async (data: AssessmentRecord) => {
+    return fetchApi('/coach/assessments', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
   // 5. Điểm danh
   getAttendance: async (sessionId: string): Promise<AttendanceRecord[]> => {
     try {
