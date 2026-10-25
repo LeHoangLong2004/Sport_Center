@@ -14,6 +14,9 @@ public class User
     public DateTime? DateOfBirth { get; set; }
     public string? Gender { get; set; }
     public string? EmergencyContact { get; set; }
+    public string? MemberCode { get; set; }
+    public string? TrainingGoal { get; set; }
+    public string? TrainingLevel { get; set; }
     public bool Status { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
