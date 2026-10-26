@@ -255,15 +255,23 @@ public static class PackageCatalogEndpoints
                 {
                     try
                     {
+                        Console.WriteLine($"[CancelOrder] Request to cancel order ID: {id}");
                         var order = await service.CancelOrderAsync(id, cancellationToken);
+                        Console.WriteLine($"[CancelOrder] Successfully cancelled order ID: {id}");
                         return Results.Ok(order);
                     }
                     catch (PackageCatalogException exception)
                     {
+                        Console.WriteLine($"[CancelOrder Business Error] {exception.Message} ({exception.StatusCode})");
                         return Results.Json(
                             new { message = exception.Message },
                             statusCode: exception.StatusCode
                         );
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[CancelOrder Unexpected Error] {ex}");
+                        return Results.BadRequest(new { message = $"Lỗi hủy đơn: {ex.Message}" });
                     }
                 }
             )

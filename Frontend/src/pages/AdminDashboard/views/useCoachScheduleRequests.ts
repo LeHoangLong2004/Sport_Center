@@ -40,7 +40,12 @@ export function useCoachScheduleRequests(onClassesChanged: () => Promise<void>) 
   }, [fetchRequests]);
 
   const pending = useMemo(
-    () => requests.filter((request) => request.status.toLowerCase() === "pending"),
+    () =>
+      requests.filter(
+        (request) =>
+          request.status.toLowerCase() === "pending" ||
+          request.status.toLowerCase() === "substitute_accepted",
+      ),
     [requests],
   );
 

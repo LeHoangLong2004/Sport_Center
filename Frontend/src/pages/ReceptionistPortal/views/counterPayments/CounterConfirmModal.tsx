@@ -23,11 +23,28 @@ export default function CounterConfirmModal({
   onConfirm,
   formatMoney,
 }: Props) {
+  React.useEffect(() => {
+    if (!confirmOrder) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [confirmOrder, onClose]);
+
   if (!confirmOrder) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 sm:p-7 max-w-lg w-full border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col gap-5">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="bg-white dark:bg-slate-800 rounded-3xl p-6 sm:p-7 max-w-lg w-full border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col gap-5"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
           <div className="flex items-center gap-2.5">
             <div className="size-10 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 flex items-center justify-center font-bold">

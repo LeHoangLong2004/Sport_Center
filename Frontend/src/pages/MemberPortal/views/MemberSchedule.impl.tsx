@@ -30,7 +30,7 @@ const [currentMonday, setCurrentMonday] = useState<Date>(() => getMonday(new Dat
 // 4. Modals & Interactions
 const [selectedSession, setSelectedSession] = useState<MemberSessionItem | null>(null); const [cancellingSession, setCancellingSession] = useState<MemberSessionItem | null>(null); const [cancelReason, setCancelReason] = useState(""); const [feedback, setFeedback] = useState<string | null>(null);
 // Load from Backend and Sync with Local
-const refreshSessions = async () => { try { const backendData = await MemberBackendAPI.getBookings(); if (Array.isArray(backendData) && backendData.length > 0) { setSessions(backendData); saveMemberData(storageKey, backendData);
+const refreshSessions = async () => { try { const backendData = await MemberBackendAPI.getBookings(); if (Array.isArray(backendData)) { setSessions(backendData); saveMemberData(storageKey, backendData);
 return; } } catch {} const local = getSavedMemberData(storageKey, []); setSessions(local); };
 useEffect(() => { refreshSessions(); const unsub = scheduleSync.subscribe(() => { refreshSessions(); }); return unsub;
 }, []);

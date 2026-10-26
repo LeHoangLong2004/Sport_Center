@@ -63,7 +63,7 @@ export default function MemberSchedule({ onNavigate }: Props) {
   const refreshSessions = async () => {
     try {
       const backendData = await MemberBackendAPI.getBookings();
-      if (Array.isArray(backendData) && backendData.length > 0) {
+      if (Array.isArray(backendData)) {
         setSessions(backendData);
         saveMemberData(storageKey, backendData);
         return;

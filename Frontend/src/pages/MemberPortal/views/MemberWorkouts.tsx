@@ -38,9 +38,11 @@ export default function MemberWorkouts({ onNavigate }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadHomeworks = async () => {
-    setLoading(true);
-    setError(null);
+  const loadHomeworks = async (silent = false) => {
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+    }
 
     try {
       const raw = await MemberAPI.getMyHomework();
@@ -52,10 +54,12 @@ export default function MemberWorkouts({ onNavigate }: Props) {
       setHomeworks(list as MemberHomework[]);
     } catch (loadError) {
       console.error("Failed to load assigned workouts", loadError);
-      setHomeworks([]);
-      setError("Không thể tải giáo án được giao. Vui lòng thử lại.");
+      if (!silent) {
+        setHomeworks([]);
+        setError("Không thể tải giáo án được giao. Vui lòng thử lại.");
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -63,7 +67,7 @@ export default function MemberWorkouts({ onNavigate }: Props) {
     void loadHomeworks();
 
     const handleAutoRefresh = () => {
-      void loadHomeworks();
+      void loadHomeworks(true);
     };
 
     window.addEventListener("focus", handleAutoRefresh);
