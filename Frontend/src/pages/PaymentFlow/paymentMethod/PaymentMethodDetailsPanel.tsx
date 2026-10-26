@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { A, PaymentMethodId } from "../shared";
 
 interface PaymentMethodDetailsPanelProps {
@@ -21,6 +21,7 @@ export function PaymentMethodDetailsPanel({
   fmt,
 }: PaymentMethodDetailsPanelProps) {
   const vnpayQrUrl = "/vnpay_qr.png";
+  const [showZoomModal, setShowZoomModal] = useState(false);
 
   if (method === "qr") {
     return (
@@ -110,21 +111,93 @@ export function PaymentMethodDetailsPanel({
 
           {/* Right: Official VNPAY QR Code Box */}
           <div className="flex flex-col gap-1 items-center shrink-0 bg-slate-50 p-2 rounded-xl border border-slate-200/80">
-            <div className="bg-white border border-slate-200 rounded-lg w-[140px] p-1 flex items-center justify-center shadow-2xs overflow-hidden">
+            <div
+              onClick={() => setShowZoomModal(true)}
+              className="group relative bg-white border border-slate-200 rounded-lg w-[155px] p-1.5 flex items-center justify-center shadow-2xs overflow-hidden cursor-pointer hover:border-teal-500 transition-all"
+              title="Nhấn để phóng to mã QR"
+            >
               <img
                 src={vnpayQrUrl}
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = `${A}/cfa8b.svg`;
                 }}
-                className="w-full h-auto object-contain rounded"
+                className="w-full h-auto object-contain rounded transition-transform group-hover:scale-[1.02]"
                 alt="Mã QR VNPAY chính thức"
               />
+              <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded">
+                <span className="bg-white/95 text-slate-800 text-[10px] font-bold px-2 py-1 rounded-full shadow-xs">
+                  🔍 Phóng to
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-1 text-[10px] font-medium text-slate-500 text-center">
-              <span>📱 Quét bằng VNPAY hoặc App ngân hàng</span>
+            <div className="flex items-center justify-between w-full px-1 text-[10px] font-medium text-slate-500 text-center">
+              <span>📱 Quét bằng VNPAY / Ngân hàng</span>
             </div>
           </div>
         </div>
+
+        {/* Zoom Lightbox Modal */}
+        {showZoomModal && (
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-150"
+            onClick={() => setShowZoomModal(false)}
+          >
+            <div
+              className="bg-white rounded-2xl shadow-2xl p-5 max-w-sm w-full flex flex-col items-center gap-3 animate-in zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between w-full border-b border-slate-100 pb-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="size-2 rounded-full bg-emerald-500" />
+                  <span className="font-bold text-sm text-slate-800">Mã QR Thanh Toán</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowZoomModal(false)}
+                  className="size-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="p-2 bg-slate-50 border border-slate-200 rounded-xl w-full flex items-center justify-center">
+                <img
+                  src={vnpayQrUrl}
+                  alt="Mã QR VNPAY chính thức phóng to"
+                  className="w-full max-h-[380px] object-contain rounded-lg shadow-xs"
+                />
+              </div>
+
+              <div className="w-full bg-slate-50 rounded-xl p-2.5 text-xs flex flex-col gap-1 border border-slate-200/80">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Số tiền:</span>
+                  <span className="font-bold text-teal-700">{fmt(finalTotal)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Nội dung CK:</span>
+                  <span className="font-mono font-bold text-slate-800">{transferMemo}</span>
+                </div>
+              </div>
+
+              <div className="flex gap-2 w-full pt-1">
+                <a
+                  href={vnpayQrUrl}
+                  download="vnpay_qr_sportcenter.png"
+                  className="flex-1 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-xs text-center border border-teal-200 transition-colors"
+                >
+                  📥 Tải ảnh về máy
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setShowZoomModal(false)}
+                  className="flex-1 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-colors cursor-pointer"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -208,3 +281,4 @@ export function PaymentMethodDetailsPanel({
 
   return null;
 }
+export default PaymentMethodDetailsPanel;
