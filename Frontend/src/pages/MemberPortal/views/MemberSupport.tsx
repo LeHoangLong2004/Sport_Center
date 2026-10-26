@@ -9,7 +9,7 @@ interface Props {
   onNavigate: (screen: MemberScreen) => void;
 }
 
-export default function MemberSupport({ onNavigate: _onNavigate }: Props) {
+export default function MemberSupport({ onNavigate }: Props) {
   const userStr = localStorage.getItem("user");
   const user = userStr ? JSON.parse(userStr) : null;
   const userId = user?.id || "";
@@ -80,7 +80,14 @@ export default function MemberSupport({ onNavigate: _onNavigate }: Props) {
         </div>
       </div>
 
-      {activeTab === "ai" && <SupportAiChat userName={userName} />}
+      {activeTab === "ai" && (
+        <SupportAiChat
+          userName={userName}
+          storageKey={userId ? `member_ai_chat_${userId}` : "member_ai_chat"}
+          onNavigate={onNavigate}
+          onOpenTickets={() => setActiveTab("tickets")}
+        />
+      )}
       {activeTab === "tickets" && (
         <SupportTickets tickets={tickets} onCreateTicket={handleCreateTicket} />
       )}

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import type { MemberScreen, MemberSessionItem, MemberTaskItem } from "../types";
 import { useUserProfile } from "../../../hooks/useUserProfile";
-import { getSavedMemberData, saveMemberData } from "../services/memberData";
+import { getSavedMemberData, saveMemberData, MemberBackendAPI } from "../services/memberData";
 import { PackageAPI, type PackageOrder } from "../../../services/packageApi";
 import {
   CreditCard,
@@ -12,6 +12,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { WalletService, MEMBER_WALLET_UPDATED_EVENT } from "../services/walletService";
+import { APPOINTMENT_UPDATED_EVENT } from "../../../services/appointmentService";
 import { DashboardWelcomeBanner } from "./dashboard/DashboardWelcomeBanner";
 import { DashboardSessionsTasks } from "./dashboard/DashboardSessionsTasks";
 
@@ -36,6 +37,26 @@ export default function MemberDashboard({ onNavigate }: Props) {
   const [balance, setBalance] = useState<number>(() => {
     return WalletService.getLocalWallet(userId).balance;
   });
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadSessions = () => {
+      MemberBackendAPI.getBookings()
+        .then((data) => {
+          if (!cancelled && Array.isArray(data)) {
+            setSessions(data);
+            if (userId) saveMemberData(`member_sessions_${userId}`, data);
+          }
+        })
+        .catch(() => {});
+    };
+    loadSessions();
+    window.addEventListener(APPOINTMENT_UPDATED_EVENT, loadSessions);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(APPOINTMENT_UPDATED_EVENT, loadSessions);
+    };
+  }, [userId]);
 
   useEffect(() => {
     let cancelled = false;
