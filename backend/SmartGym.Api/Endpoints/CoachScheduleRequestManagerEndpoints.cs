@@ -53,25 +53,44 @@ public static class CoachScheduleRequestManagerEndpoints
             IGroupClassRepository classRepository,
             [FromBody] JsonElement body) =>
         {
-            var request = (await LoadRequestsAsync(db)).FirstOrDefault(row => row.Id == id);
-            if (request is null || !IsPending(request.Status))
-                return Results.BadRequest(new { message = "Yêu cầu không tồn tại hoặc đã được xử lý." });
+            try
+            {
+                var request = (await LoadRequestsAsync(db)).FirstOrDefault(row => row.Id == id);
+                if (request is null || !IsPending(request.Status))
+                    return Results.BadRequest(new { message = "Yêu cầu không tồn tại hoặc đã được xử lý." });
 
-            var managerNote = ReadString(body, "managerNote") ?? "Yêu cầu đã bị Manager từ chối.";
-            var affected = await db.Database.ExecuteSqlInterpolatedAsync($@"
-                UPDATE coach_schedule_requests
-                SET status = 'rejected', manager_note = {managerNote}
-                WHERE id = {id} AND status = 'pending'");
-            if (affected == 0)
-                return Results.BadRequest(new { message = "Yêu cầu đã được xử lý trước đó." });
+                var managerNote = ReadString(body, "managerNote") ?? "Yêu cầu đã bị Manager từ chối.";
+                var affected = await db.Database.ExecuteSqlInterpolatedAsync($@"
+                    UPDATE coach_schedule_requests
+                    SET status = 'rejected', manager_note = {managerNote}
+                    WHERE id = {id} AND LOWER(TRIM(status)) IN ('pending', 'substitute_accepted')");
+                if (affected == 0)
+                    return Results.BadRequest(new { message = "Yêu cầu đã được xử lý trước đó." });
 
-            await classRepository.NotifyCoachAsync(
-                request.CoachId,
-                "Yêu cầu điều chỉnh ca dạy bị từ chối",
-                managerNote,
-                "schedule_request",
-                id);
-            return Results.Ok(new { message = "Đã từ chối yêu cầu điều chỉnh ca dạy." });
+                await classRepository.NotifyCoachAsync(
+                    request.CoachId,
+                    "Yêu cầu điều chỉnh ca dạy bị từ chối",
+                    managerNote,
+                    "schedule_request",
+                    id);
+
+                if (request.SubstituteCoachId.HasValue && request.SubstituteCoachId != request.CoachId)
+                {
+                    await classRepository.NotifyCoachAsync(
+                        request.SubstituteCoachId.Value,
+                        "Yêu cầu dạy thay bị từ chối",
+                        $"Yêu cầu dạy thay cho lớp {request.ClassName} đã bị Quản lý từ chối.",
+                        "schedule_request",
+                        id);
+                }
+
+                return Results.Ok(new { message = "Đã từ chối yêu cầu điều chỉnh ca dạy." });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Reject Request Error] {ex}");
+                return Results.BadRequest(new { message = $"Không thể từ chối yêu cầu: {ex.Message}" });
+            }
         });
     }
 
@@ -104,54 +123,59 @@ public static class CoachScheduleRequestManagerEndpoints
         if (request.SessionId is null)
             return (false, "Yêu cầu chưa gắn với ca dạy hợp lệ.");
 
-        await using var transaction = await db.Database.BeginTransactionAsync();
-        try
+        var strategy = db.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
         {
-            var type = request.RequestType.Trim().ToLowerInvariant();
-            if (type is "dời lịch" or "doi lich")
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            try
             {
-                if (request.NewDate is null || !TryBuildLocalSchedule(request.NewDate.Value, request.NewTime, request.DurationMinutes, out var scheduleTime, out var duration))
-                    return (false, "Yêu cầu dời lịch chưa có ngày hoặc khung giờ hợp lệ.");
+                var type = (request.RequestType ?? string.Empty).Trim().ToLowerInvariant();
+                if (type is "dời lịch" or "doi lich")
+                {
+                    if (request.NewDate is null || !TryBuildLocalSchedule(request.NewDate.Value, request.NewTime, request.DurationMinutes, out var scheduleTime, out var duration))
+                        return (false, "Yêu cầu dời lịch chưa có ngày hoặc khung giờ hợp lệ.");
 
-                var conflict = await FindScheduleConflictAsync(db, request, scheduleTime, duration, request.CurrentCoachId, request.FacilityId);
-                if (conflict is not null) return (false, conflict);
+                    var conflict = await FindScheduleConflictAsync(db, request, scheduleTime, duration, request.CurrentCoachId, request.FacilityId, isSubstitute: false);
+                    if (conflict is not null) return (false, conflict);
 
-                await db.Database.ExecuteSqlInterpolatedAsync($@"
-                    UPDATE classes SET schedule_time = {scheduleTime}, duration_minutes = {duration}
-                    WHERE id = {request.SessionId.Value}");
+                    await db.Database.ExecuteSqlInterpolatedAsync($@"
+                        UPDATE classes SET schedule_time = {scheduleTime}, duration_minutes = {duration}
+                        WHERE id = {request.SessionId.Value}");
+                }
+                else if (type is "dạy thay" or "day thay")
+                {
+                    if (request.SubstituteCoachId is null)
+                        return (false, "Yêu cầu dạy thay chưa có Coach thay thế hợp lệ.");
+
+                    var conflict = await FindScheduleConflictAsync(db, request, request.ScheduleTime, request.DurationMinutes, request.SubstituteCoachId, null, isSubstitute: true);
+                    if (conflict is not null) return (false, conflict);
+
+                    await db.Database.ExecuteSqlInterpolatedAsync($@"
+                        UPDATE classes SET coach_id = {request.SubstituteCoachId.Value}
+                        WHERE id = {request.SessionId.Value}");
+                }
+                else if (type is "báo vắng" or "bao vang")
+                {
+                    await db.Database.ExecuteSqlInterpolatedAsync($@"
+                        UPDATE classes SET status = false WHERE id = {request.SessionId.Value}");
+                }
+
+                var affected = await db.Database.ExecuteSqlInterpolatedAsync($@"
+                    UPDATE coach_schedule_requests
+                    SET status = 'approved', manager_note = {managerNote}
+                    WHERE id = {request.Id} AND LOWER(TRIM(status)) IN ('pending', 'substitute_accepted')");
+                if (affected == 0) return (false, "Yêu cầu đã được xử lý trước đó.");
+
+                await transaction.CommitAsync();
+                return (true, (string?)null);
             }
-            else if (type is "dạy thay" or "day thay")
+            catch (Exception ex)
             {
-                if (request.SubstituteCoachId is null)
-                    return (false, "Yêu cầu dạy thay chưa có Coach thay thế hợp lệ.");
-
-                var conflict = await FindScheduleConflictAsync(db, request, request.ScheduleTime, request.DurationMinutes, request.SubstituteCoachId, request.FacilityId);
-                if (conflict is not null) return (false, conflict);
-
-                await db.Database.ExecuteSqlInterpolatedAsync($@"
-                    UPDATE classes SET coach_id = {request.SubstituteCoachId.Value}
-                    WHERE id = {request.SessionId.Value}");
+                await transaction.RollbackAsync();
+                Console.WriteLine($"[ApplyApprovalAsync Error] {ex}");
+                return (false, (string?)$"Không thể cập nhật lịch dạy: {ex.Message}");
             }
-            else if (type is "báo vắng" or "bao vang")
-            {
-                await db.Database.ExecuteSqlInterpolatedAsync($@"
-                    UPDATE classes SET status = false WHERE id = {request.SessionId.Value}");
-            }
-
-            var affected = await db.Database.ExecuteSqlInterpolatedAsync($@"
-                UPDATE coach_schedule_requests
-                SET status = 'approved', manager_note = {managerNote}
-                WHERE id = {request.Id} AND status = 'pending'");
-            if (affected == 0) return (false, "Yêu cầu đã được xử lý trước đó.");
-
-            await transaction.CommitAsync();
-            return (true, null);
-        }
-        catch
-        {
-            await transaction.RollbackAsync();
-            return (false, "Không thể cập nhật lịch dạy từ yêu cầu này.");
-        }
+        });
     }
 
     private static async Task<string?> FindScheduleConflictAsync(
@@ -160,21 +184,39 @@ public static class CoachScheduleRequestManagerEndpoints
         DateTime? start,
         int duration,
         Guid? coachId,
-        Guid? facilityId)
+        Guid? facilityId,
+        bool isSubstitute = false)
     {
         if (start is null || coachId is null) return "Không xác định được Coach hoặc thời gian của lớp.";
-        var end = start.Value.AddMinutes(duration);
+        var effectiveDuration = duration > 0 ? duration : 60;
+        var scheduleStart = DateTime.SpecifyKind(start.Value, DateTimeKind.Utc);
+        var end = DateTime.SpecifyKind(start.Value.AddMinutes(effectiveDuration), DateTimeKind.Utc);
         var sessionId = request.SessionId!.Value;
-        var scheduleStart = start.Value;
-        object facilityParameter = facilityId.HasValue ? facilityId.Value : DBNull.Value;
-        var classConflict = await db.Database.SqlQueryRaw<int>(@"
+
+        // Kiểm tra trùng lịch ca dạy của HLV
+        var coachConflict = await db.Database.SqlQueryRaw<int>(@"
             SELECT 1 AS ""Value"" FROM classes
             WHERE id <> {0} AND status = true AND COALESCE(approval_status, 'approved') <> 'rejected'
-              AND (coach_id = {1} OR facility_id = {2})
-              AND schedule_time < {3}
-              AND schedule_time + (duration_minutes * INTERVAL '1 minute') > {4}
-            LIMIT 1", sessionId, coachId.Value, facilityParameter, end, scheduleStart).AnyAsync();
-        return classConflict ? "Coach hoặc phòng tập đã có lịch khác trùng thời gian." : null;
+              AND coach_id = {1}
+              AND schedule_time < {2}
+              AND schedule_time + (COALESCE(duration_minutes, 60) * INTERVAL '1 minute') > {3}
+            LIMIT 1", sessionId, coachId.Value, end, scheduleStart).AnyAsync();
+        if (coachConflict) return "Coach đã có lịch khác trùng thời gian.";
+
+        // Nếu là dời lịch và có chọn phòng, kiểm tra phòng tập có bị trùng không
+        if (!isSubstitute && facilityId.HasValue && facilityId.Value != Guid.Empty)
+        {
+            var facilityConflict = await db.Database.SqlQueryRaw<int>(@"
+                SELECT 1 AS ""Value"" FROM classes
+                WHERE id <> {0} AND status = true AND COALESCE(approval_status, 'approved') <> 'rejected'
+                  AND facility_id = {1}
+                  AND schedule_time < {2}
+                  AND schedule_time + (COALESCE(duration_minutes, 60) * INTERVAL '1 minute') > {3}
+                LIMIT 1", sessionId, facilityId.Value, end, scheduleStart).AnyAsync();
+            if (facilityConflict) return "Phòng tập đã có lịch khác trùng thời gian.";
+        }
+
+        return null;
     }
 
     private static bool TryBuildLocalSchedule(DateTime date, string? text, int fallbackDuration, out DateTime utc, out int duration)
@@ -215,7 +257,9 @@ public static class CoachScheduleRequestManagerEndpoints
     private static string? ReadString(JsonElement body, string name) =>
         body.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
-    private static bool IsPending(string? status) => string.Equals(status, "pending", StringComparison.OrdinalIgnoreCase);
+    private static bool IsPending(string? status) =>
+        string.Equals(status, "pending", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(status, "substitute_accepted", StringComparison.OrdinalIgnoreCase);
 
     private sealed class ManagerScheduleRequestRow
     {

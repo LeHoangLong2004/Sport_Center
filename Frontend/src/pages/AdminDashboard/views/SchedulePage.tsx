@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { CreateClassModal } from "../components/CreateClassModal";
 import { ClassDetailModal } from "../components/ClassDetailModal";
 import { ScheduleFilters } from "./ScheduleFilters";
@@ -254,10 +255,15 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
         throw new Error(errorMessage || `Không thể xử lý đề xuất lớp học (HTTP ${res.status}).`);
       }
       await fetchClasses();
+      toast.success(
+        action === "approve"
+          ? "Đã phê duyệt đề xuất lớp học thành công."
+          : "Đã từ chối đề xuất lớp học.",
+      );
       return true;
     } catch (error) {
       console.error("Class approval action failed:", error);
-      window.alert(error instanceof Error ? error.message : "Không thể xử lý đề xuất lớp học.");
+      toast.error(error instanceof Error ? error.message : "Không thể xử lý đề xuất lớp học.");
       return false;
     }
   };

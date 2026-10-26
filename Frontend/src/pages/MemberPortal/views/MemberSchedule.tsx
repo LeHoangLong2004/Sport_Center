@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { toast } from "sonner";
 import type { MemberScreen, MemberSessionItem } from "../types";
 import {
   getSavedMemberData,
@@ -62,7 +63,7 @@ export default function MemberSchedule({ onNavigate }: Props) {
   const refreshSessions = async () => {
     try {
       const backendData = await MemberBackendAPI.getBookings();
-      if (Array.isArray(backendData) && backendData.length > 0) {
+      if (Array.isArray(backendData)) {
         setSessions(backendData);
         saveMemberData(storageKey, backendData);
         return;
@@ -201,7 +202,7 @@ export default function MemberSchedule({ onNavigate }: Props) {
     e.preventDefault();
     if (!cancellingSession) return;
     if (!cancelReason.trim()) {
-      alert("Vui lòng nhập lý do hủy lịch.");
+      toast.error("Vui lòng nhập lý do hủy lịch.");
       return;
     }
 
@@ -221,7 +222,9 @@ export default function MemberSchedule({ onNavigate }: Props) {
     setSessions(updated);
     saveMemberData(storageKey, updated);
 
-    setFeedback(`Đã hủy buổi tập "${cancellingSession.name}". Chỗ học đã được hoàn trả về tài khoản.`);
+    const msg = `Đã hủy buổi tập "${cancellingSession.name}". Chỗ học đã được hoàn trả về tài khoản.`;
+    setFeedback(msg);
+    toast.success(msg);
     setCancellingSession(null);
     setCancelReason("");
     if (selectedSession?.id === cancellingSession.id) {

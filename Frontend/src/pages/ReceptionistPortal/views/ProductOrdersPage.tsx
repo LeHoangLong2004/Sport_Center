@@ -71,8 +71,8 @@ export function ProductOrdersPage() {
   const [drafts, setDrafts] = useState<Record<string, string>>({})
   const [error, setError] = useState("")
 
-  const loadOrders = useCallback(async () => {
-    setLoading(true)
+  const loadOrders = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     try {
       const body = await readResponse(await fetch("/api/product-orders", { headers: authHeaders() }))
       setOrders(Array.isArray(body) ? body : [])
@@ -87,20 +87,20 @@ export function ProductOrdersPage() {
         setError(loadError instanceof Error ? loadError.message : "Không thể tải danh sách đơn hàng.")
       }
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }, [])
 
   useEffect(() => {
     void loadOrders()
 
-    // Đồng bộ đơn mới tạo từ Member Portal mà không cần nhân viên bấm lại thủ công.
+    // Đồng bộ đơn mới tạo từ Member Portal mà không cần nhân viên bấm lại thủ công (tải nền im lặng).
     const refreshTimer = window.setInterval(() => {
-      if (document.visibilityState === "visible") void loadOrders()
+      if (document.visibilityState === "visible") void loadOrders(true)
     }, 15000)
 
     const refreshOnFocus = () => {
-      if (document.visibilityState === "visible") void loadOrders()
+      if (document.visibilityState === "visible") void loadOrders(true)
     }
     document.addEventListener("visibilitychange", refreshOnFocus)
     window.addEventListener("focus", refreshOnFocus)

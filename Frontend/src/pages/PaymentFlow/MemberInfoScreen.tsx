@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { toast } from "sonner";
 import { A, BillingPeriod, FlowPackage, getPaymentSummary, Stepper, CustomDatePicker } from "./shared";
 import { FadeUp } from "../../components/Motion";
 
@@ -235,7 +236,7 @@ export function MemberInfoScreen({
                 type="button"
                 onClick={async () => {
                   if (!formData.fullName || !formData.phone || !formData.email || !formData.startDate) {
-                    alert("Vui lòng điền đầy đủ các thông tin bắt buộc (*).")
+                    toast.error("Vui lòng điền đầy đủ các thông tin bắt buộc (*).")
                     return;
                   }
 
@@ -280,7 +281,7 @@ export function MemberInfoScreen({
                     localStorage.setItem("user", JSON.stringify(updatedUser))
                     window.dispatchEvent(new Event('local-storage-update'))
                   } catch (error) {
-                    alert(error instanceof Error ? error.message : "Không thể cập nhật hồ sơ hội viên.")
+                    toast.error(error instanceof Error ? error.message : "Không thể cập nhật hồ sơ hội viên.")
                     return
                   }
 

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { InvoiceTable } from "../components/InvoiceTable";
 import { PaymentHeader } from "../components/PaymentHeader";
 import { PaymentSummary } from "../components/PaymentSummary";
@@ -96,8 +97,9 @@ export function PaymentPage() {
     setIsExporting(true);
     try {
       await apiDownloadFile(exportUrl, "bao-cao-doanh-thu.xlsx");
+      toast.success("Đã xuất báo cáo doanh thu thành công!");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Không thể xuất báo cáo.");
+      toast.error(err instanceof Error ? err.message : "Không thể xuất báo cáo.");
     } finally {
       setIsExporting(false);
     }
@@ -107,8 +109,9 @@ export function PaymentPage() {
     try {
       await apiPost(`/api/payments/${id}/record-cash`);
       invoices.reload();
+      toast.success("Đã ghi nhận thanh toán tiền mặt thành công!");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Không thu được tiền.");
+      toast.error(err instanceof Error ? err.message : "Không thu được tiền.");
     }
   };
 
@@ -118,7 +121,7 @@ export function PaymentPage() {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     if (!res.ok) {
-      alert("Không thể tải hóa đơn PDF.");
+      toast.error("Không thể tải hóa đơn PDF.");
       return;
     }
     const url = URL.createObjectURL(await res.blob());
@@ -127,7 +130,7 @@ export function PaymentPage() {
 
   const handleExportCsv = () => {
     if (filtered.length === 0) {
-      alert("Không có dữ liệu giao dịch để xuất!");
+      toast.warning("Không có dữ liệu giao dịch để xuất!");
       return;
     }
 

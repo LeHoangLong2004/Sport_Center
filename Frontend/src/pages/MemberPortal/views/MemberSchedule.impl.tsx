@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react"; import { createPortal } from "react-dom"; import type { MemberScreen, MemberSessionItem } from "../types"; import { getSavedMemberData, saveMemberData,
+import React, { useState, useEffect, useMemo } from "react"; import { toast } from "sonner"; import { createPortal } from "react-dom"; import type { MemberScreen, MemberSessionItem } from "../types"; import { getSavedMemberData, saveMemberData,
 MemberBackendAPI, } from "../services/memberData"; import { Calendar, Clock, MapPin,
 User, Users, CheckCircle2, AlertCircle, XCircle, HelpCircle,
 X, Star, PlusCircle, RotateCcw, MessageSquare, ChevronLeft,
@@ -89,7 +89,7 @@ const todayStr = useMemo(() => formatDateISO(new Date()), []);
 const byDate = useMemo(() => { const map: Record<string, MemberSessionItem[]> = {}; filteredSessions.forEach((s) => { if (!map[s.date]) map[s.date] = []; map[s.date].push(s); });
 const sorted = Object.entries(map).sort(([a], [b]) => a.localeCompare(b)); sorted.forEach(([, arr]) => arr.sort((a, b) => a.startTime.localeCompare(b.startTime))); return sorted; }, [filteredSessions]);
 // Handle Cancel Booking
-const handleConfirmCancel = async (e: React.FormEvent) => { e.preventDefault(); if (!cancellingSession) return; if (!cancelReason.trim()) { alert("Vui lòng nhập lý do hủy lịch."); return;
+const handleConfirmCancel = async (e: React.FormEvent) => { e.preventDefault(); if (!cancellingSession) return; if (!cancelReason.trim()) { toast.error("Vui lòng nhập lý do hủy lịch."); return;
 } const reason = cancelReason.trim();
 // 1. Sync through scheduleSync
 scheduleSync.cancelBooking(cancellingSession.id, reason);
@@ -98,6 +98,7 @@ await MemberBackendAPI.cancelBooking(cancellingSession.id, reason);
 // 3. Update local state
 const updated = sessions.map((s) => s.id === cancellingSession.id ? { ...s, status: "đã hủy" as const, cancelReason: reason,
 } : s ); setSessions(updated); saveMemberData(storageKey, updated); setFeedback(`Đã hủy buổi tập "${cancellingSession.name}". Chỗ học đã được hoàn trả về tài khoản.`);
+toast.success(`Đã hủy buổi tập "${cancellingSession.name}".`);
 setCancellingSession(null); setCancelReason(""); if (selectedSession?.id === cancellingSession.id) { setSelectedSession(null); } setTimeout(() => setFeedback(null), 4500);
 }; return ( <div className="flex flex-col gap-5 max-w-7xl mx-auto pb-12 animate-in fade-in duration-300"> {/* 1. Header Bar (Matching Coach Schedule Header) */} <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"> <div>
 <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1"> HỘI VIÊN / LỊCH HỌC </div> <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight"> Lịch học & Ca tập </h1>

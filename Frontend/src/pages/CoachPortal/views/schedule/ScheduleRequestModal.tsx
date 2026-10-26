@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import type { UnifiedScheduleItem } from "./types";
+import { CoachAPI } from "../../services/api";
 import { DateInput } from "../../../../components/DateInput";
 
 interface Props {
@@ -13,11 +15,18 @@ interface Props {
     sessionId: string;
     className: string;
     requestType: "dời lịch" | "dạy thay" | "báo vắng";
+    substituteCoachId?: string;
     substituteCoachName: string;
     newDate: string;
     newTime: string;
     reason: string;
   }) => Promise<void>;
+}
+
+interface CoachOption {
+  id: string;
+  fullName: string;
+  specialty?: string;
 }
 
 export default function ScheduleRequestModal({
@@ -29,11 +38,15 @@ export default function ScheduleRequestModal({
 }: Props) {
   const [selectedSessionId, setSelectedSessionId] = useState("");
   const [requestType, setRequestType] = useState<"dời lịch" | "dạy thay" | "báo vắng">("dời lịch");
-  const [substituteCoach, setSubstituteCoach] = useState("");
+  const [substituteCoachId, setSubstituteCoachId] = useState("");
+  const [substituteCoachName, setSubstituteCoachName] = useState("");
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("");
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const [availableCoaches, setAvailableCoaches] = useState<CoachOption[]>([]);
+  const [loadingCoaches, setLoadingCoaches] = useState(false);
 
   useEffect(() => {
     if (initialSessionId) {
@@ -43,24 +56,70 @@ export default function ScheduleRequestModal({
     }
   }, [initialSessionId, sessions]);
 
+  // Load coaches from database when modal is open
+  useEffect(() => {
+    if (!isOpen) return;
+    setLoadingCoaches(true);
+    CoachAPI.getCoaches()
+      .then((data) => {
+        setAvailableCoaches(data);
+      })
+      .catch((err) => {
+        console.error("Lỗi nạp danh sách huấn luyện viên:", err);
+      })
+      .finally(() => {
+        setLoadingCoaches(false);
+      });
+  }, [isOpen]);
+
+  const currentSession = useMemo(
+    () => sessions.find((s) => s.id === selectedSessionId),
+    [sessions, selectedSessionId],
+  );
+
+  // Filter out the current coach
+  const filteredCoaches = useMemo(() => {
+    const currentCoachName = currentSession?.coachName?.toLowerCase().trim();
+    let currentUserName = "";
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        currentUserName = (u.fullName || u.name || "").toLowerCase().trim();
+      }
+    } catch {}
+
+    return availableCoaches.filter((c) => {
+      const name = c.fullName?.toLowerCase().trim();
+      if (currentCoachName && name === currentCoachName) return false;
+      if (currentUserName && name === currentUserName) return false;
+      return true;
+    });
+  }, [availableCoaches, currentSession]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const currentSession = sessions.find((s) => s.id === selectedSessionId);
+    if (requestType === "dạy thay" && !substituteCoachId) {
+      toast.error("Vui lòng chọn một Huấn luyện viên thay thế từ danh sách.");
+      return;
+    }
     setSubmitting(true);
     try {
       await onSubmit({
         sessionId: selectedSessionId,
         className: currentSession?.className || "Lớp học",
         requestType,
-        substituteCoachName: substituteCoach,
+        substituteCoachId: substituteCoachId || undefined,
+        substituteCoachName,
         newDate,
         newTime,
         reason,
       });
       setReason("");
-      setSubstituteCoach("");
+      setSubstituteCoachId("");
+      setSubstituteCoachName("");
       setNewDate("");
       setNewTime("");
       onClose();
@@ -129,15 +188,38 @@ export default function ScheduleRequestModal({
             {requestType === "dạy thay" && (
               <div>
                 <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                  Huấn luyện viên thay thế đề xuất:
+                  Huấn luyện viên thay thế đề xuất: <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  placeholder="VD: HLV Trần Minh Tuấn..."
-                  value={substituteCoach}
-                  onChange={(e) => setSubstituteCoach(e.target.value)}
-                  className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400 font-medium"
-                />
+                {loadingCoaches ? (
+                  <div className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-400 flex items-center gap-2">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-orange-500" />
+                    <span>Đang nạp danh sách huấn luyện viên từ hệ thống...</span>
+                  </div>
+                ) : (
+                  <select
+                    value={substituteCoachId}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      setSubstituteCoachId(id);
+                      const selected = filteredCoaches.find((c) => c.id === id);
+                      setSubstituteCoachName(selected?.fullName || "");
+                    }}
+                    required
+                    className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400 font-medium"
+                  >
+                    <option value="">-- Chọn Huấn luyện viên thay thế --</option>
+                    {filteredCoaches.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.fullName} {c.specialty ? `• ${c.specialty}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {filteredCoaches.length === 0 && !loadingCoaches && (
+                  <p className="text-[11px] text-amber-600 mt-1">
+                    Không tìm thấy huấn luyện viên thay thế khác khả dụng trong hệ thống.
+                  </p>
+                )}
               </div>
             )}
 
@@ -193,14 +275,15 @@ export default function ScheduleRequestModal({
             <button
               type="submit"
               disabled={submitting}
-              className="px-5 py-2 font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 rounded-lg shadow-sm transition-colors disabled:opacity-50"
+              className="px-5 py-2 font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 rounded-lg shadow-sm transition-colors disabled:opacity-50 flex items-center gap-1.5"
             >
+              {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               {submitting ? "Đang gửi..." : "Gửi yêu cầu"}
             </button>
           </div>
         </form>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

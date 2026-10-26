@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Navigate } from "./types";
 import { Shell } from "./MemberShellV2";
 import { MemberScheduleGrid, type ScheduleEvent } from "./MemberScheduleGrid";
@@ -103,6 +104,8 @@ export function Schedule({ onNavigate }: { onNavigate: Navigate }) {
               status: item.bookingStatus,
             };
           });
+        } else if (response && (response.status === 401 || response.status === 403)) {
+          toast.error("Phiên đăng nhập đã hết hạn hoặc bạn chưa đăng nhập. Vui lòng đăng nhập lại để xem lịch!");
         }
 
         if (Array.isArray(memberAppts) && memberAppts.length > 0) {
