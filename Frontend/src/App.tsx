@@ -65,6 +65,21 @@ function AdminPortal({
   }, [])
 
   if (step === "member") {
+    const userStr = localStorage.getItem("user")
+    const user = userStr ? JSON.parse(userStr) : null
+    const role = user?.role?.toLowerCase()
+    if (!user || (role !== "member" && role !== "user" && role !== "customer")) {
+      const demoMember = {
+        id: "mem-01",
+        fullName: "Nguyễn Minh Thu",
+        phoneNumber: "0912345678",
+        role: "Member",
+        email: "nguyenminhthu@sportcenter.com",
+        avatarUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=256&q=80",
+      }
+      localStorage.setItem("user", JSON.stringify(demoMember))
+    }
+
     return (
       <MemberPortal
         initialPage={initialMemberPage}
@@ -205,7 +220,7 @@ function isReceptionistHash(hash: string) {
 function isCoachHash(hash: string) {
   // `#coach` is the public coach directory page. Only the explicit portal
   // hashes should render the authenticated Coach Portal.
-  return hash.startsWith("#coach-") || coachHashes.has(hash)
+  return hash.startsWith("#coach-") || hash.startsWith("#coach/") || coachHashes.has(hash)
 }
 
 export default function App() {
