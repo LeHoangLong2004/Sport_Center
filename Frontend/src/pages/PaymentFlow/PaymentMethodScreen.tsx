@@ -1,5 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { A, BillingPeriod, FlowPackage, getPaymentSummary, PaymentMethodId, Stepper } from "./shared";
+import { PaymentMemberProfileCard } from "./paymentMethod/PaymentMemberProfileCard";
+import { PaymentMethodDetailsPanel } from "./paymentMethod/PaymentMethodDetailsPanel";
+import { PaymentOrderSummary } from "./paymentMethod/PaymentOrderSummary";
+
+interface PaymentMethodScreenProps {
+  pkg: FlowPackage;
+  period: BillingPeriod;
+  method: PaymentMethodId;
+  setMethod: (m: PaymentMethodId) => void;
+  formData: any;
+  setFormData?: (fnOrVal: any) => void;
+  onNext: () => void;
+  onBack: () => void;
+  availableMethods?: PaymentMethodId[];
+}
 
 export function PaymentMethodScreen({
   pkg,
@@ -11,17 +26,7 @@ export function PaymentMethodScreen({
   onNext,
   onBack,
   availableMethods,
-}: {
-  pkg: FlowPackage;
-  period: BillingPeriod;
-  method: PaymentMethodId;
-  setMethod: (m: PaymentMethodId) => void;
-  formData: any;
-  setFormData?: (fnOrVal: any) => void;
-  onNext: () => void;
-  onBack: () => void;
-  availableMethods?: PaymentMethodId[];
-}) {
+}: PaymentMethodScreenProps) {
   const { listPrice, discount, total, periodLabel } = getPaymentSummary(pkg, period);
   const fmt = (n: number) => n.toLocaleString("vi-VN") + " đ";
 
@@ -48,64 +53,6 @@ export function PaymentMethodScreen({
     setTimeout(() => {
       setCopiedField((curr) => (curr === fieldName ? null : curr));
     }, 2000);
-  };
-
-  // Inline member profile editing
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [editForm, setEditForm] = useState({
-    fullName: formData?.fullName || "",
-    phone: formData?.phone || "",
-    email: formData?.email || "",
-    branch: formData?.branch || "Chi nhánh Quận 1 - Flagship Center",
-    startDate: formData?.startDate || new Date().toISOString().slice(0, 10),
-  });
-
-  useEffect(() => {
-    setEditForm({
-      fullName: formData?.fullName || "",
-      phone: formData?.phone || "",
-      email: formData?.email || "",
-      branch: formData?.branch || "Chi nhánh Quận 1 - Flagship Center",
-      startDate: formData?.startDate || new Date().toISOString().slice(0, 10),
-    });
-  }, [formData]);
-
-  const handleSaveProfile = async () => {
-    if (!editForm.fullName || !editForm.phone || !editForm.email) {
-      alert("Vui lòng điền đầy đủ Họ tên, Số điện thoại và Email.");
-      return;
-    }
-
-    if (setFormData) {
-      setFormData((prev: any) => ({
-        ...prev,
-        ...editForm,
-      }));
-    }
-
-    try {
-      const userStr = localStorage.getItem("user");
-      const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
-      if (userStr && token) {
-        const u = JSON.parse(userStr);
-        if (u.id) {
-          fetch(`/api/users/${u.id}/profile`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              fullName: editForm.fullName,
-              phoneNumber: editForm.phone,
-              email: editForm.email,
-            }),
-          }).catch(() => {});
-        }
-      }
-    } catch {}
-
-    setIsEditingProfile(false);
   };
 
   // Promo code feature
@@ -148,7 +95,6 @@ export function PaymentMethodScreen({
   const phoneDigits = formData?.phone ? formData.phone.replace(/\D/g, "").slice(-4) : "GYM";
   const pkgCode = (pkg.id || "PKG").replace(/[^a-zA-Z0-9]/g, "").slice(0, 6).toUpperCase();
   const transferMemo = `SC ${phoneDigits} ${pkgCode}`.toUpperCase();
-  const vnpayQrUrl = "/vnpay_qr.png";
 
   const methods: { id: PaymentMethodId; icon: string; label: string; sub?: string; badge?: string }[] = [
     {
@@ -223,135 +169,11 @@ export function PaymentMethodScreen({
           <div className="flex flex-1 flex-col gap-3 items-start min-w-0 w-full">
             
             {/* 1. COMPACT MEMBER PROFILE CARD */}
-            <div className="bg-white border border-[#e2e8f0] rounded-xl p-3 px-4 w-full shadow-2xs transition-all">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="size-6 rounded-full bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center font-bold text-xs">
-                    👤
-                  </div>
-                  <h2 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-xs md:text-sm">
-                    {isProduct ? "Thông tin người nhận đơn hàng" : "Thông tin hội viên nhận gói"}
-                  </h2>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold text-[10px]">
-                    <span className="size-1 rounded-full bg-emerald-500"></span>
-                    Tài khoản chính chủ
-                  </span>
-                  {!isEditingProfile && (
-                    <button
-                      type="button"
-                      onClick={() => setIsEditingProfile(true)}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-slate-200 hover:bg-slate-50 text-slate-700 text-[11px] font-semibold transition-all cursor-pointer"
-                    >
-                      <span>✏️</span>
-                      <span>Chỉnh sửa</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* View Mode (Compact 1-row layout) */}
-              {!isEditingProfile ? (
-                <div className="mt-2 pt-2 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-slate-400 text-[11px] shrink-0">Hội viên:</span>
-                    <span className="text-slate-900 font-bold truncate">
-                      {formData?.fullName || "Chưa cập nhật"}
-                    </span>
-                    <span className="text-slate-400 text-[10px] truncate max-w-[90px]">({formData?.email})</span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-slate-400 text-[11px] shrink-0">SĐT:</span>
-                    <span className="text-slate-900 font-bold">
-                      {formData?.phone || "Chưa cập nhật"}
-                    </span>
-                    <span className="text-[10px] text-teal-700 bg-teal-50 px-1 py-0.5 rounded font-medium">Nhận SMS</span>
-                  </div>
-
-                  {!isProduct && (
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="text-slate-400 text-[11px] shrink-0">Cơ sở:</span>
-                      <span className="text-slate-900 font-bold truncate text-[11px]">
-                        {formData?.branch ? formData.branch.replace("Chi nhánh ", "") : "Q1 Flagship"}
-                      </span>
-                      <span className="text-slate-400 text-[10px] shrink-0">
-                        ({formData?.startDate ? formData.startDate.split("-").reverse().slice(0, 2).join("/") : "Hôm nay"})
-                      </span>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                /* Edit Mode Form */
-                <div className="mt-2.5 pt-2.5 border-t border-slate-100 flex flex-col gap-2.5">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11px] font-semibold text-slate-700">Họ và tên *</label>
-                      <input
-                        type="text"
-                        value={editForm.fullName}
-                        onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
-                        className="px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-teal-500 outline-none text-xs text-slate-900 font-medium"
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11px] font-semibold text-slate-700">Số điện thoại *</label>
-                      <input
-                        type="text"
-                        value={editForm.phone}
-                        onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                        className="px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-teal-500 outline-none text-xs text-slate-900 font-medium"
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11px] font-semibold text-slate-700">Email *</label>
-                      <input
-                        type="email"
-                        value={editForm.email}
-                        onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                        className="px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-teal-500 outline-none text-xs text-slate-900 font-medium"
-                      />
-                    </div>
-
-                    {!isProduct && (
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[11px] font-semibold text-slate-700">Cơ sở chính</label>
-                        <select
-                          value={editForm.branch}
-                          onChange={(e) => setEditForm({ ...editForm, branch: e.target.value })}
-                          className="px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-teal-500 outline-none text-xs text-slate-900 font-medium bg-white"
-                        >
-                          <option value="Chi nhánh Quận 1 - Flagship Center">Q1 - Flagship</option>
-                          <option value="Chi nhánh Quận 7 - Riverside Club">Q7 - Riverside</option>
-                          <option value="Chi nhánh Bình Thạnh - Pearl Plaza">Bình Thạnh</option>
-                        </select>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-end gap-2 pt-1.5 border-t border-slate-100">
-                    <button
-                      type="button"
-                      onClick={() => setIsEditingProfile(false)}
-                      className="px-3 py-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-[11px] font-semibold cursor-pointer"
-                    >
-                      Hủy bỏ
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleSaveProfile}
-                      className="px-3.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-bold shadow-2xs cursor-pointer"
-                    >
-                      Lưu thông tin
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+            <PaymentMemberProfileCard
+              formData={formData}
+              setFormData={setFormData}
+              isProduct={isProduct}
+            />
 
             {/* 2. COMPACT PAYMENT METHODS SELECTOR */}
             <div className="bg-white border border-[#e2e8f0] rounded-xl p-3 px-4 w-full shadow-2xs">
@@ -415,182 +237,16 @@ export function PaymentMethodScreen({
               </div>
             </div>
 
-            {/* 3. DYNAMIC PAYMENT METHOD DETAILS (COMPACT) */}
-            {method === "qr" && (
-              <div className="bg-white border border-[#e2e8f0] rounded-xl p-3 px-4 w-full shadow-2xs">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="size-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <h3 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-xs md:text-sm flex items-center gap-1.5">
-                      <span>Quét mã VNPAY / VietQR Chuyển khoản 24/7</span>
-                      <span className="text-[10px] bg-red-50 text-red-600 font-extrabold px-1.5 py-0.2 rounded border border-red-200">VNPAY APP</span>
-                    </h3>
-                  </div>
-                  <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Tự động kích hoạt sau khi nhận</span>
-                </div>
-
-                <div className="flex flex-col md:flex-row gap-3.5 items-center pt-2.5 w-full">
-                  {/* Left: Bank details with 1-click copy */}
-                  <div className="flex flex-col gap-1.5 flex-1 min-w-0 w-full">
-                    <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-200/80 flex flex-col gap-1.5 text-xs">
-                      
-                      {/* Bank Name */}
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-400 text-[11px]">Cổng / Ứng dụng</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-slate-900 text-xs">Ví điện tử VNPAY (Napas 247)</span>
-                        </div>
-                      </div>
-
-                      {/* Account Number */}
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-400 text-[11px]">Số tài khoản / Số ví</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-mono font-bold text-slate-900 text-xs">0815353732</span>
-                          <button
-                            type="button"
-                            onClick={() => handleCopy("0815353732", "account")}
-                            className="px-1.5 py-0.5 rounded bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-semibold text-teal-700 transition-all cursor-pointer"
-                          >
-                            {copiedField === "account" ? "✓ Đã chép!" : "Sao chép"}
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Account Owner */}
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-400 text-[11px]">Chủ tài khoản / Tên ví</span>
-                        <span className="font-bold text-slate-900 text-xs">Khách hàng 0815353732</span>
-                      </div>
-
-                      {/* Transfer Amount */}
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-400 text-[11px]">Số tiền thanh toán</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-teal-700 text-sm">{fmt(finalTotal)}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleCopy(String(finalTotal), "amount")}
-                            className="px-1.5 py-0.5 rounded bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-semibold text-teal-700 transition-all cursor-pointer"
-                          >
-                            {copiedField === "amount" ? "✓ Đã chép!" : "Sao chép"}
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Transfer Memo */}
-                      <div className="flex items-center justify-between pt-1.5 border-t border-slate-200">
-                        <span className="text-slate-600 font-semibold text-[11px]">Nội dung chuyển khoản (bắt buộc)</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="bg-teal-50 border border-teal-200 px-2 py-0.5 rounded font-mono font-black text-teal-800 text-xs tracking-wider">
-                            {transferMemo}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleCopy(transferMemo, "memo")}
-                            className="px-2 py-0.5 rounded bg-teal-600 hover:bg-teal-700 text-white text-[10px] font-bold shadow-2xs transition-all cursor-pointer"
-                          >
-                            {copiedField === "memo" ? "✓ Đã chép!" : "Sao chép"}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <p className="text-[10px] text-slate-500 leading-3.5">
-                      💡 <strong>Mẹo:</strong> Mở <strong>App VNPAY</strong> hoặc bất kỳ App Ngân hàng nào (VCB, MB, Techcom, BIDV, MoMo...) quét mã QR để chuyển khoản trực tiếp.
-                    </p>
-                  </div>
-
-                  {/* Right: Official VNPAY QR Code Box */}
-                  <div className="flex flex-col gap-1 items-center shrink-0 bg-slate-50 p-2 rounded-xl border border-slate-200/80">
-                    <div className="bg-white border border-slate-200 rounded-lg w-[140px] p-1 flex items-center justify-center shadow-2xs overflow-hidden">
-                      <img
-                        src={vnpayQrUrl}
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = `${A}/cfa8b.svg`;
-                        }}
-                        className="w-full h-auto object-contain rounded"
-                        alt="Mã QR VNPAY chính thức"
-                      />
-                    </div>
-                    <div className="flex items-center gap-1 text-[10px] font-medium text-slate-500 text-center">
-                      <span>📱 Quét bằng VNPAY hoặc App ngân hàng</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {method === "card" && (
-              <div className="bg-white border border-[#e2e8f0] rounded-xl p-3 px-4 w-full shadow-2xs">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                  <h3 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-xs md:text-sm">
-                    Thanh toán thẻ tín dụng & ghi nợ quốc tế
-                  </h3>
-                  <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                    PCI-DSS Level 1
-                  </span>
-                </div>
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mt-2 text-xs text-slate-600 flex flex-col gap-2">
-                  <p className="leading-relaxed text-[11px]">
-                    SportCenter hỗ trợ thanh toán trực tuyến qua <strong>Visa, MasterCard, JCB</strong> và <strong>thẻ ATM Napas</strong>. Mọi giao dịch được mã hóa và xác thực an toàn qua 3D Secure.
-                  </p>
-                  <div className="flex items-center justify-between bg-white p-2 rounded border border-slate-200 text-xs">
-                    <span className="font-medium text-slate-600">Số tiền cần thanh toán:</span>
-                    <strong className="text-teal-700 font-bold">{fmt(finalTotal)}</strong>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {method === "wallet" && (
-              <div className="bg-white border border-[#e2e8f0] rounded-xl p-3 px-4 w-full shadow-2xs">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                  <h3 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-xs md:text-sm">
-                    Ví điện tử MoMo & ZaloPay
-                  </h3>
-                  <span className="text-[10px] text-pink-600 font-bold bg-pink-50 px-2 py-0.5 rounded-full border border-pink-200">
-                    Ưu đãi hoàn 5%
-                  </span>
-                </div>
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mt-2 text-xs text-slate-600 flex flex-col gap-2">
-                  <p className="leading-relaxed text-[11px]">
-                    Sau khi nhấn xác nhận, bạn sẽ được liên kết trực tiếp tới ứng dụng <strong>MoMo</strong> hoặc <strong>ZaloPay</strong> để hoàn tất thanh toán trong 1 chạm.
-                  </p>
-                  <div className="flex items-center justify-between bg-white p-2 rounded border border-slate-200 text-xs">
-                    <span className="font-medium text-slate-600">Số tiền giao dịch:</span>
-                    <strong className="text-teal-700 font-bold">{fmt(finalTotal)}</strong>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {method === "counter" && (
-              <div className="bg-white border border-[#e2e8f0] rounded-xl p-3 px-4 w-full shadow-2xs">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                  <h3 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-xs md:text-sm">
-                    Thanh toán trực tiếp tại quầy lễ tân
-                  </h3>
-                  <span className="text-[10px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                    Giữ chỗ 24 giờ
-                  </span>
-                </div>
-
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 mt-2 text-xs text-slate-700 flex flex-col gap-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-teal-600 font-bold shrink-0">🏢 Cơ sở tiếp nhận:</span>
-                    <span className="text-slate-900 font-semibold">{formData?.branch || "Chi nhánh Quận 1 - Flagship Center"}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-teal-600 font-bold shrink-0">💵 Số tiền cần thanh toán:</span>
-                    <strong className="text-teal-700 font-extrabold">{fmt(finalTotal)}</strong>
-                  </div>
-                  <div className="p-2 rounded bg-amber-50/80 border border-amber-200/80 text-amber-900 text-[10px] leading-relaxed">
-                    💡 <strong>Lưu ý:</strong> Đơn đăng ký giữ chỗ có hiệu lực trong <strong>24 giờ</strong>. Khi đến quầy, bạn chỉ cần đọc Số điện thoại <span className="font-bold">{formData?.phone || "đăng ký"}</span> để Lễ tân xuất hóa đơn và bàn giao thẻ hội viên ngay.
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* 3. DYNAMIC PAYMENT METHOD DETAILS */}
+            <PaymentMethodDetailsPanel
+              method={method}
+              finalTotal={finalTotal}
+              formData={formData}
+              copiedField={copiedField}
+              onCopy={handleCopy}
+              transferMemo={transferMemo}
+              fmt={fmt}
+            />
 
             {/* Bottom Security Guarantee */}
             <div className="flex items-center justify-between text-[11px] text-slate-400 px-1 w-full pt-0.5">
@@ -604,182 +260,29 @@ export function PaymentMethodScreen({
           </div>
 
           {/* RIGHT COLUMN: Compact Sticky Order Summary Card */}
-          <div className="flex flex-col items-start w-full lg:w-[380px] shrink-0 sticky top-14">
-            <div className="bg-white border border-[#e2e8f0] rounded-xl p-4 w-full shadow-md shadow-slate-200/50 flex flex-col gap-2.5">
-              
-              {/* Header */}
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <h2 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-sm md:text-base">
-                  Tóm tắt đơn hàng
-                </h2>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
-                  {periodLabel}
-                </span>
-              </div>
-
-              {/* Package Details */}
-              <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-2.5 flex flex-col gap-1.5">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h3 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-sm">
-                      {pkg.name}
-                    </h3>
-                    <p className="text-[11px] text-slate-500">{pkg.tagline}</p>
-                  </div>
-                </div>
-
-                {pkg.description && (
-                  <p className="text-[11px] text-slate-600 leading-snug border-t border-slate-200/60 pt-1.5">
-                    {pkg.description}
-                  </p>
-                )}
-
-                {/* Key features checklist */}
-                {pkg.features && pkg.features.length > 0 && (
-                  <div className="flex flex-col gap-1 pt-1.5 border-t border-slate-200/60">
-                    {pkg.features.slice(0, 3).map((f: string, idx: number) => (
-                      <div key={idx} className="flex items-start gap-1.5 text-[11px] text-slate-700">
-                        <span className="text-teal-600 font-bold shrink-0">✓</span>
-                        <span className="line-clamp-1">{f}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Activation quick info */}
-              {!isProduct && (
-                <div className="bg-slate-50/60 border border-slate-200/60 rounded-lg p-2 flex justify-between items-center text-[11px]">
-                  <div className="flex items-center gap-1">
-                    <span className="text-slate-400">Hội viên:</span>
-                    <span className="font-semibold text-slate-900 truncate max-w-[130px]">
-                      {formData?.fullName || "Khách hàng"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-slate-400">Ngày kích hoạt:</span>
-                    <span className="font-semibold text-slate-900">
-                      {formData?.startDate ? formData.startDate.split("-").reverse().join("/") : "Hôm nay"}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Promo code voucher field */}
-              <div className="flex flex-col gap-1">
-                <div className="flex gap-1.5">
-                  <input
-                    type="text"
-                    value={promoCode}
-                    onChange={(e) => setPromoCode(e.target.value)}
-                    placeholder="Mã ưu đãi (VD: SPORT10)"
-                    className="flex-1 px-2.5 py-1 rounded-lg border border-slate-300 focus:border-teal-500 outline-none text-xs text-slate-800 uppercase"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleApplyPromo}
-                    className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs transition-all cursor-pointer shrink-0"
-                  >
-                    Áp dụng
-                  </button>
-                </div>
-                {promoMessage && (
-                  <p
-                    className={`text-[10px] font-medium ${
-                      promoDiscount > 0 ? "text-emerald-600" : "text-red-500"
-                    }`}
-                  >
-                    {promoMessage}
-                  </p>
-                )}
-              </div>
-
-              {/* Price Breakdown */}
-              <div className="border-t border-slate-200 pt-2 flex flex-col gap-1 text-[11px]">
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Giá niêm yết</span>
-                  <span className="font-semibold text-slate-800">{fmt(listPrice)}</span>
-                </div>
-
-                {discount > 0 && (
-                  <div className="flex justify-between items-center text-emerald-600">
-                    <span>Ưu đãi gói hội viên</span>
-                    <span className="font-bold">-{fmt(discount)}</span>
-                  </div>
-                )}
-
-                {promoDiscount > 0 && (
-                  <div className="flex justify-between items-center text-emerald-600">
-                    <span>Voucher giảm giá</span>
-                    <span className="font-bold">-{fmt(promoDiscount)}</span>
-                  </div>
-                )}
-
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Phí dịch vụ & Quản lý</span>
-                  <span className="font-semibold text-emerald-600">Miễn phí</span>
-                </div>
-              </div>
-
-              {/* Total Payment */}
-              <div className="border-t border-dashed border-slate-200 pt-2 flex items-baseline justify-between">
-                <div>
-                  <span className="block text-[11px] font-semibold text-slate-700">Tổng thanh toán</span>
-                  <span className="block text-[9px] text-slate-400">Đã bao gồm thuế phí</span>
-                </div>
-                <span className="font-['Inter:Extra_Bold'] font-extrabold text-teal-600 text-xl tracking-tight">
-                  {fmt(finalTotal)}
-                </span>
-              </div>
-
-              {/* Terms checkbox */}
-              <label className="flex items-start gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={agreedTerms}
-                  onChange={(e) => setAgreedTerms(e.target.checked)}
-                  className="mt-0.5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer"
-                />
-                <span className="text-[10px] text-slate-500 leading-3.5">
-                  Tôi đồng ý với{" "}
-                  <a href="#rules" className="text-teal-600 underline font-medium" target="_blank" rel="noreferrer">
-                    Điều khoản dịch vụ
-                  </a>{" "}
-                  và Quy chế hội viên SportCenter.
-                </span>
-              </label>
-
-              {/* Big Action CTA Button */}
-              <button
-                type="button"
-                disabled={!agreedTerms}
-                onClick={onNext}
-                className={`w-full py-2.5 rounded-xl font-['Inter:Bold'] font-bold text-white text-xs md:text-sm shadow-sm transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                  agreedTerms
-                    ? "bg-teal-600 hover:bg-teal-700 active:scale-[0.99] shadow-teal-600/20"
-                    : "bg-slate-300 cursor-not-allowed shadow-none"
-                }`}
-              >
-                <span>
-                  {method === "counter"
-                    ? "Xác nhận đặt lịch tại quầy →"
-                    : `Xác nhận & Thanh toán ${fmt(finalTotal)} →`}
-                </span>
-              </button>
-
-              {/* Trust Footer */}
-              <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400 pt-0.5">
-                <span>🔒 SSL 256-bit</span>
-                <span>•</span>
-                <span>Kích hoạt tự động</span>
-                <span>•</span>
-                <span>Hotline: 1900 6868</span>
-              </div>
-
-            </div>
-          </div>
+          <PaymentOrderSummary
+            pkg={pkg}
+            periodLabel={periodLabel}
+            formData={formData}
+            isProduct={isProduct}
+            promoCode={promoCode}
+            onPromoCodeChange={setPromoCode}
+            onApplyPromo={handleApplyPromo}
+            promoMessage={promoMessage}
+            promoDiscount={promoDiscount}
+            listPrice={listPrice}
+            discount={discount}
+            finalTotal={finalTotal}
+            agreedTerms={agreedTerms}
+            onAgreedTermsChange={setAgreedTerms}
+            onNext={onNext}
+            method={method}
+            fmt={fmt}
+          />
         </div>
       </div>
     </div>
   );
 }
+
+export default PaymentMethodScreen;

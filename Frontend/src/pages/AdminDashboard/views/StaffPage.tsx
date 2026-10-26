@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { iSearch2, iDownload, iMore } from '../shared';
 import { UserAvatar } from '../../../components/UserAvatar';
 import { LockKeyhole, UnlockKeyhole } from 'lucide-react';
@@ -75,11 +76,12 @@ export function StaffPage() {
       });
       if (res.ok) {
         fetchStaff();
+        toast.success("Đã cập nhật trạng thái nhân sự!");
       } else {
-        alert("Cập nhật trạng thái thất bại.");
+        toast.error("Cập nhật trạng thái thất bại.");
       }
     } catch {
-      alert("Lỗi kết nối.");
+      toast.error("Lỗi kết nối máy chủ.");
     }
   };
 
@@ -99,11 +101,12 @@ export function StaffPage() {
         setShowAddModal(false);
         setFormData({ fullName: "", email: "", phoneNumber: "", password: "", roleName: "receptionist" });
         fetchStaff();
+        toast.success("Đã thêm nhân sự mới thành công!");
       } else {
-        alert("Lỗi: " + (data.message || "Không thể tạo nhân sự"));
+        toast.error("Lỗi: " + (data.message || "Không thể tạo nhân sự"));
       }
     } catch (err) {
-      alert("Lỗi kết nối khi tạo nhân sự.");
+      toast.error("Lỗi kết nối khi tạo nhân sự.");
     }
   }
 
@@ -115,7 +118,7 @@ export function StaffPage() {
 
   const handleExportCSV = () => {
     if (filtered.length === 0) {
-      alert("Không có dữ liệu để xuất!");
+      toast.warning("Không có dữ liệu để xuất!");
       return;
     }
     
