@@ -1,4 +1,5 @@
 import React, { useState, FormEvent } from 'react';
+import { toast } from 'sonner';
 import { AuthVisual } from './AuthVisual';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -28,18 +29,18 @@ export function ForgotPassword({
       const data = await res.json().catch(() => ({}))
       
       if (!res.ok) {
-        alert(data.message || "Gửi yêu cầu thất bại.")
-        setLoading(false)
-        return
+        toast.error(data.message || "Gửi yêu cầu thất bại.");
+        setLoading(false);
+        return;
       }
       
-      localStorage.setItem("reset_email", email)
-      if (data.resetToken) localStorage.setItem("reset_token_demo", data.resetToken)
-      
-      onSubmit()
+      localStorage.setItem("reset_email", email);
+      if (data.resetToken) localStorage.setItem("reset_token_demo", data.resetToken);
+      toast.success("Mã khôi phục đã được gửi về email của bạn!");
+      onSubmit();
     } catch (err) {
-      alert("Lỗi kết nối đến server API.")
-      setLoading(false)
+      toast.error("Lỗi kết nối đến server API.");
+      setLoading(false);
     }
   }
 

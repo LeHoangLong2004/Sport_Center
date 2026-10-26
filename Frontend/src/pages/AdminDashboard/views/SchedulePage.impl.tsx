@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"; import { CreateClassModal } from "../components/CreateClassModal"; import { ClassDetailModal } from "../components/ClassDetailModal"; import { ScheduleFilters } from "./ScheduleFilters"; import { ScheduleBookings } from "./ScheduleBookings"; import { ScheduleHeader, type ScheduleTab } from "./ScheduleHeader";
+import React, { useState, useEffect } from "react"; import { toast } from "sonner"; import { CreateClassModal } from "../components/CreateClassModal"; import { ClassDetailModal } from "../components/ClassDetailModal"; import { ScheduleFilters } from "./ScheduleFilters"; import { ScheduleBookings } from "./ScheduleBookings"; import { ScheduleHeader, type ScheduleTab } from "./ScheduleHeader";
 import { ScheduleCalendarView } from "./ScheduleCalendarView"; export function SchedulePage({ initialTab = "calendar" }: { initialTab?: ScheduleTab } = {}) { const days = [ "Thứ 2", "Thứ 3", "Thứ 4",
 "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật", ]; const hours = Array.from({ length: 15 }, (_, index) =>
 `${String(index + 6).padStart(2, "0")}:00`, ); const [classes, setClasses] = useState<any[]>([]); const [showCreateModal, setShowCreateModal] = useState(false); const [selectedClassId, setSelectedClassId] = useState<string | null>(null); const [editClassData, setEditClassData] = useState<any>(null);
@@ -45,15 +45,15 @@ if (searchQuery.trim()) { const q = searchQuery.toLowerCase(); classesThisWeek =
 ); } if (selectedRooms.length > 0) { classesThisWeek = classesThisWeek.filter((c) => selectedRooms.some((r) => { const classRoom = String(c.room || "").trim().toLowerCase();
 const selectedRoom = r.trim().toLowerCase(); const classRoomBase = classRoom.split(" (")[0]; const selectedRoomBase = selectedRoom.split(" (")[0]; return classRoom === selectedRoom || classRoomBase === selectedRoomBase; }), );
 } const handleApprove = async (id: string) => { try { const token = localStorage.getItem("token"); const res = await fetch(`/api/bookings/${id}/approve`, { method: "PUT",
-headers: { Authorization: `Bearer ${token}` }, }); if (res.ok) { fetchBookings(); } } catch (error) {
-console.error("Approve failed:", error); } }; const handleReject = async (id: string) => { try { const token = localStorage.getItem("token");
-const res = await fetch(`/api/bookings/${id}/reject`, { method: "PUT", headers: { Authorization: `Bearer ${token}` }, }); if (res.ok) { fetchBookings();
-} } catch (error) { console.error("Reject failed:", error); } }; const pendingClassProposals = classes.filter(
+headers: { Authorization: `Bearer ${token}` }, }); if (res.ok) { fetchBookings(); toast.success("Đã duyệt đặt chỗ thành công!"); } else { toast.error("Không thể duyệt đặt chỗ."); } } catch (error) {
+console.error("Approve failed:", error); toast.error("Không thể duyệt đặt chỗ."); } }; const handleReject = async (id: string) => { try { const token = localStorage.getItem("token");
+const res = await fetch(`/api/bookings/${id}/reject`, { method: "PUT", headers: { Authorization: `Bearer ${token}` }, }); if (res.ok) { fetchBookings(); toast.success("Đã từ chối đặt chỗ.");
+} else { toast.error("Không thể từ chối đặt chỗ."); } } catch (error) { console.error("Reject failed:", error); toast.error("Không thể từ chối đặt chỗ."); } }; const pendingClassProposals = classes.filter(
 (item) => item.approvalStatus === "pending", ); const filteredClassProposals = pendingClassProposals.filter((item) => { const query = proposalSearch.trim().toLowerCase(); if (!query) return true; return [item.name, item.sport, item.coach, item.room]
 .filter(Boolean) .some((value) => String(value).toLowerCase().includes(query)); }); const handleClassApproval = async (id: string, action: "approve" | "reject"): Promise<boolean> => { try { const token = localStorage.getItem("token");
 const res = await fetch(`/api/classes/${id}/${action}`, { method: "PUT", headers: { Authorization: `Bearer ${token}` }, }); if (!res.ok) { const contentType = res.headers.get("content-type") || "";
 const body = contentType.includes("application/json") ? await res.json().catch(() => ({})) : {}; const errorMessage = body.message || body.detail || body.title; throw new Error(errorMessage || `Không thể xử lý đề xuất lớp học (HTTP ${res.status}).`); }
-await fetchClasses(); return true; } catch (error) { console.error("Class approval action failed:", error); window.alert(error instanceof Error ? error.message : "Không thể xử lý đề xuất lớp học."); return false;
+await fetchClasses(); toast.success(action === "approve" ? "Đã duyệt đề xuất lớp học thành công!" : "Đã từ chối đề xuất lớp học!"); return true; } catch (error) { console.error("Class approval action failed:", error); toast.error(error instanceof Error ? error.message : "Không thể xử lý đề xuất lớp học."); return false;
 } }; return ( <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto"> <ScheduleHeader activeTab={activeTab}
 onTabChange={setActiveTab} onCreate={() => setShowCreateModal(true)} proposalCount={pendingClassProposals.length} /> {showCreateModal && ( <CreateClassModal
 onClose={() => { setShowCreateModal(false); fetchClasses(); }} /> )}

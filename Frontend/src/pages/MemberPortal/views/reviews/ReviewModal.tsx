@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { Star, X } from "lucide-react";
+import { toast } from "sonner";
 
 export interface ReviewSessionTarget {
   sessionId: string;
@@ -53,7 +54,7 @@ export function ReviewModal({ session, onClose, onSubmit }: ReviewModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!comment.trim()) {
-      alert("Vui lòng nhập cảm nhận hoặc góp ý cho Huấn luyện viên.");
+      toast.error("Vui lòng nhập cảm nhận hoặc góp ý cho Huấn luyện viên.");
       return;
     }
 
@@ -68,9 +69,10 @@ export function ReviewModal({ session, onClose, onSubmit }: ReviewModalProps) {
         tags: selectedTags,
         comment: comment.trim(),
       });
+      toast.success("Cảm ơn bạn đã gửi đánh giá buổi tập!");
       onClose();
     } catch {
-      alert("Có lỗi xảy ra khi lưu đánh giá. Vui lòng thử lại!");
+      toast.error("Có lỗi xảy ra khi lưu đánh giá. Vui lòng thử lại!");
     } finally {
       setIsSubmitting(false);
     }

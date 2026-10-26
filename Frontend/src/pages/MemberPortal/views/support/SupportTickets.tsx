@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
 import type { MemberSupportTicketItem } from "../../types";
 import {
   CheckCircle2,
@@ -21,10 +22,19 @@ export const SupportTickets: React.FC<SupportTicketsProps> = ({ tickets, onCreat
   const [ticketSubject, setTicketSubject] = useState("");
   const [ticketContent, setTicketContent] = useState("");
 
+  React.useEffect(() => {
+    if (!isModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsModalOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isModalOpen]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!ticketSubject.trim() || !ticketContent.trim()) {
-      alert("Vui lòng nhập đầy đủ tiêu đề và nội dung yêu cầu.");
+      toast.error("Vui lòng nhập đầy đủ tiêu đề và nội dung yêu cầu.");
       return;
     }
     const nowStr = new Date().toLocaleString("vi-VN");
@@ -37,6 +47,7 @@ export const SupportTickets: React.FC<SupportTicketsProps> = ({ tickets, onCreat
       status: "open",
     };
     onCreateTicket(newTicket);
+    toast.success("Đã gửi yêu cầu hỗ trợ thành công!");
     setIsModalOpen(false);
     setTicketSubject("");
     setTicketContent("");
@@ -111,8 +122,16 @@ export const SupportTickets: React.FC<SupportTicketsProps> = ({ tickets, onCreat
       {/* Create Ticket Modal */}
       {isModalOpen &&
         createPortal(
-          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden flex flex-col">
+          <div
+            className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setIsModalOpen(false);
+            }}
+          >
+            <div
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                   Gửi yêu cầu hỗ trợ đến Ban Quản lý

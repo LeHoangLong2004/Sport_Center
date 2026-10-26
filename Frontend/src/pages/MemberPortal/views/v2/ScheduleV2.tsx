@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Navigate } from "./types";
 import { Shell } from "./MemberShellV2";
 import { MemberScheduleGrid, type ScheduleEvent } from "./MemberScheduleGrid";
@@ -89,7 +90,7 @@ export function Schedule({ onNavigate }: { onNavigate: Navigate }) {
             }),
           );
         } else if (response.status === 401 || response.status === 403) {
-          alert("Phiên đăng nhập đã hết hạn hoặc bạn chưa đăng nhập. Vui lòng đăng nhập lại để xem lịch!");
+          toast.error("Phiên đăng nhập đã hết hạn hoặc bạn chưa đăng nhập. Vui lòng đăng nhập lại để xem lịch!");
         }
       } catch (error) {
         console.error("Failed to fetch schedule", error);

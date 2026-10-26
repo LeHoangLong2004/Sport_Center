@@ -10,13 +10,35 @@ interface Props {
 
 const statusLabel: Record<string, string> = {
   pending: "Chờ duyệt",
+  substitute_accepted: "HLV thay thế đã nhận (Chờ duyệt)",
+  substitute_declined: "HLV thay thế từ chối",
   approved: "Đã duyệt",
   rejected: "Từ chối",
 };
 
 export function CoachScheduleRequestsSection({ requests, loading, onAction }: Props) {
   const [note, setNote] = useState<Record<string, string>>({});
-  const pending = useMemo(() => requests.filter((item) => item.status.toLowerCase() === "pending"), [requests]);
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
+
+  const pending = useMemo(
+    () =>
+      requests.filter(
+        (item) =>
+          item.status.toLowerCase() === "pending" ||
+          item.status.toLowerCase() === "substitute_accepted",
+      ),
+    [requests],
+  );
+
+  const handleTriggerAction = async (id: string, action: "approve" | "reject", reason: string) => {
+    if (submittingId) return;
+    setSubmittingId(id);
+    try {
+      await onAction(id, action, reason);
+    } finally {
+      setSubmittingId(null);
+    }
+  };
 
   return (
     <section className="coach-schedule-requests flex flex-col gap-5 pt-2">
@@ -31,7 +53,10 @@ export function CoachScheduleRequestsSection({ requests, loading, onAction }: Pr
       ) : (
         <div className="grid gap-4">
           {requests.map((request) => {
-            const isPending = request.status.toLowerCase() === "pending";
+            const isPending =
+              request.status.toLowerCase() === "pending" ||
+              request.status.toLowerCase() === "substitute_accepted";
+            const isSubmitting = submittingId === request.id;
             return (
               <article key={request.id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -58,11 +83,26 @@ export function CoachScheduleRequestsSection({ requests, loading, onAction }: Pr
                       onChange={(event) => setNote((current) => ({ ...current, [request.id]: event.target.value }))}
                       placeholder="Ghi chú cho Coach (không bắt buộc)"
                       rows={2}
-                      className="min-h-10 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                      disabled={isSubmitting}
+                      className="min-h-10 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500 disabled:opacity-60"
                     />
                     <div className="flex gap-2">
-                      <button type="button" onClick={() => void onAction(request.id, "reject", note[request.id] || "Yêu cầu đã bị Manager từ chối.")} className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50">Từ chối</button>
-                      <button type="button" onClick={() => void onAction(request.id, "approve", note[request.id] || "Yêu cầu đã được Manager duyệt.")} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Duyệt</button>
+                      <button
+                        type="button"
+                        disabled={isSubmitting}
+                        onClick={() => void handleTriggerAction(request.id, "reject", note[request.id] || "Yêu cầu đã bị Manager từ chối.")}
+                        className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      >
+                        {isSubmitting ? "Đang xử lý..." : "Từ chối"}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isSubmitting}
+                        onClick={() => void handleTriggerAction(request.id, "approve", note[request.id] || "Yêu cầu đã được Manager duyệt.")}
+                        className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      >
+                        {isSubmitting ? "Đang duyệt..." : "Duyệt"}
+                      </button>
                     </div>
                   </div>
                 )}

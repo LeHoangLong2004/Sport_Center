@@ -10,6 +10,7 @@ import type {
   MockNotification,
   AssessmentRecord,
   ScheduleChangeRequest,
+  SubstituteInvitation,
   AvailabilitySlot,
   SportOption,
   FacilityOption,
@@ -37,6 +38,7 @@ export type {
   MockNotification,
   AssessmentRecord,
   ScheduleChangeRequest,
+  SubstituteInvitation,
   AvailabilitySlot,
   SportOption,
   FacilityOption,
@@ -367,6 +369,29 @@ export const CoachAPI = {
       method: 'POST',
       body: JSON.stringify(data)
     });
+  },
+  getSubstituteInvitations: async (): Promise<SubstituteInvitation[]> => {
+    try {
+      const res = await fetchApi('/coach/substitute-invitations');
+      return Array.isArray(res) ? res : [];
+    } catch {
+      return [];
+    }
+  },
+  respondSubstituteInvitation: async (id: string, action: "accept" | "reject", note?: string) => {
+    return fetchApi(`/coach/substitute-invitations/${id}/respond`, {
+      method: 'PUT',
+      body: JSON.stringify({ action, note })
+    });
+  },
+  getCoaches: async (sportId?: string): Promise<Array<{ id: string; fullName: string; specialty?: string; avatarUrl?: string }>> => {
+    try {
+      const url = sportId ? `/coaches?sportId=${sportId}` : '/coaches';
+      const res = await fetchApi(url);
+      return Array.isArray(res) ? res : [];
+    } catch {
+      return [];
+    }
   },
 
   // 10. PT 1-1 Availability Slots

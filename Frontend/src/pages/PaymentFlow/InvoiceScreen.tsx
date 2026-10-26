@@ -1,4 +1,5 @@
 import React from "react";
+import { toast } from "sonner";
 import { A } from "./shared";
 import { useApiResource } from "../../hooks/useApiResource";
 import { type InvoiceResponse } from "../../hooks/flow3Api";
@@ -16,9 +17,9 @@ export function InvoiceScreen({ onBack }: { onBack: () => void }) {
     if (!invoiceId) return;
     try {
       await apiPost(`/api/payments/${invoiceId}/send-email`);
-      alert("Đã gửi hóa đơn qua email.");
+      toast.success("Đã gửi hóa đơn qua email thành công!");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Không gửi được email hóa đơn.");
+      toast.error(err instanceof Error ? err.message : "Không gửi được email hóa đơn.");
     }
   };
 
@@ -50,7 +51,7 @@ export function InvoiceScreen({ onBack }: { onBack: () => void }) {
                 if (invoiceId) {
                   window.open(`/api/payments/${invoiceId}/export-pdf`, '_blank');
                 } else {
-                  alert("Không tìm thấy mã hóa đơn!");
+                  toast.error("Không tìm thấy mã hóa đơn!");
                 }
               }}
               className="bg-teal-500 disabled:opacity-50 flex gap-2 items-center px-4 py-[10px] rounded-[6px] font-['Inter'] font-semibold text-white text-[13px] hover:bg-teal-600 transition-colors">
