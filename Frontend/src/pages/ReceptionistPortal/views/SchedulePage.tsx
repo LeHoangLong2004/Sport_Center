@@ -27,9 +27,11 @@ import {
   BookOpen,
 } from "lucide-react";
 import { toast } from "sonner";
+import { DateInput } from "../../../components/DateInput";
 
 interface Appointment {
   id: string;
+  date?: string;
   time: string;
   title: string;
   customerName: string;
@@ -78,6 +80,29 @@ const TIME_SLOTS = [
 ];
 
 export function SchedulePage() {
+  const getTodayIso = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  };
+
+  const getTomorrowIso = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+
+  const isSlotInPast = (slotTime: string) => {
+    if (selectedDate !== getTodayIso()) return false;
+    const now = new Date();
+    const parts = slotTime.split(":");
+    if (parts.length < 2) return false;
+    const h = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    const slotDate = new Date();
+    slotDate.setHours(h, m, 0, 0);
+    return slotDate < now;
+  };
+
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -88,6 +113,7 @@ export function SchedulePage() {
   const [statusFilter, setStatusFilter] = useState<
     "all" | "Đang chờ khách" | "Đã hoàn tất" | "Đã hủy"
   >("all");
+  const [dateFilter, setDateFilter] = useState<"all" | "today" | "tomorrow">("all");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Modal State
@@ -107,12 +133,25 @@ export function SchedulePage() {
   const [isCustomService, setIsCustomService] = useState(false);
   const [customTitle, setCustomTitle] = useState("");
   const [selectedCoachId, setSelectedCoachId] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayIso());
+  const [dateQuickChoice, setDateQuickChoice] = useState<"today" | "tomorrow" | "custom">("today");
   const [selectedTime, setSelectedTime] = useState("09:00");
   const [isCustomTime, setIsCustomTime] = useState(false);
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const memberDropdownRef = useRef<HTMLDivElement>(null);
+  const hiddenDateInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-switch to next available time slot if selectedTime is in the past for today
+  useEffect(() => {
+    if (selectedDate === getTodayIso()) {
+      if (isSlotInPast(selectedTime)) {
+        const nextAvailable = TIME_SLOTS.find((s) => !isSlotInPast(s));
+        if (nextAvailable) setSelectedTime(nextAvailable);
+      }
+    }
+  }, [selectedDate]);
 
   // Fetch appointments
   const fetchAppointments = async () => {
@@ -357,12 +396,38 @@ export function SchedulePage() {
       return;
     }
 
+    if (!selectedDate) {
+      setFormError("Vui lòng chọn hoặc nhập ngày hẹn hợp lệ theo định dạng dd/mm/yyyy.");
+      return;
+    }
+
+    const todayIso = getTodayIso();
+    if (selectedDate < todayIso) {
+      setFormError("Ngày hẹn không được trước ngày hôm nay.");
+      return;
+    }
+
+    if (selectedDate === todayIso) {
+      const parts = selectedTime.split(":");
+      if (parts.length >= 2) {
+        const h = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        const slotDate = new Date();
+        slotDate.setHours(h, m, 0, 0);
+        if (slotDate < new Date()) {
+          setFormError(`Khung giờ ${selectedTime} hôm nay đã trôi qua. Vui lòng chọn khung giờ khác.`);
+          return;
+        }
+      }
+    }
+
     setSubmitting(true);
     try {
       const response = await fetch("/api/appointments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          date: selectedDate,
           time: selectedTime,
           title: finalTitle,
           customerName: finalCustomerName,
@@ -386,6 +451,8 @@ export function SchedulePage() {
       setSelectedMember(null);
       setCustomTitle("");
       setIsCustomService(false);
+      setSelectedDate(getTodayIso());
+      setDateQuickChoice("today");
       setFormError("");
       fetchAppointments();
     } catch (err) {
@@ -398,21 +465,32 @@ export function SchedulePage() {
 
   // Filtered Appointments
   const filteredAppointments = useMemo(() => {
+    const todayIso = getTodayIso();
+    const tomorrowIso = getTomorrowIso();
+
     return appointments
       .filter((a) => {
         if (statusFilter !== "all" && a.status !== statusFilter) return false;
+        if (dateFilter === "today" && (a.date || todayIso) !== todayIso) return false;
+        if (dateFilter === "tomorrow" && a.date !== tomorrowIso) return false;
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase().trim();
           const matchCustomer = a.customerName?.toLowerCase().includes(q);
           const matchCoach = a.coachName?.toLowerCase().includes(q);
           const matchTitle = a.title?.toLowerCase().includes(q);
           const matchTime = a.time?.toLowerCase().includes(q);
-          return matchCustomer || matchCoach || matchTitle || matchTime;
+          const matchDate = a.date?.toLowerCase().includes(q);
+          return matchCustomer || matchCoach || matchTitle || matchTime || matchDate;
         }
         return true;
       })
-      .sort((a, b) => a.time.localeCompare(b.time));
-  }, [appointments, statusFilter, searchQuery]);
+      .sort((a, b) => {
+        const dateA = a.date || todayIso;
+        const dateB = b.date || todayIso;
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        return a.time.localeCompare(b.time);
+      });
+  }, [appointments, statusFilter, dateFilter, searchQuery]);
 
   // Statistics
   const stats = useMemo(() => {
@@ -601,24 +679,63 @@ export function SchedulePage() {
           })}
         </div>
 
-        {/* Compact Search Box */}
-        <div className="relative w-full sm:w-72">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Tìm theo khách, SĐT, HLV..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-7 py-1 text-xs bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:border-blue-500 focus:bg-white transition"
-          />
-          {searchQuery && (
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          {/* Quick Date Filters */}
+          <div className="flex items-center gap-0.5 bg-slate-100 p-0.5 rounded-md text-[11px] font-semibold shrink-0">
             <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+              type="button"
+              onClick={() => setDateFilter("all")}
+              className={`px-2 py-0.5 rounded transition cursor-pointer ${
+                dateFilter === "all"
+                  ? "bg-white text-blue-700 shadow-2xs font-bold"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
             >
-              <X className="w-3 h-3" />
+              Tất cả ngày
             </button>
-          )}
+            <button
+              type="button"
+              onClick={() => setDateFilter("today")}
+              className={`px-2 py-0.5 rounded transition cursor-pointer ${
+                dateFilter === "today"
+                  ? "bg-white text-blue-700 shadow-2xs font-bold"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Hôm nay
+            </button>
+            <button
+              type="button"
+              onClick={() => setDateFilter("tomorrow")}
+              className={`px-2 py-0.5 rounded transition cursor-pointer ${
+                dateFilter === "tomorrow"
+                  ? "bg-white text-blue-700 shadow-2xs font-bold"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Ngày mai
+            </button>
+          </div>
+
+          {/* Compact Search Box */}
+          <div className="relative w-full sm:w-56">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Tìm khách, SĐT, HLV..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-7 py-1 text-xs bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:border-blue-500 focus:bg-white transition"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -663,9 +780,19 @@ export function SchedulePage() {
                   >
                     {/* Left: Time + Main Info */}
                     <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                      {/* Compact Time Badge */}
-                      <div className="flex flex-col items-center justify-center w-12 py-1 bg-slate-900 text-white rounded font-mono text-xs font-bold shrink-0">
+                      {/* Compact Time & Date Badge */}
+                      <div className="flex flex-col items-center justify-center w-14 py-1 px-1 bg-slate-900 text-white rounded font-mono text-xs font-bold shrink-0 text-center">
                         <span>{slot.time}</span>
+                        <span className="text-[9px] text-slate-300 font-sans font-medium">
+                          {(() => {
+                            const todayIso = getTodayIso();
+                            const tomorrowIso = getTomorrowIso();
+                            if (!slot.date || slot.date === todayIso) return "Hôm nay";
+                            if (slot.date === tomorrowIso) return "Ngày mai";
+                            const parts = slot.date.split("-");
+                            return parts.length === 3 ? `${parts[2]}/${parts[1]}` : slot.date;
+                          })()}
+                        </span>
                       </div>
 
                       <div className="flex flex-col min-w-0 flex-1">
@@ -1087,11 +1214,115 @@ export function SchedulePage() {
                   </select>
                 </div>
 
-                {/* 4. Time Selection */}
+                {/* 4. Date Selection */}
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-slate-700 text-[11px] uppercase tracking-wider">
-                      4. Khung giờ hẹn *
+                      4. Ngày hẹn *
+                    </span>
+                    <span className="text-[11px] text-blue-600 font-medium">
+                      {selectedDate ? (
+                        (() => {
+                          const parts = selectedDate.split("-");
+                          return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : selectedDate;
+                        })()
+                      ) : ""}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDateQuickChoice("today");
+                        setSelectedDate(getTodayIso());
+                      }}
+                      className={`py-1.5 px-2 rounded text-[11px] font-semibold border transition cursor-pointer text-center ${
+                        dateQuickChoice === "today"
+                          ? "bg-slate-900 text-white border-slate-900 shadow-2xs font-bold"
+                          : "bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300"
+                      }`}
+                    >
+                      Hôm nay
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDateQuickChoice("tomorrow");
+                        setSelectedDate(getTomorrowIso());
+                      }}
+                      className={`py-1.5 px-2 rounded text-[11px] font-semibold border transition cursor-pointer text-center ${
+                        dateQuickChoice === "tomorrow"
+                          ? "bg-slate-900 text-white border-slate-900 shadow-2xs font-bold"
+                          : "bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300"
+                      }`}
+                    >
+                      Ngày mai
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDateQuickChoice("custom");
+                      }}
+                      className={`py-1.5 px-2 rounded text-[11px] font-semibold border transition cursor-pointer text-center ${
+                        dateQuickChoice === "custom"
+                          ? "bg-slate-900 text-white border-slate-900 shadow-2xs font-bold"
+                          : "bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300"
+                      }`}
+                    >
+                      Chọn ngày khác
+                    </button>
+                  </div>
+
+                  {dateQuickChoice === "custom" && (
+                    <div className="relative flex items-center">
+                      <DateInput
+                        value={selectedDate}
+                        onChange={(iso) => setSelectedDate(iso)}
+                        placeholder="dd/mm/yyyy"
+                        className="w-full mt-0.5 pl-3 pr-9 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-blue-500 bg-white font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (hiddenDateInputRef.current) {
+                            try {
+                              hiddenDateInputRef.current.showPicker();
+                            } catch {
+                              hiddenDateInputRef.current.focus();
+                            }
+                          }
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-blue-600 cursor-pointer transition"
+                        title="Mở lịch chọn ngày"
+                      >
+                        <Calendar className="w-4 h-4" />
+                      </button>
+                      <input
+                        ref={hiddenDateInputRef}
+                        type="date"
+                        min={getTodayIso()}
+                        value={selectedDate}
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            setSelectedDate(e.target.value);
+                          }
+                        }}
+                        className="sr-only"
+                        tabIndex={-1}
+                        aria-hidden="true"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* 5. Time Selection */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-700 text-[11px] uppercase tracking-wider">
+                      5. Khung giờ hẹn *
                     </span>
                     <button
                       type="button"
@@ -1114,16 +1345,21 @@ export function SchedulePage() {
                     <div className="grid grid-cols-5 gap-1.5">
                       {TIME_SLOTS.map((slot) => {
                         const isSelected = selectedTime === slot;
+                        const inPast = isSlotInPast(slot);
                         return (
                           <button
                             key={slot}
                             type="button"
-                            onClick={() => setSelectedTime(slot)}
-                            className={`py-1 rounded text-[11px] font-mono font-bold border transition cursor-pointer ${
-                              isSelected
-                                ? "bg-slate-900 text-white border-slate-900"
-                                : "bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300"
+                            disabled={inPast}
+                            onClick={() => !inPast && setSelectedTime(slot)}
+                            className={`py-1 rounded text-[11px] font-mono font-bold border transition ${
+                              inPast
+                                ? "bg-slate-100 text-slate-300 border-slate-200 cursor-not-allowed line-through"
+                                : isSelected
+                                ? "bg-slate-900 text-white border-slate-900 shadow-2xs cursor-pointer"
+                                : "bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300 cursor-pointer"
                             }`}
+                            title={inPast ? "Khung giờ này đã trôi qua trong ngày hôm nay" : undefined}
                           >
                             {slot}
                           </button>

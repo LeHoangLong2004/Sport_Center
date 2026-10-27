@@ -43,6 +43,24 @@ export default function CoachScheduleRequestModal(props: Props) {
     submittingRequest,
   } = props;
 
+  const upcomingSessions = (allUnifiedSessions || []).filter((s) => {
+    if (!s.date) return false;
+    const cleanDate = s.date.slice(0, 10);
+    const parts = cleanDate.split("-").map(Number);
+    if (parts.length !== 3 || parts.some(isNaN)) return false;
+    const [y, m, d] = parts;
+    let hour = 0;
+    let minute = 0;
+    if (s.startTime) {
+      const timeParts = s.startTime.split(":");
+      if (timeParts.length >= 2) {
+        hour = Number(timeParts[0]) || 0;
+        minute = Number(timeParts[1]) || 0;
+      }
+    }
+    return new Date(y, m - 1, d, hour, minute).getTime() > Date.now();
+  });
+
   return (
     <>
       {/* REQUEST MODAL - CHUẨN GIỐNG 'TẠO GIÁO ÁN MỚI' */}
@@ -69,17 +87,23 @@ export default function CoachScheduleRequestModal(props: Props) {
                     <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
                       Chọn ca dạy cần điều chỉnh: <span className="text-rose-500">*</span>
                     </label>
-                    <select
-                      value={selectedSessionForRequest}
-                      onChange={(e) => setSelectedSessionForRequest(e.target.value)}
-                      className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                    >
-                      {allUnifiedSessions.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.date} ({s.startTime} - {s.endTime}) • {s.className}
-                        </option>
-                      ))}
-                    </select>
+                    {upcomingSessions.length === 0 ? (
+                      <div className="p-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 text-xs">
+                        Không có ca dạy nào trong tương lai để gửi yêu cầu điều chỉnh.
+                      </div>
+                    ) : (
+                      <select
+                        value={selectedSessionForRequest}
+                        onChange={(e) => setSelectedSessionForRequest(e.target.value)}
+                        className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                      >
+                        {upcomingSessions.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.date} ({s.startTime} - {s.endTime}) • {s.className}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
 
                   <div>
@@ -104,20 +128,6 @@ export default function CoachScheduleRequestModal(props: Props) {
                     </div>
                   </div>
 
-                  {requestType === "dạy thay" && (
-                    <div>
-                      <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                        Huấn luyện viên thay thế đề xuất:
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="VD: HLV Trần Minh Tuấn..."
-                        value={substituteCoach}
-                        onChange={(e) => setSubstituteCoach(e.target.value)}
-                        className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400 font-medium"
-                      />
-                    </div>
-                  )}
 
                   {requestType === "dời lịch" && (
                     <div className="grid grid-cols-2 gap-3">

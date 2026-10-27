@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import type { CoachScreen } from "../types";
 import { CoachAPI } from "../services/api";
 import type { MockSession, AttendanceRecord } from "../services/api";
@@ -10,9 +10,16 @@ import {
   Star,
   CalendarDays,
   Sparkles,
+  CalendarCheck,
 } from "lucide-react";
 import { TodaySessionsList } from "./dashboard/TodaySessionsList";
 import { DashboardSidebar } from "./dashboard/DashboardSidebar";
+import {
+  AppointmentService,
+  Appointment,
+  APPOINTMENT_UPDATED_EVENT,
+} from "../../../services/appointmentService";
+import { toast } from "sonner";
 
 interface Props {
   navigateTo: (s: CoachScreen, extra?: { sessionId?: string }) => void;
@@ -43,23 +50,35 @@ export default function CoachDashboard({ navigateTo }: Props) {
 
   const [todaySessions, setTodaySessions] = useState<MockSession[]>([]);
   const [attendances, setAttendances] = useState<Record<string, AttendanceRecord[]>>({});
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [dashboardStats, setDashboardStats] = useState<{ averageRating: number | null; reviewCount: number }>({
     averageRating: null,
     reviewCount: 0,
   });
   const [loading, setLoading] = useState(true);
 
+  const loadAppointments = useCallback(async () => {
+    try {
+      const apptData = await AppointmentService.getForCoach(coachName);
+      setAppointments(apptData);
+    } catch (e) {
+      console.warn("Lỗi tải lịch hẹn lễ tân:", e);
+    }
+  }, [coachName]);
+
   useEffect(() => {
     async function loadData() {
       setLoading(true);
       try {
-        const [allSessions, stats] = await Promise.all([
+        const [allSessions, stats, apptData] = await Promise.all([
           CoachAPI.getSchedule(),
           CoachAPI.getDashboardStats(),
+          AppointmentService.getForCoach(coachName),
         ]);
         const todayStr = new Date().toISOString().split("T")[0];
         const todays = allSessions.filter((s: MockSession) => s.date === todayStr);
         setTodaySessions(todays);
+        setAppointments(apptData);
         setDashboardStats({
           averageRating: typeof stats?.averageRating === "number" ? stats.averageRating : null,
           reviewCount: Number(stats?.reviewCount || 0),
@@ -88,7 +107,31 @@ export default function CoachDashboard({ navigateTo }: Props) {
       }
     }
     loadData();
-  }, []);
+
+    const handleApptUpdate = () => {
+      void loadAppointments();
+    };
+    window.addEventListener(APPOINTMENT_UPDATED_EVENT, handleApptUpdate);
+    return () => {
+      window.removeEventListener(APPOINTMENT_UPDATED_EVENT, handleApptUpdate);
+    };
+  }, [coachName, loadAppointments]);
+
+  const handleUpdateAppointmentStatus = async (id: string, newStatus: string) => {
+    const res = await AppointmentService.updateStatus(id, newStatus);
+    if (res.success) {
+      setAppointments((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
+      );
+      toast.success(
+        newStatus === "Đã hoàn tất"
+          ? "Đã xác nhận tiếp đón khách thành công!"
+          : "Đã cập nhật trạng thái lịch hẹn"
+      );
+    } else {
+      toast.error(res.error || "Không thể cập nhật");
+    }
+  };
 
   const totalRegistrations = useMemo(
     () => todaySessions.reduce((s, c) => s + (c.registeredMemberIds?.length ?? (c as any).registeredCount ?? 0), 0),
@@ -135,7 +178,9 @@ export default function CoachDashboard({ navigateTo }: Props) {
               Xin chào, {coachName} 👋
             </h1>
             <p className="text-sm text-slate-300 max-w-xl leading-relaxed">
-              Chào mừng bạn trở lại! Hôm nay bạn có <strong className="text-orange-400">{todaySessions.length} ca dạy</strong> được xếp lịch ({totalRegistrations} học viên). Hãy duy trì năng lượng và đồng hành cùng học viên nhé!
+              Chào mừng bạn trở lại! Hôm nay bạn có <strong className="text-orange-400">{todaySessions.length} ca dạy</strong> ({totalRegistrations} học viên){appointments.length > 0 ? (
+                <> và <strong className="text-amber-400">{appointments.length} lịch hẹn tiếp đón khách từ Lễ tân</strong></>
+              ) : ""}. Hãy duy trì năng lượng và đồng hành cùng học viên nhé!
             </p>
           </div>
 
@@ -168,15 +213,16 @@ export default function CoachDashboard({ navigateTo }: Props) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           icon={<Calendar className="w-5 h-5 text-slate-700 dark:text-slate-300" />}
-          label="Buổi dạy hôm nay"
-          value={todaySessions.length}
-          sub="buổi học trong ngày"
+          label="Lịch làm việc hôm nay"
+          value={todaySessions.length + appointments.length}
+          sub={appointments.length > 0 ? `${todaySessions.length} lớp nhóm • ${appointments.length} hẹn lễ tân` : "buổi học trong ngày"}
+          highlight={appointments.length > 0}
         />
         <StatCard
           icon={<Users className="w-5 h-5 text-slate-700 dark:text-slate-300" />}
           label="Lượt học viên"
-          value={totalRegistrations}
-          sub="đã đăng ký tham gia"
+          value={totalRegistrations + appointments.length}
+          sub="đã đăng ký & đặt hẹn"
         />
         <StatCard
           icon={<CheckCircle2 className="w-5 h-5 text-slate-700 dark:text-slate-300" />}
@@ -200,6 +246,8 @@ export default function CoachDashboard({ navigateTo }: Props) {
           loading={loading}
           todaySessions={todaySessions}
           attendances={attendances}
+          appointments={appointments}
+          onUpdateAppointmentStatus={handleUpdateAppointmentStatus}
           navigateTo={navigateTo}
         />
 

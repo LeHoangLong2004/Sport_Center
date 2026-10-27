@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { iSearch2, iDownload, iMore } from '../shared';
 import { UserAvatar } from '../../../components/UserAvatar';
@@ -20,9 +21,39 @@ export function StaffPage() {
     roleName: "receptionist"
   })
 
+  // Khóa cuộn trang nền khi mở modal để UI hoàn toàn cố định vào khung nhìn
+  useEffect(() => {
+    if (!showAddModal && !statusConfirmation) return;
+    const origBody = document.body.style.overflow;
+    const origHtml = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    const scrollContainers = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        '.manager-page-content, .portal-page-enter, [class*="overflow-y-auto"]'
+      )
+    );
+    const origOverflows = scrollContainers.map((el) => ({ el, overflow: el.style.overflow }));
+    scrollContainers.forEach((el) => {
+      el.style.overflow = 'hidden';
+    });
+
+    return () => {
+      document.body.style.overflow = origBody;
+      document.documentElement.style.overflow = origHtml;
+      origOverflows.forEach(({ el, overflow }) => {
+        el.style.overflow = overflow;
+      });
+    };
+  }, [showAddModal, statusConfirmation]);
+
   const fetchStaff = () => {
     setLoading(true);
-    const token = localStorage.getItem("token");
+    const token =
+      localStorage.getItem("token") ||
+      localStorage.getItem("accessToken") ||
+      localStorage.getItem("auth_token");
     fetch("/api/users", {
       headers: { "Authorization": `Bearer ${token}` }
     })
@@ -171,65 +202,86 @@ export function StaffPage() {
         </div>
       </div>
 
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
-            <h2 className="text-xl font-bold text-[#0f172a] mb-6">Thêm nhân sự mới</h2>
-            <form onSubmit={handleAddStaff} className="flex flex-col gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-[#475569] mb-1">Họ và tên</label>
-                <input required type="text" className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-blue-500" value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} placeholder="Nguyễn Văn A" />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-[#475569] mb-1">Email</label>
-                <input required type="email" className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-blue-500" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="example@smartgym.com" />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-[#475569] mb-1">Số điện thoại</label>
-                <input required type="text" className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-blue-500" value={formData.phoneNumber} onChange={e => setFormData({...formData, phoneNumber: e.target.value})} placeholder="0987654321" />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-[#475569] mb-1">Mật khẩu</label>
-                <input required type="password" minLength={6} className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-blue-500" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder="Ít nhất 6 ký tự" />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-[#475569] mb-1">Vai trò (Role)</label>
-                <select className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-blue-500" value={formData.roleName} onChange={e => setFormData({...formData, roleName: e.target.value})}>
-                  <option value="receptionist">Lễ tân (receptionist)</option>
-                  <option value="coach">Huấn luyện viên (coach)</option>
-                  <option value="manager">Quản lý trung tâm (manager)</option>
-                </select>
-              </div>
-              <div className="flex gap-3 mt-4">
-                <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 bg-white border border-[#cbd5e1] font-semibold text-[#475569] py-2 rounded-lg hover:bg-slate-50 transition-colors">Hủy</button>
-                <button type="submit" className="flex-1 bg-[#2563eb] font-semibold text-white py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md">Lưu nhân sự</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {showAddModal &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overscroll-contain animate-in fade-in duration-150"
+            role="dialog"
+            aria-modal="true"
+          >
+            <div
+              className="fixed inset-0 -z-10"
+              onClick={() => setShowAddModal(false)}
+            />
+            <div className="relative z-10 bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
+              <h2 className="text-xl font-bold text-[#0f172a] mb-6">Thêm nhân sự mới</h2>
+              <form onSubmit={handleAddStaff} className="flex flex-col gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-[#475569] mb-1">Họ và tên</label>
+                  <input required type="text" className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-blue-500" value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} placeholder="Nguyễn Văn A" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-[#475569] mb-1">Email</label>
+                  <input required type="email" className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-blue-500" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="example@smartgym.com" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-[#475569] mb-1">Số điện thoại</label>
+                  <input required type="text" className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-blue-500" value={formData.phoneNumber} onChange={e => setFormData({...formData, phoneNumber: e.target.value})} placeholder="0987654321" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-[#475569] mb-1">Mật khẩu</label>
+                  <input required type="password" minLength={6} className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-blue-500" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder="Ít nhất 6 ký tự" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-[#475569] mb-1">Vai trò (Role)</label>
+                  <select className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-blue-500" value={formData.roleName} onChange={e => setFormData({...formData, roleName: e.target.value})}>
+                    <option value="receptionist">Lễ tân (receptionist)</option>
+                    <option value="coach">Huấn luyện viên (coach)</option>
+                    <option value="manager">Quản lý trung tâm (manager)</option>
+                  </select>
+                </div>
+                <div className="flex gap-3 mt-4">
+                  <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 bg-white border border-[#cbd5e1] font-semibold text-[#475569] py-2 rounded-lg hover:bg-slate-50 transition-colors">Hủy</button>
+                  <button type="submit" className="flex-1 bg-[#2563eb] font-semibold text-white py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md">Lưu nhân sự</button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body,
+        )}
 
-      {statusConfirmation && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/45 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="status-confirmation-title">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="flex items-start gap-4">
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
-                <span className="text-xl font-bold">!</span>
+      {statusConfirmation &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 backdrop-blur-xs p-4 overscroll-contain animate-in fade-in duration-150"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="status-confirmation-title"
+          >
+            <div
+              className="fixed inset-0 -z-10"
+              onClick={() => setStatusConfirmation(null)}
+            />
+            <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150">
+              <div className="flex items-start gap-4">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+                  <span className="text-xl font-bold">!</span>
+                </div>
+                <div>
+                  <h2 id="status-confirmation-title" className="text-lg font-bold text-slate-900">Xác nhận thay đổi trạng thái</h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Bạn có chắc muốn {statusConfirmation.currentStatus ? "khóa" : "mở khóa"} tài khoản này không?
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 id="status-confirmation-title" className="text-lg font-bold text-slate-900">Xác nhận thay đổi trạng thái</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Bạn có chắc muốn {statusConfirmation.currentStatus ? "khóa" : "mở khóa"} tài khoản này không?
-                </p>
+              <div className="mt-6 flex justify-end gap-3">
+                <button type="button" onClick={() => setStatusConfirmation(null)} className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">Hủy</button>
+                <button type="button" onClick={confirmToggleStatus} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Xác nhận</button>
               </div>
             </div>
-            <div className="mt-6 flex justify-end gap-3">
-              <button type="button" onClick={() => setStatusConfirmation(null)} className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">Hủy</button>
-              <button type="button" onClick={confirmToggleStatus} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Xác nhận</button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
 
       {/* filters */}
       <div className="flex gap-3 items-center mt-2">

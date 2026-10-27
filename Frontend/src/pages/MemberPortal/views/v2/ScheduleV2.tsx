@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Navigate } from "./types";
 import { Shell } from "./MemberShellV2";
 import { MemberScheduleGrid, type ScheduleEvent } from "./MemberScheduleGrid";
+import { AppointmentService, APPOINTMENT_UPDATED_EVENT } from "../../../../services/appointmentService";
 
 const DAYS = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
 
@@ -59,45 +60,92 @@ export function Schedule({ onNavigate }: { onNavigate: Navigate }) {
     const fetchSchedule = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("/api/schedule/my", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const userStr = localStorage.getItem("user");
+        let memberName = "";
+        let memberPhone = "";
+        if (userStr) {
+          try {
+            const u = JSON.parse(userStr);
+            memberName = u.fullName || u.name || "";
+            memberPhone = u.phoneNumber || u.phone || "";
+          } catch {}
+        }
 
-        if (response.ok) {
+        const [response, memberAppts] = await Promise.all([
+          fetch("/api/schedule/my", {
+            headers: { Authorization: `Bearer ${token}` },
+          }).catch(() => null),
+          AppointmentService.getForMember(memberName, memberPhone).catch(() => []),
+        ]);
+
+        let events: ScheduleEvent[] = [];
+
+        if (response && response.ok) {
           const data = await response.json();
-          setAllEvents(
-            data.map((item: any, index: number): ScheduleEvent => {
-              const startDate = new Date(item.startTime);
-              const type = String(item.sportType || "").toLowerCase();
-              const tone: ScheduleEvent["tone"] =
-                type.includes("pt") || item.role === "Coach"
-                  ? "orange"
-                  : type.includes("gym") || type.includes("cardio")
-                    ? "green"
-                    : "teal";
+          events = (Array.isArray(data) ? data : []).map((item: any, index: number): ScheduleEvent => {
+            const startDate = new Date(item.startTime);
+            const type = String(item.sportType || "").toLowerCase();
+            const tone: ScheduleEvent["tone"] =
+              type.includes("pt") || item.role === "Coach"
+                ? "orange"
+                : type.includes("gym") || type.includes("cardio")
+                  ? "green"
+                  : "teal";
 
-              return {
-                id: String(item.id || `${startDate.getTime()}-${index}`),
-                rawStart: startDate,
-                column: startDate.getDay() === 0 ? 7 : startDate.getDay(),
-                tone,
-                title: item.className || "Lớp học",
-                detail: item.coachName || "Coach",
-                meta: item.roomName || "Phòng tập",
-                sport: item.sportType || "Lớp nhóm",
-                status: item.bookingStatus,
-              };
-            }),
-          );
-        } else if (response.status === 401 || response.status === 403) {
+            return {
+              id: String(item.id || `${startDate.getTime()}-${index}`),
+              rawStart: startDate,
+              column: startDate.getDay() === 0 ? 7 : startDate.getDay(),
+              tone,
+              title: item.className || "Lớp học",
+              detail: item.coachName || "Coach",
+              meta: item.roomName || "Phòng tập",
+              sport: item.sportType || "Lớp nhóm",
+              status: item.bookingStatus,
+            };
+          });
+        } else if (response && (response.status === 401 || response.status === 403)) {
           toast.error("Phiên đăng nhập đã hết hạn hoặc bạn chưa đăng nhập. Vui lòng đăng nhập lại để xem lịch!");
         }
+
+        if (Array.isArray(memberAppts) && memberAppts.length > 0) {
+          const today = new Date();
+          const apptEvents: ScheduleEvent[] = memberAppts.map((appt) => {
+            const timeParts = (appt.time || "09:00").split(":");
+            const h = parseInt(timeParts[0], 10) || 9;
+            const m = parseInt(timeParts[1], 10) || 0;
+            let baseDate = today;
+            if (appt.date && /^\d{4}-\d{2}-\d{2}$/.test(appt.date)) {
+              const [y, mon, d] = appt.date.split("-").map(Number);
+              baseDate = new Date(y, mon - 1, d);
+            }
+            const apptDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), h, m);
+            return {
+              id: `appt-${appt.id}`,
+              rawStart: apptDate,
+              column: apptDate.getDay() === 0 ? 7 : apptDate.getDay(),
+              tone: "orange",
+              title: `[Lễ tân xếp] ${appt.title}`,
+              detail: appt.coachName || "Coach",
+              meta: "Khu PT 1-1 / Sảnh Lễ tân",
+              sport: "Lễ tân xếp",
+              status: appt.status,
+            };
+          });
+          events = [...events, ...apptEvents];
+        }
+
+        setAllEvents(events);
       } catch (error) {
         console.error("Failed to fetch schedule", error);
       }
     };
 
     fetchSchedule();
+    window.addEventListener(APPOINTMENT_UPDATED_EVENT, fetchSchedule);
+    return () => {
+      window.removeEventListener(APPOINTMENT_UPDATED_EVENT, fetchSchedule);
+    };
   }, []);
 
   const calendarEvents = allEvents.filter((event) => {

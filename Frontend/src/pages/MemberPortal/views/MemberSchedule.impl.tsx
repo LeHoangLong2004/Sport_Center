@@ -5,7 +5,7 @@ X, Star, PlusCircle, RotateCcw, MessageSquare, ChevronLeft,
 ChevronRight, Filter, Search, Grid3X3, List, Sparkles,
 CalendarCheck, CalendarDays, CalendarPlus, Send, Target, Dumbbell,
 ArrowRight, Info, Phone, Award, } from "lucide-react"; import { scheduleSync, type SyncedSession } from "../services/scheduleSync";
-import { CoachAvatar } from "../utils/coachAvatar"; interface Props { onNavigate: (screen: MemberScreen) => void; } type ViewMode = "list" | "week"; type TypeFilter = "all" | "group" | "pt";
+import { CoachAvatar } from "../utils/coachAvatar"; import { APPOINTMENT_UPDATED_EVENT } from "../../../services/appointmentService"; interface Props { onNavigate: (screen: MemberScreen) => void; } type ViewMode = "list" | "week"; type TypeFilter = "all" | "group" | "pt";
 type SportFilter = "all" | string; type StatusFilter = "all" | "sắp diễn ra" | "đang diễn ra" | "hoàn thành" | "đã hủy"; const DAYS_NAMES = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
 // Khung giờ hoạt động chuẩn từ 06:00 đến 22:00
 const DEFAULT_TIME_ROWS = Array.from({ length: 17 }, (_, index) => `${String(index + 6).padStart(2, "0")}:00` ); const SPORT_OPTIONS = ["all", "Gym", "Yoga", "Boxing", "Pilates", "Zumba", "Bơi", "Cardio"]; const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> = { "sắp diễn ra": {
@@ -29,10 +29,31 @@ const [viewMode, setViewMode] = useState<ViewMode>("week"); const [sportFilter, 
 const [currentMonday, setCurrentMonday] = useState<Date>(() => getMonday(new Date()));
 // 4. Modals & Interactions
 const [selectedSession, setSelectedSession] = useState<MemberSessionItem | null>(null); const [cancellingSession, setCancellingSession] = useState<MemberSessionItem | null>(null); const [cancelReason, setCancelReason] = useState(""); const [feedback, setFeedback] = useState<string | null>(null);
+
 // Load from Backend and Sync with Local
-const refreshSessions = async () => { try { const backendData = await MemberBackendAPI.getBookings(); if (Array.isArray(backendData)) { setSessions(backendData); saveMemberData(storageKey, backendData);
-return; } } catch {} const local = getSavedMemberData(storageKey, []); setSessions(local); };
-useEffect(() => { refreshSessions(); const unsub = scheduleSync.subscribe(() => { refreshSessions(); }); return unsub;
+const refreshSessions = async () => {
+  try {
+    const backendData = await MemberBackendAPI.getBookings();
+    if (Array.isArray(backendData)) {
+      setSessions(backendData);
+      saveMemberData(storageKey, backendData);
+      return;
+    }
+  } catch {}
+  const local = getSavedMemberData(storageKey, []);
+  setSessions(local);
+};
+
+useEffect(() => {
+  refreshSessions();
+  const unsub = scheduleSync.subscribe(() => {
+    refreshSessions();
+  });
+  window.addEventListener(APPOINTMENT_UPDATED_EVENT, refreshSessions);
+  return () => {
+    unsub();
+    window.removeEventListener(APPOINTMENT_UPDATED_EVENT, refreshSessions);
+  };
 }, []);
 // Lock scroll on modals
 useEffect(() => { if (cancellingSession || selectedSession) { document.body.style.overflow = "hidden"; } else { document.body.style.overflow = "unset"; }
@@ -118,11 +139,11 @@ const colDate = weekDates[di]?.dateStr; const cellSessions = weekSessions.filter
 });
 // Sắp xếp các buổi tập trong cùng ô theo giờ bắt đầu
 cellSessions.sort((a, b) => (a.startTime || "").localeCompare(b.startTime || "")); return ( <div key={di} className="p-1.5 border-r border-slate-100 dark:border-slate-800/60 last:border-0 relative space-y-1.5" >
-{cellSessions.map((s) => { const isPT = s.type === "pt"; const isCancelled = s.status === "đã hủy"; return ( <button key={s.id}
-type="button" onClick={() => setSelectedSession(s)} className={`w-full text-left p-2.5 rounded-xl border transition-all flex flex-col justify-between shadow-xs hover:shadow-md cursor-pointer ${ isPT ? "bg-amber-50/70 border-amber-200 hover:border-amber-300 dark:bg-amber-950/30 dark:border-amber-800/60" : isCancelled
+{cellSessions.map((s) => { const isAppt = s.id?.startsWith("appt-") || s.sport === "Lễ tân xếp"; const isPT = s.type === "pt"; const isCancelled = s.status === "đã hủy"; return ( <button key={s.id}
+type="button" onClick={() => setSelectedSession(s)} className={`w-full text-left p-2.5 rounded-xl border transition-all flex flex-col justify-between shadow-xs hover:shadow-md cursor-pointer ${ isAppt ? "bg-orange-50/80 border-orange-200 hover:border-orange-300 dark:bg-orange-950/30 dark:border-orange-800/60" : isPT ? "bg-amber-50/70 border-amber-200 hover:border-amber-300 dark:bg-amber-950/30 dark:border-amber-800/60" : isCancelled
 ? "opacity-60 bg-slate-50 border-slate-200 dark:bg-slate-800/40 dark:border-slate-700" : "bg-emerald-50/70 border-emerald-200 hover:border-emerald-300 dark:bg-emerald-950/30 dark:border-emerald-800/60" }`} > <div> <div className="flex items-center justify-between gap-1 mb-1">
-<span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${ isPT ? "bg-amber-200/80 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200" : "bg-emerald-200/80 text-emerald-900 dark:bg-emerald-900/60 dark:text-emerald-200" }`}
-> {isPT ? "PT 1–1" : s.sport.toUpperCase()} </span> <span className="text-[10px] text-slate-500 font-mono font-medium"> {s.startTime}{s.endTime ? ` – ${s.endTime}` : ""} </span>
+<span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${ isAppt ? "bg-orange-200/90 text-orange-950 dark:bg-orange-900/60 dark:text-orange-200" : isPT ? "bg-amber-200/80 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200" : "bg-emerald-200/80 text-emerald-900 dark:bg-emerald-900/60 dark:text-emerald-200" }`}
+> {isAppt ? "LỄ TÂN XẾP" : isPT ? "PT 1–1" : s.sport.toUpperCase()} </span> <span className="text-[10px] text-slate-500 font-mono font-medium"> {s.startTime}{s.endTime ? ` – ${s.endTime}` : ""} </span>
 </div> <div className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1"> {s.name} </div> </div> <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5 pt-1.5 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between">
 <span className="truncate max-w-[85px]">{s.room}</span> {isPT ? ( <span className="text-amber-700 dark:text-amber-400 font-semibold truncate max-w-[80px]"> {s.goal || s.coachName} </span> ) : (
 <span className="text-slate-600 dark:text-slate-300 font-medium"> {s.registeredCount || 8} HV </span> )} </div> </button>
@@ -136,10 +157,10 @@ const label = d.toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", m
 <div key={date} className="flex flex-col gap-3"> {/* Day Divider Header */} <div className="flex items-center gap-3"> <div className={`text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider ${ isToday
 ? "bg-orange-100 text-orange-800 dark:bg-orange-950/60 dark:text-orange-300 border border-orange-300 dark:border-orange-800" : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300" }`} > {label} {isToday && "• HÔM NAY"} </div>
 <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div> </div> {/* Day Sessions List */} <div className="grid grid-cols-1 gap-3"> {daySessions.map((s) => { const badge = STATUS_BADGE[s.status] || {
-label: s.status, bg: "bg-slate-100", text: "text-slate-600", }; const isPT = s.type === "pt"; return (
+label: s.status, bg: "bg-slate-100", text: "text-slate-600", }; const isAppt = s.id?.startsWith("appt-") || s.sport === "Lễ tân xếp"; const isPT = s.type === "pt"; return (
 <div key={s.id} className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all shadow-xs" > <div className="flex-1 min-w-0"> {/* Top Badges Row */}
 <div className="flex items-center gap-2.5 flex-wrap mb-1.5"> <span className="font-semibold text-base text-slate-900 dark:text-white"> {s.name} </span> <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold uppercase ${
-isPT ? "bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-950/50 dark:text-amber-300" : "bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300" }`} > {isPT ? "KÈM 1–1 (PT)" : "LỚP NHÓM"}
+isAppt ? "bg-orange-100 text-orange-900 border border-orange-300 dark:bg-orange-950/60 dark:text-orange-300" : isPT ? "bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-950/50 dark:text-amber-300" : "bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300" }`} > {isAppt ? "LỄ TÂN ĐẶT HẸN" : isPT ? "KÈM 1–1 (PT)" : "LỚP NHÓM"}
 </span> <span className="text-xs px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium"> {s.sport} </span> <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-semibold border ${badge.bg} ${badge.text}`}
 > {badge.label} </span> </div> {/* Meta Info Row */} <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400 font-medium flex-wrap">
 <span className="flex items-center gap-1.5"> <Clock className="w-3.5 h-3.5 text-slate-400" /> {s.startTime} – {s.endTime} </span> <span className="flex items-center gap-1.5"> <MapPin className="w-3.5 h-3.5 text-slate-400" />
@@ -181,8 +202,12 @@ type="button" onClick={() => setSelectedSession(null)} className="absolute top-5
 "{selectedSession.coachNote}" </p> </div> )} {/* Action Buttons */} <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
 <button type="button" onClick={() => { setSelectedSession(null); onNavigate("chat"); }}
 className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 shadow-sm" > <MessageSquare className="w-4 h-4" /> <span>Nhắn tin với HLV</span> </button> {(selectedSession.status === "sắp diễn ra" || selectedSession.status === "đang diễn ra") && (
+selectedSession.id.startsWith("appt-") ? (
+<span className="text-[11px] text-slate-500 italic px-2">Lịch do Lễ tân đặt hẹn</span>
+) : (
 <button type="button" onClick={() => { setCancellingSession(selectedSession); }} className="py-2.5 px-4 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 transition-colors"
-> Hủy lịch đặt chỗ </button> )} </div> </div>
+> Hủy lịch đặt chỗ </button> )
+)} </div> </div>
 </div>, document.body )} {/* 6. CANCEL BOOKING MODAL (PORTAL) */} {cancellingSession && createPortal(
 <div onClick={(e) => { if (e.target === e.currentTarget) setCancellingSession(null); }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200" >
 <div onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl relative space-y-4" > <button type="button"

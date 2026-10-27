@@ -5,15 +5,22 @@ export interface CoachScheduleRequest {
   id: string;
   sessionId: string;
   className: string;
+  sportName?: string;
+  roomName?: string;
   coachName: string;
+  coachId?: string;
+  substituteCoachId?: string;
   substituteCoachName?: string;
   requestType: string;
   newDate?: string;
   newTime?: string;
+  sessionTime?: string;
   reason: string;
   status: string;
   managerNote?: string;
   createdAt: string;
+  scheduleTime?: string;
+  durationMinutes?: number;
 }
 
 export function useCoachScheduleRequests(onClassesChanged: () => Promise<void>) {
@@ -53,13 +60,14 @@ export function useCoachScheduleRequests(onClassesChanged: () => Promise<void>) 
     id: string,
     action: "approve" | "reject",
     managerNote: string,
+    substituteCoachId?: string,
   ) => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(`/api/manager/coach-schedule-requests/${id}/${action}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ managerNote }),
+        body: JSON.stringify({ managerNote, substituteCoachId }),
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.message || "Không thể xử lý yêu cầu ca dạy.");

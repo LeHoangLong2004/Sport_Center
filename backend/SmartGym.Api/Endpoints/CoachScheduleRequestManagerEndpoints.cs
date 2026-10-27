@@ -28,6 +28,60 @@ public static class CoachScheduleRequestManagerEndpoints
             return Results.Ok(rows.Select(ToResponse));
         });
 
+        group.MapGet("/available-coaches", async (
+            SmartGymDbContext db,
+            [FromQuery] string? sessionTime,
+            [FromQuery] string? scheduleTime,
+            [FromQuery] int? durationMinutes,
+            [FromQuery] Guid? excludeCoachId) =>
+        {
+            DateTime? startUtc = null;
+            int effectiveDuration = durationMinutes.GetValueOrDefault(60);
+            if (effectiveDuration <= 0) effectiveDuration = 60;
+
+            if (!string.IsNullOrWhiteSpace(scheduleTime) && DateTime.TryParse(scheduleTime, CultureInfo.InvariantCulture, out var dt))
+            {
+                startUtc = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
+            }
+            else if (TryParseSessionTimeString(sessionTime, out var parsedUtc, out var parsedDur))
+            {
+                startUtc = parsedUtc;
+                if (parsedDur > 0) effectiveDuration = parsedDur;
+            }
+
+            if (startUtc == null)
+            {
+                var allQuery = @"
+                    SELECT c.id AS ""Id"", u.full_name AS ""FullName"", c.specialty AS ""Specialty""
+                    FROM coaches c
+                    JOIN users u ON u.id = c.user_id
+                    WHERE ({0}::uuid IS NULL OR c.id <> {0})
+                    ORDER BY u.full_name";
+                var allCoaches = await db.Database.SqlQueryRaw<AvailableCoachModel>(allQuery, excludeCoachId).ToListAsync();
+                return Results.Ok(allCoaches);
+            }
+
+            var endUtc = startUtc.Value.AddMinutes(effectiveDuration);
+
+            var sql = @"
+                SELECT c.id AS ""Id"", u.full_name AS ""FullName"", c.specialty AS ""Specialty""
+                FROM coaches c
+                JOIN users u ON u.id = c.user_id
+                WHERE ({0}::uuid IS NULL OR c.id <> {0})
+                  AND NOT EXISTS (
+                      SELECT 1 FROM classes cl
+                      WHERE cl.coach_id = c.id
+                        AND cl.status = true
+                        AND COALESCE(cl.approval_status, 'approved') <> 'rejected'
+                        AND cl.schedule_time < {1}
+                        AND cl.schedule_time + (COALESCE(cl.duration_minutes, 60) * INTERVAL '1 minute') > {2}
+                  )
+                ORDER BY u.full_name";
+
+            var coaches = await db.Database.SqlQueryRaw<AvailableCoachModel>(sql, excludeCoachId, endUtc, startUtc).ToListAsync();
+            return Results.Ok(coaches);
+        });
+
         group.MapPut("/{id:guid}/approve", async (
             Guid id,
             SmartGymDbContext db,
@@ -39,9 +93,17 @@ public static class CoachScheduleRequestManagerEndpoints
                 return Results.BadRequest(new { message = "Yêu cầu không tồn tại hoặc đã được xử lý." });
 
             var managerNote = ReadString(body, "managerNote") ?? "Yêu cầu đã được Manager duyệt.";
-            var result = await ApplyApprovalAsync(db, request, managerNote);
+            var substituteCoachIdStr = ReadString(body, "substituteCoachId");
+            Guid? substituteCoachId = Guid.TryParse(substituteCoachIdStr, out var sid) ? sid : null;
+
+            var result = await ApplyApprovalAsync(db, request, managerNote, substituteCoachId);
             if (!result.Success)
                 return Results.BadRequest(new { message = result.Error });
+
+            if (substituteCoachId.HasValue)
+            {
+                request.SubstituteCoachId = substituteCoachId.Value;
+            }
 
             await NotifyApprovalAsync(classRepository, request, managerNote);
             return Results.Ok(new { message = "Đã duyệt yêu cầu điều chỉnh ca dạy." });
@@ -101,13 +163,18 @@ public static class CoachScheduleRequestManagerEndpoints
                    r.substitute_coach_id AS ""SubstituteCoachId"", r.request_type AS ""RequestType"",
                    r.new_date AS ""NewDate"", r.new_time AS ""NewTime"", r.reason AS ""Reason"",
                    r.status AS ""Status"", r.manager_note AS ""ManagerNote"", r.created_at AS ""CreatedAt"",
-                   COALESCE(c.class_name, 'Lớp học') AS ""ClassName"",
+                   COALESCE(r.class_name, c.class_name, 'Lớp học') AS ""ClassName"",
+                   COALESCE(r.sport_name, sp.name, 'Thể hình') AS ""SportName"",
+                   COALESCE(r.room_name, fc.name, 'Khu tập luyện') AS ""RoomName"",
                    COALESCE(source_user.full_name, 'Coach') AS ""CoachName"",
                    substitute_user.full_name AS ""SubstituteCoachName"",
                    c.coach_id AS ""CurrentCoachId"", c.facility_id AS ""FacilityId"",
-                   c.schedule_time AS ""ScheduleTime"", COALESCE(c.duration_minutes, 60) AS ""DurationMinutes""
+                   c.schedule_time AS ""ScheduleTime"", COALESCE(c.duration_minutes, 60) AS ""DurationMinutes"",
+                   COALESCE(r.session_time, TO_CHAR(c.schedule_time, 'YYYY-MM-DD HH24:MI')) AS ""SessionTime""
             FROM coach_schedule_requests r
             LEFT JOIN classes c ON c.id = r.session_id
+            LEFT JOIN sports sp ON sp.id = c.sport_id
+            LEFT JOIN facilities fc ON fc.id = c.facility_id
             LEFT JOIN coaches source_coach ON source_coach.id = r.coach_id
             LEFT JOIN users source_user ON source_user.id = source_coach.user_id
             LEFT JOIN coaches substitute_coach ON substitute_coach.id = r.substitute_coach_id
@@ -118,11 +185,9 @@ public static class CoachScheduleRequestManagerEndpoints
     private static async Task<(bool Success, string? Error)> ApplyApprovalAsync(
         SmartGymDbContext db,
         ManagerScheduleRequestRow request,
-        string managerNote)
+        string managerNote,
+        Guid? substituteCoachIdFromManager = null)
     {
-        if (request.SessionId is null)
-            return (false, "Yêu cầu chưa gắn với ca dạy hợp lệ.");
-
         var strategy = db.Database.CreateExecutionStrategy();
         return await strategy.ExecuteAsync(async () =>
         {
@@ -130,8 +195,11 @@ public static class CoachScheduleRequestManagerEndpoints
             try
             {
                 var type = (request.RequestType ?? string.Empty).Trim().ToLowerInvariant();
-                if (type is "dời lịch" or "doi lich")
+                if (type is "dời lịch" or "doi lich" or "reschedule" || type.Contains("dời") || type.Contains("doi"))
                 {
+                    if (request.SessionId is null)
+                        return (false, "Yêu cầu dời lịch chưa gắn với ca dạy hợp lệ.");
+
                     if (request.NewDate is null || !TryBuildLocalSchedule(request.NewDate.Value, request.NewTime, request.DurationMinutes, out var scheduleTime, out var duration))
                         return (false, "Yêu cầu dời lịch chưa có ngày hoặc khung giờ hợp lệ.");
 
@@ -142,22 +210,44 @@ public static class CoachScheduleRequestManagerEndpoints
                         UPDATE classes SET schedule_time = {scheduleTime}, duration_minutes = {duration}
                         WHERE id = {request.SessionId.Value}");
                 }
-                else if (type is "dạy thay" or "day thay")
+                else if (type is "dạy thay" or "day thay" or "substitute" || type.Contains("thay"))
                 {
-                    if (request.SubstituteCoachId is null)
-                        return (false, "Yêu cầu dạy thay chưa có Coach thay thế hợp lệ.");
+                    var finalSubstituteId = substituteCoachIdFromManager ?? request.SubstituteCoachId;
+                    if (finalSubstituteId is null)
+                        return (false, "Vui lòng chọn Huấn luyện viên thay thế cho ca dạy này trước khi duyệt.");
 
-                    var conflict = await FindScheduleConflictAsync(db, request, request.ScheduleTime, request.DurationMinutes, request.SubstituteCoachId, null, isSubstitute: true);
-                    if (conflict is not null) return (false, conflict);
+                    var effectiveScheduleTime = request.ScheduleTime;
+                    var effectiveDuration = request.DurationMinutes > 0 ? request.DurationMinutes : 60;
+                    if (effectiveScheduleTime is null && TryParseSessionTimeString(request.SessionTime, out var parsedUtc, out var parsedDur))
+                    {
+                        effectiveScheduleTime = parsedUtc;
+                        effectiveDuration = parsedDur;
+                    }
+
+                    if (effectiveScheduleTime.HasValue)
+                    {
+                        var conflict = await FindScheduleConflictAsync(db, request, effectiveScheduleTime, effectiveDuration, finalSubstituteId, null, isSubstitute: true);
+                        if (conflict is not null) return (false, conflict);
+                    }
+
+                    if (request.SessionId.HasValue)
+                    {
+                        await db.Database.ExecuteSqlInterpolatedAsync($@"
+                            UPDATE classes SET coach_id = {finalSubstituteId.Value}
+                            WHERE id = {request.SessionId.Value}");
+                    }
 
                     await db.Database.ExecuteSqlInterpolatedAsync($@"
-                        UPDATE classes SET coach_id = {request.SubstituteCoachId.Value}
-                        WHERE id = {request.SessionId.Value}");
+                        UPDATE coach_schedule_requests SET substitute_coach_id = {finalSubstituteId.Value}
+                        WHERE id = {request.Id}");
                 }
-                else if (type is "báo vắng" or "bao vang")
+                else if (type is "báo vắng" or "bao vang" or "leave" || type.Contains("vắng") || type.Contains("vang"))
                 {
-                    await db.Database.ExecuteSqlInterpolatedAsync($@"
-                        UPDATE classes SET status = false WHERE id = {request.SessionId.Value}");
+                    if (request.SessionId.HasValue)
+                    {
+                        await db.Database.ExecuteSqlInterpolatedAsync($@"
+                            UPDATE classes SET status = false WHERE id = {request.SessionId.Value}");
+                    }
                 }
 
                 var affected = await db.Database.ExecuteSqlInterpolatedAsync($@"
@@ -191,7 +281,7 @@ public static class CoachScheduleRequestManagerEndpoints
         var effectiveDuration = duration > 0 ? duration : 60;
         var scheduleStart = DateTime.SpecifyKind(start.Value, DateTimeKind.Utc);
         var end = DateTime.SpecifyKind(start.Value.AddMinutes(effectiveDuration), DateTimeKind.Utc);
-        var sessionId = request.SessionId!.Value;
+        var sessionId = request.SessionId ?? Guid.Empty;
 
         // Kiểm tra trùng lịch ca dạy của HLV
         var coachConflict = await db.Database.SqlQueryRaw<int>(@"
@@ -217,6 +307,37 @@ public static class CoachScheduleRequestManagerEndpoints
         }
 
         return null;
+    }
+
+    private static bool TryParseSessionTimeString(string? text, out DateTime utc, out int duration)
+    {
+        utc = default;
+        duration = 60;
+        if (string.IsNullOrWhiteSpace(text)) return false;
+
+        var match = System.Text.RegularExpressions.Regex.Match(text, @"(\d{4}-\d{2}-\d{2}).*?(\d{1,2}:\d{2})\s*(?:-\s*(\d{1,2}:\d{2}))?");
+        if (!match.Success) return false;
+
+        if (!DateTime.TryParse(match.Groups[1].Value, out var date)) return false;
+        if (!TimeOnly.TryParse(match.Groups[2].Value, out var start)) return false;
+
+        if (match.Groups[3].Success && TimeOnly.TryParse(match.Groups[3].Value, out var end))
+        {
+            var diff = (int)(end - start).TotalMinutes;
+            if (diff > 0) duration = diff;
+        }
+
+        var local = DateTime.SpecifyKind(date.Date.Add(start.ToTimeSpan()), DateTimeKind.Unspecified);
+        try
+        {
+            var zone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+            utc = TimeZoneInfo.ConvertTimeToUtc(local, zone);
+        }
+        catch
+        {
+            utc = DateTime.SpecifyKind(local, DateTimeKind.Utc);
+        }
+        return true;
     }
 
     private static bool TryBuildLocalSchedule(DateTime date, string? text, int fallbackDuration, out DateTime utc, out int duration)
@@ -248,10 +369,16 @@ public static class CoachScheduleRequestManagerEndpoints
     private static object ToResponse(ManagerScheduleRequestRow row) => new
     {
         id = row.Id.ToString(), sessionId = row.SessionId?.ToString() ?? "", row.ClassName,
-        row.CoachName, substituteCoachName = row.SubstituteCoachName ?? "", requestType = row.RequestType,
+        row.CoachName, coachId = row.CoachId.ToString(), substituteCoachName = row.SubstituteCoachName ?? "",
+        substituteCoachId = row.SubstituteCoachId?.ToString() ?? "", requestType = row.RequestType,
         newDate = row.NewDate?.ToString("yyyy-MM-dd") ?? "", newTime = row.NewTime ?? "",
+        sessionTime = row.SessionTime ?? (row.ScheduleTime?.ToString("yyyy-MM-dd HH:mm") ?? ""),
+        sportName = row.SportName ?? "",
+        roomName = row.RoomName ?? "",
         row.Reason, row.Status, managerNote = row.ManagerNote ?? "",
-        createdAt = row.CreatedAt.ToString("yyyy-MM-dd HH:mm")
+        createdAt = row.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+        scheduleTime = row.ScheduleTime?.ToString("yyyy-MM-dd HH:mm") ?? "",
+        durationMinutes = row.DurationMinutes
     };
 
     private static string? ReadString(JsonElement body, string name) =>
@@ -273,6 +400,9 @@ public static class CoachScheduleRequestManagerEndpoints
         public DateTime? NewDate { get; set; }
         public int DurationMinutes { get; set; }
         public string ClassName { get; set; } = "Lớp học";
+        public string? SessionTime { get; set; }
+        public string? SportName { get; set; }
+        public string? RoomName { get; set; }
         public string CoachName { get; set; } = "Coach";
         public string? SubstituteCoachName { get; set; }
         public string RequestType { get; set; } = "dời lịch";
@@ -281,5 +411,12 @@ public static class CoachScheduleRequestManagerEndpoints
         public string Status { get; set; } = "pending";
         public string? ManagerNote { get; set; }
         public DateTime CreatedAt { get; set; }
+    }
+
+    public sealed class AvailableCoachModel
+    {
+        public Guid Id { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public string? Specialty { get; set; }
     }
 }
