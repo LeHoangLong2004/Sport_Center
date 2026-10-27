@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { DateInput } from '../../../../components/DateInput';
 
 interface CreateMemberModalProps {
@@ -16,11 +17,38 @@ export function CreateMemberModal({
   createError,
   onSubmit,
 }: CreateMemberModalProps) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const origBody = document.body.style.overflow;
+    const origHtml = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    const scrollContainers = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        '.manager-page-content, .portal-page-enter, [class*="overflow-y-auto"]'
+      )
+    );
+    const origOverflows = scrollContainers.map((el) => ({ el, overflow: el.style.overflow }));
+    scrollContainers.forEach((el) => {
+      el.style.overflow = 'hidden';
+    });
+
+    return () => {
+      document.body.style.overflow = origBody;
+      document.documentElement.style.overflow = origHtml;
+      origOverflows.forEach(({ el, overflow }) => {
+        el.style.overflow = overflow;
+      });
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
-      <form onSubmit={onSubmit} className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overscroll-contain animate-in fade-in duration-150">
+      <div className="fixed inset-0 -z-10" onClick={onClose} />
+      <form onSubmit={onSubmit} className="relative z-10 w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
         <div className="mb-5 flex items-start justify-between">
           <div>
             <h2 className="text-xl font-bold text-[#0f172a]">Thêm hội viên mới</h2>
@@ -122,6 +150,7 @@ export function CreateMemberModal({
           </button>
         </div>
       </form>
-    </div>
+    </div>,
+    document.body,
   );
 }

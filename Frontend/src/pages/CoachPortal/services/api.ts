@@ -345,16 +345,7 @@ export const CoachAPI = {
     });
   },
 
-  // 8. Đánh giá (Assessments)
-  getAssessments: async () => {
-    return fetchApi('/coach/assessments');
-  },
-  saveAssessment: async (assessment: any) => {
-    return fetchApi('/coach/assessments', {
-      method: 'POST',
-      body: JSON.stringify(assessment)
-    });
-  },
+
 
   // 9. Schedule Change Requests
   getScheduleRequests: async (): Promise<ScheduleChangeRequest[]> => {

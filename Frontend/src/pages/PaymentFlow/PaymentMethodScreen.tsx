@@ -100,7 +100,7 @@ export function PaymentMethodScreen({
     {
       id: "qr",
       icon: `${A}/66769.svg`,
-      label: "Mã QR VNPAY (Napas 247)",
+      label: "Mã QR Vietcombank (Napas 247)",
       badge: "Chính thức ⚡",
     },
     {

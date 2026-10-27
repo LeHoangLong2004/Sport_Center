@@ -7,6 +7,7 @@ import {
   sanitizeWalletData,
   cleanAllLocalWallets,
 } from "./walletUtils";
+import { BankConfigService } from "./bankConfig";
 
 export type { WalletTransaction, MemberWalletData };
 export { MEMBER_WALLET_UPDATED_EVENT, sanitizeWalletData, cleanAllLocalWallets };
@@ -143,6 +144,84 @@ export const WalletService = {
       newBalance,
       transaction: tx,
     };
+  },
+
+  async checkTransfer(
+    memo: string,
+    amount?: number,
+    userId?: string,
+    confirm: boolean = false
+  ): Promise<{ received: boolean; newBalance?: number; transaction?: WalletTransaction; message?: string }> {
+    const user = getStoredUser();
+    const targetUserId = userId || user?.id || user?.email;
+    try {
+      const bankConfig = BankConfigService.getConfig();
+      const qToken = bankConfig.sepayApiToken ? `&sepayToken=${encodeURIComponent(bankConfig.sepayApiToken)}` : "";
+      const qAmount = amount ? `&amount=${encodeURIComponent(amount)}` : "";
+      const qUser = targetUserId ? `&userId=${encodeURIComponent(targetUserId)}` : "";
+      const qConfirm = confirm ? `&confirm=true` : "";
+      const res = await fetch(`/api/member/wallet/check-transfer?memo=${encodeURIComponent(memo)}${qAmount}${qUser}${qToken}${qConfirm}`, {
+        headers: getAuthHeaders(targetUserId),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.received && typeof data.balance === "number") {
+          const current = this.getLocalWallet(targetUserId);
+          const updated: MemberWalletData = {
+            balance: data.balance,
+            currency: "VND",
+            transactions: data.transaction ? [data.transaction, ...(current.transactions || [])] : current.transactions,
+          };
+          this.saveLocalWallet(updated, targetUserId);
+          return {
+            received: true,
+            newBalance: data.balance,
+            transaction: data.transaction,
+            message: data.message,
+          };
+        }
+        return { received: false, message: data.message };
+      }
+    } catch (e) {
+      console.warn("checkTransfer failed:", e);
+    }
+    return { received: false };
+  },
+
+  async simulateWebhook(
+    amount: number,
+    note: string,
+    userId?: string
+  ): Promise<{ success: boolean; newBalance: number; transaction: WalletTransaction }> {
+    const user = getStoredUser();
+    const targetUserId = userId || user?.id || user?.email;
+    try {
+      const qUser = targetUserId ? `?userId=${encodeURIComponent(targetUserId)}` : "";
+      const res = await fetch(`/api/member/wallet/simulate-webhook${qUser}`, {
+        method: "POST",
+        headers: getAuthHeaders(targetUserId),
+        body: JSON.stringify({ amount, note }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const current = this.getLocalWallet(targetUserId);
+        const updated: MemberWalletData = {
+          balance: data.balance,
+          currency: "VND",
+          transactions: [data.transaction, ...(current.transactions || [])],
+        };
+        this.saveLocalWallet(updated, targetUserId);
+        return {
+          success: true,
+          newBalance: data.balance,
+          transaction: data.transaction,
+        };
+      }
+    } catch (e) {
+      console.warn("simulateWebhook failed:", e);
+    }
+    // Fallback nếu offline
+    return this.topUp(amount, "Vietcombank (SePay Webhook)", `[Mô phỏng Webhook] ${note}`, targetUserId);
   },
 
   async createPendingTopUp(

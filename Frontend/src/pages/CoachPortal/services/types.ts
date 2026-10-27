@@ -1,6 +1,15 @@
 export type SessionStatus = "sắp diễn ra" | "đang diễn ra" | "hoàn thành" | "đã hủy";
 export type AttendanceStatus = "chưa điểm danh" | "attended" | "no_show" | "late" | "excused";
 
+export interface MemberHealthMetrics {
+  heightCm: number;
+  weightKg: number;
+  bmi: number;
+  injuryNote?: string;
+  caution?: string;
+  heartRateRest?: number;
+}
+
 export interface MockMember {
   id: string;
   name: string;
@@ -17,6 +26,7 @@ export interface MockMember {
   attendanceRate?: number | null;
   attendedSessions?: number;
   totalSessions?: number;
+  healthMetrics?: MemberHealthMetrics;
 }
 
 export interface CoachClassOverview {
