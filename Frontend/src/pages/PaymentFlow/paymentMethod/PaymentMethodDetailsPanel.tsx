@@ -111,7 +111,7 @@ export function PaymentMethodDetailsPanel({
             </div>
 
             <p className="text-[10px] text-slate-500 leading-3.5">
-              💡 <strong>Mẹo:</strong> Mở <strong>App MB Bank</strong> hoặc bất kỳ App Ngân hàng nào (MB, VCB, Techcom, BIDV, MoMo...) quét mã QR để chuyển khoản trực tiếp tự động điền tiền.
+              💡 <strong>Mẹo:</strong> Mở <strong>App Sacombank Pay</strong> hoặc bất kỳ App Ngân hàng nào (Sacombank, MB, VCB, Techcom, BIDV, MoMo...) quét mã QR để chuyển khoản trực tiếp tự động điền tiền.
             </p>
           </div>
 
@@ -155,7 +155,7 @@ export function PaymentMethodDetailsPanel({
             </span>
             <div className="text-left">
               <div className={`text-xs font-bold flex items-center gap-1.5 ${autoPaid ? "text-white" : "text-emerald-950"}`}>
-                {autoPaid ? "🎉 Đã nhận thanh toán thành công từ MB Bank qua SePay!" : "Đang chờ chuyển khoản theo thời gian thực (MB Bank)..."}
+                {autoPaid ? "🎉 Đã nhận thanh toán thành công qua SePay!" : "Đang chờ chuyển khoản theo thời gian thực (Sacombank)..."}
               </div>
               <div className={`text-[10px] ${autoPaid ? "text-emerald-100" : "text-emerald-700"}`}>
                 {autoPaid ? (autoPaidMessage || "Hệ thống đang tự động hoàn tất và kích hoạt ngay...") : "Chuyển tiền xong, hệ thống tự động phát hiện và hoàn tất đơn hàng ngay lập tức (không cần bấm nút)!"}

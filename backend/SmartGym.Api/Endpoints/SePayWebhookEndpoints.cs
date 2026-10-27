@@ -148,8 +148,8 @@ public static class SePayWebhookEndpoints
             [FromQuery] decimal amount,
             [FromQuery] string? description) =>
         {
-            var accountNumber = config["SePay:AccountNumber"] ?? "980979977428";
-            var bankCode = config["SePay:BankCode"] ?? "MBBank";
+            var accountNumber = config["SePay:AccountNumber"] ?? "0979977428";
+            var bankCode = config["SePay:BankCode"] ?? "Sacombank";
             var prefix = config["SePay:TransferPrefix"] ?? "GYM";
 
             var transferContent = $"{prefix}{orderId}";
@@ -232,7 +232,7 @@ public static class SePayWebhookEndpoints
                         transactionId = matched.SePayId,
                         amount = matched.Amount,
                         content = matched.Content,
-                        message = "Đã nhận được tiền chuyển khoản thành công từ MB Bank!"
+                        message = "Đã nhận được tiền chuyển khoản thành công từ Sacombank qua SePay!"
                     });
                 }
             }
