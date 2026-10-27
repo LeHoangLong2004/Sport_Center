@@ -25,10 +25,10 @@ export const POPULAR_BANKS = [
 ];
 
 export const DEFAULT_BANK_CONFIG: BankConfig = {
-  bankBin: "970422",
-  bankCode: "MB",
-  bankName: "MB Bank (Ngân hàng Quân Đội)",
-  accountNumber: "980979977428",
+  bankBin: "970403",
+  bankCode: "STB",
+  bankName: "Sacombank (Sài Gòn Thương Tín)",
+  accountNumber: "0979977428",
   accountName: "PHAM DUC THANH PHUONG",
   sepayApiToken: "smartgym_sepay_secret_2026",
 };
@@ -44,15 +44,16 @@ export const BankConfigService = {
         if (
           parsed.bankBin &&
           parsed.accountNumber &&
-          parsed.bankBin !== "971015" &&
-          parsed.accountNumber !== "1030183675" &&
-          parsed.accountNumber !== "090388886868" &&
-          !parsed.accountNumber.includes("YOUR_")
+          parsed.accountNumber === "0979977428" &&
+          parsed.bankBin === "970403"
         ) {
           return {
             ...DEFAULT_BANK_CONFIG,
             ...parsed,
           };
+        } else {
+          // Reset cache cũ sang Sacombank
+          localStorage.removeItem(STORAGE_KEY);
         }
       }
     } catch (e) {
