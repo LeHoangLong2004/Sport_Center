@@ -16,13 +16,15 @@ import { CoachAiAssignModal } from "./coach-ai/CoachAiAssignModal";
 import { CoachAiHistoryDrawer } from "./coach-ai/CoachAiHistoryDrawer";
 import { useCoachAi } from "./coach-ai/useCoachAi";
 
-export default function CoachAI() {
+export default function CoachAI({ initialMemberId }: { initialMemberId?: string | null }) {
   const {
     loading,
     members,
     classes,
     sports,
     historyPlans,
+    selectedMemberProfile,
+    loadingProfile,
     targetType,
     setTargetType,
     targetId,
@@ -63,7 +65,7 @@ export default function CoachAI() {
     handleQuickDemo,
     handleApplyPreset,
     handleAiRefine,
-  } = useCoachAi();
+  } = useCoachAi(initialMemberId);
 
   if (loading) {
     return (
@@ -109,18 +111,20 @@ export default function CoachAI() {
             </div>
             <div>
               <div className="font-bold text-sm">
-                {feedback.type === "success"
-                  ? "Lưu vào Thư viện thành công!"
-                  : feedback.type === "error"
-                  ? "Đã xảy ra lỗi"
-                  : "Thông báo trợ lý AI"}
+                {feedback.title || (
+                  feedback.type === "success"
+                    ? "✨ Giáo án đề xuất thành công!"
+                    : feedback.type === "error"
+                    ? "Đã xảy ra lỗi"
+                    : "Thông báo trợ lý AI"
+                )}
               </div>
               <p className="text-xs opacity-90 mt-0.5 leading-relaxed">{feedback.msg}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 self-end sm:self-auto shrink-0 mt-1 sm:mt-0">
-            {feedback.type === "success" && (
+            {feedback.showLibraryLink && (
               <button
                 type="button"
                 onClick={() => {
@@ -187,6 +191,8 @@ export default function CoachAI() {
           setTargetId={setTargetId}
           onSelectTarget={handleSelectTarget}
           onApplyPreset={handleApplyPreset}
+          memberProfile={selectedMemberProfile}
+          loadingProfile={loadingProfile}
           members={members}
           classes={classes}
           sports={sports}

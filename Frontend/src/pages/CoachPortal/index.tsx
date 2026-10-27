@@ -91,7 +91,7 @@ export default function CoachPortal({ onExit }: { onExit?: () => void } = {}) {
       case "notifications":
         return <CoachNotifications />;
       case "ai":
-        return <CoachAI />;
+        return <CoachAI initialMemberId={selectedMemberId} />;
       case "profile":
         return <CoachProfile navigateTo={navigateTo} />;
       case "settings":
