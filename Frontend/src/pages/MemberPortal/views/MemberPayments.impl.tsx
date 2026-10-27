@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react"; import { createPortal } from "react-dom"; import type { MemberScreen, MemberPaymentItem } from "../types"; import { PackageAPI } from "../../../services/packageApi"; import { Receipt,
 CheckCircle2, Clock, X, Building, Copy, PlusCircle,
-Wallet, ArrowUpRight, ArrowDownLeft, Sparkles, } from "lucide-react"; import { WalletService, MEMBER_WALLET_UPDATED_EVENT, WalletTransaction } from "../services/walletService";
-import WalletTopUpModal from "../components/WalletTopUpModal"; interface Props { onNavigate: (screen: MemberScreen) => void; } export default function MemberPayments({ onNavigate }: Props) { const userStr = localStorage.getItem("user");
+Wallet, ArrowUpRight, ArrowDownLeft, Sparkles, QrCode } from "lucide-react"; import { WalletService, MEMBER_WALLET_UPDATED_EVENT, WalletTransaction } from "../services/walletService";
+import WalletTopUpModal from "../components/WalletTopUpModal";
+import SePayQrModal from "../components/SePayQrModal";
+interface Props { onNavigate: (screen: MemberScreen) => void; } export default function MemberPayments({ onNavigate }: Props) { const userStr = localStorage.getItem("user");
 const user = userStr ? JSON.parse(userStr) : null; const userName = user?.fullName || user?.name || "Hội viên"; const [payments, setPayments] = useState<MemberPaymentItem[]>([]); const [loading, setLoading] = useState(true); const [activePaymentModal, setActivePaymentModal] = useState<MemberPaymentItem | null>(null); const [receiptModal, setReceiptModal] = useState<MemberPaymentItem | null>(null);
+const [sepayQrOrder, setSepayQrOrder] = useState<MemberPaymentItem | null>(null);
 const [refCode, setRefCode] = useState(""); const [bankMethod, setBankMethod] = useState<"Chuyển khoản" | "Tiền mặt tại quầy">("Chuyển khoản"); const [feedback, setFeedback] = useState<string | null>(null); const [activeTab, setActiveTab] = useState<"invoices" | "wallet">("invoices"); const [balance, setBalance] = useState<number>(() => WalletService.getLocalWallet().balance); const [transactions, setTransactions] = useState<WalletTransaction[]>(() => WalletService.getLocalWallet().transactions);
 const [showWalletModal, setShowWalletModal] = useState(false); useEffect(() => { let cancelled = false; WalletService.getWallet(user?.id).then((w) => { if (!cancelled) { setBalance(w.balance);
 setTransactions(w.transactions); } }); const handleWalletUpdate = (e: any) => { if (e?.detail?.balance !== undefined) { setBalance(e.detail.balance);
@@ -10,7 +13,7 @@ if (Array.isArray(e.detail.transactions)) { setTransactions(e.detail.transaction
 setTransactions(local.transactions); } }; window.addEventListener(MEMBER_WALLET_UPDATED_EVENT, handleWalletUpdate); return () => { cancelled = true;
 window.removeEventListener(MEMBER_WALLET_UPDATED_EVENT, handleWalletUpdate); }; }, [user?.id]); useEffect(() => { let cancelled = false; PackageAPI.getMyOrders()
 .then((orders) => { if (cancelled) return; if (Array.isArray(orders) && orders.length > 0) { const mapped: MemberPaymentItem[] = orders.map((o) => ({ id: `INV-${o.id.substring(0, 8).toUpperCase()}`, packageName: o.packageSnapshot?.name || "Gói tập hội viên",
-amount: o.total || 0, date: o.createdAt ? new Date(o.createdAt).toLocaleDateString("vi-VN") : "Hôm nay", method: "Chuyển khoản", status: o.status === "paid" ? "paid" : "pending", referenceCode: o.id.substring(0, 8).toUpperCase(), }));
+amount: o.total || 0, date: o.createdAt ? new Date(o.createdAt).toLocaleDateString("vi-VN") : "Hôm nay", method: "Chuyển khoản", status: o.status === "paid" ? "paid" : "pending", referenceCode: o.id, }));
 setPayments(mapped); } else { setPayments([]); } }) .catch(() => {
 if (!cancelled) setPayments([]); }) .finally(() => { if (!cancelled) setLoading(false); }); return () => {
 cancelled = true; }; }, []); const handleReportPayment = (e: React.FormEvent) => { e.preventDefault(); if (!activePaymentModal) return;
@@ -54,8 +57,7 @@ type="button" onClick={() => onNavigate("packages")} className="mt-4 inline-flex
 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${ p.status === "paid" ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300" : "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300" }`} >
 {p.status === "paid" ? ( <> <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Đã thanh toán </> ) : (
 <> <Clock className="w-3 h-3 text-amber-600" /> Chờ thanh toán </> )} </span>
-</td> <td className="p-4 text-right"> {p.status === "pending" ? ( <button type="button" onClick={() => {
-setActivePaymentModal(p); setRefCode(p.referenceCode || ""); }} className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-xs transition-colors cursor-pointer" > Báo thanh toán
+</td> <td className="p-4 text-right"> {p.status === "pending" ? ( <button type="button" onClick={() => setSepayQrOrder(p)} className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-xs transition-colors cursor-pointer inline-flex items-center gap-1.5" > <QrCode className="w-3.5 h-3.5" /> <span>Quét mã VietQR</span>
 </button> ) : ( <button type="button" onClick={() => setReceiptModal(p)} className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs inline-flex items-center gap-1.5 cursor-pointer"
 > <Receipt className="w-3.5 h-3.5 text-slate-400" /> <span>Xem phiếu thu</span> </button> )} </td>
 </tr> ))} </tbody> </table> </div> )}
@@ -87,7 +89,36 @@ document.body )} {/* MODAL PHIẾU THU ĐIỆN TỬ (PORTAL) */} {receiptModal &
 type="button" onClick={() => setReceiptModal(null)} className="px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold cursor-pointer" > Đóng phiếu thu </button>
 </div> </div> </div>, document.body )} {/* Wallet TopUp Modal */}
 <WalletTopUpModal isOpen={showWalletModal} onClose={() => setShowWalletModal(false)} currentBalance={balance} userName={userName} phone={user?.phoneNumber}
-onSuccess={(newBal) => { setBalance(newBal); }} /> </div> );
+onSuccess={(newBal) => { setBalance(newBal); }} />
+{sepayQrOrder && (
+  <SePayQrModal
+    isOpen={!!sepayQrOrder}
+    onClose={() => setSepayQrOrder(null)}
+    orderId={sepayQrOrder.referenceCode || sepayQrOrder.id}
+    orderTitle={sepayQrOrder.packageName}
+    amount={sepayQrOrder.amount}
+    onPaymentSuccess={() => {
+      setFeedback("Xác nhận thanh toán thành công qua SePay!");
+      setSepayQrOrder(null);
+      PackageAPI.getMyOrders().then((orders) => {
+        if (Array.isArray(orders)) {
+          setPayments(
+            orders.map((o) => ({
+              id: `INV-${o.id.substring(0, 8).toUpperCase()}`,
+              packageName: o.packageSnapshot?.name || "Gói tập hội viên",
+              amount: o.total || 0,
+              date: o.createdAt ? new Date(o.createdAt).toLocaleDateString("vi-VN") : "Hôm nay",
+              method: "Chuyển khoản",
+              status: o.status === "paid" ? "paid" : "pending",
+              referenceCode: o.id,
+            }))
+          );
+        }
+      });
+    }}
+  />
+)}
+</div> );
 }
 
 

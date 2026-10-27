@@ -145,3 +145,20 @@ scratch/
 docs/Flow_5*.md
 docs/Flow_6*.md
 !docs/Flow_5_6_AI_Implementation_Plan.md
+
+# ------------------------------------------------------------------------------
+# 7. Dữ liệu trích xuất kiểm thử, Logs nhạy cảm & Tunneling (Dumps & Local Tools)
+# ------------------------------------------------------------------------------
+cracked_accounts.json
+users_dump.json
+users_summary.txt
+test_github.txt
+*.dump
+*.sql.bak
+dump/
+dumps/
+ngrok.log
+.ngrok*
+*.pem
+*.cert
+
