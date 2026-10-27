@@ -2,6 +2,7 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { Building, X, Copy } from "lucide-react";
 import type { InvoiceItem } from "./ProfileElectronicReceiptModal";
+import { BankConfigService } from "../../../services/bankConfig";
 
 interface Props {
   activePaymentReportModal: InvoiceItem | null;
@@ -28,6 +29,7 @@ export default function ProfilePaymentReportModal({
   onClose,
   onSubmit,
 }: Props) {
+  const bankConfig = BankConfigService.getConfig();
   if (!activePaymentReportModal) return null;
 
   return createPortal(
@@ -65,18 +67,18 @@ export default function ProfilePaymentReportModal({
               <div className="flex justify-between items-center text-slate-500">
                 <span>Ngân hàng thụ hưởng:</span>
                 <span className="font-bold text-slate-800 dark:text-slate-100">
-                  MB Bank (Ngân hàng Quân Đội)
+                  {bankConfig.bankName}
                 </span>
               </div>
               <div className="flex justify-between items-center text-slate-500">
                 <span>Số tài khoản:</span>
                 <div className="flex items-center gap-1.5">
                   <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
-                    0903 8888 6868
+                    {bankConfig.accountNumber}
                   </span>
                   <button
                     type="button"
-                    onClick={() => navigator.clipboard.writeText("090388886868")}
+                    onClick={() => navigator.clipboard.writeText(bankConfig.accountNumber)}
                     className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                   >
                     <Copy className="w-3.5 h-3.5" />
@@ -85,8 +87,8 @@ export default function ProfilePaymentReportModal({
               </div>
               <div className="flex justify-between items-center text-slate-500">
                 <span>Tên tài khoản:</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-100">
-                  SMART GYM SPORTS CENTER
+                <span className="font-semibold text-slate-800 dark:text-slate-100 uppercase">
+                  {bankConfig.accountName}
                 </span>
               </div>
               <div className="flex justify-between items-center text-slate-500 pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
@@ -114,7 +116,7 @@ export default function ProfilePaymentReportModal({
                 onChange={(e) => onReportBankMethodChange(e.target.value)}
                 className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
               >
-                <option value="Chuyển khoản QR">Chuyển khoản Ví VNPAY / QR (0815353732)</option>
+                <option value="Chuyển khoản QR">Chuyển khoản {bankConfig.bankCode || "Vietcombank"} / QR ({bankConfig.accountNumber})</option>
                 <option value="Thanh toán trực tiếp">Nộp tiền mặt tại Quầy Lễ tân</option>
                 <option value="Thẻ tín dụng / POS">Quẹt thẻ POS tại quầy</option>
               </select>

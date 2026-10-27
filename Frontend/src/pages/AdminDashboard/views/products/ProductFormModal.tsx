@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
 import { ProductItem, ProductFormData, PRESET_CATEGORIES } from './types';
@@ -19,6 +20,32 @@ export function ProductFormModal({
   onSubmit,
   onUploadImage,
 }: Props) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const origBody = document.body.style.overflow;
+    const origHtml = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    const scrollContainers = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        '.manager-page-content, .portal-page-enter, [class*="overflow-y-auto"]'
+      )
+    );
+    const origOverflows = scrollContainers.map((el) => ({ el, overflow: el.style.overflow }));
+    scrollContainers.forEach((el) => {
+      el.style.overflow = 'hidden';
+    });
+
+    return () => {
+      document.body.style.overflow = origBody;
+      document.documentElement.style.overflow = origHtml;
+      origOverflows.forEach(({ el, overflow }) => {
+        el.style.overflow = overflow;
+      });
+    };
+  }, [isOpen]);
+
   const [name, setName] = useState('');
   const [category, setCategory] = useState('Đồ uống');
   const [price, setPrice] = useState<number | ''>(25000);
@@ -94,9 +121,12 @@ export function ProductFormModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col my-8 animate-in fade-in zoom-in-95 duration-200">
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overscroll-contain animate-in fade-in duration-150">
+      <div className="fixed inset-0 -z-10" onClick={onClose} />
+      <div className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto flex flex-col my-8 animate-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <div>
@@ -247,6 +277,7 @@ export function ProductFormModal({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

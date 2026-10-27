@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { A, PaymentMethodId } from "../shared";
+import { BankConfigService } from "../../MemberPortal/services/bankConfig";
 
 interface PaymentMethodDetailsPanelProps {
   method: PaymentMethodId;
@@ -20,7 +21,8 @@ export function PaymentMethodDetailsPanel({
   transferMemo,
   fmt,
 }: PaymentMethodDetailsPanelProps) {
-  const vnpayQrUrl = "/vnpay_qr.png";
+  const bankConfig = BankConfigService.getConfig();
+  const qrUrl = BankConfigService.getVietQrUrl(finalTotal, transferMemo, bankConfig);
   const [showZoomModal, setShowZoomModal] = useState(false);
 
   if (method === "qr") {
@@ -30,11 +32,11 @@ export function PaymentMethodDetailsPanel({
           <div className="flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <h3 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-xs md:text-sm flex items-center gap-1.5">
-              <span>Quét mã VNPAY / VietQR Chuyển khoản 24/7</span>
-              <span className="text-[10px] bg-red-50 text-red-600 font-extrabold px-1.5 py-0.2 rounded border border-red-200">VNPAY APP</span>
+              <span>Quét mã VietQR Chuyển khoản 24/7</span>
+              <span className="text-[10px] bg-emerald-50 text-emerald-700 font-extrabold px-1.5 py-0.2 rounded border border-emerald-200">NAPAS 247</span>
             </h3>
           </div>
-          <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Tự động kích hoạt sau khi nhận</span>
+          <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Tự động điền số tiền & cú pháp</span>
         </div>
 
         <div className="flex flex-col md:flex-row gap-3.5 items-center pt-2.5 w-full">
@@ -44,20 +46,20 @@ export function PaymentMethodDetailsPanel({
               
               {/* Bank Name */}
               <div className="flex items-center justify-between">
-                <span className="text-slate-400 text-[11px]">Cổng / Ứng dụng</span>
+                <span className="text-slate-400 text-[11px]">Ngân hàng nhận</span>
                 <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-slate-900 text-xs">Ví điện tử VNPAY (Napas 247)</span>
+                  <span className="font-bold text-slate-900 text-xs">{bankConfig.bankName}</span>
                 </div>
               </div>
 
               {/* Account Number */}
               <div className="flex items-center justify-between">
-                <span className="text-slate-400 text-[11px]">Số tài khoản / Số ví</span>
+                <span className="text-slate-400 text-[11px]">Số tài khoản</span>
                 <div className="flex items-center gap-1.5">
-                  <span className="font-mono font-bold text-slate-900 text-xs">0815353732</span>
+                  <span className="font-mono font-bold text-slate-900 text-xs">{bankConfig.accountNumber}</span>
                   <button
                     type="button"
-                    onClick={() => onCopy("0815353732", "account")}
+                    onClick={() => onCopy(bankConfig.accountNumber, "account")}
                     className="px-1.5 py-0.5 rounded bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-semibold text-teal-700 transition-all cursor-pointer"
                   >
                     {copiedField === "account" ? "✓ Đã chép!" : "Sao chép"}
@@ -67,8 +69,8 @@ export function PaymentMethodDetailsPanel({
 
               {/* Account Owner */}
               <div className="flex items-center justify-between">
-                <span className="text-slate-400 text-[11px]">Chủ tài khoản / Tên ví</span>
-                <span className="font-bold text-slate-900 text-xs">Khách hàng 0815353732</span>
+                <span className="text-slate-400 text-[11px]">Chủ tài khoản</span>
+                <span className="font-bold text-slate-900 text-xs">{bankConfig.accountName}</span>
               </div>
 
               {/* Transfer Amount */}
@@ -105,11 +107,11 @@ export function PaymentMethodDetailsPanel({
             </div>
 
             <p className="text-[10px] text-slate-500 leading-3.5">
-              💡 <strong>Mẹo:</strong> Mở <strong>App VNPAY</strong> hoặc bất kỳ App Ngân hàng nào (VCB, MB, Techcom, BIDV, MoMo...) quét mã QR để chuyển khoản trực tiếp.
+              💡 <strong>Mẹo:</strong> Mở <strong>App Vietcombank</strong> hoặc bất kỳ App Ngân hàng nào (VCB, MB, Techcom, BIDV, MoMo...) quét mã QR để chuyển khoản trực tiếp tự động điền tiền.
             </p>
           </div>
 
-          {/* Right: Official VNPAY QR Code Box */}
+          {/* Right: Dynamic VietQR Code Box */}
           <div className="flex flex-col gap-1 items-center shrink-0 bg-slate-50 p-2 rounded-xl border border-slate-200/80">
             <div
               onClick={() => setShowZoomModal(true)}
@@ -117,12 +119,12 @@ export function PaymentMethodDetailsPanel({
               title="Nhấn để phóng to mã QR"
             >
               <img
-                src={vnpayQrUrl}
+                src={qrUrl}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = `${A}/cfa8b.svg`;
+                  (e.target as HTMLImageElement).src = "https://api.vietqr.io/img/vietqr_net.png";
                 }}
                 className="w-full h-auto object-contain rounded transition-transform group-hover:scale-[1.02]"
-                alt="Mã QR VNPAY chính thức"
+                alt={`Mã VietQR ${bankConfig.bankName}`}
               />
               <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded">
                 <span className="bg-white/95 text-slate-800 text-[10px] font-bold px-2 py-1 rounded-full shadow-xs">
@@ -131,9 +133,30 @@ export function PaymentMethodDetailsPanel({
               </div>
             </div>
             <div className="flex items-center justify-between w-full px-1 text-[10px] font-medium text-slate-500 text-center">
-              <span>📱 Quét bằng VNPAY / Ngân hàng</span>
+              <span>📱 Quét bằng bất kỳ App Ngân hàng nào</span>
             </div>
           </div>
+        </div>
+
+        {/* Khối trạng thái Webhook tự động */}
+        <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="relative flex h-2.5 w-2.5 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            <div className="text-left">
+              <div className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                Đang lắng nghe Vietcombank (SePay Webhook)...
+              </div>
+              <div className="text-[10px] text-emerald-700">
+                Chuyển tiền xong, hệ thống tự động phát hiện và kích hoạt gói sau 1 - 3 giây!
+              </div>
+            </div>
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-white px-2 py-0.5 rounded border border-emerald-200 shadow-2xs shrink-0">
+            Tự động ⚡
+          </span>
         </div>
 
         {/* Zoom Lightbox Modal */}
@@ -162,8 +185,11 @@ export function PaymentMethodDetailsPanel({
 
               <div className="p-2 bg-slate-50 border border-slate-200 rounded-xl w-full flex items-center justify-center">
                 <img
-                  src={vnpayQrUrl}
-                  alt="Mã QR VNPAY chính thức phóng to"
+                  src={qrUrl}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "https://api.vietqr.io/img/vietqr_net.png";
+                  }}
+                  alt={`Mã VietQR ${bankConfig.bankName} phóng to`}
                   className="w-full max-h-[380px] object-contain rounded-lg shadow-xs"
                 />
               </div>
@@ -181,8 +207,10 @@ export function PaymentMethodDetailsPanel({
 
               <div className="flex gap-2 w-full pt-1">
                 <a
-                  href={vnpayQrUrl}
-                  download="vnpay_qr_sportcenter.png"
+                  href={qrUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  download="vietqr_sportcenter.jpg"
                   className="flex-1 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-xs text-center border border-teal-200 transition-colors"
                 >
                   📥 Tải ảnh về máy

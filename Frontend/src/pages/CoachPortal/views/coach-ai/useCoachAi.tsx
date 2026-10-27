@@ -14,6 +14,8 @@ import {
   DEFAULT_DEMO_MEMBERS,
   DEFAULT_DEMO_CLASSES,
   DEFAULT_DEMO_SPORTS,
+  ROUTINE_PRESETS,
+  type RoutinePreset,
 } from "./types";
 import { cleanEquipmentList, createClientDraft } from "./coachAiFallbacks";
 
@@ -199,10 +201,9 @@ export function useCoachAi() {
 
     setIsGenerating(true);
     setFeedback(null);
+    const target: Flow5Target = { type: targetType, id: targetId };
 
     try {
-      const target: Flow5Target = { type: targetType, id: targetId };
-      
       const sanitizedEquipment = cleanEquipmentList(equipment);
 
       const apiCall = CoachAPI.generateFlow5Recommendation({
@@ -551,6 +552,79 @@ export function useCoachAi() {
     }
   };
 
+  // Apply Quick Routine Preset
+  const handleApplyPreset = (preset: RoutinePreset) => {
+    const matched = sports.find(
+      (s) => s.name.toLowerCase() === preset.sportName.toLowerCase() ||
+             preset.sportName.toLowerCase().includes(s.name.toLowerCase())
+    );
+    if (matched) {
+      setSportId(matched.id);
+    }
+    setLevel(preset.level);
+    setGoal(preset.goal);
+    setEquipment(preset.equipment);
+    setDurationMinutes(preset.durationMinutes);
+    setExerciseCount(preset.exerciseCount);
+    toast.success(`⚡ Đã nạp mẫu: "${preset.title}"! Nhấn "Gợi ý bài tập" để AI phân tích.`);
+  };
+
+  // Quick AI Copilot Refinement on Active Plan
+  const handleAiRefine = (action: "lighter" | "heavier" | "shorten" | "bodyweight") => {
+    if (!currentPlan) return;
+
+    let updatedExercises = [...currentPlan.exercises];
+    let notePrefix = "";
+    let nextDuration = currentPlan.durationMinutes;
+
+    if (action === "lighter") {
+      updatedExercises = updatedExercises.map((ex) => ({
+        ...ex,
+        sets: Math.max(2, parseInt(ex.sets || "3") - 1).toString(),
+        reps: "10-12 lần (nhẹ)",
+        rest: "75s",
+        note: (ex.note ? `${ex.note} · ` : "") + "Tập nhẹ có kiểm soát, tránh quá sức",
+      }));
+      notePrefix = "🤖 Gemini AI Copilot: Đã điều chỉnh hạ tải bài tập nhẹ hơn (giảm số hiệp, tăng thời gian nghỉ 75s).";
+    } else if (action === "heavier") {
+      updatedExercises = updatedExercises.map((ex) => ({
+        ...ex,
+        sets: (parseInt(ex.sets || "3") + 1).toString(),
+        rest: "40s",
+        note: (ex.note ? `${ex.note} · ` : "") + "Đẩy nhanh nhịp độ, siết cơ đỉnh điểm",
+      }));
+      notePrefix = "🔥 Gemini AI Copilot: Đã tăng cường độ HIIT (tăng số hiệp lên 4, rút ngắn nghỉ còn 40s).";
+    } else if (action === "shorten") {
+      nextDuration = 30;
+      updatedExercises = updatedExercises.slice(0, 3).map((ex, idx) => ({
+        ...ex,
+        order: idx + 1,
+      }));
+      notePrefix = "⏱️ Gemini AI Copilot: Đã cô đọng giáo án còn 30 phút (tập trung 3 bài tập compound cốt lõi).";
+    } else if (action === "bodyweight") {
+      const bodyweightEquivalents = [
+        { name: "Hít đất kiểm soát (Push-up)", sets: "3", reps: "12-15 lần", rest: "45s", note: "Gồng chắc cơ lõi, không võng lưng" },
+        { name: "Squat tay không (Air Squats)", sets: "3", reps: "20 lần", rest: "45s", note: "Đẩy hông về sau, hạ đùi song song sàn" },
+        { name: "Gập bụng đạp xe (Bicycle Crunches)", sets: "3", reps: "20 lần", rest: "30s", note: "Khuỷu tay chạm gối đối diện" },
+        { name: "Plank siết cơ trung tâm", sets: "3", reps: "45 giây", rest: "45s", note: "Thân người thẳng, siết chặt cơ mông và bụng" },
+        { name: "Giãn cơ toàn thân tĩnh", sets: "1", reps: "5 phút", rest: "0s", note: "Hít thở sâu, thả lỏng cơ bắp sau buổi tập" },
+      ];
+      updatedExercises = bodyweightEquivalents.slice(0, currentPlan.exercises.length).map((ex, idx) => ({
+        ...ex,
+        order: idx + 1,
+      }));
+      notePrefix = "🤸 Gemini AI Copilot: Đã chuyển toàn bộ sang bài tập Bodyweight (không cần tạ / thiết bị).";
+    }
+
+    setCurrentPlan({
+      ...currentPlan,
+      durationMinutes: nextDuration,
+      exercises: updatedExercises,
+      version: currentPlan.version + 1,
+    });
+    toast.success(notePrefix);
+  };
+
   // Quick Demo Fill
   const handleQuickDemo = () => {
     setLevel("Trung cấp");
@@ -558,7 +632,7 @@ export function useCoachAi() {
     setEquipment(["Thảm tập", "Tạ tay (Dumbbells)", "Dây kháng lực"]);
     setDurationMinutes(45);
     setExerciseCount(5);
-    toast.info("Đã điền các thông số mẫu. Hãy bấm 'Sinh giáo án với Gemini AI'!");
+    toast.info("Đã điền các thông số mẫu. Hãy bấm 'Gợi ý bài tập bằng Gemini AI'!");
   };
 
   return {
@@ -606,5 +680,7 @@ export function useCoachAi() {
     handleArchive,
     handleSelectPlanFromHistory,
     handleQuickDemo,
+    handleApplyPreset,
+    handleAiRefine,
   };
 }

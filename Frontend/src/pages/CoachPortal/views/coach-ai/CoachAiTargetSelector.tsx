@@ -1,5 +1,5 @@
 import React from "react";
-import { User, Users } from "lucide-react";
+import { User, Users, AlertTriangle, ShieldCheck, HeartPulse, Activity } from "lucide-react";
 import type { MockMember, CoachClassOverview } from "../../services/api";
 import { UserAvatar } from "../../../../components/UserAvatar";
 
@@ -95,7 +95,8 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
           </select>
 
           {selectedMember && (
-            <div className="p-3 rounded-xl bg-orange-50/70 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900/50 flex flex-col gap-2">
+            <div className="p-3.5 rounded-xl bg-orange-50/70 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900/50 flex flex-col gap-2.5 animate-in fade-in duration-200">
+              {/* Member Basic Row */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <UserAvatar
@@ -104,11 +105,14 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
                     className="w-9 h-9 rounded-full object-cover shrink-0 text-xs font-bold border border-orange-200 dark:border-orange-800 shadow-xs"
                   />
                   <div className="min-w-0">
-                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
-                      {selectedMember.name}
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate flex items-center gap-1.5">
+                      <span>{selectedMember.name}</span>
+                      <span className="text-[10px] font-normal px-1.5 py-0.5 rounded bg-orange-100 dark:bg-orange-900/60 text-orange-700 dark:text-orange-300">
+                        {selectedMember.code || "HV"}
+                      </span>
                     </div>
                     <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                      Mục tiêu: {selectedMember.goal || "Cải thiện thể lực"} · Trình độ: {selectedMember.level || "Cơ bản"}
+                      Mục tiêu: {selectedMember.goal || "Cải thiện thể lực"} · {selectedMember.level || "Cơ bản"}
                     </div>
                   </div>
                 </div>
@@ -118,10 +122,54 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
                   </span>
                 )}
               </div>
-              <div className="text-[10px] text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-md flex items-center gap-1 font-medium border border-emerald-500/20">
-                <span>✓</span>
-                <span>Đã tự động điền mục tiêu & thể trạng của học viên vào dữ liệu đầu vào cho AI</span>
-              </div>
+
+              {/* Health Metrics & Vitals Row */}
+              {selectedMember.healthMetrics && (
+                <div className="grid grid-cols-3 gap-1.5 pt-1 border-t border-orange-200/50 dark:border-orange-900/40 text-[11px]">
+                  <div className="px-2 py-1 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-orange-100 dark:border-orange-900/40 text-center">
+                    <span className="text-[10px] text-slate-400 block">Chiều cao</span>
+                    <span className="font-bold text-slate-700 dark:text-slate-300">
+                      {selectedMember.healthMetrics.heightCm} cm
+                    </span>
+                  </div>
+                  <div className="px-2 py-1 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-orange-100 dark:border-orange-900/40 text-center">
+                    <span className="text-[10px] text-slate-400 block">Cân nặng</span>
+                    <span className="font-bold text-slate-700 dark:text-slate-300">
+                      {selectedMember.healthMetrics.weightKg} kg
+                    </span>
+                  </div>
+                  <div className="px-2 py-1 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-orange-100 dark:border-orange-900/40 text-center">
+                    <span className="text-[10px] text-slate-400 block">Chỉ số BMI</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                      {selectedMember.healthMetrics.bmi} (Chuẩn)
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Medical / Injury Note & AI Safety Filter */}
+              {selectedMember.healthMetrics?.injuryNote && selectedMember.healthMetrics.injuryNote !== "Không có tiền sử chấn thương" ? (
+                <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-900 dark:text-amber-200 flex flex-col gap-1">
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <span>Lưu ý y tế: {selectedMember.healthMetrics.injuryNote}</span>
+                  </div>
+                  {selectedMember.healthMetrics.caution && (
+                    <div className="text-[10px] opacity-90 pl-5 text-slate-600 dark:text-slate-300 leading-tight">
+                      {selectedMember.healthMetrics.caution}
+                    </div>
+                  )}
+                  <div className="mt-0.5 flex items-center gap-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-white/80 dark:bg-slate-900/80 px-2 py-0.5 rounded border border-emerald-400/30">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <span>Gemini AI Safety Filter: Tự động loại bỏ các bài tập gây áp lực lên vùng chấn thương</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-[10px] text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-2.5 py-1 rounded-lg flex items-center gap-1.5 font-medium border border-emerald-500/20">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                  <span>Thể trạng tốt · Không có chống chỉ định y tế · Đã nạp dữ liệu vào AI</span>
+                </div>
+              )}
             </div>
           )}
         </div>

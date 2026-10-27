@@ -1,6 +1,7 @@
 import React from "react";
 import { X, Banknote, CreditCard, QrCode, ShieldCheck, RefreshCw, Check } from "lucide-react";
 import type { PackageOrder } from "../../../../services/packageApi";
+import { BankConfigService } from "../../../MemberPortal/services/bankConfig";
 
 export type PaymentOption = "counter" | "card" | "qr";
 
@@ -23,6 +24,11 @@ export default function CounterConfirmModal({
   onConfirm,
   formatMoney,
 }: Props) {
+  const bankConfig = BankConfigService.getConfig();
+  const totalAmount = confirmOrder?.total ?? 0;
+  const orderMemo = `SC ${confirmOrder?.id?.slice(0, 8).toUpperCase() || "COUNTER"}`;
+  const qrUrl = BankConfigService.getVietQrUrl(totalAmount, orderMemo, bankConfig);
+
   React.useEffect(() => {
     if (!confirmOrder) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -134,7 +140,7 @@ export default function CounterConfirmModal({
               }`}
             >
               <QrCode className="w-5 h-5 text-purple-600" />
-              <span className="text-xs font-semibold">Mã VNPAY QR</span>
+              <span className="text-xs font-semibold">Mã VietQR</span>
             </button>
           </div>
         </div>
@@ -142,12 +148,20 @@ export default function CounterConfirmModal({
         {selectedPayMethod === "qr" && (
           <div className="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-3">
             <div className="w-20 h-auto bg-white p-1 rounded-lg border border-slate-200 shrink-0 shadow-2xs">
-              <img src="/vnpay_qr.png" alt="Mã VNPAY QR" className="w-full h-auto object-contain rounded" />
+              <img
+                src={qrUrl}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "https://api.vietqr.io/img/vietqr_net.png";
+                }}
+                alt={`Mã VietQR ${bankConfig.bankName}`}
+                className="w-full h-auto object-contain rounded"
+              />
             </div>
             <div className="text-xs space-y-0.5">
-              <p className="font-bold text-slate-900 dark:text-white">Ví VNPAY: <span className="font-mono text-purple-600">0815353732</span></p>
-              <p className="text-[11px] text-slate-500">Chủ ví: <strong>Khách hàng 0815353732</strong></p>
-              <p className="text-[11px] text-emerald-600 font-semibold">Đưa mã này cho khách hàng quét bằng App VNPAY hoặc App Ngân hàng.</p>
+              <p className="font-bold text-slate-900 dark:text-white">{bankConfig.bankName}: <span className="font-mono text-purple-600">{bankConfig.accountNumber}</span></p>
+              <p className="text-[11px] text-slate-500">Chủ TK: <strong>{bankConfig.accountName}</strong></p>
+              <p className="text-[11px] text-slate-500">Nội dung CK: <strong className="font-mono text-indigo-600">{orderMemo}</strong></p>
+              <p className="text-[11px] text-emerald-600 font-semibold">Đưa mã này cho khách hàng quét bằng bất kỳ App Ngân hàng nào.</p>
             </div>
           </div>
         )}
