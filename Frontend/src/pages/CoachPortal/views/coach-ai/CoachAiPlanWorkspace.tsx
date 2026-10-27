@@ -338,14 +338,6 @@ export const CoachAiPlanWorkspace: React.FC<CoachAiPlanWorkspaceProps> = ({
               >
                 <span>⏱️ Rút ngắn còn 30p</span>
               </button>
-              <button
-                type="button"
-                onClick={() => onAiRefine("bodyweight")}
-                className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:text-orange-600 hover:border-orange-300 dark:hover:border-orange-700 shadow-2xs transition-all active:scale-95 cursor-pointer flex items-center gap-1"
-                title="Chuyển toàn bộ sang bài tập tay không Bodyweight"
-              >
-                <span>🤸 Đổi sang Bodyweight (Không tạ)</span>
-              </button>
             </div>
           </div>
         )}

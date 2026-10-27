@@ -117,6 +117,7 @@ export default function CoachMemberProfile({ memberId, navigateTo }: Props) {
       {/* Main Grid: Left = Attendance & Workouts | Right = Coach Notes & Assessments */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <MemberHistoryAndWorkouts
+          memberId={memberId}
           attendanceHistory={profile.attendanceHistory}
           assignedWorkouts={profile.assignedWorkouts}
           attendanceRate={profile.stats.attendanceRate}

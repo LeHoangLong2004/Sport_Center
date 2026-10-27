@@ -61,6 +61,7 @@ export const SupportAiChat: React.FC<SupportAiChatProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const quickQuestions = [
+    "Hiện tại tôi có giáo án nào được giao không?",
     "Hôm nay và ngày mai tôi có lịch tập gì?",
     "Gói tập của tôi còn hạn bao lâu?",
     "Gợi ý thực đơn giàu đạm cho ngày tập nặng",

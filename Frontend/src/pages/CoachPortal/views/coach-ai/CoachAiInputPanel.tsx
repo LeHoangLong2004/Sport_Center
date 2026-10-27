@@ -1,7 +1,8 @@
 import React from "react";
-import { Sparkles, Sliders, Check, Zap, Dumbbell, HeartPulse, Flame } from "lucide-react";
+import { Sparkles, Sliders, Zap, Dumbbell, HeartPulse, Flame } from "lucide-react";
 import type { MockMember, CoachClassOverview, SportOption } from "../../services/api";
-import { LEVEL_OPTIONS, EQUIPMENT_OPTIONS, GOAL_PRESETS, DURATION_PRESETS, ROUTINE_PRESETS, type RoutinePreset } from "./types";
+import type { MemberProfileData } from "../member-profile/types";
+import { LEVEL_OPTIONS, GOAL_PRESETS, DURATION_PRESETS, ROUTINE_PRESETS, type RoutinePreset } from "./types";
 import { CoachAiTargetSelector } from "./CoachAiTargetSelector";
 
 interface CoachAiInputPanelProps {
@@ -11,6 +12,8 @@ interface CoachAiInputPanelProps {
   setTargetId: (id: string) => void;
   onSelectTarget?: (type: "member" | "class", id: string) => void;
   onApplyPreset?: (preset: RoutinePreset) => void;
+  memberProfile?: MemberProfileData | null;
+  loadingProfile?: boolean;
   members: MockMember[];
   classes: CoachClassOverview[];
   sports: SportOption[];
@@ -20,8 +23,8 @@ interface CoachAiInputPanelProps {
   setLevel: (lvl: string) => void;
   goal: string;
   setGoal: (goal: string) => void;
-  equipment: string[];
-  setEquipment: React.Dispatch<React.SetStateAction<string[]>>;
+  equipment?: string[];
+  setEquipment?: React.Dispatch<React.SetStateAction<string[]>>;
   durationMinutes: number;
   setDurationMinutes: (d: number) => void;
   exerciseCount: number;
@@ -37,6 +40,8 @@ export const CoachAiInputPanel: React.FC<CoachAiInputPanelProps> = ({
   setTargetId,
   onSelectTarget,
   onApplyPreset,
+  memberProfile,
+  loadingProfile,
   members,
   classes,
   sports,
@@ -46,8 +51,6 @@ export const CoachAiInputPanel: React.FC<CoachAiInputPanelProps> = ({
   setLevel,
   goal,
   setGoal,
-  equipment,
-  setEquipment,
   durationMinutes,
   setDurationMinutes,
   exerciseCount,
@@ -55,11 +58,6 @@ export const CoachAiInputPanel: React.FC<CoachAiInputPanelProps> = ({
   isGenerating,
   onGenerate,
 }) => {
-  const toggleEquipment = (item: string) => {
-    setEquipment((prev) =>
-      prev.includes(item) ? prev.filter((e) => e !== item) : [...prev, item]
-    );
-  };
 
   const getPresetIcon = (iconName: string) => {
     switch (iconName) {
@@ -143,6 +141,8 @@ export const CoachAiInputPanel: React.FC<CoachAiInputPanelProps> = ({
             targetId={targetId}
             setTargetId={setTargetId}
             onSelectTarget={onSelectTarget}
+            memberProfile={memberProfile}
+            loadingProfile={loadingProfile}
             members={members}
             classes={classes}
           />
@@ -222,36 +222,6 @@ export const CoachAiInputPanel: React.FC<CoachAiInputPanelProps> = ({
                   + {p}
                 </button>
               ))}
-            </div>
-          </div>
-
-          {/* Equipment Multi-select */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center justify-between">
-              <span>Dụng cụ / Thiết bị có sẵn</span>
-              <span className="text-[11px] text-slate-400 font-normal">
-                ({equipment.length} đã chọn)
-              </span>
-            </label>
-            <div className="flex flex-wrap gap-1.5">
-              {EQUIPMENT_OPTIONS.map((item) => {
-                const isSelected = equipment.includes(item);
-                return (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => toggleEquipment(item)}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
-                      isSelected
-                        ? "bg-orange-500 text-white border-orange-500 shadow-sm shadow-orange-500/20"
-                        : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800"
-                    }`}
-                  >
-                    {isSelected && <Check className="w-3 h-3 text-white" />}
-                    <span>{item}</span>
-                  </button>
-                );
-              })}
             </div>
           </div>
 
