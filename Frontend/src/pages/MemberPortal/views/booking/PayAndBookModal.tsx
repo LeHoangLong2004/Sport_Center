@@ -3,18 +3,18 @@ import { createPortal } from "react-dom";
 import {
   X,
   AlertCircle,
-  QrCode,
-  CreditCard,
-  Building,
   ShieldCheck,
   LoaderCircle,
   Check,
-  Copy,
   Sparkles,
 } from "lucide-react";
-import { CoachAvatar } from "../../utils/coachAvatar";
 import { BankConfigService } from "../../services/bankConfig";
 import { WalletService } from "../../services/walletService";
+import { BookingClassHeader } from "./payAndBook/BookingClassHeader";
+import { PaymentMethodSelector } from "./payAndBook/PaymentMethodSelector";
+import { QrPaymentPanel } from "./payAndBook/QrPaymentPanel";
+import { CardPaymentPanel } from "./payAndBook/CardPaymentPanel";
+import { CounterPaymentPanel } from "./payAndBook/CounterPaymentPanel";
 
 interface PayAndBookModalProps {
   classToBook: any | null;
@@ -46,8 +46,6 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
   const [isCheckingPayment, setIsCheckingPayment] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [showTokenConfig, setShowTokenConfig] = useState(false);
-  const [inputToken, setInputToken] = useState(() => bankConfig.sepayApiToken || "");
 
   // Reset status on open or payment method switch
   useEffect(() => {
@@ -79,18 +77,6 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
     navigator.clipboard?.writeText(text);
     setCopiedKey(key);
     setTimeout(() => setCopiedKey(null), 2000);
-  };
-
-  const handleSaveToken = () => {
-    const updated = { ...bankConfig, sepayApiToken: inputToken.trim() };
-    BankConfigService.saveConfig(updated);
-    setShowTokenConfig(false);
-    setCheckStatusText(
-      inputToken.trim()
-        ? "Đã lưu SePay API Token thành công! Bạn có thể quét QR chuyển khoản thật để kiểm tra."
-        : "Đã xóa SePay API Token."
-    );
-    setTimeout(() => setCheckStatusText(null), 4000);
   };
 
   const handleCheckPayment = async () => {
@@ -172,244 +158,31 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
             </div>
           )}
 
-          {/* Lớp & Coach info box */}
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <CoachAvatar
-                src={classToBook.coachAvatar}
-                name={classToBook.coachName}
-                className="w-12 h-12 rounded-full border-2 border-teal-500 shrink-0"
-              />
-              <div>
-                <p className="font-extrabold text-sm text-slate-900 dark:text-white">
-                  {classToBook.name}
-                </p>
-                <p className="text-xs text-teal-600 dark:text-teal-400 font-semibold">
-                  HLV phụ trách: {classToBook.coachName}
-                </p>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  {classToBook.startTime} - {classToBook.endTime} • {classToBook.room}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* BẢNG CHI TIẾT THANH TOÁN GIÁ GỐC */}
-          <div className="p-4 rounded-2xl bg-teal-50/50 dark:bg-slate-800/80 border border-teal-200 dark:border-slate-700 space-y-2.5">
-            <h4 className="font-extrabold text-xs uppercase tracking-wider text-teal-800 dark:text-teal-300">
-              Chi tiết hóa đơn đăng ký
-            </h4>
-            <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
-              <span>Hạng thành viên của bạn:</span>
-              <span className="font-bold text-slate-800 dark:text-slate-200">🥉 Cơ bản (Basic Member)</span>
-            </div>
-            <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
-              <span>Giá gốc niêm yết buổi học:</span>
-              <span className="font-bold text-slate-800 dark:text-slate-200">
-                {classPrice.toLocaleString("vi-VN")} đ
-              </span>
-            </div>
-            <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
-              <span>Ưu đãi thành viên:</span>
-              <span className="font-bold text-slate-500">0 đ (Áp dụng 100% giá gốc)</span>
-            </div>
-            <div className="flex justify-between items-center pt-2.5 border-t border-teal-200 dark:border-slate-700 text-sm">
-              <span className="font-extrabold text-slate-900 dark:text-white">Tổng tiền thanh toán:</span>
-              <strong className="text-xl font-black text-emerald-600 dark:text-emerald-400">
-                {classPrice.toLocaleString("vi-VN")} đ
-              </strong>
-            </div>
-          </div>
+          {/* Lớp & Chi tiết hóa đơn */}
+          <BookingClassHeader classToBook={classToBook} classPrice={classPrice} />
 
           {/* CHỌN PHƯƠNG THỨC THANH TOÁN */}
-          <div>
-            <label className="font-extrabold text-xs text-slate-800 dark:text-slate-200 mb-2 block">
-              Chọn phương thức thanh toán:
-            </label>
-            <div className="grid grid-cols-3 gap-2.5">
-              <button
-                type="button"
-                onClick={() => setPaymentMethod("qr")}
-                className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5 cursor-pointer ${
-                  paymentMethod === "qr"
-                    ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 shadow-sm ring-2 ring-emerald-500/20"
-                    : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600 dark:text-slate-300"
-                }`}
-              >
-                <QrCode className="w-5 h-5 text-emerald-600 shrink-0" />
-                <span className="text-[11px] font-bold">Mã Vietcombank</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPaymentMethod("card")}
-                className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5 cursor-pointer ${
-                  paymentMethod === "card"
-                    ? "border-teal-600 bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200 shadow-sm ring-2 ring-teal-500/20"
-                    : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600 dark:text-slate-300"
-                }`}
-              >
-                <CreditCard className="w-5 h-5 text-teal-600 shrink-0" />
-                <span className="text-[11px] font-bold">Thẻ ATM / Visa</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPaymentMethod("counter")}
-                className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5 cursor-pointer ${
-                  paymentMethod === "counter"
-                    ? "border-amber-600 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 shadow-sm ring-2 ring-amber-500/20"
-                    : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600 dark:text-slate-300"
-                }`}
-              >
-                <Building className="w-5 h-5 text-amber-600 shrink-0" />
-                <span className="text-[11px] font-bold">Tại quầy lễ tân</span>
-              </button>
-            </div>
-          </div>
+          <PaymentMethodSelector
+            paymentMethod={paymentMethod}
+            setPaymentMethod={setPaymentMethod}
+          />
 
           {/* NỘI DUNG THANH TOÁN TƯƠNG ỨNG */}
           {paymentMethod === "qr" && (
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3">
-              <div className="flex items-center justify-between pb-1.5 border-b border-slate-200 dark:border-slate-700 text-xs">
-                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                  {bankConfig.bankCode || "VCB"} • {bankConfig.accountNumber}
-                </span>
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
-                  VietQR • Napas 247
-                </span>
-              </div>
-
-              <div className="text-center space-y-1">
-                <img
-                  src={vietQrUrl}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = "https://api.vietqr.io/img/vietqr_net.png";
-                  }}
-                  alt={`Mã VietQR ${bankConfig.bankName}`}
-                  className="w-40 h-auto object-contain mx-auto rounded-xl bg-white p-2 border border-slate-200 shadow-xs"
-                />
-                <p className="text-[10px] text-slate-500">Mở App Ngân hàng (VCB Digibank, Techcom, MB,...) để quét mã tự động</p>
-              </div>
-
-              {/* Thông tin chuyển khoản chi tiết */}
-              <div className="bg-white dark:bg-slate-900 rounded-xl p-3 border border-slate-200 dark:border-slate-700 text-[11px] space-y-1.5">
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Ngân hàng:</span>
-                  <span className="font-bold text-slate-700 dark:text-slate-300">{bankConfig.bankName}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Số tài khoản:</span>
-                  <span className="font-mono font-bold flex items-center gap-1 text-slate-900 dark:text-white">
-                    {bankConfig.accountNumber}
-                    <button
-                      type="button"
-                      onClick={() => handleCopy(bankConfig.accountNumber, "acc")}
-                      className="p-1 text-slate-400 hover:text-emerald-600 cursor-pointer"
-                      title="Sao chép"
-                    >
-                      {copiedKey === "acc" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                    </button>
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Chủ tài khoản:</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-100 uppercase">{bankConfig.accountName}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Số tiền:</span>
-                  <span className="font-bold text-emerald-600 flex items-center gap-1">
-                    {classPrice.toLocaleString("vi-VN")} đ
-                    <button
-                      type="button"
-                      onClick={() => handleCopy(classPrice.toString(), "amt")}
-                      className="p-1 text-slate-400 hover:text-emerald-600 cursor-pointer"
-                      title="Sao chép"
-                    >
-                      {copiedKey === "amt" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                    </button>
-                  </span>
-                </div>
-                <div className="flex justify-between items-center border-t border-slate-100 dark:border-slate-800 pt-1.5">
-                  <span className="text-slate-500">Nội dung CK:</span>
-                  <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
-                    {bookingMemo}
-                    <button
-                      type="button"
-                      onClick={() => handleCopy(bookingMemo, "memo")}
-                      className="p-1 text-slate-400 hover:text-emerald-600 cursor-pointer"
-                      title="Sao chép"
-                    >
-                      {copiedKey === "memo" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                    </button>
-                  </span>
-                </div>
-              </div>
-
-              {/* VIETQR LIVE STATUS BADGE */}
-              <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="relative flex h-3 w-3 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                  </span>
-                  <div className="text-left">
-                    <div className="text-xs font-bold text-emerald-950 dark:text-emerald-200">
-                      VietQR • {bankConfig.bankName}
-                    </div>
-                    <div className="text-[10px] text-emerald-700 dark:text-emerald-400">
-                      Quét mã QR chuyển khoản trên App Ngân hàng hoặc MoMo, sau đó bấm Xác nhận đặt chỗ!
-                    </div>
-                  </div>
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300 bg-white dark:bg-slate-900 px-2 py-1 rounded-lg border border-emerald-200 shadow-2xs shrink-0">
-                  Napas 24/7 ⚡
-                </span>
-              </div>
-
-              {/* Thông báo nếu kiểm tra chưa thấy tiền */}
-              {checkStatusText && (
-                <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs text-left flex items-start gap-2 animate-in fade-in">
-                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                  <span className="font-semibold leading-relaxed">{checkStatusText}</span>
-                </div>
-              )}
-            </div>
+            <QrPaymentPanel
+              bankConfig={bankConfig}
+              classPrice={classPrice}
+              bookingMemo={bookingMemo}
+              vietQrUrl={vietQrUrl}
+              copiedKey={copiedKey}
+              onCopy={handleCopy}
+              checkStatusText={checkStatusText}
+            />
           )}
 
-          {paymentMethod === "card" && (
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-2">
-              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-semibold text-xs mb-1">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" /> Cổng thanh toán thẻ bảo mật 256-bit
-              </div>
-              <input
-                placeholder="Số thẻ (VD: 9704 0000 ....)"
-                defaultValue="9704 1988 2026 8888"
-                className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium outline-none"
-              />
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  placeholder="MM/YY"
-                  defaultValue="12/28"
-                  className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium outline-none"
-                />
-                <input
-                  placeholder="CVV"
-                  defaultValue="888"
-                  className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium outline-none"
-                />
-              </div>
-            </div>
-          )}
+          {paymentMethod === "card" && <CardPaymentPanel />}
 
-          {paymentMethod === "counter" && (
-            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 space-y-1">
-              <p className="font-bold text-xs">Thanh toán trực tiếp khi đến trung tâm:</p>
-              <p className="text-[11px] leading-relaxed">
-                Chỗ học của bạn sẽ được giữ trước. Bạn vui lòng có mặt tại quầy lễ tân trước giờ bắt đầu lớp 10 phút để thanh toán giá gốc và nhận thẻ vào phòng tập.
-              </p>
-            </div>
-          )}
+          {paymentMethod === "counter" && <CounterPaymentPanel />}
         </div>
 
         {/* Footer */}
