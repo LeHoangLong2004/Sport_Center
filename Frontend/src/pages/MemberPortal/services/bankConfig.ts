@@ -25,12 +25,12 @@ export const POPULAR_BANKS = [
 ];
 
 export const DEFAULT_BANK_CONFIG: BankConfig = {
-  bankBin: "970436",
-  bankCode: "VCB",
-  bankName: "Vietcombank (Ngân hàng Ngoại thương Việt Nam)",
-  accountNumber: "1030183675",
-  accountName: "LE HOANG LONG",
-  sepayApiToken: "",
+  bankBin: "970403",
+  bankCode: "STB",
+  bankName: "Sacombank (Sài Gòn Thương Tín)",
+  accountNumber: "0979977428",
+  accountName: "PHAM DUC THANH PHUONG",
+  sepayApiToken: "smartgym_sepay_secret_2026",
 };
 
 const STORAGE_KEY = "sport_center_bank_config";
@@ -44,13 +44,16 @@ export const BankConfigService = {
         if (
           parsed.bankBin &&
           parsed.accountNumber &&
-          parsed.bankBin !== "971015" &&
-          !parsed.accountNumber.includes("YOUR_")
+          parsed.accountNumber === "0979977428" &&
+          parsed.bankBin === "970403"
         ) {
           return {
             ...DEFAULT_BANK_CONFIG,
             ...parsed,
           };
+        } else {
+          // Reset cache cũ sang Sacombank
+          localStorage.removeItem(STORAGE_KEY);
         }
       }
     } catch (e) {

@@ -19,6 +19,7 @@ interface PaymentOrderSummaryProps {
   onNext: () => void;
   method: PaymentMethodId;
   fmt: (n: number) => string;
+  autoPaid?: boolean;
 }
 
 export function PaymentOrderSummary({
@@ -39,6 +40,7 @@ export function PaymentOrderSummary({
   onNext,
   method,
   fmt,
+  autoPaid,
 }: PaymentOrderSummaryProps) {
   return (
     <div className="flex flex-col items-start w-full lg:w-[380px] shrink-0 sticky top-14">
@@ -189,16 +191,20 @@ export function PaymentOrderSummary({
         {/* Big Action CTA Button */}
         <button
           type="button"
-          disabled={!agreedTerms}
+          disabled={!agreedTerms || autoPaid}
           onClick={onNext}
           className={`w-full py-2.5 rounded-xl font-['Inter:Bold'] font-bold text-white text-xs md:text-sm shadow-sm transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-            agreedTerms
+            autoPaid
+              ? "bg-emerald-600 shadow-emerald-500/30 animate-pulse cursor-wait"
+              : agreedTerms
               ? "bg-teal-600 hover:bg-teal-700 active:scale-[0.99] shadow-teal-600/20"
               : "bg-slate-300 cursor-not-allowed shadow-none"
           }`}
         >
           <span>
-            {method === "counter"
+            {autoPaid
+              ? "🎉 Đã nhận tiền! Đang kích hoạt đơn hàng..."
+              : method === "counter"
               ? "Xác nhận đặt lịch tại quầy →"
               : `Xác nhận & Thanh toán ${fmt(finalTotal)} →`}
           </span>

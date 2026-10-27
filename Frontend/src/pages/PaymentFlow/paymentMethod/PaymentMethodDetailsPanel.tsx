@@ -10,6 +10,8 @@ interface PaymentMethodDetailsPanelProps {
   onCopy: (text: string, fieldName: string) => void;
   transferMemo: string;
   fmt: (n: number) => string;
+  autoPaid?: boolean;
+  autoPaidMessage?: string | null;
 }
 
 export function PaymentMethodDetailsPanel({
@@ -20,6 +22,8 @@ export function PaymentMethodDetailsPanel({
   onCopy,
   transferMemo,
   fmt,
+  autoPaid,
+  autoPaidMessage,
 }: PaymentMethodDetailsPanelProps) {
   const bankConfig = BankConfigService.getConfig();
   const qrUrl = BankConfigService.getVietQrUrl(finalTotal, transferMemo, bankConfig);
@@ -107,7 +111,7 @@ export function PaymentMethodDetailsPanel({
             </div>
 
             <p className="text-[10px] text-slate-500 leading-3.5">
-              💡 <strong>Mẹo:</strong> Mở <strong>App Vietcombank</strong> hoặc bất kỳ App Ngân hàng nào (VCB, MB, Techcom, BIDV, MoMo...) quét mã QR để chuyển khoản trực tiếp tự động điền tiền.
+              💡 <strong>Mẹo:</strong> Mở <strong>App Sacombank Pay</strong> hoặc bất kỳ App Ngân hàng nào (Sacombank, MB, VCB, Techcom, BIDV, MoMo...) quét mã QR để chuyển khoản trực tiếp tự động điền tiền.
             </p>
           </div>
 
@@ -139,23 +143,29 @@ export function PaymentMethodDetailsPanel({
         </div>
 
         {/* Khối trạng thái Webhook tự động */}
-        <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 flex items-center justify-between gap-3">
+        <div className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 transition-all ${
+          autoPaid 
+            ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-emerald-400 shadow-md animate-pulse" 
+            : "bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200"
+        }`}>
           <div className="flex items-center gap-2.5">
-            <span className="relative flex h-2.5 w-2.5 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            <span className="relative flex h-3 w-3 shrink-0">
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${autoPaid ? "bg-white" : "bg-emerald-400"}`}></span>
+              <span className={`relative inline-flex rounded-full h-3 w-3 ${autoPaid ? "bg-white" : "bg-emerald-500"}`}></span>
             </span>
             <div className="text-left">
-              <div className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
-                Đang lắng nghe Vietcombank (SePay Webhook)...
+              <div className={`text-xs font-bold flex items-center gap-1.5 ${autoPaid ? "text-white" : "text-emerald-950"}`}>
+                {autoPaid ? "🎉 Đã nhận thanh toán thành công qua SePay!" : "Đang chờ chuyển khoản theo thời gian thực (Sacombank)..."}
               </div>
-              <div className="text-[10px] text-emerald-700">
-                Chuyển tiền xong, hệ thống tự động phát hiện và kích hoạt gói sau 1 - 3 giây!
+              <div className={`text-[10px] ${autoPaid ? "text-emerald-100" : "text-emerald-700"}`}>
+                {autoPaid ? (autoPaidMessage || "Hệ thống đang tự động hoàn tất và kích hoạt ngay...") : "Chuyển tiền xong, hệ thống tự động phát hiện và hoàn tất đơn hàng ngay lập tức (không cần bấm nút)!"}
               </div>
             </div>
           </div>
-          <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-white px-2 py-0.5 rounded border border-emerald-200 shadow-2xs shrink-0">
-            Tự động ⚡
+          <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border shadow-2xs shrink-0 ${
+            autoPaid ? "bg-white text-emerald-700 border-white" : "text-emerald-700 bg-white border-emerald-200"
+          }`}>
+            {autoPaid ? "Thành công ✓" : "Trực tiếp 24/7 ⚡"}
           </span>
         </div>
 

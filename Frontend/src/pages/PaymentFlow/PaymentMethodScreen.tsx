@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { A, BillingPeriod, FlowPackage, getPaymentSummary, PaymentMethodId, Stepper } from "./shared";
 import { PaymentMemberProfileCard } from "./paymentMethod/PaymentMemberProfileCard";
 import { PaymentMethodDetailsPanel } from "./paymentMethod/PaymentMethodDetailsPanel";
@@ -27,6 +27,8 @@ export function PaymentMethodScreen({
   onBack,
   availableMethods,
 }: PaymentMethodScreenProps) {
+  const onNextRef = useRef(onNext);
+  onNextRef.current = onNext;
   const { listPrice, discount, total, periodLabel } = getPaymentSummary(pkg, period);
   const fmt = (n: number) => n.toLocaleString("vi-VN") + " đ";
 
@@ -96,11 +98,92 @@ export function PaymentMethodScreen({
   const pkgCode = (pkg.id || "PKG").replace(/[^a-zA-Z0-9]/g, "").slice(0, 6).toUpperCase();
   const transferMemo = `SC ${phoneDigits} ${pkgCode}`.toUpperCase();
 
+  // Auto-detection of SePay transfer for QR method
+  const [autoPaid, setAutoPaid] = useState(false);
+  const [autoPaidMessage, setAutoPaidMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (method !== "qr" || autoPaid) return;
+    let isCancelled = false;
+
+    const checkTransaction = async () => {
+      try {
+        const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/$/, "");
+        
+        // 1. Kiểm tra trực tiếp danh sách giao dịch SePay đã nhận trên backend
+        const res = await fetch(`${API_BASE}/api/payments/sepay-transactions`, {
+          cache: "no-store",
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const txs = data?.transactions || [];
+          const cleanMemo = transferMemo.trim().toUpperCase();
+          const cleanPhone = phoneDigits.toUpperCase();
+
+          const matched = txs.find((t: any) => {
+            const content = (t.content || "").toUpperCase();
+            const amount = Number(t.amount || 0);
+            // Bắt buộc số tiền phải khớp chính xác với đơn hàng hiện tại
+            const amountMatches = Math.abs(amount - finalTotal) < 1;
+            const memoMatches =
+              content.includes(cleanMemo) ||
+              content.replace(/\s+/g, "").includes(cleanMemo.replace(/\s+/g, "")) ||
+              (cleanPhone.length >= 3 && content.includes(cleanPhone) && (pkgCode ? content.includes(pkgCode.toUpperCase()) : true));
+            return amountMatches && memoMatches;
+          });
+
+          if (matched) {
+            setAutoPaid(true);
+            setAutoPaidMessage("🎉 Đã nhận được tiền chuyển khoản thành công từ Sacombank qua SePay!");
+            setTimeout(() => {
+              onNextRef.current?.();
+            }, 600);
+            return;
+          }
+        }
+
+        // 2. Thử thêm endpoint check-memo
+        const resMemo = await fetch(
+          `${API_BASE}/api/payments/sepay-check-memo?memo=${encodeURIComponent(transferMemo)}&amount=${encodeURIComponent(finalTotal)}`,
+          { cache: "no-store" }
+        );
+        if (resMemo.ok) {
+          const dataMemo = await resMemo.json();
+          if (dataMemo.received) {
+            setAutoPaid(true);
+            setAutoPaidMessage("🎉 Đã nhận được tiền chuyển khoản thành công từ Sacombank qua SePay!");
+            setTimeout(() => {
+              onNextRef.current?.();
+            }, 600);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("SePay polling error:", err);
+      }
+    };
+
+    // Kiểm tra ngay lập tức khi mở tab
+    void checkTransaction();
+
+    const interval = setInterval(() => {
+      if (!autoPaid) {
+        void checkTransaction();
+      }
+    }, 2000);
+
+    return () => {
+      isCancelled = true;
+      clearInterval(interval);
+    };
+  }, [method, transferMemo, phoneDigits, finalTotal, autoPaid, onNext]);
+
   const methods: { id: PaymentMethodId; icon: string; label: string; sub?: string; badge?: string }[] = [
     {
       id: "qr",
       icon: `${A}/66769.svg`,
-      label: "Mã QR Vietcombank (Napas 247)",
+      label: "Mã QR Sacombank (Napas 247)",
       badge: "Chính thức ⚡",
     },
     {
@@ -246,6 +329,8 @@ export function PaymentMethodScreen({
               onCopy={handleCopy}
               transferMemo={transferMemo}
               fmt={fmt}
+              autoPaid={autoPaid}
+              autoPaidMessage={autoPaidMessage}
             />
 
             {/* Bottom Security Guarantee */}
@@ -278,6 +363,7 @@ export function PaymentMethodScreen({
             onNext={onNext}
             method={method}
             fmt={fmt}
+            autoPaid={autoPaid}
           />
         </div>
       </div>
