@@ -125,6 +125,7 @@ public static partial class MemberEndpoints
         public string? TrainingLevel { get; set; }
         public List<string> ActivePackages { get; } = new();
         public List<string> UpcomingSessions { get; } = new();
+        public List<string> AssignedWorkouts { get; } = new();
         public bool IsAuthenticated => !string.IsNullOrEmpty(UserId);
     }
 
@@ -355,6 +356,50 @@ public static partial class MemberEndpoints
         foreach (var s in sessions.OrderBy(s => s.LocalStart).Take(8))
             result.UpcomingSessions.Add(s.Text);
 
+        if (memberId != Guid.Empty)
+        {
+            try
+            {
+                var homeworks = await db.HomeworkProgresses.AsNoTracking()
+                    .Include(h => h.Plan)
+                        .ThenInclude(p => p!.Exercises)
+                    .Where(h => h.MemberId == memberId)
+                    .OrderByDescending(h => h.AssignedDate)
+                    .Take(8)
+                    .ToListAsync(ct);
+
+                foreach (var hw in homeworks)
+                {
+                    var plan = hw.Plan;
+                    if (plan == null) continue;
+                    var duration = plan.DurationMinutes.HasValue ? $"{plan.DurationMinutes} phút" : "45 phút";
+                    var level = !string.IsNullOrWhiteSpace(plan.Level) ? $"Trình độ: {plan.Level}" : "Cơ bản";
+                    
+                    var exerciseList = plan.Exercises != null && plan.Exercises.Count > 0
+                        ? string.Join(", ", plan.Exercises.OrderBy(e => e.Order).Select((e, idx) =>
+                            $"{idx + 1}. {e.Name} ({e.Sets ?? "3"} hiệp x {e.Reps ?? e.Duration ?? "12 lần"}" +
+                            (!string.IsNullOrWhiteSpace(e.Rest) ? $", nghỉ {e.Rest}" : "") +
+                            (!string.IsNullOrWhiteSpace(e.Note) ? $" - ghi chú: {e.Note}" : "") + ")"))
+                        : "Chưa có bài tập chi tiết";
+                        
+                    var notes = !string.IsNullOrWhiteSpace(hw.Notes) ? $" [Lưu ý của HLV: {hw.Notes}]" : "";
+                    var status = hw.Status switch
+                    {
+                        "completed" => "Đã hoàn thành",
+                        "verified" => "Đã được HLV xác nhận",
+                        _ => "Đang thực hiện (chưa hoàn thành)"
+                    };
+                    var dueDate = hw.DueDate.HasValue ? $" [Hạn: {ToVn(hw.DueDate.Value):dd/MM/yyyy}]" : "";
+
+                    result.AssignedWorkouts.Add($"Giáo án \"{plan.PlanName}\" ({duration}, {level}) — Trạng thái: {status}{dueDate}{notes}. Gồm các bài tập: {exerciseList}");
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogDebug(ex, "Flow 6: cannot load assigned workout plans.");
+            }
+        }
+
         return result;
     }
 
@@ -403,10 +448,10 @@ public static partial class MemberEndpoints
         var sb = new StringBuilder();
 
         sb.AppendLine("Bạn là \"Trợ lý AI SportCenter\" — trợ lý ảo 24/7 dành cho hội viên của trung tâm thể thao SportCenter (Gym, Yoga, Bơi, Boxing, Cầu lông).");
-        sb.AppendLine("Nhiệm vụ: trả lời ngắn gọn, thân thiện, chính xác bằng TIẾNG VIỆT về: lịch tập cá nhân, gói tập, kỹ thuật bài tập, dinh dưỡng thể thao cơ bản, phục hồi cơ bắp, nội quy & chính sách trung tâm.");
+        sb.AppendLine("Nhiệm vụ: trả lời ngắn gọn, thân thiện, chính xác bằng TIẾNG VIỆT về: lịch tập cá nhân, gói tập, giáo án bài tập được giao, kỹ thuật bài tập, dinh dưỡng thể thao cơ bản, phục hồi cơ bắp, nội quy & chính sách trung tâm.");
         sb.AppendLine();
         sb.AppendLine("QUY TẮC BẮT BUỘC:");
-        sb.AppendLine("1. Chỉ dùng dữ liệu trong mục [NGỮ CẢNH HỘI VIÊN] khi nói về lịch, gói tập của hội viên. TUYỆT ĐỐI không bịa lịch học, tên HLV, gói tập, giá tiền hay ngày hết hạn.");
+        sb.AppendLine("1. Chỉ dùng dữ liệu trong mục [NGỮ CẢNH HỘI VIÊN] khi nói về lịch, gói tập, giáo án của hội viên. TUYỆT ĐỐI không bịa lịch học, tên HLV, gói tập, bài tập, giá tiền hay ngày hết hạn.");
         sb.AppendLine("2. Nếu ngữ cảnh không có dữ liệu cần thiết, nói rõ là chưa thấy dữ liệu và hướng dẫn màn hình phù hợp.");
         sb.AppendLine("3. Bạn KHÔNG thể tự đặt/hủy lớp, thanh toán, hoàn tiền hay sửa dữ liệu. Chỉ hướng dẫn và gợi ý màn hình để hội viên tự thao tác.");
         sb.AppendLine("4. An toàn sức khỏe: không chẩn đoán bệnh, không kê đơn thuốc, không khuyến nghị chất kích thích/doping, không đưa thực đơn ăn kiêng cực đoan. Nếu có dấu hiệu chấn thương/đau bất thường, khuyên ngừng tập và gặp bác sĩ/HLV.");
@@ -435,6 +480,9 @@ public static partial class MemberEndpoints
         sb.AppendLine(ctx.UpcomingSessions.Count == 0
             ? "• Lịch sắp tới: (chưa có buổi nào được đặt)"
             : "• Lịch sắp tới (theo thứ tự thời gian):\n  - " + string.Join("\n  - ", ctx.UpcomingSessions));
+        sb.AppendLine(ctx.AssignedWorkouts.Count == 0
+            ? "• Giáo án & bài tập được giao: (chưa có giáo án nào được HLV giao hoặc đã hoàn thành hết)"
+            : "• Giáo án & bài tập được giao:\n  - " + string.Join("\n  - ", ctx.AssignedWorkouts));
 
         if (history.Count > 0)
         {
@@ -551,8 +599,13 @@ public static partial class MemberEndpoints
             return ("💪 Giảm đau mỏi cơ (DOMS) sau buổi tập:\n• Giãn cơ tĩnh hoặc lăn Foam Roller 10-15 phút.\n• Đi bộ nhẹ 15-20 phút thay vì nằm yên.\n• Uống đủ nước, ngủ 7-8 tiếng.\nNếu đau nhói, sưng hoặc kéo dài trên 3 ngày, hãy ngừng tập và hỏi ý kiến HLV/bác sĩ.", "none");
         }
 
-        if (Has("bài tập", "giáo án", "kỹ thuật", "động tác"))
+        if (Has("bài tập", "giáo án", "kỹ thuật", "động tác", "giao an", "bai tap", "dong tac", "ky thuat", "tap luyen"))
         {
+            if (ctx.AssignedWorkouts.Count > 0)
+            {
+                var summary = string.Join("\n", ctx.AssignedWorkouts.Take(4).Select(w => "• " + (w.Length > 150 ? w[..150] + "…" : w)));
+                return ($"🏋️ Bạn hiện có {ctx.AssignedWorkouts.Count} giáo án được HLV giao trên hệ thống:\n{summary}\nBạn có thể bấm vào mục Giáo án & Bài tập để xem chi tiết từng bài và báo cáo tiến độ nhé!", "workouts");
+            }
             return ("🏋️ Giáo án và bài tập về nhà HLV giao cho bạn nằm ở mục Giáo án & Bài tập. Nếu cần hướng dẫn kỹ thuật cụ thể, bạn có thể nhắn trực tiếp cho HLV.", "workouts");
         }
 

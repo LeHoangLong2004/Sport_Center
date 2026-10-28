@@ -1,6 +1,7 @@
 import React from "react";
 import { Sparkles, Sliders } from "lucide-react";
 import type { MockMember, CoachClassOverview, SportOption } from "../../services/api";
+import type { MemberProfileData } from "../member-profile/types";
 import { type RoutinePreset } from "./types";
 import { CoachAiTargetSelector } from "./CoachAiTargetSelector";
 import { CoachAiPresetCards } from "./inputPanel/CoachAiPresetCards";
@@ -13,6 +14,8 @@ interface CoachAiInputPanelProps {
   setTargetId: (id: string) => void;
   onSelectTarget?: (type: "member" | "class", id: string) => void;
   onApplyPreset?: (preset: RoutinePreset) => void;
+  memberProfile?: MemberProfileData | null;
+  loadingProfile?: boolean;
   members: MockMember[];
   classes: CoachClassOverview[];
   sports: SportOption[];
@@ -22,8 +25,8 @@ interface CoachAiInputPanelProps {
   setLevel: (lvl: string) => void;
   goal: string;
   setGoal: (goal: string) => void;
-  equipment: string[];
-  setEquipment: React.Dispatch<React.SetStateAction<string[]>>;
+  equipment?: string[];
+  setEquipment?: React.Dispatch<React.SetStateAction<string[]>>;
   durationMinutes: number;
   setDurationMinutes: (d: number) => void;
   exerciseCount: number;
@@ -39,6 +42,8 @@ export const CoachAiInputPanel: React.FC<CoachAiInputPanelProps> = ({
   setTargetId,
   onSelectTarget,
   onApplyPreset,
+  memberProfile,
+  loadingProfile,
   members,
   classes,
   sports,
@@ -87,6 +92,8 @@ export const CoachAiInputPanel: React.FC<CoachAiInputPanelProps> = ({
             targetId={targetId}
             setTargetId={setTargetId}
             onSelectTarget={onSelectTarget}
+            memberProfile={memberProfile}
+            loadingProfile={loadingProfile}
             members={members}
             classes={classes}
           />
@@ -101,8 +108,8 @@ export const CoachAiInputPanel: React.FC<CoachAiInputPanelProps> = ({
           setLevel={setLevel}
           goal={goal}
           setGoal={setGoal}
-          equipment={equipment}
-          setEquipment={setEquipment}
+          equipment={equipment || []}
+          setEquipment={setEquipment || (() => {})}
           durationMinutes={durationMinutes}
           setDurationMinutes={setDurationMinutes}
           exerciseCount={exerciseCount}

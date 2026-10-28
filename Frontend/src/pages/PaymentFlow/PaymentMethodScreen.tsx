@@ -135,7 +135,7 @@ export function PaymentMethodScreen({
 
           if (matched) {
             setAutoPaid(true);
-            setAutoPaidMessage("🎉 Đã nhận được tiền chuyển khoản thành công từ MB Bank qua SePay!");
+            setAutoPaidMessage("🎉 Đã nhận được tiền chuyển khoản thành công từ Sacombank qua SePay!");
             setTimeout(() => {
               onNextRef.current?.();
             }, 600);
@@ -152,7 +152,7 @@ export function PaymentMethodScreen({
           const dataMemo = await resMemo.json();
           if (dataMemo.received) {
             setAutoPaid(true);
-            setAutoPaidMessage("🎉 Đã nhận được tiền chuyển khoản thành công từ MB Bank qua SePay!");
+            setAutoPaidMessage("🎉 Đã nhận được tiền chuyển khoản thành công từ Sacombank qua SePay!");
             setTimeout(() => {
               onNextRef.current?.();
             }, 600);
@@ -183,7 +183,7 @@ export function PaymentMethodScreen({
     {
       id: "qr",
       icon: `${A}/66769.svg`,
-      label: "Mã QR MB Bank (Napas 247)",
+      label: "Mã QR Sacombank (Napas 247)",
       badge: "Chính thức ⚡",
     },
     {

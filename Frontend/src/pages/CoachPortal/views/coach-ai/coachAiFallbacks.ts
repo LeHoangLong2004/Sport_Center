@@ -1,5 +1,23 @@
 import type { Flow5WorkoutPlan, Flow5Target } from "../../services/api";
 
+export function getDefaultEquipmentForSport(sportName?: string): string[] {
+  if (!sportName) return ["Không dụng cụ"];
+  const lower = sportName.toLowerCase();
+  if (lower.includes("bơi") || lower.includes("swim")) {
+    return ["Hồ bơi", "Phao bơi"];
+  }
+  if (lower.includes("yoga") || lower.includes("pilates")) {
+    return ["Thảm tập"];
+  }
+  if (lower.includes("cầu lông") || lower.includes("badminton")) {
+    return ["Vợt cầu lông"];
+  }
+  if (lower.includes("boxing") || lower.includes("võ")) {
+    return ["Không dụng cụ"];
+  }
+  return ["Thảm tập", "Tạ tay"];
+}
+
 export function cleanEquipmentList(raw: string[]): string[] {
   const mapped = raw.map((item) => {
     const lower = item.toLowerCase();
@@ -11,10 +29,12 @@ export function cleanEquipmentList(raw: string[]): string[] {
     if (lower.includes("tham")) return "Thảm tập";
     if (lower.includes("khang luc")) return "Dây kháng lực";
     if (lower.includes("kettlebell")) return "Kettlebell";
+    if (lower.includes("phao") || lower.includes("kickboard")) return "Phao bơi";
     if (lower.includes("ho boi") || lower.includes("boi")) return "Hồ bơi";
     if (lower.includes("ghe tap")) return "Ghế tập";
     if (lower.includes("day nhay")) return "Dây nhảy";
     if (lower.includes("bong")) return "Bóng";
+    if (lower.includes("vot") || lower.includes("cau long")) return "Vợt cầu lông";
     return item.replace(/\s*\([^)]*\)/g, "").trim();
   });
   const unique = Array.from(new Set(mapped)).filter(Boolean);
@@ -305,7 +325,7 @@ export function createClientDraft({
     coachId: "",
     sportId,
     planName: `${selectedSport} - ${goal || "Cải thiện thể lực toàn diện"}`,
-    description: `Giáo án gợi ý tối ưu thời lượng ${durationMinutes} phút. Thiết bị: ${equipment.join(", ") || "Không dụng cụ"}.`,
+    description: `Kế hoạch tập luyện môn ${selectedSport} tối ưu thời lượng ${durationMinutes} phút, tập trung vào ${goal || "cải thiện thể lực & kỹ thuật động tác"}.`,
     goal,
     level,
     durationMinutes,

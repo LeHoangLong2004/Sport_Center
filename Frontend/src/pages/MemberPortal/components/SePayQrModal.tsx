@@ -36,7 +36,7 @@ export default function SePayQrModal({
   // SePay QR URL with fallback to VietQR CDN
   const sepayQrUrl = `https://qr.sepay.vn/img?acc=${encodeURIComponent(
     bankConfig.accountNumber
-  )}&bank=MBBank&amount=${amount}&des=${encodeURIComponent(
+  )}&bank=${encodeURIComponent(bankConfig.bankCode || "Sacombank")}&amount=${amount}&des=${encodeURIComponent(
     transferMemo
   )}&template=compact`;
 
