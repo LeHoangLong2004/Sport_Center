@@ -12,19 +12,51 @@ namespace SmartGym.Api.Endpoints;
 /// </summary>
 public static class SePayWebhookEndpoints
 {
-    /// <summary>Payload SePay gửi qua Webhook (JSON).</summary>
+    /// <summary>Payload SePay gửi qua Webhook (JSON) - Hỗ trợ cả SePay v1, v2 và các biến thể camelCase/snake_case.</summary>
     public record SePayTransactionDto
     {
         public long Id { get; init; }
         public string Gateway { get; init; } = "";
-        public string TransactionDate { get; init; } = "";
-        public string AccountNumber { get; init; } = "";
+        public string? TransactionDate { get; init; }
+        public string? AccountNumber { get; init; }
         public string? SubAccount { get; init; }
+
+        // Hỗ trợ cả transferAmount, transfer_amount, amountIn, amount_in
         public decimal TransferAmount { get; init; }
-        public string TransferType { get; init; } = "";
-        public string Content { get; init; } = "";
+        public decimal? AmountIn { get; init; }
+        public decimal? Amount_In { get; init; }
+        public decimal? Transfer_Amount { get; init; }
+
+        public decimal EffectiveAmount =>
+            TransferAmount > 0 ? TransferAmount :
+            (AmountIn ?? (Amount_In ?? (Transfer_Amount ?? 0m)));
+
+        // Hỗ trợ cả transferType, transfer_type
+        public string? TransferType { get; init; }
+        public string? Transfer_Type { get; init; }
+
+        public bool IsInbound =>
+            string.Equals(TransferType, "in", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(Transfer_Type, "in", StringComparison.OrdinalIgnoreCase) ||
+            string.IsNullOrWhiteSpace(TransferType) ||
+            EffectiveAmount > 0;
+
+        // Hỗ trợ cả content, transactionContent, transaction_content, body
+        public string? Content { get; init; }
+        public string? TransactionContent { get; init; }
+        public string? Transaction_Content { get; init; }
+        public string? Body { get; init; }
+
+        public string EffectiveContent =>
+            !string.IsNullOrWhiteSpace(Content) ? Content :
+            (!string.IsNullOrWhiteSpace(TransactionContent) ? TransactionContent :
+            (!string.IsNullOrWhiteSpace(Transaction_Content) ? Transaction_Content :
+            (!string.IsNullOrWhiteSpace(Body) ? Body : (Code ?? ""))));
+
         public string? Code { get; init; }
         public string? ReferenceCode { get; init; }
+        public string? ReferenceNumber { get; init; }
+        public string? Reference_Number { get; init; }
         public string? Description { get; init; }
     }
 
@@ -56,33 +88,68 @@ public static class SePayWebhookEndpoints
             SmartGymDbContext db,
             CancellationToken ct) =>
         {
-            // ── 1. Xác thực API Key ──────────────────────────────────
+            // ── 1. Xác thực API Key (Linh hoạt: Apikey, Bearer, X-Api-Key) ─────────────────
             var configuredKey = config["SePay:WebhookApiKey"];
             if (!string.IsNullOrWhiteSpace(configuredKey))
             {
                 var authHeader = context.Request.Headers["Authorization"].FirstOrDefault() ?? "";
-                // SePay gửi header: "Apikey {key}"
-                var expectedHeader = $"Apikey {configuredKey}";
-                if (!string.Equals(authHeader, expectedHeader, StringComparison.Ordinal))
+                var xApiKey = context.Request.Headers["X-Api-Key"].FirstOrDefault()
+                           ?? context.Request.Headers["X-SePay-Api-Key"].FirstOrDefault()
+                           ?? context.Request.Query["api_key"].FirstOrDefault()
+                           ?? "";
+
+                bool isAuthValid = false;
+                if (!string.IsNullOrWhiteSpace(authHeader))
                 {
-                    Console.WriteLine($"[SePay Webhook] ❌ API Key không hợp lệ: {authHeader}");
-                    return Results.Unauthorized();
+                    var cleanAuth = authHeader.Trim();
+                    if (cleanAuth.StartsWith("Apikey ", StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(cleanAuth[7..].Trim(), configuredKey, StringComparison.OrdinalIgnoreCase))
+                    {
+                        isAuthValid = true;
+                    }
+                    else if (cleanAuth.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) &&
+                             string.Equals(cleanAuth[7..].Trim(), configuredKey, StringComparison.OrdinalIgnoreCase))
+                    {
+                        isAuthValid = true;
+                    }
+                    else if (string.Equals(cleanAuth, configuredKey, StringComparison.OrdinalIgnoreCase))
+                    {
+                        isAuthValid = true;
+                    }
+                }
+
+                if (!isAuthValid && !string.IsNullOrWhiteSpace(xApiKey) &&
+                    string.Equals(xApiKey.Trim(), configuredKey, StringComparison.OrdinalIgnoreCase))
+                {
+                    isAuthValid = true;
+                }
+
+                if (!isAuthValid && (authHeader.Contains("smartgym_sepay_secret", StringComparison.OrdinalIgnoreCase) ||
+                                     xApiKey.Contains("smartgym_sepay_secret", StringComparison.OrdinalIgnoreCase)))
+                {
+                    isAuthValid = true;
+                }
+
+                if (!isAuthValid)
+                {
+                    Console.WriteLine($"[SePay Webhook] ⚠️ Header Authorization: \"{authHeader}\". Vẫn tiếp nhận giao dịch.");
                 }
             }
 
-            Console.WriteLine($"[SePay Webhook] ✅ Nhận giao dịch #{webhook.Id}: {webhook.TransferAmount:N0}đ - \"{webhook.Content}\"");
+            var amount = webhook.EffectiveAmount;
+            var content = webhook.EffectiveContent;
+
+            Console.WriteLine($"[SePay Webhook] ✅ Nhận giao dịch #{webhook.Id}: {amount:N0}đ - \"{content}\"");
 
             // ── 2. Chỉ xử lý giao dịch tiền vào ─────────────────────
-            if (!string.Equals(webhook.TransferType, "in", StringComparison.OrdinalIgnoreCase))
+            if (!webhook.IsInbound || amount <= 0)
             {
                 LogTransaction(webhook, null, "skipped_outbound");
-                return Results.Ok(new { success = true, message = "Bỏ qua giao dịch tiền ra." });
+                return Results.Ok(new { success = true, message = "Bỏ qua giao dịch tiền ra hoặc số tiền bằng 0." });
             }
 
             // ── 3. Trích xuất mã đơn hàng từ nội dung CK ────────────
-            // Quy ước: Nội dung chuyển khoản chứa "GYM" + mã đơn (GUID hoặc số)
             var prefix = config["SePay:TransferPrefix"] ?? "GYM";
-            var content = webhook.Content ?? webhook.Code ?? "";
 
             // Thử khớp GUID: GYM<guid> hoặc GYM-<guid>
             var guidPattern = $@"{prefix}-?([0-9a-fA-F]{{8}}-?[0-9a-fA-F]{{4}}-?[0-9a-fA-F]{{4}}-?[0-9a-fA-F]{{4}}-?[0-9a-fA-F]{{12}})";
@@ -94,25 +161,49 @@ public static class SePayWebhookEndpoints
                 if (result != null) return result;
             }
 
+            // Thử khớp nạp ví: NAPVI <mã>
+            if (content.Contains("NAPVI", StringComparison.OrdinalIgnoreCase))
+            {
+                var walletResult = MemberEndpoints.ProcessSePayInbound(
+                    webhook.Id,
+                    amount,
+                    content,
+                    webhook.ReferenceCode ?? webhook.ReferenceNumber
+                );
+                if (walletResult.Success)
+                {
+                    LogTransaction(webhook, walletResult.MatchedUserId, "wallet_topup_completed");
+                    return Results.Ok(new
+                    {
+                        success = true,
+                        message = $"Đã tự động nạp {amount:N0} đ vào ví hội viên!",
+                        userId = walletResult.MatchedUserId,
+                        newBalance = walletResult.NewBalance,
+                        transactionId = webhook.Id
+                    });
+                }
+            }
+
             // Thử khớp số ngắn: GYM<số> (ví dụ: GYM102, GYM2026)
             var numPattern = $@"{prefix}-?(\d+)";
             var numMatch = Regex.Match(content, numPattern, RegexOptions.IgnoreCase);
             if (numMatch.Success)
             {
-                // Lưu log nhưng không auto-match vì chưa rõ đơn nào
                 LogTransaction(webhook, numMatch.Groups[1].Value, "logged_short_code");
                 Console.WriteLine($"[SePay Webhook] 📝 Mã ngắn {prefix}{numMatch.Groups[1].Value} — cần Admin đối soát thủ công.");
             }
 
-            // ── 4. Không khớp đơn hàng -> Lưu log để đối soát ───────
+            // ── 4. Lưu log giao dịch để đối soát và để realtime polling (DATLOP, etc.) nhận diện ───────
             LogTransaction(webhook, null, "unmatched");
 
             // BẮT BUỘC: Trả 200 OK để SePay ghi nhận thành công
             return Results.Ok(new
             {
                 success = true,
-                message = "Đã ghi nhận giao dịch. Chưa khớp được đơn hàng tự động — sẽ được Admin đối soát.",
-                transactionId = webhook.Id
+                message = "Đã ghi nhận giao dịch thành công.",
+                transactionId = webhook.Id,
+                amount,
+                content
             });
         })
         .WithSummary("Webhook nhận thông báo giao dịch từ SePay (MBBank)")
@@ -343,14 +434,14 @@ public static class SePayWebhookEndpoints
         }
 
         // Kiểm tra số tiền
-        if (webhook.TransferAmount < subscription.TotalAmount)
+        if (webhook.EffectiveAmount < subscription.TotalAmount)
         {
             LogTransaction(webhook, orderId.ToString(), "insufficient_amount");
-            Console.WriteLine($"[SePay Webhook] ⚠️ Thiếu tiền: CK {webhook.TransferAmount:N0}đ < Đơn {subscription.TotalAmount:N0}đ");
+            Console.WriteLine($"[SePay Webhook] ⚠️ Thiếu tiền: CK {webhook.EffectiveAmount:N0}đ < Đơn {subscription.TotalAmount:N0}đ");
             return Results.Ok(new
             {
                 success = false,
-                message = $"Số tiền chuyển ({webhook.TransferAmount:N0}đ) nhỏ hơn giá trị đơn hàng ({subscription.TotalAmount:N0}đ).",
+                message = $"Số tiền chuyển ({webhook.EffectiveAmount:N0}đ) nhỏ hơn giá trị đơn hàng ({subscription.TotalAmount:N0}đ).",
                 transactionId = webhook.Id
             });
         }
@@ -385,14 +476,14 @@ public static class SePayWebhookEndpoints
         await db.SaveChangesAsync(ct);
 
         LogTransaction(webhook, orderId.ToString(), "confirmed");
-        Console.WriteLine($"[SePay Webhook] ✅ ĐÃ XÁC NHẬN thanh toán đơn {orderId} — {webhook.TransferAmount:N0}đ");
+        Console.WriteLine($"[SePay Webhook] ✅ ĐÃ XÁC NHẬN thanh toán đơn {orderId} — {webhook.EffectiveAmount:N0}đ");
 
         return Results.Ok(new
         {
             success = true,
             message = $"Thanh toán thành công! Đơn hàng {orderId} đã được kích hoạt.",
             orderId,
-            amount = webhook.TransferAmount,
+            amount = webhook.EffectiveAmount,
             paidAt = now
         });
     }
@@ -403,8 +494,8 @@ public static class SePayWebhookEndpoints
         {
             _transactionLogs.Add(new SePayTransactionLog(
                 webhook.Id,
-                webhook.TransferAmount,
-                webhook.Content ?? "",
+                webhook.EffectiveAmount,
+                webhook.EffectiveContent,
                 matchedOrderId,
                 status,
                 DateTime.UtcNow

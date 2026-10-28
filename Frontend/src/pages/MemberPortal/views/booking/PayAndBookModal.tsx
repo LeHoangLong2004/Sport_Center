@@ -367,43 +367,43 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
         {/* Footer */}
         <div className="p-4 border-t border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50/50 dark:bg-slate-850">
           {paymentMethod === "qr" ? (
-            <div className="flex items-center justify-end gap-3 w-full">
-              <button
-                type="button"
-                disabled={isBusy}
-                onClick={onClose}
-                className="px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs disabled:opacity-50 cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                disabled={isBusy || isPaid}
-                onClick={handleCheckPayment}
-                className={`px-5 py-2.5 font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer ${
-                  isPaid
-                    ? "bg-emerald-600 text-white shadow-emerald-600/30 cursor-wait"
-                    : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 active:scale-95 disabled:opacity-50"
-                }`}
-              >
-                {isPaid ? (
-                  <>
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>✓ Đã nhận thanh toán • Đang đặt chỗ...</span>
-                  </>
-                ) : isCheckingPayment || isProcessingPayment ? (
-                  <>
-                    <LoaderCircle className="w-4 h-4 animate-spin" />
-                    <span>Đang kiểm tra biến động số dư...</span>
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="w-4 h-4" />
-                    <span>Tôi đã chuyển tiền - Kiểm tra ngay</span>
-                  </>
-                )}
-              </button>
-            </div>
+            <div className="flex items-center justify-end gap-2 w-full">
+                <button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={onClose}
+                  className="px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs disabled:opacity-50 cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  disabled={isBusy || isPaid}
+                  onClick={handleCheckPayment}
+                  className={`px-5 py-2.5 font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer ${
+                    isPaid
+                      ? "bg-emerald-600 text-white shadow-emerald-600/30 cursor-wait"
+                      : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 active:scale-95 disabled:opacity-50"
+                  }`}
+                >
+                  {isPaid ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>✓ Đã nhận thanh toán • Đang đặt chỗ...</span>
+                    </>
+                  ) : isCheckingPayment || isProcessingPayment ? (
+                    <>
+                      <LoaderCircle className="w-4 h-4 animate-spin" />
+                      <span>Đang kiểm tra biến động số dư...</span>
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-4 h-4" />
+                      <span>Tôi đã chuyển tiền - Kiểm tra ngay</span>
+                    </>
+                  )}
+                </button>
+              </div>
           ) : (
             <div className="flex justify-end gap-3 w-full">
               <button
