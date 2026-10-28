@@ -65,7 +65,7 @@ export default function WalletTopUpModal({
     }
   }, [isOpen]);
 
-  // Auto-polling biến động số dư Vietcombank khi mở tab QR
+  // Auto-polling biến động số dư khi mở tab QR
   useEffect(() => {
     if (!isOpen || method !== "qr" || successResult) return;
     let isCancelled = false;
@@ -111,7 +111,7 @@ export default function WalletTopUpModal({
   const handleCheckTransfer = async () => {
     if (actualAmount <= 0) return;
     setLoading(true);
-    setCheckStatusText("Đang kiểm tra biến động số dư Vietcombank...");
+    setCheckStatusText("Đang kiểm tra biến động số dư...");
     try {
       const res = await WalletService.checkTransfer(transferMemo, actualAmount, undefined, false);
       if (res.received && typeof res.newBalance === "number") {
@@ -120,7 +120,7 @@ export default function WalletTopUpModal({
       } else {
         setCheckStatusText(
           res.message ||
-            `Chưa phát hiện giao dịch ${actualAmount.toLocaleString("vi-VN")} đ với nội dung "${transferMemo}" trên tài khoản Vietcombank. Vui lòng quét mã QR và hoàn tất chuyển tiền trước khi bấm kiểm tra!`
+            `Chưa phát hiện giao dịch ${actualAmount.toLocaleString("vi-VN")} đ với nội dung "${transferMemo}". Vui lòng quét mã QR và hoàn tất chuyển tiền trước khi bấm kiểm tra!`
         );
       }
     } finally {
@@ -244,7 +244,7 @@ export default function WalletTopUpModal({
                 <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Hình thức thanh toán</label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { id: "qr" as const, label: "Mã Vietcombank", icon: QrCode, color: "text-emerald-600" },
+                    { id: "qr" as const, label: "Mã VietQR", icon: QrCode, color: "text-emerald-600" },
                     { id: "card" as const, label: "Thẻ ATM / Visa", icon: CreditCard, color: "text-blue-600" },
                     { id: "counter" as const, label: "Tại quầy", icon: Building, color: "text-amber-600" },
                   ].map((m) => (
@@ -281,7 +281,7 @@ export default function WalletTopUpModal({
                 <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3">
                   <div className="flex items-center justify-between pb-1.5 border-b border-slate-200 dark:border-slate-700 text-xs">
                     <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                      {bankConfig.bankCode || "VCB"} • {bankConfig.accountNumber}
+                      {bankConfig.bankCode || "STB"} • {bankConfig.accountNumber}
                     </span>
                     <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
                       VietQR • Napas 247
@@ -297,7 +297,7 @@ export default function WalletTopUpModal({
                       alt={`Mã QR ${bankConfig.bankCode} VietQR`}
                       className="w-44 h-auto object-contain mx-auto rounded-xl bg-white p-2 border border-slate-200 shadow-xs"
                     />
-                    <p className="text-[10px] text-slate-500">Mở App Ngân hàng (VCB Digibank, Techcombank, MB,...) để quét mã</p>
+                    <p className="text-[10px] text-slate-500">Mở App Ngân hàng bất kỳ (Sacombank, MBBank, VCB, MoMo,...) để quét mã</p>
                   </div>
 
                   <div className="bg-white dark:bg-slate-900 rounded-xl p-2.5 border border-slate-200 dark:border-slate-700 text-[11px] space-y-1.5">
@@ -449,7 +449,7 @@ export default function WalletTopUpModal({
               )}
 
               {method === "qr" && (
-                <div className="space-y-2">
+                <div>
                   <button
                     type="button"
                     disabled={loading || actualAmount <= 0}
@@ -457,24 +457,13 @@ export default function WalletTopUpModal({
                     className="w-full py-3 rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 text-white bg-emerald-600 hover:bg-emerald-500"
                   >
                     {loading ? (
-                      <span>Đang kiểm tra biến động số dư Vietcombank...</span>
+                      <span>Đang kiểm tra biến động số dư...</span>
                     ) : (
                       <>
                         <ShieldCheck className="w-4 h-4" />
-                        <span>Tôi đã chuyển tiền • Xác nhận nạp ví</span>
+                        <span>Xác nhận nạp ví</span>
                       </>
                     )}
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={isSimulating}
-                    onClick={handleSimulateWebhook}
-                    className="w-full py-2.5 rounded-xl text-[11px] font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
-                    title="Bấm nút này để giả lập Vietcombank vừa gửi tin nhắn tiền về (dành cho demo / kiểm thử)"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                    <span>{isSimulating ? "Đang gửi tín hiệu Webhook..." : "Mô phỏng Webhook Vietcombank báo tiền về (Demo Test ⚡)"}</span>
                   </button>
                 </div>
               )}
