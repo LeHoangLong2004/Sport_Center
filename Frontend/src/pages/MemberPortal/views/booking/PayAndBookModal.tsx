@@ -3,18 +3,22 @@ import { createPortal } from "react-dom";
 import {
   X,
   AlertCircle,
-  QrCode,
-  CreditCard,
-  Building,
   ShieldCheck,
   LoaderCircle,
   Check,
-  Copy,
   Sparkles,
+  CheckCircle2,
+  RefreshCw,
+  QrCode,
+  CreditCard,
+  Building,
+  Copy,
 } from "lucide-react";
-import { CoachAvatar } from "../../utils/coachAvatar";
 import { BankConfigService } from "../../services/bankConfig";
 import { WalletService } from "../../services/walletService";
+import { BookingClassHeader } from "./payAndBook/BookingClassHeader";
+import { CardPaymentPanel } from "./payAndBook/CardPaymentPanel";
+import { CounterPaymentPanel } from "./payAndBook/CounterPaymentPanel";
 
 interface PayAndBookModalProps {
   classToBook: any | null;
@@ -44,19 +48,18 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
 
   const [checkStatusText, setCheckStatusText] = useState<string | null>(null);
   const [isCheckingPayment, setIsCheckingPayment] = useState(false);
-  const [isSimulating, setIsSimulating] = useState(false);
+  const [isPaid, setIsPaid] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [showTokenConfig, setShowTokenConfig] = useState(false);
-  const [inputToken, setInputToken] = useState(() => bankConfig.sepayApiToken || "");
 
   // Reset status on open or payment method switch
   useEffect(() => {
     setCheckStatusText(null);
+    setIsPaid(false);
   }, [paymentMethod, classToBook]);
 
-  // Auto-polling biến động số dư Vietcombank khi mở tab QR
+  // Auto-polling biến động số dư khi mở tab QR
   useEffect(() => {
-    if (!classToBook || paymentMethod !== "qr" || isProcessingPayment) return;
+    if (!classToBook || paymentMethod !== "qr" || isProcessingPayment || isPaid) return;
     let isCancelled = false;
 
     const interval = setInterval(async () => {
@@ -64,16 +67,20 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
         const res = await WalletService.checkTransfer(bookingMemo, classPrice);
         if (!isCancelled && res.received) {
           clearInterval(interval);
-          onConfirmPayment();
+          setIsPaid(true);
+          setCheckStatusText(null);
+          setTimeout(() => {
+            onConfirmPayment();
+          }, 1000);
         }
       } catch {}
-    }, 2500);
+    }, 2000);
 
     return () => {
       isCancelled = true;
       clearInterval(interval);
     };
-  }, [classToBook, paymentMethod, bookingMemo, classPrice, isProcessingPayment, onConfirmPayment]);
+  }, [classToBook, paymentMethod, bookingMemo, classPrice, isProcessingPayment, isPaid, onConfirmPayment]);
 
   const handleCopy = (text: string, key: string) => {
     navigator.clipboard?.writeText(text);
@@ -81,52 +88,38 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  const handleSaveToken = () => {
-    const updated = { ...bankConfig, sepayApiToken: inputToken.trim() };
-    BankConfigService.saveConfig(updated);
-    setShowTokenConfig(false);
-    setCheckStatusText(
-      inputToken.trim()
-        ? "Đã lưu SePay API Token thành công! Bạn có thể quét QR chuyển khoản thật để kiểm tra."
-        : "Đã xóa SePay API Token."
-    );
-    setTimeout(() => setCheckStatusText(null), 4000);
-  };
-
   const handleCheckPayment = async () => {
+    if (isPaid) {
+      onConfirmPayment();
+      return;
+    }
+
     setIsCheckingPayment(true);
-    setCheckStatusText("Đang kiểm tra biến động số dư Vietcombank...");
+    setCheckStatusText("Đang kiểm tra biến động số dư từ ngân hàng qua SePay...");
     try {
       const res = await WalletService.checkTransfer(bookingMemo, classPrice, undefined, false);
       if (res.received) {
+        setIsPaid(true);
         setCheckStatusText(null);
-        onConfirmPayment();
+        setTimeout(() => {
+          onConfirmPayment();
+        }, 1000);
+        return;
       } else {
+        // CHƯA NHẬN ĐƯỢC TIỀN -> BÁO LỖI RÕ RÀNG VÀ KHÔNG CHO HOÀN TẤT
         setCheckStatusText(
           res.message ||
-            `Chưa phát hiện giao dịch ${classPrice.toLocaleString("vi-VN")} đ với nội dung "${bookingMemo}" trên Vietcombank. Vui lòng hoàn tất chuyển khoản trước khi bấm kiểm tra!`
+            `Chưa phát hiện giao dịch chuyển khoản ${classPrice.toLocaleString("vi-VN")} đ với nội dung "${bookingMemo}". Vui lòng hoàn tất chuyển tiền trên App ngân hàng trước khi xác nhận!`
         );
       }
     } catch {
-      setCheckStatusText("Chưa tìm thấy giao dịch chuyển khoản trên tài khoản Vietcombank.");
+      setCheckStatusText("Chưa tìm thấy giao dịch chuyển khoản trên tài khoản ngân hàng. Vui lòng chuyển tiền trước khi bấm xác nhận!");
     } finally {
       setIsCheckingPayment(false);
     }
   };
 
-  const handleSimulateWebhook = async () => {
-    setIsSimulating(true);
-    try {
-      const res = await WalletService.simulateWebhook(classPrice, bookingMemo);
-      if (res.success) {
-        onConfirmPayment();
-      }
-    } finally {
-      setIsSimulating(false);
-    }
-  };
-
-  const isBusy = isProcessingPayment || isCheckingPayment || isSimulating;
+  const isBusy = isProcessingPayment || isCheckingPayment;
 
   return createPortal(
     <div
@@ -172,54 +165,8 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
             </div>
           )}
 
-          {/* Lớp & Coach info box */}
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <CoachAvatar
-                src={classToBook.coachAvatar}
-                name={classToBook.coachName}
-                className="w-12 h-12 rounded-full border-2 border-teal-500 shrink-0"
-              />
-              <div>
-                <p className="font-extrabold text-sm text-slate-900 dark:text-white">
-                  {classToBook.name}
-                </p>
-                <p className="text-xs text-teal-600 dark:text-teal-400 font-semibold">
-                  HLV phụ trách: {classToBook.coachName}
-                </p>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  {classToBook.startTime} - {classToBook.endTime} • {classToBook.room}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* BẢNG CHI TIẾT THANH TOÁN GIÁ GỐC */}
-          <div className="p-4 rounded-2xl bg-teal-50/50 dark:bg-slate-800/80 border border-teal-200 dark:border-slate-700 space-y-2.5">
-            <h4 className="font-extrabold text-xs uppercase tracking-wider text-teal-800 dark:text-teal-300">
-              Chi tiết hóa đơn đăng ký
-            </h4>
-            <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
-              <span>Hạng thành viên của bạn:</span>
-              <span className="font-bold text-slate-800 dark:text-slate-200">🥉 Cơ bản (Basic Member)</span>
-            </div>
-            <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
-              <span>Giá gốc niêm yết buổi học:</span>
-              <span className="font-bold text-slate-800 dark:text-slate-200">
-                {classPrice.toLocaleString("vi-VN")} đ
-              </span>
-            </div>
-            <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
-              <span>Ưu đãi thành viên:</span>
-              <span className="font-bold text-slate-500">0 đ (Áp dụng 100% giá gốc)</span>
-            </div>
-            <div className="flex justify-between items-center pt-2.5 border-t border-teal-200 dark:border-slate-700 text-sm">
-              <span className="font-extrabold text-slate-900 dark:text-white">Tổng tiền thanh toán:</span>
-              <strong className="text-xl font-black text-emerald-600 dark:text-emerald-400">
-                {classPrice.toLocaleString("vi-VN")} đ
-              </strong>
-            </div>
-          </div>
+          {/* Lớp & Chi tiết hóa đơn */}
+          <BookingClassHeader classToBook={classToBook} classPrice={classPrice} />
 
           {/* CHỌN PHƯƠNG THỨC THANH TOÁN */}
           <div>
@@ -237,7 +184,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                 }`}
               >
                 <QrCode className="w-5 h-5 text-emerald-600 shrink-0" />
-                <span className="text-[11px] font-bold">Mã Vietcombank</span>
+                <span className="text-[11px] font-bold">Mã VietQR</span>
               </button>
 
               <button
@@ -273,7 +220,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3">
               <div className="flex items-center justify-between pb-1.5 border-b border-slate-200 dark:border-slate-700 text-xs">
                 <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                  {bankConfig.bankCode || "VCB"} • {bankConfig.accountNumber}
+                  {bankConfig.bankCode || "STB"} • {bankConfig.accountNumber}
                 </span>
                 <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
                   VietQR • Napas 247
@@ -289,7 +236,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                   alt={`Mã VietQR ${bankConfig.bankName}`}
                   className="w-40 h-auto object-contain mx-auto rounded-xl bg-white p-2 border border-slate-200 shadow-xs"
                 />
-                <p className="text-[10px] text-slate-500">Mở App Ngân hàng (VCB Digibank, Techcom, MB,...) để quét mã tự động</p>
+                <p className="text-[10px] text-slate-500">Mở App Ngân hàng bất kỳ (Sacombank, MBBank, VCB, MoMo,...) để quét mã tự động</p>
               </div>
 
               {/* Thông tin chuyển khoản chi tiết */}
@@ -346,115 +293,116 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                 </div>
               </div>
 
-              {/* VIETQR LIVE STATUS BADGE */}
-              <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="relative flex h-3 w-3 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                  </span>
-                  <div className="text-left">
-                    <div className="text-xs font-bold text-emerald-950 dark:text-emerald-200">
-                      VietQR • {bankConfig.bankName}
-                    </div>
-                    <div className="text-[10px] text-emerald-700 dark:text-emerald-400">
-                      Quét mã QR chuyển khoản trên App Ngân hàng hoặc MoMo, sau đó bấm Xác nhận đặt chỗ!
+              {/* VIETQR LIVE STATUS BADGE: TRƯỚC VÀ SAU KHI CHUYỂN KHOẢN */}
+              <div
+                className={`p-3.5 rounded-2xl border transition-all ${
+                  isPaid
+                    ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 text-white border-emerald-400 shadow-md animate-in fade-in"
+                    : "bg-amber-50/90 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    {isPaid ? (
+                      <div className="size-9 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                        <CheckCircle2 className="w-5 h-5 text-white" />
+                      </div>
+                    ) : (
+                      <span className="relative flex h-3.5 w-3.5 shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500"></span>
+                      </span>
+                    )}
+                    <div className="text-left">
+                      <div
+                        className={`text-xs font-black flex items-center gap-1.5 ${
+                          isPaid ? "text-white" : "text-amber-950 dark:text-amber-200"
+                        }`}
+                      >
+                        {isPaid
+                          ? "🎉 ĐÃ NHẬN THANH TOÁN THÀNH CÔNG!"
+                          : "⏳ Trạng thái: Chưa thanh toán (Chờ quét mã)"}
+                      </div>
+                      <div
+                        className={`text-[11px] mt-0.5 ${
+                          isPaid ? "text-emerald-100" : "text-amber-800 dark:text-amber-300"
+                        }`}
+                      >
+                        {isPaid
+                          ? `Tài khoản Sacombank đã ghi nhận ${classPrice.toLocaleString("vi-VN")} đ. Hệ thống đang tự động kích hoạt đặt chỗ...`
+                          : "Hệ thống tự động quét biến động số dư Sacombank liên tục mỗi 2 giây. Bạn chỉ cần quét mã chuyển tiền, hệ thống sẽ tự cập nhật!"}
+                      </div>
                     </div>
                   </div>
+                  <span
+                    className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg border shadow-2xs shrink-0 ${
+                      isPaid
+                        ? "bg-white text-emerald-700 border-white font-bold"
+                        : "bg-amber-100 dark:bg-slate-900 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700"
+                    }`}
+                  >
+                    {isPaid ? "Đã thanh toán ✓" : "Chờ chuyển tiền ⏳"}
+                  </span>
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300 bg-white dark:bg-slate-900 px-2 py-1 rounded-lg border border-emerald-200 shadow-2xs shrink-0">
-                  Napas 24/7 ⚡
-                </span>
               </div>
 
-              {/* Thông báo nếu kiểm tra chưa thấy tiền */}
-              {checkStatusText && (
-                <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs text-left flex items-start gap-2 animate-in fade-in">
-                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                  <span className="font-semibold leading-relaxed">{checkStatusText}</span>
+              {/* Cảnh báo rõ ràng nếu bấm kiểm tra mà chưa thấy tiền */}
+              {!isPaid && checkStatusText && (
+                <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200 text-xs text-left flex items-start gap-2.5 animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <p className="font-extrabold text-rose-700 dark:text-rose-300">Chưa nhận được tiền thanh toán!</p>
+                    <p className="text-[11px] leading-relaxed">{checkStatusText}</p>
+                  </div>
                 </div>
               )}
             </div>
           )}
 
-          {paymentMethod === "card" && (
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-2">
-              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-semibold text-xs mb-1">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" /> Cổng thanh toán thẻ bảo mật 256-bit
-              </div>
-              <input
-                placeholder="Số thẻ (VD: 9704 0000 ....)"
-                defaultValue="9704 1988 2026 8888"
-                className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium outline-none"
-              />
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  placeholder="MM/YY"
-                  defaultValue="12/28"
-                  className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium outline-none"
-                />
-                <input
-                  placeholder="CVV"
-                  defaultValue="888"
-                  className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium outline-none"
-                />
-              </div>
-            </div>
-          )}
+          {paymentMethod === "card" && <CardPaymentPanel />}
 
-          {paymentMethod === "counter" && (
-            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 space-y-1">
-              <p className="font-bold text-xs">Thanh toán trực tiếp khi đến trung tâm:</p>
-              <p className="text-[11px] leading-relaxed">
-                Chỗ học của bạn sẽ được giữ trước. Bạn vui lòng có mặt tại quầy lễ tân trước giờ bắt đầu lớp 10 phút để thanh toán giá gốc và nhận thẻ vào phòng tập.
-              </p>
-            </div>
-          )}
+          {paymentMethod === "counter" && <CounterPaymentPanel />}
         </div>
 
         {/* Footer */}
         <div className="p-4 border-t border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50/50 dark:bg-slate-850">
           {paymentMethod === "qr" ? (
-            <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-2">
+            <div className="flex items-center justify-end gap-3 w-full">
               <button
                 type="button"
                 disabled={isBusy}
-                onClick={handleSimulateWebhook}
-                className="w-full sm:w-auto px-3 py-2 rounded-xl text-[11px] font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 disabled:opacity-50"
-                title="Bấm nút này để mô phỏng Vietcombank vừa gửi tin nhắn tiền về (dành cho demo / kiểm thử)"
+                onClick={onClose}
+                className="px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs disabled:opacity-50 cursor-pointer"
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>{isSimulating ? "Đang gửi tín hiệu Webhook..." : "Mô phỏng Webhook tiền về (Demo Test ⚡)"}</span>
+                Hủy
               </button>
-
-              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                <button
-                  type="button"
-                  disabled={isBusy}
-                  onClick={onClose}
-                  className="px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs disabled:opacity-50 cursor-pointer"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  disabled={isBusy}
-                  onClick={handleCheckPayment}
-                  className="px-5 py-2.5 font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
-                >
-                  {isCheckingPayment || isProcessingPayment ? (
-                    <>
-                      <LoaderCircle className="w-4 h-4 animate-spin" />
-                      <span>Đang kiểm tra biến động số dư...</span>
-                    </>
-                  ) : (
-                    <>
-                      <ShieldCheck className="w-4 h-4" />
-                      <span>Tôi đã chuyển tiền • Xác nhận đặt chỗ</span>
-                    </>
-                  )}
-                </button>
-              </div>
+              <button
+                type="button"
+                disabled={isBusy || isPaid}
+                onClick={handleCheckPayment}
+                className={`px-5 py-2.5 font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer ${
+                  isPaid
+                    ? "bg-emerald-600 text-white shadow-emerald-600/30 cursor-wait"
+                    : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 active:scale-95 disabled:opacity-50"
+                }`}
+              >
+                {isPaid ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>✓ Đã nhận thanh toán • Đang đặt chỗ...</span>
+                  </>
+                ) : isCheckingPayment || isProcessingPayment ? (
+                  <>
+                    <LoaderCircle className="w-4 h-4 animate-spin" />
+                    <span>Đang kiểm tra biến động số dư...</span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Tôi đã chuyển tiền - Kiểm tra ngay</span>
+                  </>
+                )}
+              </button>
             </div>
           ) : (
             <div className="flex justify-end gap-3 w-full">

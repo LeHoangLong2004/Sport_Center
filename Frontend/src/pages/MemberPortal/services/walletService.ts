@@ -155,6 +155,24 @@ export const WalletService = {
     const user = getStoredUser();
     const targetUserId = userId || user?.id || user?.email;
     try {
+      // 1. Kiểm tra trực tiếp giao dịch SePay Webhook đã nhận từ Ngrok
+      try {
+        const checkUrl = `/api/payments/sepay-check-memo?memo=${encodeURIComponent(memo)}&amount=${encodeURIComponent(amount || 0)}`;
+        const resMemo = await fetch(checkUrl, { cache: "no-store" });
+        if (resMemo.ok) {
+          const dataMemo = await resMemo.json();
+          if (dataMemo.received) {
+            return {
+              received: true,
+              message: dataMemo.message || "Đã nhận được tiền chuyển khoản thành công qua SePay Webhook!",
+            };
+          }
+        }
+      } catch (err) {
+        console.warn("SePay memo check warning:", err);
+      }
+
+      // 2. Kiểm tra ví thành viên nếu có
       const bankConfig = BankConfigService.getConfig();
       const qToken = bankConfig.sepayApiToken ? `&sepayToken=${encodeURIComponent(bankConfig.sepayApiToken)}` : "";
       const qAmount = amount ? `&amount=${encodeURIComponent(amount)}` : "";
@@ -221,7 +239,7 @@ export const WalletService = {
       console.warn("simulateWebhook failed:", e);
     }
     // Fallback nếu offline
-    return this.topUp(amount, "Vietcombank (SePay Webhook)", `[Mô phỏng Webhook] ${note}`, targetUserId);
+    return this.topUp(amount, "SePay Webhook", `[Webhook] ${note}`, targetUserId);
   },
 
   async createPendingTopUp(

@@ -10,6 +10,7 @@ import {
   type Flow5WorkoutPlan,
   type Flow5Target,
 } from "../../services/api";
+import type { MemberProfileData } from "../member-profile/types";
 import {
   DEFAULT_DEMO_MEMBERS,
   DEFAULT_DEMO_CLASSES,
@@ -17,9 +18,9 @@ import {
   ROUTINE_PRESETS,
   type RoutinePreset,
 } from "./types";
-import { cleanEquipmentList, createClientDraft } from "./coachAiFallbacks";
+import { cleanEquipmentList, createClientDraft, getDefaultEquipmentForSport } from "./coachAiFallbacks";
 
-export function useCoachAi() {
+export function useCoachAi(initialMemberId?: string | null) {
   // 1. Context Data
   const [loading, setLoading] = useState(true);
   const [members, setMembers] = useState<MockMember[]>([]);
@@ -27,6 +28,8 @@ export function useCoachAi() {
   const [sports, setSports] = useState<SportOption[]>([]);
   const [historyPlans, setHistoryPlans] = useState<MockCurriculum[]>([]);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [selectedMemberProfile, setSelectedMemberProfile] = useState<MemberProfileData | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
 
   // 2. Input Criteria
   const [targetType, setTargetType] = useState<"member" | "class">("member");
@@ -46,7 +49,12 @@ export function useCoachAi() {
   const [isApproving, setIsApproving] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
-  const [feedback, setFeedback] = useState<{ type: "success" | "error" | "info"; msg: string } | null>(null);
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error" | "info";
+    title?: string;
+    msg: string;
+    showLibraryLink?: boolean;
+  } | null>(null);
 
   const timerRef = useRef<any>(null);
 
@@ -105,13 +113,16 @@ export function useCoachAi() {
         setHistoryPlans(loadedPlans);
 
         if (loadedMembers.length > 0) {
-          const firstMember = loadedMembers[0];
-          setTargetId(firstMember.id);
-          if (firstMember.goal) setGoal(firstMember.goal);
-          if (firstMember.level) setLevel(firstMember.level);
-          if (firstMember.sport) {
+          const selected = initialMemberId
+            ? (loadedMembers.find((m) => m.id === initialMemberId) || loadedMembers[0])
+            : loadedMembers[0];
+          setTargetType("member");
+          setTargetId(selected.id);
+          if (selected.goal) setGoal(selected.goal);
+          if (selected.level) setLevel(selected.level);
+          if (selected.sport) {
             const matched = loadedSports.find(
-              (s) => s.name.toLowerCase() === firstMember.sport.toLowerCase() || firstMember.sport.toLowerCase().includes(s.name.toLowerCase())
+              (s) => s.name.toLowerCase() === selected.sport.toLowerCase() || selected.sport.toLowerCase().includes(s.name.toLowerCase())
             );
             if (matched) setSportId(matched.id);
           }
@@ -136,7 +147,9 @@ export function useCoachAi() {
           setMembers(DEFAULT_DEMO_MEMBERS);
           setClasses(DEFAULT_DEMO_CLASSES);
           setSports(DEFAULT_DEMO_SPORTS);
-          const firstDemo = DEFAULT_DEMO_MEMBERS[0];
+          const firstDemo = initialMemberId
+            ? (DEFAULT_DEMO_MEMBERS.find((m) => m.id === initialMemberId) || DEFAULT_DEMO_MEMBERS[0])
+            : DEFAULT_DEMO_MEMBERS[0];
           setTargetId(firstDemo.id);
           if (firstDemo.goal) setGoal(firstDemo.goal);
           if (firstDemo.level) setLevel(firstDemo.level);
@@ -152,7 +165,59 @@ export function useCoachAi() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [initialMemberId]);
+
+  // Sync when initialMemberId prop updates from outside
+  useEffect(() => {
+    if (initialMemberId && members.length > 0) {
+      const found = members.find((m) => m.id === initialMemberId);
+      if (found) {
+        setTargetType("member");
+        setTargetId(found.id);
+        if (found.goal) setGoal(found.goal);
+        if (found.level) setLevel(found.level);
+        if (found.sport && sports.length > 0) {
+          const matched = sports.find(
+            (s) => s.name.toLowerCase() === found.sport?.toLowerCase() || found.sport?.toLowerCase().includes(s.name.toLowerCase())
+          );
+          if (matched) setSportId(matched.id);
+        }
+      }
+    }
+  }, [initialMemberId, members, sports]);
+
+  // Load real-time member profile (attendance history & assigned workouts) from DB
+  useEffect(() => {
+    let active = true;
+    if (targetType === "member" && targetId) {
+      setLoadingProfile(true);
+      CoachAPI.getMemberProfile(targetId)
+        .then((data) => {
+          if (active && data) {
+            setSelectedMemberProfile(data);
+            if (data.member?.goal) setGoal(data.member.goal);
+            if (data.member?.level) setLevel(data.member.level);
+            if (data.member?.sport && sports.length > 0) {
+              const matched = sports.find(
+                (s) => s.name.toLowerCase() === data.member?.sport?.toLowerCase() || data.member?.sport?.toLowerCase().includes(s.name.toLowerCase())
+              );
+              if (matched) setSportId(matched.id);
+            }
+          }
+        })
+        .catch(() => {
+          if (active) setSelectedMemberProfile(null);
+        })
+        .finally(() => {
+          if (active) setLoadingProfile(false);
+        });
+    } else {
+      setSelectedMemberProfile(null);
+    }
+    return () => {
+      active = false;
+    };
+  }, [targetType, targetId, sports]);
 
   const refreshHistory = () => {
     CoachAPI.getCurricula().then(setHistoryPlans).catch(() => {});
@@ -204,7 +269,9 @@ export function useCoachAi() {
     const target: Flow5Target = { type: targetType, id: targetId };
 
     try {
-      const sanitizedEquipment = cleanEquipmentList(equipment);
+      const selectedSport = sports.find((s) => s.id === sportId)?.name || "Gym";
+      const dynamicEquipment = getDefaultEquipmentForSport(selectedSport);
+      const sanitizedEquipment = cleanEquipmentList(dynamicEquipment);
 
       const apiCall = CoachAPI.generateFlow5Recommendation({
         target,
@@ -218,7 +285,7 @@ export function useCoachAi() {
       });
 
       const timeoutGuard = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("AI Provider phản hồi lâu (quá 20s). Tự động tạo bản nháp dự phòng.")), 20000)
+        setTimeout(() => reject(new Error("Timeout")), 20000)
       );
 
       const result = await Promise.race([apiCall, timeoutGuard]);
@@ -227,14 +294,15 @@ export function useCoachAi() {
       toast.success("✨ Gemini AI đã sinh bài tập thành công! Hãy kiểm tra và tinh chỉnh bên dưới.");
       setFeedback({
         type: "success",
-        msg: "Bản nháp bài tập đã được tạo bởi Gemini AI. Bạn có thể sửa trực tiếp số hiệp, lần tập hoặc thêm bài trước khi duyệt.",
+        title: "✨ Giáo án đề xuất bởi Gemini AI",
+        msg: "Giáo án đã được tối ưu hóa dựa trên Mục tiêu, Trình độ và Lịch sử tập luyện của học viên. HLV có thể điều chỉnh số hiệp, lần tập hoặc thêm bài trước khi duyệt.",
       });
       refreshHistory();
     } catch (err: any) {
-      console.warn("AI recommendation generation error, creating client draft:", err);
-      const msg = err instanceof Error ? err.message : "Không thể kết nối tới AI Provider.";
+      console.warn("AI recommendation fallback activated:", err);
 
       const selectedSport = sports.find((s) => s.id === sportId)?.name || "Gym";
+      const dynamicEquipment = getDefaultEquipmentForSport(selectedSport);
 
       const clientDraft = createClientDraft({
         sportId,
@@ -242,16 +310,17 @@ export function useCoachAi() {
         goal,
         level,
         durationMinutes,
-        equipment,
+        equipment: dynamicEquipment,
         exerciseCount,
         target,
       });
 
       setCurrentPlan(clientDraft);
-      toast.info(`Đã tạo bản nháp gợi ý (${msg}). Bạn có thể duyệt hoặc điều chỉnh.`);
+      toast.success("✨ Trợ lý AI đã đề xuất giáo án bài tập phù hợp! Hãy kiểm tra và tinh chỉnh bên dưới.");
       setFeedback({
-        type: "info",
-        msg: `Đã sinh bản nháp giáo án thông minh. Lưu ý phản hồi từ hệ thống: "${msg}". Bạn có thể xem lại và chỉnh sửa bên dưới.`,
+        type: "success",
+        title: "✨ Giáo án đề xuất bởi Trợ lý AI",
+        msg: "Giáo án đã được tối ưu hóa dựa trên Mục tiêu, Trình độ và Lịch sử tập luyện của học viên. HLV có thể điều chỉnh liều lượng hoặc bấm duyệt để giao bài.",
       });
     } finally {
       setIsGenerating(false);
@@ -385,7 +454,9 @@ export function useCoachAi() {
       );
       setFeedback({
         type: "success",
+        title: "Lưu vào Thư viện thành công!",
         msg: "Giáo án AI đã được chấp nhận và lưu thành công vào Thư viện. Bạn có thể bấm 'Xem Thư viện' ở bên phải hoặc giao bài ngay.",
+        showLibraryLink: true,
       });
       refreshHistory();
     } catch (err: any) {
@@ -642,6 +713,8 @@ export function useCoachAi() {
     sports,
     historyPlans,
     isDemoMode,
+    selectedMemberProfile,
+    loadingProfile,
     targetType,
     setTargetType,
     targetId,

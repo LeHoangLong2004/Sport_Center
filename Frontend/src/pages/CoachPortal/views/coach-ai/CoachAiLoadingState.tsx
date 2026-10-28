@@ -36,7 +36,7 @@ export const CoachAiLoadingState: React.FC<CoachAiLoadingStateProps> = ({
     },
     {
       title: "3. Google Gemini 1.5 Flash sinh bài tập chuyên sâu",
-      desc: "Lựa chọn các bài tập phù hợp mục tiêu, thiết bị sẵn có & trình độ",
+      desc: "Lựa chọn các bài tập phù hợp mục tiêu, trình độ & lịch sử tập luyện",
       active: stepIndex === 3,
       done: stepIndex > 3,
     },

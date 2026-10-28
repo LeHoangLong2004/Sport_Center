@@ -5,7 +5,7 @@ export interface BankConfig {
   accountNumber: string; // Real account number
   accountName: string; // Account holder name
   qrImage?: string; // Static image file path in /public
-  sepayApiToken?: string; // Mã API Token từ my.sepay.vn để đọc biến động số dư Vietcombank thực tế
+  sepayApiToken?: string; // Mã API Token từ my.sepay.vn để đọc biến động số dư thực tế
 }
 
 export const POPULAR_BANKS = [

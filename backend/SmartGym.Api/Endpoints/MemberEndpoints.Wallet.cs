@@ -289,7 +289,7 @@ namespace SmartGym.Api.Endpoints
                         return Results.Ok(new
                         {
                             received = true,
-                            message = "Đã nhận được tiền chuyển khoản thành công từ ngân hàng Vietcombank!",
+                            message = "Đã nhận được tiền chuyển khoản thành công từ ngân hàng!",
                             balance = bal,
                             transaction = matched
                         });
@@ -380,8 +380,8 @@ namespace SmartGym.Api.Endpoints
                                                 $"SEPAY-{txId}",
                                                 "topup",
                                                 txAmount > 0 ? txAmount : (amount ?? 100000m),
-                                                "Vietcombank (SePay Live API)",
-                                                $"Vietcombank báo có thật: {content} (Mã GD: {refNo})",
+                                                "SePay Live API",
+                                                $"Hệ thống báo có: {content} (Mã GD: {refNo})",
                                                 DateTime.UtcNow,
                                                 "completed"
                                             );
@@ -394,7 +394,7 @@ namespace SmartGym.Api.Endpoints
                                             return Results.Ok(new
                                             {
                                                 received = true,
-                                                message = $"Đã phát hiện giao dịch thật {(txAmount > 0 ? txAmount : (amount ?? 0)):N0} đ từ Vietcombank! Số dư ví đã được cộng thành công.",
+                                                message = $"Đã phát hiện giao dịch thật {(txAmount > 0 ? txAmount : (amount ?? 0)):N0} đ! Số dư ví đã được cộng thành công.",
                                                 balance = newBalance,
                                                 transaction = newTx,
                                                 isLiveBank = true
@@ -416,12 +416,12 @@ namespace SmartGym.Api.Endpoints
                     received = false,
                     hasToken = !string.IsNullOrWhiteSpace(token),
                     message = !string.IsNullOrWhiteSpace(token)
-                        ? "Đã kết nối SePay Vietcombank nhưng chưa tìm thấy giao dịch tiền vào khớp với số tiền và nội dung. Vui lòng chuyển khoản và thử lại sau ít giây!"
-                        : "Chưa cấu hình SePay API Token để đọc biến động số dư Vietcombank thực tế. Vui lòng nhập SePay Token từ my.sepay.vn để kích hoạt kiểm tra tiền thật."
+                        ? "Đã kết nối SePay nhưng chưa tìm thấy giao dịch tiền vào khớp với số tiền và nội dung. Vui lòng chuyển khoản và thử lại sau ít giây!"
+                        : "Chưa cấu hình SePay API Token để đọc biến động số dư thực tế. Vui lòng nhập SePay Token từ my.sepay.vn để kích hoạt kiểm tra tiền thật."
                 });
             })
             .WithTags("Member Portal")
-            .WithSummary("Kiểm tra biến động số dư chuyển khoản Vietcombank tự động hoặc qua SePay Live API");
+            .WithSummary("Kiểm tra biến động số dư chuyển khoản tự động hoặc qua SePay Live API");
 
             // 5. POST /api/member/wallet/sepay-webhook - Cổng Webhook nhận dữ liệu tự động từ SePay/Casso
             wallet.MapPost("/sepay-webhook", ([FromBody] SepayWebhookRequest payload) =>
@@ -463,8 +463,8 @@ namespace SmartGym.Api.Endpoints
                     $"SEPAY-{payload.id ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                     "topup",
                     amount,
-                    "Vietcombank (SePay Webhook)",
-                    $"Vietcombank báo có: {content} (Ref: {payload.referenceNumber ?? "Napas 247"})",
+                    "SePay Webhook",
+                    $"Hệ thống báo có: {content} (Ref: {payload.referenceNumber ?? "Napas 247"})",
                     DateTime.UtcNow,
                     "completed"
                 );
@@ -478,14 +478,14 @@ namespace SmartGym.Api.Endpoints
                 return Results.Ok(new
                 {
                     success = true,
-                    message = "Webhook đã ghi nhận biến động số dư Vietcombank và tự động nạp tiền vào ví!",
+                    message = "Webhook đã ghi nhận biến động số dư và tự động nạp tiền vào ví!",
                     userId = matchedUserId,
                     newBalance,
                     transaction = tx
                 });
             })
             .WithTags("Member Portal")
-            .WithSummary("Webhook nhận thông báo biến động số dư Vietcombank tự động từ SePay/Casso");
+            .WithSummary("Webhook nhận thông báo biến động số dư tự động từ SePay/Casso");
 
             // 6. POST /api/member/wallet/simulate-webhook - Mô phỏng Webhook tiền về tức thì (Dành cho Test / Demo)
             wallet.MapPost("/simulate-webhook", (HttpContext context, [FromBody] TopUpRequest request) =>
@@ -511,8 +511,8 @@ namespace SmartGym.Api.Endpoints
                     $"SEPAY-SIM-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                     "topup",
                     amount,
-                    "Vietcombank (SePay Webhook)",
-                    $"[Mô phỏng Webhook] Vietcombank báo có: {note}",
+                    "SePay Webhook",
+                    $"[Mô phỏng Webhook] Hệ thống báo có: {note}",
                     DateTime.UtcNow,
                     "completed"
                 );
@@ -526,13 +526,13 @@ namespace SmartGym.Api.Endpoints
                 return Results.Ok(new
                 {
                     success = true,
-                    message = $"Mô phỏng Webhook Vietcombank thành công! Đã nhận {amount:N0} đ",
+                    message = $"Mô phỏng Webhook thành công! Đã nhận {amount:N0} đ",
                     balance = newBalance,
                     transaction = tx
                 });
             })
             .WithTags("Member Portal")
-            .WithSummary("Mô phỏng Webhook Vietcombank báo có tiền dành cho demo");
+            .WithSummary("Mô phỏng Webhook báo có tiền dành cho demo");
         }
 
         public record SepayWebhookRequest(
