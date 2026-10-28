@@ -197,7 +197,7 @@ export default function SePayQrModal({
                 className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isChecking ? "animate-spin" : ""}`} />
-                <span>{isChecking ? "Đang đối soát..." : "Tôi đã chuyển khoản"}</span>
+                <span>{isChecking ? "Đang đối soát..." : "Xác nhận thanh toán"}</span>
               </button>
             </div>
           </div>
