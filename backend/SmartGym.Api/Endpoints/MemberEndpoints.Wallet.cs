@@ -426,53 +426,21 @@ namespace SmartGym.Api.Endpoints
             // 5. POST /api/member/wallet/sepay-webhook - Cổng Webhook nhận dữ liệu tự động từ SePay/Casso
             wallet.MapPost("/sepay-webhook", ([FromBody] SepayWebhookRequest payload) =>
             {
-                var amount = payload.amountIn ?? 0m;
-                if (amount <= 0)
+                var amount = (payload.amountIn ?? 0m) > 0 ? (payload.amountIn ?? 0m) : (payload.transferAmount ?? 0m);
+                var content = !string.IsNullOrWhiteSpace(payload.transactionContent)
+                    ? payload.transactionContent
+                    : (!string.IsNullOrWhiteSpace(payload.content) ? payload.content : (payload.body ?? ""));
+
+                var (success, newBalance, matchedUserId, tx) = ProcessSePayInbound(
+                    payload.id ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                    amount,
+                    content,
+                    payload.referenceNumber
+                );
+
+                if (!success)
                 {
                     return Results.Ok(new { success = false, message = "Không phải giao dịch tiền vào hoặc số tiền bằng 0." });
-                }
-
-                var content = payload.transactionContent ?? "";
-
-                // Tìm user khớp với nội dung chuyển khoản
-                string? matchedUserId = null;
-                foreach (var (uId, txs) in _memberWalletTransactions)
-                {
-                    lock (txs)
-                    {
-                        if (txs.Any(t => t.Note.Contains(content, StringComparison.OrdinalIgnoreCase) || content.Contains(t.Id, StringComparison.OrdinalIgnoreCase)))
-                        {
-                            matchedUserId = uId;
-                            break;
-                        }
-                    }
-                }
-
-                if (string.IsNullOrWhiteSpace(matchedUserId))
-                {
-                    matchedUserId = _memberWallets.Keys.FirstOrDefault(k => k != "m-default") ?? "m-default";
-                }
-
-                var newBalance = _memberWallets.AddOrUpdate(
-                    matchedUserId,
-                    amount,
-                    (_, current) => current + amount
-                );
-
-                var tx = new WalletTransactionDto(
-                    $"SEPAY-{payload.id ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-                    "topup",
-                    amount,
-                    "SePay Webhook",
-                    $"Hệ thống báo có: {content} (Ref: {payload.referenceNumber ?? "Napas 247"})",
-                    DateTime.UtcNow,
-                    "completed"
-                );
-
-                var txList = _memberWalletTransactions.GetOrAdd(matchedUserId, _ => new List<WalletTransactionDto>());
-                lock (txList)
-                {
-                    txList.Insert(0, tx);
                 }
 
                 return Results.Ok(new
@@ -535,6 +503,58 @@ namespace SmartGym.Api.Endpoints
             .WithSummary("Mô phỏng Webhook báo có tiền dành cho demo");
         }
 
+        public static (bool Success, decimal NewBalance, string MatchedUserId, WalletTransactionDto? Tx) ProcessSePayInbound(
+            long txId,
+            decimal amount,
+            string content,
+            string? referenceNumber = null)
+        {
+            if (amount <= 0) return (false, 0, "", null);
+
+            string? matchedUserId = null;
+            foreach (var (uId, txs) in _memberWalletTransactions)
+            {
+                lock (txs)
+                {
+                    if (txs.Any(t => (!string.IsNullOrEmpty(t.Note) && t.Note.Contains(content, StringComparison.OrdinalIgnoreCase)) ||
+                                     (!string.IsNullOrEmpty(t.Id) && content.Contains(t.Id, StringComparison.OrdinalIgnoreCase))))
+                    {
+                        matchedUserId = uId;
+                        break;
+                    }
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(matchedUserId))
+            {
+                matchedUserId = _memberWallets.Keys.FirstOrDefault(k => k != "m-default") ?? "m-default";
+            }
+
+            var newBalance = _memberWallets.AddOrUpdate(
+                matchedUserId,
+                amount,
+                (_, current) => current + amount
+            );
+
+            var tx = new WalletTransactionDto(
+                $"SEPAY-{txId}",
+                "topup",
+                amount,
+                "SePay Webhook",
+                $"Hệ thống báo có: {content} (Ref: {referenceNumber ?? "Napas 247"})",
+                DateTime.UtcNow,
+                "completed"
+            );
+
+            var txList = _memberWalletTransactions.GetOrAdd(matchedUserId, _ => new List<WalletTransactionDto>());
+            lock (txList)
+            {
+                txList.Insert(0, tx);
+            }
+
+            return (true, newBalance, matchedUserId, tx);
+        }
+
         public record SepayWebhookRequest(
             long? id,
             string? gateway,
@@ -546,7 +566,10 @@ namespace SmartGym.Api.Endpoints
             string? code,
             string? transactionContent,
             string? referenceNumber,
-            string? body
+            string? body,
+            decimal? transferAmount = null,
+            string? content = null
         );
     }
 }
+
