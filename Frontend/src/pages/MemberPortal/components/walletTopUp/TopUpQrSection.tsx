@@ -149,21 +149,6 @@ export const TopUpQrSection: React.FC<Props> = ({
             </>
           )}
         </button>
-
-        <button
-          type="button"
-          disabled={isSimulating}
-          onClick={onSimulateWebhook}
-          className="w-full py-2.5 rounded-xl text-[11px] font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
-          title="Bấm nút này để giả lập Vietcombank vừa gửi tin nhắn tiền về (dành cho demo / kiểm thử)"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-          <span>
-            {isSimulating
-              ? "Đang gửi tín hiệu Webhook..."
-              : "Mô phỏng Webhook Vietcombank báo tiền về (Demo Test ⚡)"}
-          </span>
-        </button>
       </div>
     </>
   );
