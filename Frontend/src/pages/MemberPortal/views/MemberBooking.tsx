@@ -74,7 +74,8 @@ export default function MemberBooking({ onNavigate }: Props) {
   });
 
   useEffect(() => {
-    if (selectedClassDetail || classToBook || bookingSuccessInfo || bookingPtSlot || cancelTarget) {
+    const hasOpenModal = Boolean(selectedClassDetail || classToBook || bookingSuccessInfo || bookingPtSlot || cancelTarget);
+    if (hasOpenModal) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
@@ -83,6 +84,12 @@ export default function MemberBooking({ onNavigate }: Props) {
       document.body.style.overflow = "unset";
     };
   }, [selectedClassDetail, classToBook, bookingSuccessInfo, bookingPtSlot, cancelTarget]);
+
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, []);
 
   const handleStartChatWithCoach = (coachName: string, coachId?: string, coachAvatar?: string) => {
     try {

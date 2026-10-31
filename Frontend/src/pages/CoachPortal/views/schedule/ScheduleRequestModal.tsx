@@ -1,10 +1,12 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { UnifiedScheduleItem } from "./types";
 import { CoachAPI } from "../../services/api";
-import { DateInput } from "../../../../components/DateInput";
+import { RequestSessionPicker } from "./scheduleRequestModal/RequestSessionPicker";
+import { RequestTypePicker, type ScheduleRequestType } from "./scheduleRequestModal/RequestTypePicker";
+import { RequestAdjustmentFields } from "./scheduleRequestModal/RequestAdjustmentFields";
 
 interface Props {
   isOpen: boolean;
@@ -17,7 +19,7 @@ interface Props {
     sessionTime?: string;
     sport?: string;
     room?: string;
-    requestType: "dời lịch" | "dạy thay" | "báo vắng";
+    requestType: ScheduleRequestType;
     substituteCoachId?: string;
     substituteCoachName: string;
     newDate: string;
@@ -66,7 +68,7 @@ export default function ScheduleRequestModal({
   onSubmit,
 }: Props) {
   const [selectedSessionId, setSelectedSessionId] = useState("");
-  const [requestType, setRequestType] = useState<"dời lịch" | "dạy thay" | "báo vắng">("dời lịch");
+  const [requestType, setRequestType] = useState<ScheduleRequestType>("dời lịch");
   const [substituteCoachId, setSubstituteCoachId] = useState("");
   const [substituteCoachName, setSubstituteCoachName] = useState("");
   const [newDate, setNewDate] = useState("");
@@ -188,7 +190,7 @@ export default function ScheduleRequestModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -196,105 +198,50 @@ export default function ScheduleRequestModal({
 
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
           <div className="p-5 overflow-y-auto flex flex-col gap-4 text-xs">
-            <div>
-              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                Chọn ca dạy cần điều chỉnh: <span className="text-rose-500">*</span>
-              </label>
-              {upcomingSessions.length === 0 ? (
-                <div className="p-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 text-xs">
-                  Không có ca dạy nào sắp diễn ra trong tương lai để điều chỉnh. Các ca dạy trong quá khứ đã kết thúc nên không thể dời lịch, dạy thay hoặc báo vắng.
-                </div>
-              ) : (
-                <select
-                  value={selectedSessionId}
-                  onChange={(e) => setSelectedSessionId(e.target.value)}
-                  className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                >
-                  {upcomingSessions.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.date} ({s.startTime} - {s.endTime}) • {s.className}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
+            {/* 1. Session Picker */}
+            <RequestSessionPicker
+              sessions={upcomingSessions}
+              selectedSessionId={selectedSessionId}
+              onSelectSessionId={setSelectedSessionId}
+            />
 
-            <div>
-              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                Loại yêu cầu:
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {(["dời lịch", "dạy thay", "báo vắng"] as const).map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setRequestType(t)}
-                    className={`p-2.5 rounded-lg border text-center font-semibold capitalize transition-all ${
-                      requestType === t
-                        ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900"
-                        : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50"
-                    }`}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* 2. Request Type Buttons */}
+            <RequestTypePicker
+              requestType={requestType}
+              onRequestTypeChange={setRequestType}
+            />
 
-
-            {requestType === "dời lịch" && (
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                    Ngày mới đề xuất:
-                  </label>
-                  <DateInput
-                    value={newDate}
-                    onChange={setNewDate}
-                    className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                    Khung giờ mới:
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="VD: 08:00 - 09:30"
-                    value={newTime}
-                    onChange={(e) => setNewTime(e.target.value)}
-                    className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                  />
-                </div>
-              </div>
-            )}
-
-            <div>
-              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                Lý do cụ thể: <span className="text-rose-500">*</span>
-              </label>
-              <textarea
-                rows={3}
-                placeholder="Điền lý do cụ thể gửi tới ban quản lý..."
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400"
-              />
-            </div>
+            {/* 3. Adjustment Fields (Date/Time, Substitute Coach, Reason) */}
+            <RequestAdjustmentFields
+              requestType={requestType}
+              newDate={newDate}
+              onNewDateChange={setNewDate}
+              newTime={newTime}
+              onNewTimeChange={setNewTime}
+              substituteCoachId={substituteCoachId}
+              onSubstituteCoachChange={(id, name) => {
+                setSubstituteCoachId(id);
+                setSubstituteCoachName(name);
+              }}
+              filteredCoaches={filteredCoaches}
+              loadingCoaches={loadingCoaches}
+              reason={reason}
+              onReasonChange={setReason}
+            />
           </div>
 
           <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2.5 shrink-0 bg-slate-50/50 dark:bg-slate-850">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={submitting || upcomingSessions.length === 0}
-              className="px-5 py-2 font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 rounded-lg shadow-sm transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              className="px-5 py-2 font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 rounded-lg shadow-sm transition-colors disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
             >
               {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               {submitting ? "Đang gửi..." : "Gửi yêu cầu"}

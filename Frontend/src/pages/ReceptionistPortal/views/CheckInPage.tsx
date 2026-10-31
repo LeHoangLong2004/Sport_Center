@@ -141,17 +141,21 @@ export function CheckInPage() {
       {/* Stats */}
       <div className="flex gap-[16px] items-start shrink-0 w-full">
         {[
-          { icon: `${A}/9e21f.svg`, bg: "bg-[#3b82f6]", label: "Tổng check-in hôm nay", value: historyRows.length.toString() },
-           { icon: `${A}/fe113.svg`, bg: "bg-[#22c55e]", label: "Đang tập tại trung tâm", value: historyRows.filter(row => !row.checkOutTime).length.toString() },
-          { icon: `${A}/53e60.svg`, bg: "bg-[#ea580c]", label: "Lớp học sắp bắt đầu", value: "3 lớp" },
+          { label: "Tổng check-in hôm nay", value: historyRows.length.toString(), sub: "lượt vào cổng ca trực" },
+          { label: "Đang tập tại trung tâm", value: historyRows.filter(row => !row.checkOutTime).length.toString(), sub: "hội viên trong phòng tập", highlight: true },
+          { label: "Lớp học sắp bắt đầu", value: "3 lớp", sub: "trong 60 phút tới" },
         ].map((stat) => (
-          <div key={stat.label} className="bg-white border border-[#e2e8f0] flex flex-1 gap-[16px] items-start min-w-0 p-[20px] rounded-[12px]">
-            <div className={`${stat.bg} flex items-center justify-center rounded-[8px] shrink-0 size-[44px]`}>
-              <img src={stat.icon} alt="" className="size-[20px]" />
+          <div
+            key={stat.label}
+            className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 flex flex-1 flex-col justify-between min-w-0 p-[20px] rounded-[16px] shadow-xs hover:border-purple-400 dark:hover:border-purple-600 transition-all group"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-semibold text-slate-500 dark:text-slate-400 text-[12px] uppercase tracking-wider">{stat.label}</span>
+              <span className={`size-2 rounded-full ${stat.highlight ? "bg-purple-600 animate-pulse" : "bg-purple-400"}`} />
             </div>
-            <div className="flex flex-col gap-[4px] items-start shrink-0">
-              <span className="font-['Manrope:SemiBold'] font-semibold text-[#64748b] text-[13px]">{stat.label}</span>
-              <span className="font-['Manrope:ExtraBold'] font-extrabold text-[#0f172a] text-[24px]">{stat.value}</span>
+            <div className="flex items-baseline gap-2 mt-2">
+              <span className="font-extrabold text-slate-900 dark:text-white text-[26px] tracking-tight">{stat.value}</span>
+              <span className="text-slate-400 dark:text-slate-500 text-[11px] font-medium">{stat.sub}</span>
             </div>
           </div>
         ))}
@@ -163,14 +167,14 @@ export function CheckInPage() {
         <div className="bg-white border border-[#e2e8f0] flex flex-1 flex-col gap-[16px] items-start min-w-0 p-[24px] rounded-[12px]">
           <span className="font-['Manrope:ExtraBold'] font-extrabold text-[#0f172a] text-[16px]">Nhập mã hoặc quét thẻ hội viên / phiếu nạp ví</span>
           <div className="bg-[#f1f5f9] flex gap-[12px] items-center p-[16px] rounded-[8px] shrink-0 w-full">
-            <img src={`${A}/f6f1f.svg`} alt="" className="size-[20px] shrink-0" />
+            <img src={`${A}/f6f1f.svg`} alt="" className="size-[20px] shrink-0 opacity-60" />
             <input
               className="flex-1 bg-transparent font-['Manrope:Regular'] text-[#0f172a] text-[15px] outline-none min-w-0"
               value={scanValue}
               onChange={(e) => { setScanValue(e.target.value); setConfirmed(false) }}
               placeholder="Nhập mã thẻ, SĐT hoặc mã phiếu nạp (TOPUP-...)"
             />
-            <span className={`font-['Manrope:Bold'] font-bold px-[8px] py-[2px] rounded-[4px] text-[11px] text-white whitespace-nowrap shrink-0 ${isTopUpTicket ? "bg-amber-500" : "bg-[#3b82f6]"}`}>
+            <span className={`font-['Manrope:Bold'] font-bold px-[10px] py-[4px] rounded-[6px] text-[11px] text-white whitespace-nowrap shrink-0 shadow-xs ${isTopUpTicket ? "bg-amber-500" : "bg-purple-600"}`}>
               {isTopUpTicket ? "PHIẾU NẠP VÍ" : foundMember ? "ĐÃ NHẬN DIỆN" : "ĐANG CHỜ QUÉT"}
             </span>
           </div>

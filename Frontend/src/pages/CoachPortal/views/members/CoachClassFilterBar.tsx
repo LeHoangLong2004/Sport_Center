@@ -35,13 +35,13 @@ export const CoachClassFilterBar: React.FC<CoachClassFilterBarProps> = ({
           onClick={() => onSelectClassId("all")}
           className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between ${
             selectedClassId === "all"
-              ? "bg-emerald-500/10 border-emerald-500 text-emerald-900 dark:text-emerald-200 shadow-xs ring-1 ring-emerald-500/30"
+              ? "bg-orange-500/10 border-orange-500 text-orange-900 dark:text-orange-200 shadow-xs ring-1 ring-orange-500/30"
               : "bg-slate-50 dark:bg-slate-800/60 border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600"
           }`}
         >
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs font-bold">Tất cả các lớp</span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white">
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-orange-500 text-white">
               {totalMembersCount} HV
             </span>
           </div>
@@ -59,7 +59,7 @@ export const CoachClassFilterBar: React.FC<CoachClassFilterBarProps> = ({
               onClick={() => onSelectClassId(isSelected ? "all" : cls.id)}
               className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between ${
                 isSelected
-                  ? "bg-emerald-500/10 border-emerald-500 text-emerald-900 dark:text-emerald-200 shadow-xs ring-1 ring-emerald-500/30"
+                  ? "bg-orange-500/10 border-orange-500 text-orange-900 dark:text-orange-200 shadow-xs ring-1 ring-orange-500/30"
                   : "bg-slate-50 dark:bg-slate-800/60 border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600"
               }`}
             >
@@ -82,13 +82,13 @@ export const CoachClassFilterBar: React.FC<CoachClassFilterBarProps> = ({
               <div>
                 <div className="flex items-center justify-between text-[11px] mb-1">
                   <span className="text-slate-500 dark:text-slate-400">Số lượng học viên:</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="font-bold text-orange-600 dark:text-orange-400">
                     {cls.enrolledCount}/{cls.capacity} học viên
                   </span>
                 </div>
                 <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-emerald-500 rounded-full transition-all"
+                    className="h-full bg-orange-500 rounded-full transition-all"
                     style={{ width: `${fillPct}%` }}
                   ></div>
                 </div>

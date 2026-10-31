@@ -51,6 +51,8 @@ function AdminPortal({
           "#booking-success",
           "#workout-detail",
           "#move-ai",
+          "#ai",
+          "#support",
         ].includes(h)
       ) {
         setStep("member")
@@ -204,6 +206,8 @@ const adminHashes = new Set([
   "#booking-success",
   "#workout-detail",
   "#move-ai",
+  "#ai",
+  "#support",
 ])
 
 const paymentHashes = new Set(["#payment"])
@@ -416,6 +420,8 @@ export default function App() {
                   "#booking-success",
                   "#workout-detail",
                   "#move-ai",
+                  "#ai",
+                  "#support",
                 ].includes(window.location.hash)
               )
                 ? "member"
@@ -432,7 +438,7 @@ export default function App() {
                   ? "success"
                   : window.location.hash === "#workout-detail"
                     ? "workout"
-                    : window.location.hash === "#move-ai"
+                    : (window.location.hash === "#move-ai" || window.location.hash === "#ai" || window.location.hash === "#support" || window.location.hash.startsWith("#member-support"))
                       ? "ai"
                       : "overview"
         }

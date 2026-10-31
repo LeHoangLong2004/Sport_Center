@@ -190,7 +190,7 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
           </button>
           <button
             onClick={() => { setCreateError(""); setShowCreateMember(true); }}
-            className="bg-[#2563eb] hover:bg-blue-700 transition-colors flex gap-2 items-center px-4 py-2.5 rounded-lg cursor-pointer"
+            className="bg-rose-600 hover:bg-rose-700 text-white transition-all flex gap-2 items-center px-4 py-2.5 rounded-xl cursor-pointer shadow-md shadow-rose-600/20 active:scale-95"
           >
             <span className="font-semibold text-white text-sm">+ Thêm hội viên mới</span>
           </button>
@@ -198,7 +198,7 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-[#e2e8f0] flex gap-6">
+      <div className="border-b border-[#e2e8f0] dark:border-slate-800 flex gap-6">
         {tabs.map((t) => {
           const count = allUsers.filter(t.filter).length;
           const isActive = t.label === activeTab;
@@ -206,7 +206,7 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
             <button 
               key={t.label} 
               onClick={() => setActiveTab(t.label)}
-              className={`pb-3 text-sm transition-colors cursor-pointer ${isActive ? "border-b-2 border-[#2563eb] font-bold text-[#2563eb]" : "font-medium text-[#64748b] hover:text-[#0f172a]"}`}
+              className={`pb-3 text-sm transition-colors cursor-pointer ${isActive ? "border-b-2 border-rose-600 font-bold text-rose-600 dark:text-rose-400" : "font-medium text-[#64748b] dark:text-slate-400 hover:text-[#0f172a] dark:hover:text-white"}`}
             >
               {t.label} ({count})
             </button>

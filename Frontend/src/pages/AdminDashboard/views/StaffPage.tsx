@@ -188,16 +188,15 @@ export function StaffPage() {
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto relative">
       <div className="flex items-center justify-between">
         <div>
-          <p className="font-bold text-[#0f172a] text-[28px]">Quản lý nhân sự</p>
-          <p className="text-[#64748b] text-sm mt-1">-- danh sách ban quản lý, lễ tân và huấn luyện viên.</p>
+          <p className="font-bold text-[#0f172a] dark:text-white text-[28px]">Quản lý nhân sự</p>
+          <p className="text-[#64748b] dark:text-slate-400 text-sm mt-1">Danh sách ban quản lý, lễ tân và huấn luyện viên toàn hệ thống.</p>
         </div>
         <div className="flex gap-3">
-          <button onClick={handleExportCSV} className="bg-white border border-[#cbd5e1] flex gap-2 items-center px-4 py-2.5 rounded-lg hover:bg-slate-50 transition-colors">
-            <img src={iDownload} alt="" className="size-4" />
-            <span className="font-semibold text-[#0f172a] text-sm">Xuất dữ liệu</span>
+          <button onClick={handleExportCSV} className="bg-white dark:bg-slate-800 border border-[#cbd5e1] dark:border-slate-700 flex gap-2 items-center px-4 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-2xs">
+            <span className="font-semibold text-[#0f172a] dark:text-white text-sm">Xuất dữ liệu</span>
           </button>
-          <button onClick={() => setShowAddModal(true)} className="bg-[#2563eb] flex gap-2 items-center px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm shadow-blue-500/20">
-            <span className="font-semibold text-white text-sm">+ Thêm nhân sự</span>
+          <button onClick={() => setShowAddModal(true)} className="bg-rose-600 hover:bg-rose-700 text-white flex gap-2 items-center px-4 py-2.5 rounded-xl transition-all shadow-md shadow-rose-600/20 active:scale-95 cursor-pointer">
+            <span className="font-semibold text-white text-sm">+ Thêm nhân sự mới</span>
           </button>
         </div>
       </div>
@@ -241,8 +240,8 @@ export function StaffPage() {
                   </select>
                 </div>
                 <div className="flex gap-3 mt-4">
-                  <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 bg-white border border-[#cbd5e1] font-semibold text-[#475569] py-2 rounded-lg hover:bg-slate-50 transition-colors">Hủy</button>
-                  <button type="submit" className="flex-1 bg-[#2563eb] font-semibold text-white py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md">Lưu nhân sự</button>
+                  <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 bg-white border border-[#cbd5e1] font-semibold text-[#475569] py-2.5 rounded-xl hover:bg-slate-50 transition-colors">Hủy</button>
+                  <button type="submit" className="flex-1 bg-rose-600 font-semibold text-white py-2.5 rounded-xl hover:bg-rose-700 transition-colors shadow-md shadow-rose-600/20">Lưu nhân sự</button>
                 </div>
               </form>
             </div>
@@ -275,8 +274,8 @@ export function StaffPage() {
                 </div>
               </div>
               <div className="mt-6 flex justify-end gap-3">
-                <button type="button" onClick={() => setStatusConfirmation(null)} className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">Hủy</button>
-                <button type="button" onClick={confirmToggleStatus} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Xác nhận</button>
+                <button type="button" onClick={() => setStatusConfirmation(null)} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">Hủy</button>
+                <button type="button" onClick={confirmToggleStatus} className="rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 shadow-md shadow-rose-600/20">Xác nhận</button>
               </div>
             </div>
           </div>,

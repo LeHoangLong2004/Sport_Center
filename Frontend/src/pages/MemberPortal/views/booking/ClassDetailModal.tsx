@@ -154,7 +154,7 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
             className={`px-5 py-2.5 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5 ${
               isBooked
                 ? "cursor-not-allowed bg-emerald-50 text-emerald-700 border border-emerald-200"
-                : "text-white bg-teal-600 hover:bg-teal-700 shadow-teal-600/20 active:scale-95"
+                : "text-white bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20 active:scale-95"
             }`}
           >
             {isBooked ? (

@@ -79,7 +79,7 @@ export const ChatActiveArea: React.FC<ChatActiveAreaProps> = ({
               <span
                 className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
                   cat === "coach"
-                    ? "bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300"
+                    ? "bg-teal-100 text-teal-800 dark:bg-teal-950/50 dark:text-teal-300"
                     : cat === "manager"
                     ? "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300"
                     : cat === "member"
@@ -167,10 +167,10 @@ export const ChatActiveArea: React.FC<ChatActiveAreaProps> = ({
                     <span
                       className={`px-1.5 py-0.2 rounded text-[9px] font-semibold ${
                         m.sender === "coach"
-                          ? "bg-orange-100 text-orange-700"
+                          ? "bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300"
                           : m.sender === "manager"
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-emerald-100 text-emerald-700"
+                          ? "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
+                          : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
                       }`}
                     >
                       {m.sender === "coach" ? "HLV" : (m.sender === "manager" ? "BQL" : "HỘI VIÊN")}

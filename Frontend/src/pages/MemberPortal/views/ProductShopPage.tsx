@@ -111,7 +111,9 @@ export function ProductShopPage({ onNavigate, onOnlinePayment, embedded = false 
   useEffect(() => {
     if (!openChatId) return
     void loadMessages(openChatId)
-    const refreshTimer = window.setInterval(() => void loadMessages(openChatId), 10000)
+    const refreshTimer = window.setInterval(() => {
+      if (!document.hidden) void loadMessages(openChatId)
+    }, 10000)
     return () => window.clearInterval(refreshTimer)
   }, [openChatId])
 
@@ -200,29 +202,235 @@ export function ProductShopPage({ onNavigate, onOnlinePayment, embedded = false 
   const content = (
       <div className="flex flex-col gap-6 p-6 lg:p-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#0f9f94]">Mua sắm tại SportCenter</p><h1 className="mt-2 text-2xl font-extrabold text-[#0f172a]">Cửa hàng sản phẩm</h1><p className="mt-1 text-sm text-[#64748b]">Đặt trước sản phẩm, thanh toán và nhận hàng tại trung tâm.</p></div>
-          <div className="rounded-xl bg-[#ecfdf5] px-4 py-3 text-sm font-semibold text-[#047857]">{itemCount} món trong giỏ</div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-400">Mua sắm tại SportCenter</p>
+            <h1 className="mt-2 text-2xl font-extrabold text-slate-900 dark:text-white">Cửa hàng sản phẩm</h1>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Đặt trước thực phẩm thể thao, phụ kiện và nhận hàng nhanh chóng.</p>
+          </div>
+          <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/80 dark:border-emerald-800 px-4 py-2.5 text-sm font-bold text-emerald-700 dark:text-emerald-300">
+            {itemCount} món trong giỏ
+          </div>
         </div>
 
-        {message && <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</div>}
-        {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>}
+        {message && <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-3 text-sm font-semibold text-emerald-700 dark:text-emerald-300">{message}</div>}
+        {error && <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/40 px-4 py-3 text-sm font-semibold text-red-600 dark:text-red-400">{error}</div>}
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm">
-            <div className="mb-5 flex flex-wrap gap-2">{categories.map((item) => <button key={item} type="button" onClick={() => setCategory(item)} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${category === item ? "border-[#0f9f94] bg-[#ecfdf5] text-[#0f9f94]" : "border-[#e2e8f0] text-[#64748b] hover:border-[#94a3b8]"}`}>{item}</button>)}</div>
-            {loading ? <p className="py-12 text-center text-sm text-[#94a3b8]">Đang tải sản phẩm...</p> : visibleProducts.length === 0 ? <p className="py-12 text-center text-sm text-[#94a3b8]">Chưa có sản phẩm phù hợp.</p> : <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">{visibleProducts.map((product) => <button key={product.id} type="button" disabled={product.stockQuantity <= 0} onClick={() => addToCart(product)} className="overflow-hidden rounded-xl border border-[#e2e8f0] text-left transition hover:-translate-y-0.5 hover:border-[#0f9f94] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"><div className="flex h-36 items-center justify-center bg-[#f8fafc]">{product.imageUrl ? <img src={product.imageUrl} alt="" className="h-full w-full object-cover" /> : <span className="text-xs text-[#94a3b8]">Không có ảnh</span>}</div><div className="p-4"><p className="text-[11px] font-bold uppercase tracking-wide text-[#0f9f94]">{product.category || "Sản phẩm"}</p><h2 className="mt-1 line-clamp-2 min-h-10 text-sm font-bold text-[#0f172a]">{product.name}</h2><div className="mt-3 flex items-center justify-between gap-2"><span className="text-base font-extrabold text-[#2563eb]">{money(product.price)}</span><span className="text-xs text-[#64748b]">{product.stockQuantity > 0 ? `Còn ${product.stockQuantity}` : "Hết hàng"}</span></div></div></button>)}</div>}
+          <section className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
+            <div className="mb-5 flex flex-wrap gap-2">
+              {categories.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setCategory(item)}
+                  className={`rounded-xl border px-3.5 py-1.5 text-xs font-bold transition cursor-pointer ${
+                    category === item
+                      ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 shadow-xs"
+                      : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600"
+                  }`}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+
+            {loading ? (
+              <p className="py-12 text-center text-sm text-slate-400">Đang tải sản phẩm...</p>
+            ) : visibleProducts.length === 0 ? (
+              <p className="py-12 text-center text-sm text-slate-400">Chưa có sản phẩm phù hợp.</p>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
+                {visibleProducts.map((product) => (
+                  <button
+                    key={product.id}
+                    type="button"
+                    disabled={product.stockQuantity <= 0}
+                    onClick={() => addToCart(product)}
+                    className="overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-850 text-left transition hover:-translate-y-0.5 hover:border-emerald-500/50 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer group"
+                  >
+                    <div className="flex h-40 items-center justify-center bg-slate-50 dark:bg-slate-800 overflow-hidden">
+                      {product.imageUrl ? (
+                        <img src={product.imageUrl} alt="" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                      ) : (
+                        <span className="text-xs text-slate-400">Không có ảnh</span>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">{product.category || "Sản phẩm"}</p>
+                      <h2 className="mt-1 line-clamp-2 min-h-10 text-sm font-bold text-slate-900 dark:text-white">{product.name}</h2>
+                      <div className="mt-3 flex items-center justify-between gap-2">
+                        <span className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">{money(product.price)}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">{product.stockQuantity > 0 ? `Còn ${product.stockQuantity}` : "Hết hàng"}</span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </section>
 
-          <aside className="flex h-fit flex-col gap-4 rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between"><h2 className="font-extrabold text-[#0f172a]">Giỏ hàng</h2><span className="rounded-full bg-[#eef2ff] px-2 py-1 text-xs font-bold text-[#4f46e5]">{itemCount} món</span></div>
-            <div className="max-h-64 overflow-y-auto">{cart.length === 0 ? <p className="py-8 text-center text-sm text-[#94a3b8]">Chưa có sản phẩm trong giỏ.</p> : cart.map((item) => <div key={item.id} className="flex items-center gap-3 border-b border-[#e2e8f0] py-3 last:border-b-0"><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-[#0f172a]">{item.name}</p><p className="text-xs text-[#64748b]">{money(item.price)}</p></div><div className="flex items-center gap-2"><button type="button" onClick={() => changeQuantity(item.id, -1)} className="h-7 w-7 rounded border border-[#e2e8f0] text-[#64748b]">−</button><span className="w-5 text-center text-sm font-bold text-[#0f172a]">{item.quantity}</span><button type="button" onClick={() => changeQuantity(item.id, 1)} className="h-7 w-7 rounded border border-[#e2e8f0] text-[#64748b]">+</button></div></div>)}</div>
-            {cart.length > 0 && <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-sm font-bold text-slate-800">Cách nhận hàng</p><label className="mt-3 flex cursor-pointer items-start gap-2 text-sm text-slate-600"><input type="radio" checked={fulfillmentMethod === "counter_pickup"} onChange={() => setFulfillmentMethod("counter_pickup")} className="mt-1" />Nhận tại quầy lễ tân</label><label className="mt-2 flex cursor-pointer items-start gap-2 text-sm text-slate-600"><input type="radio" checked={fulfillmentMethod === "in_center_delivery"} onChange={() => setFulfillmentMethod("in_center_delivery")} className="mt-1" />Giao đến vị trí trong trung tâm</label>{fulfillmentMethod === "in_center_delivery" && <input value={deliveryLocation} onChange={(event) => setDeliveryLocation(event.target.value)} placeholder="Ví dụ: Gym Area, Studio 1..." className="mt-3 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#0f9f94]" />}</div>}
-            {cart.length > 0 && <div className="rounded-xl border border-teal-100 bg-teal-50 p-3"><p className="text-sm font-bold text-slate-800">Phương thức thanh toán</p><label className="mt-3 flex cursor-pointer items-start gap-2 text-sm text-slate-600"><input type="radio" checked={paymentMethod === "counter"} onChange={() => setPaymentMethod("counter")} className="mt-1" />Thanh toán tại quầy</label><label className="mt-2 flex cursor-pointer items-start gap-2 text-sm text-slate-600"><input type="radio" checked={paymentMethod === "online"} onChange={() => setPaymentMethod("online")} className="mt-1" />Thanh toán online</label></div>}
-            <div className="border-t border-[#e2e8f0] pt-4"><div className="flex items-center justify-between text-sm text-[#64748b]"><span>Tạm tính</span><strong className="text-[#0f172a]">{money(total)}</strong></div><button type="button" disabled={cart.length === 0 || submitting} onClick={() => void submitOrder()} className="mt-4 w-full rounded-xl bg-[#0f9f94] px-4 py-3 text-sm font-extrabold text-white transition hover:bg-[#0d8b82] disabled:cursor-not-allowed disabled:opacity-50">{submitting ? "Đang gửi đơn..." : paymentMethod === "online" ? "Tiếp tục thanh toán" : "Đặt hàng, thanh toán tại quầy"}</button></div>
+          <aside className="flex h-fit flex-col gap-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
+            <div className="flex items-center justify-between">
+              <h2 className="font-extrabold text-sm text-slate-900 dark:text-white">Giỏ hàng của bạn</h2>
+              <span className="rounded-full bg-emerald-100/70 dark:bg-emerald-950/60 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">{itemCount} món</span>
+            </div>
+
+            <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+              {cart.length === 0 ? (
+                <p className="py-8 text-center text-xs text-slate-400">Chưa có sản phẩm trong giỏ.</p>
+              ) : (
+                cart.map((item) => (
+                  <div key={item.id} className="flex items-center gap-3 py-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-bold text-slate-900 dark:text-white">{item.name}</p>
+                      <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">{money(item.price)}</p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button type="button" onClick={() => changeQuantity(item.id, -1)} className="h-6 w-6 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">−</button>
+                      <span className="w-5 text-center text-xs font-bold text-slate-900 dark:text-white">{item.quantity}</span>
+                      <button type="button" onClick={() => changeQuantity(item.id, 1)} className="h-6 w-6 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">+</button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {cart.length > 0 && (
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-3 space-y-2">
+                <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Cách nhận hàng</p>
+                <label className="flex cursor-pointer items-start gap-2 text-xs text-slate-600 dark:text-slate-300">
+                  <input type="radio" checked={fulfillmentMethod === "counter_pickup"} onChange={() => setFulfillmentMethod("counter_pickup")} className="mt-0.5 accent-emerald-600" />
+                  Nhận tại quầy lễ tân
+                </label>
+                <label className="flex cursor-pointer items-start gap-2 text-xs text-slate-600 dark:text-slate-300">
+                  <input type="radio" checked={fulfillmentMethod === "in_center_delivery"} onChange={() => setFulfillmentMethod("in_center_delivery")} className="mt-0.5 accent-emerald-600" />
+                  Giao đến vị trí trong trung tâm
+                </label>
+                {fulfillmentMethod === "in_center_delivery" && (
+                  <input
+                    value={deliveryLocation}
+                    onChange={(event) => setDeliveryLocation(event.target.value)}
+                    placeholder="Ví dụ: Khu Gym tầng 2, Studio 1..."
+                    className="mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500"
+                  />
+                )}
+              </div>
+            )}
+
+            {cart.length > 0 && (
+              <div className="rounded-xl border border-emerald-200/80 dark:border-emerald-900/60 bg-emerald-50/50 dark:bg-emerald-950/20 p-3 space-y-2">
+                <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Phương thức thanh toán</p>
+                <label className="flex cursor-pointer items-start gap-2 text-xs text-slate-600 dark:text-slate-300">
+                  <input type="radio" checked={paymentMethod === "counter"} onChange={() => setPaymentMethod("counter")} className="mt-0.5 accent-emerald-600" />
+                  Thanh toán tại quầy
+                </label>
+                <label className="flex cursor-pointer items-start gap-2 text-xs text-slate-600 dark:text-slate-300">
+                  <input type="radio" checked={paymentMethod === "online"} onChange={() => setPaymentMethod("online")} className="mt-0.5 accent-emerald-600" />
+                  Thanh toán online (QR/Ví)
+                </label>
+              </div>
+            )}
+
+            <div className="border-t border-slate-200 dark:border-slate-800 pt-3">
+              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                <span>Tạm tính</span>
+                <strong className="text-sm font-extrabold text-slate-900 dark:text-white">{money(total)}</strong>
+              </div>
+              <button
+                type="button"
+                disabled={cart.length === 0 || submitting}
+                onClick={() => void submitOrder()}
+                className="mt-3.5 w-full rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 text-xs font-bold text-white transition shadow-sm shadow-emerald-600/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+              >
+                {submitting ? "Đang gửi đơn..." : paymentMethod === "online" ? "Tiếp tục thanh toán online" : "Đặt hàng, thanh toán tại quầy"}
+              </button>
+            </div>
           </aside>
         </div>
 
-        <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm"><div className="mb-4 flex flex-wrap items-center justify-between gap-2"><div><h2 className="font-extrabold text-[#0f172a]">Đơn hàng của tôi</h2><p className="mt-1 text-xs text-[#64748b]">Tin nhắn với lễ tân nằm trong từng đơn hàng. Bấm <strong>Xem tin nhắn</strong> để mở trao đổi.</p></div><span className="text-xs text-[#64748b]">{orders.length} đơn</span></div>{orders.length === 0 ? <p className="text-sm text-[#94a3b8]">Bạn chưa có đơn mua sản phẩm nào.</p> : <div className="grid gap-3 md:grid-cols-2">{orders.map((order) => <div key={order.id} className="rounded-xl border border-[#e2e8f0] p-4"><div className="flex items-center justify-between gap-3"><p className="text-sm font-bold text-[#0f172a]">#{order.id.slice(0, 8).toUpperCase()}</p><span className={`rounded-full px-2 py-1 text-xs font-bold ${order.status === "completed" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>{order.status === "completed" ? "Đã thanh toán" : "Chờ thanh toán"}</span></div><p className="mt-2 text-xs font-semibold text-[#64748b]">{fulfillmentLabels[order.fulfillmentStatus]} · {order.fulfillmentMethod === "in_center_delivery" ? `Giao tại ${order.deliveryLocation || "vị trí đã chọn"}` : "Nhận tại quầy"}</p><p className="mt-2 text-xs text-[#64748b]">{new Date(order.createdAt).toLocaleString("vi-VN")} · {order.items.map((item) => `${item.name} × ${item.quantity}`).join(", ")}</p><div className="mt-3 flex items-center justify-between"><p className="font-extrabold text-[#0f9f94]">{money(order.totalAmount)}</p><button type="button" onClick={() => void toggleChat(order.id)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:border-[#0f9f94] hover:text-[#0f9f94]">{openChatId === order.id ? "Đóng trao đổi" : order.messageCount > 0 ? `Xem tin nhắn (${order.messageCount})` : "Nhắn lễ tân"}</button></div>{openChatId === order.id && <div className="mt-3 rounded-xl bg-slate-50 p-3"><div className="max-h-40 space-y-2 overflow-y-auto">{(messages[order.id] || []).length === 0 ? <p className="text-xs text-slate-400">Chưa có tin nhắn từ lễ tân.</p> : messages[order.id].map((item) => <div key={item.id} className="rounded-lg bg-white p-2 text-xs"><p className="font-bold text-slate-700">{item.senderName}</p><p className="mt-1 text-slate-600">{item.message}</p><p className="mt-1 text-slate-400">{new Date(item.createdAt).toLocaleString("vi-VN")}</p></div>)}</div><div className="mt-2 flex gap-2"><input value={drafts[order.id] || ""} onChange={(event) => setDrafts((current) => ({ ...current, [order.id]: event.target.value }))} onKeyDown={(event) => { if (event.key === "Enter") void sendMessage(order.id) }} placeholder="Nhắn lễ tân..." className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs outline-none focus:border-[#0f9f94]" /><button type="button" onClick={() => void sendMessage(order.id)} className="rounded-lg bg-[#0f9f94] px-3 py-2 text-xs font-bold text-white">Gửi</button></div></div>}</div>)}</div>}</section>
+        <section className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="font-extrabold text-sm text-slate-900 dark:text-white">Đơn hàng của tôi</h2>
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Theo dõi tiến độ nhận hàng và trao đổi trực tiếp với lễ tân.</p>
+            </div>
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{orders.length} đơn</span>
+          </div>
+
+          {orders.length === 0 ? (
+            <p className="py-6 text-center text-xs text-slate-400">Bạn chưa có đơn mua sản phẩm nào.</p>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {orders.map((order) => (
+                <div key={order.id} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-4 space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs font-bold text-slate-900 dark:text-white">#{order.id.slice(0, 8).toUpperCase()}</p>
+                    <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                      order.status === "completed"
+                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                        : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                    }`}>
+                      {order.status === "completed" ? "Đã thanh toán" : "Chờ thanh toán"}
+                    </span>
+                  </div>
+
+                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    {fulfillmentLabels[order.fulfillmentStatus]} · {order.fulfillmentMethod === "in_center_delivery" ? `Giao tại ${order.deliveryLocation || "vị trí đã chọn"}` : "Nhận tại quầy"}
+                  </p>
+
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {new Date(order.createdAt).toLocaleString("vi-VN")} · {order.items.map((item) => `${item.name} × ${item.quantity}`).join(", ")}
+                  </p>
+
+                  <div className="mt-3 pt-2 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                    <p className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">{money(order.totalAmount)}</p>
+                    <button
+                      type="button"
+                      onClick={() => void toggleChat(order.id)}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:border-emerald-500 hover:text-emerald-600 transition-colors cursor-pointer"
+                    >
+                      {openChatId === order.id ? "Đóng trao đổi" : order.messageCount > 0 ? `Xem tin nhắn (${order.messageCount})` : "Nhắn lễ tân"}
+                    </button>
+                  </div>
+
+                  {openChatId === order.id && (
+                    <div className="mt-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 space-y-2">
+                      <div className="max-h-40 space-y-2 overflow-y-auto">
+                        {(messages[order.id] || []).length === 0 ? (
+                          <p className="text-xs text-slate-400">Chưa có tin nhắn từ lễ tân.</p>
+                        ) : (
+                          messages[order.id].map((item) => (
+                            <div key={item.id} className="rounded-lg bg-slate-50 dark:bg-slate-700/60 p-2.5 text-xs space-y-1">
+                              <p className="font-bold text-slate-800 dark:text-slate-200">{item.senderName}</p>
+                              <p className="text-slate-600 dark:text-slate-300">{item.message}</p>
+                              <p className="text-[10px] text-slate-400">{new Date(item.createdAt).toLocaleString("vi-VN")}</p>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                      <div className="mt-2 flex gap-2">
+                        <input
+                          value={drafts[order.id] || ""}
+                          onChange={(event) => setDrafts((current) => ({ ...current, [order.id]: event.target.value }))}
+                          onKeyDown={(event) => { if (event.key === "Enter") void sendMessage(order.id) }}
+                          placeholder="Nhắn lễ tân..."
+                          className="min-w-0 flex-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void sendMessage(order.id)}
+                          className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3.5 py-1.5 text-xs font-bold text-white transition cursor-pointer"
+                        >
+                          Gửi
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
   )
 

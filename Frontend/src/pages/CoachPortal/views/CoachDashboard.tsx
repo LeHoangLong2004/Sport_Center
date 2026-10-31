@@ -188,18 +188,16 @@ export default function CoachDashboard({ navigateTo }: Props) {
             <button
               type="button"
               onClick={() => navigateTo("schedule")}
-              className="px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md shadow-orange-500/25 transition-all flex items-center gap-2"
+              className="px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md shadow-orange-500/25 transition-all cursor-pointer"
             >
-              <CalendarDays className="w-4 h-4" />
-              <span>Lịch dạy hôm nay</span>
+              Lịch dạy hôm nay
             </button>
             <button
               type="button"
               onClick={() => navigateTo("attendance")}
-              className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-medium text-xs backdrop-blur-sm transition-all flex items-center gap-1.5 border border-white/10"
+              className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold text-xs backdrop-blur-sm transition-all border border-white/10 cursor-pointer"
             >
-              <CheckCircle2 className="w-4 h-4 text-orange-400" />
-              <span>Điểm danh lớp ({pendingAttendanceCount})</span>
+              Điểm danh lớp ({pendingAttendanceCount})
             </button>
           </div>
         </div>
@@ -212,27 +210,23 @@ export default function CoachDashboard({ navigateTo }: Props) {
       {/* Modern SaaS Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          icon={<Calendar className="w-5 h-5 text-slate-700 dark:text-slate-300" />}
           label="Lịch làm việc hôm nay"
           value={todaySessions.length + appointments.length}
           sub={appointments.length > 0 ? `${todaySessions.length} lớp nhóm • ${appointments.length} hẹn lễ tân` : "buổi học trong ngày"}
           highlight={appointments.length > 0}
         />
         <StatCard
-          icon={<Users className="w-5 h-5 text-slate-700 dark:text-slate-300" />}
           label="Lượt học viên"
           value={totalRegistrations + appointments.length}
           sub="đã đăng ký & đặt hẹn"
         />
         <StatCard
-          icon={<CheckCircle2 className="w-5 h-5 text-slate-700 dark:text-slate-300" />}
           label="Cần điểm danh"
           value={pendingAttendanceCount}
           sub={pendingAttendanceCount > 0 ? "buổi chưa hoàn tất" : "đã xong toàn bộ"}
           highlight={pendingAttendanceCount > 0}
         />
         <StatCard
-          icon={<Star className="w-5 h-5 text-amber-500 fill-amber-500" />}
           label="Đánh giá trung bình"
           value={dashboardStats.averageRating === null ? "—" : dashboardStats.averageRating.toFixed(1)}
           sub={`Dựa trên ${dashboardStats.reviewCount} lượt nhận xét`}
@@ -262,14 +256,13 @@ export default function CoachDashboard({ navigateTo }: Props) {
 }
 
 function StatCard({
-  icon,
   label,
   value,
   sub,
   highlight,
   onClick,
 }: {
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   label: string;
   value: number | string;
   sub: string;
@@ -281,18 +274,18 @@ function StatCard({
       onClick={onClick}
       className={`p-5 rounded-2xl border bg-white dark:bg-slate-900 transition-all ${
         highlight
-          ? "border-amber-300 dark:border-amber-700/60 shadow-sm"
-          : "border-slate-200/90 dark:border-slate-800 shadow-sm"
-      } ${onClick ? "cursor-pointer hover:border-slate-400" : ""}`}
+          ? "border-orange-300 dark:border-orange-700/60 shadow-sm"
+          : "border-slate-200/90 dark:border-slate-800 shadow-xs"
+      } ${onClick ? "cursor-pointer hover:border-orange-400 dark:hover:border-orange-500/60" : "hover:border-slate-300 dark:hover:border-slate-700"}`}
     >
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</span>
-        <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800">{icon}</div>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{label}</span>
+        <span className={`size-2 rounded-full ${highlight ? "bg-orange-500 animate-pulse" : "bg-orange-400"}`} />
       </div>
-      <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+      <div className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
         {value}
       </div>
-      <div className="text-xs text-slate-400 mt-1">{sub}</div>
+      <div className="text-xs text-slate-400 mt-1 font-medium">{sub}</div>
     </div>
   );
 }

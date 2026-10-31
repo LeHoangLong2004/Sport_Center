@@ -210,13 +210,13 @@ export default function MemberAttendance({ onNavigate }: Props) {
           <button
             id="tab-btn-classes"
             onClick={() => setActiveTab("classes")}
-            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 ${
+            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 cursor-pointer ${
               activeTab === "classes"
-                ? "bg-white dark:bg-slate-900 text-teal-600 dark:text-teal-400 shadow-sm"
+                ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <UserCheck className="w-4 h-4" />
+            <UserCheck className="w-4 h-4 text-emerald-500" />
             Điểm danh Lớp học & PT
             <span className="ml-1 px-2 py-0.5 rounded-full text-xs bg-slate-200/60 dark:bg-slate-700">
               {sessions.length}
@@ -225,13 +225,13 @@ export default function MemberAttendance({ onNavigate }: Props) {
           <button
             id="tab-btn-gate"
             onClick={() => setActiveTab("gate")}
-            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 ${
+            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 cursor-pointer ${
               activeTab === "gate"
-                ? "bg-white dark:bg-slate-900 text-teal-600 dark:text-teal-400 shadow-sm"
+                ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <DoorOpen className="w-4 h-4" />
+            <DoorOpen className="w-4 h-4 text-teal-500" />
             Check-in Quầy Lễ Tân
             <span className="ml-1 px-2 py-0.5 rounded-full text-xs bg-slate-200/60 dark:bg-slate-700">
               {gateCheckIns.length}
@@ -240,13 +240,13 @@ export default function MemberAttendance({ onNavigate }: Props) {
           <button
             id="tab-btn-qrcode"
             onClick={() => setActiveTab("qrcode")}
-            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 ${
+            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 cursor-pointer ${
               activeTab === "qrcode"
-                ? "bg-white dark:bg-slate-900 text-teal-600 dark:text-teal-400 shadow-sm"
+                ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <QrCode className="w-4 h-4" />
+            <QrCode className="w-4 h-4 text-emerald-500" />
             Thẻ QR Hội Viên
           </button>
         </div>

@@ -29,9 +29,7 @@ export const DashboardSessionsTasks: React.FC<DashboardSessionsTasksProps> = ({
     <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
-            <Calendar className="w-4 h-4" />
-          </div>
+          <span className="w-1.5 h-4 rounded-full bg-emerald-500 shrink-0" />
           <div>
             <h2 className="text-sm font-bold text-slate-900 dark:text-white">Lịch tập tiếp theo</h2>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">Các ca học sắp tới bạn đã đặt chỗ</p>
@@ -79,7 +77,7 @@ export const DashboardSessionsTasks: React.FC<DashboardSessionsTasksProps> = ({
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
                         isAppt
-                          ? "bg-orange-100 text-orange-800 border border-orange-200 dark:bg-orange-950 dark:text-orange-300"
+                          ? "bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
                           : session.type === "pt"
                           ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
                           : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
@@ -116,9 +114,7 @@ export const DashboardSessionsTasks: React.FC<DashboardSessionsTasksProps> = ({
     <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400">
-            <Dumbbell className="w-4 h-4" />
-          </div>
+          <span className="w-1.5 h-4 rounded-full bg-emerald-500 shrink-0" />
           <div>
             <h2 className="text-sm font-bold text-slate-900 dark:text-white">Bài tập & Lời dặn từ Huấn luyện viên</h2>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">Hoàn thành để duy trì tiến độ rèn luyện</p>

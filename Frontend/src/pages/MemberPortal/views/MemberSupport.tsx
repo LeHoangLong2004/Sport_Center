@@ -47,7 +47,7 @@ export default function MemberSupport({ onNavigate }: Props) {
       {/* Header */}
       <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-base font-bold text-slate-900 dark:text-white">Trợ giúp & Hỗ trợ</h2>
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">Trợ lý AI & Hỗ trợ kỹ thuật</h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Trợ lý AI thể thao 24/7 và hệ thống tiếp nhận yêu cầu CSKH từ hội viên
           </p>
@@ -58,11 +58,11 @@ export default function MemberSupport({ onNavigate }: Props) {
             onClick={() => setActiveTab("ai")}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               activeTab === "ai"
-                ? "bg-white dark:bg-slate-700 text-orange-600 shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                ? "bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <Bot className="w-4 h-4" />
+            <Bot className="w-4 h-4 text-emerald-500" />
             <span>Trợ lý AI 24/7</span>
           </button>
           <button
@@ -70,11 +70,11 @@ export default function MemberSupport({ onNavigate }: Props) {
             onClick={() => setActiveTab("tickets")}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               activeTab === "tickets"
-                ? "bg-white dark:bg-slate-700 text-orange-600 shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                ? "bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <HelpCircle className="w-4 h-4" />
+            <HelpCircle className="w-4 h-4 text-emerald-500" />
             <span>Phiếu hỗ trợ ({tickets.length})</span>
           </button>
         </div>

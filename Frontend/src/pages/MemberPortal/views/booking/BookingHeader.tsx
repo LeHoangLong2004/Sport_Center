@@ -47,39 +47,39 @@ export const BookingHeader: React.FC<BookingHeaderProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab("group")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === "group"
-                ? "bg-white dark:bg-slate-900 text-teal-700 dark:text-teal-400 shadow-sm"
+                ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm border border-slate-200/80 dark:border-slate-700"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <Users className="w-4 h-4" />
+            <Users className="w-4 h-4 text-emerald-500" />
             <span>Lớp nhóm ({groupClassesCount})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab("pt")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === "pt"
-                ? "bg-white dark:bg-slate-900 text-purple-700 dark:text-purple-400 shadow-sm"
+                ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm border border-slate-200/80 dark:border-slate-700"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <Dumbbell className="w-4 h-4" />
+            <Dumbbell className="w-4 h-4 text-teal-500" />
             <span>Kèm riêng 1–1 ({ptSlotsCount})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab("my_classes")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === "my_classes"
-                ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-sm"
+                ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm border border-slate-200/80 dark:border-slate-700"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <Receipt className="w-4 h-4" />
+            <Receipt className="w-4 h-4 text-emerald-500" />
             <span>Lớp đã đăng ký</span>
             {myActiveClassesCount > 0 && (
               <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-full font-black animate-pulse">
