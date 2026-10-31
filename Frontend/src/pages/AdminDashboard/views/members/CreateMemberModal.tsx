@@ -144,7 +144,7 @@ export function CreateMemberModal({
           <button
             type="submit"
             disabled={isCreating}
-            className="rounded-lg bg-[#2563eb] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60 cursor-pointer hover:bg-blue-700 transition-colors"
+            className="rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60 cursor-pointer hover:bg-rose-700 transition-all shadow-md shadow-rose-600/20"
           >
             {isCreating ? "Đang tạo..." : "Tạo hội viên"}
           </button>

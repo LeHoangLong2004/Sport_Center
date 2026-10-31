@@ -66,17 +66,20 @@ export default function MemberWorkouts({ onNavigate }: Props) {
   useEffect(() => {
     void loadHomeworks();
 
+    let lastRefresh = Date.now();
     const handleAutoRefresh = () => {
-      void loadHomeworks(true);
+      // Cooldown 30s to avoid UI freeze on tab switching
+      if (Date.now() - lastRefresh > 30000) {
+        lastRefresh = Date.now();
+        void loadHomeworks(true);
+      }
     };
 
     window.addEventListener("focus", handleAutoRefresh);
-    window.addEventListener("visibilitychange", handleAutoRefresh);
     window.addEventListener("local-storage-update", handleAutoRefresh);
 
     return () => {
       window.removeEventListener("focus", handleAutoRefresh);
-      window.removeEventListener("visibilitychange", handleAutoRefresh);
       window.removeEventListener("local-storage-update", handleAutoRefresh);
     };
   }, []);
@@ -172,8 +175,8 @@ export default function MemberWorkouts({ onNavigate }: Props) {
                         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
                           {plan?.level || "Bài tập cá nhân"}
                         </span>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 flex items-center gap-1">
-                          <Sparkles className="w-2.5 h-2.5 text-orange-500" />
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 flex items-center gap-1">
+                          <Sparkles className="w-2.5 h-2.5 text-teal-500" />
                           <span>Gợi ý AI & HLV duyệt</span>
                         </span>
                       </div>

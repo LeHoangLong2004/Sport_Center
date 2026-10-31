@@ -42,8 +42,8 @@ export const SPORT_THEME: Record<string, { badge: string; border: string }> = {
     border: "border-l-emerald-500",
   },
   Gym: {
-    badge: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/60 dark:text-orange-300 dark:border-orange-800",
-    border: "border-l-orange-500",
+    badge: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800",
+    border: "border-l-amber-500",
   },
   Boxing: {
     badge: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800",

@@ -175,7 +175,7 @@ export default function MemberReviews({ onNavigate: _onNavigate }: Props) {
                 <button
                   type="button"
                   onClick={() => setActiveReviewSession(s)}
-                  className="px-3 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-xs cursor-pointer transition-colors shrink-0"
+                  className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs shadow-emerald-600/20 cursor-pointer transition-colors shrink-0"
                 >
                   Viết đánh giá
                 </button>

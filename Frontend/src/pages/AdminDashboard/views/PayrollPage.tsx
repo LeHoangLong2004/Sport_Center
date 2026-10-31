@@ -12,10 +12,10 @@ export function PayrollPage() {
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
       <div>
-        <p className="font-extrabold text-[#2563eb] text-[11px] tracking-wider uppercase">MÔ ĐUN TÀI CHÍNH TRUNG TÂM</p>
+        <p className="font-extrabold text-rose-600 text-[11px] tracking-wider uppercase">MÔ ĐUN TÀI CHÍNH TRUNG TÂM</p>
         <div className="flex items-end justify-between mt-1">
           <div>
-            <p className="font-extrabold text-[#0f172a] text-[28px]">Bảng lương nhân viên</p>
+            <p className="font-extrabold text-[#0f172a] text-[28px]">Báo bảng lương nhân viên</p>
             <p className="text-[#64748b] text-sm mt-1">Tính toán tiền lương hàng tháng, thưởng KPI, hoa hồng dịch vụ & trích nộp bảo hiểm bắt buộc</p>
           </div>
           <div className="flex gap-3">
@@ -37,7 +37,7 @@ export function PayrollPage() {
             </button>
             <button
               onClick={() => toast.success(`Đã hoàn tất chốt bảng lương cho ${selectedMonth}!`)}
-              className="bg-[#2563eb] hover:bg-blue-700 active:scale-95 flex items-center px-4 py-2.5 rounded-lg cursor-pointer transition-all shadow-sm"
+              className="bg-rose-600 hover:bg-rose-700 active:scale-95 flex items-center px-4 py-2.5 rounded-lg cursor-pointer transition-all shadow-sm shadow-rose-600/20"
             >
               <span className="font-semibold text-white text-sm">Chốt lương</span>
             </button>
@@ -94,7 +94,7 @@ export function PayrollPage() {
               <div className="w-[90px]"><p className="text-[#0f172a] text-sm">{r.allowance} đ</p></div>
               <div className="w-[130px]"><p className="font-semibold text-[#14b8a6] text-sm">{r.commission} đ</p></div>
               <div className="w-[100px]"><p className="font-semibold text-[#dc2626] text-sm">{r.deduct} đ</p></div>
-              <div className="w-[120px] text-right"><p className="font-bold text-[#2563eb] text-sm">{r.net} đ</p></div>
+              <div className="w-[120px] text-right"><p className="font-bold text-rose-600 text-sm">{r.net} đ</p></div>
             </div>
           ))
         )}

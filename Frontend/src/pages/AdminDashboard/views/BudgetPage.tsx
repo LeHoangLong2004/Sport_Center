@@ -10,7 +10,7 @@ export function BudgetPage() {
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
       <div>
-        <p className="font-extrabold text-[#2563eb] text-[11px] tracking-wider uppercase">MÔ ĐUN TÀI CHÍNH TRUNG TÂM</p>
+        <p className="font-extrabold text-rose-600 text-[11px] tracking-wider uppercase">MÔ ĐUN TÀI CHÍNH TRUNG TÂM</p>
         <div className="flex items-end justify-between mt-1">
           <div>
             <p className="font-extrabold text-[#0f172a] text-[28px]">Quản lý ngân sách</p>
@@ -18,7 +18,7 @@ export function BudgetPage() {
           </div>
           <button
             onClick={() => toast.info("Hệ thống chuẩn bị mở cổng đăng ký ngân sách cho quý tiếp theo.")}
-            className="bg-[#2563eb] hover:bg-blue-700 active:scale-95 transition-all cursor-pointer flex items-center px-4 py-2.5 rounded-lg shadow-sm"
+            className="bg-rose-600 hover:bg-rose-700 active:scale-95 transition-all cursor-pointer flex items-center px-4 py-2.5 rounded-lg shadow-sm shadow-rose-600/20"
           >
             <span className="font-semibold text-white text-sm">+ Tạo ngân sách mới</span>
           </button>
@@ -92,7 +92,7 @@ export function BudgetPage() {
               <div key={bar.month} className="flex flex-col items-center gap-2 flex-1">
                 <div className="flex gap-1 items-end" style={{height:120}}>
                   <div className="bg-[#e2e8f0] rounded-t-sm w-7" style={{height:`${(bar.planned/280)*100}%`}}/>
-                  <div className={`rounded-t-sm w-7 ${bar.actual>bar.planned?"bg-[#ef4444]":"bg-[#2563eb]"}`} style={{height:`${(bar.actual/280)*100}%`}}/>
+                  <div className={`rounded-t-sm w-7 ${bar.actual>bar.planned?"bg-[#ef4444]":"bg-rose-600"}`} style={{height:`${(bar.actual/280)*100}%`}}/>
                 </div>
                 <span className="text-[#64748b] text-[11px] whitespace-nowrap">{bar.month}</span>
               </div>
@@ -100,7 +100,7 @@ export function BudgetPage() {
           </div>
           <div className="flex gap-4">
             <div className="flex gap-1.5 items-center"><div className="bg-[#e2e8f0] rounded-full size-2.5"/><span className="text-[#64748b] text-[12px]">Ngân sách kế hoạch</span></div>
-            <div className="flex gap-1.5 items-center"><div className="bg-[#2563eb] rounded-full size-2.5"/><span className="text-[#64748b] text-[12px]">Thực chi thực tế</span></div>
+            <div className="flex gap-1.5 items-center"><div className="bg-rose-600 rounded-full size-2.5"/><span className="text-[#64748b] text-[12px]">Thực chi thực tế</span></div>
           </div>
         </div>
       </div>

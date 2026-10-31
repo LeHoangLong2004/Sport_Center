@@ -22,17 +22,36 @@ export default function CoachChat({ initialMemberId }: CoachChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const openedMemberRef = useRef<string | null>(null);
 
-  // Polling for real-time messages
+  // Polling for real-time messages - optimized to prevent UI lag/freezing
   useEffect(() => {
     let isMounted = true;
     async function loadConversations() {
+      // Don't poll if browser tab is hidden to save CPU/network
+      if (typeof document !== "undefined" && document.hidden) return;
+
       try {
         const coachId = profile?.id || "";
         const res = await coachApi.getCoachConversations(coachId);
         if (isMounted && Array.isArray(res)) {
-          setConversations(res);
+          setConversations((prev) => {
+            // Deep check to prevent redundant re-renders while coach is typing
+            if (prev.length === res.length) {
+              const hasDiff = res.some((c, i) => {
+                const p = prev[i];
+                return (
+                  !p ||
+                  p.id !== c.id ||
+                  p.lastMessage !== c.lastMessage ||
+                  p.messages?.length !== c.messages?.length
+                );
+              });
+              if (!hasDiff) return prev;
+            }
+            return res;
+          });
+
           setActiveId((current) =>
-            res.some((conversation) => conversation.id === current)
+            current && res.some((conversation) => conversation.id === current)
               ? current
               : (res[0]?.id || "")
           );
@@ -43,7 +62,7 @@ export default function CoachChat({ initialMemberId }: CoachChatProps) {
     }
 
     loadConversations();
-    const interval = setInterval(loadConversations, 2500);
+    const interval = setInterval(loadConversations, 6000);
 
     return () => {
       isMounted = false;

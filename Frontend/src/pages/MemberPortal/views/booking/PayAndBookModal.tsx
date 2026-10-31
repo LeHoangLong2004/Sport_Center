@@ -192,11 +192,11 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                 onClick={() => setPaymentMethod("card")}
                 className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5 cursor-pointer ${
                   paymentMethod === "card"
-                    ? "border-teal-600 bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200 shadow-sm ring-2 ring-teal-500/20"
+                    ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 shadow-sm ring-2 ring-emerald-500/20"
                     : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600 dark:text-slate-300"
                 }`}
               >
-                <CreditCard className="w-5 h-5 text-teal-600 shrink-0" />
+                <CreditCard className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span className="text-[11px] font-bold">Thẻ ATM / Visa</span>
               </button>
 
@@ -418,7 +418,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                 type="button"
                 disabled={isBusy}
                 onClick={onConfirmPayment}
-                className="px-6 py-2.5 font-bold text-xs rounded-xl shadow-lg shadow-teal-600/20 text-white bg-teal-600 hover:bg-teal-700 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                className="px-6 py-2.5 font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 text-white bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
               >
                 {isProcessingPayment ? (
                   <>

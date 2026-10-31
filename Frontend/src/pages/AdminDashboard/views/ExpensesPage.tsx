@@ -13,7 +13,7 @@ export function ExpensesPage() {
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
       <div>
-        <p className="font-extrabold text-[#2563eb] text-[11px] tracking-wider uppercase">MÔ ĐUN TÀI CHÍNH TRUNG TÂM</p>
+        <p className="font-extrabold text-rose-600 text-[11px] tracking-wider uppercase">MÔ ĐUN TÀI CHÍNH TRUNG TÂM</p>
         <div className="flex items-end justify-between mt-1">
           <div>
             <p className="font-extrabold text-[#0f172a] text-[28px]">Chi phí vận hành</p>
@@ -21,7 +21,7 @@ export function ExpensesPage() {
           </div>
           <button
             onClick={() => toast.info("Tính năng tạo phiếu chi mới đang được đồng bộ với bộ phận Kế toán.")}
-            className="bg-[#2563eb] hover:bg-blue-700 active:scale-95 transition-all cursor-pointer flex items-center px-4 py-2.5 rounded-lg shadow-sm"
+            className="bg-rose-600 hover:bg-rose-700 active:scale-95 transition-all cursor-pointer flex items-center px-4 py-2.5 rounded-lg shadow-sm shadow-rose-600/20"
           >
             <span className="font-semibold text-white text-sm">+ Tạo phiếu chi mới</span>
           </button>
@@ -33,7 +33,7 @@ export function ExpensesPage() {
           <button
             key={t}
             onClick={() => setActiveTab(t)}
-            className={`pb-3 text-sm cursor-pointer transition-colors ${activeTab===t?"border-b-2 border-[#2563eb] font-bold text-[#2563eb]":"font-medium text-[#64748b] hover:text-[#0f172a]"}`}
+            className={`pb-3 text-sm cursor-pointer transition-colors ${activeTab===t?"border-b-2 border-rose-600 font-bold text-rose-600":"font-medium text-[#64748b] hover:text-[#0f172a]"}`}
           >
             {t}
           </button>
@@ -100,7 +100,7 @@ export function ExpensesPage() {
                   if (p === "1") setPageNumber(1);
                   else toast.info(`Chuyển trang: ${p}`);
                 }}
-                className={`flex items-center px-3 py-1.5 rounded-md text-[13px] cursor-pointer transition-colors ${p===String(pageNumber)?"bg-[#2563eb] font-semibold text-white":"bg-white border border-[#e2e8f0] text-[#0f172a] hover:bg-slate-50"}`}
+                className={`flex items-center px-3 py-1.5 rounded-md text-[13px] cursor-pointer transition-colors ${p===String(pageNumber)?"bg-rose-600 font-semibold text-white shadow-xs shadow-rose-600/20":"bg-white border border-[#e2e8f0] text-[#0f172a] hover:bg-slate-50"}`}
               >
                 {p}
               </button>

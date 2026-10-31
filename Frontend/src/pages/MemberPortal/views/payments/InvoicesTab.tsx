@@ -41,7 +41,7 @@ export default function InvoicesTab({
           <button
             type="button"
             onClick={() => onNavigate("packages")}
-            className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-xs cursor-pointer transition-colors"
+            className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs cursor-pointer transition-colors shadow-emerald-500/20"
           >
             <PlusCircle className="w-4 h-4" />
             <span>Khám phá gói tập</span>

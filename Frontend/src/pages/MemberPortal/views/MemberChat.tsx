@@ -75,6 +75,9 @@ export default function MemberChat({ onNavigate }: Props) {
     };
   }, []);
 
+  const conversationsRef = useRef<ChatConversation[]>([]);
+  conversationsRef.current = conversations;
+
   const loadConversations = async (silent = false) => {
     if (!silent) setIsRefreshing(true);
     try {
@@ -82,8 +85,25 @@ export default function MemberChat({ onNavigate }: Props) {
         const res = await MemberAPI.getMemberConversations(memberId);
         if (Array.isArray(res)) {
           const list = res as ChatConversation[];
-          setConversations(list);
-          setActiveId((curr) => (list.some((c) => c.id === curr) ? curr : list[0]?.id || ""));
+          // Only update state if data actually changed to prevent UI freezing
+          const currentList = conversationsRef.current;
+          const isSame =
+            currentList.length === list.length &&
+            list.every((item, i) => {
+              const cur = currentList[i];
+              return (
+                cur &&
+                cur.id === item.id &&
+                cur.messages?.length === item.messages?.length &&
+                cur.messages?.[cur.messages.length - 1]?.id ===
+                  item.messages?.[item.messages.length - 1]?.id
+              );
+            });
+
+          if (!isSame) {
+            setConversations(list);
+            setActiveId((curr) => (list.some((c) => c.id === curr) ? curr : list[0]?.id || ""));
+          }
         }
       }
     } catch (err) {
@@ -95,7 +115,11 @@ export default function MemberChat({ onNavigate }: Props) {
 
   useEffect(() => {
     loadConversations(true);
-    const interval = setInterval(() => loadConversations(true), 2500);
+    const interval = setInterval(() => {
+      if (!document.hidden) {
+        loadConversations(true);
+      }
+    }, 6000);
     return () => clearInterval(interval);
   }, [memberId]);
 
@@ -112,7 +136,7 @@ export default function MemberChat({ onNavigate }: Props) {
       const coachId = targetCoach.coachId || coachName;
       if (!coachId) return;
 
-      const existing = conversations.find(
+      const existing = conversationsRef.current.find(
         (c) =>
           (targetCoach.coachId && (c.coachId === targetCoach.coachId || c.id.includes(targetCoach.coachId))) ||
           c.title.toLowerCase().includes(coachName.toLowerCase())
@@ -140,7 +164,7 @@ export default function MemberChat({ onNavigate }: Props) {
     } catch (e) {
       console.warn("Failed to consume chat_target_coach:", e);
     }
-  }, [memberId, memberName, conversations]);
+  }, [memberId, memberName]);
 
   const activeConv = useMemo(
     () => conversations.find((c) => c.id === activeId) || conversations[0],

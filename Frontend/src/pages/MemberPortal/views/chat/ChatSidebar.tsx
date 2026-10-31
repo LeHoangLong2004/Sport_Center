@@ -112,7 +112,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                       <span
                         className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${
                           cat === "coach"
-                            ? "bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300"
+                            ? "bg-teal-100 text-teal-800 dark:bg-teal-950/50 dark:text-teal-300"
                             : cat === "manager"
                             ? "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300"
                             : cat === "member"

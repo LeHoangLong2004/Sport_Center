@@ -1,5 +1,5 @@
 import React from "react";
-import { Calendar, Filter, User, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { DateInput } from "../../../../components/DateInput";
 
 interface BookingFiltersProps {
@@ -32,9 +32,8 @@ export const BookingFilters: React.FC<BookingFiltersProps> = ({
   return (
     <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-wrap items-center gap-3">
       {/* Date filter */}
-      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
-        <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
-        <span className="text-slate-500 font-medium">Ngày học:</span>
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/90 dark:border-slate-700/80 text-xs shadow-2xs hover:border-emerald-500/40 transition-colors">
+        <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Ngày:</span>
         <DateInput
           value={selectedDate}
           onChange={setSelectedDate}
@@ -44,7 +43,8 @@ export const BookingFilters: React.FC<BookingFiltersProps> = ({
           <button
             type="button"
             onClick={() => setSelectedDate("")}
-            className="text-slate-400 hover:text-slate-600"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            title="Xóa lọc ngày"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -52,9 +52,8 @@ export const BookingFilters: React.FC<BookingFiltersProps> = ({
       </div>
 
       {/* Sport Filter */}
-      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
-        <Filter className="w-4 h-4 text-slate-400 shrink-0" />
-        <span className="text-slate-500 font-medium">Bộ môn:</span>
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/90 dark:border-slate-700/80 text-xs shadow-2xs hover:border-emerald-500/40 transition-colors">
+        <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Bộ môn:</span>
         <select
           value={selectedSport}
           onChange={(e) => setSelectedSport(e.target.value)}
@@ -70,9 +69,8 @@ export const BookingFilters: React.FC<BookingFiltersProps> = ({
       </div>
 
       {/* Coach Filter Dropdown */}
-      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
-        <User className="w-4 h-4 text-slate-400 shrink-0" />
-        <span className="text-slate-500 font-medium">Huấn luyện viên:</span>
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/90 dark:border-slate-700/80 text-xs shadow-2xs hover:border-emerald-500/40 transition-colors">
+        <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">HLV:</span>
         <select
           value={selectedCoachId}
           onChange={(e) => setSelectedCoachId(e.target.value)}
@@ -95,7 +93,7 @@ export const BookingFilters: React.FC<BookingFiltersProps> = ({
           placeholder={activeTab === "group" ? "Tìm theo tên lớp, HLV..." : "Tìm HLV hoặc môn tập..."}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-teal-500"
+          className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
         />
         {searchQuery && (
           <button
