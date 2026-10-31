@@ -13,7 +13,7 @@ export default function SimpleLineChart() {
 
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ height: h }}>
-      <path d={path(newPoints, 120)} stroke="#2563eb" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d={path(newPoints, 120)} stroke="#e11d48" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
       <path d={path(cancelPoints, 120)} stroke="#ef4444" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   )

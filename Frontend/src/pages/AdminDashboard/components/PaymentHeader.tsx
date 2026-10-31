@@ -40,7 +40,7 @@ export function PaymentHeader({
         )}
         <button
           onClick={onOpenCreate}
-          className="bg-[#2563eb] flex gap-2 items-center px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm shadow-blue-500/20"
+          className="bg-rose-600 flex gap-2 items-center px-4 py-2.5 rounded-lg hover:bg-rose-700 transition-colors shadow-sm shadow-rose-600/20 cursor-pointer"
         >
           <img src={iPlus} alt="" className="size-4" />
           <span className="font-semibold text-white text-sm">

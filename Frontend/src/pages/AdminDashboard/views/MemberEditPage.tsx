@@ -221,7 +221,7 @@ export function MemberEditPage({ memberData, onBack }: { memberData?: any, onBac
         <button type="button" onClick={onBack} className="bg-white border border-[#e2e8f0] px-6 py-2.5 rounded-lg">
           <span className="font-semibold text-[#0f172a] text-sm">Hủy bỏ</span>
         </button>
-        <button type="submit" disabled={isSaving} className="bg-[#2563eb] disabled:bg-blue-300 px-6 py-2.5 rounded-lg">
+        <button type="submit" disabled={isSaving} className="bg-rose-600 hover:bg-rose-700 disabled:bg-rose-300 px-6 py-2.5 rounded-lg shadow-sm shadow-rose-600/20 cursor-pointer transition-colors">
           <span className="font-semibold text-white text-sm">{isSaving ? "Đang lưu..." : "Lưu thay đổi"}</span>
         </button>
       </div>

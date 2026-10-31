@@ -31,32 +31,29 @@ export function CoachScheduleHeader({
           </h1>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onOpenClassProposal}
-            className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all shadow-sm hover:shadow-md cursor-pointer"
-          >
-            <CalendarPlus className="w-4 h-4" />
-            Đề xuất lớp học
-          </button>
-
+        <div className="flex flex-wrap items-center gap-2.5">
           <button
             type="button"
             onClick={onOpenSlotModal}
-            className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-xl transition-all shadow-sm hover:shadow-md cursor-pointer"
+            className="px-4 py-2 text-xs font-bold text-white bg-orange-500 hover:bg-orange-600 rounded-xl transition-all shadow-sm hover:shadow-md cursor-pointer"
           >
-            <CalendarPlus className="w-4 h-4" />
             Đăng lịch trống 1–1
           </button>
 
           <button
             type="button"
-            onClick={onOpenRequestModal}
-            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 transition-colors shadow-sm cursor-pointer"
+            onClick={onOpenClassProposal}
+            className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-xs cursor-pointer"
           >
-            <Send className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
-            Yêu cầu ca dạy / Dạy thay
+            Đề xuất mở lớp mới
+          </button>
+
+          <button
+            type="button"
+            onClick={onOpenRequestModal}
+            className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-xs cursor-pointer"
+          >
+            Yêu cầu đổi / Dạy thay
           </button>
         </div>
       </div>

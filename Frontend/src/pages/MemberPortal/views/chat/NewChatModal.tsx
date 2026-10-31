@@ -117,7 +117,7 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
                   <div>
                     <div className="flex items-center gap-1.5">
                       <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100">{c.name}</h4>
-                      <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-orange-100 text-orange-700">HLV</span>
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300">HLV</span>
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400">{c.subtitle}</p>
                   </div>

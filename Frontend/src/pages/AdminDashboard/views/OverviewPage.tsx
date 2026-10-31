@@ -31,8 +31,6 @@ export function OverviewPage({ onNavigate }: { onNavigate?: (page: any) => void 
           sub={`${formatVnd(dashboard.data?.todayRevenue)} hôm nay`}
           badge={dashboard.data ? `${dashboard.data.pendingInvoiceCount} chờ thu` : "--"}
           badgeColor="green"
-          icon={iKpiRevenue}
-          iconBg="bg-blue-50 dark:bg-blue-500/10"
         />
         <KpiCard
           label="Hội viên đang hoạt động"
@@ -40,8 +38,6 @@ export function OverviewPage({ onNavigate }: { onNavigate?: (page: any) => void 
           sub={`${dashboard.data?.newMembersThisMonth ?? "--"} hội viên mới trong tháng`}
           badge={dashboard.data ? `${dashboard.data.activeSubscriptions} gói active` : "--"}
           badgeColor="green"
-          icon={iKpiMembers}
-          iconBg="bg-emerald-50 dark:bg-emerald-500/10"
         />
         <KpiCard
           label="Lớp học sắp diễn ra"
@@ -49,8 +45,6 @@ export function OverviewPage({ onNavigate }: { onNavigate?: (page: any) => void 
           sub={`Tỷ lệ lấp đầy trung bình ${dashboard.data?.classOccupancyRate ?? "--"}`}
           badge={dashboard.data ? `${dashboard.data.pendingAmount > 0 ? formatVnd(dashboard.data.pendingAmount) : "0 đ"} công nợ` : "--"}
           badgeColor="yellow"
-          icon={iKpiClasses}
-          iconBg="bg-orange-50 dark:bg-orange-500/10"
         />
       </div>
 

@@ -130,7 +130,7 @@ export function MembersTable({
               key={i} 
               onClick={() => typeof p === 'number' && onPageChange(p)}
               disabled={p === '...'}
-              className={`flex items-center px-3 py-1.5 rounded-md text-[13px] transition-colors ${p === currentPage ? "bg-[#2563eb] font-semibold text-white" : p === '...' ? "bg-transparent text-slate-400 cursor-default" : "bg-white border border-[#e2e8f0] text-[#0f172a] hover:bg-slate-50 cursor-pointer"}`}
+              className={`flex items-center px-3 py-1.5 rounded-md text-[13px] transition-colors ${p === currentPage ? "bg-rose-600 font-semibold text-white shadow-xs shadow-rose-600/20" : p === '...' ? "bg-transparent text-slate-400 cursor-default" : "bg-white border border-[#e2e8f0] text-[#0f172a] hover:bg-slate-50 cursor-pointer"}`}
             >
               {p}
             </button>

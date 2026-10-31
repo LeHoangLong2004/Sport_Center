@@ -49,7 +49,7 @@ export default function ScheduleFilterBar({
             <select
               value={sportFilter}
               onChange={(e) => onSportFilterChange(e.target.value)}
-              className="text-xs font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 min-w-[150px] shadow-xs cursor-pointer"
+              className="text-xs font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 min-w-[150px] shadow-xs cursor-pointer"
             >
               {SPORT_OPTIONS.map((o) => (
                 <option key={o} value={o}>
@@ -69,7 +69,7 @@ export default function ScheduleFilterBar({
             <select
               value={typeFilter}
               onChange={(e) => onTypeFilterChange(e.target.value as TypeFilter)}
-              className="text-xs font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 min-w-[185px] shadow-xs cursor-pointer"
+              className="text-xs font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 min-w-[185px] shadow-xs cursor-pointer"
             >
               <option value="all">Tất cả lịch tập</option>
               <option value="group">Lớp học nhóm</option>
@@ -87,7 +87,7 @@ export default function ScheduleFilterBar({
             <select
               value={statusFilter}
               onChange={(e) => onStatusFilterChange(e.target.value as StatusFilter)}
-              className="text-xs font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 min-w-[150px] shadow-xs cursor-pointer"
+              className="text-xs font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 min-w-[150px] shadow-xs cursor-pointer"
             >
               <option value="all">Tất cả trạng thái</option>
               <option value="sắp diễn ra">Sắp diễn ra</option>
@@ -108,7 +108,7 @@ export default function ScheduleFilterBar({
             onClick={() => onViewModeChange("list")}
             className={`p-1.5 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
               viewMode === "list"
-                ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs"
+                ? "bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 font-bold shadow-xs"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-700"
             }`}
           >
@@ -119,7 +119,7 @@ export default function ScheduleFilterBar({
             onClick={() => onViewModeChange("week")}
             className={`p-1.5 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
               viewMode === "week"
-                ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs"
+                ? "bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 font-bold shadow-xs"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-700"
             }`}
           >
@@ -143,7 +143,7 @@ export default function ScheduleFilterBar({
               onClick={onTodayWeek}
               className={`text-xs font-semibold px-3.5 py-2 border rounded-xl transition-colors cursor-pointer ${
                 isCurrentWeek
-                  ? "bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-950/40 dark:border-orange-800 font-bold"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300 font-bold"
                   : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
               }`}
             >

@@ -319,8 +319,16 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager
               <button type="button" onClick={onClose} className="px-5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
                 Hủy
               </button>
-              <button type="submit" disabled={loading} className="px-5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50">
-                {loading ? 'Đang xử lý...' : (isCoachMode ? 'Xác nhận tạo' : editData ? 'Lưu thay đổi' : 'Xác nhận tạo')}
+              <button
+                type="submit"
+                disabled={loading}
+                className={`px-5 py-2.5 text-sm font-semibold text-white rounded-xl transition-all shadow-md disabled:opacity-50 cursor-pointer ${
+                  isCoachMode
+                    ? "bg-orange-500 hover:bg-orange-600 shadow-orange-500/20"
+                    : "bg-rose-600 hover:bg-rose-700 shadow-rose-600/20"
+                }`}
+              >
+                {loading ? 'Đang xử lý...' : (isCoachMode ? 'Gửi đề xuất mở lớp' : editData ? 'Lưu thay đổi' : 'Xác nhận tạo lớp')}
               </button>
             </div>
           </form>

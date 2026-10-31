@@ -93,6 +93,12 @@ export default function MemberSchedule({ onNavigate }: Props) {
     };
   }, [cancellingSession, selectedSession]);
 
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, []);
+
   // Escape key handler to close modals
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -250,7 +256,7 @@ export default function MemberSchedule({ onNavigate }: Props) {
           <button
             type="button"
             onClick={() => onNavigate("booking")}
-            className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-500 rounded-xl transition-all shadow-sm hover:shadow-md cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-600 dark:hover:bg-emerald-500 rounded-xl transition-all shadow-sm hover:shadow-md shadow-emerald-500/20 cursor-pointer"
           >
             <CalendarPlus className="w-4 h-4" />
             Đăng ký lớp / PT mới
@@ -261,7 +267,7 @@ export default function MemberSchedule({ onNavigate }: Props) {
             onClick={() => onNavigate("chat")}
             className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-sm cursor-pointer"
           >
-            <Send className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
+            <Send className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             Trò chuyện HLV
           </button>
         </div>

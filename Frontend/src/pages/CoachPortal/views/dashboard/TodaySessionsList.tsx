@@ -177,7 +177,7 @@ export const TodaySessionsList: React.FC<TodaySessionsListProps> = ({
           <button
             type="button"
             onClick={() => navigateTo("schedule")}
-            className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+            className="text-xs font-semibold text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-1"
           >
             Xem tất cả <ArrowRight className="w-3.5 h-3.5" />
           </button>
@@ -255,7 +255,7 @@ export const TodaySessionsList: React.FC<TodaySessionsListProps> = ({
                       <button
                         type="button"
                         onClick={() => navigateTo("attendance", { sessionId: s.id })}
-                        className="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-sm"
+                        className="px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors shadow-sm shadow-orange-600/20"
                       >
                         Điểm danh
                       </button>

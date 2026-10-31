@@ -118,7 +118,7 @@ export function DetailPage({
         </div>
 
         <div className="flex gap-[12px] items-start shrink-0">
-          <button type="button" className="bg-[#3b82f6] text-white px-[18px] py-[10px] rounded-[8px] font-['Manrope:Bold'] font-bold text-[14px] hover:bg-blue-600 transition-colors">
+          <button type="button" className="bg-purple-600 text-white px-[18px] py-[10px] rounded-[8px] font-['Manrope:Bold'] font-bold text-[14px] hover:bg-purple-700 shadow-sm shadow-purple-600/20 transition-all">
             Gia hạn gói tập
           </button>
           <button type="button" className="bg-white border border-[#e2e8f0] px-[18px] py-[10px] rounded-[8px] font-['Manrope:Bold'] font-bold text-[#0f172a] text-[14px] hover:bg-slate-50 transition-colors">

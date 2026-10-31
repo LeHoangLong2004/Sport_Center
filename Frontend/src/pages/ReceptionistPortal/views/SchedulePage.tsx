@@ -239,7 +239,7 @@ export function SchedulePage() {
         <div className="lg:col-span-2 flex flex-col gap-2">
           {loading ? (
             <div className="bg-white rounded-xl border border-slate-200 p-8 text-center flex flex-col items-center justify-center gap-2">
-              <RefreshCw className="w-5 h-5 animate-spin text-blue-600" />
+              <RefreshCw className="w-5 h-5 animate-spin text-purple-600" />
               <p className="text-xs text-slate-500">Đang tải lịch hẹn...</p>
             </div>
           ) : filteredAppointments.length === 0 ? (

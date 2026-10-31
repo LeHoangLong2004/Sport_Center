@@ -98,7 +98,7 @@ export const AppointmentCard: React.FC<Props> = ({
                   <button
                     type="button"
                     onClick={() => onCopyPhone(customer.phone)}
-                    className="text-slate-400 hover:text-blue-600 transition cursor-pointer"
+                    className="text-slate-400 hover:text-purple-600 transition cursor-pointer"
                     title="Sao chép SĐT"
                   >
                     {copiedPhone === customer.phone ? (
@@ -135,7 +135,7 @@ export const AppointmentCard: React.FC<Props> = ({
                 className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded transition cursor-pointer"
                 title="Gọi nhắc trước 30 phút"
               >
-                <Phone className="w-3 h-3 text-blue-600" />
+                <Phone className="w-3 h-3 text-purple-600" />
                 <span className="hidden sm:inline">Gọi</span>
               </a>
             )}

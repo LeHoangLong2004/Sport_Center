@@ -208,10 +208,10 @@ export const GroupClassesTab: React.FC<GroupClassesTabProps> = ({
                       type="button"
                       disabled={isFull}
                       onClick={() => onInitiateBook(item)}
-                      className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all shadow-sm flex items-center gap-1.5 ${
+                      className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all shadow-sm flex items-center gap-1.5 cursor-pointer ${
                         isFull
                           ? "bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
-                          : "bg-teal-600 hover:bg-teal-700 text-white shadow-teal-600/20 active:scale-95"
+                          : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20 active:scale-[0.98]"
                       }`}
                     >
                       <CreditCard className="w-3.5 h-3.5" />
