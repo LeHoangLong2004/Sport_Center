@@ -30,9 +30,18 @@ public sealed partial class ClassService
             return (false, "Thời lượng lớp học phải lớn hơn 0 phút.");
         }
 
-        if (request.ScheduleTime <= DateTime.UtcNow)
+        var scheduleTimeUtc = request.ScheduleTime.Kind == DateTimeKind.Utc
+            ? request.ScheduleTime
+            : request.ScheduleTime.ToUniversalTime();
+
+        if (scheduleTimeUtc <= DateTime.UtcNow)
         {
             return (false, "Thời gian học phải lớn hơn thời điểm hiện tại.");
+        }
+
+        if (approvalStatus == "pending" && scheduleTimeUtc < DateTime.UtcNow.AddHours(24))
+        {
+            return (false, "Thời gian bắt đầu lớp học đề xuất phải cách thời điểm hiện tại ít nhất 24 giờ để Ban quản lý kịp phê duyệt và hội viên đăng ký.");
         }
 
         var newStart = request.ScheduleTime;

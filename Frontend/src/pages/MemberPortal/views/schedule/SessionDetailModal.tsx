@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import type { MemberSessionItem, MemberScreen } from "../../types";
 import { CoachAvatar } from "../../utils/coachAvatar";
-import { STATUS_BADGE } from "./scheduleConstants";
+import { STATUS_BADGE, resolveSessionStatus } from "./scheduleConstants";
 
 interface Props {
   session: MemberSessionItem | null;
@@ -26,6 +26,13 @@ export default function SessionDetailModal({
   onStartCancelSession,
 }: Props) {
   if (!session) return null;
+
+  const effectiveStatus = resolveSessionStatus(
+    session.status,
+    session.date,
+    session.endTime,
+    session.startTime
+  );
 
   return createPortal(
     <div
@@ -61,10 +68,10 @@ export default function SessionDetailModal({
             </span>
             <span
               className={`text-xs px-2.5 py-0.5 rounded-full font-semibold border ${
-                STATUS_BADGE[session.status]?.bg || ""
-              } ${STATUS_BADGE[session.status]?.text || ""}`}
+                STATUS_BADGE[effectiveStatus]?.bg || ""
+              } ${STATUS_BADGE[effectiveStatus]?.text || ""}`}
             >
-              {STATUS_BADGE[session.status]?.label || session.status}
+              {STATUS_BADGE[effectiveStatus]?.label || effectiveStatus}
             </span>
           </div>
           <h3 className="text-xl font-bold text-slate-900 dark:text-white">
@@ -168,7 +175,7 @@ export default function SessionDetailModal({
             <span>Nhắn tin với HLV</span>
           </button>
 
-          {(session.status === "sắp diễn ra" || session.status === "đang diễn ra") && (
+          {(effectiveStatus === "sắp diễn ra") && (
             <button
               type="button"
               onClick={() => {

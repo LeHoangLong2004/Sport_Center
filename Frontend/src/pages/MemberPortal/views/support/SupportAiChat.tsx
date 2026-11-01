@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ArrowRight, Bot, RotateCcw, Send, ShieldCheck, Sparkles, User } from "lucide-react";
+import { ArrowRight, Bot, RotateCcw, Send, ShieldCheck, User } from "lucide-react";
 import type { MemberScreen } from "../../types";
 import { MemberBackendAPI, type MemberAiAction } from "../../services/memberData";
 
@@ -59,15 +59,6 @@ export const SupportAiChat: React.FC<SupportAiChatProps> = ({
   const [inputQuestion, setInputQuestion] = useState("");
   const [isThinking, setIsThinking] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  const quickQuestions = [
-    "Hiện tại tôi có giáo án nào được giao không?",
-    "Hôm nay và ngày mai tôi có lịch tập gì?",
-    "Gói tập của tôi còn hạn bao lâu?",
-    "Gợi ý thực đơn giàu đạm cho ngày tập nặng",
-    "Cách giảm đau cơ sau buổi tập chân (Leg day)",
-    "Tôi muốn hủy lớp thì phải làm sao?",
-  ];
 
   useEffect(() => {
     try {
@@ -156,24 +147,6 @@ export const SupportAiChat: React.FC<SupportAiChatProps> = ({
         >
           <RotateCcw className="w-3.5 h-3.5" /> Cuộc trò chuyện mới
         </button>
-      </div>
-
-      {/* Quick questions */}
-      <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2 overflow-x-auto text-xs">
-        <span className="font-semibold text-slate-400 shrink-0 text-[11px] flex items-center gap-1">
-          <Sparkles className="w-3.5 h-3.5 text-teal-500" /> Gợi ý câu hỏi:
-        </span>
-        {quickQuestions.map((q) => (
-          <button
-            key={q}
-            type="button"
-            disabled={isThinking}
-            onClick={() => handleSend(q)}
-            className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:border-emerald-500 hover:text-emerald-600 shrink-0 transition-colors cursor-pointer text-[11px] disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {q}
-          </button>
-        ))}
       </div>
 
       {/* Messages */}

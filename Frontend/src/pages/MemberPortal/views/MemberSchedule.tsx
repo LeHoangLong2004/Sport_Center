@@ -22,6 +22,7 @@ import {
   getMonday,
   formatDateISO,
   isCancelledSession,
+  resolveSessionStatus,
 } from "./schedule/scheduleConstants";
 import ScheduleFilterBar from "./schedule/ScheduleFilterBar";
 import ScheduleWeekView from "./schedule/ScheduleWeekView";
@@ -41,7 +42,10 @@ export default function MemberSchedule({ onNavigate }: Props) {
 
   // Data States
   const [sessions, setSessions] = useState<MemberSessionItem[]>(() =>
-    getSavedMemberData(storageKey, [])
+    getSavedMemberData<MemberSessionItem[]>(storageKey, []).map((s) => ({
+      ...s,
+      status: resolveSessionStatus(s.status, s.date, s.endTime, s.startTime),
+    }))
   );
 
   // View Mode & Filters
@@ -64,12 +68,19 @@ export default function MemberSchedule({ onNavigate }: Props) {
     try {
       const backendData = await MemberBackendAPI.getBookings();
       if (Array.isArray(backendData)) {
-        setSessions(backendData);
-        saveMemberData(storageKey, backendData);
+        const normalized = backendData.map((s) => ({
+          ...s,
+          status: resolveSessionStatus(s.status, s.date, s.endTime, s.startTime),
+        }));
+        setSessions(normalized);
+        saveMemberData(storageKey, normalized);
         return;
       }
     } catch {}
-    const local = getSavedMemberData(storageKey, []);
+    const local = getSavedMemberData<MemberSessionItem[]>(storageKey, []).map((s) => ({
+      ...s,
+      status: resolveSessionStatus(s.status, s.date, s.endTime, s.startTime),
+    }));
     setSessions(local);
   };
 

@@ -10,6 +10,8 @@ export function StaffPage() {
   const [roleFilter, setRoleFilter] = useState("Tất cả")
   const [staffList, setStaffList] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const rowsPerPage = 10
 
   const [showAddModal, setShowAddModal] = useState(false)
   const [statusConfirmation, setStatusConfirmation] = useState<{ realId: string; currentStatus: boolean } | null>(null)
@@ -20,6 +22,10 @@ export function StaffPage() {
     password: "",
     roleName: "receptionist"
   })
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [query, roleFilter])
 
   // Khóa cuộn trang nền khi mở modal để UI hoàn toàn cố định vào khung nhìn
   useEffect(() => {
@@ -147,6 +153,16 @@ export function StaffPage() {
       && (roleFilter === "Tất cả" || String(m.role).toLowerCase() === roleFilter.toLowerCase())
   })
 
+  const totalPages = Math.ceil(filtered.length / rowsPerPage) || 1;
+  const paginatedList = filtered.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+
+  const getPageNumbers = () => {
+    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (currentPage <= 3) return [1, 2, 3, 4, '...', totalPages];
+    if (currentPage >= totalPages - 2) return [1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+  };
+
   const handleExportCSV = () => {
     if (filtered.length === 0) {
       toast.warning("Không có dữ liệu để xuất!");
@@ -192,7 +208,7 @@ export function StaffPage() {
           <p className="text-[#64748b] dark:text-slate-400 text-sm mt-1">Danh sách ban quản lý, lễ tân và huấn luyện viên toàn hệ thống.</p>
         </div>
         <div className="flex gap-3">
-          <button onClick={handleExportCSV} className="bg-white dark:bg-slate-800 border border-[#cbd5e1] dark:border-slate-700 flex gap-2 items-center px-4 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-2xs">
+          <button onClick={handleExportCSV} className="bg-white dark:bg-slate-800 border border-[#cbd5e1] dark:border-slate-700 flex gap-2 items-center px-4 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-2xs cursor-pointer">
             <span className="font-semibold text-[#0f172a] dark:text-white text-sm">Xuất dữ liệu</span>
           </button>
           <button onClick={() => setShowAddModal(true)} className="bg-rose-600 hover:bg-rose-700 text-white flex gap-2 items-center px-4 py-2.5 rounded-xl transition-all shadow-md shadow-rose-600/20 active:scale-95 cursor-pointer">
@@ -294,65 +310,106 @@ export function StaffPage() {
           <option value="Coach">Huấn luyện viên (Coach)</option>
           <option value="Receptionist">Lễ tân (Receptionist)</option>
         </select>
-        <span className="ml-auto text-[#64748b] text-sm">Đã chọn 0 mục</span>
+        <span className="ml-auto text-[#64748b] text-sm">Tổng cộng: {filtered.length} nhân sự</span>
       </div>
 
       {/* table */}
-      <div className="bg-white border border-[#e2e8f0] overflow-hidden rounded-xl">
-        <div className="bg-[#f1f5f9] flex font-semibold items-center px-6 text-[#475569] text-[12px]">
-          <div className="py-3 flex-1">NHÂN VIÊN</div>
-          <div className="py-3 w-[180px]">VAI TRÒ</div>
-          <div className="py-3 w-[200px]">LIÊN HỆ</div>
-          <div className="py-3 w-[140px]">TRẠNG THÁI</div>
-          <div className="py-3 w-[140px]">NGÀY THAM GIA</div>
-          <div className="py-3 w-[100px] text-right">THAO TÁC</div>
-        </div>
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <div className="size-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-            <p className="text-[#64748b] text-sm font-medium">Đang tải danh sách nhân sự...</p>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="flex h-24 items-center justify-center">
-            <p className="text-[#64748b] text-sm">Không tìm thấy nhân sự phù hợp.</p>
-          </div>
-        ) : (
-          filtered.map(m=>(
-            <div key={m.id} className="border-b border-[#f1f5f9] flex h-16 items-center px-6">
-              <div className="flex gap-2.5 items-center flex-1">
-                <UserAvatar src={m.avatar} name={m.name} className="rounded-full size-9 object-cover" />
-                <div>
-                  <p className="font-semibold text-[#0f172a] text-sm">{m.name}</p>
-                  <p className="text-[#64748b] text-[12px]">{m.id}</p>
-                </div>
-              </div>
-              <div className="w-[180px]">
-                <span className="text-[#0f172a] text-sm font-medium">{m.role}</span>
-              </div>
-              <div className="w-[200px]">
-                <p className="text-[#0f172a] text-sm">{m.phone}</p>
-                <p className="text-[#64748b] text-[12px]">{m.email}</p>
-              </div>
-              <div className="w-[140px]">
-                <span className={`font-semibold px-2.5 py-1 rounded-full text-[12px] ${statusStyle[m.status]}`}>{m.status}</span>
-              </div>
-              <div className="w-[140px]"><p className="text-[#0f172a] text-sm">{m.joined}</p></div>
-              <div className="flex items-center justify-end w-[100px]">
-                <button 
-                  onClick={() => handleToggleStatus(m.realId, m.statusRaw)} 
-                  title={m.statusRaw ? "Khóa tài khoản" : "Mở khóa tài khoản"}
-                  aria-label={m.statusRaw ? "Khóa tài khoản" : "Mở khóa tài khoản"}
-                  className={`inline-flex min-w-[72px] items-center justify-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-xs font-semibold shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 cursor-pointer ${m.statusRaw
-                    ? 'border-rose-200 bg-rose-50 text-rose-600 hover:border-rose-300 hover:bg-rose-100 focus:ring-rose-300'
-                    : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 focus:ring-emerald-300'}`}
-                >
-                  {m.statusRaw ? <LockKeyhole size={14} strokeWidth={2.2} /> : <UnlockKeyhole size={14} strokeWidth={2.2} />}
-                  <span>{m.statusRaw ? "Khóa" : "Mở khóa"}</span>
-                </button>
-              </div>
+      <div className="bg-white border border-[#e2e8f0] overflow-hidden rounded-xl shadow-xs">
+        <div className="overflow-x-auto">
+          <div className="min-w-[900px]">
+            <div className="bg-[#f8fafc] border-b border-[#e2e8f0] flex font-semibold items-center px-6 text-[#475569] text-[12px] whitespace-nowrap select-none">
+              <div className="py-3.5 flex-1 min-w-[220px] shrink-0">NHÂN VIÊN</div>
+              <div className="py-3.5 w-[180px] shrink-0">VAI TRÒ</div>
+              <div className="py-3.5 w-[210px] shrink-0">LIÊN HỆ</div>
+              <div className="py-3.5 w-[150px] shrink-0">TRẠNG THÁI</div>
+              <div className="py-3.5 w-[140px] shrink-0">NGÀY THAM GIA</div>
+              <div className="py-3.5 w-[120px] shrink-0 text-right">THAO TÁC</div>
             </div>
-          ))
-        )}
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3">
+                <div className="size-8 border-2 border-rose-600 border-t-transparent rounded-full animate-spin" />
+                <p className="text-[#64748b] text-sm font-medium">Đang tải danh sách nhân sự...</p>
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="flex h-28 items-center justify-center">
+                <p className="text-[#64748b] text-sm">Không tìm thấy nhân sự phù hợp.</p>
+              </div>
+            ) : (
+              paginatedList.map(m => (
+                <div key={m.id} className="border-b border-[#f1f5f9] flex h-16 items-center px-6 hover:bg-slate-50/70 transition-colors">
+                  <div className="flex gap-3 items-center flex-1 min-w-[220px] shrink-0 pr-4">
+                    <UserAvatar src={m.avatar} name={m.name} className="rounded-full size-9.5 object-cover shrink-0 ring-1 ring-slate-200" />
+                    <div className="min-w-0">
+                      <p className="font-semibold text-[#0f172a] text-sm truncate" title={m.name}>{m.name}</p>
+                      <p className="text-[#64748b] text-[12px] font-mono">{m.id}</p>
+                    </div>
+                  </div>
+                  <div className="w-[180px] shrink-0 whitespace-nowrap">
+                    <span className="text-[#0f172a] text-sm font-medium">{m.role}</span>
+                  </div>
+                  <div className="w-[210px] shrink-0 pr-3">
+                    <p className="text-[#0f172a] text-sm">{m.phone}</p>
+                    <p className="text-[#64748b] text-[12px] truncate" title={m.email}>{m.email}</p>
+                  </div>
+                  <div className="w-[150px] shrink-0 whitespace-nowrap">
+                    <span className={`inline-flex items-center font-semibold px-2.5 py-1 rounded-full text-[12px] whitespace-nowrap ${statusStyle[m.status] || "bg-slate-100 text-slate-700"}`}>
+                      {m.status}
+                    </span>
+                  </div>
+                  <div className="w-[140px] shrink-0 whitespace-nowrap">
+                    <p className="text-[#0f172a] text-sm">{m.joined}</p>
+                  </div>
+                  <div className="flex items-center justify-end w-[120px] shrink-0">
+                    <button 
+                      onClick={() => handleToggleStatus(m.realId, m.statusRaw)} 
+                      title={m.statusRaw ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                      aria-label={m.statusRaw ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                      className={`inline-flex min-w-[76px] items-center justify-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-xs font-semibold shadow-xs transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 cursor-pointer active:scale-95 ${m.statusRaw
+                        ? 'border-rose-200 bg-rose-50 text-rose-600 hover:border-rose-300 hover:bg-rose-100 focus:ring-rose-300'
+                        : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 focus:ring-emerald-300'}`}
+                    >
+                      {m.statusRaw ? <LockKeyhole size={13} strokeWidth={2.2} /> : <UnlockKeyhole size={13} strokeWidth={2.2} />}
+                      <span>{m.statusRaw ? "Khóa" : "Mở khóa"}</span>
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Pagination Footer */}
+        <div className="flex h-14 items-center justify-between px-6 border-t border-[#f1f5f9]">
+          <span className="text-[#64748b] text-sm">
+            Hiển thị {filtered.length === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1}-{Math.min(currentPage * rowsPerPage, filtered.length)} trong tổng số {filtered.length} nhân sự
+          </span>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className={`flex items-center px-3 py-1.5 rounded-md text-[13px] ${currentPage === 1 ? "bg-slate-50 text-slate-400 cursor-not-allowed" : "bg-white border border-[#e2e8f0] text-[#0f172a] hover:bg-slate-50 transition-colors cursor-pointer"}`}
+            >
+              ‹ Trước
+            </button>
+            {getPageNumbers().map((p, i) => (
+              <button 
+                key={i} 
+                onClick={() => typeof p === 'number' && setCurrentPage(p)}
+                disabled={p === '...'}
+                className={`flex items-center px-3 py-1.5 rounded-md text-[13px] transition-colors ${p === currentPage ? "bg-rose-600 font-semibold text-white shadow-xs shadow-rose-600/20" : p === '...' ? "bg-transparent text-slate-400 cursor-default" : "bg-white border border-[#e2e8f0] text-[#0f172a] hover:bg-slate-50 cursor-pointer"}`}
+              >
+                {p}
+              </button>
+            ))}
+            <button 
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className={`flex items-center px-3 py-1.5 rounded-md text-[13px] ${currentPage === totalPages ? "bg-slate-50 text-slate-400 cursor-not-allowed" : "bg-white border border-[#e2e8f0] text-[#0f172a] hover:bg-slate-50 transition-colors cursor-pointer"}`}
+            >
+              Sau ›
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )

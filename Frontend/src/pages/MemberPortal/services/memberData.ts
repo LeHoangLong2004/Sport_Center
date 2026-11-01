@@ -120,11 +120,33 @@ export const MemberBackendAPI = {
       String(new Date().getDate()).padStart(2, "0"),
     ].join("-");
 
-    const getUiStatus = (value: unknown): MemberSessionItem["status"] => {
+    const getUiStatus = (
+      value: unknown,
+      scheduleTime?: string | Date | null,
+      durationMinutes: number = 60
+    ): MemberSessionItem["status"] => {
       const status = String(value ?? "").trim().toLowerCase();
       if (["cancelled", "canceled", "rejected", "class_cancelled", "đã hủy"].includes(status)) return "đã hủy";
       if (["attended", "completed", "hoàn thành"].includes(status)) return "hoàn thành";
       if (["in_progress", "đang diễn ra"].includes(status)) return "đang diễn ra";
+
+      if (scheduleTime) {
+        const startDate = new Date(scheduleTime);
+        if (!Number.isNaN(startDate.getTime())) {
+          const duration = Number(durationMinutes || 60);
+          const endDate = new Date(startDate.getTime() + duration * 60000);
+          const now = new Date();
+
+          if (now > endDate) {
+            return "hoàn thành";
+          }
+          if (now >= startDate && now <= endDate) {
+            return "đang diễn ra";
+          }
+          return "sắp diễn ra";
+        }
+      }
+
       return "sắp diễn ra";
     };
 
@@ -181,7 +203,7 @@ export const MemberBackendAPI = {
             price: booking.price ? Number(booking.price) : 150000,
             capacity: 0,
             registeredCount: 0,
-            status: getUiStatus(booking.status),
+            status: getUiStatus(booking.status, booking.scheduleTime, duration),
             bookingStatus: booking.status,
           };
         });
@@ -215,7 +237,7 @@ export const MemberBackendAPI = {
             price: session.price ? Number(session.price) : 250000,
             capacity: 1,
             registeredCount: 1,
-            status: getUiStatus(session.status),
+            status: getUiStatus(session.status, session.scheduleTime, duration),
             bookingStatus: session.status,
           };
         });
@@ -229,6 +251,16 @@ export const MemberBackendAPI = {
           let uiStatus: MemberSessionItem["status"] = "sắp diễn ra";
           if (appt.status === "Đã hoàn tất") uiStatus = "hoàn thành";
           else if (appt.status === "Đã hủy") uiStatus = "đã hủy";
+          else if (appt.date) {
+            const apptEndDateTime = new Date(`${appt.date}T${endTime.length === 5 ? endTime + ":00" : endTime}`);
+            const apptStartDateTime = new Date(`${appt.date}T${startTime.length === 5 ? startTime + ":00" : startTime}`);
+            const now = new Date();
+            if (!Number.isNaN(apptEndDateTime.getTime()) && now > apptEndDateTime) {
+              uiStatus = "hoàn thành";
+            } else if (!Number.isNaN(apptStartDateTime.getTime()) && !Number.isNaN(apptEndDateTime.getTime()) && now >= apptStartDateTime && now <= apptEndDateTime) {
+              uiStatus = "đang diễn ra";
+            }
+          }
 
           return {
             id: `appt-${appt.id}`,
