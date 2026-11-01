@@ -52,6 +52,15 @@ public static partial class ClassEndpoints
                     if (coachId == null)
                         return Results.BadRequest(new { message = "Tài khoản Coach chưa có hồ sơ hoạt động." });
 
+                    var scheduleTimeUtc = request.ScheduleTime.Kind == DateTimeKind.Utc
+                        ? request.ScheduleTime
+                        : request.ScheduleTime.ToUniversalTime();
+
+                    if (scheduleTimeUtc < DateTime.UtcNow.AddHours(24))
+                    {
+                        return Results.BadRequest(new { message = "Thời gian bắt đầu lớp học đề xuất phải cách thời điểm hiện tại ít nhất 24 giờ để Ban quản lý kịp phê duyệt và hội viên đăng ký." });
+                    }
+
                     if (request.SportId != Guid.Empty)
                     {
                         try

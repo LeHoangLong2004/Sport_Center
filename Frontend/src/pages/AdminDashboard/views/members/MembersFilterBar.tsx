@@ -7,6 +7,7 @@ interface MembersFilterBarProps {
   statusFilter: string;
   onStatusFilterChange: (status: string) => void;
   selectedCount?: number;
+  onClearSelection?: () => void;
 }
 
 export function MembersFilterBar({
@@ -15,6 +16,7 @@ export function MembersFilterBar({
   statusFilter,
   onStatusFilterChange,
   selectedCount = 0,
+  onClearSelection,
 }: MembersFilterBarProps) {
   return (
     <div className="flex flex-wrap gap-3 items-center">
@@ -45,7 +47,18 @@ export function MembersFilterBar({
         <option>Fitness 6 tháng</option>
       </select>
 
-      <span className="ml-auto text-[#64748b] text-sm">Đã chọn {selectedCount} mục</span>
+      <div className="ml-auto flex items-center gap-2 text-sm text-[#64748b]">
+        <span>Đã chọn {selectedCount} mục</span>
+        {selectedCount > 0 && onClearSelection && (
+          <button
+            type="button"
+            onClick={onClearSelection}
+            className="text-xs text-rose-600 hover:text-rose-700 hover:underline cursor-pointer font-medium"
+          >
+            (Bỏ chọn)
+          </button>
+        )}
+      </div>
     </div>
   );
 }

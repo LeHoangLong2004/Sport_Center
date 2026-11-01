@@ -76,7 +76,7 @@ app.MapGet(
                     CoachName = slot.CoachName,
                     ScheduleTime = slot.StartTime,
                     DurationMinutes = Math.Max(1, (int)(slot.EndTime - slot.StartTime).TotalMinutes),
-                    Status = "confirmed"
+                    Status = slot.EndTime <= DateTime.UtcNow ? "completed" : "confirmed"
                 }));
                 schedule.PtSessions = schedule.PtSessions.OrderBy(session => session.ScheduleTime).ToList();
                 return Results.Ok(schedule);

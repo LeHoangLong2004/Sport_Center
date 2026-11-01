@@ -121,7 +121,12 @@ public sealed partial class SupabaseGroupClassRepository
                         Price = 150000m,
                         ScheduleTime = targetClass?.ScheduleTime ?? DateTime.MinValue,
                         DurationMinutes = targetClass?.DurationMinutes ?? 60,
-                        Status = cb.Status,
+                        Status = (targetClass != null 
+                                  && targetClass.ScheduleTime.AddMinutes(targetClass.DurationMinutes) <= DateTime.UtcNow 
+                                  && !string.Equals(cb.Status, "cancelled", StringComparison.OrdinalIgnoreCase)
+                                  && !string.Equals(cb.Status, "canceled", StringComparison.OrdinalIgnoreCase))
+                                  ? "completed"
+                                  : cb.Status,
                     };
                 })
                 .OrderBy(x => x.ScheduleTime)
@@ -147,7 +152,11 @@ public sealed partial class SupabaseGroupClassRepository
                     CoachName = "Personal Trainer",
                     ScheduleTime = ps.ScheduleTime,
                     DurationMinutes = ps.DurationMinutes,
-                    Status = ps.Status,
+                    Status = (ps.ScheduleTime.AddMinutes(ps.DurationMinutes) <= DateTime.UtcNow
+                              && !string.Equals(ps.Status, "cancelled", StringComparison.OrdinalIgnoreCase)
+                              && !string.Equals(ps.Status, "canceled", StringComparison.OrdinalIgnoreCase))
+                              ? "completed"
+                              : ps.Status,
                 })
                 .OrderBy(x => x.ScheduleTime)
                 .ToList();

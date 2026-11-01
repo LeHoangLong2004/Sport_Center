@@ -50,6 +50,23 @@ export function PackagesWorkspace() {
       .toLowerCase().includes(orderSearch.toLowerCase()),
   )
 
+  const [orderPage, setOrderPage] = useState(1)
+  const orderRowsPerPage = 8
+
+  useEffect(() => {
+    setOrderPage(1)
+  }, [orderSearch, activeTab])
+
+  const orderTotalPages = Math.ceil(visibleOrders.length / orderRowsPerPage) || 1
+  const paginatedOrders = visibleOrders.slice((orderPage - 1) * orderRowsPerPage, orderPage * orderRowsPerPage)
+
+  const getOrderPageNumbers = () => {
+    if (orderTotalPages <= 5) return Array.from({ length: orderTotalPages }, (_, i) => i + 1)
+    if (orderPage <= 3) return [1, 2, 3, 4, '...', orderTotalPages]
+    if (orderPage >= orderTotalPages - 2) return [1, '...', orderTotalPages - 3, orderTotalPages - 2, orderTotalPages - 1, orderTotalPages]
+    return [1, '...', orderPage - 1, orderPage, orderPage + 1, '...', orderTotalPages]
+  }
+
   const edit = (item: CatalogPackage) => {
     setError("")
     setDraft({ ...item, prices: { ...item.prices }, benefits: [...item.benefits], terms: [...item.terms] })
@@ -175,40 +192,78 @@ export function PackagesWorkspace() {
           {visibleOrders.length === 0 ? (
             <div className="mt-5 rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">Chưa có đơn phù hợp.</div>
           ) : (
-            <div className="mt-5 space-y-3">
-              {visibleOrders.map((order) => (
-                <article key={order.id} className="flex flex-col gap-4 rounded-xl border border-slate-200 p-4 lg:flex-row lg:items-center lg:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <strong className="text-sm text-slate-900">{order.packageSnapshot.name}</strong>
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${order.status === "pending" ? "bg-amber-50 text-amber-800" : order.status === "paid" ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-800"}`}>
-                        {order.status === "pending" ? "Chờ thanh toán" : order.status === "paid" ? (order.startDate && new Date(order.startDate) > new Date() ? "Đã thanh toán · Chờ hiệu lực" : "Đã thanh toán") : "Thất bại"}
-                      </span>
+            <>
+              <div className="mt-5 space-y-3">
+                {paginatedOrders.map((order) => (
+                  <article key={order.id} className="flex flex-col gap-4 rounded-xl border border-slate-200 p-4 lg:flex-row lg:items-center lg:justify-between hover:border-slate-300 transition-colors">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <strong className="text-sm text-slate-900">{order.packageSnapshot.name}</strong>
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${order.status === "pending" ? "bg-amber-50 text-amber-800" : order.status === "paid" ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-800"}`}>
+                          {order.status === "pending" ? "Chờ thanh toán" : order.status === "paid" ? (order.startDate && new Date(order.startDate) > new Date() ? "Đã thanh toán · Chờ hiệu lực" : "Đã thanh toán") : "Thất bại"}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-sm text-slate-600">{order.userName}{order.userEmail && ` · ${order.userEmail}`}</p>
+                      <p className="mt-1 text-xs text-slate-500">{order.id} · {order.durationMonths} tháng · Tạo {new Date(order.createdAt).toLocaleString("vi-VN")}</p>
+                      {order.startDate && (
+                        <p className="mt-1 text-xs text-slate-500">
+                          Hiệu lực {new Date(order.startDate).toLocaleDateString("vi-VN")} – {new Date(order.endDate!).toLocaleDateString("vi-VN")}
+                        </p>
+                      )}
                     </div>
-                    <p className="mt-1 text-sm text-slate-600">{order.userName}{order.userEmail && ` · ${order.userEmail}`}</p>
-                    <p className="mt-1 text-xs text-slate-500">{order.id} · {order.durationMonths} tháng · Tạo {new Date(order.createdAt).toLocaleString("vi-VN")}</p>
-                    {order.startDate && (
-                      <p className="mt-1 text-xs text-slate-500">
-                        Hiệu lực {new Date(order.startDate).toLocaleDateString("vi-VN")} – {new Date(order.endDate!).toLocaleDateString("vi-VN")}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between gap-4 lg:justify-end">
-                    <div className="text-right">
-                      <p className="text-xs text-slate-500">Cần thanh toán</p>
-                      <strong className="text-lg text-slate-900">{money(order.total)}</strong>
-                      {order.discountPct > 0 && <p className="text-xs text-emerald-700">Đã giảm {order.discountPct}%</p>}
+                    <div className="flex items-center justify-between gap-4 lg:justify-end">
+                      <div className="text-right">
+                        <p className="text-xs text-slate-500">Cần thanh toán</p>
+                        <strong className="text-lg text-slate-900">{money(order.total)}</strong>
+                        {order.discountPct > 0 && <p className="text-xs text-emerald-700">Đã giảm {order.discountPct}%</p>}
+                      </div>
+                      {order.status === "pending" && (
+                        <button type="button" onClick={() => void confirmPayment(order)}
+                          className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-3 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800">
+                          <Check size={16} /> Xác nhận đã thu
+                        </button>
+                      )}
                     </div>
-                    {order.status === "pending" && (
-                      <button type="button" onClick={() => void confirmPayment(order)}
-                        className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-3 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800">
-                        <Check size={16} /> Xác nhận đã thu
-                      </button>
-                    )}
-                  </div>
-                </article>
-              ))}
-            </div>
+                  </article>
+                ))}
+              </div>
+
+              {/* Pagination Footer */}
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-slate-100 pt-4">
+                <span className="text-sm text-slate-500">
+                  Hiển thị {visibleOrders.length === 0 ? 0 : (orderPage - 1) * orderRowsPerPage + 1}-{Math.min(orderPage * orderRowsPerPage, visibleOrders.length)} trong tổng số {visibleOrders.length} đơn mua
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setOrderPage((p) => Math.max(1, p - 1))}
+                    disabled={orderPage === 1}
+                    className={`flex items-center px-3 py-1.5 rounded-md text-[13px] ${orderPage === 1 ? "bg-slate-50 text-slate-400 cursor-not-allowed" : "bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer"}`}
+                  >
+                    ‹ Trước
+                  </button>
+                  {getOrderPageNumbers().map((p, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => typeof p === 'number' && setOrderPage(p)}
+                      disabled={p === '...'}
+                      className={`flex items-center px-3 py-1.5 rounded-md text-[13px] transition-colors ${p === orderPage ? "bg-rose-600 font-semibold text-white shadow-xs shadow-rose-600/20" : p === '...' ? "bg-transparent text-slate-400 cursor-default" : "bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 cursor-pointer"}`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setOrderPage((p) => Math.min(orderTotalPages, p + 1))}
+                    disabled={orderPage === orderTotalPages}
+                    className={`flex items-center px-3 py-1.5 rounded-md text-[13px] ${orderPage === orderTotalPages ? "bg-slate-50 text-slate-400 cursor-not-allowed" : "bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer"}`}
+                  >
+                    Sau ›
+                  </button>
+                </div>
+              </div>
+            </>
           )}
         </section>
       ) : !category ? (
