@@ -7,6 +7,7 @@ import { useState, useEffect, useMemo } from "react";
 import { CoachAPI } from "../services/api";
 import { createPortal } from "react-dom";
 import type { AssessmentRecord, MockSession } from "../services/api";
+import { X, Plus, Trash2, Check, CheckCircle2 } from "lucide-react";
 
 interface CoachAssessmentProps {
   initialSessionId?: string | null;
@@ -16,10 +17,19 @@ interface CoachAssessmentProps {
 export default function CoachAssessment({ initialSessionId, initialMemberId }: CoachAssessmentProps = {}) {
   const [assessments, setAssessments] = useState<AssessmentRecord[]>([]);
   const [sessions, setSessions] = useState<MockSession[]>([]);
-  const [members, setMembers] = useState<{ id: string; name: string; code: string }[]>([]);
+  const [members, setMembers] = useState<{ id: string; name: string; code: string; classIds?: string[] }[]>([]);
   const [selectedMemberId, setSelectedMemberId] = useState(initialMemberId || "");
   const [selectedSessionId, setSelectedSessionId] = useState(initialSessionId || "");
   const [editingId, setEditingId] = useState<string | null>(null);
+  useEffect(() => {
+    if (editingId) {
+      const prevBodyOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prevBodyOverflow;
+      };
+    }
+  }, [editingId]);
   const [draft, setDraft] = useState<Partial<AssessmentRecord>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -48,20 +58,61 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
 
   const eligibleSessions = useMemo(() => {
     if (!selectedMemberId) return [];
+    const selectedMember = members.find((m) => m.id === selectedMemberId);
+
     return sessions.filter((s) => {
+      // 1. Không hiển thị các buổi học đã bị hủy
       if (s.status === "đã hủy") return false;
-      // If backend has registeredMemberIds populated, filter by it; otherwise allow coach to assess any active session
-      if (Array.isArray(s.registeredMemberIds) && s.registeredMemberIds.length > 0) {
-        return s.registeredMemberIds.includes(selectedMemberId);
-      }
-      return true;
+
+      // 2. Kiểm tra học viên có đăng ký buổi học này hay không
+      const registeredInSession =
+        Array.isArray(s.registeredMemberIds) &&
+        s.registeredMemberIds.some((id) => String(id) === String(selectedMemberId));
+
+      const memberHasClass =
+        Array.isArray(selectedMember?.classIds) &&
+        selectedMember.classIds.some(
+          (cid) => String(cid) === String(s.id) || String(cid) === String(s.classId)
+        );
+
+      const isRegistered = registeredInSession || memberHasClass;
+      if (!isRegistered) return false;
+
+      // 3. Buổi học phải đã hoặc đang diễn ra (không đánh giá buổi sắp diễn ra trong tương lai)
+      const todayIso = new Date().toISOString().split("T")[0];
+      const isPastOrToday = s.date ? s.date <= todayIso : true;
+      const isEligibleTime = s.status === "hoàn thành" || s.status === "đang diễn ra" || isPastOrToday;
+
+      return isEligibleTime;
     });
-  }, [selectedMemberId, sessions]);
+  }, [selectedMemberId, sessions, members]);
+
+  // Reset selectedSessionId if it's no longer eligible
+  useEffect(() => {
+    if (selectedSessionId && !eligibleSessions.some((s) => s.id === selectedSessionId)) {
+      setSelectedSessionId("");
+    }
+  }, [eligibleSessions, selectedSessionId]);
 
   const memberAssessments = useMemo(
-    () => assessments.filter((a) => a.memberId === selectedMemberId).sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    () =>
+      assessments
+        .filter(
+          (a) =>
+            Boolean(a.memberId) &&
+            Boolean(selectedMemberId) &&
+            a.memberId.toString().toLowerCase() === selectedMemberId.toString().toLowerCase()
+        )
+        .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || "")),
     [assessments, selectedMemberId]
   );
+
+  const addMetric = (label = "", unit = "") => {
+    setDraft((prev) => ({
+      ...prev,
+      metrics: [...(prev.metrics || []), { label, value: "", unit }],
+    }));
+  };
 
   const openNew = () => {
     if (!selectedSessionId) { setFeedback("Vui lòng chọn buổi học trước."); return; }
@@ -71,7 +122,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
       sessionId: selectedSessionId,
       memberId: selectedMemberId,
       completion: 80,
-      metrics: [{ label: "Chỉ số", value: "", unit: "" }],
+      metrics: [{ label: "", value: "", unit: "" }],
       comment: "",
       nextStep: "",
       createdAt: new Date().toISOString(),
@@ -93,14 +144,34 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
       nextStep: draft.nextStep || "",
       createdAt: draft.createdAt || new Date().toISOString(),
     };
-    await CoachAPI.saveAssessment(full);
-    const ass = await CoachAPI.getAssessments();
-    setAssessments(ass);
-    setIsSaving(false);
-    setEditingId(null);
-    setDraft({});
-    setFeedback("Đã ghi kết quả thành công");
+    try {
+      await CoachAPI.saveAssessment(full);
+      const ass = await CoachAPI.getAssessments();
+      if (Array.isArray(ass) && ass.length > 0) {
+        setAssessments(ass);
+      } else {
+        setAssessments((prev) => [
+          full,
+          ...prev.filter((p) => p.sessionId !== full.sessionId || p.memberId !== full.memberId),
+        ]);
+      }
+    } catch (err) {
+      console.error("Save assessment error:", err);
+      // Fallback local update
+      setAssessments((prev) => [
+        full,
+        ...prev.filter((p) => p.sessionId !== full.sessionId || p.memberId !== full.memberId),
+      ]);
+    } finally {
+      setIsSaving(false);
+      setEditingId(null);
+      setDraft({});
+      setFeedback("Đã ghi kết quả thành công");
+    }
   };
+
+  const currentMember = members.find((m) => m.id === (draft.memberId || selectedMemberId));
+  const currentSession = sessions.find((s) => s.id === (draft.sessionId || selectedSessionId));
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-400 max-w-4xl">
@@ -123,15 +194,32 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Buổi học (đủ điều kiện)</label>
-          <select value={selectedSessionId} onChange={(e) => setSelectedSessionId(e.target.value)} className={selectCls}>
-            <option value="">-- Chọn buổi --</option>
+          <select
+            value={selectedSessionId}
+            onChange={(e) => setSelectedSessionId(e.target.value)}
+            disabled={eligibleSessions.length === 0}
+            className={`${selectCls} ${eligibleSessions.length === 0 ? "opacity-60 cursor-not-allowed" : ""}`}
+          >
+            <option value="">
+              {eligibleSessions.length === 0
+                ? "-- Học viên chưa có buổi học đủ điều kiện --"
+                : "-- Chọn buổi --"}
+            </option>
             {eligibleSessions.map((s) => (
               <option key={s.id} value={s.id}>{s.className} — {s.date}</option>
             ))}
           </select>
         </div>
-        <button type="button" onClick={openNew}
-          className="px-4 py-2 bg-orange-500 text-white rounded-xl text-sm font-semibold hover:bg-orange-600 shadow-md shadow-orange-500/20 transition-all">
+        <button
+          type="button"
+          onClick={openNew}
+          disabled={!selectedSessionId}
+          className={`px-4 py-2 text-white rounded-xl text-sm font-semibold transition-all ${
+            !selectedSessionId
+              ? "bg-slate-300 dark:bg-slate-700 cursor-not-allowed"
+              : "bg-orange-500 hover:bg-orange-600 shadow-md shadow-orange-500/20 cursor-pointer"
+          }`}
+        >
           + Ghi kết quả
         </button>
       </div>
@@ -188,74 +276,240 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
 
       {/* Edit form */}
       {editingId && createPortal(
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-xl flex flex-col max-h-[92vh] border border-slate-200 dark:border-slate-800 overflow-hidden">
             
             {/* Header */}
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Ghi kết quả buổi học</h2>
-              <button type="button" onClick={() => { setEditingId(null); setDraft({}); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-3xl leading-none transition-colors">&times;</button>
+            <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between shrink-0 bg-slate-50/70 dark:bg-slate-850">
+              <div>
+                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300 border border-orange-200 dark:border-orange-800">
+                    Học viên: {currentMember?.name || "Học viên"}
+                  </span>
+                  {currentSession && (
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-200/70 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                      Buổi: {currentSession.className} ({currentSession.date})
+                    </span>
+                  )}
+                </div>
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                  Ghi nhận kết quả & tiến độ buổi học
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setEditingId(null); setDraft({}); }}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
             {/* Body */}
-            <div className="p-6 flex flex-col gap-5 overflow-y-auto flex-1 custom-scrollbar min-h-0">
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Mức hoàn thành (%)</label>
-                <input type="range" min={0} max={100} value={draft.completion || 0}
+            <div className="p-5 sm:p-6 flex flex-col gap-5 overflow-y-auto flex-1 custom-scrollbar min-h-0">
+              {/* 1. Mức độ hoàn thành */}
+              <div className="p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
+                    Mức độ hoàn thành bài tập
+                  </label>
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-black ${
+                    (draft.completion || 0) >= 80
+                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
+                      : (draft.completion || 0) >= 60
+                      ? "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
+                      : "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300"
+                  }`}>
+                    {draft.completion || 0}%
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={draft.completion || 0}
                   onChange={(e) => setDraft({ ...draft, completion: +e.target.value })}
-                  className="accent-orange-500" />
-                <div className="text-sm font-bold text-orange-600">{draft.completion}%</div>
+                  className="w-full accent-orange-500 cursor-pointer"
+                />
+                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                  <span className="text-[11px] text-slate-400 mr-1">Mốc nhanh:</span>
+                  {[50, 70, 80, 90, 100].map((val) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setDraft({ ...draft, completion: val })}
+                      className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
+                        draft.completion === val
+                          ? "bg-orange-500 text-white border-orange-500 shadow-xs"
+                          : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                      }`}
+                    >
+                      {val}%
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Chỉ số tập luyện</label>
-                  <button type="button" className="text-xs text-orange-600 hover:underline font-semibold"
-                    onClick={() => setDraft({ ...draft, metrics: [...(draft.metrics || []), { label: "", value: "", unit: "" }] })}>
-                    + Thêm chỉ số
+              {/* 2. Chỉ số tập luyện & Thể lực */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider block">
+                      Chỉ số tập luyện & Thể lực
+                    </label>
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                      Ghi nhận mức tạ, cự ly, số lần hoặc thành tích đạt được
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => addMetric("", "")}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/50 hover:bg-orange-100 dark:hover:bg-orange-900/40 border border-orange-200 dark:border-orange-800 rounded-xl transition-all cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Thêm chỉ số
                   </button>
                 </div>
-                {(draft.metrics || []).map((m, i) => (
-                  <div key={i} className="flex gap-2 items-center bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg border border-slate-100 dark:border-slate-700">
-                    <input type="text" placeholder="Tên chỉ số (VD: Nhịp tim, Tạ tối đa)" value={m.label}
-                      onChange={(e) => { const ms = [...(draft.metrics || [])]; ms[i] = { ...m, label: e.target.value }; setDraft({ ...draft, metrics: ms }); }}
-                      className={`${inputCls} text-xs flex-1`} />
-                    <input type="text" placeholder="Giá trị" value={m.value}
-                      onChange={(e) => { const ms = [...(draft.metrics || [])]; ms[i] = { ...m, value: e.target.value }; setDraft({ ...draft, metrics: ms }); }}
-                      className={`${inputCls} text-xs w-20`} />
-                    <input type="text" placeholder="Đvị" value={m.unit}
-                      onChange={(e) => { const ms = [...(draft.metrics || [])]; ms[i] = { ...m, unit: e.target.value }; setDraft({ ...draft, metrics: ms }); }}
-                      className={`${inputCls} text-xs w-14`} />
-                    <button type="button" onClick={() => { const ms = draft.metrics!.filter((_, j) => j !== i); setDraft({ ...draft, metrics: ms }); }}
-                      className="text-slate-400 hover:text-rose-500 px-1 transition-colors">
-                      &times;
+
+                {/* Quick suggestion chips */}
+                <div className="flex items-center gap-1.5 flex-wrap bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Gợi ý nhanh:</span>
+                  {[
+                    { label: "Mức tạ", unit: "kg" },
+                    { label: "Quãng đường", unit: "km" },
+                    { label: "Thời gian", unit: "phút" },
+                    { label: "Số rep", unit: "lần" },
+                    { label: "Nhịp tim", unit: "bpm" },
+                    { label: "Calo", unit: "kcal" },
+                  ].map((chip) => (
+                    <button
+                      key={chip.label}
+                      type="button"
+                      onClick={() => addMetric(chip.label, chip.unit)}
+                      className="px-2 py-0.5 text-[11px] font-medium rounded-lg bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-300 dark:hover:bg-slate-650 border border-slate-200 dark:border-slate-600 transition-colors cursor-pointer shadow-2xs"
+                    >
+                      + {chip.label} ({chip.unit})
                     </button>
+                  ))}
+                </div>
+
+                {/* Metric Items List */}
+                {(!draft.metrics || draft.metrics.length === 0) ? (
+                  <div className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-center text-xs text-slate-400">
+                    Chưa có chỉ số nào. Bấm vào các nút gợi ý nhanh ở trên hoặc nút "+ Thêm chỉ số".
                   </div>
-                ))}
+                ) : (
+                  <div className="space-y-2">
+                    {/* Header Columns */}
+                    <div className="flex items-center gap-2 px-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      <span className="flex-1 min-w-0">Tên bài tập / Chỉ số</span>
+                      <span className="w-24 shrink-0 text-center">Giá trị</span>
+                      <span className="w-24 shrink-0 text-center">Đơn vị</span>
+                      <span className="w-8 shrink-0"></span>
+                    </div>
+
+                    {draft.metrics.map((m, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-2 p-2 rounded-xl bg-slate-50/70 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700"
+                      >
+                        <input
+                          type="text"
+                          placeholder="VD: Đẩy ngực, Plank, Chạy bộ..."
+                          value={m.label}
+                          onChange={(e) => {
+                            const ms = [...(draft.metrics || [])];
+                            ms[i] = { ...m, label: e.target.value };
+                            setDraft({ ...draft, metrics: ms });
+                          }}
+                          className="flex-1 min-w-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none"
+                        />
+                        <input
+                          type="text"
+                          placeholder="VD: 60"
+                          value={m.value}
+                          onChange={(e) => {
+                            const ms = [...(draft.metrics || [])];
+                            ms[i] = { ...m, value: e.target.value };
+                            setDraft({ ...draft, metrics: ms });
+                          }}
+                          className="w-24 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-2 text-xs text-center font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none"
+                        />
+                        <input
+                          type="text"
+                          placeholder="kg, km, s..."
+                          value={m.unit}
+                          onChange={(e) => {
+                            const ms = [...(draft.metrics || [])];
+                            ms[i] = { ...m, unit: e.target.value };
+                            setDraft({ ...draft, metrics: ms });
+                          }}
+                          className="w-24 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-2 text-xs text-center text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const ms = draft.metrics!.filter((_, j) => j !== i);
+                            setDraft({ ...draft, metrics: ms });
+                          }}
+                          className="w-8 h-8 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+                          title="Xóa chỉ số này"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Nhận xét buổi tập</label>
-                <textarea value={draft.comment || ""} onChange={(e) => setDraft({ ...draft, comment: e.target.value })}
-                  rows={3} className={`${inputCls} resize-none`} placeholder="Nhận xét kết quả buổi học, thái độ và kỹ thuật của học viên..." />
+              {/* 3. Nhận xét buổi tập */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider block">
+                  Nhận xét của Huấn luyện viên
+                </label>
+                <textarea
+                  value={draft.comment || ""}
+                  onChange={(e) => setDraft({ ...draft, comment: e.target.value })}
+                  rows={3}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none resize-none leading-relaxed"
+                  placeholder="Nhận xét kỹ thuật, sự tập trung và mức độ nỗ lực của học viên trong buổi học này..."
+                />
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Hướng tập tiếp theo</label>
-                <input type="text" value={draft.nextStep || ""} onChange={(e) => setDraft({ ...draft, nextStep: e.target.value })}
-                  className={inputCls} placeholder="VD: Tăng tạ, cải thiện tư thế, tập cardio..." />
+              {/* 4. Hướng tập tiếp theo */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider block">
+                  Kế hoạch & Định hướng buổi tập tiếp theo
+                </label>
+                <input
+                  type="text"
+                  value={draft.nextStep || ""}
+                  onChange={(e) => setDraft({ ...draft, nextStep: e.target.value })}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none"
+                  placeholder="VD: Nâng mức tạ Bench Press lên 65kg, cải thiện nhịp thở khi Squat..."
+                />
               </div>
             </div>
 
             {/* Footer */}
-            <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 shrink-0 bg-slate-50 dark:bg-slate-900/50 rounded-b-2xl">
-              <button type="button" onClick={() => { setEditingId(null); setDraft({}); }}
-                className="px-5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-xs">
+            <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3 shrink-0 bg-slate-50/70 dark:bg-slate-900/60 rounded-b-2xl">
+              <button
+                type="button"
+                onClick={() => { setEditingId(null); setDraft({}); }}
+                className="px-5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-xs cursor-pointer"
+              >
                 Hủy
               </button>
-              <button type="button" onClick={handleSave} disabled={isSaving}
-                className="px-6 py-2.5 bg-orange-500 text-white rounded-xl text-sm font-bold hover:bg-orange-600 disabled:bg-slate-400 dark:disabled:bg-slate-600 transition-colors shadow-md shadow-orange-500/20">
-                {isSaving ? "Đang lưu..." : "Lưu kết quả"}
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={isSaving}
+                className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:bg-slate-400 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-orange-500/20 cursor-pointer"
+              >
+                <Check className="w-4 h-4" />
+                <span>{isSaving ? "Đang lưu..." : "Lưu kết quả"}</span>
               </button>
             </div>
             

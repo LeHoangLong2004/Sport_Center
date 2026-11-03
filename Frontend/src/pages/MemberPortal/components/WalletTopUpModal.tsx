@@ -52,6 +52,9 @@ export default function WalletTopUpModal({
 
   useEffect(() => {
     if (!isOpen) return;
+    const prevBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
     const cfg = BankConfigService.getConfig();
     setBankConfig(cfg);
     setCheckStatusText(null);
@@ -62,7 +65,10 @@ export default function WalletTopUpModal({
       }
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [isOpen, onClose]);
 
   const [sessionCode, setSessionCode] = useState(() => Math.floor(1000 + Math.random() * 9000).toString());

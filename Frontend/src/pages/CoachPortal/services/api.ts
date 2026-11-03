@@ -213,7 +213,7 @@ export const CoachAPI = {
   },
   getSports: async (): Promise<SportOption[]> => {
     try {
-      const sports = await fetchApi('/sports');
+      const sports = await fetchApi('/coach/my-sports');
       return Array.isArray(sports)
         ? sports
             .filter((sport: any) => sport?.id && sport?.name)
@@ -324,6 +324,7 @@ export const CoachAPI = {
       title: string;
       message?: string | null;
       type?: string;
+      isRead?: boolean;
       createdAt: string;
     }>;
 
@@ -332,11 +333,27 @@ export const CoachAPI = {
       title: notification.title,
       content: notification.message || "",
       type: "Thông báo" as const,
+      notificationType: notification.type || "general",
       sentAt: notification.createdAt,
       targetType: "class" as const,
       targetId: "",
       targetName: "Hệ thống",
+      isRead: notification.isRead ?? false,
     }));
+  },
+  markNotificationAsRead: async (id: string) => {
+    try {
+      return await fetchApi(`/notifications/${encodeURIComponent(id)}/read`, { method: 'POST' });
+    } catch {
+      return null;
+    }
+  },
+  markAllNotificationsAsRead: async () => {
+    try {
+      return await fetchApi('/notifications/read-all', { method: 'POST' });
+    } catch {
+      return null;
+    }
   },
   sendNotification: async (notification: any) => {
     return fetchApi('/coach/notifications', {

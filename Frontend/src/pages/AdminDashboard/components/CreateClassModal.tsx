@@ -88,12 +88,19 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const token = localStorage.getItem("token") || localStorage.getItem("accessToken") || "";
+        const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 
-        // Fetch sports
-        const sportsRes = await fetch("/api/sports");
+        // Fetch sports: Nếu là Coach đề xuất lớp thì chỉ lấy các bộ môn HLV đang phụ trách
+        const sportsEndpoint = isCoachMode ? "/api/coach/my-sports" : "/api/sports";
+        const sportsRes = await fetch(sportsEndpoint, { headers: authHeaders });
         if (sportsRes.ok) {
           const sportsData = await sportsRes.json();
-          setSports(sportsData);
+          setSports(Array.isArray(sportsData) ? sportsData : []);
+        } else if (isCoachMode) {
+          // Fallback nếu có lỗi
+          const fallbackRes = await fetch("/api/sports");
+          if (fallbackRes.ok) setSports(await fallbackRes.json());
         }
 
         // Fetch facilities
@@ -334,9 +341,15 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Môn học</label>
                 <select required name="sportId" value={formData.sportId} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 bg-white">
-                  <option value="">-- Chọn môn học --</option>
+                  <option value="">-- {sports.length === 0 ? (isCoachMode ? "Chưa được phân công môn nào" : "Không có môn") : "Chọn môn học"} --</option>
                   {sports.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
+                {isCoachMode && sports.length === 0 && !loadingData && (
+                  <p className="mt-1 text-[11px] text-amber-600 font-medium">Bạn chưa được Quản lý phân công môn nào để mở lớp.</p>
+                )}
+                {isCoachMode && sports.length > 0 && (
+                  <p className="mt-1 text-[11px] text-slate-500">Chỉ hiển thị các môn bạn được phân công ({sports.length} môn).</p>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Phòng tập</label>

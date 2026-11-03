@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 import type { AttendanceSession } from "./types";
 import type { MemberScreen } from "../../types";
 import {
@@ -11,6 +12,10 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
+  Award,
+  Target,
+  Dumbbell,
+  ArrowRight,
 } from "lucide-react";
 
 interface AttendanceDetailModalProps {
@@ -24,6 +29,22 @@ export default function AttendanceDetailModal({
   onClose,
   onNavigate,
 }: AttendanceDetailModalProps) {
+  useEffect(() => {
+    if (!session) return;
+    const prevBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [session, onClose]);
+
   if (!session) return null;
 
   const formatDateDisplay = (dateStr: string) => {
@@ -62,6 +83,7 @@ export default function AttendanceDetailModal({
 
   const isFuture = isFutureSession(session.date, session.startTime);
   const effectiveStatus = isFuture ? "chưa diễn ra" : session.status;
+  const assessment = session.assessment;
 
   const getStatusBadge = (status: AttendanceSession["status"]) => {
     switch (status) {
@@ -103,9 +125,18 @@ export default function AttendanceDetailModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-8 space-y-6">
+  return createPortal(
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-xl rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-7 space-y-5 my-auto max-h-[90vh] overflow-y-auto"
+      >
+        {/* Top Header */}
         <div className="flex items-start justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
@@ -124,24 +155,24 @@ export default function AttendanceDetailModal({
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-colors cursor-pointer"
           >
             ✕
           </button>
         </div>
 
         {/* Attendance Status Banner */}
-        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
             Trạng thái điểm danh:
           </span>
           {getStatusBadge(effectiveStatus)}
         </div>
 
-        {/* Schedule & Package Details */}
-        <div className="grid grid-cols-2 gap-4 text-xs">
-          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80">
-            <p className="text-slate-400 mb-1 flex items-center gap-1.5 font-medium">
+        {/* Schedule & Coach Details */}
+        <div className="grid grid-cols-2 gap-3 text-xs">
+          <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80">
+            <p className="text-slate-400 mb-0.5 flex items-center gap-1.5 font-medium text-[11px]">
               <Calendar className="w-3.5 h-3.5 text-teal-500" />
               Ngày học
             </p>
@@ -150,8 +181,8 @@ export default function AttendanceDetailModal({
             </p>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80">
-            <p className="text-slate-400 mb-1 flex items-center gap-1.5 font-medium">
+          <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80">
+            <p className="text-slate-400 mb-0.5 flex items-center gap-1.5 font-medium text-[11px]">
               <Clock className="w-3.5 h-3.5 text-teal-500" />
               Thời gian
             </p>
@@ -160,74 +191,151 @@ export default function AttendanceDetailModal({
             </p>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80">
-            <p className="text-slate-400 mb-1 flex items-center gap-1.5 font-medium">
+          <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80">
+            <p className="text-slate-400 mb-0.5 flex items-center gap-1.5 font-medium text-[11px]">
               <Building className="w-3.5 h-3.5 text-teal-500" />
               Phòng tập
             </p>
-            <p className="font-bold text-slate-800 dark:text-slate-200">
+            <p className="font-bold text-slate-800 dark:text-slate-200 truncate">
               {session.room}
             </p>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80">
-            <p className="text-slate-400 mb-1 flex items-center gap-1.5 font-medium">
+          <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80">
+            <p className="text-slate-400 mb-0.5 flex items-center gap-1.5 font-medium text-[11px]">
               <UserCheck className="w-3.5 h-3.5 text-teal-500" />
               Huấn luyện viên
             </p>
-            <p className="font-bold text-slate-800 dark:text-slate-200">
+            <p className="font-bold text-slate-800 dark:text-slate-200 truncate">
               {session.coachName}
             </p>
           </div>
         </div>
 
-        {/* Coach Feedback Note or Upcoming Notice */}
-        {isFuture ? (
-          <div className="p-4 rounded-2xl bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 text-xs space-y-1">
-            <p className="font-bold text-blue-800 dark:text-blue-300 flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-blue-500" />
-              Buổi học sắp diễn ra
-            </p>
-            <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-              Buổi học chưa đến giờ ({session.startTime} - {session.endTime}). Huấn luyện viên sẽ điểm danh và ghi nhận xét sau giờ học.
-            </p>
-          </div>
-        ) : session.coachNote ? (
-          <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/50 dark:border-emerald-800/30 space-y-1">
-            <p className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
-              Ghi chú từ Huấn luyện viên
-            </p>
-            <p className="text-xs text-slate-600 dark:text-slate-300 italic leading-relaxed">
-              "{session.coachNote}"
-            </p>
-          </div>
-        ) : (
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80 text-xs text-slate-400 text-center">
-            Chưa có nhận xét riêng từ Huấn luyện viên cho buổi học này.
+        {/* Coach Assessment & Progress Card (If available) */}
+        {assessment && (
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-orange-50/70 via-amber-50/40 to-white dark:from-orange-950/20 dark:via-slate-800/50 dark:to-slate-900 border border-orange-200/80 dark:border-orange-800/40 shadow-xs space-y-3.5">
+            <div className="flex items-center justify-between">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-700 dark:text-orange-400 uppercase tracking-wider">
+                <Award className="w-4 h-4 text-orange-500" />
+                Đánh giá kết quả từ HLV {session.coachName}
+              </span>
+              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/50 text-orange-800 dark:text-orange-300">
+                Hoàn thành: {assessment.completion}%
+              </span>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="space-y-1">
+              <div className="h-2 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div
+                  style={{ width: `${Math.min(100, Math.max(0, assessment.completion))}%` }}
+                  className="h-full bg-gradient-to-r from-orange-500 to-amber-500 rounded-full transition-all duration-300"
+                />
+              </div>
+            </div>
+
+            {/* Fitness & Workout Metrics */}
+            {Array.isArray(assessment.metrics) && assessment.metrics.length > 0 && (
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">
+                  Chỉ số tập luyện đạt được:
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {assessment.metrics.map((m, idx) => (
+                    <div
+                      key={idx}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs shadow-2xs"
+                    >
+                      <Dumbbell className="w-3.5 h-3.5 text-orange-500" />
+                      <span className="text-slate-500 dark:text-slate-400">{m.name}:</span>
+                      <span className="font-bold text-slate-900 dark:text-white">
+                        {m.value} {m.unit || ""}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Coach Comments */}
+            {assessment.comment && (
+              <div className="p-3 rounded-xl bg-white/80 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 text-xs space-y-1">
+                <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <MessageSquare className="w-3.5 h-3.5 text-blue-500" />
+                  Nhận xét của Huấn luyện viên:
+                </span>
+                <p className="text-slate-600 dark:text-slate-300 italic leading-relaxed pl-5">
+                  &ldquo;{assessment.comment}&rdquo;
+                </p>
+              </div>
+            )}
+
+            {/* Next Steps Direction */}
+            {assessment.nextStep && (
+              <div className="p-3 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/40 text-xs space-y-1">
+                <span className="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                  <Target className="w-3.5 h-3.5 text-amber-600" />
+                  Kế hoạch & Định hướng buổi tiếp theo:
+                </span>
+                <p className="text-amber-900 dark:text-amber-200 leading-relaxed pl-5 font-medium">
+                  {assessment.nextStep}
+                </p>
+              </div>
+            )}
           </div>
         )}
 
+        {/* Coach Attendance Short Note (if no assessment yet or supplementary) */}
+        {!assessment && (
+          isFuture ? (
+            <div className="p-4 rounded-2xl bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 text-xs space-y-1">
+              <p className="font-bold text-blue-800 dark:text-blue-300 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-blue-500" />
+                Buổi học sắp diễn ra
+              </p>
+              <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                Buổi học chưa đến giờ ({session.startTime} - {session.endTime}). Huấn luyện viên sẽ điểm danh và ghi nhận xét sau giờ học.
+              </p>
+            </div>
+          ) : session.coachNote ? (
+            <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/50 dark:border-emerald-800/30 space-y-1">
+              <p className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                Ghi chú từ Huấn luyện viên
+              </p>
+              <p className="text-xs text-slate-600 dark:text-slate-300 italic leading-relaxed">
+                &ldquo;{session.coachNote}&rdquo;
+              </p>
+            </div>
+          ) : (
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80 text-xs text-slate-400 text-center">
+              Chưa có nhận xét hoặc đánh giá riêng từ Huấn luyện viên cho buổi học này.
+            </div>
+          )
+        )}
+
         {/* Actions */}
-        <div className="flex items-center gap-3 pt-2">
+        <div className="flex items-center gap-3 pt-1">
           <button
             onClick={() => {
               onClose();
               onNavigate("chat");
             }}
-            className="flex-1 py-3 rounded-2xl bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-bold text-xs flex items-center justify-center gap-2 transition-colors"
+            className="flex-1 py-3 rounded-2xl bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
             <MessageSquare className="w-4 h-4" />
             Nhắn tin với HLV
           </button>
           <button
             onClick={onClose}
-            className="flex-1 py-3 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs transition-colors"
+            className="flex-1 py-3 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs transition-colors cursor-pointer"
           >
             Đóng
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

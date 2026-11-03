@@ -1,12 +1,15 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using SmartGym.Application.DTOs;
 using SmartGym.Application.Interfaces;
 using IAccountTokenRepository = SmartGym.Application.Interfaces.Repositories.IAccountTokenRepository;
 using AuthForgotPasswordRequest = SmartGym.Application.DTOs.Auth.ForgotPasswordRequest;
 using AuthResetPasswordRequest = SmartGym.Application.DTOs.Auth.ResetPasswordRequest;
 using System;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -33,6 +36,25 @@ public static class AuthEndpoints
                 }
 
                 var response = await authService.RegisterAsync(request);
+
+                if (isPrivilegedStaff && string.Equals(request.RoleName, "coach", StringComparison.OrdinalIgnoreCase) && request.SportIds != null && request.SportIds.Any())
+                {
+                    try
+                    {
+                        var db = httpContext.RequestServices.GetRequiredService<SmartGym.Infrastructure.Persistence.EF.SmartGymDbContext>();
+                        var coachId = await CoachProfileResolver.FindByUserIdAsync(db, response.Id, activeOnly: false) ?? response.Id;
+                        foreach (var sportId in request.SportIds.Distinct())
+                        {
+                            await db.Database.ExecuteSqlInterpolatedAsync($@"
+                                INSERT INTO coach_sports (coach_id, sport_id)
+                                VALUES ({coachId}, {sportId})
+                                ON CONFLICT DO NOTHING;
+                            ");
+                        }
+                    }
+                    catch { }
+                }
+
                 return Results.Ok(response);
             }
             catch (Exception ex)

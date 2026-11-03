@@ -132,6 +132,7 @@ public static partial class MemberEndpoints
         public List<string> RecentInvoices { get; } = new();
         public List<string> PackageBenefits { get; } = new();
         public string? AssignedCoachInfo { get; set; }
+        public List<string> RecentCoachAssessments { get; } = new();
         public bool IsAuthenticated => !string.IsNullOrEmpty(UserId);
     }
 
@@ -173,6 +174,18 @@ public static partial class MemberEndpoints
     {
         public string CoachName { get; set; } = string.Empty;
         public string Specialties { get; set; } = string.Empty;
+    }
+
+    private sealed class AiCoachAssessmentRow
+    {
+        public int Completion { get; set; }
+        public string? MetricsJson { get; set; }
+        public string? Comment { get; set; }
+        public string? NextStep { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string ClassName { get; set; } = string.Empty;
+        public string CoachName { get; set; } = string.Empty;
+        public string SportName { get; set; } = string.Empty;
     }
 
     private static async Task<MemberAiContext> BuildMemberAiContextAsync(
@@ -613,6 +626,59 @@ public static partial class MemberEndpoints
                 }
             }
             catch (Exception ex) { logger.LogDebug(ex, "Flow 6: cannot load coach info."); }
+
+            // 6. Coach Assessments (Evaluations & Feedback from Coach)
+            try
+            {
+                var assessments = await db.Database.SqlQueryRaw<AiCoachAssessmentRow>(@"
+                    SELECT ca.completion AS ""Completion"",
+                           ca.metrics_json::text AS ""MetricsJson"",
+                           ca.comment AS ""Comment"",
+                           ca.next_step AS ""NextStep"",
+                           ca.created_at AS ""CreatedAt"",
+                           COALESCE(c.class_name, 'Buổi tập cá nhân') AS ""ClassName"",
+                           COALESCE(u.full_name, 'HLV Trung tâm') AS ""CoachName"",
+                           COALESCE(s.name, 'Thể thao') AS ""SportName""
+                    FROM coach_assessments ca
+                    LEFT JOIN classes c ON c.id = ca.session_id
+                    LEFT JOIN sports s ON s.id = c.sport_id
+                    LEFT JOIN coaches co ON co.id = ca.coach_id
+                    LEFT JOIN users u ON u.id = co.user_id
+                    WHERE ca.member_id = {0}
+                    ORDER BY ca.created_at DESC
+                    LIMIT 5", memberId).ToListAsync(ct);
+
+                foreach (var a in assessments)
+                {
+                    var dateStr = ToVn(a.CreatedAt).ToString("dd/MM/yyyy");
+                    var metricSummary = "";
+                    if (!string.IsNullOrWhiteSpace(a.MetricsJson) && a.MetricsJson != "[]")
+                    {
+                        try
+                        {
+                            using var doc = JsonDocument.Parse(a.MetricsJson);
+                            if (doc.RootElement.ValueKind == JsonValueKind.Array)
+                            {
+                                var mList = new List<string>();
+                                foreach (var elem in doc.RootElement.EnumerateArray())
+                                {
+                                    var n = elem.TryGetProperty("name", out var np) ? np.GetString() : null;
+                                    var v = elem.TryGetProperty("value", out var vp) ? vp.ToString() : null;
+                                    var u = elem.TryGetProperty("unit", out var up) ? up.GetString() : null;
+                                    if (!string.IsNullOrEmpty(n) && !string.IsNullOrEmpty(v))
+                                        mList.Add($"{n}: {v} {u ?? ""}".Trim());
+                                }
+                                if (mList.Count > 0) metricSummary = $" [Chỉ số: {string.Join(", ", mList)}]";
+                            }
+                        }
+                        catch { }
+                    }
+                    var commentStr = !string.IsNullOrWhiteSpace(a.Comment) ? $" - Nhận xét của HLV: \"{a.Comment}\"" : "";
+                    var nextStepStr = !string.IsNullOrWhiteSpace(a.NextStep) ? $" - Định hướng buổi tới: \"{a.NextStep}\"" : "";
+                    result.RecentCoachAssessments.Add($"Buổi \"{a.ClassName}\" ({a.SportName}, ngày {dateStr}, HLV {a.CoachName}) — Mức độ hoàn thành: {a.Completion}%{metricSummary}{commentStr}{nextStepStr}");
+                }
+            }
+            catch (Exception ex) { logger.LogDebug(ex, "Flow 6: cannot load coach assessments."); }
         }
 
         return result;
@@ -663,7 +729,7 @@ public static partial class MemberEndpoints
         var sb = new StringBuilder();
 
         sb.AppendLine("Bạn là \"Trợ lý AI SportCenter\" — trợ lý ảo 24/7 dành cho hội viên của trung tâm thể thao SportCenter (Gym, Yoga, Bơi, Boxing, Cầu lông).");
-        sb.AppendLine("Nhiệm vụ: trả lời ngắn gọn, thân thiện, chính xác bằng TIẾNG VIỆT về: lịch tập cá nhân (cả sắp tới và đã hoàn thành), gói tập & quyền lợi tiện ích (locker, khăn, sauna, bãi xe), chỉ số cơ thể InBody, tần suất check-in cổng, hóa đơn thanh toán, HLV phụ trách, giáo án bài tập được giao, kỹ thuật bài tập, dinh dưỡng thể thao cơ bản, phục hồi cơ bắp, nội quy & chính sách trung tâm.");
+        sb.AppendLine("Nhiệm vụ: trả lời ngắn gọn, thân thiện, chính xác bằng TIẾNG VIỆT về: lịch tập cá nhân (cả sắp tới và đã hoàn thành), gói tập & quyền lợi tiện ích (locker, khăn, sauna, bãi xe), kết quả đánh giá tiến độ & nhận xét của HLV (mức độ hoàn thành, mức tạ, thể lực, định hướng tiếp theo), chỉ số cơ thể InBody, tần suất check-in cổng, hóa đơn thanh toán, HLV phụ trách, giáo án bài tập được giao, kỹ thuật bài tập, dinh dưỡng thể thao cơ bản, phục hồi cơ bắp, nội quy & chính sách trung tâm.");
         sb.AppendLine();
         sb.AppendLine("QUY TẮC BẮT BUỘC:");
         sb.AppendLine("1. Chỉ dùng dữ liệu trong mục [NGỮ CẢNH HỘI VIÊN] khi nói về lịch, gói tập, giáo án của hội viên. TUYỆT ĐỐI không bịa lịch học, tên HLV, gói tập, bài tập, giá tiền hay ngày hết hạn.");
@@ -715,6 +781,9 @@ public static partial class MemberEndpoints
         sb.AppendLine(ctx.AssignedWorkouts.Count == 0
             ? "• Giáo án & bài tập được giao: (chưa có giáo án nào được HLV giao hoặc đã hoàn thành hết)"
             : "• Giáo án & bài tập được giao:\n  - " + string.Join("\n  - ", ctx.AssignedWorkouts));
+        sb.AppendLine(ctx.RecentCoachAssessments.Count == 0
+            ? "• Đánh giá tiến độ & nhận xét từ HLV: (chưa có đánh giá nào gần đây)"
+            : "• Đánh giá tiến độ & nhận xét từ HLV gần đây:\n  - " + string.Join("\n  - ", ctx.RecentCoachAssessments));
 
         if (history.Count > 0)
         {
