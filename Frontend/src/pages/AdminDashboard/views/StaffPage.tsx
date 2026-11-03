@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { iSearch2, iDownload, iMore } from '../shared';
 import { UserAvatar } from '../../../components/UserAvatar';
-import { LockKeyhole, UnlockKeyhole } from 'lucide-react';
+import { LockKeyhole, UnlockKeyhole, Dumbbell, X, Check, Loader2 } from 'lucide-react';
 
 export function StaffPage() {
   const [query, setQuery] = useState("")
@@ -13,14 +13,21 @@ export function StaffPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const rowsPerPage = 10
 
+  const [availableSports, setAvailableSports] = useState<{ id: string; name: string }[]>([])
   const [showAddModal, setShowAddModal] = useState(false)
   const [statusConfirmation, setStatusConfirmation] = useState<{ realId: string; currentStatus: boolean } | null>(null)
+  const [assigningCoach, setAssigningCoach] = useState<{ realId: string; name: string } | null>(null)
+  const [coachSelectedSportIds, setCoachSelectedSportIds] = useState<string[]>([])
+  const [loadingCoachSports, setLoadingCoachSports] = useState(false)
+  const [savingCoachSports, setSavingCoachSports] = useState(false)
+
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     phoneNumber: "",
     password: "",
-    roleName: "receptionist"
+    roleName: "receptionist",
+    sportIds: [] as string[]
   })
 
   useEffect(() => {
@@ -29,7 +36,7 @@ export function StaffPage() {
 
   // Khóa cuộn trang nền khi mở modal để UI hoàn toàn cố định vào khung nhìn
   useEffect(() => {
-    if (!showAddModal && !statusConfirmation) return;
+    if (!showAddModal && !statusConfirmation && !assigningCoach) return;
     const origBody = document.body.style.overflow;
     const origHtml = document.documentElement.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -52,7 +59,16 @@ export function StaffPage() {
         el.style.overflow = overflow;
       });
     };
-  }, [showAddModal, statusConfirmation]);
+  }, [showAddModal, statusConfirmation, assigningCoach]);
+
+  useEffect(() => {
+    fetch('/api/sports')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setAvailableSports(data);
+      })
+      .catch(() => {});
+  }, []);
 
   const fetchStaff = () => {
     setLoading(true);
@@ -80,6 +96,7 @@ export function StaffPage() {
               statusRaw: u.status,
               joined: new Date(u.createdAt).toLocaleDateString('vi-VN'),
               avatar: u.avatarUrl || null,
+              assignedSports: Array.isArray(u.assignedSports) ? u.assignedSports : [],
             };
           });
         setStaffList(mapped);
@@ -124,6 +141,10 @@ export function StaffPage() {
 
   const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.roleName === "coach" && (!formData.sportIds || formData.sportIds.length === 0)) {
+      toast.error("Vui lòng chọn ít nhất 1 bộ môn mà Huấn luyện viên sẽ phụ trách.");
+      return;
+    }
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -136,7 +157,7 @@ export function StaffPage() {
       const data = await res.json();
       if (res.ok) {
         setShowAddModal(false);
-        setFormData({ fullName: "", email: "", phoneNumber: "", password: "", roleName: "receptionist" });
+        setFormData({ fullName: "", email: "", phoneNumber: "", password: "", roleName: "receptionist", sportIds: [] });
         fetchStaff();
         toast.success("Đã thêm nhân sự mới thành công!");
       } else {
@@ -146,6 +167,54 @@ export function StaffPage() {
       toast.error("Lỗi kết nối khi tạo nhân sự.");
     }
   }
+
+  const handleOpenAssignSports = async (staff: any) => {
+    setAssigningCoach({ realId: staff.realId, name: staff.name });
+    setLoadingCoachSports(true);
+    setCoachSelectedSportIds([]);
+    try {
+      const res = await fetch(`/api/coaches/${staff.realId}/sports`, {
+        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setCoachSelectedSportIds(data.map((s: any) => s.id));
+        }
+      }
+    } catch {
+      toast.error("Không thể tải danh sách môn của HLV.");
+    } finally {
+      setLoadingCoachSports(false);
+    }
+  };
+
+  const handleSaveCoachSports = async () => {
+    if (!assigningCoach) return;
+    setSavingCoachSports(true);
+    try {
+      const res = await fetch(`/api/coaches/${assigningCoach.realId}/sports`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify(coachSelectedSportIds)
+      });
+      if (res.ok) {
+        toast.success(`Đã cập nhật bộ môn phụ trách cho HLV ${assigningCoach.name}!`);
+        setAssigningCoach(null);
+        fetchStaff();
+      } else {
+        const err = await res.json().catch(() => null);
+        toast.error("Lỗi: " + (err?.message || "Không thể cập nhật bộ môn"));
+      }
+    } catch {
+      toast.error("Lỗi kết nối khi cập nhật bộ môn.");
+    } finally {
+      setSavingCoachSports(false);
+    }
+  };
 
   const filtered = staffList.filter(m => {
     const q = query.toLowerCase()
@@ -249,12 +318,43 @@ export function StaffPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-[#475569] mb-1">Vai trò (Role)</label>
-                  <select className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-blue-500" value={formData.roleName} onChange={e => setFormData({...formData, roleName: e.target.value})}>
+                  <select className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-blue-500" value={formData.roleName} onChange={e => setFormData({...formData, roleName: e.target.value, sportIds: []})}>
                     <option value="receptionist">Lễ tân (receptionist)</option>
                     <option value="coach">Huấn luyện viên (coach)</option>
                     <option value="manager">Quản lý trung tâm (manager)</option>
                   </select>
                 </div>
+                {formData.roleName === "coach" && (
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Bộ môn phụ trách (Bắt buộc)</label>
+                      <span className="text-[11px] text-rose-600 font-medium">Đã chọn: {formData.sportIds.length}</span>
+                    </div>
+                    <p className="text-xs text-slate-500">Tick chọn các bộ môn mà HLV này có chứng chỉ và được phép đứng lớp:</p>
+                    <div className="grid grid-cols-2 gap-2 mt-1">
+                      {availableSports.map(s => {
+                        const checked = formData.sportIds.includes(s.id);
+                        return (
+                          <label key={s.id} className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-colors ${checked ? 'border-rose-300 bg-rose-50/70 text-rose-700 font-semibold' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>
+                            <input
+                              type="checkbox"
+                              className="accent-rose-600 rounded"
+                              checked={checked}
+                              onChange={e => {
+                                if (e.target.checked) {
+                                  setFormData({ ...formData, sportIds: [...formData.sportIds, s.id] });
+                                } else {
+                                  setFormData({ ...formData, sportIds: formData.sportIds.filter(id => id !== s.id) });
+                                }
+                              }}
+                            />
+                            <span className="truncate">{s.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 <div className="flex gap-3 mt-4">
                   <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 bg-white border border-[#cbd5e1] font-semibold text-[#475569] py-2.5 rounded-xl hover:bg-slate-50 transition-colors">Hủy</button>
                   <button type="submit" className="flex-1 bg-rose-600 font-semibold text-white py-2.5 rounded-xl hover:bg-rose-700 transition-colors shadow-md shadow-rose-600/20">Lưu nhân sự</button>
@@ -298,6 +398,146 @@ export function StaffPage() {
           document.body,
         )}
 
+      {assigningCoach &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4 overscroll-contain animate-in fade-in duration-150"
+            role="dialog"
+            aria-modal="true"
+          >
+            <div
+              className="fixed inset-0 -z-10"
+              onClick={() => !savingCoachSports && setAssigningCoach(null)}
+            />
+            <div className="relative z-10 w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
+              {/* Header */}
+              <div className="flex items-start justify-between pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="size-11 rounded-xl bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center text-white shadow-sm shadow-rose-500/20">
+                    <Dumbbell className="size-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-900">Phân công chuyên môn</h2>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Huấn luyện viên: <strong className="text-slate-800 font-semibold">{assigningCoach.name}</strong>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled={savingCoachSports}
+                  onClick={() => setAssigningCoach(null)}
+                  className="size-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Subtitle / Instructions */}
+              <div className="py-4">
+                <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 mb-4 text-xs text-slate-600 leading-relaxed flex items-start gap-2.5">
+                  <span className="font-bold text-rose-600 shrink-0">Lưu ý:</span>
+                  <span>Chỉ các bộ môn được <strong>bật trạng thái phụ trách</strong> dưới đây thì HLV mới có quyền mở lớp và được Quản lý xếp lịch dạy.</span>
+                </div>
+
+                {loadingCoachSports ? (
+                  <div className="flex flex-col items-center justify-center py-16 gap-3">
+                    <Loader2 className="size-7 text-rose-600 animate-spin" />
+                    <span className="text-xs text-slate-500 font-medium">Đang đồng bộ danh mục bộ môn...</span>
+                  </div>
+                ) : availableSports.length === 0 ? (
+                  <p className="text-xs text-slate-400 text-center py-8">Chưa có bộ môn nào trong hệ thống.</p>
+                ) : (
+                  <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+                    {availableSports.map(s => {
+                      const isAssigned = coachSelectedSportIds.includes(s.id);
+                      return (
+                        <div
+                          key={s.id}
+                          className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${
+                            isAssigned
+                              ? 'border-emerald-300 bg-emerald-50/40 shadow-xs ring-1 ring-emerald-200/60'
+                              : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/60'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0 pr-3">
+                            <div className={`size-9 rounded-lg flex items-center justify-center shrink-0 font-bold text-xs ${
+                              isAssigned ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                            }`}>
+                              {s.name.substring(0, 2).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className={`text-sm font-semibold truncate ${isAssigned ? 'text-emerald-950' : 'text-slate-800'}`}>
+                                {s.name}
+                              </p>
+                              <p className="text-[11px] text-slate-500 truncate">
+                                {isAssigned ? 'Đang được phép đứng lớp bộ môn này' : 'Chưa được phân công phụ trách'}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Interactive Toggle Button / Pill */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (isAssigned) {
+                                setCoachSelectedSportIds(prev => prev.filter(id => id !== s.id));
+                              } else {
+                                setCoachSelectedSportIds(prev => [...prev, s.id]);
+                              }
+                            }}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer active:scale-95 shrink-0 ${
+                              isAssigned
+                                ? 'bg-emerald-600 text-white shadow-xs shadow-emerald-600/30 hover:bg-emerald-700'
+                                : 'border border-slate-300 bg-white text-slate-700 hover:border-emerald-400 hover:text-emerald-700 hover:bg-emerald-50/50'
+                            }`}
+                          >
+                            {isAssigned ? (
+                              <>
+                                <Check size={14} strokeWidth={2.5} />
+                                <span>Đang phụ trách</span>
+                              </>
+                            ) : (
+                              <span>+ Phân công môn</span>
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-between mt-auto">
+                <span className="text-xs text-slate-600">
+                  Số bộ môn phụ trách: <strong className="text-emerald-700 font-bold text-sm ml-1">{coachSelectedSportIds.length}</strong> / {availableSports.length}
+                </span>
+                <div className="flex gap-2.5">
+                  <button
+                    type="button"
+                    disabled={savingCoachSports}
+                    onClick={() => setAssigningCoach(null)}
+                    className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="button"
+                    disabled={savingCoachSports || loadingCoachSports}
+                    onClick={handleSaveCoachSports}
+                    className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-rose-600 text-xs font-semibold text-white hover:bg-rose-700 shadow-md shadow-rose-600/20 disabled:opacity-50 transition-all cursor-pointer active:scale-95"
+                  >
+                    {savingCoachSports && <Loader2 size={13} className="animate-spin" />}
+                    <span>Lưu phân công</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+
       {/* filters */}
       <div className="flex gap-3 items-center mt-2">
         <div className="bg-white border border-[#cbd5e1] flex gap-2 items-center px-3 py-2 rounded-lg flex-1 max-w-[320px]">
@@ -318,12 +558,12 @@ export function StaffPage() {
         <div className="overflow-x-auto">
           <div className="min-w-[900px]">
             <div className="bg-[#f8fafc] border-b border-[#e2e8f0] flex font-semibold items-center px-6 text-[#475569] text-[12px] whitespace-nowrap select-none">
-              <div className="py-3.5 flex-1 min-w-[220px] shrink-0">NHÂN VIÊN</div>
-              <div className="py-3.5 w-[180px] shrink-0">VAI TRÒ</div>
-              <div className="py-3.5 w-[210px] shrink-0">LIÊN HỆ</div>
-              <div className="py-3.5 w-[150px] shrink-0">TRẠNG THÁI</div>
-              <div className="py-3.5 w-[140px] shrink-0">NGÀY THAM GIA</div>
-              <div className="py-3.5 w-[120px] shrink-0 text-right">THAO TÁC</div>
+              <div className="py-3.5 flex-1 min-w-[200px] shrink-0">NHÂN VIÊN</div>
+              <div className="py-3.5 w-[200px] shrink-0">VAI TRÒ / BỘ MÔN</div>
+              <div className="py-3.5 w-[200px] shrink-0">LIÊN HỆ</div>
+              <div className="py-3.5 w-[140px] shrink-0">TRẠNG THÁI</div>
+              <div className="py-3.5 w-[130px] shrink-0">NGÀY THAM GIA</div>
+              <div className="py-3.5 w-[180px] shrink-0 text-right">THAO TÁC</div>
             </div>
             {loading ? (
               <div className="flex flex-col items-center justify-center py-16 gap-3">
@@ -344,22 +584,44 @@ export function StaffPage() {
                       <p className="text-[#64748b] text-[12px] font-mono">{m.id}</p>
                     </div>
                   </div>
-                  <div className="w-[180px] shrink-0 whitespace-nowrap">
+                  <div className="w-[200px] shrink-0 flex flex-col justify-center gap-1 pr-2">
                     <span className="text-[#0f172a] text-sm font-medium">{m.role}</span>
+                    {String(m.role).toLowerCase().includes("coach") && m.assignedSports && m.assignedSports.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {m.assignedSports.map((sportName: string, idx: number) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 font-medium text-[10px] ring-1 ring-rose-200"
+                          >
+                            {sportName}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div className="w-[210px] shrink-0 pr-3">
+                  <div className="w-[200px] shrink-0 pr-3">
                     <p className="text-[#0f172a] text-sm">{m.phone}</p>
                     <p className="text-[#64748b] text-[12px] truncate" title={m.email}>{m.email}</p>
                   </div>
-                  <div className="w-[150px] shrink-0 whitespace-nowrap">
+                  <div className="w-[140px] shrink-0 whitespace-nowrap">
                     <span className={`inline-flex items-center font-semibold px-2.5 py-1 rounded-full text-[12px] whitespace-nowrap ${statusStyle[m.status] || "bg-slate-100 text-slate-700"}`}>
                       {m.status}
                     </span>
                   </div>
-                  <div className="w-[140px] shrink-0 whitespace-nowrap">
+                  <div className="w-[130px] shrink-0 whitespace-nowrap">
                     <p className="text-[#0f172a] text-sm">{m.joined}</p>
                   </div>
-                  <div className="flex items-center justify-end w-[120px] shrink-0">
+                  <div className="flex items-center justify-end gap-1.5 w-[180px] shrink-0">
+                    {String(m.role).toLowerCase().includes("coach") && (
+                      <button
+                        onClick={() => handleOpenAssignSports(m)}
+                        title="Phân công bộ môn cho HLV"
+                        className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-xs font-semibold text-sky-700 hover:border-sky-300 hover:bg-sky-100 transition-all cursor-pointer active:scale-95"
+                      >
+                        <Dumbbell size={13} strokeWidth={2.2} />
+                        <span>Bộ môn</span>
+                      </button>
+                    )}
                     <button 
                       onClick={() => handleToggleStatus(m.realId, m.statusRaw)} 
                       title={m.statusRaw ? "Khóa tài khoản" : "Mở khóa tài khoản"}

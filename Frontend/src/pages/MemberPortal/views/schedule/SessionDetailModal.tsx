@@ -7,6 +7,7 @@ import {
   Star,
   Phone,
   MessageSquare,
+  CheckCircle2,
 } from "lucide-react";
 import type { MemberSessionItem, MemberScreen } from "../../types";
 import { CoachAvatar } from "../../utils/coachAvatar";
@@ -17,6 +18,8 @@ interface Props {
   onClose: () => void;
   onNavigate: (screen: MemberScreen) => void;
   onStartCancelSession: (session: MemberSessionItem) => void;
+  onStartReview?: (session: MemberSessionItem) => void;
+  isReviewed?: boolean;
 }
 
 export default function SessionDetailModal({
@@ -24,6 +27,8 @@ export default function SessionDetailModal({
   onClose,
   onNavigate,
   onStartCancelSession,
+  onStartReview,
+  isReviewed,
 }: Props) {
   if (!session) return null;
 
@@ -174,6 +179,41 @@ export default function SessionDetailModal({
             <MessageSquare className="w-4 h-4" />
             <span>Nhắn tin với HLV</span>
           </button>
+
+          {effectiveStatus === "hoàn thành" && (
+            isReviewed ? (
+              <span className="py-2.5 px-4 rounded-xl text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                <span>Đã đánh giá</span>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  if (onStartReview) {
+                    onStartReview(session);
+                  } else {
+                    localStorage.setItem(
+                      "target_review_session",
+                      JSON.stringify({
+                        sessionId: session.id,
+                        sessionName: session.name,
+                        coachId: session.coachId || "",
+                        coachName: session.coachName,
+                        date: session.date,
+                      })
+                    );
+                    onNavigate("reviews");
+                  }
+                }}
+                className="py-2.5 px-4 rounded-xl text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+                <span>Đánh giá HLV</span>
+              </button>
+            )
+          )}
 
           {(effectiveStatus === "sắp diễn ra") && (
             <button

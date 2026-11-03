@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ArrowRight, Bot, RotateCcw, Send, ShieldCheck, User } from "lucide-react";
+import { ArrowRight, Bot, RotateCcw, Send, ShieldCheck, User, Mic, MicOff } from "lucide-react";
 import type { MemberScreen } from "../../types";
 import { MemberBackendAPI, type MemberAiAction } from "../../services/memberData";
 
@@ -46,7 +46,7 @@ export const SupportAiChat: React.FC<SupportAiChatProps> = ({
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     try {
-      const saved = sessionStorage.getItem(storageKey);
+      const saved = localStorage.getItem(storageKey) || sessionStorage.getItem(storageKey);
       if (saved) {
         const parsed = JSON.parse(saved) as ChatMessage[];
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -58,11 +58,55 @@ export const SupportAiChat: React.FC<SupportAiChatProps> = ({
   });
   const [inputQuestion, setInputQuestion] = useState("");
   const [isThinking, setIsThinking] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognizer = new SpeechRecognition();
+      recognizer.lang = "vi-VN";
+      recognizer.continuous = false;
+      recognizer.interimResults = false;
+
+      recognizer.onresult = (event: any) => {
+        const transcript = event.results[0]?.[0]?.transcript;
+        if (transcript) {
+          setInputQuestion((prev) => (prev ? `${prev} ${transcript}` : transcript));
+        }
+        setIsListening(false);
+      };
+
+      recognizer.onerror = () => setIsListening(false);
+      recognizer.onend = () => setIsListening(false);
+
+      recognitionRef.current = recognizer;
+    }
+  }, []);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      alert("Trình duyệt chưa hỗ trợ nhận diện giọng nói Web Speech. Bạn có thể sử dụng Google Chrome hoặc Edge.");
+      return;
+    }
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch {
+        setIsListening(false);
+      }
+    }
+  };
+
+  useEffect(() => {
     try {
-      sessionStorage.setItem(storageKey, JSON.stringify(messages.slice(-40)));
+      localStorage.setItem(storageKey, JSON.stringify(messages.slice(-40)));
     } catch {
       /* storage full / disabled */
     }
@@ -216,6 +260,44 @@ export const SupportAiChat: React.FC<SupportAiChatProps> = ({
         )}
       </div>
 
+      {/* Quick Suggestions */}
+      {messages.length <= 3 && !isThinking && (
+        <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex flex-wrap gap-2 shrink-0">
+          {[
+            "Hôm nay tôi có lịch gì không?",
+            "HLV vừa nhận xét gì về tôi?",
+            "Gói tập của tôi còn hạn bao lâu?",
+            "Gợi ý bữa ăn sau tập",
+          ].map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => handleSend(s)}
+              className="px-3 py-1 rounded-full text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-emerald-500 hover:text-emerald-600 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Voice Listening Bar Indicator */}
+      {isListening && (
+        <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/40 border-t border-amber-200 dark:border-amber-800 flex items-center justify-between text-xs text-amber-800 dark:text-amber-300 animate-pulse shrink-0">
+          <span className="flex items-center gap-2 font-medium">
+            <Mic className="w-4 h-4 text-amber-600 animate-bounce" />
+            Đang lắng nghe bạn nói tiếng Việt...
+          </span>
+          <button
+            type="button"
+            onClick={toggleListening}
+            className="text-xs font-bold text-amber-700 underline cursor-pointer"
+          >
+            Dừng lại
+          </button>
+        </div>
+      )}
+
       {/* Input */}
       <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850 space-y-2">
         <form
@@ -225,13 +307,27 @@ export const SupportAiChat: React.FC<SupportAiChatProps> = ({
           }}
           className="flex items-center gap-2"
         >
+          {/* Voice Input Button */}
+          <button
+            type="button"
+            onClick={toggleListening}
+            className={`p-3 rounded-xl border transition-colors cursor-pointer ${
+              isListening
+                ? "bg-rose-50 border-rose-300 text-rose-600 animate-bounce"
+                : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:text-emerald-600"
+            }`}
+            title={isListening ? "Dừng ghi âm" : "Nói để hỏi (Voice Speech Input)"}
+          >
+            {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+          </button>
+
           <input
             id="member-ai-chat-input"
             type="text"
             value={inputQuestion}
             maxLength={1000}
             onChange={(e) => setInputQuestion(e.target.value)}
-            placeholder="Hỏi về lịch tập, gói tập, dinh dưỡng, kỹ thuật bài tập..."
+            placeholder="Hỏi về lịch tập, gói tập, nhận xét HLV, dinh dưỡng..."
             className="flex-1 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-none focus:border-emerald-500"
           />
           <button

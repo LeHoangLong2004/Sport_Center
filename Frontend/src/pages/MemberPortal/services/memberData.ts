@@ -192,7 +192,7 @@ export const MemberBackendAPI = {
               ? `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`
               : start.time,
             room: booking.facilityName || "N/A",
-            coachId: "",
+            coachId: booking.coachId ? String(booking.coachId) : "",
             coachName: booking.coachName || "N/A",
             coachAvatar: booking.coachAvatar || "",
             coachSpecialty: booking.coachSpecialty || "",
@@ -227,7 +227,7 @@ export const MemberBackendAPI = {
               ? `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`
               : start.time,
             room: "",
-            coachId: "",
+            coachId: session.coachId ? String(session.coachId) : "",
             coachName: session.coachName || "Personal Trainer",
             coachAvatar: session.coachAvatar || "",
             coachSpecialty: session.coachSpecialty || "Huấn luyện viên cá nhân 1-1",

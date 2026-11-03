@@ -40,6 +40,22 @@ public static class ReviewEndpoints
                         return Results.Unauthorized();
                     }
 
+                    if (request.CoachId == Guid.Empty && !string.IsNullOrWhiteSpace(request.CoachName))
+                    {
+                        var cleanedName = request.CoachName
+                            .Replace("Coach", "", StringComparison.OrdinalIgnoreCase)
+                            .Replace("HLV", "", StringComparison.OrdinalIgnoreCase)
+                            .Replace(":", "")
+                            .Trim();
+                        var matchedUser = await db.Users
+                            .FirstOrDefaultAsync(u => EF.Functions.ILike(u.FullName, $"%{cleanedName}%"));
+                        if (matchedUser != null)
+                        {
+                            var resolvedFromUser = await CoachProfileResolver.FindByUserIdAsync(db, matchedUser.Id);
+                            request.CoachId = resolvedFromUser ?? matchedUser.Id;
+                        }
+                    }
+
                     if (request.CoachId == Guid.Empty)
                     {
                         return Results.BadRequest(new { message = "CoachId không hợp lệ." });
