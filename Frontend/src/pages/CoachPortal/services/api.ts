@@ -326,6 +326,8 @@ export const CoachAPI = {
       type?: string;
       isRead?: boolean;
       createdAt: string;
+      targetType?: string | null;
+      targetId?: string | null;
     }>;
 
     return (Array.isArray(notifications) ? notifications : []).map((notification) => ({
@@ -335,8 +337,8 @@ export const CoachAPI = {
       type: "Thông báo" as const,
       notificationType: notification.type || "general",
       sentAt: notification.createdAt,
-      targetType: "class" as const,
-      targetId: "",
+      targetType: (notification.targetType || "general") as any,
+      targetId: notification.targetId || "",
       targetName: "Hệ thống",
       isRead: notification.isRead ?? false,
     }));
