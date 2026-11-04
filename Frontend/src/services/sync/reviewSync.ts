@@ -68,6 +68,20 @@ export async function fetchCoachReviews(coachId: string): Promise<SyncedCoachRev
   return requestReviews(`/reviews/coach/${encodeURIComponent(coachId)}`);
 }
 
+export async function fetchReviewById(reviewId: string): Promise<SyncedCoachReview | null> {
+  if (!reviewId) return null;
+  try {
+    const res = await fetch(`${BASE_URL}/reviews/${encodeURIComponent(reviewId)}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return mapReview(data);
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchMyReviews(): Promise<SyncedCoachReview[]> {
   const localStr = localStorage.getItem("member_local_reviews");
   let localReviews: SyncedCoachReview[] = [];

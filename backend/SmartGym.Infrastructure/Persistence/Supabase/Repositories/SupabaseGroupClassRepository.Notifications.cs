@@ -24,7 +24,7 @@ public sealed partial class SupabaseGroupClassRepository
     {
         try
         {
-            await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+            var inserted = await _dbContext.Database.ExecuteSqlInterpolatedAsync(
                 $@"
                 INSERT INTO notifications (user_id, title, message, type, target_type, target_id)
                 SELECT user_id, {title}, {message}, 'coach_event', {targetType}, {targetId}
@@ -32,6 +32,15 @@ public sealed partial class SupabaseGroupClassRepository
                 WHERE (id = {coachId} OR user_id = {coachId})
                 AND user_id IS NOT NULL"
             );
+
+            if (inserted == 0)
+            {
+                await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+                    $@"
+                    INSERT INTO notifications (user_id, title, message, type, target_type, target_id)
+                    VALUES ({coachId}, {title}, {message}, 'coach_event', {targetType}, {targetId})"
+                );
+            }
         }
         catch (Exception ex)
         {
