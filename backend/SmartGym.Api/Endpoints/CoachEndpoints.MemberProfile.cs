@@ -181,7 +181,7 @@ public static partial class CoachEndpoints
                     name = member.FullName,
                     code = !string.IsNullOrWhiteSpace(member.MemberCode) ? member.MemberCode : "MB" + member.Id.ToString()[..4].ToUpperInvariant(),
                     avatar = member.AvatarUrl,
-                    goal = !string.IsNullOrWhiteSpace(member.TrainingGoal) ? member.TrainingGoal : "Cải thiện thể lực & Sức khỏe",
+                    goal = !string.IsNullOrWhiteSpace(member.TrainingGoal) ? member.TrainingGoal : "",
                     level = !string.IsNullOrWhiteSpace(member.TrainingLevel) ? member.TrainingLevel : "Cơ bản",
                     sport = sports.Count > 0 ? string.Join(", ", sports) : null,
                     phone = member.PhoneNumber,

@@ -21,10 +21,24 @@ public static partial class MemberEndpoints
             SmartGymDbContext db,
             ICheckInRepository checkInRepo) =>
         {
-            var userIdStr = GetUserId(context);
-            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var memberGuid))
+            Guid memberGuid;
+            var qMemberId = context.Request.Query["memberId"].ToString();
+            var role = context.User.FindFirstValue(ClaimTypes.Role) ?? context.User.FindFirst("role")?.Value;
+            var isStaff = string.Equals(role, "receptionist", StringComparison.OrdinalIgnoreCase)
+                       || string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase)
+                       || string.Equals(role, "manager", StringComparison.OrdinalIgnoreCase);
+
+            if (!string.IsNullOrEmpty(qMemberId) && Guid.TryParse(qMemberId, out var parsedTargetId) && isStaff)
             {
-                return Results.Unauthorized();
+                memberGuid = parsedTargetId;
+            }
+            else
+            {
+                var userIdStr = GetUserId(context);
+                if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out memberGuid))
+                {
+                    return Results.Unauthorized();
+                }
             }
 
             // 0. Get member's active subscriptions to synchronize package information
