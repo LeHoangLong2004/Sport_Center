@@ -21,7 +21,7 @@ public sealed partial class PackageCatalogService
                 .Include(item => item.User)
                 .Include(item => item.Package)
                 .FirstOrDefaultAsync(item => item.Id == orderId, cancellationToken);
-            if (subscription != null && subscription.PackageSnapshotJson != null)
+            if (subscription != null)
             {
                 if (subscription.PaymentStatus != PaymentStatus.Pending)
                     throw new PackageCatalogException(
@@ -179,26 +179,41 @@ public sealed partial class PackageCatalogService
                 .Include(item => item.User)
                 .Include(item => item.Package)
                 .FirstOrDefaultAsync(item => item.Id == orderId, cancellationToken);
-            if (subscription != null && subscription.PackageSnapshotJson != null)
+            if (subscription != null)
             {
-                if (subscription.PaymentStatus != PaymentStatus.Pending)
+                if (subscription.PaymentStatus == PaymentStatus.Failed)
                     throw new PackageCatalogException(
                         StatusCodes.Status409Conflict,
-                        "Chỉ có thể hủy đơn đang chờ thanh toán."
+                        "Đơn hàng này đã bị hủy trước đó."
                     );
 
                 subscription.PaymentStatus = PaymentStatus.Failed;
 
-                var invoice = await db.Invoices
-                    .Where(i => i.UserId == subscription.UserId && i.Status == PaymentStatus.Pending)
-                    .OrderByDescending(i => i.CreatedAt)
-                    .FirstOrDefaultAsync(cancellationToken);
-                if (invoice != null)
+                try
                 {
-                    invoice.Status = PaymentStatus.Failed;
+                    var invoice = await db.Invoices
+                        .Where(i => i.UserId == subscription.UserId && i.Status == PaymentStatus.Pending)
+                        .OrderByDescending(i => i.CreatedAt)
+                        .FirstOrDefaultAsync(cancellationToken);
+                    if (invoice != null)
+                    {
+                        invoice.Status = PaymentStatus.Failed;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[CancelOrder Invoice Warning] {ex.Message}");
                 }
 
                 await db.SaveChangesAsync(cancellationToken);
+
+                try
+                {
+                    await db.Database.ExecuteSqlInterpolatedAsync(
+                        $"UPDATE subscriptions SET payment_status = 'failed' WHERE id = {orderId}",
+                        cancellationToken);
+                }
+                catch {}
 
                 var snapshot = DeserializeSnapshot(subscription);
                 return MapOrder(

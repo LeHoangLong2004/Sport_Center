@@ -1,6 +1,15 @@
 export type SessionStatus = "sắp diễn ra" | "đang diễn ra" | "hoàn thành" | "đã hủy";
 export type AttendanceStatus = "chưa điểm danh" | "attended" | "no_show" | "late" | "excused";
 
+export interface MemberHealthMetrics {
+  heightCm: number;
+  weightKg: number;
+  bmi: number;
+  injuryNote?: string;
+  caution?: string;
+  heartRateRest?: number;
+}
+
 export interface MockMember {
   id: string;
   name: string;
@@ -17,6 +26,7 @@ export interface MockMember {
   attendanceRate?: number | null;
   attendedSessions?: number;
   totalSessions?: number;
+  healthMetrics?: MemberHealthMetrics;
 }
 
 export interface CoachClassOverview {
@@ -92,11 +102,13 @@ export interface MockNotification {
   title: string;
   content: string;
   type: "Thông báo" | "Bài tập về nhà";
+  notificationType?: string;
   sentAt: string;
-  targetType: "class" | "member";
+  targetType: "class" | "member" | "review" | string;
   targetId: string;
   targetName: string;
   deadline?: string;
+  isRead?: boolean;
 }
 
 export interface AssessmentRecord {
@@ -122,6 +134,24 @@ export interface ScheduleChangeRequest {
   status: "chờ duyệt" | "đã duyệt" | "từ chối";
   createdAt: string;
   managerNote?: string;
+}
+
+export interface SubstituteInvitation {
+  id: string;
+  sessionId: string;
+  coachId: string;
+  coachName: string;
+  className: string;
+  scheduleTime: string;
+  durationMinutes: number;
+  facilityName: string;
+  requestType: string;
+  newDate: string;
+  newTime: string;
+  reason: string;
+  status: string;
+  createdAt: string;
+  managerNote: string;
 }
 
 export interface AvailabilitySlot {

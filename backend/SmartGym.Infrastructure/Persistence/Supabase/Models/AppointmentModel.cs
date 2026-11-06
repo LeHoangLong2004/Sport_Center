@@ -23,4 +23,7 @@ public sealed class AppointmentModel : BaseModel
 
     [Column("status")]
     public string Status { get; set; } = "Đang chờ khách";
+
+    [Column("date")]
+    public string? Date { get; set; }
 }

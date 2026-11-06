@@ -1,6 +1,6 @@
 # SmartGym - Báo Cáo Tiến Độ Dự Án (Project Progress Update)
 
-**Ngày cập nhật:** 15/10/2026
+**Ngày cập nhật:** 31/10/2026
 **Người phụ trách:** Phương, Long, Nam, Thuận
 
 ---
@@ -126,6 +126,14 @@
 - **Nam & Long**: Phát triển giao diện Coach AI Copilot (`CoachAI.tsx`) gồm 6 subcomponent độc lập (<200 dòng) và hook `useCoachAi.ts`, hỗ trợ chọn mục tiêu, sinh giáo án bằng Gemini, hiển thị dinh dưỡng, lưu bản nháp và gán giáo án.
 - **Nam**: Đồng bộ bảng màu cam/hổ phách (Amber/Orange) chuẩn Coach Portal, tích hợp timeout guard 20s triệt tiêu đơ giao diện; đồng bộ ảnh đại diện thực tế (`UserAvatar`) trên toàn bộ Topbar, Sidebar và danh bạ.
 - **Thuận & Nam**: Gỡ bỏ hoàn toàn nút demo chuyển nhanh 4 vai trò trên form đăng nhập và Topbar các Portal; xóa bỏ `RoleSwitcher.tsx` để giao diện đạt chuẩn production.
+
+### 1.24. Tích Hợp Tự Động Hóa Thanh Toán SePay Webhook & VietQR Real-Time (Task 89 - 90) - **HOÀN THÀNH**
+- **Phương & Thuận**: Tích hợp backend SePay webhook endpoint (`POST /api/payments/sepay-webhook`), cấu hình ngrok tunnel port 5000, API đối soát thời gian thực (`/api/payments/sepay-transactions`, `/api/payments/sepay-check-memo`); chuẩn hóa VietQR Sacombank trên modal `SePayQrModal`, PaymentMethodScreen, MemberPackages và MemberPayments, gắn real-time polling tự động kích hoạt đơn hàng và cập nhật UI tức thì khi tiền về tài khoản.
+- **Phương**: Tăng cường `.gitignore` loại bỏ các file trích xuất dữ liệu kiểm thử, log ngrok và chứng chỉ bảo mật.
+
+### 1.25. Tái Cấu Trúc Đa Portal & Khắc Phục Lỗi Import Build Vite (Task 91 - 92) - **HOÀN THÀNH**
+- **Nam, Long, Phương**: Tiếp tục phân tách các màn hình và modal lớn trên cả 4 Portal về dưới 200–250 dòng: bóc tách `createPayment/PaymentFormFields.tsx` từ CreatePaymentModal (Admin), các selector trong `appointmentModal/` (Receptionist), `scheduleList/` và `scheduleRequestModal/` (Coach), cùng `bookingSuccess/` (Member).
+- **Phương & Nam**: Khắc phục dứt điểm lỗi build Vite (UNRESOLVED_IMPORT `../../../hooks/apiClient` -> `../../../../hooks/apiClient`) trong `PaymentFormFields.tsx`, đưa `npx tsc --noEmit` và `npm run build` về trạng thái 0 lỗi sạch hoàn toàn.
 
 ---
 

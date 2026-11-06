@@ -17,6 +17,28 @@ export interface GateCheckInRecord {
   status: "APPROVED" | "CHECKED_OUT";
 }
 
+export interface CoachAssessmentMetric {
+  name: string;
+  value: string | number;
+  unit?: string;
+}
+
+export interface CoachAssessmentData {
+  id: string;
+  sessionId?: string;
+  coachId?: string;
+  coachName?: string;
+  coachAvatar?: string;
+  className?: string;
+  sportName?: string;
+  scheduleTime?: string;
+  completion: number;
+  metrics?: CoachAssessmentMetric[];
+  comment?: string;
+  nextStep?: string;
+  createdAt: string;
+}
+
 export interface AttendanceSession {
   id: string;
   className: string;
@@ -30,6 +52,7 @@ export interface AttendanceSession {
   endTime: string;
   status: "có mặt" | "vắng" | "đi muộn" | "chưa điểm danh" | "chưa diễn ra";
   coachNote?: string;
+  assessment?: CoachAssessmentData | null;
   type: "group" | "pt";
 }
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { toast } from "sonner";
 import type { MemberScreen, MemberSessionItem } from "../types";
 import {
   getSavedMemberData,
@@ -21,12 +22,15 @@ import {
   getMonday,
   formatDateISO,
   isCancelledSession,
+  resolveSessionStatus,
 } from "./schedule/scheduleConstants";
 import ScheduleFilterBar from "./schedule/ScheduleFilterBar";
 import ScheduleWeekView from "./schedule/ScheduleWeekView";
 import ScheduleListView from "./schedule/ScheduleListView";
 import SessionDetailModal from "./schedule/SessionDetailModal";
 import CancelSessionModal from "./schedule/CancelSessionModal";
+import { ReviewModal, type ReviewSessionTarget } from "./reviews/ReviewModal";
+import { fetchMyReviews, submitCoachReview } from "../services/reviewSync";
 
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
@@ -40,7 +44,10 @@ export default function MemberSchedule({ onNavigate }: Props) {
 
   // Data States
   const [sessions, setSessions] = useState<MemberSessionItem[]>(() =>
-    getSavedMemberData(storageKey, [])
+    getSavedMemberData<MemberSessionItem[]>(storageKey, []).map((s) => ({
+      ...s,
+      status: resolveSessionStatus(s.status, s.date, s.endTime, s.startTime),
+    }))
   );
 
   // View Mode & Filters
@@ -55,6 +62,15 @@ export default function MemberSchedule({ onNavigate }: Props) {
   // Modals & Interactions
   const [selectedSession, setSelectedSession] = useState<MemberSessionItem | null>(null);
   const [cancellingSession, setCancellingSession] = useState<MemberSessionItem | null>(null);
+  const [reviewingSession, setReviewingSession] = useState<ReviewSessionTarget | null>(null);
+  const [reviewedSessionIds, setReviewedSessionIds] = useState<Set<string>>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("reviewed_session_ids") || "[]");
+      return new Set(saved);
+    } catch {
+      return new Set();
+    }
+  });
   const [cancelReason, setCancelReason] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
 
@@ -62,13 +78,20 @@ export default function MemberSchedule({ onNavigate }: Props) {
   const refreshSessions = async () => {
     try {
       const backendData = await MemberBackendAPI.getBookings();
-      if (Array.isArray(backendData) && backendData.length > 0) {
-        setSessions(backendData);
-        saveMemberData(storageKey, backendData);
+      if (Array.isArray(backendData)) {
+        const normalized = backendData.map((s) => ({
+          ...s,
+          status: resolveSessionStatus(s.status, s.date, s.endTime, s.startTime),
+        }));
+        setSessions(normalized);
+        saveMemberData(storageKey, normalized);
         return;
       }
     } catch {}
-    const local = getSavedMemberData(storageKey, []);
+    const local = getSavedMemberData<MemberSessionItem[]>(storageKey, []).map((s) => ({
+      ...s,
+      status: resolveSessionStatus(s.status, s.date, s.endTime, s.startTime),
+    }));
     setSessions(local);
   };
 
@@ -80,9 +103,47 @@ export default function MemberSchedule({ onNavigate }: Props) {
     return unsub;
   }, []);
 
+  // Fetch already reviewed sessions
+  useEffect(() => {
+    if (!userId) return;
+    void fetchMyReviews()
+      .then((reviews) => {
+        const ids = reviews.map((r) => r.sessionId).filter(Boolean) as string[];
+        if (ids.length > 0) {
+          setReviewedSessionIds((prev) => new Set([...prev, ...ids]));
+        }
+      })
+      .catch(() => {});
+  }, [userId]);
+
+  const handleScheduleReviewSubmit = async (data: {
+    sessionId: string;
+    sessionName: string;
+    coachId: string;
+    coachName: string;
+    rating: number;
+    tags: string[];
+    comment: string;
+  }) => {
+    const memberName = user?.fullName || user?.name || "Hội viên";
+    await submitCoachReview({
+      coachId: data.coachId,
+      coachName: data.coachName,
+      sessionId: data.sessionId,
+      sessionName: data.sessionName,
+      rating: data.rating,
+      comment: data.comment,
+      tags: data.tags,
+      memberName,
+    });
+    setReviewedSessionIds((prev) => new Set([...prev, data.sessionId]));
+    setFeedback("Cảm ơn bạn đã gửi đánh giá! Đóng góp của bạn giúp HLV hoàn thiện chất lượng giảng dạy.");
+    setTimeout(() => setFeedback(null), 4500);
+  };
+
   // Lock scroll on modals
   useEffect(() => {
-    if (cancellingSession || selectedSession) {
+    if (cancellingSession || selectedSession || reviewingSession) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
@@ -90,7 +151,13 @@ export default function MemberSchedule({ onNavigate }: Props) {
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [cancellingSession, selectedSession]);
+  }, [cancellingSession, selectedSession, reviewingSession]);
+
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, []);
 
   // Escape key handler to close modals
   useEffect(() => {
@@ -201,7 +268,7 @@ export default function MemberSchedule({ onNavigate }: Props) {
     e.preventDefault();
     if (!cancellingSession) return;
     if (!cancelReason.trim()) {
-      alert("Vui lòng nhập lý do hủy lịch.");
+      toast.error("Vui lòng nhập lý do hủy lịch.");
       return;
     }
 
@@ -221,7 +288,9 @@ export default function MemberSchedule({ onNavigate }: Props) {
     setSessions(updated);
     saveMemberData(storageKey, updated);
 
-    setFeedback(`Đã hủy buổi tập "${cancellingSession.name}". Chỗ học đã được hoàn trả về tài khoản.`);
+    const msg = `Đã hủy buổi tập "${cancellingSession.name}". Chỗ học đã được hoàn trả về tài khoản.`;
+    setFeedback(msg);
+    toast.success(msg);
     setCancellingSession(null);
     setCancelReason("");
     if (selectedSession?.id === cancellingSession.id) {
@@ -247,7 +316,7 @@ export default function MemberSchedule({ onNavigate }: Props) {
           <button
             type="button"
             onClick={() => onNavigate("booking")}
-            className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-500 rounded-xl transition-all shadow-sm hover:shadow-md cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-600 dark:hover:bg-emerald-500 rounded-xl transition-all shadow-sm hover:shadow-md shadow-emerald-500/20 cursor-pointer"
           >
             <CalendarPlus className="w-4 h-4" />
             Đăng ký lớp / PT mới
@@ -258,7 +327,7 @@ export default function MemberSchedule({ onNavigate }: Props) {
             onClick={() => onNavigate("chat")}
             className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-sm cursor-pointer"
           >
-            <Send className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
+            <Send className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             Trò chuyện HLV
           </button>
         </div>
@@ -315,6 +384,16 @@ export default function MemberSchedule({ onNavigate }: Props) {
           onSelectSession={setSelectedSession}
           onStartCancelSession={setCancellingSession}
           onNavigate={onNavigate}
+          onStartReview={(s) =>
+            setReviewingSession({
+              sessionId: s.id,
+              sessionName: s.name,
+              coachId: s.coachId || "",
+              coachName: s.coachName,
+              date: s.date,
+            })
+          }
+          reviewedSessionIds={reviewedSessionIds}
         />
       )}
 
@@ -324,6 +403,16 @@ export default function MemberSchedule({ onNavigate }: Props) {
         onClose={() => setSelectedSession(null)}
         onNavigate={onNavigate}
         onStartCancelSession={setCancellingSession}
+        onStartReview={(s) =>
+          setReviewingSession({
+            sessionId: s.id,
+            sessionName: s.name,
+            coachId: s.coachId || "",
+            coachName: s.coachName,
+            date: s.date,
+          })
+        }
+        isReviewed={selectedSession ? reviewedSessionIds.has(selectedSession.id) : false}
       />
 
       {/* 6. Cancel Session Modal */}
@@ -333,6 +422,13 @@ export default function MemberSchedule({ onNavigate }: Props) {
         onCancelReasonChange={setCancelReason}
         onClose={() => setCancellingSession(null)}
         onConfirmCancel={handleConfirmCancel}
+      />
+
+      {/* 7. Coach Review Modal */}
+      <ReviewModal
+        session={reviewingSession}
+        onClose={() => setReviewingSession(null)}
+        onSubmit={handleScheduleReviewSubmit}
       />
     </div>
   );

@@ -7,6 +7,7 @@ import {
   sanitizeWalletData,
   cleanAllLocalWallets,
 } from "./walletUtils";
+import { BankConfigService } from "./bankConfig";
 
 export type { WalletTransaction, MemberWalletData };
 export { MEMBER_WALLET_UPDATED_EVENT, sanitizeWalletData, cleanAllLocalWallets };
@@ -22,7 +23,9 @@ export const WalletService = {
   },
 
   getLocalWallet(userId?: string): MemberWalletData {
-    const key = this.getStorageKey(userId);
+    const user = getStoredUser();
+    const targetUserId = userId || user?.id || user?.email;
+    const key = this.getStorageKey(targetUserId);
     try {
       const saved = localStorage.getItem(key);
       if (saved) {
@@ -52,7 +55,9 @@ export const WalletService = {
   },
 
   saveLocalWallet(data: MemberWalletData, userId?: string) {
-    const key = this.getStorageKey(userId);
+    const user = getStoredUser();
+    const targetUserId = userId || user?.id || user?.email;
+    const key = this.getStorageKey(targetUserId);
     const sanitized = sanitizeWalletData(data);
     try {
       localStorage.setItem(key, JSON.stringify(sanitized));
@@ -143,6 +148,112 @@ export const WalletService = {
       newBalance,
       transaction: tx,
     };
+  },
+
+  async checkTransfer(
+    memo: string,
+    amount?: number,
+    userId?: string,
+    confirm: boolean = false
+  ): Promise<{ received: boolean; newBalance?: number; transaction?: WalletTransaction; message?: string }> {
+    const user = getStoredUser();
+    const targetUserId = userId || user?.id || user?.email;
+    try {
+      // 1. Kiểm tra trực tiếp giao dịch SePay Webhook đã nhận từ Ngrok
+      try {
+        const checkUrl = `/api/payments/sepay-check-memo?memo=${encodeURIComponent(memo)}&amount=${encodeURIComponent(amount || 0)}`;
+        const resMemo = await fetch(checkUrl, { cache: "no-store" });
+        if (resMemo.ok) {
+          const dataMemo = await resMemo.json();
+          if (dataMemo.received) {
+            // Đã nhận được tiền qua webhook! Tự động hoàn tất nạp tiền vào ví của hội viên
+            const topUpAmount = Number(dataMemo.amount || amount || 0);
+            const topUpRes = await this.topUp(
+              topUpAmount,
+              "Chuyển khoản SePay",
+              `Nạp tiền qua SePay: ${memo}`,
+              targetUserId
+            );
+            return {
+              received: true,
+              newBalance: topUpRes.newBalance,
+              transaction: topUpRes.transaction,
+              message: dataMemo.message || "Đã nhận được tiền chuyển khoản thành công qua SePay Webhook!",
+            };
+          }
+        }
+      } catch (err) {
+        console.warn("SePay memo check warning:", err);
+      }
+
+      // 2. Kiểm tra ví thành viên nếu có
+      const bankConfig = BankConfigService.getConfig();
+      const qToken = bankConfig.sepayApiToken ? `&sepayToken=${encodeURIComponent(bankConfig.sepayApiToken)}` : "";
+      const qAmount = amount ? `&amount=${encodeURIComponent(amount)}` : "";
+      const qUser = targetUserId ? `&userId=${encodeURIComponent(targetUserId)}` : "";
+      const qConfirm = confirm ? `&confirm=true` : "";
+      const res = await fetch(`/api/member/wallet/check-transfer?memo=${encodeURIComponent(memo)}${qAmount}${qUser}${qToken}${qConfirm}`, {
+        headers: getAuthHeaders(targetUserId),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.received && typeof data.balance === "number") {
+          const current = this.getLocalWallet(targetUserId);
+          const updated: MemberWalletData = {
+            balance: data.balance,
+            currency: "VND",
+            transactions: data.transaction ? [data.transaction, ...(current.transactions || [])] : current.transactions,
+          };
+          this.saveLocalWallet(updated, targetUserId);
+          return {
+            received: true,
+            newBalance: data.balance,
+            transaction: data.transaction,
+            message: data.message,
+          };
+        }
+        return { received: false, message: data.message };
+      }
+    } catch (e) {
+      console.warn("checkTransfer failed:", e);
+    }
+    return { received: false };
+  },
+
+  async simulateWebhook(
+    amount: number,
+    note: string,
+    userId?: string
+  ): Promise<{ success: boolean; newBalance: number; transaction: WalletTransaction }> {
+    const user = getStoredUser();
+    const targetUserId = userId || user?.id || user?.email;
+    try {
+      const qUser = targetUserId ? `?userId=${encodeURIComponent(targetUserId)}` : "";
+      const res = await fetch(`/api/member/wallet/simulate-webhook${qUser}`, {
+        method: "POST",
+        headers: getAuthHeaders(targetUserId),
+        body: JSON.stringify({ amount, note }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const current = this.getLocalWallet(targetUserId);
+        const updated: MemberWalletData = {
+          balance: data.balance,
+          currency: "VND",
+          transactions: [data.transaction, ...(current.transactions || [])],
+        };
+        this.saveLocalWallet(updated, targetUserId);
+        return {
+          success: true,
+          newBalance: data.balance,
+          transaction: data.transaction,
+        };
+      }
+    } catch (e) {
+      console.warn("simulateWebhook failed:", e);
+    }
+    // Fallback nếu offline
+    return this.topUp(amount, "SePay Webhook", `[Webhook] ${note}`, targetUserId);
   },
 
   async createPendingTopUp(

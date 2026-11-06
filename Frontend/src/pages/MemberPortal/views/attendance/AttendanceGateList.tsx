@@ -41,7 +41,7 @@ export default function AttendanceGateList({
           </p>
           <button
             onClick={onOpenQrModal}
-            className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-sm shadow-md transition-all inline-flex items-center gap-2"
+            className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-md shadow-emerald-600/20 transition-all inline-flex items-center gap-2 cursor-pointer"
           >
             <QrCode className="w-4 h-4" />
             Mở mã QR Check-in

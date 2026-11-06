@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
 import type { MemberSupportTicketItem } from "../../types";
 import {
   CheckCircle2,
@@ -21,10 +22,19 @@ export const SupportTickets: React.FC<SupportTicketsProps> = ({ tickets, onCreat
   const [ticketSubject, setTicketSubject] = useState("");
   const [ticketContent, setTicketContent] = useState("");
 
+  React.useEffect(() => {
+    if (!isModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsModalOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isModalOpen]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!ticketSubject.trim() || !ticketContent.trim()) {
-      alert("Vui lòng nhập đầy đủ tiêu đề và nội dung yêu cầu.");
+      toast.error("Vui lòng nhập đầy đủ tiêu đề và nội dung yêu cầu.");
       return;
     }
     const nowStr = new Date().toLocaleString("vi-VN");
@@ -37,6 +47,7 @@ export const SupportTickets: React.FC<SupportTicketsProps> = ({ tickets, onCreat
       status: "open",
     };
     onCreateTicket(newTicket);
+    toast.success("Đã gửi yêu cầu hỗ trợ thành công!");
     setIsModalOpen(false);
     setTicketSubject("");
     setTicketContent("");
@@ -51,7 +62,7 @@ export const SupportTickets: React.FC<SupportTicketsProps> = ({ tickets, onCreat
         <button
           type="button"
           onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-xs cursor-pointer transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs cursor-pointer transition-colors shadow-emerald-500/20"
         >
           <Plus className="w-4 h-4" />
           <span>Gửi yêu cầu mới</span>
@@ -94,9 +105,9 @@ export const SupportTickets: React.FC<SupportTicketsProps> = ({ tickets, onCreat
               <h4 className="font-bold text-xs text-slate-900 dark:text-white">{t.subject}</h4>
               <p className="text-xs text-slate-600 dark:text-slate-400">{t.content}</p>
               {t.reply && (
-                <div className="p-3 rounded-xl bg-orange-50/60 dark:bg-orange-950/30 border border-orange-200/60 dark:border-orange-800/40 text-xs text-orange-950 dark:text-orange-200 mt-2">
+                <div className="p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/40 text-xs text-emerald-950 dark:text-emerald-200 mt-2">
                   <div className="font-bold flex items-center gap-1.5 mb-1">
-                    <Shield className="w-3.5 h-3.5 text-orange-600" />
+                    <Shield className="w-3.5 h-3.5 text-emerald-600" />
                     <span>Phản hồi từ Ban Quản lý SportCenter:</span>
                   </div>
                   <p>{t.reply}</p>
@@ -111,8 +122,16 @@ export const SupportTickets: React.FC<SupportTicketsProps> = ({ tickets, onCreat
       {/* Create Ticket Modal */}
       {isModalOpen &&
         createPortal(
-          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden flex flex-col">
+          <div
+            className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setIsModalOpen(false);
+            }}
+          >
+            <div
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                   Gửi yêu cầu hỗ trợ đến Ban Quản lý
@@ -169,7 +188,7 @@ export const SupportTickets: React.FC<SupportTicketsProps> = ({ tickets, onCreat
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold cursor-pointer transition-colors shadow-xs"
+                    className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold cursor-pointer transition-colors shadow-xs shadow-emerald-500/20"
                   >
                     Gửi yêu cầu
                   </button>

@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshCw, Search, X, AlertCircle } from "lucide-react";
+import { RefreshCw, AlertCircle } from "lucide-react";
 import { PackageAPI, PackageOrder } from "../../../services/packageApi";
 import { toast } from "sonner";
 import CounterStatsCards from "./counterPayments/CounterStatsCards";
 import CounterOrderCard from "./counterPayments/CounterOrderCard";
 import CounterConfirmModal, { type PaymentOption } from "./counterPayments/CounterConfirmModal";
 import CounterReceiptModal from "./counterPayments/CounterReceiptModal";
+import { CounterFilterBar } from "./counterPayments/CounterFilterBar";
+import { CancelOrderModal } from "./counterPayments/CancelOrderModal";
 
 const money = (value: number) => `${value.toLocaleString("vi-VN")} đ`;
 
@@ -17,6 +19,7 @@ export function CounterPaymentsPage() {
   const [categoryFilter, setCategoryFilter] = useState<"all" | "membership" | "sport" | "class">("all");
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [confirmOrder, setConfirmOrder] = useState<PackageOrder | null>(null);
+  const [cancelTargetOrder, setCancelTargetOrder] = useState<PackageOrder | null>(null);
   const [selectedPayMethod, setSelectedPayMethod] = useState<PaymentOption>("counter");
   const [receiptOrder, setReceiptOrder] = useState<PackageOrder | null>(null);
   const [error, setError] = useState("");
@@ -112,14 +115,18 @@ export function CounterPaymentsPage() {
     }
   };
 
-  const handleCancelOrder = async (order: PackageOrder) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn hủy đơn giữ chỗ #${order.id.slice(0, 8).toUpperCase()} của khách hàng ${order.userName}?`)) {
-      return;
-    }
-    setProcessingId(order.id);
+  const handleCancelOrder = (order: PackageOrder) => {
+    setCancelTargetOrder(order);
+  };
+
+  const executeCancelOrder = async () => {
+    if (!cancelTargetOrder) return;
+    const orderToCancel = cancelTargetOrder;
+    setProcessingId(orderToCancel.id);
     try {
-      await PackageAPI.cancelOrder(order.id);
-      toast.success(`Đã hủy đơn ${order.id.slice(0, 8).toUpperCase()}`);
+      await PackageAPI.cancelOrder(orderToCancel.id);
+      toast.success(`Đã hủy đơn ${orderToCancel.id.slice(0, 8).toUpperCase()}`);
+      setCancelTargetOrder(null);
       await loadOrders();
     } catch (err: any) {
       toast.error(err?.message || "Không thể hủy đơn hàng.");
@@ -142,76 +149,15 @@ export function CounterPaymentsPage() {
       />
 
       {/* Filter and Search Bar */}
-      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row gap-4 items-center justify-between shadow-sm">
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm theo SĐT, Tên, Email hoặc Mã đơn..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
-          />
-          {search && (
-            <button
-              type="button"
-              onClick={() => setSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold">
-            <button
-              type="button"
-              onClick={() => setStatusFilter("pending")}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
-                statusFilter === "pending"
-                  ? "bg-white dark:bg-slate-800 text-amber-700 dark:text-amber-300 shadow-sm"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-              }`}
-            >
-              Chờ thu tiền ({pendingOrders.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusFilter("paid")}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
-                statusFilter === "paid"
-                  ? "bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 shadow-sm"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-              }`}
-            >
-              Đã thu
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusFilter("all")}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
-                statusFilter === "all"
-                  ? "bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-300 shadow-sm"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-              }`}
-            >
-              Tất cả
-            </button>
-          </div>
-
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value as any)}
-            className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none cursor-pointer"
-          >
-            <option value="all">Tất cả loại đơn / dịch vụ</option>
-            <option value="membership">Gói thành viên (Gym)</option>
-            <option value="sport">Gói bộ môn (Yoga, Bơi, Boxing...)</option>
-            <option value="class">Đơn đặt lớp học</option>
-          </select>
-        </div>
-      </div>
+      <CounterFilterBar
+        search={search}
+        onSearchChange={setSearch}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        categoryFilter={categoryFilter}
+        onCategoryFilterChange={setCategoryFilter}
+        pendingCount={pendingOrders.length}
+      />
 
       {error && (
         <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm flex items-center gap-2">
@@ -276,6 +222,14 @@ export function CounterPaymentsPage() {
         receiptOrder={receiptOrder}
         onClose={() => setReceiptOrder(null)}
         formatMoney={money}
+      />
+
+      {/* Cancel Confirmation Modal */}
+      <CancelOrderModal
+        order={cancelTargetOrder}
+        processingId={processingId}
+        onClose={() => setCancelTargetOrder(null)}
+        onConfirm={executeCancelOrder}
       />
     </div>
   );

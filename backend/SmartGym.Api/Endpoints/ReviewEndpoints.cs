@@ -40,6 +40,22 @@ public static class ReviewEndpoints
                         return Results.Unauthorized();
                     }
 
+                    if (request.CoachId == Guid.Empty && !string.IsNullOrWhiteSpace(request.CoachName))
+                    {
+                        var cleanedName = request.CoachName
+                            .Replace("Coach", "", StringComparison.OrdinalIgnoreCase)
+                            .Replace("HLV", "", StringComparison.OrdinalIgnoreCase)
+                            .Replace(":", "")
+                            .Trim();
+                        var matchedUser = await db.Users
+                            .FirstOrDefaultAsync(u => EF.Functions.ILike(u.FullName, $"%{cleanedName}%"));
+                        if (matchedUser != null)
+                        {
+                            var resolvedFromUser = await CoachProfileResolver.FindByUserIdAsync(db, matchedUser.Id);
+                            request.CoachId = resolvedFromUser ?? matchedUser.Id;
+                        }
+                    }
+
                     if (request.CoachId == Guid.Empty)
                     {
                         return Results.BadRequest(new { message = "CoachId không hợp lệ." });
@@ -50,11 +66,16 @@ public static class ReviewEndpoints
                         request.CoachId = await ResolveCoachIdAsync(db, request.CoachId);
                         var stored = await service.CreateReviewAsync(memberId, request);
 
+                        var sessionLabel = !string.IsNullOrWhiteSpace(request.SessionName)
+                            ? $" cho ca tập {request.SessionName}"
+                            : "";
+
                         await classRepository.NotifyCoachAsync(
                             request.CoachId,
                             "Bạn nhận được đánh giá mới",
-                            $"Hội viên đã gửi đánh giá {request.Rating}/5 cho bạn.",
-                            "review"
+                            $"Hội viên đã gửi đánh giá {request.Rating}/5{sessionLabel}.",
+                            "review",
+                            stored.Id
                         );
 
                         return Results.Ok(new
@@ -113,6 +134,49 @@ public static class ReviewEndpoints
             )
             .WithTags("Reviews")
             .WithSummary("Get anonymous reviews from the database for a coach");
+
+        group
+            .MapGet(
+                "/{id:guid}",
+                async (Guid id, SmartGymDbContext db) =>
+                {
+                    var review = await db.Reviews
+                        .Include(r => r.Member)
+                        .FirstOrDefaultAsync(r => r.Id == id);
+
+                    if (review == null)
+                    {
+                        return Results.NotFound(new { message = "Không tìm thấy đánh giá." });
+                    }
+
+                    var parsedTags = new System.Collections.Generic.List<string>();
+                    if (!string.IsNullOrWhiteSpace(review.TagsJson))
+                    {
+                        try
+                        {
+                            parsedTags = System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<string>>(review.TagsJson)
+                                ?? new System.Collections.Generic.List<string>();
+                        }
+                        catch {}
+                    }
+
+                    return Results.Ok(new
+                    {
+                        id = review.Id,
+                        coachId = review.CoachId,
+                        memberId = string.Empty,
+                        memberName = BuildAnonymousName(review.MemberId),
+                        rating = review.Rating,
+                        comment = review.Comment,
+                        tags = parsedTags,
+                        createdAt = review.CreatedAt.ToString("o"),
+                        sessionId = review.SessionId,
+                        sessionName = review.SessionName
+                    });
+                }
+            )
+            .WithTags("Reviews")
+            .WithSummary("Get a specific review details by ID");
 
         group
             .MapGet(

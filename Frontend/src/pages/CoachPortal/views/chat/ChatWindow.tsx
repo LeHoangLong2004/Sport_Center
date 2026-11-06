@@ -91,7 +91,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               <div
                 className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-xs font-medium leading-relaxed shadow-sm ${
                   isMe
-                    ? "bg-slate-900 text-white dark:bg-emerald-600 dark:text-white rounded-br-none"
+                    ? "bg-orange-500 text-white shadow-sm shadow-orange-500/20 rounded-br-none"
                     : "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 rounded-bl-none"
                 }`}
               >
@@ -116,12 +116,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           placeholder={`Nhắn tin cho ${activeConv.title}...`}
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          className="flex-1 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-slate-400"
+          className="flex-1 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
         />
         <button
           type="submit"
           disabled={!inputText.trim()}
-          className="p-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm shrink-0"
+          className="p-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-orange-500/20 shrink-0 cursor-pointer"
           title="Gửi tin nhắn"
         >
           <Send className="w-4 h-4" />

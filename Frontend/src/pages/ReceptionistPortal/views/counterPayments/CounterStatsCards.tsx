@@ -22,41 +22,41 @@ export default function CounterStatsCards({
 }: Props) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl p-5 flex items-center justify-between">
-        <div>
-          <p className="text-xs font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wider">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:border-amber-400 dark:hover:border-amber-600 transition-all flex flex-col justify-between">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Đơn chờ thu tại quầy
           </p>
-          <p className="text-2xl font-black text-amber-900 dark:text-amber-100 mt-1">
+          <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
+        </div>
+        <div className="mt-3">
+          <p className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             {pendingCount} đơn
           </p>
-          <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
+          <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 mt-0.5">
             Tổng: {formatMoney(pendingAmount)}
           </p>
         </div>
-        <div className="size-12 rounded-xl bg-amber-100 dark:bg-amber-900/60 flex items-center justify-center text-amber-600 text-2xl font-bold">
-          ⏳
-        </div>
       </div>
 
-      <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-5 flex items-center justify-between">
-        <div>
-          <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
-            Đã thu hôm nay
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:border-purple-400 dark:hover:border-purple-600 transition-all flex flex-col justify-between">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            Đã thu ca trực hôm nay
           </p>
-          <p className="text-2xl font-black text-emerald-900 dark:text-emerald-100 mt-1">
+          <span className="size-2 rounded-full bg-purple-600" />
+        </div>
+        <div className="mt-3">
+          <p className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             {todayPaidCount} đơn
           </p>
-          <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
+          <p className="text-xs font-semibold text-purple-600 dark:text-purple-400 mt-0.5">
             Tổng thu: {formatMoney(todayPaidAmount)}
           </p>
         </div>
-        <div className="size-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 flex items-center justify-center text-emerald-600 text-2xl font-bold">
-          ✓
-        </div>
       </div>
 
-      <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 flex items-center justify-between">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all flex items-center justify-between">
         <div>
           <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Tác vụ nhanh

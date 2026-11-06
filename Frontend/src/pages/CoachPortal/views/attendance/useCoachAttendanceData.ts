@@ -3,13 +3,16 @@ import { CoachAPI, type AttendanceRecord, type AttendanceStatus, type MockSessio
 
 export function useCoachAttendanceData(initialSessionId: string | null) {
   const [activeSessions, setActiveSessions] = useState<MockSession[]>([]);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const [selectedSessionId, setSelectedSessionId] = useState<string>(initialSessionId || "");
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [savedRecords, setSavedRecords] = useState<AttendanceRecord[]>([]);
   const [members, setMembers] = useState<MockMember[]>([]);
+  const [sheetState, setSheetState] = useState<"unmarked" | "draft" | "finalized">("unmarked");
 
   useEffect(() => {
     async function loadSessions() {
+      setIsLoadingSessions(true);
       try {
         const sessions = await CoachAPI.getSchedule();
         const active = Array.isArray(sessions)
@@ -29,6 +32,8 @@ export function useCoachAttendanceData(initialSessionId: string | null) {
       } catch {
         setActiveSessions([]);
         setSelectedSessionId("");
+      } finally {
+        setIsLoadingSessions(false);
       }
     }
     loadSessions();
@@ -39,9 +44,10 @@ export function useCoachAttendanceData(initialSessionId: string | null) {
 
     async function loadSessionAttendance() {
       try {
-        const [attRecords, sessionMembers] = await Promise.all([
+        const [attRecords, sessionMembers, sheetInfo] = await Promise.all([
           CoachAPI.getAttendance(selectedSessionId).catch(() => []),
           CoachAPI.getSessionMembers(selectedSessionId).catch(() => []),
+          CoachAPI.getSheetStatus(selectedSessionId).catch(() => ({ state: "unmarked", isFinalized: false, isDraft: false, version: 0 })),
         ]);
 
         const usableMembers = Array.isArray(sessionMembers) ? sessionMembers : [];
@@ -53,11 +59,11 @@ export function useCoachAttendanceData(initialSessionId: string | null) {
           : [];
 
         const initialized: AttendanceRecord[] = usableMembers.map((m: MockMember) => {
-          const exist = (Array.isArray(attRecords) && attRecords.find((r) => r.memberId === m.id))
+          const exist = (Array.isArray(attRecords) && attRecords.find((r) => r.memberId === m.id && r.status !== "chưa điểm danh"))
+            || baseRecords.find((r) => r.memberId === m.id && r.status !== "chưa điểm danh")
+            || (Array.isArray(attRecords) && attRecords.find((r) => r.memberId === m.id))
             || baseRecords.find((r) => r.memberId === m.id);
           
-          // Thành viên chưa có bản ghi điểm danh phải giữ trạng thái chưa điểm danh.
-          // Không coi lớp trong tương lai là đã có mặt.
           const status: AttendanceStatus = exist?.status || "chưa điểm danh";
 
           return {
@@ -68,6 +74,13 @@ export function useCoachAttendanceData(initialSessionId: string | null) {
           };
         });
 
+        const resolvedState = sheetInfo.isFinalized
+          ? "finalized"
+          : sheetInfo.isDraft || initialized.some((r) => r.status !== "chưa điểm danh")
+          ? "draft"
+          : "unmarked";
+
+        setSheetState(resolvedState);
         setRecords(initialized);
         setSavedRecords(initialized);
         setMembers(usableMembers);
@@ -89,6 +102,7 @@ export function useCoachAttendanceData(initialSessionId: string | null) {
 
   return {
     activeSessions,
+    isLoadingSessions,
     selectedSessionId,
     setSelectedSessionId,
     records,
@@ -96,5 +110,7 @@ export function useCoachAttendanceData(initialSessionId: string | null) {
     savedRecords,
     setSavedRecords,
     members,
+    sheetState,
+    setSheetState,
   };
 }

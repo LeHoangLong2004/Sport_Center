@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
-import type { MemberScreen, MemberCoachReviewItem } from "../types";
+import type { MemberScreen, MemberCoachReviewItem, MemberSessionItem } from "../types";
 import { fetchMyReviews, submitCoachReview } from "../services/reviewSync";
 import { scheduleSync } from "../services/scheduleSync";
+import { getSavedMemberData, MemberBackendAPI } from "../services/memberData";
+import { resolveSessionStatus } from "./schedule/scheduleConstants";
 import {
   Star,
   CheckCircle2,
@@ -22,9 +24,25 @@ export default function MemberReviews({ onNavigate: _onNavigate }: Props) {
   const userId = user?.id || "";
   const memberName = user?.fullName || user?.name || "Hội viên";
   const [reviews, setReviews] = useState<MemberCoachReviewItem[]>([]);
+  const [serverSessions, setServerSessions] = useState<MemberSessionItem[]>([]);
   const [activeReviewSession, setActiveReviewSession] = useState<ReviewSessionTarget | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
 
+  // Check if there was a direct review request passed from Schedule
+  useEffect(() => {
+    try {
+      const targetStr = localStorage.getItem("target_review_session");
+      if (targetStr) {
+        const parsed = JSON.parse(targetStr);
+        if (parsed && (parsed.sessionName || parsed.sessionId)) {
+          setActiveReviewSession(parsed);
+        }
+        localStorage.removeItem("target_review_session");
+      }
+    } catch {}
+  }, []);
+
+  // Fetch submitted reviews
   useEffect(() => {
     if (!userId) return;
 
@@ -39,7 +57,7 @@ export default function MemberReviews({ onNavigate: _onNavigate }: Props) {
             sessionName: item.sessionName || "Buổi tập",
             coachId: item.coachId,
             coachName: item.coachName || "Huấn luyện viên",
-            date: item.createdAt.split("T")[0],
+            date: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
             rating: item.rating,
             tags: item.tags,
             comment: item.comment,
@@ -48,6 +66,15 @@ export default function MemberReviews({ onNavigate: _onNavigate }: Props) {
       })
       .catch((error) => console.error("Không thể tải lịch sử đánh giá:", error));
 
+    // Also load bookings from backend to ensure freshest data
+    void MemberBackendAPI.getBookings()
+      .then((bookings) => {
+        if (active && Array.isArray(bookings)) {
+          setServerSessions(bookings);
+        }
+      })
+      .catch(() => {});
+
     return () => {
       active = false;
     };
@@ -55,30 +82,63 @@ export default function MemberReviews({ onNavigate: _onNavigate }: Props) {
 
   // Available sessions to review from user's real completed sessions
   const availableSessions = useMemo(() => {
-    const fromSchedule = scheduleSync.getSyncedSessions()
-      .filter(
-        (s) =>
-          (s.memberId === userId || s.memberName === memberName) &&
-          (s.attendanceStatus === "có mặt" || s.status === "hoàn thành") &&
-          s.coachName
-      )
-      .map((s) => ({
-        sessionId: s.id,
-        sessionName: s.className || `Tập với ${s.coachName}`,
-        coachId: s.coachId || "",
-        coachName: s.coachName,
-        date: s.date || new Date().toISOString().split("T")[0],
-      }));
+    const storageKey = userId ? `member_sessions_${userId}` : "member_sessions";
+    const localMemberSessions = getSavedMemberData<MemberSessionItem[]>(storageKey, []);
+    const syncedSessions = scheduleSync.getSyncedSessions();
 
-    const unique = new Map<string, (typeof fromSchedule)[0]>();
-    fromSchedule.forEach((item) => {
-      const alreadyReviewed = reviews.some((r) => r.sessionId === item.sessionId);
-      if (!alreadyReviewed && !unique.has(item.sessionId)) {
+    const candidateList: ReviewSessionTarget[] = [];
+
+    // 1. Sessions from member schedule storage and server bookings
+    const combinedMemberSessions = [...serverSessions, ...localMemberSessions];
+    combinedMemberSessions.forEach((s) => {
+      const effStatus = resolveSessionStatus(s.status, s.date, s.endTime, s.startTime);
+      const isCompleted = effStatus === "hoàn thành" || s.attendanceStatus === "có mặt";
+      const hasCoach = s.coachName && s.coachName !== "N/A" && s.coachName.trim() !== "";
+      if (isCompleted && hasCoach) {
+        candidateList.push({
+          sessionId: s.id,
+          sessionName: s.name || `Tập cùng ${s.coachName}`,
+          coachId: s.coachId || "",
+          coachName: s.coachName,
+          date: s.date || new Date().toISOString().split("T")[0],
+        });
+      }
+    });
+
+    // 2. Sessions from coach schedule sync (if any)
+    syncedSessions.forEach((s) => {
+      const matchMember = s.memberId === userId || s.memberName === memberName;
+      const isCompleted = s.attendanceStatus === "có mặt" || s.status === "hoàn thành";
+      if (matchMember && isCompleted && s.coachName) {
+        candidateList.push({
+          sessionId: s.id,
+          sessionName: s.className || `Tập với ${s.coachName}`,
+          coachId: s.coachId || "",
+          coachName: s.coachName,
+          date: s.date || new Date().toISOString().split("T")[0],
+        });
+      }
+    });
+
+    // 3. Deduplicate and filter out already reviewed sessions
+    let reviewedIds: string[] = [];
+    try {
+      reviewedIds = JSON.parse(localStorage.getItem("reviewed_session_ids") || "[]");
+    } catch {}
+
+    const unique = new Map<string, ReviewSessionTarget>();
+    candidateList.forEach((item) => {
+      const alreadyReviewed =
+        reviews.some((r) => r.sessionId === item.sessionId) ||
+        reviewedIds.includes(item.sessionId);
+
+      if (!alreadyReviewed && item.sessionId && !unique.has(item.sessionId)) {
         unique.set(item.sessionId, item);
       }
     });
+
     return Array.from(unique.values());
-  }, [reviews, userId, memberName]);
+  }, [reviews, serverSessions, userId, memberName]);
 
   const handleReviewSubmit = async (data: {
     sessionId: string;
@@ -104,7 +164,7 @@ export default function MemberReviews({ onNavigate: _onNavigate }: Props) {
       id: reviewRes.id,
       sessionId: data.sessionId,
       sessionName: data.sessionName,
-      coachId: reviewRes.coachId,
+      coachId: reviewRes.coachId || data.coachId,
       coachName: reviewRes.coachName || data.coachName || "Coach",
       date: new Date().toISOString().split("T")[0],
       rating: data.rating,
@@ -175,7 +235,7 @@ export default function MemberReviews({ onNavigate: _onNavigate }: Props) {
                 <button
                   type="button"
                   onClick={() => setActiveReviewSession(s)}
-                  className="px-3 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-xs cursor-pointer transition-colors shrink-0"
+                  className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs shadow-emerald-600/20 cursor-pointer transition-colors shrink-0"
                 >
                   Viết đánh giá
                 </button>

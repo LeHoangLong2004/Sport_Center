@@ -73,15 +73,14 @@ export function MemberTopBar({
 
   const handleSwitchToInvoices = () => {
     setShowUserMenu(false);
-    onNavigate("profile");
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent("switch-profile-tab", { detail: "payments" }));
-    }, 50);
+    onNavigate("payments");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSwitchToSecurity = () => {
     setShowUserMenu(false);
     onNavigate("profile");
+    window.scrollTo({ top: 0, behavior: "smooth" });
     setTimeout(() => {
       window.dispatchEvent(new CustomEvent("switch-profile-tab", { detail: "security" }));
     }, 50);
@@ -251,6 +250,7 @@ export function MemberTopBar({
                 );
               }}
               onOpenCheckIn={onOpenCheckInModal}
+              onOpenWallet={onOpenWalletModal}
               onSwitchToInvoices={handleSwitchToInvoices}
               onSwitchToSecurity={handleSwitchToSecurity}
               onLogout={onLogout}

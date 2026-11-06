@@ -140,6 +140,15 @@ public sealed partial class ClassService
             return (false, "Đề xuất lớp học không còn ở trạng thái chờ duyệt.");
         }
 
+        var scheduleTimeUtc = targetClass.ScheduleTime.Kind == DateTimeKind.Utc
+            ? targetClass.ScheduleTime
+            : targetClass.ScheduleTime.ToUniversalTime();
+
+        if (scheduleTimeUtc <= DateTime.UtcNow)
+        {
+            return (false, "Không thể duyệt: thời gian bắt đầu lớp học đã trôi qua.");
+        }
+
         var newStart = targetClass.ScheduleTime;
         var newEnd = newStart.AddMinutes(targetClass.DurationMinutes);
 

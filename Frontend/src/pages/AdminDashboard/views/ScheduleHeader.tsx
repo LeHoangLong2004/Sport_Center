@@ -63,7 +63,7 @@ export function ScheduleHeader({
         {activeTab === "calendar" && (
           <button
             onClick={onCreate}
-            className="bg-[#2563eb] flex gap-2 items-center px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors"
+            className="bg-rose-600 hover:bg-rose-700 text-white flex gap-2 items-center px-4 py-2.5 rounded-xl transition-all shadow-md shadow-rose-600/20 active:scale-95 cursor-pointer"
           >
             <span className="font-semibold text-white text-sm">
               + Tạo lớp mới

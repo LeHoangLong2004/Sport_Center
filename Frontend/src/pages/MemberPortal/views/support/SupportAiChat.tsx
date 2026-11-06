@@ -1,82 +1,203 @@
-import React, { useState } from "react";
-import { Bot, Send, Sparkles, User } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { ArrowRight, Bot, RotateCcw, Send, ShieldCheck, User, Mic, MicOff } from "lucide-react";
+import type { MemberScreen } from "../../types";
+import { MemberBackendAPI, type MemberAiAction } from "../../services/memberData";
 
 interface ChatMessage {
   sender: "user" | "ai";
   text: string;
   time: string;
+  action?: MemberAiAction;
+  actionLabel?: string | null;
+  source?: "ai" | "fallback" | "throttled" | "offline";
 }
 
 interface SupportAiChatProps {
   userName: string;
+  storageKey?: string;
+  onNavigate?: (screen: MemberScreen) => void;
+  onOpenTickets?: () => void;
 }
 
-export const SupportAiChat: React.FC<SupportAiChatProps> = ({ userName }) => {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      sender: "ai",
-      text: `Xin chào ${userName}! Tôi là Trợ lý AI của SportCenter. Tôi có thể hỗ trợ bạn tra cứu lịch tập, kiểm tra thông tin hoặc giải đáp các thắc mắc về kỹ thuật bài tập và dinh dưỡng thể thao. Bạn cần tôi hỗ trợ gì hôm nay?`,
-      time: "08:00",
-    },
-  ]);
-  const [inputQuestion, setInputQuestion] = useState("");
+const ACTION_TO_SCREEN: Partial<Record<MemberAiAction, MemberScreen>> = {
+  schedule: "schedule",
+  booking: "booking",
+  packages: "packages",
+  payments: "payments",
+  workouts: "workouts",
+  attendance: "attendance",
+  chat: "chat",
+};
 
-  const quickQuestions = [
-    "Lịch tập của tôi xem ở đâu?",
-    "Làm sao để đăng ký gói tập mới?",
-    "Gợi ý thực đơn giàu đạm cho ngày tập nặng",
-    "Cách giảm đau cơ sau buổi tập chân (Leg day)",
-  ];
+const nowLabel = () => new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
 
-  const handleSend = (questionText: string) => {
-    const q = questionText.trim();
-    if (!q) return;
+const buildGreeting = (userName: string): ChatMessage => ({
+  sender: "ai",
+  text: `Xin chào ${userName}! 👋 Tôi là Trợ lý AI của SportCenter. Tôi có thể xem lịch tập, gói tập của bạn và giải đáp về kỹ thuật bài tập, dinh dưỡng hay nội quy trung tâm. Bạn cần hỗ trợ gì hôm nay?`,
+  time: nowLabel(),
+  source: "ai",
+});
 
-    const now = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-    const userMsg: ChatMessage = { sender: "user", text: q, time: now };
-    const lower = q.toLowerCase();
-
-    let aiReply = "Tôi đã ghi nhận câu hỏi của bạn. ";
-    if (lower.includes("lịch") || lower.includes("buổi") || lower.includes("hôm nay") || lower.includes("ngày mai")) {
-      aiReply = "📅 Bạn có thể theo dõi và quản lý toàn bộ các ca học nhóm cũng như ca kèm 1-1 tại mục **Lịch tập cá nhân** trên thanh điều hướng. Tại đó bạn cũng có thể đổi ca hoặc hủy lịch trước giờ tập.";
-    } else if (lower.includes("gói") || lower.includes("hạn") || lower.includes("đăng ký") || lower.includes("mua")) {
-      aiReply = "💳 Để xem các gói thẻ thành viên Gym, Bơi, Yoga, Boxing đang mở đăng ký kèm ưu đãi hiện hành, bạn có thể ghé mục **Gói tập & Dịch vụ** trên menu để lựa chọn gói phù hợp nhé.";
-    } else if (lower.includes("thực đơn") || lower.includes("ăn") || lower.includes("đạm") || lower.includes("dinh dưỡng")) {
-      aiReply = "🥗 Gợi ý thực đơn phục hồi giàu Protein:\n• Bữa sáng: 2 quả trứng ốp la, 1 lát bánh mì đen, 1 cốc sữa chua Hy Lạp.\n• Bữa trưa: 150g ức gà áp chảo, cơm gạo lứt, bông cải xanh luộc.\n• Trước tập 1h: 1 quả chuối + 1 muỗng Whey Protein.\n• Bữa tối: 150g cá hồi hoặc thịt bò áp chảo, salad dầu oliu.";
-    } else if (lower.includes("đau cơ") || lower.includes("mỏi") || lower.includes("chân") || lower.includes("giãn")) {
-      aiReply = "💪 Để giảm hiện tượng đau mỏi cơ (DOMS) sau ngày tập:\n1. Dành 10-15 phút lăn bọt (Foam Roller) đùi trước và bắp chuối.\n2. Tắm nước ấm và ngâm chân để tăng tuần hoàn máu.\n3. Uống đủ 2-2.5 lít nước và bổ sung thêm Magie/BCAA nếu cần.\n4. Đi bộ nhẹ nhàng 15-20 phút thay vì nằm yên cả ngày.";
-    } else {
-      aiReply = `Dạ với câu hỏi "${q}", bạn có thể trao đổi trực tiếp với Huấn luyện viên hoặc gửi phiếu yêu cầu hỗ trợ (Ticket) tại tab bên cạnh để bộ phận Lễ tân & CSKH hỗ trợ bạn nhanh nhất!`;
+export const SupportAiChat: React.FC<SupportAiChatProps> = ({
+  userName,
+  storageKey = "member_ai_chat",
+  onNavigate,
+  onOpenTickets,
+}) => {
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    try {
+      const saved = localStorage.getItem(storageKey) || sessionStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved) as ChatMessage[];
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      /* ignore corrupted cache */
     }
+    return [buildGreeting(userName)];
+  });
+  const [inputQuestion, setInputQuestion] = useState("");
+  const [isThinking, setIsThinking] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-    const aiMsg: ChatMessage = { sender: "ai", text: aiReply, time: now };
-    setMessages((prev) => [...prev, userMsg, aiMsg]);
+  useEffect(() => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognizer = new SpeechRecognition();
+      recognizer.lang = "vi-VN";
+      recognizer.continuous = false;
+      recognizer.interimResults = false;
+
+      recognizer.onresult = (event: any) => {
+        const transcript = event.results[0]?.[0]?.transcript;
+        if (transcript) {
+          setInputQuestion((prev) => (prev ? `${prev} ${transcript}` : transcript));
+        }
+        setIsListening(false);
+      };
+
+      recognizer.onerror = () => setIsListening(false);
+      recognizer.onend = () => setIsListening(false);
+
+      recognitionRef.current = recognizer;
+    }
+  }, []);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      alert("Trình duyệt chưa hỗ trợ nhận diện giọng nói Web Speech. Bạn có thể sử dụng Google Chrome hoặc Edge.");
+      return;
+    }
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch {
+        setIsListening(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(messages.slice(-40)));
+    } catch {
+      /* storage full / disabled */
+    }
+  }, [messages, storageKey]);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages, isThinking]);
+
+  const handleSend = async (questionText: string) => {
+    const q = questionText.trim();
+    if (!q || isThinking) return;
+
+    const history = messages
+      .slice(1) // skip greeting
+      .slice(-6)
+      .map((m) => ({ role: m.sender, text: m.text }));
+
+    setMessages((prev) => [...prev, { sender: "user", text: q, time: nowLabel() }]);
     setInputQuestion("");
+    setIsThinking(true);
+
+    const result = await MemberBackendAPI.askAI(q, history);
+
+    const aiMsg: ChatMessage = result
+      ? {
+          sender: "ai",
+          text: result.answer,
+          time: result.timestamp || nowLabel(),
+          action: result.action,
+          actionLabel: result.actionLabel,
+          source: result.source,
+        }
+      : {
+          sender: "ai",
+          text: "⚠️ Không thể kết nối tới máy chủ lúc này. Bạn vui lòng thử lại sau ít phút hoặc gửi Phiếu hỗ trợ để Lễ tân hỗ trợ trực tiếp nhé.",
+          time: nowLabel(),
+          action: "support_ticket",
+          actionLabel: "Gửi phiếu hỗ trợ cho Lễ tân",
+          source: "offline",
+        };
+
+    setMessages((prev) => [...prev, aiMsg]);
+    setIsThinking(false);
+  };
+
+  const handleAction = (action?: MemberAiAction) => {
+    if (!action || action === "none") return;
+    if (action === "support_ticket") {
+      onOpenTickets?.();
+      return;
+    }
+    const screen = ACTION_TO_SCREEN[action];
+    if (screen) onNavigate?.(screen);
+  };
+
+  const handleReset = () => {
+    setMessages([buildGreeting(userName)]);
+    sessionStorage.removeItem(storageKey);
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden flex flex-col h-[560px]">
-      {/* Quick questions */}
-      <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2 overflow-x-auto text-xs">
-        <span className="font-semibold text-slate-400 shrink-0 text-[11px] flex items-center gap-1">
-          <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Gợi ý câu hỏi:
-        </span>
-        {quickQuestions.map((q) => (
-          <button
-            key={q}
-            type="button"
-            onClick={() => handleSend(q)}
-            className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 shrink-0 transition-colors cursor-pointer text-[11px]"
-          >
-            {q}
-          </button>
-        ))}
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden flex flex-col h-[600px]">
+      {/* Header */}
+      <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="relative w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-xs">
+            <Bot className="w-4.5 h-4.5" />
+            <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">Trợ lý AI SportCenter</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">Powered by Gemini • Hiểu lịch tập & gói tập của bạn</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={handleReset}
+          disabled={isThinking}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-50"
+          title="Bắt đầu cuộc trò chuyện mới"
+        >
+          <RotateCcw className="w-3.5 h-3.5" /> Cuộc trò chuyện mới
+        </button>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 p-5 overflow-y-auto space-y-4 text-xs">
+      <div ref={scrollRef} className="flex-1 p-5 overflow-y-auto space-y-4 text-xs">
         {messages.map((m, idx) => {
           const isAi = m.sender === "ai";
+          const showAction = isAi && m.action && m.action !== "none" && m.actionLabel;
           return (
             <div
               key={idx}
@@ -85,46 +206,143 @@ export const SupportAiChat: React.FC<SupportAiChatProps> = ({ userName }) => {
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
                   isAi
-                    ? "bg-gradient-to-tr from-orange-600 to-amber-500 text-white shadow-xs"
+                    ? "bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-xs"
                     : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
                 }`}
               >
                 {isAi ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
               </div>
-              <div className="space-y-1">
+              <div className={`space-y-1.5 ${isAi ? "" : "flex flex-col items-end"}`}>
                 <div
                   className={`p-3.5 rounded-2xl leading-relaxed whitespace-pre-line ${
                     isAi
                       ? "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-tl-xs"
-                      : "bg-orange-600 text-white rounded-tr-xs"
+                      : "bg-emerald-600 text-white rounded-tr-xs"
                   }`}
                 >
                   {m.text}
                 </div>
-                <span className="text-[10px] text-slate-400 px-1">{m.time}</span>
+                {showAction && (
+                  <button
+                    type="button"
+                    onClick={() => handleAction(m.action)}
+                    className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[11px] font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors cursor-pointer"
+                  >
+                    {m.actionLabel}
+                    <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+                  </button>
+                )}
+                <div className="flex items-center gap-2 px-1">
+                  <span className="text-[10px] text-slate-400">{m.time}</span>
+                  {isAi && idx > 0 && m.source && m.source !== "ai" && (
+                    <span className="text-[10px] text-amber-600 dark:text-amber-400" title="AI tạm thời không khả dụng, đang dùng câu trả lời dự phòng">
+                      • Chế độ dự phòng
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           );
         })}
+
+        {isThinking && (
+          <div className="flex gap-3 max-w-[85%] self-start">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-xs">
+              <Bot className="w-4 h-4" />
+            </div>
+            <div className="px-4 py-3.5 rounded-2xl rounded-tl-xs bg-slate-100 dark:bg-slate-800 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce [animation-delay:-0.3s]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce [animation-delay:-0.15s]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce" />
+              <span className="ml-2 text-[11px] text-slate-500">Trợ lý đang soạn câu trả lời…</span>
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* Quick Suggestions */}
+      {messages.length <= 3 && !isThinking && (
+        <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex flex-wrap gap-2 shrink-0">
+          {[
+            "Hôm nay tôi có lịch gì không?",
+            "HLV vừa nhận xét gì về tôi?",
+            "Gói tập của tôi còn hạn bao lâu?",
+            "Gợi ý bữa ăn sau tập",
+          ].map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => handleSend(s)}
+              className="px-3 py-1 rounded-full text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-emerald-500 hover:text-emerald-600 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Voice Listening Bar Indicator */}
+      {isListening && (
+        <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/40 border-t border-amber-200 dark:border-amber-800 flex items-center justify-between text-xs text-amber-800 dark:text-amber-300 animate-pulse shrink-0">
+          <span className="flex items-center gap-2 font-medium">
+            <Mic className="w-4 h-4 text-amber-600 animate-bounce" />
+            Đang lắng nghe bạn nói tiếng Việt...
+          </span>
+          <button
+            type="button"
+            onClick={toggleListening}
+            className="text-xs font-bold text-amber-700 underline cursor-pointer"
+          >
+            Dừng lại
+          </button>
+        </div>
+      )}
+
       {/* Input */}
-      <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850">
+      <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850 space-y-2">
         <form
-          onSubmit={(e) => { e.preventDefault(); handleSend(inputQuestion); }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSend(inputQuestion);
+          }}
           className="flex items-center gap-2"
         >
+          {/* Voice Input Button */}
+          <button
+            type="button"
+            onClick={toggleListening}
+            className={`p-3 rounded-xl border transition-colors cursor-pointer ${
+              isListening
+                ? "bg-rose-50 border-rose-300 text-rose-600 animate-bounce"
+                : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:text-emerald-600"
+            }`}
+            title={isListening ? "Dừng ghi âm" : "Nói để hỏi (Voice Speech Input)"}
+          >
+            {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+          </button>
+
           <input
+            id="member-ai-chat-input"
             type="text"
             value={inputQuestion}
+            maxLength={1000}
             onChange={(e) => setInputQuestion(e.target.value)}
-            placeholder="Đặt câu hỏi về dinh dưỡng, bài tập, lịch rèn luyện..."
-            className="flex-1 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-none focus:border-orange-500"
+            placeholder="Hỏi về lịch tập, gói tập, nhận xét HLV, dinh dưỡng..."
+            className="flex-1 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-none focus:border-emerald-500"
           />
-          <button type="submit" className="p-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white shadow-xs cursor-pointer transition-colors">
+          <button
+            id="member-ai-chat-send"
+            type="submit"
+            disabled={isThinking || !inputQuestion.trim()}
+            className="p-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             <Send className="w-4 h-4" />
           </button>
         </form>
+        <p className="flex items-center gap-1.5 text-[10px] text-slate-400 px-1">
+          <ShieldCheck className="w-3 h-3 text-emerald-500" />
+          Trợ lý AI chỉ đưa ra gợi ý tham khảo, không thay thế chẩn đoán y khoa. Các thao tác đặt/hủy lớp, thanh toán bạn vẫn tự thực hiện.
+        </p>
       </div>
     </div>
   );

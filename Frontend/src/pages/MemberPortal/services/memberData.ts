@@ -55,6 +55,31 @@ export function saveMemberData<T>(key: string, data: T): void {
   }
 }
 
+import {
+  AppointmentService,
+  calculateAppointmentEndTime,
+} from "../../../services/appointmentService";
+
+// Flow 6 — AI Assistant response
+export type MemberAiAction =
+  | "none"
+  | "schedule"
+  | "booking"
+  | "packages"
+  | "payments"
+  | "workouts"
+  | "attendance"
+  | "chat"
+  | "support_ticket";
+
+export interface MemberAiAnswer {
+  answer: string;
+  action: MemberAiAction;
+  actionLabel?: string | null;
+  source: "ai" | "fallback" | "throttled";
+  timestamp: string;
+}
+
 // REST Backend API Client for Member Portal
 export const MemberBackendAPI = {
   getAuthHeaders(): Record<string, string> {
@@ -78,32 +103,76 @@ export const MemberBackendAPI = {
   },
 
   async getBookings(): Promise<MemberSessionItem[]> {
+    let memberName = "";
+    let memberPhone = "";
     try {
-      // The personal schedule is persisted in class_bookings/pt_sessions.
-      // Do not use the legacy /api/member/bookings endpoint here because it
-      // only contains the old in-memory PT booking store.
-      const res = await fetch("/api/schedule/member", {
-        headers: this.getAuthHeaders(),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const toSessionTime = (value: string | undefined, fallback = "00:00") => {
-          const date = value ? new Date(value) : null;
-          if (!date || Number.isNaN(date.getTime())) return { date: "", time: fallback };
-          return {
-            date: [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-"),
-            time: `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`,
-          };
-        };
-        const getUiStatus = (value: unknown): MemberSessionItem["status"] => {
-          const status = String(value ?? "").trim().toLowerCase();
-          if (["cancelled", "canceled", "rejected", "class_cancelled", "đã hủy"].includes(status)) return "đã hủy";
-          if (["attended", "completed", "hoàn thành"].includes(status)) return "hoàn thành";
-          if (["in_progress", "đang diễn ra"].includes(status)) return "đang diễn ra";
-          return "sắp diễn ra";
-        };
+      const userStr = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        memberName = u.fullName || u.name || "";
+        memberPhone = u.phoneNumber || u.phone || "";
+      }
+    } catch {}
 
-        const classBookings = (Array.isArray(data?.classBookings) ? data.classBookings : []).map((booking: any) => {
+    const todayIso = [
+      new Date().getFullYear(),
+      String(new Date().getMonth() + 1).padStart(2, "0"),
+      String(new Date().getDate()).padStart(2, "0"),
+    ].join("-");
+
+    const getUiStatus = (
+      value: unknown,
+      scheduleTime?: string | Date | null,
+      durationMinutes: number = 60
+    ): MemberSessionItem["status"] => {
+      const status = String(value ?? "").trim().toLowerCase();
+      if (["cancelled", "canceled", "rejected", "class_cancelled", "đã hủy"].includes(status)) return "đã hủy";
+      if (["attended", "completed", "hoàn thành"].includes(status)) return "hoàn thành";
+      if (["in_progress", "đang diễn ra"].includes(status)) return "đang diễn ra";
+
+      if (scheduleTime) {
+        const startDate = new Date(scheduleTime);
+        if (!Number.isNaN(startDate.getTime())) {
+          const duration = Number(durationMinutes || 60);
+          const endDate = new Date(startDate.getTime() + duration * 60000);
+          const now = new Date();
+
+          if (now > endDate) {
+            return "hoàn thành";
+          }
+          if (now >= startDate && now <= endDate) {
+            return "đang diễn ra";
+          }
+          return "sắp diễn ra";
+        }
+      }
+
+      return "sắp diễn ra";
+    };
+
+    const toSessionTime = (value: string | undefined, fallback = "00:00") => {
+      const date = value ? new Date(value) : null;
+      if (!date || Number.isNaN(date.getTime())) return { date: "", time: fallback };
+      return {
+        date: [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-"),
+        time: `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`,
+      };
+    };
+
+    let classBookings: MemberSessionItem[] = [];
+    let ptSessions: MemberSessionItem[] = [];
+    let apptSessions: MemberSessionItem[] = [];
+
+    try {
+      const [res, memberAppts] = await Promise.all([
+        fetch("/api/schedule/member", { headers: this.getAuthHeaders() }).catch(() => null),
+        AppointmentService.getForMember(memberName, memberPhone).catch(() => []),
+      ]);
+
+      if (res && res.ok) {
+        const data = await res.json().catch(() => null);
+
+        classBookings = (Array.isArray(data?.classBookings) ? data.classBookings : []).map((booking: any) => {
           const start = toSessionTime(booking.scheduleTime);
           const duration = Number(booking.durationMinutes || 60);
           const startDate = booking.scheduleTime ? new Date(booking.scheduleTime) : null;
@@ -123,7 +192,7 @@ export const MemberBackendAPI = {
               ? `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`
               : start.time,
             room: booking.facilityName || "N/A",
-            coachId: "",
+            coachId: booking.coachId ? String(booking.coachId) : "",
             coachName: booking.coachName || "N/A",
             coachAvatar: booking.coachAvatar || "",
             coachSpecialty: booking.coachSpecialty || "",
@@ -134,12 +203,12 @@ export const MemberBackendAPI = {
             price: booking.price ? Number(booking.price) : 150000,
             capacity: 0,
             registeredCount: 0,
-            status: getUiStatus(booking.status),
+            status: getUiStatus(booking.status, booking.scheduleTime, duration),
             bookingStatus: booking.status,
           };
         });
 
-        const ptSessions = (Array.isArray(data?.ptSessions) ? data.ptSessions : []).map((session: any) => {
+        ptSessions = (Array.isArray(data?.ptSessions) ? data.ptSessions : []).map((session: any) => {
           const start = toSessionTime(session.scheduleTime);
           const duration = Number(session.durationMinutes || 60);
           const startDate = session.scheduleTime ? new Date(session.scheduleTime) : null;
@@ -158,7 +227,7 @@ export const MemberBackendAPI = {
               ? `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`
               : start.time,
             room: "",
-            coachId: "",
+            coachId: session.coachId ? String(session.coachId) : "",
             coachName: session.coachName || "Personal Trainer",
             coachAvatar: session.coachAvatar || "",
             coachSpecialty: session.coachSpecialty || "Huấn luyện viên cá nhân 1-1",
@@ -168,14 +237,62 @@ export const MemberBackendAPI = {
             price: session.price ? Number(session.price) : 250000,
             capacity: 1,
             registeredCount: 1,
-            status: getUiStatus(session.status),
+            status: getUiStatus(session.status, session.scheduleTime, duration),
             bookingStatus: session.status,
           };
         });
-
-        return [...classBookings, ...ptSessions]
-          .filter((item: any) => item.date && (!item.id || !LEGACY_MOCK_IDS.has(item.id)));
       }
+
+      if (Array.isArray(memberAppts) && memberAppts.length > 0) {
+        apptSessions = memberAppts.map((appt) => {
+          const startTime = appt.time?.split("-")[0]?.trim() || appt.time || "09:00";
+          const endTime = calculateAppointmentEndTime(appt.time);
+
+          let uiStatus: MemberSessionItem["status"] = "sắp diễn ra";
+          if (appt.status === "Đã hoàn tất") uiStatus = "hoàn thành";
+          else if (appt.status === "Đã hủy") uiStatus = "đã hủy";
+          else if (appt.date) {
+            const apptEndDateTime = new Date(`${appt.date}T${endTime.length === 5 ? endTime + ":00" : endTime}`);
+            const apptStartDateTime = new Date(`${appt.date}T${startTime.length === 5 ? startTime + ":00" : startTime}`);
+            const now = new Date();
+            if (!Number.isNaN(apptEndDateTime.getTime()) && now > apptEndDateTime) {
+              uiStatus = "hoàn thành";
+            } else if (!Number.isNaN(apptStartDateTime.getTime()) && !Number.isNaN(apptEndDateTime.getTime()) && now >= apptStartDateTime && now <= apptEndDateTime) {
+              uiStatus = "đang diễn ra";
+            }
+          }
+
+          return {
+            id: `appt-${appt.id}`,
+            classId: "",
+            name: appt.title,
+            sport: "Lễ tân xếp",
+            level: "1-1 PT",
+            type: "pt" as const,
+            date: appt.date || todayIso,
+            startTime,
+            endTime,
+            room: "Khu PT 1-1 / Sảnh Lễ tân",
+            coachId: "",
+            coachName: appt.coachName || "HLV SmartGym",
+            coachAvatar: "",
+            coachSpecialty: "Huấn luyện viên cá nhân 1-1",
+            coachPhone: "",
+            coachBio: "Lịch hẹn được tạo bởi Lễ tân trung tâm tại quầy tiếp đón.",
+            price: 0,
+            capacity: 1,
+            registeredCount: 1,
+            status: uiStatus,
+            bookingStatus: appt.status,
+            goal: appt.title,
+            coachNote: "Lịch hẹn tiếp đón do Lễ tân xếp. Vui lòng đến trước 10 phút để nhận chìa khóa tủ đồ.",
+          };
+        });
+      }
+
+      return [...classBookings, ...ptSessions, ...apptSessions].filter(
+        (item: any) => item.date && (!item.id || !LEGACY_MOCK_IDS.has(item.id))
+      );
     } catch (e) {
       console.warn("Backend getBookings failed", e);
     }
@@ -215,21 +332,37 @@ export const MemberBackendAPI = {
     return false;
   },
 
-  async askAI(query: string): Promise<string> {
+  async askAI(
+    query: string,
+    history: { role: "user" | "ai"; text: string }[] = []
+  ): Promise<MemberAiAnswer | null> {
     try {
+      const userStr = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+      let userMeta: any = null;
+      try {
+        if (userStr) userMeta = JSON.parse(userStr);
+      } catch {}
+
       const res = await fetch("/api/member/ai-ask", {
         method: "POST",
         headers: this.getAuthHeaders(),
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({
+          query,
+          history,
+          userId: userMeta?.id,
+          userEmail: userMeta?.email,
+          userPhone: userMeta?.phoneNumber,
+          userName: userMeta?.fullName || userMeta?.name,
+        }),
       });
       if (res.ok) {
         const data = await res.json();
-        return data.answer;
+        if (data && typeof data.answer === "string") return data as MemberAiAnswer;
       }
     } catch (e) {
       console.warn("Backend askAI failed", e);
     }
-    return "";
+    return null;
   },
 
   async createSupportTicket(ticket: { category: string; subject: string; content: string }) {

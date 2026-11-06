@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import type { CoachScreen } from "../types";
 import { CoachAPI } from "../services/api";
-import { Send, CalendarPlus, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   type MainTab,
   type ViewMode,
@@ -15,12 +16,9 @@ import ScheduleWeekGrid from "./schedule/ScheduleWeekGrid";
 import ScheduleListView from "./schedule/ScheduleListView";
 import CoachAvailabilityTab from "./schedule/CoachAvailabilityTab";
 import CoachRequestsTab from "./schedule/CoachRequestsTab";
-import ScheduleRequestModal from "./schedule/ScheduleRequestModal";
-import OpenPtSlotModal from "./schedule/OpenPtSlotModal";
-import OpenPtDetailModal from "./schedule/OpenPtDetailModal";
-import PtSessionDetailModal from "./schedule/PtSessionDetailModal";
+import { CoachScheduleHeader } from "./schedule/CoachScheduleHeader";
+import { CoachScheduleModals } from "./schedule/CoachScheduleModals";
 import { useCoachScheduleData } from "./schedule/useCoachScheduleData";
-import { CreateClassModal } from "../../AdminDashboard/components/CreateClassModal";
 
 export type { UnifiedScheduleItem } from "./schedule/types";
 
@@ -77,6 +75,7 @@ export default function CoachSchedule({ navigateTo }: Props) {
 
   const {
     requests,
+    invitations,
     availabilitySlots,
     allUnifiedSessions,
     loading,
@@ -84,7 +83,16 @@ export default function CoachSchedule({ navigateTo }: Props) {
     removeOpenSlot,
     toggleSlot,
     addRequest,
+    respondInvitation,
   } = useCoachScheduleData(weekDates);
+
+  const pendingInvitationsCount = useMemo(
+    () =>
+      invitations.filter(
+        (inv) => inv.status === "pending" || inv.status === "waiting_substitute",
+      ).length,
+    [invitations],
+  );
 
   const SPORT_OPTIONS = useMemo(() => {
     const list = Array.from(new Set(allUnifiedSessions.map((s) => s.sport).filter(Boolean)));
@@ -114,16 +122,21 @@ export default function CoachSchedule({ navigateTo }: Props) {
     try {
       const res = await CoachAPI.createScheduleRequest(data);
       if (res?.data) addRequest(res.data);
-      setFeedbackMsg(`Yêu cầu ${data.requestType} đã được gửi tới Ban Quản Lý!`);
+      const msg = `Yêu cầu ${data.requestType} đã được gửi tới Ban Quản Lý!`;
+      setFeedbackMsg(msg);
+      toast.success(msg);
       setTimeout(() => setFeedbackMsg(null), 4000);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      toast.error(err?.message || "Không thể gửi yêu cầu điều chỉnh ca dạy.");
     }
   };
 
   const handleCreateOpenSlotSuccess = async (newItem: UnifiedScheduleItem) => {
     await addOpenSlot(newItem);
-    setFeedbackMsg(`Đã đăng lịch trống 1-1 (${newItem.sport} ngày ${newItem.date}) thành công!`);
+    const msg = `Đã đăng lịch trống 1-1 (${newItem.sport} ngày ${newItem.date}) thành công!`;
+    setFeedbackMsg(msg);
+    toast.success(msg);
     setTimeout(() => setFeedbackMsg(null), 4000);
   };
 
@@ -131,55 +144,24 @@ export default function CoachSchedule({ navigateTo }: Props) {
     await removeOpenSlot(slotId);
     setSelectedOpenSlot(null);
     setFeedbackMsg("Đã đóng/hủy lịch trống 1-1 này.");
+    toast.info("Đã đóng/hủy lịch trống 1-1 này.");
     setTimeout(() => setFeedbackMsg(null), 4000);
-  };
-
-  const handleToggleSlot = async (slotId: string) => {
-    toggleSlot(slotId);
   };
 
   return (
     <div className="flex flex-col gap-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-300">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
-        <div>
-          <div className="text-xs font-semibold text-slate-400 mb-1">HLV / LỊCH DẠY</div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-            Lịch dạy & Ca làm việc
-          </h1>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setIsClassProposalModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all shadow-sm hover:shadow-md"
-          >
-            <CalendarPlus className="w-4 h-4" />
-            Đề xuất lớp học
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsOpenSlotModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-xl transition-all shadow-sm hover:shadow-md"
-          >
-            <CalendarPlus className="w-4 h-4" />
-            Đăng lịch trống 1–1
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedSessionForRequest(allUnifiedSessions[0]?.id || "");
-              setIsRequestModalOpen(true);
-            }}
-            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
-          >
-            <Send className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
-            Yêu cầu ca dạy / Dạy thay
-          </button>
-        </div>
-      </div>
+      <CoachScheduleHeader
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        pendingInvitationsCount={pendingInvitationsCount}
+        requestsCount={requests.length}
+        onOpenClassProposal={() => setIsClassProposalModalOpen(true)}
+        onOpenSlotModal={() => setIsOpenSlotModalOpen(true)}
+        onOpenRequestModal={() => {
+          setSelectedSessionForRequest(allUnifiedSessions[0]?.id || "");
+          setIsRequestModalOpen(true);
+        }}
+      />
 
       {feedbackMsg && (
         <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 rounded-xl text-emerald-800 dark:text-emerald-300 text-sm flex items-center gap-3">
@@ -187,56 +169,6 @@ export default function CoachSchedule({ navigateTo }: Props) {
           <span>{feedbackMsg}</span>
         </div>
       )}
-
-      {isClassProposalModalOpen && (
-        <CreateClassModal
-          mode="coach"
-          onSuccess={() => {
-            setFeedbackMsg("Đề xuất lớp học đã được gửi để Manager duyệt.");
-            setTimeout(() => setFeedbackMsg(null), 4000);
-          }}
-          onClose={() => {
-            setIsClassProposalModalOpen(false);
-          }}
-        />
-      )}
-
-      {/* Tabs */}
-      <div className="flex border-b border-slate-200 dark:border-slate-800 gap-6 text-sm font-semibold">
-        <button
-          type="button"
-          onClick={() => setActiveTab("schedule")}
-          className={`pb-3 border-b-2 transition-colors ${
-            activeTab === "schedule"
-              ? "border-orange-500 text-orange-600 dark:text-orange-400"
-              : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-          }`}
-        >
-          Lịch dạy & PT 1–1
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("availability")}
-          className={`pb-3 border-b-2 transition-colors ${
-            activeTab === "availability"
-              ? "border-orange-500 text-orange-600 dark:text-orange-400"
-              : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-          }`}
-        >
-          Khung giờ rảnh
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("requests")}
-          className={`pb-3 border-b-2 transition-colors ${
-            activeTab === "requests"
-              ? "border-orange-500 text-orange-600 dark:text-orange-400"
-              : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-          }`}
-        >
-          Yêu cầu ca dạy ({requests.length})
-        </button>
-      </div>
 
       {activeTab === "schedule" && (
         <div className="flex flex-col gap-5">
@@ -285,13 +217,15 @@ export default function CoachSchedule({ navigateTo }: Props) {
       {activeTab === "availability" && (
         <CoachAvailabilityTab
           availabilitySlots={availabilitySlots}
-          onToggleSlot={handleToggleSlot}
+          onToggleSlot={toggleSlot}
         />
       )}
 
       {activeTab === "requests" && (
         <CoachRequestsTab
           requests={requests}
+          invitations={invitations}
+          onRespondInvitation={respondInvitation}
           onOpenCreateRequest={() => {
             setSelectedSessionForRequest(allUnifiedSessions[0]?.id || "");
             setIsRequestModalOpen(true);
@@ -299,35 +233,28 @@ export default function CoachSchedule({ navigateTo }: Props) {
         />
       )}
 
-      {/* Modals */}
-      <ScheduleRequestModal
-        isOpen={isRequestModalOpen}
-        onClose={() => setIsRequestModalOpen(false)}
-        sessions={allUnifiedSessions}
-        initialSessionId={selectedSessionForRequest}
-        onSubmit={handleSubmitRequest}
-      />
-
-      <OpenPtSlotModal
-        isOpen={isOpenSlotModalOpen}
-        onClose={() => setIsOpenSlotModalOpen(false)}
-        onSuccess={handleCreateOpenSlotSuccess}
+      <CoachScheduleModals
+        isRequestModalOpen={isRequestModalOpen}
+        setIsRequestModalOpen={setIsRequestModalOpen}
+        isOpenSlotModalOpen={isOpenSlotModalOpen}
+        setIsOpenSlotModalOpen={setIsOpenSlotModalOpen}
+        isClassProposalModalOpen={isClassProposalModalOpen}
+        setIsClassProposalModalOpen={setIsClassProposalModalOpen}
+        selectedSessionForRequest={selectedSessionForRequest}
+        setSelectedSessionForRequest={setSelectedSessionForRequest}
+        selectedOpenSlot={selectedOpenSlot}
+        setSelectedOpenSlot={setSelectedOpenSlot}
+        selectedPtSession={selectedPtSession}
+        setSelectedPtSession={setSelectedPtSession}
+        allUnifiedSessions={allUnifiedSessions}
         sportOptions={sportOptions}
         roomOptions={roomOptions}
-      />
-
-      <OpenPtDetailModal
-        slot={selectedOpenSlot}
-        onClose={() => setSelectedOpenSlot(null)}
-        onDelete={handleDeleteOpenSlot}
-      />
-
-      <PtSessionDetailModal
-        session={selectedPtSession}
-        onClose={() => setSelectedPtSession(null)}
-        onRequestReschedule={(sid) => {
-          setSelectedSessionForRequest(sid);
-          setIsRequestModalOpen(true);
+        onSubmitRequest={handleSubmitRequest}
+        onCreateOpenSlotSuccess={handleCreateOpenSlotSuccess}
+        onDeleteOpenSlot={handleDeleteOpenSlot}
+        onClassProposalSuccess={() => {
+          setFeedbackMsg("Đề xuất lớp học đã được gửi để Manager duyệt.");
+          setTimeout(() => setFeedbackMsg(null), 4000);
         }}
         navigateTo={navigateTo}
       />

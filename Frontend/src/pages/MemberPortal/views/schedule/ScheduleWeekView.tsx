@@ -37,7 +37,7 @@ export default function ScheduleWeekView({
                 key={d}
                 className={`p-3 text-xs text-center border-r border-slate-200 dark:border-slate-800 last:border-0 ${
                   isToday
-                    ? "bg-orange-50/60 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400 font-bold"
+                    ? "bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold"
                     : "text-slate-700 dark:text-slate-300 font-semibold"
                 }`}
               >

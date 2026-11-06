@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { Navigate } from "./types";
 import { Shell, src } from "./MemberShellV2";
 
@@ -30,8 +31,15 @@ export function Workout({ onNavigate }: { onNavigate: Navigate }) {
                 <button type="button" onClick={() => {
                   import('../../services/api').then(({ MemberAPI }) => {
                     MemberAPI.updateHomeworkProgress(hw.id, { status: 'completed', progressPct: 100 })
-                      .then(() => alert('Đã cập nhật tiến độ hoàn thành!'))
-                      .catch(() => alert('Lỗi cập nhật.'));
+                      .then(() => {
+                        toast.success('Đã cập nhật tiến độ hoàn thành!');
+                        setHomeworks((prev) =>
+                          prev.map((item) =>
+                            item.id === hw.id ? { ...item, status: 'completed', progressPct: 100 } : item
+                          )
+                        );
+                      })
+                      .catch(() => toast.error('Lỗi cập nhật tiến độ bài tập.'));
                   });
                 }}>Đánh dấu hoàn thành</button>
               </div>

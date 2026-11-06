@@ -4,7 +4,7 @@ import { useApiResource } from '../../../hooks/useApiResource';
 import { type ExpiringMemberResponse, type MemberRetentionResponse, type RevenueByPackageResponse } from '../../../hooks/flow3Api';
 import { formatDate } from '../../../hooks/apiClient';
 
-const DONUT_COLORS = ['#2563eb', '#14b8a6', '#f97316', '#f59e0b', '#94a3b8'];
+const DONUT_COLORS = ['#e11d48', '#14b8a6', '#f97316', '#f59e0b', '#94a3b8'];
 const CIRCUMFERENCE = 2 * Math.PI * 50;
 
 export default function ReportsTabMembers() {

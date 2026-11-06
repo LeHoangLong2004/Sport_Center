@@ -22,6 +22,7 @@ public class UserResponse
     public string? Certifications { get; set; }
     public int? ExperienceYears { get; set; }
     public string? Bio { get; set; }
+    public List<string>? AssignedSports { get; set; }
 
     // Member Profile Fields
     public string? FitnessGoal { get; set; }
@@ -55,6 +56,7 @@ public class UpdateUserProfileRequest
     public string? Certifications { get; set; }
     public int? ExperienceYears { get; set; }
     public string? Bio { get; set; }
+    public List<string>? AssignedSports { get; set; }
 
     // Member Profile Fields
     public string? FitnessGoal { get; set; }

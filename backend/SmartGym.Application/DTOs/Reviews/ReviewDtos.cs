@@ -6,6 +6,7 @@ namespace SmartGym.Application.DTOs.Reviews;
 public class CreateReviewRequest
 {
     public Guid CoachId { get; set; }
+    public string? CoachName { get; set; }
     public int Rating { get; set; } // 1 to 5
     public string? Comment { get; set; }
     public string? SessionId { get; set; }

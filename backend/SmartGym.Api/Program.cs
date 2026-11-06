@@ -25,6 +25,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseSmartGymSwagger();
 
+// ── Health Check Endpoint for Cloud Deployments ──
+app.MapGet("/", () => Results.Ok(new { status = "Healthy", service = "SmartGym API", timestamp = DateTime.UtcNow }));
+
 // ── API Endpoints ──
 app.MapSmartGymEndpoints();
 

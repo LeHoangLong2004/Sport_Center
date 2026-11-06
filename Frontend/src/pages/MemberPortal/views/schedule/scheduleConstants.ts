@@ -42,8 +42,8 @@ export const SPORT_THEME: Record<string, { badge: string; border: string }> = {
     border: "border-l-emerald-500",
   },
   Gym: {
-    badge: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/60 dark:text-orange-300 dark:border-orange-800",
-    border: "border-l-orange-500",
+    badge: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800",
+    border: "border-l-amber-500",
   },
   Boxing: {
     badge: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800",
@@ -92,4 +92,36 @@ export function isCancelledSession(session: MemberSessionItem): boolean {
     .replace(/đ/g, "d");
 
   return ["da huy", "cancelled", "canceled", "rejected", "class_cancelled"].includes(normalizedStatus);
+}
+
+export function resolveSessionStatus(
+  status: MemberSessionItem["status"] | string,
+  dateStr?: string,
+  endTimeStr?: string,
+  startTimeStr?: string
+): MemberSessionItem["status"] {
+  const normalized = String(status ?? "").trim().toLowerCase();
+  if (["cancelled", "canceled", "rejected", "class_cancelled", "đã hủy"].includes(normalized)) {
+    return "đã hủy";
+  }
+  if (["attended", "completed", "hoàn thành"].includes(normalized)) {
+    return "hoàn thành";
+  }
+
+  if (dateStr) {
+    const timeToEnd = endTimeStr || startTimeStr || "23:59";
+    const endDateTime = new Date(`${dateStr}T${timeToEnd.length === 5 ? timeToEnd + ":00" : timeToEnd}`);
+    const timeToStart = startTimeStr || "00:00";
+    const startDateTime = new Date(`${dateStr}T${timeToStart.length === 5 ? timeToStart + ":00" : timeToStart}`);
+    const now = new Date();
+
+    if (!Number.isNaN(endDateTime.getTime()) && now > endDateTime) {
+      return "hoàn thành";
+    }
+    if (!Number.isNaN(startDateTime.getTime()) && !Number.isNaN(endDateTime.getTime()) && now >= startDateTime && now <= endDateTime) {
+      return "đang diễn ra";
+    }
+  }
+
+  return "sắp diễn ra";
 }

@@ -9,6 +9,7 @@ public class RegisterRequest
     public string Email { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
     public string RoleName { get; set; } = "member"; // Mặc định là member nếu không chọn
+    public List<Guid>? SportIds { get; set; }
 }
 
 public class LoginRequest

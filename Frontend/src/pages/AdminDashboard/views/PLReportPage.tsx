@@ -12,7 +12,7 @@ export function PLReportPage() {
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
       <div>
-        <p className="font-extrabold text-[#2563eb] text-[11px] tracking-wider uppercase">MÔ ĐUN TÀI CHÍNH TRUNG TÂM</p>
+        <p className="font-extrabold text-rose-600 text-[11px] tracking-wider uppercase">MÔ ĐUN TÀI CHÍNH TRUNG TÂM</p>
         <div className="flex items-end justify-between mt-1">
           <div>
             <p className="font-extrabold text-[#0f172a] text-[28px]">Báo cáo lãi lỗ (P&L)</p>
@@ -34,13 +34,13 @@ export function PLReportPage() {
                 setComparing(!comparing);
                 toast.info(comparing ? "Đã tắt chế độ so sánh" : "Đã kích hoạt chế độ so sánh với Quý trước");
               }}
-              className={`border border-[#e2e8f0] flex items-center px-4 py-2.5 rounded-lg cursor-pointer transition-colors ${comparing ? "bg-blue-50 text-blue-700 font-semibold" : "bg-white hover:bg-slate-50 text-[#0f172a]"}`}
+              className={`border border-[#e2e8f0] flex items-center px-4 py-2.5 rounded-lg cursor-pointer transition-colors ${comparing ? "bg-rose-50 text-rose-700 font-semibold" : "bg-white hover:bg-slate-50 text-[#0f172a]"}`}
             >
               <span className="font-medium text-sm">So sánh với Q2/2026</span>
             </button>
             <button
               onClick={() => toast.success("Đang tổng hợp báo cáo P&L và chuẩn bị tải xuống file PDF...")}
-              className="bg-[#2563eb] hover:bg-blue-700 active:scale-95 flex items-center px-4 py-2.5 rounded-lg cursor-pointer transition-all shadow-sm"
+              className="bg-rose-600 hover:bg-rose-700 active:scale-95 flex items-center px-4 py-2.5 rounded-lg cursor-pointer transition-all shadow-sm shadow-rose-600/20"
             >
               <span className="font-semibold text-white text-sm">Xuất File PDF</span>
             </button>
@@ -67,7 +67,7 @@ export function PLReportPage() {
         {/* Revenue */}
         <div className="bg-white border border-[#e2e8f0] flex flex-1 flex-col min-w-0 rounded-xl">
           <div className="border-b border-[#e2e8f0] px-6 py-4">
-            <p className="font-extrabold text-[#2563eb] text-sm tracking-wider uppercase">Cơ cấu doanh thu (Revenue)</p>
+            <p className="font-extrabold text-rose-600 text-sm tracking-wider uppercase">Cơ cấu doanh thu (Revenue)</p>
           </div>
           <div className="bg-[#f1f5f9] flex font-bold gap-4 px-6 py-3 text-[#475569] text-[12px]">
             <span className="flex-1">PHÂN LOẠI</span>

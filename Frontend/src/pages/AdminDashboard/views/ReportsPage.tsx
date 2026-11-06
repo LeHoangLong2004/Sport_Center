@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { A, avatarSidebar, avatarTopbar, iDashboard, iUsers, iPackage, iCalendar, iReceipt, iBarChart, iSettings, iSearch, iBell, iSearch2, iDownload, iPlus, iWallet, iCheckCircle, iClock, iRotateCcw, iChevron, iEye, iPrinter, iMore, mAvatar0, mAvatar1, mAvatar2, mAvatar3, mAvatar4, iBell2, iDownload2, iKpiRevenue, iKpiMembers, iKpiClasses, iKpiRetain, iSeg1, iSeg2, iSeg3, iSeg4, iDotBlue, iDotTeal, iDotOrange, iDotPurple, iActivity0, iActivity1, iActivity2, iActivity3, iLineChart, iBarFill, coachAvatar1, coachAvatar2, coachAvatar3, coachAvatar4, hrAvatar1, hrAvatar2, hrAvatar3, hrAvatar4, iBudgetIcon, iExpenseIcon, iBudgetChevron, iPLRevIcon, memberEditAvatar } from '../shared';
 import KpiCard from '../components/KpiCard';
 import SimpleLineChart from '../components/SimpleLineChart';
@@ -25,8 +26,9 @@ export function ReportsPage() {
     setIsExporting(true);
     try {
       await apiDownloadFile(reportApi.revenueExportUrl(), "bao-cao-doanh-thu.xlsx");
+      toast.success("Đã xuất báo cáo doanh thu thành công!");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Không thể xuất báo cáo.");
+      toast.error(err instanceof Error ? err.message : "Không thể xuất báo cáo.");
     } finally {
       setIsExporting(false);
     }
@@ -37,7 +39,7 @@ export function ReportsPage() {
       {/* header */}
       <div className="flex items-end justify-between">
         <div>
-          <p className="font-extrabold text-[#2563eb] text-[11px] tracking-[1.5px] uppercase">Thứ hai, 21 tháng 9</p>
+          <p className="font-extrabold text-rose-600 text-[11px] tracking-[1.5px] uppercase">Thứ hai, 21 tháng 9</p>
           <p className="font-extrabold text-[#0f172a] text-[28px] mt-1">Báo cáo & Thống kê</p>
           <p className="text-[#64748b] text-sm mt-1">Phân tích hiệu suất vận hành, doanh thu và xu hướng tăng trưởng hội viên toàn trung tâm.</p>
         </div>
@@ -45,14 +47,14 @@ export function ReportsPage() {
           <button
             onClick={handleExport}
             disabled={isExporting}
-            className="bg-white border border-[#e2e8f0] flex gap-2 items-center px-[18px] py-3 rounded-lg"
+            className="bg-white border border-[#e2e8f0] flex gap-2 items-center px-[18px] py-3 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
           >
             <img src={iDownload2} alt="" className="size-4" />
             <span className="font-bold text-[#64748b] text-sm">Xuất báo cáo Excel</span>
           </button>
           <button
             onClick={() => { dashboard.reload(); retention.reload(); }}
-            className="bg-[#2563eb] flex items-center px-[18px] py-3 rounded-lg"
+            className="bg-rose-600 hover:bg-rose-700 transition-colors shadow-sm shadow-rose-600/20 flex items-center px-[18px] py-3 rounded-lg cursor-pointer"
           >
             <span className="font-bold text-white text-sm">Làm mới số liệu</span>
           </button>
@@ -134,10 +136,10 @@ export function ReportsPage() {
       {/* tabs */}
       <div className="border-b border-[#e2e8f0] flex gap-6">
         {tabs.map((t, i) => (
-          <button key={i} onClick={() => setTab(i)} className={`pb-3 text-sm transition-colors ${
+          <button key={i} onClick={() => setTab(i)} className={`pb-3 text-sm transition-colors cursor-pointer ${
             tab === i
-              ? "border-b-2 border-[#2563eb] font-bold text-[#2563eb]"
-              : "font-medium text-[#64748b]"
+              ? "border-b-2 border-rose-600 font-bold text-rose-600"
+              : "font-medium text-[#64748b] hover:text-slate-800"
           }`}>{t}</button>
         ))}
       </div>

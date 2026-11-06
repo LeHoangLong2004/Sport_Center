@@ -4,6 +4,8 @@ export interface BankConfig {
   bankName: string; // Full bank name
   accountNumber: string; // Real account number
   accountName: string; // Account holder name
+  qrImage?: string; // Static image file path in /public
+  sepayApiToken?: string; // Mã API Token từ my.sepay.vn để đọc biến động số dư thực tế
 }
 
 export const POPULAR_BANKS = [
@@ -23,11 +25,12 @@ export const POPULAR_BANKS = [
 ];
 
 export const DEFAULT_BANK_CONFIG: BankConfig = {
-  bankBin: "971015",
-  bankCode: "VNPAY",
-  bankName: "Ví điện tử VNPAY (App VNPAY / Napas 247)",
-  accountNumber: "0815353732",
-  accountName: "Khách hàng 0815353732",
+  bankBin: "970403",
+  bankCode: "STB",
+  bankName: "Sacombank (Sài Gòn Thương Tín)",
+  accountNumber: "0979977428",
+  accountName: "PHAM DUC THANH PHUONG",
+  sepayApiToken: "smartgym_sepay_secret_2026",
 };
 
 const STORAGE_KEY = "sport_center_bank_config";
@@ -38,8 +41,19 @@ export const BankConfigService = {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.bankBin && parsed.accountNumber) {
-          return { ...DEFAULT_BANK_CONFIG, ...parsed };
+        if (
+          parsed.bankBin &&
+          parsed.accountNumber &&
+          parsed.accountNumber === "0979977428" &&
+          parsed.bankBin === "970403"
+        ) {
+          return {
+            ...DEFAULT_BANK_CONFIG,
+            ...parsed,
+          };
+        } else {
+          // Reset cache cũ sang Sacombank
+          localStorage.removeItem(STORAGE_KEY);
         }
       }
     } catch (e) {
@@ -56,15 +70,16 @@ export const BankConfigService = {
     }
   },
 
-  getVietQrUrl(amount: number, memo: string, config?: BankConfig): string {
+  getVietQrUrl(amount?: number, memo?: string, config?: BankConfig): string {
     const cfg = config || this.getConfig();
-    if (cfg.bankCode === "VNPAY" || cfg.bankBin === "971015" || cfg.accountNumber === "0815353732") {
-      return "/vnpay_qr.png";
+    // Ưu tiên hiển thị chính xác ảnh QR Vietcombank thật từ thư mục public của dự án
+    if (cfg.qrImage) {
+      return cfg.qrImage;
     }
     const cleanAcc = (cfg.accountNumber || "").replace(/\s+/g, "");
-    const encodedMemo = encodeURIComponent(memo || "NAPVI");
-    const encodedName = encodeURIComponent(cfg.accountName || "Khách hàng 0815353732");
+    const encodedMemo = encodeURIComponent(memo || "THANHTOAN");
+    const encodedName = encodeURIComponent(cfg.accountName || "CHU TAI KHOAN");
 
-    return `https://api.vietqr.io/image/${cfg.bankBin}-${cleanAcc}-compact2.jpg?amount=${amount}&addInfo=${encodedMemo}&accountName=${encodedName}`;
+    return `https://img.vietqr.io/image/${cfg.bankBin}-${cleanAcc}-compact2.jpg?amount=${amount || 0}&addInfo=${encodedMemo}&accountName=${encodedName}`;
   },
 };

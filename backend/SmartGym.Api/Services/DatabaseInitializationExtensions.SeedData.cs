@@ -65,6 +65,18 @@ public static partial class DatabaseInitializationExtensions
                 ALTER TABLE users ADD COLUMN IF NOT EXISTS member_code VARCHAR(50);
                 ALTER TABLE users ADD COLUMN IF NOT EXISTS training_goal TEXT;
                 ALTER TABLE users ADD COLUMN IF NOT EXISTS training_level VARCHAR(50);
+
+                ALTER TABLE coach_schedule_requests ADD COLUMN IF NOT EXISTS class_name VARCHAR(255);
+                ALTER TABLE coach_schedule_requests ADD COLUMN IF NOT EXISTS session_time VARCHAR(100);
+                ALTER TABLE coach_schedule_requests ADD COLUMN IF NOT EXISTS sport_name VARCHAR(100);
+                ALTER TABLE coach_schedule_requests ADD COLUMN IF NOT EXISTS room_name VARCHAR(100);
+
+                UPDATE coach_schedule_requests
+                SET class_name = '[Lễ tân] Tập thử PT kèm riêng 1:1 - Pilates phục hồi',
+                    session_time = '2026-10-27 (17:00 - 18:00)',
+                    sport_name = 'Pilates phục hồi',
+                    room_name = 'Khu PT 1-1 / Quầy Lễ tân'
+                WHERE (class_name IS NULL OR class_name = 'Lớp học') AND reason LIKE '%gia đình đột xuất%';
                 "
             );
             app.Logger.LogInformation("Coach attendance, assessment, and schedule request tables are ready.");

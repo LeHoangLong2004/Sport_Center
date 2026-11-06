@@ -21,10 +21,24 @@ public static partial class MemberEndpoints
             SmartGymDbContext db,
             ICheckInRepository checkInRepo) =>
         {
-            var userIdStr = GetUserId(context);
-            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var memberGuid))
+            Guid memberGuid;
+            var qMemberId = context.Request.Query["memberId"].ToString();
+            var role = context.User.FindFirstValue(ClaimTypes.Role) ?? context.User.FindFirst("role")?.Value;
+            var isStaff = string.Equals(role, "receptionist", StringComparison.OrdinalIgnoreCase)
+                       || string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase)
+                       || string.Equals(role, "manager", StringComparison.OrdinalIgnoreCase);
+
+            if (!string.IsNullOrEmpty(qMemberId) && Guid.TryParse(qMemberId, out var parsedTargetId) && isStaff)
             {
-                return Results.Unauthorized();
+                memberGuid = parsedTargetId;
+            }
+            else
+            {
+                var userIdStr = GetUserId(context);
+                if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out memberGuid))
+                {
+                    return Results.Unauthorized();
+                }
             }
 
             // 0. Get member's active subscriptions to synchronize package information
@@ -111,6 +125,45 @@ public static partial class MemberEndpoints
             {
             }
 
+            // 4. Get Coach Assessments for this Member
+            List<MemberAssessmentDbRow> assessmentRows = new();
+            try
+            {
+                assessmentRows = await db.Database.SqlQueryRaw<MemberAssessmentDbRow>(@"
+                    SELECT id AS ""Id"",
+                           session_id AS ""SessionId"",
+                           coach_id AS ""CoachId"",
+                           completion AS ""Completion"",
+                           metrics_json::text AS ""MetricsJson"",
+                           comment AS ""Comment"",
+                           next_step AS ""NextStep"",
+                           created_at AS ""CreatedAt""
+                    FROM coach_assessments
+                    WHERE member_id = {0}
+                    ORDER BY created_at DESC", memberGuid).ToListAsync();
+            }
+            catch
+            {
+            }
+
+            var assessmentBySession = assessmentRows
+                .Where(a => a.SessionId.HasValue)
+                .GroupBy(a => a.SessionId!.Value)
+                .ToDictionary(g => g.Key, g => g.First());
+
+            static object ParseMetricsJson(string? rawJson)
+            {
+                if (string.IsNullOrWhiteSpace(rawJson)) return Array.Empty<object>();
+                try
+                {
+                    return System.Text.Json.JsonSerializer.Deserialize<object>(rawJson) ?? Array.Empty<object>();
+                }
+                catch
+                {
+                    return Array.Empty<object>();
+                }
+            }
+
             // Helper for Vietnam Time (GMT+7)
             static DateTime ToVnTime(DateTime utcTime)
             {
@@ -148,6 +201,17 @@ public static partial class MemberEndpoints
                     })
                     ?? (string.IsNullOrWhiteSpace(r.Sport) ? "Gói môn tập" : $"Gói Tập {r.Sport}");
 
+                var hasAsm = assessmentBySession.TryGetValue(r.SessionId, out var asm);
+                var asmObj = hasAsm && asm != null ? new
+                {
+                    id = asm.Id.ToString(),
+                    completion = asm.Completion,
+                    metrics = ParseMetricsJson(asm.MetricsJson),
+                    comment = asm.Comment ?? string.Empty,
+                    nextStep = asm.NextStep ?? string.Empty,
+                    createdAt = asm.CreatedAt.ToString("o")
+                } : null;
+
                 return new
                 {
                     id = r.SessionId.ToString(),
@@ -162,6 +226,7 @@ public static partial class MemberEndpoints
                     endTime = localTime.AddMinutes(r.DurationMinutes).ToString("HH:mm"),
                     status = isFuture ? "chưa diễn ra" : NormalizeAttendanceStatus(r.AttendanceStatus),
                     coachNote = isFuture ? string.Empty : r.CoachNote,
+                    assessment = asmObj,
                     type = "group"
                 };
             }).ToList();
@@ -175,6 +240,18 @@ public static partial class MemberEndpoints
             {
                 var localTime = ToVnTime(r.ScheduleTime);
                 var isFuture = r.ScheduleTime > nowUtc;
+
+                var hasPtAsm = assessmentBySession.TryGetValue(r.SessionId, out var ptAsm);
+                var ptAsmObj = hasPtAsm && ptAsm != null ? new
+                {
+                    id = ptAsm.Id.ToString(),
+                    completion = ptAsm.Completion,
+                    metrics = ParseMetricsJson(ptAsm.MetricsJson),
+                    comment = ptAsm.Comment ?? string.Empty,
+                    nextStep = ptAsm.NextStep ?? string.Empty,
+                    createdAt = ptAsm.CreatedAt.ToString("o")
+                } : null;
+
                 return new
                 {
                     id = r.SessionId.ToString(),
@@ -189,6 +266,7 @@ public static partial class MemberEndpoints
                     endTime = localTime.AddMinutes(r.DurationMinutes).ToString("HH:mm"),
                     status = isFuture ? "chưa diễn ra" : (r.ScheduleTime <= nowUtc ? "có mặt" : "chưa diễn ra"),
                     coachNote = isFuture ? string.Empty : (string.IsNullOrWhiteSpace(r.Goal) ? "Buổi tập cá nhân theo mục tiêu" : $"Mục tiêu: {r.Goal}"),
+                    assessment = ptAsmObj,
                     type = "pt"
                 };
             }).ToList();
@@ -236,6 +314,18 @@ public static partial class MemberEndpoints
                 daysLeft = Math.Max(0, (int)Math.Ceiling((s.EndDate - DateTime.UtcNow).TotalDays))
             }).ToList();
 
+            var formattedAssessments = assessmentRows.Select(a => new
+            {
+                id = a.Id.ToString(),
+                sessionId = a.SessionId?.ToString() ?? string.Empty,
+                coachId = a.CoachId.ToString(),
+                completion = a.Completion,
+                metrics = ParseMetricsJson(a.MetricsJson),
+                comment = a.Comment ?? string.Empty,
+                nextStep = a.NextStep ?? string.Empty,
+                createdAt = a.CreatedAt.ToString("o")
+            }).ToList();
+
             return Results.Ok(new
             {
                 summary = new
@@ -252,11 +342,75 @@ public static partial class MemberEndpoints
                 },
                 sessions = allSessionItems,
                 gateCheckIns = gateItems,
-                activePackages = activePackagesDto
+                activePackages = activePackagesDto,
+                assessments = formattedAssessments
             });
         })
         .WithTags("Member Portal")
         .WithSummary("Get member attendance history (classes, PT sessions, gate check-ins, and statistics)");
+
+        group.MapGet("/assessments", async (HttpContext context, SmartGymDbContext db) =>
+        {
+            var userIdStr = GetUserId(context);
+            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var memberGuid))
+            {
+                return Results.Unauthorized();
+            }
+
+            var rows = await db.Database.SqlQueryRaw<MemberFullAssessmentRow>(@"
+                SELECT ca.id AS ""Id"",
+                       ca.session_id AS ""SessionId"",
+                       ca.coach_id AS ""CoachId"",
+                       ca.completion AS ""Completion"",
+                       ca.metrics_json::text AS ""MetricsJson"",
+                       ca.comment AS ""Comment"",
+                       ca.next_step AS ""NextStep"",
+                       ca.created_at AS ""CreatedAt"",
+                       COALESCE(c.class_name, 'Buổi tập với HLV') AS ""ClassName"",
+                       COALESCE(u.full_name, 'Huấn luyện viên') AS ""CoachName"",
+                       COALESCE(u.avatar_url, '') AS ""CoachAvatar"",
+                       COALESCE(s.name, 'Thể thao') AS ""SportName"",
+                       c.schedule_time AS ""ScheduleTime""
+                FROM coach_assessments ca
+                LEFT JOIN classes c ON c.id = ca.session_id
+                LEFT JOIN sports s ON s.id = c.sport_id
+                LEFT JOIN coaches co ON co.id = ca.coach_id
+                LEFT JOIN users u ON u.id = co.user_id
+                WHERE ca.member_id = {0}
+                ORDER BY ca.created_at DESC", memberGuid).ToListAsync();
+
+            return Results.Ok(rows.Select(r => new
+            {
+                id = r.Id.ToString(),
+                sessionId = r.SessionId?.ToString() ?? string.Empty,
+                coachId = r.CoachId.ToString(),
+                coachName = r.CoachName,
+                coachAvatar = r.CoachAvatar,
+                className = r.ClassName,
+                sportName = r.SportName,
+                scheduleTime = r.ScheduleTime,
+                completion = r.Completion,
+                metrics = ParseMetrics(r.MetricsJson),
+                comment = r.Comment ?? string.Empty,
+                nextStep = r.NextStep ?? string.Empty,
+                createdAt = r.CreatedAt.ToString("o")
+            }));
+        })
+        .WithTags("Member Portal")
+        .WithSummary("Get member evaluation and progress assessments by coaches");
+    }
+
+    private static object ParseMetrics(string? rawJson)
+    {
+        if (string.IsNullOrWhiteSpace(rawJson)) return Array.Empty<object>();
+        try
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<object>(rawJson) ?? Array.Empty<object>();
+        }
+        catch
+        {
+            return Array.Empty<object>();
+        }
     }
 
     private static string NormalizeAttendanceStatus(string raw)
@@ -267,6 +421,35 @@ public static partial class MemberEndpoints
         if (s == "đi muộn" || s == "late") return "đi muộn";
         if (s == "chưa diễn ra" || s == "upcoming") return "chưa diễn ra";
         return "chưa điểm danh";
+    }
+
+    private sealed class MemberAssessmentDbRow
+    {
+        public Guid Id { get; set; }
+        public Guid? SessionId { get; set; }
+        public Guid CoachId { get; set; }
+        public int Completion { get; set; }
+        public string? MetricsJson { get; set; }
+        public string? Comment { get; set; }
+        public string? NextStep { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
+    private sealed class MemberFullAssessmentRow
+    {
+        public Guid Id { get; set; }
+        public Guid? SessionId { get; set; }
+        public Guid CoachId { get; set; }
+        public int Completion { get; set; }
+        public string? MetricsJson { get; set; }
+        public string? Comment { get; set; }
+        public string? NextStep { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string ClassName { get; set; } = string.Empty;
+        public string CoachName { get; set; } = string.Empty;
+        public string CoachAvatar { get; set; } = string.Empty;
+        public string SportName { get; set; } = string.Empty;
+        public DateTime? ScheduleTime { get; set; }
     }
 
     private sealed class MemberClassAttendanceRow

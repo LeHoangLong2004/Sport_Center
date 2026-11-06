@@ -1,9 +1,10 @@
 import React from "react";
-import { Calendar, CheckCircle2, AlertCircle, Clock, Dumbbell } from "lucide-react";
+import { Calendar, CheckCircle2, AlertCircle, Clock, Dumbbell, Sparkles } from "lucide-react";
 import type { CoachScreen } from "../../types";
 import type { MemberAttendanceHistoryItem, MemberWorkoutItem } from "./types";
 
 interface MemberHistoryAndWorkoutsProps {
+  memberId?: string | null;
   attendanceHistory: MemberAttendanceHistoryItem[];
   assignedWorkouts: MemberWorkoutItem[];
   attendanceRate?: number | null;
@@ -12,6 +13,7 @@ interface MemberHistoryAndWorkoutsProps {
 }
 
 export const MemberHistoryAndWorkouts: React.FC<MemberHistoryAndWorkoutsProps> = ({
+  memberId,
   attendanceHistory,
   assignedWorkouts,
   attendanceRate,
@@ -120,13 +122,23 @@ export const MemberHistoryAndWorkouts: React.FC<MemberHistoryAndWorkoutsProps> =
               {assignedWorkouts.length} giáo án
             </span>
           </div>
-          <button
-            type="button"
-            onClick={() => navigateTo("curriculum")}
-            className="text-xs font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400"
-          >
-            + Thêm giáo án
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => navigateTo("ai", { memberId: memberId || undefined })}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800 transition-colors shadow-2xs cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-orange-500" />
+              <span>AI gợi ý bài tiếp theo</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => navigateTo("curriculum")}
+              className="text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 cursor-pointer"
+            >
+              + Thủ công
+            </button>
+          </div>
         </div>
 
         <div className="divide-y divide-slate-100 dark:divide-slate-800/60 p-6 space-y-6">

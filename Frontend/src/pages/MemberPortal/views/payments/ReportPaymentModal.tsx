@@ -48,17 +48,17 @@ export default function ReportPaymentModal({
           <div className="p-4 rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 text-white space-y-2 border border-slate-700 shadow-md">
             <div className="flex items-center justify-between">
               <span className="text-[11px] text-emerald-400 font-bold uppercase tracking-wider">
-                Ngân hàng Quân Đội (MB Bank)
+                Ngân hàng TMCP Sài Gòn Thương Tín (Sacombank)
               </span>
               <Building className="w-4 h-4 text-slate-400" />
             </div>
             <div className="text-lg font-mono font-bold tracking-widest text-white">
-              0903 8888 6868
+              0979 977 428
             </div>
             <div className="text-[11px] text-slate-300">
               Chủ TK:{" "}
               <span className="font-semibold text-white">
-                TRUNG TAM THE THAO SPORTCENTER
+                PHAM DUC THANH PHUONG
               </span>
             </div>
             <div className="pt-2 border-t border-slate-700/60 flex justify-between items-center text-[11px]">

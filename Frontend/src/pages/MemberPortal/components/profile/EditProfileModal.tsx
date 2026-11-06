@@ -1,13 +1,8 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
-import {
-  X,
-  Plus,
-  Trash2,
-  CheckCircle2,
-  Check,
-} from "lucide-react";
-import { DateInput } from "../../../../components/DateInput";
+import { X, Check } from "lucide-react";
+import { ProfileBasicFields } from "./editProfile/ProfileBasicFields";
+import { ProfileGoalsSection } from "./editProfile/ProfileGoalsSection";
 
 interface EditProfileModalProps {
   profile: any;
@@ -148,180 +143,36 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               </div>
             )}
 
-            <div>
-              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                Họ và tên: <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="VD: Nguyễn Văn A..."
-                value={formFullName}
-                onChange={(e) => setFormFullName(e.target.value)}
-                className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400 font-medium"
-              />
-            </div>
+            <ProfileBasicFields
+              formFullName={formFullName}
+              setFormFullName={setFormFullName}
+              formPhone={formPhone}
+              setFormPhone={setFormPhone}
+              formEmail={formEmail}
+              setFormEmail={setFormEmail}
+              formDob={formDob}
+              setFormDob={setFormDob}
+              formGender={formGender}
+              setFormGender={setFormGender}
+              formPreferredTime={formPreferredTime}
+              setFormPreferredTime={setFormPreferredTime}
+              formEmergencyContact={formEmergencyContact}
+              setFormEmergencyContact={setFormEmergencyContact}
+              formFavoriteSportsStr={formFavoriteSportsStr}
+              setFormFavoriteSportsStr={setFormFavoriteSportsStr}
+              formFitnessGoal={formFitnessGoal}
+              setFormFitnessGoal={setFormFitnessGoal}
+              formHealthNotes={formHealthNotes}
+              setFormHealthNotes={setFormHealthNotes}
+            />
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                  Số điện thoại: <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="VD: 0912 345 678"
-                  value={formPhone}
-                  onChange={(e) => setFormPhone(e.target.value)}
-                  className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400"
-                />
-              </div>
-              <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">Email:</label>
-                <input
-                  type="email"
-                  placeholder="email@example.com"
-                  value={formEmail}
-                  onChange={(e) => setFormEmail(e.target.value)}
-                  className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">Ngày sinh:</label>
-                <DateInput
-                  value={formDob}
-                  onChange={setFormDob}
-                  className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                />
-              </div>
-              <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">Giới tính:</label>
-                <select
-                  value={formGender || ""}
-                  onChange={(e) => setFormGender(e.target.value)}
-                  className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                >
-                  <option value="">Chọn giới tính</option>
-                  <option value="Nam">Nam</option>
-                  <option value="Nữ">Nữ</option>
-                  <option value="Khác">Khác</option>
-                </select>
-              </div>
-              <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">Khung giờ ưu tiên:</label>
-                <input
-                  type="text"
-                  placeholder="VD: 17:30 - 19:30"
-                  value={formPreferredTime}
-                  onChange={(e) => setFormPreferredTime(e.target.value)}
-                  className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">Liên hệ khẩn cấp:</label>
-              <input
-                type="text"
-                placeholder="SĐT & Tên người thân"
-                value={formEmergencyContact}
-                onChange={(e) => setFormEmergencyContact(e.target.value)}
-                className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-              />
-            </div>
-
-            <div>
-              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                Bộ môn yêu thích (ngăn cách bằng dấu phẩy):
-              </label>
-              <input
-                type="text"
-                placeholder="Gym thể hình, Bơi lội, Yoga, Boxing, Pilates..."
-                value={formFavoriteSportsStr}
-                onChange={(e) => setFormFavoriteSportsStr(e.target.value)}
-                className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-              />
-            </div>
-
-            <div>
-              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                Mục tiêu rèn luyện trọng tâm:
-              </label>
-              <input
-                type="text"
-                placeholder="VD: Tăng cơ giảm mỡ, cải thiện sức bền tim mạch..."
-                value={formFitnessGoal}
-                onChange={(e) => setFormFitnessGoal(e.target.value)}
-                className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-              />
-            </div>
-
-            <div className="pt-1">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-bold text-slate-800 dark:text-slate-200">
-                  Danh sách mục tiêu & ưu tiên cá nhân ({formGoalsList.length})
-                </span>
-                <button
-                  type="button"
-                  onClick={handleAddGoal}
-                  className="px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-lg hover:bg-emerald-100 transition-colors flex items-center gap-1"
-                >
-                  <Plus className="w-3 h-3" /> Thêm mục tiêu
-                </button>
-              </div>
-              <div className="flex gap-2 mb-2">
-                <input
-                  type="text"
-                  placeholder="Nhập mục tiêu mới rồi bấm 'Thêm mục tiêu'..."
-                  value={newGoalInput}
-                  onChange={(e) => setNewGoalInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAddGoal();
-                    }
-                  }}
-                  className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                {formGoalsList.map((goal, idx) => (
-                  <div
-                    key={idx}
-                    className="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 flex items-center justify-between gap-2"
-                  >
-                    <div className="flex items-center gap-2 flex-1">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                      <span className="font-medium text-slate-800 dark:text-slate-200">{goal}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveGoal(idx)}
-                      className="p-1.5 text-slate-400 hover:text-rose-500 rounded transition-colors"
-                      title="Xóa mục tiêu này"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                Lưu ý sức khỏe & Thể trạng cá nhân:
-              </label>
-              <textarea
-                rows={3}
-                placeholder="Ghi chú về tiền sử chấn thương, dị ứng, vấn đề cơ xương khớp hoặc lưu ý đặc biệt khi tập..."
-                value={formHealthNotes}
-                onChange={(e) => setFormHealthNotes(e.target.value)}
-                className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-              />
-            </div>
+            <ProfileGoalsSection
+              formGoalsList={formGoalsList}
+              newGoalInput={newGoalInput}
+              setNewGoalInput={setNewGoalInput}
+              onAddGoal={handleAddGoal}
+              onRemoveGoal={handleRemoveGoal}
+            />
           </div>
 
           <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2.5 shrink-0 bg-slate-50/50 dark:bg-slate-850">

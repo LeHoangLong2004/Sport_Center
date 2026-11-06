@@ -10,6 +10,7 @@ import type {
   MockNotification,
   AssessmentRecord,
   ScheduleChangeRequest,
+  SubstituteInvitation,
   AvailabilitySlot,
   SportOption,
   FacilityOption,
@@ -37,6 +38,7 @@ export type {
   MockNotification,
   AssessmentRecord,
   ScheduleChangeRequest,
+  SubstituteInvitation,
   AvailabilitySlot,
   SportOption,
   FacilityOption,
@@ -152,16 +154,23 @@ export const CoachAPI = {
     } catch {}
     return [];
   },
+  getSheetStatus: async (sessionId: string): Promise<{ state: string; isFinalized: boolean; isDraft: boolean; version: number }> => {
+    try {
+      const res = await fetchApi(`/coach/sessions/${sessionId}/attendance/sheet`);
+      if (res && typeof res.state === 'string') return res;
+    } catch {}
+    return { state: 'unmarked', isFinalized: false, isDraft: false, version: 0 };
+  },
   saveAttendanceDraft: async (sessionId: string, records: AttendanceRecord[]) => {
     return fetchApi(`/coach/sessions/${sessionId}/attendance/draft`, {
       method: 'POST',
       body: JSON.stringify({ records })
     });
   },
-  finalizeAttendance: async (sessionId: string, records: AttendanceRecord[]) => {
+  finalizeAttendance: async (sessionId: string, records: AttendanceRecord[], reason?: string) => {
     return fetchApi(`/coach/sessions/${sessionId}/attendance/finalize`, {
       method: 'POST',
-      body: JSON.stringify({ records })
+      body: JSON.stringify({ records, reason })
     });
   },
 
@@ -211,7 +220,7 @@ export const CoachAPI = {
   },
   getSports: async (): Promise<SportOption[]> => {
     try {
-      const sports = await fetchApi('/sports');
+      const sports = await fetchApi('/coach/my-sports');
       return Array.isArray(sports)
         ? sports
             .filter((sport: any) => sport?.id && sport?.name)
@@ -322,7 +331,10 @@ export const CoachAPI = {
       title: string;
       message?: string | null;
       type?: string;
+      isRead?: boolean;
       createdAt: string;
+      targetType?: string | null;
+      targetId?: string | null;
     }>;
 
     return (Array.isArray(notifications) ? notifications : []).map((notification) => ({
@@ -330,11 +342,27 @@ export const CoachAPI = {
       title: notification.title,
       content: notification.message || "",
       type: "Thông báo" as const,
+      notificationType: notification.type || "general",
       sentAt: notification.createdAt,
-      targetType: "class" as const,
-      targetId: "",
+      targetType: (notification.targetType || "general") as any,
+      targetId: notification.targetId || "",
       targetName: "Hệ thống",
+      isRead: notification.isRead ?? false,
     }));
+  },
+  markNotificationAsRead: async (id: string) => {
+    try {
+      return await fetchApi(`/notifications/${encodeURIComponent(id)}/read`, { method: 'POST' });
+    } catch {
+      return null;
+    }
+  },
+  markAllNotificationsAsRead: async () => {
+    try {
+      return await fetchApi('/notifications/read-all', { method: 'POST' });
+    } catch {
+      return null;
+    }
   },
   sendNotification: async (notification: any) => {
     return fetchApi('/coach/notifications', {
@@ -343,16 +371,7 @@ export const CoachAPI = {
     });
   },
 
-  // 8. Đánh giá (Assessments)
-  getAssessments: async () => {
-    return fetchApi('/coach/assessments');
-  },
-  saveAssessment: async (assessment: any) => {
-    return fetchApi('/coach/assessments', {
-      method: 'POST',
-      body: JSON.stringify(assessment)
-    });
-  },
+
 
   // 9. Schedule Change Requests
   getScheduleRequests: async (): Promise<ScheduleChangeRequest[]> => {
@@ -367,6 +386,29 @@ export const CoachAPI = {
       method: 'POST',
       body: JSON.stringify(data)
     });
+  },
+  getSubstituteInvitations: async (): Promise<SubstituteInvitation[]> => {
+    try {
+      const res = await fetchApi('/coach/substitute-invitations');
+      return Array.isArray(res) ? res : [];
+    } catch {
+      return [];
+    }
+  },
+  respondSubstituteInvitation: async (id: string, action: "accept" | "reject", note?: string) => {
+    return fetchApi(`/coach/substitute-invitations/${id}/respond`, {
+      method: 'PUT',
+      body: JSON.stringify({ action, note })
+    });
+  },
+  getCoaches: async (sportId?: string): Promise<Array<{ id: string; fullName: string; specialty?: string; avatarUrl?: string }>> => {
+    try {
+      const url = sportId ? `/coaches?sportId=${sportId}` : '/coaches';
+      const res = await fetchApi(url);
+      return Array.isArray(res) ? res : [];
+    } catch {
+      return [];
+    }
   },
 
   // 10. PT 1-1 Availability Slots

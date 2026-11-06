@@ -31,8 +31,9 @@ export default function CoachSidebar({
   userName = userName || "Huấn luyện viên";
 
   return (
-    <div className="bg-[#0f172a] flex flex-col gap-[28px] items-start pb-[24px] pt-[28px] px-[18px] shrink-0 w-[240px] sticky top-0 h-screen overflow-y-auto hidden-scrollbar">
-      {/* Brand */}
+    <aside className="bg-[#0f172a] w-[240px] h-full flex flex-col justify-between shrink-0 pb-5 pt-6 px-4 select-none z-30 border-r border-[#1e293b]/70 overflow-hidden">
+      <div className="flex flex-col gap-4 items-start w-full min-h-0">
+        {/* Brand */}
       <button
         type="button"
         className="group flex gap-[12px] items-center shrink-0 w-full cursor-pointer text-left focus:outline-none select-none"
@@ -85,8 +86,7 @@ export default function CoachSidebar({
           );
         })}
       </div>
-
-      <div className="mt-auto"></div>
+      </div>
 
       {/* User profile */}
       <div className="pt-2 w-full border-t border-[#1e293b]">
@@ -142,6 +142,6 @@ export default function CoachSidebar({
           </div>
         </div>
       </div>
-    </div>
+    </aside>
   );
 }

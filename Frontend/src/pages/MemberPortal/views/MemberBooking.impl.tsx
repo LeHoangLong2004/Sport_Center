@@ -3,7 +3,7 @@ Clock, MapPin, User, Users, Search, CheckCircle2,
 AlertCircle, X, Dumbbell, Plus, Sparkles, Filter,
 LoaderCircle, CreditCard, QrCode, MessageCircle, Star, Award,
 Phone, ShieldCheck, Receipt, ChevronRight, ExternalLink, Check,
-Building, } from "lucide-react"; import { DateInput } from "../../../components/DateInput"; import { CoachAvatar, getRealCoachAvatar } from "../utils/coachAvatar"; interface Props { onNavigate: (screen: MemberScreen) => void;
+Building, } from "lucide-react"; import { DateInput } from "../../../components/DateInput"; import { CoachAvatar, getRealCoachAvatar } from "../utils/coachAvatar"; import { BankConfigService } from "../services/bankConfig"; interface Props { onNavigate: (screen: MemberScreen) => void;
 } type Feedback = { message: string; type: "success" | "error"; }; export default function MemberBooking({ onNavigate }: Props) {
 // Tabs: "group" (Khám phá lớp nhóm), "pt" (Kèm riêng 1-1), "my_classes" (Lớp đã đăng ký)
 const [activeTab, setActiveTab] = useState<"group" | "pt" | "my_classes">("group");
@@ -250,16 +250,41 @@ className="flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-5
 </div> <div className="flex justify-between items-center pt-2.5 border-t border-teal-200 dark:border-slate-700 text-sm"> <span className="font-extrabold text-slate-900 dark:text-white">Tổng tiền thanh toán:</span> <strong className="text-xl font-black text-emerald-600 dark:text-emerald-400"> {(classToBook.price || 150000).toLocaleString("vi-VN")} đ </strong>
 </div> </div> {/* CHỌN PHƯƠNG THỨC THANH TOÁN */} <div> <label className="font-extrabold text-xs text-slate-800 dark:text-slate-200 mb-2 block"> Chọn phương thức thanh toán:
 </label> <div className="grid grid-cols-3 gap-2.5"> <button type="button" onClick={() => setPaymentMethod("qr")} className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5 ${
-paymentMethod === "qr" ? "border-teal-600 bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200 shadow-sm" : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600 dark:text-slate-300" }`} > <QrCode className="w-5 h-5 text-red-600 shrink-0" />
-<span className="text-[11px] font-bold">Mã VNPAY</span> </button> <button type="button" onClick={() => setPaymentMethod("card")} className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5 ${
+paymentMethod === "qr" ? "border-teal-600 bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200 shadow-sm" : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600 dark:text-slate-300" }`} > <QrCode className="w-5 h-5 text-emerald-600 shrink-0" />
+<span className="text-[11px] font-bold">Mã VietQR</span> </button> <button type="button" onClick={() => setPaymentMethod("card")} className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5 ${
 paymentMethod === "card" ? "border-teal-600 bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200 shadow-sm" : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600 dark:text-slate-300" }`} > <CreditCard className="w-5 h-5 text-teal-600 shrink-0" />
 <span className="text-[11px] font-bold">Thẻ ATM / Visa</span> </button> <button type="button" onClick={() => setPaymentMethod("counter")} className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5 ${
 paymentMethod === "counter" ? "border-teal-600 bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200 shadow-sm" : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600 dark:text-slate-300" }`} > <Building className="w-5 h-5 text-teal-600 shrink-0" />
-<span className="text-[11px] font-bold">Tại quầy lễ tân</span> </button> </div> </div> {/* NỘI DUNG THANH TOÁN TƯƠNG ỨNG */} {paymentMethod === "qr" && (
-<div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center space-y-2"> <p className="text-[11px] text-slate-500">Mở App VNPAY hoặc bất kỳ ứng dụng ngân hàng nào để quét mã:</p> <div className="w-36 h-auto mx-auto bg-white p-1.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-center"> <img
-src="/vnpay_qr.png" alt="Mã QR VNPAY chính thức" className="w-full h-auto object-contain rounded-lg" /> </div>
-<div className="text-[11px] text-slate-600 dark:text-slate-300 font-medium"> <span>Ví/TK VNPAY: <strong>0815353732</strong> • Chủ TK: <strong>Khách hàng 0815353732</strong></span> <br /> <span>Số tiền: <strong className="text-emerald-600">{(classToBook.price || 150000).toLocaleString("vi-VN")} đ</strong></span> </div> </div>
-)} {paymentMethod === "card" && ( <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-2"> <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-semibold text-xs mb-1"> <ShieldCheck className="w-4 h-4 text-emerald-600" /> Cổng thanh toán thẻ bảo mật 256-bit </div>
+<span className="text-[11px] font-bold">Tại quầy lễ tân</span> </button> </div> </div> {/* NỘI DUNG THANH TOÁN TƯƠNG ỨNG */} {paymentMethod === "qr" && (() => {
+const bCfg = BankConfigService.getConfig();
+const bMemo = `DATLOP ${classToBook.id || "CLASS"}`;
+const qrImg = BankConfigService.getVietQrUrl(classToBook.price || 150000, bMemo, bCfg);
+return (
+<div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center space-y-2">
+  <div className="flex items-center justify-between pb-1 text-xs">
+    <span className="font-bold text-slate-700 dark:text-slate-300">{bCfg.bankCode || "VCB"} • {bCfg.accountNumber}</span>
+    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">VietQR • Napas 247</span>
+  </div>
+  <div className="w-40 h-auto mx-auto bg-white p-2 rounded-xl border border-slate-200 shadow-xs flex items-center justify-center">
+    <img
+      src={qrImg}
+      onError={(e) => {
+        (e.target as HTMLImageElement).src = "https://api.vietqr.io/img/vietqr_net.png";
+      }}
+      alt={`Mã QR ${bCfg.bankCode} VietQR`}
+      className="w-full h-auto object-contain rounded-lg"
+    />
+  </div>
+  <div className="text-[11px] text-slate-600 dark:text-slate-300 font-medium space-y-0.5 text-left bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-700">
+    <div className="flex justify-between"><span>Ngân hàng:</span><strong className="text-slate-800 dark:text-slate-200">{bCfg.bankName}</strong></div>
+    <div className="flex justify-between"><span>Số tài khoản:</span><strong className="font-mono text-slate-800 dark:text-slate-200">{bCfg.accountNumber}</strong></div>
+    <div className="flex justify-between"><span>Chủ tài khoản:</span><strong className="uppercase text-slate-800 dark:text-slate-200">{bCfg.accountName}</strong></div>
+    <div className="flex justify-between"><span>Số tiền:</span><strong className="text-emerald-600 font-bold">{(classToBook.price || 150000).toLocaleString("vi-VN")} đ</strong></div>
+    <div className="flex justify-between border-t border-slate-200 dark:border-slate-700 pt-1"><span>Nội dung:</span><strong className="font-mono text-emerald-700 dark:text-emerald-400">{bMemo}</strong></div>
+  </div>
+</div>
+);
+})()} {paymentMethod === "card" && ( <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-2"> <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-semibold text-xs mb-1"> <ShieldCheck className="w-4 h-4 text-emerald-600" /> Cổng thanh toán thẻ bảo mật 256-bit </div>
 <input placeholder="Số thẻ (VD: 9704 0000 ....)" defaultValue="9704 1988 2026 8888" className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium outline-none" /> <div className="grid grid-cols-2 gap-2">
 <input placeholder="MM/YY" defaultValue="12/28" className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium outline-none" /> <input
 placeholder="CVV" defaultValue="888" className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium outline-none" /> </div> </div>

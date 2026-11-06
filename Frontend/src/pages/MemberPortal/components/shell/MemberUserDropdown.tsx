@@ -30,6 +30,7 @@ interface Props {
   onToggleTheme: () => void;
   onToggleLang: () => void;
   onOpenCheckIn: () => void;
+  onOpenWallet?: () => void;
   onSwitchToInvoices: () => void;
   onSwitchToSecurity: () => void;
   onLogout: () => void;
@@ -47,6 +48,7 @@ export default function MemberUserDropdown({
   onToggleTheme,
   onToggleLang,
   onOpenCheckIn,
+  onOpenWallet,
   onSwitchToInvoices,
   onSwitchToSecurity,
   onLogout,
@@ -77,6 +79,8 @@ export default function MemberUserDropdown({
           onClick={() => {
             onClose();
             onNavigate("profile");
+            window.dispatchEvent(new CustomEvent("switch-profile-tab", { detail: "info" }));
+            window.scrollTo({ top: 0, behavior: "smooth" });
           }}
           className="mt-3 w-full py-1.5 text-center text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl transition-colors cursor-pointer"
         >
@@ -91,6 +95,7 @@ export default function MemberUserDropdown({
           onClick={() => {
             onClose();
             onNavigate("packages");
+            window.scrollTo({ top: 0, behavior: "smooth" });
           }}
           className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
         >
@@ -100,7 +105,11 @@ export default function MemberUserDropdown({
 
         <button
           type="button"
-          onClick={onSwitchToInvoices}
+          onClick={() => {
+            onClose();
+            onNavigate("payments");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
           className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
         >
           <Receipt className="w-4 h-4 text-blue-500" />
@@ -114,7 +123,12 @@ export default function MemberUserDropdown({
           type="button"
           onClick={() => {
             onClose();
-            onNavigate("packages");
+            if (onOpenWallet) {
+              onOpenWallet();
+            } else {
+              onNavigate("packages");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
           }}
           className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
         >
@@ -130,6 +144,7 @@ export default function MemberUserDropdown({
           onClick={() => {
             onClose();
             onNavigate("workouts");
+            window.scrollTo({ top: 0, behavior: "smooth" });
           }}
           className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
         >
@@ -141,7 +156,8 @@ export default function MemberUserDropdown({
           type="button"
           onClick={() => {
             onClose();
-            onNavigate("profile");
+            onNavigate("workouts");
+            window.scrollTo({ top: 0, behavior: "smooth" });
           }}
           className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
         >
@@ -210,6 +226,7 @@ export default function MemberUserDropdown({
           onClick={() => {
             onClose();
             onNavigate("support");
+            window.scrollTo({ top: 0, behavior: "smooth" });
           }}
           className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
         >

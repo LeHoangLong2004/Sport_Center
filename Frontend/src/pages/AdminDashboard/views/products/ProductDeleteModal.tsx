@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Trash2 } from 'lucide-react';
 import { ProductItem } from './types';
 
@@ -15,11 +16,38 @@ export function ProductDeleteModal({
   onClose,
   onConfirm,
 }: Props) {
+  useEffect(() => {
+    if (!deleteTarget) return;
+    const origBody = document.body.style.overflow;
+    const origHtml = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    const scrollContainers = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        '.manager-page-content, .portal-page-enter, [class*="overflow-y-auto"]'
+      )
+    );
+    const origOverflows = scrollContainers.map((el) => ({ el, overflow: el.style.overflow }));
+    scrollContainers.forEach((el) => {
+      el.style.overflow = 'hidden';
+    });
+
+    return () => {
+      document.body.style.overflow = origBody;
+      document.documentElement.style.overflow = origHtml;
+      origOverflows.forEach(({ el, overflow }) => {
+        el.style.overflow = overflow;
+      });
+    };
+  }, [deleteTarget]);
+
   if (!deleteTarget) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200 text-xs">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overscroll-contain animate-in fade-in duration-150">
+      <div className="fixed inset-0 -z-10" onClick={onClose} />
+      <div className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-150 text-xs">
         <div className="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center mx-auto">
           <Trash2 className="w-6 h-6" />
         </div>
@@ -53,6 +81,7 @@ export function ProductDeleteModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

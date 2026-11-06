@@ -37,7 +37,7 @@ export default function ProfileHeaderCard({
               name={fullName || "Chưa cập nhật"}
               className="w-24 h-24 rounded-2xl text-3xl font-bold ring-4 ring-slate-100 dark:ring-slate-800 object-cover shadow-sm bg-orange-500 text-white"
             />
-            <span className={`absolute -bottom-1.5 -right-1.5 bg-emerald-500 hover:bg-emerald-600 text-white p-1.5 rounded-full ring-2 ring-white dark:ring-slate-900 transition-colors shadow-sm ${avatarUploading ? "animate-pulse" : ""}`}>
+            <span className={`absolute -bottom-1.5 -right-1.5 bg-orange-500 hover:bg-orange-600 text-white p-1.5 rounded-full ring-2 ring-white dark:ring-slate-900 transition-colors shadow-sm shadow-orange-500/20 ${avatarUploading ? "animate-pulse" : ""}`}>
               <Camera className="w-3.5 h-3.5" />
             </span>
             <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={avatarUploading} onChange={onAvatarFileChange} />

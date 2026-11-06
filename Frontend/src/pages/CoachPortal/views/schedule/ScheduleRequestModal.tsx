@@ -1,8 +1,12 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import type { UnifiedScheduleItem } from "./types";
-import { DateInput } from "../../../../components/DateInput";
+import { CoachAPI } from "../../services/api";
+import { RequestSessionPicker } from "./scheduleRequestModal/RequestSessionPicker";
+import { RequestTypePicker, type ScheduleRequestType } from "./scheduleRequestModal/RequestTypePicker";
+import { RequestAdjustmentFields } from "./scheduleRequestModal/RequestAdjustmentFields";
 
 interface Props {
   isOpen: boolean;
@@ -12,12 +16,48 @@ interface Props {
   onSubmit: (data: {
     sessionId: string;
     className: string;
-    requestType: "dời lịch" | "dạy thay" | "báo vắng";
+    sessionTime?: string;
+    sport?: string;
+    room?: string;
+    requestType: ScheduleRequestType;
+    substituteCoachId?: string;
     substituteCoachName: string;
     newDate: string;
     newTime: string;
     reason: string;
   }) => Promise<void>;
+}
+
+interface CoachOption {
+  id: string;
+  fullName: string;
+  specialty?: string;
+}
+
+function parseSessionStartDateTime(dateStr?: string, startTimeStr?: string): Date | null {
+  if (!dateStr) return null;
+  const cleanDate = dateStr.slice(0, 10);
+  const parts = cleanDate.split("-").map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return null;
+  const [y, m, d] = parts;
+
+  let hour = 0;
+  let minute = 0;
+  if (startTimeStr) {
+    const timeParts = startTimeStr.split(":");
+    if (timeParts.length >= 2) {
+      hour = Number(timeParts[0]) || 0;
+      minute = Number(timeParts[1]) || 0;
+    }
+  }
+
+  return new Date(y, m - 1, d, hour, minute, 0, 0);
+}
+
+function isSessionInFuture(dateStr?: string, startTimeStr?: string): boolean {
+  const dt = parseSessionStartDateTime(dateStr, startTimeStr);
+  if (!dt) return false;
+  return dt.getTime() > Date.now();
 }
 
 export default function ScheduleRequestModal({
@@ -28,39 +68,110 @@ export default function ScheduleRequestModal({
   onSubmit,
 }: Props) {
   const [selectedSessionId, setSelectedSessionId] = useState("");
-  const [requestType, setRequestType] = useState<"dời lịch" | "dạy thay" | "báo vắng">("dời lịch");
-  const [substituteCoach, setSubstituteCoach] = useState("");
+  const [requestType, setRequestType] = useState<ScheduleRequestType>("dời lịch");
+  const [substituteCoachId, setSubstituteCoachId] = useState("");
+  const [substituteCoachName, setSubstituteCoachName] = useState("");
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("");
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const [availableCoaches, setAvailableCoaches] = useState<CoachOption[]>([]);
+  const [loadingCoaches, setLoadingCoaches] = useState(false);
+
+  // Chỉ lấy những ca dạy trong tương lai (chưa bắt đầu) và sắp xếp theo thời gian sớm nhất
+  const upcomingSessions = useMemo(() => {
+    return sessions
+      .filter((s) => isSessionInFuture(s.date, s.startTime))
+      .sort((a, b) => {
+        const tA = parseSessionStartDateTime(a.date, a.startTime)?.getTime() || 0;
+        const tB = parseSessionStartDateTime(b.date, b.startTime)?.getTime() || 0;
+        return tA - tB;
+      });
+  }, [sessions]);
+
   useEffect(() => {
-    if (initialSessionId) {
+    if (initialSessionId && upcomingSessions.some((s) => s.id === initialSessionId)) {
       setSelectedSessionId(initialSessionId);
-    } else if (sessions.length > 0 && !selectedSessionId) {
-      setSelectedSessionId(sessions[0].id);
+    } else if (upcomingSessions.length > 0) {
+      if (!selectedSessionId || !upcomingSessions.some((s) => s.id === selectedSessionId)) {
+        setSelectedSessionId(upcomingSessions[0].id);
+      }
+    } else {
+      setSelectedSessionId("");
     }
-  }, [initialSessionId, sessions]);
+  }, [initialSessionId, upcomingSessions, selectedSessionId]);
+
+  // Load coaches from database when modal is open
+  useEffect(() => {
+    if (!isOpen) return;
+    setLoadingCoaches(true);
+    CoachAPI.getCoaches()
+      .then((data) => {
+        setAvailableCoaches(data);
+      })
+      .catch((err) => {
+        console.error("Lỗi nạp danh sách huấn luyện viên:", err);
+      })
+      .finally(() => {
+        setLoadingCoaches(false);
+      });
+  }, [isOpen]);
+
+  const currentSession = useMemo(
+    () => upcomingSessions.find((s) => s.id === selectedSessionId) || sessions.find((s) => s.id === selectedSessionId),
+    [upcomingSessions, sessions, selectedSessionId],
+  );
+
+  // Filter out the current coach
+  const filteredCoaches = useMemo(() => {
+    const currentCoachName = currentSession?.coachName?.toLowerCase().trim();
+    let currentUserName = "";
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        currentUserName = (u.fullName || u.name || "").toLowerCase().trim();
+      }
+    } catch {}
+
+    return availableCoaches.filter((c) => {
+      const name = c.fullName?.toLowerCase().trim();
+      if (currentCoachName && name === currentCoachName) return false;
+      if (currentUserName && name === currentUserName) return false;
+      return true;
+    });
+  }, [availableCoaches, currentSession]);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const currentSession = sessions.find((s) => s.id === selectedSessionId);
+    if (upcomingSessions.length === 0 || !selectedSessionId) {
+      toast.error("Không có ca dạy nào trong tương lai để thực hiện yêu cầu.");
+      return;
+    }
     setSubmitting(true);
+    const timeStr = currentSession
+      ? `${currentSession.date} (${currentSession.startTime} - ${currentSession.endTime})`
+      : "";
     try {
       await onSubmit({
         sessionId: selectedSessionId,
         className: currentSession?.className || "Lớp học",
+        sessionTime: timeStr,
+        sport: currentSession?.sport || "",
+        room: currentSession?.room || "",
         requestType,
-        substituteCoachName: substituteCoach,
+        substituteCoachId: substituteCoachId || undefined,
+        substituteCoachName,
         newDate,
         newTime,
         reason,
       });
       setReason("");
-      setSubstituteCoach("");
+      setSubstituteCoachId("");
+      setSubstituteCoachName("");
       setNewDate("");
       setNewTime("");
       onClose();
@@ -79,7 +190,7 @@ export default function ScheduleRequestModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -87,120 +198,58 @@ export default function ScheduleRequestModal({
 
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
           <div className="p-5 overflow-y-auto flex flex-col gap-4 text-xs">
-            <div>
-              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                Chọn ca dạy cần điều chỉnh: <span className="text-rose-500">*</span>
-              </label>
-              <select
-                value={selectedSessionId}
-                onChange={(e) => setSelectedSessionId(e.target.value)}
-                className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-              >
-                {sessions.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.date} ({s.startTime} - {s.endTime}) • {s.className}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* 1. Session Picker */}
+            <RequestSessionPicker
+              sessions={upcomingSessions}
+              selectedSessionId={selectedSessionId}
+              onSelectSessionId={setSelectedSessionId}
+            />
 
-            <div>
-              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                Loại yêu cầu:
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {(["dời lịch", "dạy thay", "báo vắng"] as const).map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setRequestType(t)}
-                    className={`p-2.5 rounded-lg border text-center font-semibold capitalize transition-all ${
-                      requestType === t
-                        ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900"
-                        : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50"
-                    }`}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* 2. Request Type Buttons */}
+            <RequestTypePicker
+              requestType={requestType}
+              onRequestTypeChange={setRequestType}
+            />
 
-            {requestType === "dạy thay" && (
-              <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                  Huấn luyện viên thay thế đề xuất:
-                </label>
-                <input
-                  type="text"
-                  placeholder="VD: HLV Trần Minh Tuấn..."
-                  value={substituteCoach}
-                  onChange={(e) => setSubstituteCoach(e.target.value)}
-                  className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400 font-medium"
-                />
-              </div>
-            )}
-
-            {requestType === "dời lịch" && (
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                    Ngày mới đề xuất:
-                  </label>
-                  <DateInput
-                    value={newDate}
-                    onChange={setNewDate}
-                    className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                    Khung giờ mới:
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="VD: 08:00 - 09:30"
-                    value={newTime}
-                    onChange={(e) => setNewTime(e.target.value)}
-                    className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                  />
-                </div>
-              </div>
-            )}
-
-            <div>
-              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                Lý do cụ thể: <span className="text-rose-500">*</span>
-              </label>
-              <textarea
-                rows={3}
-                placeholder="Điền lý do cụ thể gửi tới ban quản lý..."
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400"
-              />
-            </div>
+            {/* 3. Adjustment Fields (Date/Time, Substitute Coach, Reason) */}
+            <RequestAdjustmentFields
+              requestType={requestType}
+              newDate={newDate}
+              onNewDateChange={setNewDate}
+              newTime={newTime}
+              onNewTimeChange={setNewTime}
+              substituteCoachId={substituteCoachId}
+              onSubstituteCoachChange={(id, name) => {
+                setSubstituteCoachId(id);
+                setSubstituteCoachName(name);
+              }}
+              filteredCoaches={filteredCoaches}
+              loadingCoaches={loadingCoaches}
+              reason={reason}
+              onReasonChange={setReason}
+            />
           </div>
 
           <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2.5 shrink-0 bg-slate-50/50 dark:bg-slate-850">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
             >
               Hủy
             </button>
             <button
               type="submit"
-              disabled={submitting}
-              className="px-5 py-2 font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 rounded-lg shadow-sm transition-colors disabled:opacity-50"
+              disabled={submitting || upcomingSessions.length === 0}
+              className="px-5 py-2 font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 rounded-lg shadow-sm transition-colors disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
             >
+              {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               {submitting ? "Đang gửi..." : "Gửi yêu cầu"}
             </button>
           </div>
         </form>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

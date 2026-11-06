@@ -91,17 +91,6 @@ export default function PendingTicketModal({
             >
               Đóng phiếu nạp
             </button>
-
-            <div className="text-center pt-1">
-              <button
-                type="button"
-                disabled={confirmingPending}
-                onClick={() => onConfirmPendingTicket(pendingTicketModal.id)}
-                className="text-[10px] text-slate-400 hover:text-amber-600 underline cursor-pointer transition-colors"
-              >
-                🛠️ {confirmingPending ? "Đang xử lý..." : "[Chế độ Test Demo]: Giả lập Lễ tân đã thu tiền"}
-              </button>
-            </div>
           </div>
         </div>
       </div>

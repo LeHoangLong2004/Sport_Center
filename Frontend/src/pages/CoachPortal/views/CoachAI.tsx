@@ -11,17 +11,20 @@ import { AlertCircle, CheckCircle2, Info, BookOpen, ArrowRight, Sparkles, X } fr
 import { CoachAiHeader } from "./coach-ai/CoachAiHeader";
 import { CoachAiInputPanel } from "./coach-ai/CoachAiInputPanel";
 import { CoachAiPlanWorkspace } from "./coach-ai/CoachAiPlanWorkspace";
+import { CoachAiLoadingState } from "./coach-ai/CoachAiLoadingState";
 import { CoachAiAssignModal } from "./coach-ai/CoachAiAssignModal";
 import { CoachAiHistoryDrawer } from "./coach-ai/CoachAiHistoryDrawer";
 import { useCoachAi } from "./coach-ai/useCoachAi";
 
-export default function CoachAI() {
+export default function CoachAI({ initialMemberId }: { initialMemberId?: string | null }) {
   const {
     loading,
     members,
     classes,
     sports,
     historyPlans,
+    selectedMemberProfile,
+    loadingProfile,
     targetType,
     setTargetType,
     targetId,
@@ -60,7 +63,9 @@ export default function CoachAI() {
     handleArchive,
     handleSelectPlanFromHistory,
     handleQuickDemo,
-  } = useCoachAi();
+    handleApplyPreset,
+    handleAiRefine,
+  } = useCoachAi(initialMemberId);
 
   if (loading) {
     return (
@@ -106,18 +111,20 @@ export default function CoachAI() {
             </div>
             <div>
               <div className="font-bold text-sm">
-                {feedback.type === "success"
-                  ? "Lưu vào Thư viện thành công!"
-                  : feedback.type === "error"
-                  ? "Đã xảy ra lỗi"
-                  : "Thông báo trợ lý AI"}
+                {feedback.title || (
+                  feedback.type === "success"
+                    ? "✨ Giáo án đề xuất thành công!"
+                    : feedback.type === "error"
+                    ? "Đã xảy ra lỗi"
+                    : "Thông báo trợ lý AI"
+                )}
               </div>
               <p className="text-xs opacity-90 mt-0.5 leading-relaxed">{feedback.msg}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 self-end sm:self-auto shrink-0 mt-1 sm:mt-0">
-            {feedback.type === "success" && (
+            {feedback.showLibraryLink && (
               <button
                 type="button"
                 onClick={() => {
@@ -142,56 +149,69 @@ export default function CoachAI() {
         </div>
       )}
 
-      {/* 2. Main Dual Panel: Input Criteria & Plan Workspace */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Input Form (5 cols) */}
-        <div className="lg:col-span-5 flex flex-col gap-6">
-          <CoachAiInputPanel
-            targetType={targetType}
-            setTargetType={setTargetType}
-            targetId={targetId}
-            setTargetId={setTargetId}
-            onSelectTarget={handleSelectTarget}
-            members={members}
-            classes={classes}
-            sports={sports}
-            sportId={sportId}
-            setSportId={setSportId}
-            level={level}
-            setLevel={setLevel}
-            goal={goal}
-            setGoal={setGoal}
-            equipment={equipment}
-            setEquipment={setEquipment}
-            durationMinutes={durationMinutes}
-            setDurationMinutes={setDurationMinutes}
-            exerciseCount={exerciseCount}
-            setExerciseCount={setExerciseCount}
-            isGenerating={isGenerating}
-            onGenerate={handleGenerate}
-          />
-        </div>
-
-        {/* Right Column: Interactive Plan Workspace (7 cols) */}
-        <div className="lg:col-span-7 flex flex-col gap-6">
-          <CoachAiPlanWorkspace
-            plan={currentPlan}
-            setPlan={setCurrentPlan}
-            isGenerating={isGenerating}
-            elapsedSeconds={elapsedSeconds}
-            isSaving={isSaving}
-            isApproving={isApproving}
-            onSaveDraft={handleSaveDraft}
-            onApprove={handleApprove}
-            onApproveAndAssign={handleApproveAndAssign}
-            onOpenAssign={() => setShowAssignModal(true)}
-            onClone={handleClone}
-            onArchive={handleArchive}
-            onReset={() => setCurrentPlan(null)}
-            onQuickDemo={handleQuickDemo}
-          />
-        </div>
-      </div>
+      {/* 2. Focused Single-Workflow: Setup -> Generating -> Result */}
+      {isGenerating ? (
+        <CoachAiLoadingState
+          elapsedSeconds={elapsedSeconds}
+          onCancel={() => setCurrentPlan(null)}
+          targetName={
+            targetType === "member"
+              ? members.find((m) => m.id === targetId)?.name
+              : classes.find((c) => c.id === targetId)?.className
+          }
+          sportName={sports.find((s) => s.id === sportId)?.name || "Gym"}
+          goal={goal}
+          durationMinutes={durationMinutes}
+        />
+      ) : currentPlan ? (
+        <CoachAiPlanWorkspace
+          plan={currentPlan}
+          setPlan={setCurrentPlan}
+          isGenerating={isGenerating}
+          elapsedSeconds={elapsedSeconds}
+          isSaving={isSaving}
+          isApproving={isApproving}
+          onSaveDraft={handleSaveDraft}
+          onApprove={handleApprove}
+          onApproveAndAssign={handleApproveAndAssign}
+          onOpenAssign={() => setShowAssignModal(true)}
+          onClone={handleClone}
+          onArchive={handleArchive}
+          onReset={() => setCurrentPlan(null)}
+          onBackToSetup={() => setCurrentPlan(null)}
+          onQuickDemo={handleQuickDemo}
+          onApplyPreset={handleApplyPreset}
+          onAiRefine={handleAiRefine}
+        />
+      ) : (
+        <CoachAiInputPanel
+          targetType={targetType}
+          setTargetType={setTargetType}
+          targetId={targetId}
+          setTargetId={setTargetId}
+          onSelectTarget={handleSelectTarget}
+          onApplyPreset={handleApplyPreset}
+          memberProfile={selectedMemberProfile}
+          loadingProfile={loadingProfile}
+          members={members}
+          classes={classes}
+          sports={sports}
+          sportId={sportId}
+          setSportId={setSportId}
+          level={level}
+          setLevel={setLevel}
+          goal={goal}
+          setGoal={setGoal}
+          equipment={equipment}
+          setEquipment={setEquipment}
+          durationMinutes={durationMinutes}
+          setDurationMinutes={setDurationMinutes}
+          exerciseCount={exerciseCount}
+          setExerciseCount={setExerciseCount}
+          isGenerating={isGenerating}
+          onGenerate={handleGenerate}
+        />
+      )}
 
       {/* 3. Assign Plan Modal */}
       {currentPlan && (

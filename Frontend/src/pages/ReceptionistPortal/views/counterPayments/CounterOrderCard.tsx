@@ -155,12 +155,12 @@ export default function CounterOrderCard({
 
               <button
                 type="button"
-                disabled={processingId === order.id}
+                disabled={Boolean(processingId)}
                 onClick={() => onCancelOrder(order)}
-                className="px-3 py-2.5 rounded-xl border border-red-200 dark:border-red-900 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 font-bold text-xs transition-all cursor-pointer"
+                className="px-3 py-2.5 rounded-xl border border-red-200 dark:border-red-900 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 font-bold text-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Hủy đơn quá hạn hoặc khách đổi ý"
               >
-                Hủy đơn
+                {processingId === order.id ? "Đang hủy..." : "Hủy đơn"}
               </button>
             </>
           ) : (
