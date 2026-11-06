@@ -18,7 +18,6 @@ public static class EndpointRouteExtensions
         app.MapNotificationEndpoints();
         app.MapSePayWebhookEndpoints();
 
-        app.MapGet("/", () => Results.Redirect("/swagger/index.html"));
         app.MapGet("/swagger", () => Results.Redirect("/swagger/index.html"));
         return app;
     }

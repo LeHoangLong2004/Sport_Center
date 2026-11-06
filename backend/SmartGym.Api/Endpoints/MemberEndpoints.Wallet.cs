@@ -527,7 +527,10 @@ namespace SmartGym.Api.Endpoints
 
             if (string.IsNullOrWhiteSpace(matchedUserId))
             {
-                matchedUserId = _memberWallets.Keys.FirstOrDefault(k => k != "m-default") ?? "m-default";
+                // Ưu tiên tìm userId từ GUID của người dùng đang có phiên làm việc thay vì fallback vào m-default
+                matchedUserId = _memberWallets.Keys.FirstOrDefault(k => k != "m-default" && Guid.TryParse(k, out _)) 
+                             ?? _memberWallets.Keys.FirstOrDefault(k => k != "m-default") 
+                             ?? "m-default";
             }
 
             var newBalance = _memberWallets.AddOrUpdate(
