@@ -4,21 +4,14 @@ export const EQUIPMENT_OPTIONS = [
   "Thảm tập",
   "Tạ tay (Dumbbells)",
   "Tạ đòn (Barbell)",
-  "Máy tập đa năng",
-  "Xà đơn / Xà kép",
   "Dây kháng lực",
-  "Kettlebell",
   "Không dụng cụ (Bodyweight)",
-  "Hồ bơi",
-  "Bao cát boxing",
 ];
 
 export const GOAL_PRESETS = [
-  "Giảm mỡ & đốt calo toàn thân",
-  "Tăng cơ & phát triển sức mạnh",
-  "Phục hồi thể lực & giãn cơ",
-  "Tăng sức bền Cardio (HIIT)",
-  "Hoàn thiện kỹ thuật động tác",
+  "Giảm mỡ & Đốt calo",
+  "Tăng cơ & Sức mạnh",
+  "Phục hồi & Giãn cơ",
 ];
 
 export const DURATION_PRESETS = [30, 45, 60, 90];
