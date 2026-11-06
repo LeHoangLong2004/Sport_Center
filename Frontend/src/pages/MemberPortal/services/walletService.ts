@@ -23,7 +23,9 @@ export const WalletService = {
   },
 
   getLocalWallet(userId?: string): MemberWalletData {
-    const key = this.getStorageKey(userId);
+    const user = getStoredUser();
+    const targetUserId = userId || user?.id || user?.email;
+    const key = this.getStorageKey(targetUserId);
     try {
       const saved = localStorage.getItem(key);
       if (saved) {
@@ -53,7 +55,9 @@ export const WalletService = {
   },
 
   saveLocalWallet(data: MemberWalletData, userId?: string) {
-    const key = this.getStorageKey(userId);
+    const user = getStoredUser();
+    const targetUserId = userId || user?.id || user?.email;
+    const key = this.getStorageKey(targetUserId);
     const sanitized = sanitizeWalletData(data);
     try {
       localStorage.setItem(key, JSON.stringify(sanitized));
@@ -162,8 +166,18 @@ export const WalletService = {
         if (resMemo.ok) {
           const dataMemo = await resMemo.json();
           if (dataMemo.received) {
+            // Đã nhận được tiền qua webhook! Tự động hoàn tất nạp tiền vào ví của hội viên
+            const topUpAmount = Number(dataMemo.amount || amount || 0);
+            const topUpRes = await this.topUp(
+              topUpAmount,
+              "Chuyển khoản SePay",
+              `Nạp tiền qua SePay: ${memo}`,
+              targetUserId
+            );
             return {
               received: true,
+              newBalance: topUpRes.newBalance,
+              transaction: topUpRes.transaction,
               message: dataMemo.message || "Đã nhận được tiền chuyển khoản thành công qua SePay Webhook!",
             };
           }
