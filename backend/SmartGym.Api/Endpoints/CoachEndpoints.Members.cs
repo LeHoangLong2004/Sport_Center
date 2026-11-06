@@ -223,7 +223,7 @@ namespace SmartGym.Api.Endpoints
                         avatar = string.IsNullOrWhiteSpace(u.AvatarUrl)
                             ? "https://ui-avatars.com/api/?name=" + Uri.EscapeDataString(u.FullName ?? "User")
                             : u.AvatarUrl,
-                        goal = !string.IsNullOrWhiteSpace(u.TrainingGoal) ? u.TrainingGoal : "Cải thiện thể lực & Sức khỏe",
+                        goal = !string.IsNullOrWhiteSpace(u.TrainingGoal) ? u.TrainingGoal : "",
                         level = !string.IsNullOrWhiteSpace(u.TrainingLevel) ? u.TrainingLevel : "Cơ bản",
                         sport = memberSports is { Count: > 0 } ? string.Join(", ", memberSports) : "Thể thao",
                         className = primaryClass,

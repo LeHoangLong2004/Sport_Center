@@ -8,6 +8,7 @@ import { notificationApi, type ManagerNotification } from "../../../hooks/notifi
 import MemberSidebar from "./shell/MemberSidebar";
 import MemberCheckInModal from "./shell/MemberCheckInModal";
 import { MemberTopBar } from "./shell/MemberTopBar";
+import FloatingAiWidget from "./FloatingAiWidget";
 
 interface Props {
   currentScreen: MemberScreen;
@@ -168,7 +169,7 @@ export default function MemberShellModern({ currentScreen, onNavigate, onLogout,
   };
 
   return (
-    <div className="flex w-full min-h-screen bg-slate-50 dark:bg-[#0f172a] transition-colors duration-300 font-sans text-slate-900 dark:text-white selection:bg-emerald-500 selection:text-white">
+    <div className="flex w-full h-screen overflow-hidden bg-slate-50 dark:bg-[#0f172a] transition-colors duration-300 font-sans text-slate-900 dark:text-white selection:bg-emerald-500 selection:text-white">
       {/* Toast popup */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-[100] px-4 py-3 rounded-2xl bg-slate-900 text-white dark:bg-emerald-500 dark:text-slate-950 font-bold text-xs shadow-2xl flex items-center gap-2.5 animate-fadeIn">
@@ -188,7 +189,7 @@ export default function MemberShellModern({ currentScreen, onNavigate, onLogout,
       />
 
       {/* MAIN WORKSPACE */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         <MemberTopBar
           currentScreen={currentScreen}
           userName={userName}
@@ -211,7 +212,7 @@ export default function MemberShellModern({ currentScreen, onNavigate, onLogout,
         />
 
         {/* CONTENT AREA */}
-        <main className="flex-1 p-6 lg:p-8 max-w-7xl w-full mx-auto">{children}</main>
+        <main className="flex-1 overflow-y-auto p-6 lg:p-8 max-w-7xl w-full mx-auto">{children}</main>
       </div>
 
       {/* QUICK CHECK-IN QR PASS MODAL */}
@@ -234,6 +235,15 @@ export default function MemberShellModern({ currentScreen, onNavigate, onLogout,
           setWalletBalance(newBal);
         }}
       />
+
+      {/* Floating Omnipresent AI Assistant Widget for Member */}
+      {currentScreen !== "support" && (
+        <FloatingAiWidget
+          onNavigate={onNavigate}
+          userName={userName}
+          userId={profile?.id}
+        />
+      )}
     </div>
   );
 }

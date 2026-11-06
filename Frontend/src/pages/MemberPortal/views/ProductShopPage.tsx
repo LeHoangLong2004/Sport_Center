@@ -44,6 +44,24 @@ const fulfillmentLabels: Record<FulfillmentStatus, string> = {
   cancelled: "Đã hủy",
 }
 
+const getCategoryFallbackImage = (category?: string, name?: string) => {
+  if (name?.toLowerCase().includes("protein bar")) {
+    return "/assets/protein_bar_chocolate.jpg"
+  }
+  switch (category) {
+    case "Đồ uống":
+      return "/assets/c5e97.png"
+    case "Bánh năng lượng":
+    case "Thực phẩm":
+    case "Đồ ăn nhẹ":
+      return "/assets/28ab4.png"
+    case "Phụ kiện":
+      return "/assets/235a3.png"
+    default:
+      return "/assets/cf835.png"
+  }
+}
+
 function authHeaders(): Record<string, string> {
   const token = localStorage.getItem("token") || localStorage.getItem("accessToken")
   return token ? { Authorization: `Bearer ${token}` } : {}
@@ -249,11 +267,17 @@ export function ProductShopPage({ onNavigate, onOnlinePayment, embedded = false 
                     className="overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-850 text-left transition hover:-translate-y-0.5 hover:border-emerald-500/50 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer group"
                   >
                     <div className="flex h-40 items-center justify-center bg-slate-50 dark:bg-slate-800 overflow-hidden">
-                      {product.imageUrl ? (
-                        <img src={product.imageUrl} alt="" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
-                      ) : (
-                        <span className="text-xs text-slate-400">Không có ảnh</span>
-                      )}
+                      <img
+                        src={product.imageUrl || getCategoryFallbackImage(product.category, product.name)}
+                        alt={product.name}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        onError={(e) => {
+                          const fallback = getCategoryFallbackImage(product.category, product.name)
+                          if (!e.currentTarget.src.endsWith(fallback)) {
+                            e.currentTarget.src = fallback
+                          }
+                        }}
+                      />
                     </div>
                     <div className="p-4">
                       <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">{product.category || "Sản phẩm"}</p>

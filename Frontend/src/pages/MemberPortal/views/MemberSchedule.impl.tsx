@@ -56,8 +56,16 @@ useEffect(() => {
   };
 }, []);
 // Lock scroll on modals
-useEffect(() => { if (cancellingSession || selectedSession) { document.body.style.overflow = "hidden"; } else { document.body.style.overflow = "unset"; }
-return () => { document.body.style.overflow = "unset"; }; }, [cancellingSession, selectedSession]);
+useEffect(() => {
+  if (cancellingSession || selectedSession) {
+    document.body.style.overflow = "hidden";
+  } else {
+    document.body.style.overflow = "unset";
+  }
+  return () => {
+    document.body.style.overflow = "unset";
+  };
+}, [cancellingSession, selectedSession]);
 // Escape key handler to close modals
 useEffect(() => { const handleKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") { setSelectedSession(null); setCancellingSession(null); }
 }; window.addEventListener("keydown", handleKeyDown); return () => window.removeEventListener("keydown", handleKeyDown); }, []);

@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
-import { Star, MessageSquare, Calendar, ShieldCheck, User } from "lucide-react";
+import { Star, MessageSquare, Calendar, ShieldCheck, User, Eye, ChevronRight } from "lucide-react";
 import { useUserProfile } from "../../../hooks/useUserProfile";
 import {
   fetchCoachReviews,
+  type SyncedCoachReview,
 } from "../../MemberPortal/services/reviewSync";
+import CoachReviewDetailModal from "../components/CoachReviewDetailModal";
 
 interface ReviewItem {
   id: string;
@@ -21,6 +23,8 @@ export default function CoachReviews() {
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStar, setSelectedStar] = useState<number | null>(null);
+  const [selectedDetailReview, setSelectedDetailReview] = useState<Partial<SyncedCoachReview> | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     if (!profile?.id) {
@@ -179,11 +183,25 @@ export default function CoachReviews() {
           filteredReviews.map((item) => (
             <div
               key={item.id}
-              className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
+              onClick={() => {
+                setSelectedDetailReview({
+                  id: item.id,
+                  memberName: item.memberName,
+                  anonymizedMemberName: item.memberName,
+                  rating: item.rating,
+                  comment: item.comment,
+                  tags: item.tags,
+                  createdAt: item.createdAt,
+                  sessionName: item.sessionName,
+                  coachName: profile?.fullName || "Huấn luyện viên",
+                });
+                setModalOpen(true);
+              }}
+              className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs hover:border-amber-400 dark:hover:border-amber-600 transition-all cursor-pointer group"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 shrink-0 group-hover:border-amber-300 transition-colors">
                     <User className="w-5 h-5" />
                   </div>
                   <div>
@@ -213,13 +231,19 @@ export default function CoachReviews() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 text-xs text-slate-400 font-medium">
-                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                  {new Date(item.createdAt).toLocaleDateString("vi-VN", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric"
-                  })}
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1 text-xs text-slate-400 font-medium">
+                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                    {new Date(item.createdAt).toLocaleDateString("vi-VN", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric"
+                    })}
+                  </div>
+                  <span className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span>Xem chi tiết</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </span>
                 </div>
               </div>
 
@@ -245,6 +269,13 @@ export default function CoachReviews() {
           ))
         )}
       </div>
+
+      {/* Review Detail Modal */}
+      <CoachReviewDetailModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        review={selectedDetailReview}
+      />
     </div>
   );
 }

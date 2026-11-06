@@ -7,16 +7,19 @@ import {
   Star,
   Phone,
   MessageSquare,
+  CheckCircle2,
 } from "lucide-react";
 import type { MemberSessionItem, MemberScreen } from "../../types";
 import { CoachAvatar } from "../../utils/coachAvatar";
-import { STATUS_BADGE } from "./scheduleConstants";
+import { STATUS_BADGE, resolveSessionStatus } from "./scheduleConstants";
 
 interface Props {
   session: MemberSessionItem | null;
   onClose: () => void;
   onNavigate: (screen: MemberScreen) => void;
   onStartCancelSession: (session: MemberSessionItem) => void;
+  onStartReview?: (session: MemberSessionItem) => void;
+  isReviewed?: boolean;
 }
 
 export default function SessionDetailModal({
@@ -24,8 +27,17 @@ export default function SessionDetailModal({
   onClose,
   onNavigate,
   onStartCancelSession,
+  onStartReview,
+  isReviewed,
 }: Props) {
   if (!session) return null;
+
+  const effectiveStatus = resolveSessionStatus(
+    session.status,
+    session.date,
+    session.endTime,
+    session.startTime
+  );
 
   return createPortal(
     <div
@@ -61,10 +73,10 @@ export default function SessionDetailModal({
             </span>
             <span
               className={`text-xs px-2.5 py-0.5 rounded-full font-semibold border ${
-                STATUS_BADGE[session.status]?.bg || ""
-              } ${STATUS_BADGE[session.status]?.text || ""}`}
+                STATUS_BADGE[effectiveStatus]?.bg || ""
+              } ${STATUS_BADGE[effectiveStatus]?.text || ""}`}
             >
-              {STATUS_BADGE[session.status]?.label || session.status}
+              {STATUS_BADGE[effectiveStatus]?.label || effectiveStatus}
             </span>
           </div>
           <h3 className="text-xl font-bold text-slate-900 dark:text-white">
@@ -168,7 +180,42 @@ export default function SessionDetailModal({
             <span>Nhắn tin với HLV</span>
           </button>
 
-          {(session.status === "sắp diễn ra" || session.status === "đang diễn ra") && (
+          {effectiveStatus === "hoàn thành" && (
+            isReviewed ? (
+              <span className="py-2.5 px-4 rounded-xl text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                <span>Đã đánh giá</span>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  if (onStartReview) {
+                    onStartReview(session);
+                  } else {
+                    localStorage.setItem(
+                      "target_review_session",
+                      JSON.stringify({
+                        sessionId: session.id,
+                        sessionName: session.name,
+                        coachId: session.coachId || "",
+                        coachName: session.coachName,
+                        date: session.date,
+                      })
+                    );
+                    onNavigate("reviews");
+                  }
+                }}
+                className="py-2.5 px-4 rounded-xl text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+                <span>Đánh giá HLV</span>
+              </button>
+            )
+          )}
+
+          {(effectiveStatus === "sắp diễn ra") && (
             <button
               type="button"
               onClick={() => {

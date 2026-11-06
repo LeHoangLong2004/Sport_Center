@@ -77,6 +77,34 @@ public static partial class CoachEndpoints
                 return await SaveAttendanceAsync(sessionId, request, db, finalized: true, actorId);
             }
         );
+
+        group.MapGet(
+            "/sessions/{sessionId}/attendance/sheet",
+            async (string sessionId, SmartGymDbContext db) =>
+            {
+                if (!Guid.TryParse(sessionId, out var sessionGuid))
+                    return Results.Ok(new { state = "unmarked", version = 0, isFinalized = false, isDraft = false });
+
+                var sheet = await db.Database
+                    .SqlQueryRaw<AttendanceSheetRawModel>(
+                        "SELECT session_id, state, version, finalized_at, finalized_by, updated_at FROM class_attendance_sheets WHERE session_id = {0}",
+                        sessionGuid)
+                    .FirstOrDefaultAsync();
+
+                if (sheet == null)
+                    return Results.Ok(new { state = "unmarked", version = 0, isFinalized = false, isDraft = false });
+
+                return Results.Ok(new
+                {
+                    state = sheet.State ?? "unmarked",
+                    version = sheet.Version,
+                    isFinalized = string.Equals(sheet.State, "finalized", StringComparison.OrdinalIgnoreCase),
+                    isDraft = string.Equals(sheet.State, "draft", StringComparison.OrdinalIgnoreCase),
+                    finalizedAt = sheet.FinalizedAt,
+                    updatedAt = sheet.UpdatedAt
+                });
+            }
+        );
     }
 
     private static async Task<IResult> SaveAttendanceAsync(
@@ -124,6 +152,19 @@ public static partial class CoachEndpoints
                 ON CONFLICT (session_id)
                 DO UPDATE SET state = 'finalized', version = class_attendance_sheets.version + 1,
                               finalized_at = now(), finalized_by = {actorId}, updated_at = now()");
+
+            var reason = request.TryGetProperty("reason", out var reasonProp) ? reasonProp.GetString() : null;
+            if (!string.IsNullOrWhiteSpace(reason))
+            {
+                var changesJson = recordsElement.GetRawText();
+                try
+                {
+                    await db.Database.ExecuteSqlInterpolatedAsync($@"
+                        INSERT INTO class_attendance_audits (session_id, actor_id, action, reason, changes, occurred_at)
+                        VALUES ({sessionGuid}, {actorId}, 'UPDATE_AFTER_FINALIZED', {reason}, {changesJson}::jsonb, now())");
+                }
+                catch {}
+            }
         }
         else
         {
@@ -131,7 +172,9 @@ public static partial class CoachEndpoints
                 INSERT INTO class_attendance_sheets (session_id, state, version, updated_at)
                 VALUES ({sessionGuid}, 'draft', 1, now())
                 ON CONFLICT (session_id)
-                DO UPDATE SET state = 'draft', version = class_attendance_sheets.version + 1, updated_at = now()");
+                DO UPDATE SET state = CASE WHEN class_attendance_sheets.state = 'finalized' THEN 'finalized' ELSE 'draft' END,
+                              version = class_attendance_sheets.version + 1,
+                              updated_at = now()");
         }
 
         await transaction.CommitAsync();
@@ -155,6 +198,42 @@ public static partial class CoachEndpoints
                 classId)
             .ToListAsync();
 
-        return bookings.Select(booking => booking.UserId).ToHashSet();
+        var set = bookings.Select(booking => booking.UserId).ToHashSet();
+
+        try
+        {
+            var existingMembers = await db.Database
+                .SqlQueryRaw<Guid>(
+                    "SELECT member_id AS \"Value\" FROM class_attendance_records WHERE session_id = {0}",
+                    classId)
+                .ToListAsync();
+
+            foreach (var m in existingMembers)
+                set.Add(m);
+        }
+        catch {}
+
+        return set;
+    }
+
+    public class AttendanceSheetRawModel
+    {
+        [System.ComponentModel.DataAnnotations.Schema.Column("session_id")]
+        public Guid SessionId { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Schema.Column("state")]
+        public string? State { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Schema.Column("version")]
+        public int Version { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Schema.Column("finalized_at")]
+        public DateTime? FinalizedAt { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Schema.Column("finalized_by")]
+        public Guid? FinalizedBy { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Schema.Column("updated_at")]
+        public DateTime? UpdatedAt { get; set; }
     }
 }

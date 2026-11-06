@@ -63,6 +63,7 @@ const navItems = [
 
 export default function ClassListPage() {
   const [classes, setClasses] = useState<ClassItem[]>([]);
+  const [sports, setSports] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [subject, setSubject] = useState("");
   const [day, setDay] = useState("");
@@ -70,69 +71,96 @@ export default function ClassListPage() {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    const fetchClasses = async () => {
+    setPage(1);
+  }, [subject, day, shift]);
+
+  useEffect(() => {
+    const fetchData = async () => {
       try {
-        const res = await fetch("/api/classes/available");
-        if (!res.ok) throw new Error("Failed to fetch classes");
-        const data = await res.json();
+        const [resClasses, resSports] = await Promise.all([
+          fetch("/api/classes/available"),
+          fetch("/api/sports"),
+        ]);
 
-        const mapped: ClassItem[] = data.map((d: any, index: number) => {
-          // /api/classes/available returns ClassResponse fields. Keep the
-          // legacy aliases as a fallback for older seeded data.
-          const scheduleTime = d.scheduleTime ?? d.startTime;
-          const capacity = Number(d.capacity ?? d.maxCapacity ?? 0);
-          const currentEnrolled = Number(
-            d.currentEnrolled ?? d.currentBookings ?? 0,
-          );
-          const avail = Math.max(
-            0,
-            Number(d.availableSpots ?? capacity - currentEnrolled),
-          );
-          const title = d.className ?? d.name ?? "Lớp học";
-          const sportName = d.sportName ?? "";
-          let status: ClassStatus = "available";
-          let statusLabel = "Còn chỗ";
-          let spots = `Còn ${avail} suất trống`;
-
-          if (avail <= 0) {
-            status = "full";
-            statusLabel = "Đã đầy";
-            spots = "Lớp học đã kín chỗ";
-          } else if (avail <= 3) {
-            status = "almost";
-            statusLabel = "Sắp đầy";
+        if (resSports.ok) {
+          const sportsData = await resSports.json();
+          if (Array.isArray(sportsData)) {
+            setSports(
+              sportsData.map((s: any) => ({
+                id: String(s.id),
+                name: s.name,
+              })),
+            );
           }
+        }
 
-          return {
-            id: d.id,
-            title,
-            sportName,
-            scheduleTime,
-            status,
-            statusLabel,
-            trainer: d.coachName || "Đang cập nhật",
-            schedule: formatSchedule(scheduleTime),
-            location: d.facilityName || d.roomName || "Đang cập nhật",
-            spots,
-            img: classImages[index % classImages.length],
-          };
-        });
-        setClasses(mapped);
+        if (resClasses.ok) {
+          const data = await resClasses.json();
+          const mapped: ClassItem[] = data.map((d: any, index: number) => {
+            // /api/classes/available returns ClassResponse fields. Keep the
+            // legacy aliases as a fallback for older seeded data.
+            const scheduleTime = d.scheduleTime ?? d.startTime;
+            const capacity = Number(d.capacity ?? d.maxCapacity ?? 0);
+            const currentEnrolled = Number(
+              d.currentEnrolled ?? d.currentBookings ?? 0,
+            );
+            const avail = Math.max(
+              0,
+              Number(d.availableSpots ?? capacity - currentEnrolled),
+            );
+            const title = d.className ?? d.name ?? "Lớp học";
+            const sportName = d.sportName ?? "";
+            let status: ClassStatus = "available";
+            let statusLabel = "Còn chỗ";
+            let spots = `Còn ${avail} suất trống`;
+
+            if (avail <= 0) {
+              status = "full";
+              statusLabel = "Đã đầy";
+              spots = "Lớp học đã kín chỗ";
+            } else if (avail <= 3) {
+              status = "almost";
+              statusLabel = "Sắp đầy";
+            }
+
+            return {
+              id: d.id,
+              sportId: d.sportId ? String(d.sportId) : "",
+              title,
+              sportName,
+              scheduleTime,
+              status,
+              statusLabel,
+              trainer: d.coachName || "Đang cập nhật",
+              schedule: formatSchedule(scheduleTime),
+              location: d.facilityName || d.roomName || "Đang cập nhật",
+              spots,
+              img: classImages[index % classImages.length],
+            };
+          });
+          setClasses(mapped);
+        }
       } catch (error) {
-        console.error("Error fetching classes:", error);
+        console.error("Error fetching class list data:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchClasses();
+    fetchData();
   }, []);
 
   const filtered = classes.filter((c) => {
-    if (
-      subject &&
-      !`${c.title} ${c.sportName}`.toLowerCase().includes(subject.toLowerCase())
-    )
-      return false;
+    if (subject) {
+      const selectedSport = sports.find(
+        (s) => s.id === subject || s.name === subject,
+      );
+      const targetName = (selectedSport?.name || subject).toLowerCase();
+      // Lọc chính xác theo môn học (sportId hoặc sportName), không lẫn sang tên lớp
+      const matches =
+        c.sportId === subject ||
+        (c.sportName && c.sportName.toLowerCase() === targetName);
+      if (!matches) return false;
+    }
 
     if (day) {
       const date = new Date(c.scheduleTime);
@@ -155,9 +183,18 @@ export default function ClassListPage() {
     return true;
   });
 
+  const ITEMS_PER_PAGE = 6;
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const currentPage = Math.min(Math.max(1, page), Math.max(1, totalPages));
+
+  const pagedClasses = filtered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   const rows: ClassItem[][] = [];
-  for (let i = 0; i < filtered.length; i += 2) {
-    rows.push(filtered.slice(i, i + 2));
+  for (let i = 0; i < pagedClasses.length; i += 2) {
+    rows.push(pagedClasses.slice(i, i + 2));
   }
 
   return (
@@ -205,16 +242,11 @@ export default function ClassListPage() {
               className="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-lg px-4 py-3 appearance-none font-['Inter:Regular'] font-normal text-[#1e293b] text-[14px] cursor-pointer pr-9"
             >
               <option value="">Tất cả bộ môn</option>
-              <option value="Aqua Basic Therapy">Aqua Therapy</option>
-              <option value="Vinyasa Flow Yoga">Yoga</option>
-              <option value="Functional HIIT Performance">
-                HIIT Performance
-              </option>
-              <option value="Kickboxing Core Stress-Relief">Kickboxing</option>
-              <option value="Pilates Hồi Phục Cột Sống">Pilates</option>
-              <option value="Bóng Rổ Thiếu Niên U12">Bóng Rổ</option>
-              <option value="Bơi Sải Nâng Cao">Bơi lội</option>
-              <option value="Strength Conditioning">Strength</option>
+              {sports.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
             </select>
             <img
               src={imgChevronDown}
@@ -298,29 +330,49 @@ export default function ClassListPage() {
           </div>
         )}
 
-        {/* Pagination */}
-        <div className="flex gap-2 items-center justify-center pt-8">
-          {[
-            { label: "<", val: Math.max(1, page - 1) },
-            { label: "1", val: 1 },
-            { label: "2", val: 2 },
-            { label: "3", val: 3 },
-            { label: ">", val: Math.min(3, page + 1) },
-          ].map(({ label, val }) => (
+        {/* Pagination - chỉ hiển thị khi số lượng lớp vượt quá 1 trang */}
+        {totalPages > 1 && (
+          <div className="flex gap-2 items-center justify-center pt-8">
             <button
-              key={label}
-              onClick={() => setPage(val)}
+              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
               type="button"
               className={`flex items-center justify-center rounded-lg size-10 text-[14px] border transition-colors ${
-                label === String(page)
-                  ? "bg-[#2563eb] text-white border-[#2563eb] font-['Inter:Bold'] font-bold"
-                  : "bg-white border-[#e2e8f0] text-[#1e293b] font-['Inter:Semi_Bold'] font-semibold hover:bg-[#f1f5f9]"
+                currentPage === 1
+                  ? "bg-slate-50 border-slate-200 text-slate-300 cursor-not-allowed"
+                  : "bg-white border-[#e2e8f0] text-[#1e293b] hover:bg-[#f1f5f9]"
               }`}
             >
-              {label}
+              &lt;
             </button>
-          ))}
-        </div>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPage(p)}
+                type="button"
+                className={`flex items-center justify-center rounded-lg size-10 text-[14px] border transition-colors ${
+                  p === currentPage
+                    ? "bg-[#2563eb] text-white border-[#2563eb] font-['Inter:Bold'] font-bold shadow-sm"
+                    : "bg-white border-[#e2e8f0] text-[#1e293b] font-['Inter:Semi_Bold'] font-semibold hover:bg-[#f1f5f9]"
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+            <button
+              onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              type="button"
+              className={`flex items-center justify-center rounded-lg size-10 text-[14px] border transition-colors ${
+                currentPage === totalPages
+                  ? "bg-slate-50 border-slate-200 text-slate-300 cursor-not-allowed"
+                  : "bg-white border-[#e2e8f0] text-[#1e293b] hover:bg-[#f1f5f9]"
+              }`}
+            >
+              &gt;
+            </button>
+          </div>
+        )}
       </section>
     </div>
   );

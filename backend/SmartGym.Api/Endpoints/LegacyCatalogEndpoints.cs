@@ -184,6 +184,107 @@ app.MapGet(
     }
 );
 
+app.MapGet(
+    "/api/coaches/{coachId:guid}/sports",
+    async (Guid coachId, SmartGym.Infrastructure.Persistence.EF.SmartGymDbContext db) =>
+    {
+        await db.Database.OpenConnectionAsync();
+        await using var command = db.Database.GetDbConnection().CreateCommand();
+        command.CommandText = @"
+            SELECT s.id, s.name, s.description
+            FROM sports s
+            JOIN coach_sports cs ON s.id = cs.sport_id
+            WHERE cs.coach_id = @coachId OR cs.coach_id = (SELECT id FROM coaches WHERE user_id = @coachId LIMIT 1)";
+        var p = command.CreateParameter();
+        p.ParameterName = "@coachId";
+        p.Value = coachId;
+        command.Parameters.Add(p);
+
+        var list = new List<object>();
+        using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            list.Add(new
+            {
+                id = reader.GetGuid(0),
+                name = reader.GetString(1),
+                description = reader.IsDBNull(2) ? "" : reader.GetString(2)
+            });
+        }
+        return Results.Ok(list);
+    }
+);
+
+app.MapGet(
+    "/api/coach/my-sports",
+    async (System.Security.Claims.ClaimsPrincipal user, SmartGym.Infrastructure.Persistence.EF.SmartGymDbContext db) =>
+    {
+        var userIdValue = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            ?? user.FindFirst("sub")?.Value;
+        if (!Guid.TryParse(userIdValue, out var userId))
+            return Results.Unauthorized();
+
+        var coachId = await CoachProfileResolver.FindByUserIdAsync(db, userId, activeOnly: true);
+        if (coachId == null)
+            return Results.Ok(new List<object>());
+
+        await db.Database.OpenConnectionAsync();
+        await using var command = db.Database.GetDbConnection().CreateCommand();
+        command.CommandText = @"
+            SELECT s.id, s.name, s.description
+            FROM sports s
+            JOIN coach_sports cs ON s.id = cs.sport_id
+            WHERE cs.coach_id = @coachId";
+        var p = command.CreateParameter();
+        p.ParameterName = "@coachId";
+        p.Value = coachId.Value;
+        command.Parameters.Add(p);
+
+        var list = new List<object>();
+        using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            list.Add(new
+            {
+                id = reader.GetGuid(0),
+                name = reader.GetString(1),
+                description = reader.IsDBNull(2) ? "" : reader.GetString(2)
+            });
+        }
+        return Results.Ok(list);
+    }
+).RequireAuthorization(policy => policy.RequireRole("coach"));
+
+app.MapPut(
+    "/api/coaches/{coachId:guid}/sports",
+    async (Guid coachId, [Microsoft.AspNetCore.Mvc.FromBody] List<Guid> sportIds, SmartGym.Infrastructure.Persistence.EF.SmartGymDbContext db) =>
+    {
+        var resolvedCoachId = await CoachProfileResolver.FindByUserIdAsync(db, coachId, activeOnly: false) ?? coachId;
+        await db.Database.OpenConnectionAsync();
+        
+        await using var deleteCmd = db.Database.GetDbConnection().CreateCommand();
+        deleteCmd.CommandText = "DELETE FROM coach_sports WHERE coach_id = @coachId";
+        var dp = deleteCmd.CreateParameter();
+        dp.ParameterName = "@coachId";
+        dp.Value = resolvedCoachId;
+        deleteCmd.Parameters.Add(dp);
+        await deleteCmd.ExecuteNonQueryAsync();
+
+        if (sportIds != null && sportIds.Any())
+        {
+            foreach (var sportId in sportIds.Distinct())
+            {
+                await db.Database.ExecuteSqlInterpolatedAsync($@"
+                    INSERT INTO coach_sports (coach_id, sport_id)
+                    VALUES ({resolvedCoachId}, {sportId})
+                    ON CONFLICT DO NOTHING;
+                ");
+            }
+        }
+        return Results.Ok(new { message = "Đã cập nhật danh sách bộ môn phụ trách cho Huấn luyện viên." });
+    }
+).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
+
 
     }
 }

@@ -88,12 +88,19 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const token = localStorage.getItem("token") || localStorage.getItem("accessToken") || "";
+        const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 
-        // Fetch sports
-        const sportsRes = await fetch("/api/sports");
+        // Fetch sports: Nếu là Coach đề xuất lớp thì chỉ lấy các bộ môn HLV đang phụ trách
+        const sportsEndpoint = isCoachMode ? "/api/coach/my-sports" : "/api/sports";
+        const sportsRes = await fetch(sportsEndpoint, { headers: authHeaders });
         if (sportsRes.ok) {
           const sportsData = await sportsRes.json();
-          setSports(sportsData);
+          setSports(Array.isArray(sportsData) ? sportsData : []);
+        } else if (isCoachMode) {
+          // Fallback nếu có lỗi
+          const fallbackRes = await fetch("/api/sports");
+          if (fallbackRes.ok) setSports(await fallbackRes.json());
         }
 
         // Fetch facilities
@@ -133,6 +140,31 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager
     fetchCoaches();
   }, [formData.sportId]);
 
+  const leadTimeValidation = (() => {
+    if (!formData.scheduleDate || !formData.scheduleTime) return null;
+    const start = new Date(`${formData.scheduleDate}T${formData.scheduleTime}:00`);
+    if (Number.isNaN(start.getTime())) return null;
+    const diffHours = (start.getTime() - Date.now()) / (1000 * 60 * 60);
+    if (isCoachMode) {
+      if (diffHours < 24) {
+        return {
+          valid: false,
+          message: diffHours <= 0
+            ? "Thời gian bắt đầu lớp học phải ở tương lai và cách hiện tại ít nhất 24 giờ."
+            : `Thời gian đã chọn chỉ cách hiện tại khoảng ${Math.floor(diffHours)} giờ. Lớp đề xuất phải cách thời điểm hiện tại tối thiểu 24 giờ.`
+        };
+      }
+    } else if (!editData) {
+      if (diffHours <= 0) {
+        return {
+          valid: false,
+          message: "Thời gian bắt đầu lớp học phải sau thời điểm hiện tại."
+        };
+      }
+    }
+    return { valid: true, message: "" };
+  })();
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => {
@@ -163,6 +195,18 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager
       const startDateTime = new Date(`${scheduleDate}T${scheduleTime}:00`);
       if (Number.isNaN(startDateTime.getTime())) {
         throw new Error('Ngày hoặc giờ học không hợp lệ.');
+      }
+
+      const now = new Date();
+      if (!editData && startDateTime <= now) {
+        throw new Error('Thời gian học phải sau thời điểm hiện tại.');
+      }
+
+      if (isCoachMode) {
+        const minAllowedTime = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        if (startDateTime < minAllowedTime) {
+          throw new Error('Thời gian bắt đầu lớp học đề xuất phải cách thời điểm hiện tại ít nhất 24 giờ để Ban quản lý kịp phê duyệt và hội viên đăng ký.');
+        }
       }
       
       const payload = {
@@ -250,6 +294,18 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager
             {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">{error}</div>}
             {success && <div className="p-3 bg-green-50 text-green-600 text-sm rounded-lg border border-green-100">{success}</div>}
 
+            {isCoachMode && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-3.5 text-xs text-amber-900 flex items-start gap-2.5">
+                <span className="text-base leading-none shrink-0 mt-0.5">⏱️</span>
+                <div className="space-y-0.5">
+                  <p className="font-bold text-amber-900">Quy định thời gian đề xuất lớp</p>
+                  <p className="text-amber-800 leading-relaxed">
+                    Lớp học đề xuất phải bắt đầu sau thời điểm hiện tại <strong>tối thiểu 24 giờ</strong> để Ban quản lý kịp phê duyệt và mở cho Hội viên đăng ký.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Tên lớp học</label>
               <input required type="text" name="className" value={formData.className} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="VD: Yoga thư giãn" />
@@ -259,20 +315,41 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Ngày học</label>
                 <DateInput required value={formData.scheduleDate} onChange={(value) => setFormData((prev) => ({ ...prev, scheduleDate: value }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" />
+                {isCoachMode && (
+                  <p className="mt-1 text-[11px] text-slate-500">Tối thiểu từ ngày mai trở đi</p>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Giờ học</label>
                 <input required type="time" name="scheduleTime" value={formData.scheduleTime} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" />
+                {isCoachMode && (
+                  <p className="mt-1 text-[11px] text-slate-500">Cách hiện tại ≥ 24h</p>
+                )}
               </div>
             </div>
+
+            {leadTimeValidation && !leadTimeValidation.valid && (
+              <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+                <svg className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span>{leadTimeValidation.message}</span>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Môn học</label>
                 <select required name="sportId" value={formData.sportId} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 bg-white">
-                  <option value="">-- Chọn môn học --</option>
+                  <option value="">-- {sports.length === 0 ? (isCoachMode ? "Chưa được phân công môn nào" : "Không có môn") : "Chọn môn học"} --</option>
                   {sports.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
+                {isCoachMode && sports.length === 0 && !loadingData && (
+                  <p className="mt-1 text-[11px] text-amber-600 font-medium">Bạn chưa được Quản lý phân công môn nào để mở lớp.</p>
+                )}
+                {isCoachMode && sports.length > 0 && (
+                  <p className="mt-1 text-[11px] text-slate-500">Chỉ hiển thị các môn bạn được phân công ({sports.length} môn).</p>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Phòng tập</label>
@@ -321,8 +398,8 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager
               </button>
               <button
                 type="submit"
-                disabled={loading}
-                className={`px-5 py-2.5 text-sm font-semibold text-white rounded-xl transition-all shadow-md disabled:opacity-50 cursor-pointer ${
+                disabled={loading || (leadTimeValidation !== null && !leadTimeValidation.valid)}
+                className={`px-5 py-2.5 text-sm font-semibold text-white rounded-xl transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
                   isCoachMode
                     ? "bg-orange-500 hover:bg-orange-600 shadow-orange-500/20"
                     : "bg-rose-600 hover:bg-rose-700 shadow-rose-600/20"

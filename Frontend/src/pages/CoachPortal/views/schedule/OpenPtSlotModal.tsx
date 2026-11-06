@@ -141,12 +141,19 @@ export default function OpenPtSlotModal({ isOpen, onClose, onSuccess, sportOptio
                   onChange={(e) => setOpenSlotSport(e.target.value)}
                   className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
                 >
-                  {sportOptions.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
+                  {sportOptions.length === 0 ? (
+                    <option value="">Chưa được phân công môn</option>
+                  ) : (
+                    sportOptions.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))
+                  )}
                 </select>
+                {sportOptions.length === 0 && (
+                  <p className="mt-1 text-[11px] text-amber-600 font-medium">Bạn chưa được Quản lý phân công môn nào để đăng lịch 1–1.</p>
+                )}
               </div>
               <div>
                 <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">

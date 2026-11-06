@@ -125,7 +125,14 @@ public static partial class MemberEndpoints
         public string? TrainingLevel { get; set; }
         public List<string> ActivePackages { get; } = new();
         public List<string> UpcomingSessions { get; } = new();
+        public List<string> CompletedSessions { get; } = new();
         public List<string> AssignedWorkouts { get; } = new();
+        public string? BodyMetricsSummary { get; set; }
+        public List<string> RecentCheckIns { get; } = new();
+        public List<string> RecentInvoices { get; } = new();
+        public List<string> PackageBenefits { get; } = new();
+        public string? AssignedCoachInfo { get; set; }
+        public List<string> RecentCoachAssessments { get; } = new();
         public bool IsAuthenticated => !string.IsNullOrEmpty(UserId);
     }
 
@@ -154,6 +161,31 @@ public static partial class MemberEndpoints
         public string? Date { get; set; }
         public string? CoachName { get; set; }
         public string? Status { get; set; }
+    }
+
+    private sealed class AiCheckInRow
+    {
+        public DateTime CheckInTime { get; set; }
+        public DateTime? CheckOutTime { get; set; }
+        public string Method { get; set; } = string.Empty;
+    }
+
+    private sealed class AiCoachInfoRow
+    {
+        public string CoachName { get; set; } = string.Empty;
+        public string Specialties { get; set; } = string.Empty;
+    }
+
+    private sealed class AiCoachAssessmentRow
+    {
+        public int Completion { get; set; }
+        public string? MetricsJson { get; set; }
+        public string? Comment { get; set; }
+        public string? NextStep { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string ClassName { get; set; } = string.Empty;
+        public string CoachName { get; set; } = string.Empty;
+        public string SportName { get; set; } = string.Empty;
     }
 
     private static async Task<MemberAiContext> BuildMemberAiContextAsync(
@@ -269,7 +301,8 @@ public static partial class MemberEndpoints
             catch (Exception ex) { logger.LogDebug(ex, "Flow 6: cannot load subscriptions."); }
         }
 
-        var sessions = new List<(DateTime LocalStart, string Text)>();
+        var upcomingSessions = new List<(DateTime LocalStart, string Text)>();
+        var completedSessions = new List<(DateTime LocalStart, string Text)>();
 
         try
         {
@@ -296,10 +329,40 @@ public static partial class MemberEndpoints
             {
                 var start = ToVn(c.ScheduleTime);
                 var room = string.IsNullOrWhiteSpace(c.Room) ? "" : $", phòng {c.Room}";
-                sessions.Add((start, $"Lớp nhóm \"{c.ClassName}\" ({c.Sport}) — {FormatVnDateTime(start, vi)}–{start.AddMinutes(c.DurationMinutes):HH:mm}{room}, HLV {c.CoachName}"));
+                upcomingSessions.Add((start, $"Lớp nhóm \"{c.ClassName}\" ({c.Sport}) — {FormatVnDateTime(start, vi)}–{start.AddMinutes(c.DurationMinutes):HH:mm}{room}, HLV {c.CoachName}"));
             }
         }
         catch (Exception ex) { logger.LogDebug(ex, "Flow 6: cannot load class bookings."); }
+
+        try
+        {
+            var pastClasses = await db.Database.SqlQueryRaw<AiUpcomingClassRow>(
+                @"SELECT c.class_name AS ""ClassName"",
+                         COALESCE(s.name, '') AS ""Sport"",
+                         COALESCE(f.name, '') AS ""Room"",
+                         c.schedule_time AS ""ScheduleTime"",
+                         COALESCE(c.duration_minutes, 60) AS ""DurationMinutes"",
+                         COALESCE(u.full_name, 'HLV Trung tâm') AS ""CoachName""
+                  FROM class_bookings b
+                  INNER JOIN classes c ON c.id = b.class_id
+                  LEFT JOIN sports s ON s.id = c.sport_id
+                  LEFT JOIN facilities f ON f.id = c.facility_id
+                  LEFT JOIN coaches co ON co.id = c.coach_id
+                  LEFT JOIN users u ON u.id = co.user_id
+                  WHERE b.user_id = {0}
+                    AND b.status NOT IN ('cancelled', 'rejected', 'class_cancelled')
+                    AND c.schedule_time < NOW()
+                  ORDER BY c.schedule_time DESC
+                  LIMIT 6", memberId).ToListAsync(ct);
+
+            foreach (var c in pastClasses)
+            {
+                var start = ToVn(c.ScheduleTime);
+                var room = string.IsNullOrWhiteSpace(c.Room) ? "" : $", phòng {c.Room}";
+                completedSessions.Add((start, $"Lớp nhóm \"{c.ClassName}\" ({c.Sport}) — {FormatVnDateTime(start, vi)}–{start.AddMinutes(c.DurationMinutes):HH:mm}{room}, HLV {c.CoachName} (Đã hoàn thành)"));
+            }
+        }
+        catch (Exception ex) { logger.LogDebug(ex, "Flow 6: cannot load past class bookings."); }
 
         try
         {
@@ -320,10 +383,34 @@ public static partial class MemberEndpoints
             foreach (var p in pts)
             {
                 var start = ToVn(p.ScheduleTime);
-                sessions.Add((start, $"Buổi PT 1-1 ({p.Sport}) — {FormatVnDateTime(start, vi)}, {p.Room}, HLV {p.CoachName}"));
+                upcomingSessions.Add((start, $"Buổi PT 1-1 ({p.Sport}) — {FormatVnDateTime(start, vi)}, {p.Room}, HLV {p.CoachName}"));
             }
         }
         catch (Exception ex) { logger.LogDebug(ex, "Flow 6: cannot load PT slots."); }
+
+        try
+        {
+            var pastPts = await db.Database.SqlQueryRaw<AiUpcomingPtRow>(
+                @"SELECT COALESCE(s.sport, 'Gym') AS ""Sport"",
+                         COALESCE(s.room, 'Khu vực PT 1-1') AS ""Room"",
+                         s.start_time AS ""ScheduleTime"",
+                         COALESCE(u.full_name, 'HLV Cá nhân') AS ""CoachName""
+                  FROM coach_availability_slots s
+                  INNER JOIN coaches c ON c.id = s.coach_id
+                  LEFT JOIN users u ON u.id = c.user_id
+                  WHERE s.booked_member_id = {0}
+                    AND s.status = 'booked'
+                    AND s.start_time < NOW()
+                  ORDER BY s.start_time DESC
+                  LIMIT 6", memberId).ToListAsync(ct);
+
+            foreach (var p in pastPts)
+            {
+                var start = ToVn(p.ScheduleTime);
+                completedSessions.Add((start, $"Buổi PT 1-1 ({p.Sport}) — {FormatVnDateTime(start, vi)}, {p.Room}, HLV {p.CoachName} (Đã hoàn thành)"));
+            }
+        }
+        catch (Exception ex) { logger.LogDebug(ex, "Flow 6: cannot load past PT slots."); }
 
         // Receptionist appointments are stored with "Name (phone)" in customer_name.
         var digits = Regex.Replace(phone, "[^0-9]", "");
@@ -345,16 +432,25 @@ public static partial class MemberEndpoints
                     var dateStr = string.IsNullOrWhiteSpace(a.Date) ? todayVn.ToString("yyyy-MM-dd") : a.Date!;
                     if (!DateTime.TryParseExact($"{dateStr} {a.Time}", "yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var start))
                         continue;
-                    if (start < ToVn(nowUtc).AddMinutes(-30)) continue;
                     var coach = string.IsNullOrWhiteSpace(a.CoachName) ? "" : $", HLV {a.CoachName}";
-                    sessions.Add((start, $"Lịch hẹn tại quầy \"{a.Title}\" — {FormatVnDateTime(start, vi)}{coach} (trạng thái: {a.Status})"));
+                    if (start < ToVn(nowUtc).AddMinutes(-30))
+                    {
+                        completedSessions.Add((start, $"Lịch hẹn tại quầy \"{a.Title}\" — {FormatVnDateTime(start, vi)}{coach} (trạng thái: {a.Status})"));
+                    }
+                    else
+                    {
+                        upcomingSessions.Add((start, $"Lịch hẹn tại quầy \"{a.Title}\" — {FormatVnDateTime(start, vi)}{coach} (trạng thái: {a.Status})"));
+                    }
                 }
             }
             catch (Exception ex) { logger.LogDebug(ex, "Flow 6: cannot load appointments."); }
         }
 
-        foreach (var s in sessions.OrderBy(s => s.LocalStart).Take(8))
+        foreach (var s in upcomingSessions.OrderBy(s => s.LocalStart).Take(8))
             result.UpcomingSessions.Add(s.Text);
+
+        foreach (var s in completedSessions.OrderByDescending(s => s.LocalStart).Take(8))
+            result.CompletedSessions.Add(s.Text);
 
         if (memberId != Guid.Empty)
         {
@@ -398,6 +494,191 @@ public static partial class MemberEndpoints
             {
                 logger.LogDebug(ex, "Flow 6: cannot load assigned workout plans.");
             }
+
+            // 1. Body metrics (InBody)
+            try
+            {
+                var metric = await db.BodyMetrics.AsNoTracking()
+                    .Where(m => m.UserId == memberId)
+                    .OrderByDescending(m => m.RecordedAt)
+                    .FirstOrDefaultAsync(ct);
+
+                if (metric != null)
+                {
+                    var parts = new List<string>();
+                    if (metric.Height.HasValue && metric.Height > 0) parts.Add($"Chiều cao: {metric.Height:0.#}cm");
+                    if (metric.Weight.HasValue && metric.Weight > 0) parts.Add($"Cân nặng: {metric.Weight:0.#}kg");
+                    if (metric.Bmi.HasValue && metric.Bmi > 0)
+                    {
+                        var bmiVal = metric.Bmi.Value;
+                        var eval = bmiVal < 18.5m ? "Gầy"
+                            : bmiVal < 24.9m ? "Chuẩn/Bình thường"
+                            : bmiVal < 29.9m ? "Hơi thừa cân"
+                            : "Béo phì";
+                        parts.Add($"BMI: {bmiVal:0.#} ({eval})");
+                    }
+                    if (metric.BodyFat.HasValue && metric.BodyFat > 0) parts.Add($"Mỡ: {metric.BodyFat:0.#}%");
+                    if (metric.MuscleMass.HasValue && metric.MuscleMass > 0) parts.Add($"Cơ: {metric.MuscleMass:0.#}kg");
+                    var dateStr = metric.RecordedAt != default ? $" (đo ngày {ToVn(metric.RecordedAt):dd/MM/yyyy})" : "";
+                    result.BodyMetricsSummary = string.Join(", ", parts) + dateStr;
+                }
+            }
+            catch (Exception ex) { logger.LogDebug(ex, "Flow 6: cannot load body metrics."); }
+
+            // 2. Gate Check-ins (Attendance at center)
+            try
+            {
+                var checkIns = await db.Database.SqlQueryRaw<AiCheckInRow>(
+                    @"SELECT check_in_time AS ""CheckInTime"",
+                             check_out_time AS ""CheckOutTime"",
+                             COALESCE(method, 'qr') AS ""Method""
+                      FROM check_in_logs
+                      WHERE user_id = {0}
+                      ORDER BY check_in_time DESC
+                      LIMIT 5", memberId).ToListAsync(ct);
+
+                var sevenDaysAgo = nowUtc.AddDays(-7);
+                var countLast7Days = checkIns.Count(c => c.CheckInTime >= sevenDaysAgo);
+                if (checkIns.Count > 0)
+                {
+                    var latest = checkIns[0];
+                    var start = ToVn(latest.CheckInTime);
+                    var methodStr = (latest.Method ?? "").ToLowerInvariant() switch
+                    {
+                        "qr" => "quét mã QR",
+                        "card" => "quẹt thẻ",
+                        _ => "check-in tại quầy"
+                    };
+                    var outStr = latest.CheckOutTime.HasValue ? $", check-out lúc {ToVn(latest.CheckOutTime.Value):HH:mm}" : "";
+                    result.RecentCheckIns.Add($"Trong 7 ngày qua bạn đã đến phòng tập {countLast7Days} lần. Lần check-in gần nhất: {FormatVnDateTime(start, vi)} ({methodStr}{outStr}).");
+                }
+            }
+            catch (Exception ex) { logger.LogDebug(ex, "Flow 6: cannot load check-in logs."); }
+
+            // 3. Invoices & Billing
+            try
+            {
+                var invoices = await db.Invoices.AsNoTracking()
+                    .Where(i => i.UserId == memberId)
+                    .OrderByDescending(i => i.CreatedAt)
+                    .Take(3)
+                    .ToListAsync(ct);
+
+                foreach (var inv in invoices)
+                {
+                    var status = inv.Status switch
+                    {
+                        SmartGym.Domain.Enums.PaymentStatus.Completed => "Đã thanh toán",
+                        SmartGym.Domain.Enums.PaymentStatus.Pending => "Chờ thanh toán",
+                        SmartGym.Domain.Enums.PaymentStatus.Failed => "Thất bại",
+                        _ => inv.Status.ToString()
+                    };
+                    var date = ToVn(inv.CreatedAt);
+                    result.RecentInvoices.Add($"Hóa đơn {inv.InvoiceNumber}: {inv.TotalAmount:N0}đ — {status} ({date:dd/MM/yyyy})");
+                }
+            }
+            catch (Exception ex) { logger.LogDebug(ex, "Flow 6: cannot load invoices."); }
+
+            // 4. Package benefits & amenities
+            try
+            {
+                var activePackageIds = await db.Subscriptions.AsNoTracking()
+                    .Where(s => s.UserId == memberId && s.PaymentStatus == SmartGym.Domain.Enums.PaymentStatus.Completed && s.EndDate >= nowUtc && s.PackageId != null)
+                    .Select(s => s.PackageId!)
+                    .Distinct()
+                    .ToListAsync(ct);
+
+                if (activePackageIds.Count > 0)
+                {
+                    var benefits = await db.MembershipBenefits.AsNoTracking()
+                        .Where(b => activePackageIds.Contains(b.PackageId))
+                        .Select(b => b.Description)
+                        .Distinct()
+                        .Take(5)
+                        .ToListAsync(ct);
+
+                    foreach (var b in benefits)
+                    {
+                        if (!string.IsNullOrWhiteSpace(b))
+                            result.PackageBenefits.Add(b);
+                    }
+                }
+            }
+            catch (Exception ex) { logger.LogDebug(ex, "Flow 6: cannot load membership benefits."); }
+
+            // 5. Assigned Coach info
+            try
+            {
+                var coachRow = await db.Database.SqlQueryRaw<AiCoachInfoRow>(
+                    @"SELECT COALESCE(u.full_name, 'HLV Trung tâm') AS ""CoachName"",
+                             COALESCE(cp.specialties, s.sport, 'Fitness & Thể thao') AS ""Specialties""
+                      FROM coach_availability_slots s
+                      INNER JOIN coaches c ON c.id = s.coach_id
+                      INNER JOIN users u ON u.id = c.user_id
+                      LEFT JOIN coach_profiles cp ON cp.user_id = u.id
+                      WHERE s.booked_member_id = {0}
+                      ORDER BY s.start_time DESC
+                      LIMIT 1", memberId).FirstOrDefaultAsync(ct);
+
+                if (coachRow != null && !string.IsNullOrWhiteSpace(coachRow.CoachName))
+                {
+                    result.AssignedCoachInfo = $"{coachRow.CoachName} (Chuyên môn: {coachRow.Specialties})";
+                }
+            }
+            catch (Exception ex) { logger.LogDebug(ex, "Flow 6: cannot load coach info."); }
+
+            // 6. Coach Assessments (Evaluations & Feedback from Coach)
+            try
+            {
+                var assessments = await db.Database.SqlQueryRaw<AiCoachAssessmentRow>(@"
+                    SELECT ca.completion AS ""Completion"",
+                           ca.metrics_json::text AS ""MetricsJson"",
+                           ca.comment AS ""Comment"",
+                           ca.next_step AS ""NextStep"",
+                           ca.created_at AS ""CreatedAt"",
+                           COALESCE(c.class_name, 'Buổi tập cá nhân') AS ""ClassName"",
+                           COALESCE(u.full_name, 'HLV Trung tâm') AS ""CoachName"",
+                           COALESCE(s.name, 'Thể thao') AS ""SportName""
+                    FROM coach_assessments ca
+                    LEFT JOIN classes c ON c.id = ca.session_id
+                    LEFT JOIN sports s ON s.id = c.sport_id
+                    LEFT JOIN coaches co ON co.id = ca.coach_id
+                    LEFT JOIN users u ON u.id = co.user_id
+                    WHERE ca.member_id = {0}
+                    ORDER BY ca.created_at DESC
+                    LIMIT 5", memberId).ToListAsync(ct);
+
+                foreach (var a in assessments)
+                {
+                    var dateStr = ToVn(a.CreatedAt).ToString("dd/MM/yyyy");
+                    var metricSummary = "";
+                    if (!string.IsNullOrWhiteSpace(a.MetricsJson) && a.MetricsJson != "[]")
+                    {
+                        try
+                        {
+                            using var doc = JsonDocument.Parse(a.MetricsJson);
+                            if (doc.RootElement.ValueKind == JsonValueKind.Array)
+                            {
+                                var mList = new List<string>();
+                                foreach (var elem in doc.RootElement.EnumerateArray())
+                                {
+                                    var n = elem.TryGetProperty("name", out var np) ? np.GetString() : null;
+                                    var v = elem.TryGetProperty("value", out var vp) ? vp.ToString() : null;
+                                    var u = elem.TryGetProperty("unit", out var up) ? up.GetString() : null;
+                                    if (!string.IsNullOrEmpty(n) && !string.IsNullOrEmpty(v))
+                                        mList.Add($"{n}: {v} {u ?? ""}".Trim());
+                                }
+                                if (mList.Count > 0) metricSummary = $" [Chỉ số: {string.Join(", ", mList)}]";
+                            }
+                        }
+                        catch { }
+                    }
+                    var commentStr = !string.IsNullOrWhiteSpace(a.Comment) ? $" - Nhận xét của HLV: \"{a.Comment}\"" : "";
+                    var nextStepStr = !string.IsNullOrWhiteSpace(a.NextStep) ? $" - Định hướng buổi tới: \"{a.NextStep}\"" : "";
+                    result.RecentCoachAssessments.Add($"Buổi \"{a.ClassName}\" ({a.SportName}, ngày {dateStr}, HLV {a.CoachName}) — Mức độ hoàn thành: {a.Completion}%{metricSummary}{commentStr}{nextStepStr}");
+                }
+            }
+            catch (Exception ex) { logger.LogDebug(ex, "Flow 6: cannot load coach assessments."); }
         }
 
         return result;
@@ -448,7 +729,7 @@ public static partial class MemberEndpoints
         var sb = new StringBuilder();
 
         sb.AppendLine("Bạn là \"Trợ lý AI SportCenter\" — trợ lý ảo 24/7 dành cho hội viên của trung tâm thể thao SportCenter (Gym, Yoga, Bơi, Boxing, Cầu lông).");
-        sb.AppendLine("Nhiệm vụ: trả lời ngắn gọn, thân thiện, chính xác bằng TIẾNG VIỆT về: lịch tập cá nhân, gói tập, giáo án bài tập được giao, kỹ thuật bài tập, dinh dưỡng thể thao cơ bản, phục hồi cơ bắp, nội quy & chính sách trung tâm.");
+        sb.AppendLine("Nhiệm vụ: trả lời ngắn gọn, thân thiện, chính xác bằng TIẾNG VIỆT về: lịch tập cá nhân (cả sắp tới và đã hoàn thành), gói tập & quyền lợi tiện ích (locker, khăn, sauna, bãi xe), kết quả đánh giá tiến độ & nhận xét của HLV (mức độ hoàn thành, mức tạ, thể lực, định hướng tiếp theo), chỉ số cơ thể InBody, tần suất check-in cổng, hóa đơn thanh toán, HLV phụ trách, giáo án bài tập được giao, kỹ thuật bài tập, dinh dưỡng thể thao cơ bản, phục hồi cơ bắp, nội quy & chính sách trung tâm.");
         sb.AppendLine();
         sb.AppendLine("QUY TẮC BẮT BUỘC:");
         sb.AppendLine("1. Chỉ dùng dữ liệu trong mục [NGỮ CẢNH HỘI VIÊN] khi nói về lịch, gói tập, giáo án của hội viên. TUYỆT ĐỐI không bịa lịch học, tên HLV, gói tập, bài tập, giá tiền hay ngày hết hạn.");
@@ -462,6 +743,8 @@ public static partial class MemberEndpoints
         sb.AppendLine();
         sb.AppendLine("[THÔNG TIN TRUNG TÂM]");
         sb.AppendLine("• Giờ mở cửa: 06:00 — 22:00 mỗi ngày, kể cả Thứ 7, Chủ Nhật và ngày Lễ.");
+        sb.AppendLine("• Tiện ích chung: Tủ đồ locker riêng có khóa, mượn khăn tập miễn phí tại quầy, phòng tắm nóng lạnh, nước uống nóng lạnh miễn phí, gửi xe miễn phí tại hầm.");
+        sb.AppendLine("• Tiện ích đặc biệt: Phòng xông hơi khô Sauna và bể bơi áp dụng theo các gói Plus / Premium / VIP hoặc gói chuyên biệt.");
         sb.AppendLine("• Đặt lớp: tối đa 7 ngày trước, tối thiểu 30 phút trước giờ học; lớp đủ người sẽ khóa đặt chỗ.");
         sb.AppendLine("• Hủy lớp hợp lệ: trước giờ học ít nhất 2 tiếng; hủy muộn hoặc vắng không báo bị tính 1 buổi đã dùng.");
         sb.AppendLine("• Bảo lưu: mỗi gói tối đa 1 lần, tổng không quá 60 ngày (liên hệ Lễ tân).");
@@ -477,12 +760,30 @@ public static partial class MemberEndpoints
         sb.AppendLine(ctx.ActivePackages.Count == 0
             ? "• Gói tập còn hiệu lực: (chưa có gói nào được kích hoạt hoặc đã hết hạn)"
             : "• Gói tập còn hiệu lực:\n  - " + string.Join("\n  - ", ctx.ActivePackages));
+        if (ctx.PackageBenefits.Count > 0)
+            sb.AppendLine("• Tiện ích & quyền lợi gói tập:\n  - " + string.Join("\n  - ", ctx.PackageBenefits));
+        if (!string.IsNullOrWhiteSpace(ctx.BodyMetricsSummary))
+            sb.AppendLine($"• Chỉ số thể hình InBody: {ctx.BodyMetricsSummary}");
+        else
+            sb.AppendLine("• Chỉ số thể hình InBody: (Chưa có dữ liệu đo gần đây; hướng dẫn hội viên ghé quầy Lễ tân/PT để đo InBody miễn phí)");
+        if (ctx.RecentCheckIns.Count > 0)
+            sb.AppendLine($"• Tần suất đi tập & check-in cổng: {string.Join(" ", ctx.RecentCheckIns)}");
+        if (ctx.RecentInvoices.Count > 0)
+            sb.AppendLine("• Hóa đơn & thanh toán gần đây:\n  - " + string.Join("\n  - ", ctx.RecentInvoices));
+        if (!string.IsNullOrWhiteSpace(ctx.AssignedCoachInfo))
+            sb.AppendLine($"• HLV cá nhân phụ trách: {ctx.AssignedCoachInfo}");
         sb.AppendLine(ctx.UpcomingSessions.Count == 0
             ? "• Lịch sắp tới: (chưa có buổi nào được đặt)"
             : "• Lịch sắp tới (theo thứ tự thời gian):\n  - " + string.Join("\n  - ", ctx.UpcomingSessions));
+        sb.AppendLine(ctx.CompletedSessions.Count == 0
+            ? "• Các buổi tập đã hoàn thành trong quá khứ: (chưa ghi nhận buổi tập nào đã hoàn thành)"
+            : "• Các buổi tập đã hoàn thành trong quá khứ (gần đây nhất):\n  - " + string.Join("\n  - ", ctx.CompletedSessions));
         sb.AppendLine(ctx.AssignedWorkouts.Count == 0
             ? "• Giáo án & bài tập được giao: (chưa có giáo án nào được HLV giao hoặc đã hoàn thành hết)"
             : "• Giáo án & bài tập được giao:\n  - " + string.Join("\n  - ", ctx.AssignedWorkouts));
+        sb.AppendLine(ctx.RecentCoachAssessments.Count == 0
+            ? "• Đánh giá tiến độ & nhận xét từ HLV: (chưa có đánh giá nào gần đây)"
+            : "• Đánh giá tiến độ & nhận xét từ HLV gần đây:\n  - " + string.Join("\n  - ", ctx.RecentCoachAssessments));
 
         if (history.Count > 0)
         {
@@ -562,6 +863,60 @@ public static partial class MemberEndpoints
         if (Has("hoàn tiền", "khiếu nại", "sự cố", "lỗi", "bảo lưu", "trừ tiền", "không vào được"))
         {
             return ("🛟 Với vấn đề này, bạn vui lòng gửi Phiếu hỗ trợ để bộ phận Lễ tân & CSKH kiểm tra và phản hồi trong 2-4 giờ làm việc nhé.", "support_ticket");
+        }
+
+        if (Has("inbody", "chỉ số", "chi so", "bmi", "cân nặng", "can nang", "chiều cao", "chieu cao", "mỡ", "cơ bắp", "the hinh", "thể hình"))
+        {
+            if (!string.IsNullOrWhiteSpace(ctx.BodyMetricsSummary))
+            {
+                return ($"📊 Chỉ số thể hình gần nhất của bạn:\n• {ctx.BodyMetricsSummary}\nNếu muốn cập nhật chỉ số mới, bạn hãy ghé quầy Lễ tân hoặc khu vực PT để đo InBody định kỳ nhé!", "none");
+            }
+            return ("📊 Hiện hệ thống chưa ghi nhận số đo InBody của bạn. Bạn hãy ghé quầy Lễ tân hoặc khu vực PT để được đo chỉ số cơ thể (cân nặng, chiều cao, % mỡ, cơ) hoàn toàn miễn phí nhé!", "none");
+        }
+
+        if (Has("check-in", "checkin", "vào cổng", "vao cong", "quét mã", "quet ma", "tần suất", "mấy lần", "may lan"))
+        {
+            if (ctx.RecentCheckIns.Count > 0)
+            {
+                return ($"🚪 Thông tin check-in cổng của bạn:\n• {string.Join("\n• ", ctx.RecentCheckIns)}\nBạn có thể xem toàn bộ lịch sử quét mã ra/vào tại mục Điểm danh.", "attendance");
+            }
+            return ("🚪 Bạn có thể xem lịch sử quét mã QR ra/vào trung tâm tại mục Điểm danh nhé!", "attendance");
+        }
+
+        if (Has("hóa đơn", "hoa don", "thanh toán", "thanh toan", "tiền", "giao dịch", "giao dich", "invoice"))
+        {
+            if (ctx.RecentInvoices.Count > 0)
+            {
+                return ($"🧾 Hóa đơn gần đây của bạn:\n• {string.Join("\n• ", ctx.RecentInvoices.Take(3))}\nBạn có thể xem chi tiết hoặc tải hóa đơn tại mục Thanh toán & Hóa đơn.", "payments");
+            }
+            return ("🧾 Bạn có thể tra cứu toàn bộ lịch sử thanh toán và hóa đơn tại mục Thanh toán & Hóa đơn nhé!", "payments");
+        }
+
+        if (Has("khăn", "khan", "locker", "tủ đồ", "tu do", "xông hơi", "xong hoi", "sauna", "bể bơi", "be boi", "bơi", "gửi xe", "gui xe", "tiện ích", "tien ich", "quyền lợi", "quyen loi"))
+        {
+            var benefitsText = ctx.PackageBenefits.Count > 0
+                ? "• " + string.Join("\n• ", ctx.PackageBenefits)
+                : "• Tủ đồ locker riêng có khóa\n• Mượn khăn tập miễn phí tại quầy\n• Phòng tắm nóng lạnh & phòng thay đồ\n• Nước uống nóng lạnh miễn phí\n• Gửi xe miễn phí tại hầm trung tâm";
+            return ($"✨ Tiện ích & quyền lợi tại SportCenter dành cho bạn:\n{benefitsText}\n(Phòng xông hơi Sauna và bể bơi áp dụng cho hội viên đăng ký gói tương ứng). Bạn có thể kiểm tra chi tiết tại mục Gói tập.", "packages");
+        }
+
+        if (Has("hlv", "huấn luyện viên", "huan luyen vien", "pt", "kèm"))
+        {
+            if (!string.IsNullOrWhiteSpace(ctx.AssignedCoachInfo))
+            {
+                return ($"🏋️ Huấn luyện viên cá nhân của bạn: {ctx.AssignedCoachInfo}.\nBạn có thể nhắn tin trực tiếp để trao đổi về bài tập tại mục Tin nhắn HLV.", "chat");
+            }
+            return ("🏋️ Bạn có thể kết nối và nhắn tin trực tiếp với các Huấn luyện viên tại mục Tin nhắn HLV hoặc đặt lịch PT 1-1 tại mục Đặt lịch nhé!", "chat");
+        }
+
+        if (Has("hoàn thành", "hoan thanh", "đã tập", "da tap", "đã học", "da hoc", "đã qua", "da qua", "quá khứ", "qua khu", "lịch sử tập", "lich su tap", "buổi tập cũ", "buoi tap cu"))
+        {
+            if (ctx.CompletedSessions.Count > 0)
+            {
+                return ($"✅ Các buổi tập đã hoàn thành gần đây của {ctx.FullName}:\n• " + string.Join("\n• ", ctx.CompletedSessions.Take(5)) +
+                        "\nBạn có thể kiểm tra toàn bộ lịch sử điểm danh và buổi tập tại mục Điểm danh hoặc Lịch của tôi.", "attendance");
+            }
+            return ("📅 Hiện hệ thống chưa ghi nhận buổi tập nào đã hoàn thành trong quá khứ của bạn. Khi bạn tham gia các lớp học hoặc buổi tập PT, lịch sử sẽ được cập nhật tại đây và mục Điểm danh nhé!", "schedule");
         }
 
         if (Has("lịch", "buổi", "hôm nay", "ngày mai", "mấy giờ", "học gì", "tập gì"))

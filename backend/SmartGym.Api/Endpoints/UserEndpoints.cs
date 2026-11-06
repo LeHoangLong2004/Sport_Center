@@ -21,9 +21,57 @@ public static class UserEndpoints
         group
             .MapGet(
                 "/",
-                async (IUserService userService) =>
+                async (IUserService userService, SmartGym.Infrastructure.Persistence.EF.SmartGymDbContext db) =>
                 {
-                    var users = await userService.GetAllUsersAsync();
+                    var users = (await userService.GetAllUsersAsync()).ToList();
+
+                    try
+                    {
+                        await db.Database.OpenConnectionAsync();
+                        await using var cmd = db.Database.GetDbConnection().CreateCommand();
+                        cmd.CommandText = @"
+                            SELECT cs.coach_id, s.name, c.user_id
+                            FROM coach_sports cs
+                            JOIN sports s ON cs.sport_id = s.id
+                            LEFT JOIN coaches c ON cs.coach_id = c.id";
+
+                        var coachSportsMap = new Dictionary<Guid, List<string>>();
+                        using var reader = await cmd.ExecuteReaderAsync();
+                        while (await reader.ReadAsync())
+                        {
+                            var coachId = reader.GetGuid(0);
+                            var sportName = reader.GetString(1);
+                            var userId = reader.IsDBNull(2) ? (Guid?)null : reader.GetGuid(2);
+
+                            if (!coachSportsMap.ContainsKey(coachId))
+                                coachSportsMap[coachId] = new List<string>();
+                            coachSportsMap[coachId].Add(sportName);
+
+                            if (userId.HasValue)
+                            {
+                                if (!coachSportsMap.ContainsKey(userId.Value))
+                                    coachSportsMap[userId.Value] = new List<string>();
+                                coachSportsMap[userId.Value].Add(sportName);
+                            }
+                        }
+
+                        foreach (var u in users)
+                        {
+                            if (string.Equals(u.RoleName, "coach", StringComparison.OrdinalIgnoreCase))
+                            {
+                                if (coachSportsMap.TryGetValue(u.Id, out var sports))
+                                {
+                                    u.AssignedSports = sports.Distinct().ToList();
+                                }
+                                else
+                                {
+                                    u.AssignedSports = new List<string>();
+                                }
+                            }
+                        }
+                    }
+                    catch { }
+
                     return Results.Ok(users);
                 }
             )

@@ -105,9 +105,10 @@ public class UserRepository : IUserRepository
                 DateOfBirth = m.DateOfBirth,
                 EmergencyContact = m.EmergencyContact ?? "Chưa cập nhật",
                 AvatarUrl =
-                    m.AvatarUrl
-                    ?? "https://ui-avatars.com/api/?name="
-                        + System.Uri.EscapeDataString(m.FullName),
+                    !string.IsNullOrWhiteSpace(m.AvatarUrl)
+                        ? m.AvatarUrl
+                        : "https://ui-avatars.com/api/?name="
+                            + System.Uri.EscapeDataString(m.FullName),
                 PackageName = m.Subscription?.PackageName ?? "Chưa đăng ký",
                 StartDate = m.Subscription?.StartDate,
                 ExpiryDate = m.Subscription?.EndDate,

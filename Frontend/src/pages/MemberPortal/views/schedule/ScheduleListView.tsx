@@ -8,6 +8,7 @@ import {
   Target,
   CheckCircle2,
   PlusCircle,
+  Star,
 } from "lucide-react";
 import type { MemberSessionItem, MemberScreen } from "../../types";
 import { STATUS_BADGE } from "./scheduleConstants";
@@ -18,6 +19,8 @@ interface Props {
   onSelectSession: (session: MemberSessionItem) => void;
   onStartCancelSession: (session: MemberSessionItem) => void;
   onNavigate: (screen: MemberScreen) => void;
+  onStartReview?: (session: MemberSessionItem) => void;
+  reviewedSessionIds?: Set<string>;
 }
 
 export default function ScheduleListView({
@@ -26,6 +29,8 @@ export default function ScheduleListView({
   onSelectSession,
   onStartCancelSession,
   onNavigate,
+  onStartReview,
+  reviewedSessionIds,
 }: Props) {
   if (byDate.length === 0) {
     return (
@@ -175,41 +180,72 @@ export default function ScheduleListView({
                     {/* Right Actions */}
                     <div className="flex items-center gap-2 shrink-0">
                       {s.status === "hoàn thành" ? (
-                        <button
-                          type="button"
-                          onClick={() => onSelectSession(s)}
-                          className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all shadow-xs cursor-pointer"
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          Điểm danh & Nhận xét
-                        </button>
+                        <>
+                          {reviewedSessionIds?.has(s.id) ? (
+                            <span className="flex items-center gap-1 px-3 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                              Đã đánh giá
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (onStartReview) {
+                                  onStartReview(s);
+                                } else {
+                                  localStorage.setItem(
+                                    "target_review_session",
+                                    JSON.stringify({
+                                      sessionId: s.id,
+                                      sessionName: s.name,
+                                      coachId: s.coachId || "",
+                                      coachName: s.coachName,
+                                      date: s.date,
+                                    })
+                                  );
+                                  onNavigate("reviews");
+                                }
+                              }}
+                              className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 rounded-xl transition-all shadow-xs cursor-pointer"
+                            >
+                              <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                              Đánh giá HLV
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => onSelectSession(s)}
+                            className="px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-xs cursor-pointer"
+                          >
+                            Chi tiết
+                          </button>
+                        </>
                       ) : s.status !== "đã hủy" ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => onStartCancelSession(s)}
+                            className="px-3.5 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-xl transition-colors shadow-xs cursor-pointer"
+                          >
+                            Hủy đặt chỗ
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onSelectSession(s)}
+                            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-all shadow-xs cursor-pointer shadow-emerald-500/20"
+                          >
+                            Xem chi tiết
+                          </button>
+                        </>
+                      ) : (
                         <button
                           type="button"
                           onClick={() => onSelectSession(s)}
-                          className="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-all shadow-xs cursor-pointer shadow-emerald-500/20"
+                          className="px-3 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
                         >
-                          Điểm danh
-                        </button>
-                      ) : null}
-
-                      {s.status !== "đã hủy" && s.status !== "hoàn thành" && (
-                        <button
-                          type="button"
-                          onClick={() => onStartCancelSession(s)}
-                          className="px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-xs cursor-pointer"
-                        >
-                          Dời ca
+                          Chi tiết
                         </button>
                       )}
-
-                      <button
-                        type="button"
-                        onClick={() => onSelectSession(s)}
-                        className="px-2 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
-                      >
-                        Chi tiết →
-                      </button>
                     </div>
                   </div>
                 );

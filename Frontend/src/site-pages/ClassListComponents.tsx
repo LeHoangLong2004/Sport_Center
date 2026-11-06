@@ -9,6 +9,7 @@ export type ClassStatus = "available" | "full" | "almost";
 
 export interface ClassItem {
   id: string;
+  sportId?: string;
   title: string;
   sportName: string;
   scheduleTime: string;
@@ -51,6 +52,9 @@ export function ClassCard({ item }: { item: ClassItem }) {
       className="bg-white border border-[#e2e8f0] rounded-2xl p-5 flex gap-5 items-center shadow-[0_4px_6px_rgba(0,0,0,0.02)] cursor-pointer hover:-translate-y-1 hover:border-[#10b981] hover:shadow-[0_8px_16px_rgba(0,0,0,0.06)] transition-all duration-300 group"
       data-name="class-card"
       data-class-id={item.id}
+      onClick={() => {
+        window.location.hash = `#chitietlophoc?classId=${item.id}`;
+      }}
     >
       <div className="shrink-0 w-[180px] h-[130px] rounded-xl overflow-hidden relative">
         <img
@@ -102,6 +106,10 @@ export function ClassCard({ item }: { item: ClassItem }) {
               className="bg-[#2563eb] text-white font-['Inter:Bold'] font-bold text-[13px] px-4 py-2 rounded-lg hover:bg-[#1d4ed8] transition-colors"
               data-name="btn-detail"
               data-class-id={item.id}
+              onClick={(e) => {
+                e.stopPropagation();
+                window.location.hash = `#chitietlophoc?classId=${item.id}`;
+              }}
               type="button"
             >
               Chi tiết &amp; Đăng ký

@@ -52,17 +52,26 @@ public static partial class ClassEndpoints
                     if (coachId == null)
                         return Results.BadRequest(new { message = "Tài khoản Coach chưa có hồ sơ hoạt động." });
 
+                    var scheduleTimeUtc = request.ScheduleTime.Kind == DateTimeKind.Utc
+                        ? request.ScheduleTime
+                        : request.ScheduleTime.ToUniversalTime();
+
+                    if (scheduleTimeUtc < DateTime.UtcNow.AddHours(24))
+                    {
+                        return Results.BadRequest(new { message = "Thời gian bắt đầu lớp học đề xuất phải cách thời điểm hiện tại ít nhất 24 giờ để Ban quản lý kịp phê duyệt và hội viên đăng ký." });
+                    }
+
                     if (request.SportId != Guid.Empty)
                     {
-                        try
+                        var isAssignedSport = await db.Database.SqlQueryRaw<int>(
+                            @"SELECT 1 AS ""Value"" FROM coach_sports WHERE coach_id = {0} AND sport_id = {1}",
+                            coachId.Value, request.SportId
+                        ).AnyAsync();
+
+                        if (!isAssignedSport)
                         {
-                            await db.Database.ExecuteSqlInterpolatedAsync(
-                                $@"INSERT INTO coach_sports (coach_id, sport_id)
-                                   VALUES ({coachId.Value}, {request.SportId})
-                                   ON CONFLICT (coach_id, sport_id) DO NOTHING"
-                            );
+                            return Results.BadRequest(new { message = "Bạn chưa được phân công phụ trách bộ môn này. Vui lòng liên hệ Quản lý để được cấp quyền chuyên môn trước khi đề xuất mở lớp." });
                         }
-                        catch { }
                     }
 
                     var createRequest = new CreateClassRequest

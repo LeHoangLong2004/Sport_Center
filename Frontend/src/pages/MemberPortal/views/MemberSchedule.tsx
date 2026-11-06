@@ -22,12 +22,15 @@ import {
   getMonday,
   formatDateISO,
   isCancelledSession,
+  resolveSessionStatus,
 } from "./schedule/scheduleConstants";
 import ScheduleFilterBar from "./schedule/ScheduleFilterBar";
 import ScheduleWeekView from "./schedule/ScheduleWeekView";
 import ScheduleListView from "./schedule/ScheduleListView";
 import SessionDetailModal from "./schedule/SessionDetailModal";
 import CancelSessionModal from "./schedule/CancelSessionModal";
+import { ReviewModal, type ReviewSessionTarget } from "./reviews/ReviewModal";
+import { fetchMyReviews, submitCoachReview } from "../services/reviewSync";
 
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
@@ -41,7 +44,10 @@ export default function MemberSchedule({ onNavigate }: Props) {
 
   // Data States
   const [sessions, setSessions] = useState<MemberSessionItem[]>(() =>
-    getSavedMemberData(storageKey, [])
+    getSavedMemberData<MemberSessionItem[]>(storageKey, []).map((s) => ({
+      ...s,
+      status: resolveSessionStatus(s.status, s.date, s.endTime, s.startTime),
+    }))
   );
 
   // View Mode & Filters
@@ -56,6 +62,15 @@ export default function MemberSchedule({ onNavigate }: Props) {
   // Modals & Interactions
   const [selectedSession, setSelectedSession] = useState<MemberSessionItem | null>(null);
   const [cancellingSession, setCancellingSession] = useState<MemberSessionItem | null>(null);
+  const [reviewingSession, setReviewingSession] = useState<ReviewSessionTarget | null>(null);
+  const [reviewedSessionIds, setReviewedSessionIds] = useState<Set<string>>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("reviewed_session_ids") || "[]");
+      return new Set(saved);
+    } catch {
+      return new Set();
+    }
+  });
   const [cancelReason, setCancelReason] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
 
@@ -64,12 +79,19 @@ export default function MemberSchedule({ onNavigate }: Props) {
     try {
       const backendData = await MemberBackendAPI.getBookings();
       if (Array.isArray(backendData)) {
-        setSessions(backendData);
-        saveMemberData(storageKey, backendData);
+        const normalized = backendData.map((s) => ({
+          ...s,
+          status: resolveSessionStatus(s.status, s.date, s.endTime, s.startTime),
+        }));
+        setSessions(normalized);
+        saveMemberData(storageKey, normalized);
         return;
       }
     } catch {}
-    const local = getSavedMemberData(storageKey, []);
+    const local = getSavedMemberData<MemberSessionItem[]>(storageKey, []).map((s) => ({
+      ...s,
+      status: resolveSessionStatus(s.status, s.date, s.endTime, s.startTime),
+    }));
     setSessions(local);
   };
 
@@ -81,9 +103,47 @@ export default function MemberSchedule({ onNavigate }: Props) {
     return unsub;
   }, []);
 
+  // Fetch already reviewed sessions
+  useEffect(() => {
+    if (!userId) return;
+    void fetchMyReviews()
+      .then((reviews) => {
+        const ids = reviews.map((r) => r.sessionId).filter(Boolean) as string[];
+        if (ids.length > 0) {
+          setReviewedSessionIds((prev) => new Set([...prev, ...ids]));
+        }
+      })
+      .catch(() => {});
+  }, [userId]);
+
+  const handleScheduleReviewSubmit = async (data: {
+    sessionId: string;
+    sessionName: string;
+    coachId: string;
+    coachName: string;
+    rating: number;
+    tags: string[];
+    comment: string;
+  }) => {
+    const memberName = user?.fullName || user?.name || "Hội viên";
+    await submitCoachReview({
+      coachId: data.coachId,
+      coachName: data.coachName,
+      sessionId: data.sessionId,
+      sessionName: data.sessionName,
+      rating: data.rating,
+      comment: data.comment,
+      tags: data.tags,
+      memberName,
+    });
+    setReviewedSessionIds((prev) => new Set([...prev, data.sessionId]));
+    setFeedback("Cảm ơn bạn đã gửi đánh giá! Đóng góp của bạn giúp HLV hoàn thiện chất lượng giảng dạy.");
+    setTimeout(() => setFeedback(null), 4500);
+  };
+
   // Lock scroll on modals
   useEffect(() => {
-    if (cancellingSession || selectedSession) {
+    if (cancellingSession || selectedSession || reviewingSession) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
@@ -91,7 +151,7 @@ export default function MemberSchedule({ onNavigate }: Props) {
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [cancellingSession, selectedSession]);
+  }, [cancellingSession, selectedSession, reviewingSession]);
 
   useEffect(() => {
     return () => {
@@ -324,6 +384,16 @@ export default function MemberSchedule({ onNavigate }: Props) {
           onSelectSession={setSelectedSession}
           onStartCancelSession={setCancellingSession}
           onNavigate={onNavigate}
+          onStartReview={(s) =>
+            setReviewingSession({
+              sessionId: s.id,
+              sessionName: s.name,
+              coachId: s.coachId || "",
+              coachName: s.coachName,
+              date: s.date,
+            })
+          }
+          reviewedSessionIds={reviewedSessionIds}
         />
       )}
 
@@ -333,6 +403,16 @@ export default function MemberSchedule({ onNavigate }: Props) {
         onClose={() => setSelectedSession(null)}
         onNavigate={onNavigate}
         onStartCancelSession={setCancellingSession}
+        onStartReview={(s) =>
+          setReviewingSession({
+            sessionId: s.id,
+            sessionName: s.name,
+            coachId: s.coachId || "",
+            coachName: s.coachName,
+            date: s.date,
+          })
+        }
+        isReviewed={selectedSession ? reviewedSessionIds.has(selectedSession.id) : false}
       />
 
       {/* 6. Cancel Session Modal */}
@@ -342,6 +422,13 @@ export default function MemberSchedule({ onNavigate }: Props) {
         onCancelReasonChange={setCancelReason}
         onClose={() => setCancellingSession(null)}
         onConfirmCancel={handleConfirmCancel}
+      />
+
+      {/* 7. Coach Review Modal */}
+      <ReviewModal
+        session={reviewingSession}
+        onClose={() => setReviewingSession(null)}
+        onSubmit={handleScheduleReviewSubmit}
       />
     </div>
   );

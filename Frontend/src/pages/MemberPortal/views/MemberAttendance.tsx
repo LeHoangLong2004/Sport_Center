@@ -1,15 +1,21 @@
 import React, { useState, useEffect, useMemo } from "react";
 import type { MemberScreen } from "../types";
-import { UserCheck, DoorOpen, QrCode } from "lucide-react";
+import { UserCheck, DoorOpen, QrCode, Award } from "lucide-react";
 import { MemberBackendAPI } from "../services/memberData";
 
-import type { AttendanceSession, GateCheckInRecord, AttendanceSummary } from "./attendance/types";
+import type {
+  AttendanceSession,
+  GateCheckInRecord,
+  AttendanceSummary,
+  CoachAssessmentData,
+} from "./attendance/types";
 import AttendanceHeader from "./attendance/AttendanceHeader";
 import AttendanceClassList from "./attendance/AttendanceClassList";
 import AttendanceGateList from "./attendance/AttendanceGateList";
 import AttendanceQrPass from "./attendance/AttendanceQrPass";
 import AttendanceDetailModal from "./attendance/AttendanceDetailModal";
 import AttendanceQrModal from "./attendance/AttendanceQrModal";
+import AttendanceAssessmentList from "./attendance/AttendanceAssessmentList";
 
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
@@ -23,13 +29,14 @@ export default function MemberAttendance({ onNavigate }: Props) {
   const memberId = user?.id || "m-demo";
 
   // Active Tab
-  const [activeTab, setActiveTab] = useState<"classes" | "gate" | "qrcode">("classes");
+  const [activeTab, setActiveTab] = useState<"classes" | "gate" | "qrcode" | "assessments">("classes");
 
   // State
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [sessions, setSessions] = useState<AttendanceSession[]>([]);
   const [gateCheckIns, setGateCheckIns] = useState<GateCheckInRecord[]>([]);
+  const [assessments, setAssessments] = useState<CoachAssessmentData[]>([]);
   const [summary, setSummary] = useState<AttendanceSummary>({
     attendanceRate: null,
     totalSessions: 0,
@@ -65,7 +72,11 @@ export default function MemberAttendance({ onNavigate }: Props) {
       // 1. Try dedicated endpoint first
       let fetchedSuccessfully = false;
       try {
-        const res = await fetch("/api/member/attendance", { headers });
+        const [res, asmRes] = await Promise.all([
+          fetch("/api/member/attendance", { headers }),
+          fetch("/api/member/assessments", { headers }).catch(() => null),
+        ]);
+
         if (res.ok) {
           const data = await res.json();
           if (data && (Array.isArray(data.sessions) || Array.isArray(data.gateCheckIns))) {
@@ -74,7 +85,17 @@ export default function MemberAttendance({ onNavigate }: Props) {
             if (data.summary) {
               setSummary(data.summary);
             }
+            if (Array.isArray(data.assessments)) {
+              setAssessments(data.assessments);
+            }
             fetchedSuccessfully = true;
+          }
+        }
+
+        if (asmRes && asmRes.ok) {
+          const asmData = await asmRes.json();
+          if (Array.isArray(asmData) && asmData.length > 0) {
+            setAssessments(asmData);
           }
         }
       } catch (err) {
@@ -249,6 +270,23 @@ export default function MemberAttendance({ onNavigate }: Props) {
             <QrCode className="w-4 h-4 text-emerald-500" />
             Thẻ QR Hội Viên
           </button>
+          <button
+            id="tab-btn-assessments"
+            onClick={() => setActiveTab("assessments")}
+            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 cursor-pointer ${
+              activeTab === "assessments"
+                ? "bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-400 shadow-sm"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <Award className="w-4 h-4 text-orange-500" />
+            Đánh giá từ HLV
+            {assessments.length > 0 && (
+              <span className="ml-1 px-2 py-0.5 rounded-full text-xs bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 font-extrabold">
+                {assessments.length}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
@@ -281,6 +319,14 @@ export default function MemberAttendance({ onNavigate }: Props) {
           memberId={memberId}
           memberName={memberName}
           memberEmail={memberEmail}
+        />
+      )}
+
+      {activeTab === "assessments" && (
+        <AttendanceAssessmentList
+          assessments={assessments}
+          loading={loading}
+          onNavigate={onNavigate}
         />
       )}
 
