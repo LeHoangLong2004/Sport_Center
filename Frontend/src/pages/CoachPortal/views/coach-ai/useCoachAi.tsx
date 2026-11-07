@@ -36,8 +36,8 @@ export function useCoachAi(initialMemberId?: string | null) {
   const [targetId, setTargetId] = useState<string>("");
   const [sportId, setSportId] = useState<string>("");
   const [level, setLevel] = useState<string>("Cơ bản");
-  const [goal, setGoal] = useState<string>("Giảm mỡ & đốt calo toàn thân");
-  const [equipment, setEquipment] = useState<string[]>(["Thảm tập", "Tạ tay (Dumbbells)"]);
+  const [goal, setGoal] = useState<string>("");
+  const [equipment, setEquipment] = useState<string[]>([]);
   const [durationMinutes, setDurationMinutes] = useState<number>(60);
   const [exerciseCount, setExerciseCount] = useState<number>(5);
 
@@ -196,6 +196,7 @@ export function useCoachAi(initialMemberId?: string | null) {
           if (active && data) {
             setSelectedMemberProfile(data);
             if (data.member?.goal) setGoal(data.member.goal);
+            else setGoal("");
             if (data.member?.level) setLevel(data.member.level);
             if (data.member?.sport && sports.length > 0) {
               const matched = sports.find(
@@ -231,6 +232,7 @@ export function useCoachAi(initialMemberId?: string | null) {
       const m = members.find((item) => item.id === id);
       if (m) {
         if (m.goal) setGoal(m.goal);
+        else setGoal("");
         if (m.level) setLevel(m.level);
         if (m.sport) {
           const matched = sports.find(

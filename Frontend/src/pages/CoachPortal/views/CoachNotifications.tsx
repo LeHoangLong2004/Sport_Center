@@ -17,19 +17,34 @@ import {
   Info,
   Calendar,
   X,
+  ChevronRight,
+  Eye,
 } from "lucide-react";
 import { CoachAPI } from "../services/api";
 import type { MockNotification } from "../services/api";
+import CoachReviewDetailModal from "../components/CoachReviewDetailModal";
+import { useUserProfile } from "../../../hooks/useUserProfile";
+import {
+  fetchCoachReviews,
+  fetchReviewById,
+  type SyncedCoachReview,
+} from "../../../services/sync/reviewSync";
 
 type FilterTab = "all" | "unread" | "reviews" | "approvals" | "system";
 
 export default function CoachNotifications() {
+  const { profile } = useUserProfile();
   const [notifications, setNotifications] = useState<MockNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const [feedback, setFeedback] = useState<string | null>(null);
+
+  // Review detail modal state
+  const [selectedReview, setSelectedReview] = useState<Partial<SyncedCoachReview> | null>(null);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewLoading, setReviewLoading] = useState(false);
 
   const fetchNotifications = async (isManual = false) => {
     if (isManual) setRefreshing(true);
@@ -64,6 +79,86 @@ export default function CoachNotifications() {
     await CoachAPI.markAllNotificationsAsRead();
     setFeedback("Đã đánh dấu tất cả thông báo là đã đọc.");
     setTimeout(() => setFeedback(null), 3500);
+  };
+
+  const handleOpenReviewModal = async (n: MockNotification) => {
+    setReviewModalOpen(true);
+    setReviewLoading(true);
+
+    try {
+      // 1. If notification has targetId (UUID), try fetchReviewById
+      if (
+        n.targetId &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(n.targetId)
+      ) {
+        const rev = await fetchReviewById(n.targetId);
+        if (rev) {
+          setSelectedReview(rev);
+          return;
+        }
+      }
+
+      // 2. Fetch all reviews for this coach
+      const coachId = profile?.id;
+      let coachReviews: SyncedCoachReview[] = [];
+      if (coachId) {
+        coachReviews = await fetchCoachReviews(coachId);
+      }
+
+      // 2a. Match by targetId if review list contains it
+      let match = coachReviews.find((r) => r.id === n.targetId);
+
+      // 2b. Match by sessionName in notification content or title
+      if (!match) {
+        match = coachReviews.find(
+          (r) =>
+            r.sessionName &&
+            (n.content.toLowerCase().includes(r.sessionName.toLowerCase()) ||
+              n.title.toLowerCase().includes(r.sessionName.toLowerCase()))
+        );
+      }
+
+      // 2c. Match by date
+      if (!match && coachReviews.length > 0) {
+        const notifDate = n.sentAt ? n.sentAt.split("T")[0] : "";
+        match = coachReviews.find((r) => r.createdAt && r.createdAt.split("T")[0] === notifDate);
+        if (!match) match = coachReviews[0];
+      }
+
+      if (match) {
+        setSelectedReview(match);
+      } else {
+        // Fallback representation directly from the notification
+        setSelectedReview({
+          id: n.id,
+          coachId: coachId || "",
+          coachName: profile?.fullName || "Huấn luyện viên",
+          memberId: "",
+          memberName: "Học viên ẩn danh",
+          anonymizedMemberName: "Học viên ẩn danh",
+          rating: 5,
+          comment: n.content,
+          tags: ["Giảng dạy dễ hiểu", "Động viên tích cực"],
+          createdAt: n.sentAt,
+          sessionName: n.title.includes("đánh giá") ? "Buổi tập chuyên đề" : n.title,
+        });
+      }
+    } catch (e) {
+      console.error("Lỗi khi mở chi tiết đánh giá:", e);
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  const handleNotificationClick = async (n: MockNotification) => {
+    if (!n.isRead) {
+      void handleMarkAsRead(n.id);
+    }
+
+    const category = getNotificationCategory(n);
+    if (category === "reviews") {
+      await handleOpenReviewModal(n);
+    }
   };
 
   // Helper to categorize notifications
@@ -379,17 +474,18 @@ export default function CoachNotifications() {
         ) : (
           filteredNotifications.map((n) => {
             const isUnread = !n.isRead;
+            const category = getNotificationCategory(n);
+            const isReviewNotification = category === "reviews";
+
             return (
               <div
                 key={n.id}
-                onClick={() => {
-                  if (isUnread) handleMarkAsRead(n.id);
-                }}
+                onClick={() => handleNotificationClick(n)}
                 className={`relative group bg-white dark:bg-slate-900 border rounded-2xl p-4 sm:p-5 transition-all duration-200 cursor-pointer ${
                   isUnread
                     ? "border-emerald-300 dark:border-emerald-800 bg-emerald-50/20 dark:bg-emerald-950/10 shadow-xs hover:border-emerald-400"
                     : "border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-2xs"
-                }`}
+                } ${isReviewNotification ? "hover:border-amber-300 dark:hover:border-amber-700" : ""}`}
               >
                 <div className="flex items-start gap-3.5">
                   {/* Left Category Icon */}
@@ -422,6 +518,21 @@ export default function CoachNotifications() {
                         <span>Hạn thực hiện: {n.deadline}</span>
                       </div>
                     )}
+
+                    {/* Dedicated CTA for Review Notifications */}
+                    {isReviewNotification && (
+                      <div className="mt-3 pt-3 border-t border-amber-100/70 dark:border-amber-900/40 flex items-center justify-between">
+                        <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                          <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                          Bấm để xem chi tiết nhận xét & tiêu chí đánh giá
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-xs transition-colors">
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Xem chi tiết</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Right Mark as read button */}
@@ -430,7 +541,7 @@ export default function CoachNotifications() {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleMarkAsRead(n.id);
+                        void handleMarkAsRead(n.id);
                       }}
                       className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 transition-colors shrink-0 cursor-pointer"
                       title="Đánh dấu đã đọc"
@@ -444,6 +555,17 @@ export default function CoachNotifications() {
           })
         )}
       </div>
+
+      {/* Review Detail Modal */}
+      <CoachReviewDetailModal
+        isOpen={reviewModalOpen}
+        onClose={() => setReviewModalOpen(false)}
+        review={selectedReview}
+        loading={reviewLoading}
+        onNavigateToAllReviews={() => {
+          window.location.hash = "#coach-reviews";
+        }}
+      />
     </div>
   );
 }

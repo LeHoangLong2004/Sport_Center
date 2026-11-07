@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
 type FulfillmentStatus = "pending" | "preparing" | "ready" | "delivering" | "delivered" | "cancelled"
 
@@ -70,6 +71,8 @@ export function ProductOrdersPage() {
   const [messages, setMessages] = useState<Record<string, OrderMessage[]>>({})
   const [drafts, setDrafts] = useState<Record<string, string>>({})
   const [error, setError] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 8
 
   const loadOrders = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
@@ -138,12 +141,29 @@ export function ProductOrdersPage() {
     delivering: orders.filter((order) => order.fulfillmentStatus === "delivering").length,
   }), [orders])
 
-  const visibleOrders = orders.filter((order) => {
-    if (filter === "all") return true
-    if (filter === "pending") return order.status === "pending" || order.fulfillmentStatus === "pending"
-    if (filter === "preparing") return order.fulfillmentStatus === "preparing" || order.fulfillmentStatus === "ready"
-    return order.fulfillmentStatus === filter
-  })
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filter])
+
+  const visibleOrders = useMemo(() => {
+    return orders.filter((order) => {
+      if (filter === "all") return true
+      if (filter === "pending") return order.status === "pending" || order.fulfillmentStatus === "pending"
+      if (filter === "preparing") return order.fulfillmentStatus === "preparing" || order.fulfillmentStatus === "ready"
+      return order.fulfillmentStatus === filter
+    })
+  }, [orders, filter])
+
+  const totalPages = Math.max(1, Math.ceil(visibleOrders.length / ITEMS_PER_PAGE))
+  const page = Math.min(Math.max(1, currentPage), totalPages)
+
+  const paginatedOrders = useMemo(() => {
+    const start = (page - 1) * ITEMS_PER_PAGE
+    return visibleOrders.slice(start, start + ITEMS_PER_PAGE)
+  }, [visibleOrders, page, ITEMS_PER_PAGE])
+
+  const fromIndex = visibleOrders.length > 0 ? (page - 1) * ITEMS_PER_PAGE + 1 : 0
+  const toIndex = Math.min(page * ITEMS_PER_PAGE, visibleOrders.length)
 
   async function confirmPayment(orderId: string) {
     if (processingId) return
@@ -229,26 +249,165 @@ export function ProductOrdersPage() {
       </div>
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-5 py-4"><h2 className="font-extrabold text-slate-900">Danh sách đơn Member</h2></div>
-        {loading ? <p className="p-8 text-center text-sm text-slate-400">Đang tải đơn hàng...</p> : visibleOrders.length === 0 ? <p className="p-8 text-center text-sm text-slate-400">Không có đơn hàng ở trạng thái này.</p> : <div className="divide-y divide-slate-100">{visibleOrders.map((order) => {
-          const action = nextAction(order)
-          const isPaid = order.status === "completed"
-          const isClosed = order.fulfillmentStatus === "delivered" || order.fulfillmentStatus === "cancelled"
-          return (
-            <article key={order.id} className="p-5">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2"><h3 className="font-bold text-slate-900">#{order.id.slice(0, 8).toUpperCase()}</h3><span className={`rounded-full px-2 py-1 text-xs font-bold ${isPaid ? "bg-emerald-50 text-emerald-700" : "bg-slate-50 text-slate-700"}`}>{isPaid ? "Đã thanh toán" : "Chờ thanh toán"}</span><span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">{fulfillmentLabels[order.fulfillmentStatus]}</span></div>
-                  <p className="mt-1 text-sm text-slate-600">{order.customerName} · {new Date(order.createdAt).toLocaleString("vi-VN")}</p>
-                  <p className="mt-2 text-xs text-slate-500">{order.items.map((item) => `${item.name} × ${item.quantity}`).join(", ")}</p>
-                  <p className="mt-2 text-xs font-semibold text-slate-600">{order.fulfillmentMethod === "in_center_delivery" ? `Giao tại: ${order.deliveryLocation || "Chưa nhập vị trí"}` : "Nhận tại quầy lễ tân"}{order.assignedToName ? ` · Phụ trách: ${order.assignedToName}` : ""}</p>
-                </div>
-                <div className="flex flex-wrap items-center justify-end gap-2"><strong className="mr-2 text-lg text-emerald-600">{money(order.totalAmount)}</strong>{order.status === "pending" && <button type="button" disabled={processingId === order.id} onClick={() => void confirmPayment(order.id)} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">{processingId === order.id ? "Đang xử lý..." : "Xác nhận đã thu tiền"}</button>}{isPaid && action && <button type="button" disabled={processingId === order.id} onClick={() => void updateFulfillment(order.id, action[0])} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-700 disabled:opacity-50">{action[1]}</button>}{!isClosed && <button type="button" onClick={() => void updateFulfillment(order.id, "cancelled")} className="rounded-lg border border-red-200 px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50">Hủy</button>}<button type="button" onClick={() => void toggleChat(order.id)} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-600 hover:border-emerald-300 hover:text-emerald-600">{openChatId === order.id ? "Đóng chat" : order.messageCount > 0 ? `Xem chat (${order.messageCount})` : "Nhắn Member"}</button></div>
+        <div className="border-b border-slate-200 px-5 py-4 flex items-center justify-between">
+          <h2 className="font-extrabold text-slate-900">Danh sách đơn Member</h2>
+          <span className="text-xs font-semibold text-slate-500">
+            Tổng cộng: <strong className="text-slate-900 font-bold">{visibleOrders.length}</strong> đơn
+          </span>
+        </div>
+        {loading ? (
+          <p className="p-8 text-center text-sm text-slate-400">Đang tải đơn hàng...</p>
+        ) : paginatedOrders.length === 0 ? (
+          <p className="p-8 text-center text-sm text-slate-400">Không có đơn hàng ở trạng thái này.</p>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {paginatedOrders.map((order) => {
+              const action = nextAction(order)
+              const isPaid = order.status === "completed"
+              const isClosed = order.fulfillmentStatus === "delivered" || order.fulfillmentStatus === "cancelled"
+              return (
+                <article key={order.id} className="p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-bold text-slate-900">#{order.id.slice(0, 8).toUpperCase()}</h3>
+                        <span className={`rounded-full px-2 py-1 text-xs font-bold ${isPaid ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+                          {isPaid ? "Đã thanh toán" : "Chờ thanh toán"}
+                        </span>
+                        <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">
+                          {fulfillmentLabels[order.fulfillmentStatus]}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-sm text-slate-600">{order.customerName} · {new Date(order.createdAt).toLocaleString("vi-VN")}</p>
+                      <p className="mt-2 text-xs text-slate-500">{order.items.map((item) => `${item.name} × ${item.quantity}`).join(", ")}</p>
+                      <p className="mt-2 text-xs font-semibold text-slate-600">{order.fulfillmentMethod === "in_center_delivery" ? `Giao tại: ${order.deliveryLocation || "Chưa nhập vị trí"}` : "Nhận tại quầy lễ tân"}{order.assignedToName ? ` · Phụ trách: ${order.assignedToName}` : ""}</p>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      <strong className="mr-2 text-lg text-emerald-600">{money(order.totalAmount)}</strong>
+                      {order.status === "pending" && (
+                        <button type="button" disabled={processingId === order.id} onClick={() => void confirmPayment(order.id)} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
+                          {processingId === order.id ? "Đang xử lý..." : "Xác nhận đã thu tiền"}
+                        </button>
+                      )}
+                      {isPaid && action && (
+                        <button type="button" disabled={processingId === order.id} onClick={() => void updateFulfillment(order.id, action[0])} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-700 disabled:opacity-50">
+                          {action[1]}
+                        </button>
+                      )}
+                      {!isClosed && (
+                        <button type="button" onClick={() => void updateFulfillment(order.id, "cancelled")} className="rounded-lg border border-red-200 px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50">
+                          Hủy
+                        </button>
+                      )}
+                      <button type="button" onClick={() => void toggleChat(order.id)} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-600 hover:border-emerald-300 hover:text-emerald-600">
+                        {openChatId === order.id ? "Đóng chat" : order.messageCount > 0 ? `Xem chat (${order.messageCount})` : "Nhắn Member"}
+                      </button>
+                    </div>
+                  </div>
+                  {openChatId === order.id && (
+                    <div className="mt-4 rounded-xl bg-slate-50 p-4">
+                      <div className="max-h-48 space-y-2 overflow-y-auto">
+                        {(messages[order.id] || []).length === 0 ? (
+                          <p className="text-sm text-slate-400">Chưa có tin nhắn. Hãy chủ động thông báo tình trạng đơn cho Member.</p>
+                        ) : (
+                          messages[order.id].map((item) => (
+                            <div key={item.id} className="rounded-lg bg-white p-3 text-sm shadow-sm">
+                              <p className="font-bold text-slate-700">{item.senderName}</p>
+                              <p className="mt-1 text-slate-600">{item.message}</p>
+                              <p className="mt-1 text-xs text-slate-400">{new Date(item.createdAt).toLocaleString("vi-VN")}</p>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                      <div className="mt-3 flex gap-2">
+                        <input value={drafts[order.id] || ""} onChange={(event) => setDrafts((current) => ({ ...current, [order.id]: event.target.value }))} onKeyDown={(event) => { if (event.key === "Enter") void sendMessage(order.id) }} placeholder="Nhập tin nhắn cho Member..." className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500" />
+                        <button type="button" onClick={() => void sendMessage(order.id)} className="rounded-lg bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-sm font-bold text-white">
+                          Gửi
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </article>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Pagination Bar */}
+        {visibleOrders.length > 0 && (
+          <div className="bg-slate-50 border-t border-slate-200 flex items-center justify-between px-5 py-3 text-xs sm:text-sm">
+            <span className="text-slate-500 font-medium">
+              Hiển thị <strong className="text-slate-800">{fromIndex} - {toIndex}</strong> trên tổng số{" "}
+              <strong className="text-slate-800">{visibleOrders.length}</strong> đơn hàng
+            </span>
+
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1.5 select-none">
+                <button
+                  type="button"
+                  disabled={page === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className={`flex items-center justify-center size-8 rounded-lg border text-xs transition cursor-pointer ${
+                    page === 1
+                      ? "bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed"
+                      : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100"
+                  }`}
+                  title="Trang trước"
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
+                  if (
+                    totalPages > 7 &&
+                    p !== 1 &&
+                    p !== totalPages &&
+                    Math.abs(p - page) > 1
+                  ) {
+                    if (p === 2 || p === totalPages - 1) {
+                      return (
+                        <span key={p} className="px-1 text-slate-400 text-xs font-bold">
+                          ...
+                        </span>
+                      )
+                    }
+                    return null
+                  }
+
+                  const isActive = p === page
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setCurrentPage(p)}
+                      className={`flex items-center justify-center size-8 rounded-lg border text-xs font-bold transition cursor-pointer ${
+                        isActive
+                          ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                          : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  )
+                })}
+
+                <button
+                  type="button"
+                  disabled={page === totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className={`flex items-center justify-center size-8 rounded-lg border text-xs transition cursor-pointer ${
+                    page === totalPages
+                      ? "bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed"
+                      : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100"
+                  }`}
+                  title="Trang kế tiếp"
+                >
+                  <ChevronRight className="size-4" />
+                </button>
               </div>
-              {openChatId === order.id && <div className="mt-4 rounded-xl bg-slate-50 p-4"><div className="max-h-48 space-y-2 overflow-y-auto">{(messages[order.id] || []).length === 0 ? <p className="text-sm text-slate-400">Chưa có tin nhắn. Hãy chủ động thông báo tình trạng đơn cho Member.</p> : messages[order.id].map((item) => <div key={item.id} className="rounded-lg bg-white p-3 text-sm shadow-sm"><p className="font-bold text-slate-700">{item.senderName}</p><p className="mt-1 text-slate-600">{item.message}</p><p className="mt-1 text-xs text-slate-400">{new Date(item.createdAt).toLocaleString("vi-VN")}</p></div>)}</div><div className="mt-3 flex gap-2"><input value={drafts[order.id] || ""} onChange={(event) => setDrafts((current) => ({ ...current, [order.id]: event.target.value }))} onKeyDown={(event) => { if (event.key === "Enter") void sendMessage(order.id) }} placeholder="Nhập tin nhắn cho Member..." className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500" /><button type="button" onClick={() => void sendMessage(order.id)} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700">Gửi</button></div></div>}
-            </article>
-          )
-        })}</div>}
+            )}
+          </div>
+        )}
       </section>
     </div>
   )

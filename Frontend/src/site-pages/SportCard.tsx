@@ -1,9 +1,11 @@
+import { useState, useEffect } from "react"
 import { FadeUp } from "../components/Motion"
-import { imgFlame } from "./sportsPageData"
+import { imgFlame, imgHeroBg } from "./sportsPageData"
 
 export function SportCard({
   id = "boi-loi",
   img,
+  fallbackImg,
   badge,
   icon,
   title,
@@ -14,6 +16,7 @@ export function SportCard({
 }: {
   id?: string
   img: string
+  fallbackImg?: string
   badge: string
   icon: string
   title: string
@@ -22,6 +25,13 @@ export function SportCard({
   tall?: boolean
   delay?: number
 }) {
+  const defaultFallback = fallbackImg || imgHeroBg
+  const [src, setSrc] = useState(img || defaultFallback)
+
+  useEffect(() => {
+    setSrc(img || defaultFallback)
+  }, [img, defaultFallback])
+
   return (
     <FadeUp
       delay={delay}
@@ -32,13 +42,18 @@ export function SportCard({
       className="bg-white border border-[#e2e8f0] flex flex-1 flex-col items-start min-w-0 overflow-clip rounded-[16px] shadow-[0px_4px_12px_0px_rgba(0,0,0,0.02)] hover:shadow-xl hover:-translate-y-1 hover:border-[#10b981] transition-all duration-300 cursor-pointer group"
     >
       <div
-        className="relative w-full shrink-0 overflow-hidden"
+        className="relative w-full shrink-0 overflow-hidden bg-slate-100"
         style={{ height: tall ? 220 : 200 }}
       >
         <img
-          alt={title}
+          alt=""
           className="absolute inset-0 object-cover size-full max-w-none transition-transform duration-500 group-hover:scale-105"
-          src={img}
+          src={src}
+          onError={() => {
+            if (src !== defaultFallback) {
+              setSrc(defaultFallback)
+            }
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[rgba(15,23,42,0.4)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <div className="absolute bg-[#10b981] flex items-center px-[12px] py-[6px] rounded-[100px] left-[16px] top-[16px] shadow-md shadow-emerald-500/20">

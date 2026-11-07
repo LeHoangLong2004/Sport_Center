@@ -118,7 +118,7 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
                       </span>
                     </div>
                     <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                      Mục tiêu: {memberProfile?.member?.goal || selectedMember.goal || "Cải thiện thể lực"} · {memberProfile?.member?.level || selectedMember.level || "Cơ bản"}
+                      Mục tiêu: {memberProfile?.member?.goal || selectedMember.goal || "Chưa thiết lập"} · {memberProfile?.member?.level || selectedMember.level || "Cơ bản"}
                     </div>
                   </div>
                 </div>

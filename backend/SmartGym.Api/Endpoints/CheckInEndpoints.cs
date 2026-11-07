@@ -82,7 +82,12 @@ public static class CheckInEndpoints
 
             IReadOnlyList<SmartGym.Domain.Entities.CheckInRecord> records;
 
-            if (string.Equals(role, UserRole.CenterManager.ToString(), StringComparison.OrdinalIgnoreCase) ||
+            var qMemberId = context.Request.Query["memberId"].ToString();
+            if (!string.IsNullOrEmpty(qMemberId) && Guid.TryParse(qMemberId, out var targetMemberId))
+            {
+                records = await checkInRepo.GetByMemberAsync(targetMemberId);
+            }
+            else if (string.Equals(role, UserRole.CenterManager.ToString(), StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(role, UserRole.Receptionist.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 records = await checkInRepo.GetTodayAsync();

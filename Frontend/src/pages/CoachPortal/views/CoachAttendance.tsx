@@ -16,6 +16,7 @@ import {
   CheckCheck,
   AlertTriangle,
   Info,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import AttendanceSessionSelector from "./attendance/AttendanceSessionSelector";
@@ -33,6 +34,7 @@ type FilterStatus = "all" | "attended" | "no_show" | "pending";
 export default function CoachAttendance({ initialSessionId, navigateTo }: Props) {
   const {
     activeSessions,
+    isLoadingSessions,
     selectedSessionId,
     setSelectedSessionId,
     records,
@@ -40,6 +42,8 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
     savedRecords,
     setSavedRecords,
     members,
+    sheetState,
+    setSheetState,
   } = useCoachAttendanceData(initialSessionId);
 
   const [isSaving, setIsSaving] = useState(false);
@@ -69,7 +73,8 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
     [activeSessions, selectedSessionId]
   );
 
-  const isFinalized = !!finalizedMap[selectedSessionId];
+  const isFinalized = sheetState === "finalized" || !!finalizedMap[selectedSessionId];
+  const isDraft = sheetState === "draft" || (!isFinalized && records.some((r) => r.status !== "chưa điểm danh"));
   const isEditingThisSession = editingSessionId === selectedSessionId;
   const isLocked = isFinalized && !isEditingThisSession;
 
@@ -89,29 +94,80 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
   const handleStatusChange = useCallback(
     (memberId: string, status: AttendanceStatus) => {
       if (isLocked) return;
-      setRecords((prev) => prev.map((r) => (r.memberId === memberId ? { ...r, status } : r)));
+      const next = records.map((r) => (r.memberId === memberId ? { ...r, status } : r));
+      setRecords(next);
+
+      // Lưu ngay vào localStorage
+      if (selectedSessionId) {
+        localStorage.setItem(`coach_attendance_${selectedSessionId}`, JSON.stringify(next));
+        // Tự động lưu bản nháp vào server
+        if (!isFinalized) {
+          void CoachAPI.saveAttendanceDraft(selectedSessionId, next).catch(() => {});
+        }
+      }
+      if (!isFinalized) setSheetState("draft");
     },
-    [isLocked, setRecords]
+    [isLocked, records, selectedSessionId, isFinalized, setRecords, setSheetState]
   );
 
   const handleNoteChange = useCallback(
     (memberId: string, note: string) => {
       if (isLocked) return;
-      setRecords((prev) => prev.map((r) => (r.memberId === memberId ? { ...r, note } : r)));
+      const next = records.map((r) => (r.memberId === memberId ? { ...r, note } : r));
+      setRecords(next);
+
+      if (selectedSessionId) {
+        localStorage.setItem(`coach_attendance_${selectedSessionId}`, JSON.stringify(next));
+        if (!isFinalized) {
+          void CoachAPI.saveAttendanceDraft(selectedSessionId, next).catch(() => {});
+        }
+      }
     },
-    [isLocked, setRecords]
+    [isLocked, records, selectedSessionId, isFinalized, setRecords]
   );
 
   const handleMarkAllPresent = () => {
     if (isLocked) return;
-    setRecords((prev) => prev.map((r) => ({ ...r, status: "attended" })));
-    toast.info("Đã đánh dấu tất cả học viên có mặt.");
+    const next = records.map((r) => ({ ...r, status: "attended" as const }));
+    setRecords(next);
+    if (selectedSessionId) {
+      localStorage.setItem(`coach_attendance_${selectedSessionId}`, JSON.stringify(next));
+      if (!isFinalized) {
+        void CoachAPI.saveAttendanceDraft(selectedSessionId, next).catch(() => {});
+      }
+    }
+    if (!isFinalized) setSheetState("draft");
+    toast.info("Đã đánh dấu tất cả học viên có mặt (đã lưu nháp).");
   };
 
   const handleResetAll = () => {
     if (isLocked) return;
-    setRecords((prev) => prev.map((r) => ({ ...r, status: "chưa điểm danh" })));
+    const next = records.map((r) => ({ ...r, status: "chưa điểm danh" as const, note: "" }));
+    setRecords(next);
+    if (selectedSessionId) {
+      localStorage.setItem(`coach_attendance_${selectedSessionId}`, JSON.stringify(next));
+      if (!isFinalized) {
+        void CoachAPI.saveAttendanceDraft(selectedSessionId, next).catch(() => {});
+      }
+    }
+    setSheetState("unmarked");
     toast.info("Đã đặt lại trạng thái điểm danh về chưa điểm danh.");
+  };
+
+  const handleSaveDraft = async () => {
+    if (!selectedSessionId || isSaving) return;
+    setIsSaving(true);
+    try {
+      localStorage.setItem(`coach_attendance_${selectedSessionId}`, JSON.stringify(records));
+      await CoachAPI.saveAttendanceDraft(selectedSessionId, records);
+      setSavedRecords(records);
+      setSheetState("draft");
+      toast.success("Đã lưu bản nháp điểm danh vào hệ thống!");
+    } catch (err: any) {
+      toast.error(err?.message || "Lưu nháp thất bại.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleSave = async () => {
@@ -125,7 +181,7 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
     setIsSaving(true);
     try {
       localStorage.setItem(`coach_attendance_${selectedSessionId}`, JSON.stringify(records));
-      await CoachAPI.finalizeAttendance(selectedSessionId, records).catch(() => {});
+      await CoachAPI.finalizeAttendance(selectedSessionId, records, auditReason.trim() || undefined);
 
       const updatedMap = { ...finalizedMap, [selectedSessionId]: true };
       setFinalizedMap(updatedMap);
@@ -134,6 +190,7 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
       setEditingSessionId(null);
       setAuditReason("");
       setSavedRecords(records);
+      setSheetState("finalized");
       toast.success(isEditingThisSession ? "Đã lưu điều chỉnh điểm danh!" : "Đã chốt sổ điểm danh thành công!");
     } catch (err: any) {
       toast.error(err?.message || "Lưu thất bại. Vui lòng thử lại.");
@@ -175,13 +232,21 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
   }, [members, search, filterStatus, records]);
 
   if (!session) {
+    if (isLoadingSessions) {
+      return (
+        <div className="flex flex-col items-center justify-center py-24 text-slate-400 gap-3">
+          <Clock className="w-10 h-10 text-orange-500 animate-spin" />
+          <p className="text-base font-medium">Đang tải lịch dạy và ca học...</p>
+        </div>
+      );
+    }
     return (
       <div className="flex flex-col items-center justify-center py-24 text-slate-400 gap-3">
         <Clock className="w-10 h-10 text-slate-300 dark:text-slate-600" />
         <p className="text-base font-medium">Không có buổi học nào cần điểm danh.</p>
         <button
           type="button"
-          className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
+          className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 cursor-pointer"
           onClick={() => navigateTo("schedule")}
         >
           Xem lịch dạy →
@@ -280,6 +345,7 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
         activeSessions={activeSessions}
         session={session}
         isFinalized={isFinalized}
+        isDraft={isDraft}
         enrolledCount={members.length}
       />
 
@@ -506,10 +572,22 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
+            {!isFinalized && (
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={handleSaveDraft}
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/40 border border-amber-300 dark:border-amber-700 rounded-xl transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+              >
+                <FileText className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                Lưu bản nháp
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => navigateTo("assessment", { sessionId: selectedSessionId })}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-colors shadow-xs"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-colors shadow-xs cursor-pointer"
             >
               <Award className="w-4 h-4" />
               Đánh giá buổi học

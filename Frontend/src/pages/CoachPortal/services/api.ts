@@ -154,16 +154,23 @@ export const CoachAPI = {
     } catch {}
     return [];
   },
+  getSheetStatus: async (sessionId: string): Promise<{ state: string; isFinalized: boolean; isDraft: boolean; version: number }> => {
+    try {
+      const res = await fetchApi(`/coach/sessions/${sessionId}/attendance/sheet`);
+      if (res && typeof res.state === 'string') return res;
+    } catch {}
+    return { state: 'unmarked', isFinalized: false, isDraft: false, version: 0 };
+  },
   saveAttendanceDraft: async (sessionId: string, records: AttendanceRecord[]) => {
     return fetchApi(`/coach/sessions/${sessionId}/attendance/draft`, {
       method: 'POST',
       body: JSON.stringify({ records })
     });
   },
-  finalizeAttendance: async (sessionId: string, records: AttendanceRecord[]) => {
+  finalizeAttendance: async (sessionId: string, records: AttendanceRecord[], reason?: string) => {
     return fetchApi(`/coach/sessions/${sessionId}/attendance/finalize`, {
       method: 'POST',
-      body: JSON.stringify({ records })
+      body: JSON.stringify({ records, reason })
     });
   },
 
@@ -326,6 +333,8 @@ export const CoachAPI = {
       type?: string;
       isRead?: boolean;
       createdAt: string;
+      targetType?: string | null;
+      targetId?: string | null;
     }>;
 
     return (Array.isArray(notifications) ? notifications : []).map((notification) => ({
@@ -335,8 +344,8 @@ export const CoachAPI = {
       type: "Thông báo" as const,
       notificationType: notification.type || "general",
       sentAt: notification.createdAt,
-      targetType: "class" as const,
-      targetId: "",
+      targetType: (notification.targetType || "general") as any,
+      targetId: notification.targetId || "",
       targetName: "Hệ thống",
       isRead: notification.isRead ?? false,
     }));

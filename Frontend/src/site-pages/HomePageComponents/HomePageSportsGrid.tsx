@@ -49,9 +49,21 @@ export default function HomePageSportsGrid() {
             className="relative rounded-[16px] overflow-hidden h-[220px] cursor-pointer group shadow-sm hover:shadow-xl transition-all duration-300"
           >
             <img
-              alt={label}
+              alt=""
               className="absolute inset-0 w-full h-full object-cover max-w-none transition-transform duration-500 group-hover:scale-105"
               src={img}
+              onError={(e) => {
+                const norm = (label || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                let fallback = imgHeroBg;
+                if (norm.includes("boi") || norm.includes("swim")) fallback = "/assets/cfb22.png";
+                else if (norm.includes("yoga")) fallback = "/assets/88bba.png";
+                else if (norm.includes("gym") || norm.includes("the hinh") || norm.includes("hiit")) fallback = "/assets/e865e.png";
+                else if (norm.includes("box")) fallback = "/assets/252a5.png";
+                else if (norm.includes("bong ro") || norm.includes("basket")) fallback = "/assets/3c386.png";
+                if (e.currentTarget.src !== fallback) {
+                  e.currentTarget.src = fallback;
+                }
+              }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[rgba(11,31,58,0.9)] via-[rgba(11,31,58,0.3)] to-transparent" />
             <div className="absolute bottom-0 left-0 p-[20px] transform transition-transform duration-300 group-hover:-translate-y-2">

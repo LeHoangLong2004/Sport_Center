@@ -89,6 +89,19 @@ function formatSessionTime(value: string, durationMinutes: number) {
   return `${date} • ${time}`
 }
 
+function getSportFallbackImage(sportName: string): string {
+  const norm = (sportName || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  if (norm.includes("boi") || norm.includes("swim")) return "/assets/cfb22.png";
+  if (norm.includes("yoga")) return "/assets/88bba.png";
+  if (norm.includes("gym") || norm.includes("the hinh") || norm.includes("hiit")) return "/assets/e865e.png";
+  if (norm.includes("box")) return "/assets/252a5.png";
+  if (norm.includes("bong ro") || norm.includes("basket")) return "/assets/3c386.png";
+  return imgHero;
+}
+
 export function useSportDetail() {
   const [sport, setSport] = useState<SportDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -148,12 +161,13 @@ export function useSportDetail() {
           desc: item.coachBio || "Huấn luyện viên phụ trách lớp học.",
         }))
 
+        const sportFallback = getSportFallbackImage(selected.name);
         const detail: SportDetail = {
           id: selected.id,
           name: selected.name,
           tagline: selected.description || "Thông tin bộ môn được cập nhật từ hệ thống.",
-          heroImg: selected.imageUrl || imgHero,
-          facilityImg: facility?.imageUrl || selected.imageUrl || imgHero,
+          heroImg: selected.imageUrl || sportFallback,
+          facilityImg: facility?.imageUrl || selected.imageUrl || sportFallback,
           facilityTitle: facility?.name || firstClass?.facilityName || "Chưa cập nhật phòng tập",
           facilityDesc: facility?.address || "Thông tin phòng tập được cập nhật từ hệ thống.",
           schedule: sportClasses.map((item) => ({

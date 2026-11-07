@@ -104,7 +104,7 @@ export interface MockNotification {
   type: "Thông báo" | "Bài tập về nhà";
   notificationType?: string;
   sentAt: string;
-  targetType: "class" | "member";
+  targetType: "class" | "member" | "review" | string;
   targetId: string;
   targetName: string;
   deadline?: string;

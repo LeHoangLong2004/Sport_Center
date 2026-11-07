@@ -60,7 +60,14 @@ export default function ReceptionistPortal({ onExit }: { onExit: () => void }) {
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
-  const [selectedMember, setSelectedMember] = useState<any>(null)
+  const [selectedMember, setSelectedMember] = useState<any>(() => {
+    try {
+      const saved = sessionStorage.getItem("receptionist_selected_member");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
   const { profile, loading, uploadAvatar } = useUserProfile()
   const [error, setError] = useState<string>("");
 

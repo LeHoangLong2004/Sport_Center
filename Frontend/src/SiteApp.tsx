@@ -172,6 +172,13 @@ export default function SiteApp({
       clickable?.dataset.name === "similar-class-card" ||
       (label.includes("Chi tiết") && label.includes("Đăng ký"))
     ) {
+      const classId =
+        clickable?.dataset.classId ||
+        clickable?.closest("[data-class-id]")?.getAttribute("data-class-id")
+      if (classId) {
+        window.location.hash = `#chitietlophoc?classId=${classId}`
+        return
+      }
       navigate("chitietlophoc")
       return
     }

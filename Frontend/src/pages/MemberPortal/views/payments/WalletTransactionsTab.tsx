@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import {
   Wallet,
   PlusCircle,
@@ -6,6 +6,8 @@ import {
   CheckCircle2,
   ArrowUpRight,
   ArrowDownLeft,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import type { WalletTransaction } from "../../services/walletService";
 
@@ -22,6 +24,19 @@ export default function WalletTransactionsTab({
   onOpenTopUp,
   onOpenPendingTicket,
 }: Props) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 8;
+
+  const totalPages = Math.max(1, Math.ceil(transactions.length / ITEMS_PER_PAGE));
+  const page = Math.min(Math.max(1, currentPage), totalPages);
+
+  const paginatedTransactions = useMemo(() => {
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    return transactions.slice(start, start + ITEMS_PER_PAGE);
+  }, [transactions, page]);
+
+  const fromIndex = transactions.length > 0 ? (page - 1) * ITEMS_PER_PAGE + 1 : 0;
+  const toIndex = Math.min(page * ITEMS_PER_PAGE, transactions.length);
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
       <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
@@ -71,7 +86,7 @@ export default function WalletTransactionsTab({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-              {transactions.map((tx) => {
+              {paginatedTransactions.map((tx) => {
                 const isPending = tx.status === "pending";
                 const isPayment = tx.type === "payment";
                 return (
@@ -152,6 +167,78 @@ export default function WalletTransactionsTab({
               })}
             </tbody>
           </table>
+
+          {/* Pagination Bar */}
+          {transactions.length > 0 && (
+            <div className="bg-slate-50 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3 text-xs">
+              <span className="text-slate-500 dark:text-slate-400 font-medium">
+                Hiển thị{" "}
+                <strong className="text-slate-800 dark:text-slate-200">{fromIndex} - {toIndex}</strong>{" "}
+                trên tổng số{" "}
+                <strong className="text-slate-800 dark:text-slate-200">{transactions.length}</strong> giao dịch
+              </span>
+
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1.5 select-none">
+                  <button
+                    type="button"
+                    disabled={page === 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    className={`flex items-center justify-center size-8 rounded-lg border text-xs transition cursor-pointer ${
+                      page === 1
+                        ? "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-300 dark:text-slate-600 cursor-not-allowed"
+                        : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    }`}
+                    title="Trang trước"
+                  >
+                    <ChevronLeft className="size-4" />
+                  </button>
+
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
+                    if (totalPages > 7 && p !== 1 && p !== totalPages && Math.abs(p - page) > 1) {
+                      if (p === 2 || p === totalPages - 1) {
+                        return (
+                          <span key={p} className="px-1 text-slate-400 text-xs font-bold">
+                            ...
+                          </span>
+                        );
+                      }
+                      return null;
+                    }
+                    const isActive = p === page;
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setCurrentPage(p)}
+                        className={`flex items-center justify-center size-8 rounded-lg border text-xs font-bold transition cursor-pointer ${
+                          isActive
+                            ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    type="button"
+                    disabled={page === totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    className={`flex items-center justify-center size-8 rounded-lg border text-xs transition cursor-pointer ${
+                      page === totalPages
+                        ? "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-300 dark:text-slate-600 cursor-not-allowed"
+                        : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    }`}
+                    title="Trang sau"
+                  >
+                    <ChevronRight className="size-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

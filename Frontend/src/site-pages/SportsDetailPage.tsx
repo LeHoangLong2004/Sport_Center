@@ -13,7 +13,14 @@ export default function ChiTietBoMonPage() {
     <div className="bg-[#f8fafc] flex flex-col items-start w-full min-h-screen">
       <div className="relative flex flex-col gap-[24px] items-start px-[80px] py-[64px] w-full shrink-0 min-h-[320px]">
         <div aria-hidden className="absolute inset-0 pointer-events-none">
-          <img alt="" className="absolute inset-0 object-cover size-full max-w-none" src={sport.heroImg} />
+          <img
+            alt=""
+            className="absolute inset-0 object-cover size-full max-w-none"
+            src={sport.heroImg}
+            onError={(e) => {
+              e.currentTarget.src = "/assets/images/hero_bg.jpg";
+            }}
+          />
           <div className="absolute inset-0 bg-[rgba(15,23,42,0.85)]" />
         </div>
         <div className="relative flex gap-[8px] items-center text-[14px]">
@@ -34,7 +41,14 @@ export default function ChiTietBoMonPage() {
 
       <div className="bg-white flex gap-[64px] items-center p-[80px] w-full shrink-0">
         <div className="relative h-[380px] rounded-[16px] shrink-0 w-[560px] overflow-hidden shadow-lg">
-          <img alt={sport.facilityTitle} className="absolute inset-0 object-cover size-full max-w-none rounded-[16px]" src={sport.facilityImg} />
+          <img
+            alt=""
+            className="absolute inset-0 object-cover size-full max-w-none rounded-[16px]"
+            src={sport.facilityImg}
+            onError={(e) => {
+              e.currentTarget.src = "/assets/images/hero_bg.jpg";
+            }}
+          />
         </div>
         <div className="flex flex-1 flex-col gap-[20px] items-start min-w-0">
           <p className="font-extrabold text-[#1e293b] text-[30px] w-full">{sport.facilityTitle}</p>

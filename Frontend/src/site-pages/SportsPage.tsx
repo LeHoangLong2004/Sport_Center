@@ -1,10 +1,33 @@
 import { useMemo, useState } from "react";
 import { FadeIn, FadeUp } from "../components/Motion";
 import { SportCard } from "./SportCard";
-import { imgCircleX, imgDumbbell, imgHeroBg, imgChevronDown } from "./sportsPageData";
+import {
+  imgCircleX,
+  imgDumbbell,
+  imgHeroBg,
+  imgChevronDown,
+  imgSportSwim,
+  imgSportYoga,
+  imgSportHiit,
+  imgSportBoxing,
+  imgSportBasket,
+} from "./sportsPageData";
 import { useSportsCatalog } from "./useSportsCatalog";
 
 const fallbackIcons = [imgCircleX, imgDumbbell];
+
+function getSportFallbackImage(sportName: string): string {
+  const norm = (sportName || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  if (norm.includes("boi") || norm.includes("swim")) return imgSportSwim;
+  if (norm.includes("yoga")) return imgSportYoga;
+  if (norm.includes("gym") || norm.includes("the hinh") || norm.includes("hiit")) return imgSportHiit;
+  if (norm.includes("box")) return imgSportBoxing;
+  if (norm.includes("bong ro") || norm.includes("basket")) return imgSportBasket;
+  return imgHeroBg;
+}
 
 function getSportSlug(name: string) {
   return name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/đ/g, "d").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -35,7 +58,28 @@ export default function BoMonPage() {
         {isLoading && <p className="text-[#64748b] text-[14px]">Đang tải danh sách bộ môn...</p>}
         {!isLoading && loadError && <p className="text-[#dc2626] text-[14px]">{loadError}</p>}
         {!isLoading && !loadError && visibleSports.length === 0 && <p className="text-[#64748b] text-[14px]">Chưa có bộ môn nào trong hệ thống.</p>}
-        {!isLoading && !loadError && <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-[24px] w-full">{visibleSports.map((sport, index) => <SportCard key={sport.id} id={getSportSlug(sport.name) || sport.id} img={sport.imageUrl || imgHeroBg} badge="Bộ môn" icon={fallbackIcons[index % fallbackIcons.length]} title={sport.name} desc={sport.description || "Khám phá lớp học và lịch tập phù hợp tại SportCenter."} stat="Xem lớp học đang mở" delay={index * 0.05} tall={false} />)}</div>}
+        {!isLoading && !loadError && (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-[24px] w-full">
+            {visibleSports.map((sport, index) => {
+              const fallback = getSportFallbackImage(sport.name);
+              return (
+                <SportCard
+                  key={sport.id}
+                  id={getSportSlug(sport.name) || sport.id}
+                  img={sport.imageUrl || fallback}
+                  fallbackImg={fallback}
+                  badge="Bộ môn"
+                  icon={fallbackIcons[index % fallbackIcons.length]}
+                  title={sport.name}
+                  desc={sport.description || "Khám phá lớp học và lịch tập phù hợp tại SportCenter."}
+                  stat="Xem lớp học đang mở"
+                  delay={index * 0.05}
+                  tall={false}
+                />
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <section className="bg-white flex flex-col gap-[32px] items-start px-[80px] py-[64px] w-full">

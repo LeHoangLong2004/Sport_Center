@@ -7,6 +7,7 @@ interface Props {
   activeSessions: MockSession[];
   session: MockSession;
   isFinalized: boolean;
+  isDraft?: boolean;
   enrolledCount: number;
 }
 
@@ -16,6 +17,7 @@ export default function AttendanceSessionSelector({
   activeSessions,
   session,
   isFinalized,
+  isDraft,
   enrolledCount,
 }: Props) {
   // Format Vietnamese date
@@ -57,7 +59,9 @@ export default function AttendanceSessionSelector({
                 className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                   isFinalized
                     ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400"
-                    : "bg-slate-100 text-slate-800 dark:bg-slate-950/50 dark:text-slate-400"
+                    : isDraft
+                    ? "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400"
+                    : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400"
                 }`}
               >
                 {isFinalized ? (
@@ -65,10 +69,15 @@ export default function AttendanceSessionSelector({
                     <ShieldCheck className="w-3.5 h-3.5" />
                     Đã chốt sổ điểm danh
                   </>
+                ) : isDraft ? (
+                  <>
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                    Bản nháp (Đang lưu nháp)
+                  </>
                 ) : (
                   <>
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-pulse" />
-                    Chưa chốt sổ
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                    Chưa điểm danh
                   </>
                 )}
               </span>
