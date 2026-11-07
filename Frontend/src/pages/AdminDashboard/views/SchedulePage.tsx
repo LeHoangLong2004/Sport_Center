@@ -6,6 +6,7 @@ import { ScheduleFilters } from "./ScheduleFilters";
 import { ScheduleBookings } from "./ScheduleBookings";
 import { ScheduleHeader, type ScheduleTab } from "./ScheduleHeader";
 import { ScheduleCalendarView } from "./ScheduleCalendarView";
+import { ScheduleListView } from "./ScheduleListView";
 import { ScheduleProposalsSection } from "./ScheduleProposalsSection";
 import { CoachScheduleRequestsSection } from "./CoachScheduleRequestsSection";
 import { useCoachScheduleRequests } from "./useCoachScheduleRequests";
@@ -22,6 +23,7 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<ScheduleTab>(initialTab);
+  const [viewMode, setViewMode] = useState<"week" | "list">("week");
   const [bookings, setBookings] = useState<any[]>([]);
   const [facilities, setFacilities] = useState<string[]>([]);
   useEffect(() => {
@@ -335,13 +337,24 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
             onPrevWeek={handlePrevWeek}
             onNextWeek={handleNextWeek}
             onToday={handleCurrentWeek}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
           />
-          <ScheduleCalendarView
-            hours={hours}
-            weekDates={weekDates}
-            classesThisWeek={classesThisWeek}
-            onSelectClass={(id) => setSelectedClassId(id)}
-          />
+          {viewMode === "list" ? (
+            <ScheduleListView
+              classes={classesThisWeek}
+              onSelectClass={(id) => setSelectedClassId(id)}
+              onToday={handleCurrentWeek}
+              onCreateClass={() => setShowCreateModal(true)}
+            />
+          ) : (
+            <ScheduleCalendarView
+              hours={hours}
+              weekDates={weekDates}
+              classesThisWeek={classesThisWeek}
+              onSelectClass={(id) => setSelectedClassId(id)}
+            />
+          )}
         </div>
       ) : (
         <ScheduleBookings
