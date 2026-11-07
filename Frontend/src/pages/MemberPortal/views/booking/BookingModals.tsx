@@ -14,8 +14,8 @@ interface BookingModalsProps {
 
   classToBook: any | null;
   onCloseClassToBook: () => void;
-  paymentMethod: "qr" | "card" | "counter";
-  setPaymentMethod: (m: "qr" | "card" | "counter") => void;
+  paymentMethod: "qr" | "card" | "counter" | "wallet";
+  setPaymentMethod: (m: "qr" | "card" | "counter" | "wallet") => void;
   isProcessingPayment: boolean;
   paymentError: string | null;
   onConfirmPayment: () => void;

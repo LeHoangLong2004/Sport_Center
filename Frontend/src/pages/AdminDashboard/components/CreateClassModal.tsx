@@ -89,7 +89,7 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("token") || localStorage.getItem("accessToken") || "";
-        const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+        const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
         // Fetch sports: Nếu là Coach đề xuất lớp thì chỉ lấy các bộ môn HLV đang phụ trách
         const sportsEndpoint = isCoachMode ? "/api/coach/my-sports" : "/api/sports";
