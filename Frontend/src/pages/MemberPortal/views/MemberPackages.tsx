@@ -61,6 +61,17 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
     void loadData();
   }, [loadData]);
 
+  useEffect(() => {
+    const handleSwitchTab = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      if (customEvent.detail === "sport" || customEvent.detail === "membership") {
+        setActiveTab(customEvent.detail);
+      }
+    };
+    window.addEventListener("switch-packages-tab", handleSwitchTab);
+    return () => window.removeEventListener("switch-packages-tab", handleSwitchTab);
+  }, []);
+
   // Compute active membership status
   const membershipStatus = useMemo<MembershipStatus>(() => {
     const status = getMembershipStatus(orders, catalog);
@@ -192,9 +203,9 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
         >
           <div className="flex items-center gap-2.5">
             {feedback.type === "success" ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <CheckCircle2 className="w-5 h-5 shrink-0" />
             ) : (
-              <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0" />
+              <AlertCircle className="w-5 h-5 shrink-0" />
             )}
             <span>{feedback.text}</span>
           </div>
@@ -236,7 +247,15 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
           >
             <Crown className="w-4 h-4 text-amber-500" />
             <span>1. Gói Thành Viên</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold uppercase bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">
+            <span
+              className={`px-1.5 py-0.2 rounded-full text-[9px] font-extrabold uppercase ${
+                membershipStatus.tier === "premium"
+                  ? "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300"
+                  : membershipStatus.tier === "plus"
+                  ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300"
+                  : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+              }`}
+            >
               {membershipStatus.tier.toUpperCase()}
             </span>
           </button>
@@ -250,7 +269,7 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <Dumbbell className="w-4 h-4 text-emerald-500" />
+            <Dumbbell className="w-4 h-4" />
             <span>2. Gói Môn Tập</span>
             {activeSportOrders.length > 0 && (
               <span className="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">

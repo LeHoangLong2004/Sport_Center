@@ -85,7 +85,7 @@ export const MemberNotesAndAssessments: React.FC<MemberNotesAndAssessmentsProps>
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-xs">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2">
-            <FileText className="w-4 h-4 text-orange-500" />
+            <FileText className="w-4 h-4" />
             <h2 className="font-bold text-sm text-slate-900 dark:text-white">Ghi chú & Đánh giá của Coach</h2>
           </div>
         </div>
@@ -97,7 +97,7 @@ export const MemberNotesAndAssessments: React.FC<MemberNotesAndAssessmentsProps>
             value={newNote}
             onChange={(e) => setNewNote(e.target.value)}
             placeholder="Nhập ghi chú hoặc đánh giá buổi tập cho học viên này..."
-            className="w-full text-xs p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-orange-500"
+            className="w-full text-xs p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
           />
           <div className="flex items-center justify-between">
             {noteSaved ? (
@@ -129,7 +129,7 @@ export const MemberNotesAndAssessments: React.FC<MemberNotesAndAssessmentsProps>
               className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 leading-relaxed"
             >
               <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
-                <span className="font-semibold text-orange-600 dark:text-orange-400">HLV nhận xét</span>
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">HLV nhận xét</span>
                 <span>{note.createdAt ? new Date(note.createdAt).toLocaleDateString("vi-VN") : "Hôm nay"}</span>
               </div>
               <p>{note.comment}</p>
@@ -147,7 +147,7 @@ export const MemberNotesAndAssessments: React.FC<MemberNotesAndAssessmentsProps>
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-xs">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2">
-            <Award className="w-4 h-4 text-emerald-500" />
+            <Award className="w-4 h-4" />
             <h2 className="font-bold text-sm text-slate-900 dark:text-white">Kiểm tra Thể lực & Kết quả</h2>
           </div>
           {onAddFitnessTest && (
@@ -166,7 +166,7 @@ export const MemberNotesAndAssessments: React.FC<MemberNotesAndAssessmentsProps>
         {showTestForm && (
           <form onSubmit={handleSubmitTest} className="mt-4 p-4 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/60 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-200">
-              <Activity className="w-4 h-4 text-emerald-600" />
+              <Activity className="w-4 h-4" />
               <span>Ghi nhận chỉ số thể lực buổi tập</span>
             </div>
 
@@ -311,7 +311,7 @@ export const MemberNotesAndAssessments: React.FC<MemberNotesAndAssessmentsProps>
               <div className="flex items-center justify-between text-[10px] text-slate-400 mt-1">
                 <span>
                   {test.effort ? (
-                    <span className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200 font-semibold mr-1.5">
+                    <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-200 font-semibold mr-1.5">
                       RPE {test.effort}
                     </span>
                   ) : null}

@@ -35,7 +35,7 @@ export function PaymentMethodDetailsPanel({
         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
           <div className="flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <h3 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-xs md:text-sm flex items-center gap-1.5">
+            <h3 className="font-bold text-[#0f172a] text-xs md:text-sm flex items-center gap-1.5">
               <span>Quét mã VietQR Chuyển khoản 24/7</span>
               <span className="text-[10px] bg-emerald-50 text-emerald-700 font-extrabold px-1.5 py-0.2 rounded border border-emerald-200">NAPAS 247</span>
             </h3>
@@ -60,11 +60,11 @@ export function PaymentMethodDetailsPanel({
               <div className="flex items-center justify-between">
                 <span className="text-slate-400 text-[11px]">Số tài khoản</span>
                 <div className="flex items-center gap-1.5">
-                  <span className="font-mono font-bold text-slate-900 text-xs">{bankConfig.accountNumber}</span>
+                  <span className="font-bold text-slate-900 text-xs">{bankConfig.accountNumber}</span>
                   <button
                     type="button"
                     onClick={() => onCopy(bankConfig.accountNumber, "account")}
-                    className="px-1.5 py-0.5 rounded bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-semibold text-teal-700 transition-all cursor-pointer"
+                    className="px-1.5 py-0.5 rounded bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-semibold text-emerald-700 transition-all cursor-pointer"
                   >
                     {copiedField === "account" ? "✓ Đã chép!" : "Sao chép"}
                   </button>
@@ -81,11 +81,11 @@ export function PaymentMethodDetailsPanel({
               <div className="flex items-center justify-between">
                 <span className="text-slate-400 text-[11px]">Số tiền thanh toán</span>
                 <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-teal-700 text-sm">{fmt(finalTotal)}</span>
+                  <span className="font-bold text-emerald-700 text-sm">{fmt(finalTotal)}</span>
                   <button
                     type="button"
                     onClick={() => onCopy(String(finalTotal), "amount")}
-                    className="px-1.5 py-0.5 rounded bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-semibold text-teal-700 transition-all cursor-pointer"
+                    className="px-1.5 py-0.5 rounded bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-semibold text-emerald-700 transition-all cursor-pointer"
                   >
                     {copiedField === "amount" ? "✓ Đã chép!" : "Sao chép"}
                   </button>
@@ -96,13 +96,13 @@ export function PaymentMethodDetailsPanel({
               <div className="flex items-center justify-between pt-1.5 border-t border-slate-200">
                 <span className="text-slate-600 font-semibold text-[11px]">Nội dung chuyển khoản (bắt buộc)</span>
                 <div className="flex items-center gap-1.5">
-                  <span className="bg-teal-50 border border-teal-200 px-2 py-0.5 rounded font-mono font-black text-teal-800 text-xs tracking-wider">
+                  <span className="bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-black text-emerald-800 text-xs tracking-wider">
                     {transferMemo}
                   </span>
                   <button
                     type="button"
                     onClick={() => onCopy(transferMemo, "memo")}
-                    className="px-2 py-0.5 rounded bg-teal-600 hover:bg-teal-700 text-white text-[10px] font-bold shadow-2xs transition-all cursor-pointer"
+                    className="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold shadow-2xs transition-all cursor-pointer"
                   >
                     {copiedField === "memo" ? "✓ Đã chép!" : "Sao chép"}
                   </button>
@@ -119,7 +119,7 @@ export function PaymentMethodDetailsPanel({
           <div className="flex flex-col gap-1 items-center shrink-0 bg-slate-50 p-2 rounded-xl border border-slate-200/80">
             <div
               onClick={() => setShowZoomModal(true)}
-              className="group relative bg-white border border-slate-200 rounded-lg w-[155px] p-1.5 flex items-center justify-center shadow-2xs overflow-hidden cursor-pointer hover:border-teal-500 transition-all"
+              className="group relative bg-white border border-slate-200 rounded-lg w-[155px] p-1.5 flex items-center justify-center shadow-2xs overflow-hidden cursor-pointer hover:border-emerald-500 transition-all"
               title="Nhấn để phóng to mã QR"
             >
               <img
@@ -145,8 +145,8 @@ export function PaymentMethodDetailsPanel({
         {/* Khối trạng thái Webhook tự động */}
         <div className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 transition-all ${
           autoPaid 
-            ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-emerald-400 shadow-md animate-pulse" 
-            : "bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200"
+            ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-emerald-400 shadow-md animate-pulse" 
+            : "bg-gradient-to-r from-emerald-50 to-emerald-50 border border-emerald-200"
         }`}>
           <div className="flex items-center gap-2.5">
             <span className="relative flex h-3 w-3 shrink-0">
@@ -207,11 +207,11 @@ export function PaymentMethodDetailsPanel({
               <div className="w-full bg-slate-50 rounded-xl p-2.5 text-xs flex flex-col gap-1 border border-slate-200/80">
                 <div className="flex justify-between">
                   <span className="text-slate-500">Số tiền:</span>
-                  <span className="font-bold text-teal-700">{fmt(finalTotal)}</span>
+                  <span className="font-bold text-emerald-700">{fmt(finalTotal)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Nội dung CK:</span>
-                  <span className="font-mono font-bold text-slate-800">{transferMemo}</span>
+                  <span className="font-bold text-slate-800">{transferMemo}</span>
                 </div>
               </div>
 
@@ -221,7 +221,7 @@ export function PaymentMethodDetailsPanel({
                   target="_blank"
                   rel="noreferrer"
                   download="vietqr_sportcenter.jpg"
-                  className="flex-1 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-xs text-center border border-teal-200 transition-colors"
+                  className="flex-1 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs text-center border border-emerald-200 transition-colors"
                 >
                   📥 Tải ảnh về máy
                 </a>
@@ -244,7 +244,7 @@ export function PaymentMethodDetailsPanel({
     return (
       <div className="bg-white border border-[#e2e8f0] rounded-xl p-3 px-4 w-full shadow-2xs">
         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-          <h3 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-xs md:text-sm">
+          <h3 className="font-bold text-[#0f172a] text-xs md:text-sm">
             Thanh toán thẻ tín dụng & ghi nợ quốc tế
           </h3>
           <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
@@ -257,7 +257,7 @@ export function PaymentMethodDetailsPanel({
           </p>
           <div className="flex items-center justify-between bg-white p-2 rounded border border-slate-200 text-xs">
             <span className="font-medium text-slate-600">Số tiền cần thanh toán:</span>
-            <strong className="text-teal-700 font-bold">{fmt(finalTotal)}</strong>
+            <strong className="text-emerald-700 font-bold">{fmt(finalTotal)}</strong>
           </div>
         </div>
       </div>
@@ -268,10 +268,10 @@ export function PaymentMethodDetailsPanel({
     return (
       <div className="bg-white border border-[#e2e8f0] rounded-xl p-3 px-4 w-full shadow-2xs">
         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-          <h3 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-xs md:text-sm">
+          <h3 className="font-bold text-[#0f172a] text-xs md:text-sm">
             Ví điện tử MoMo & ZaloPay
           </h3>
-          <span className="text-[10px] text-pink-600 font-bold bg-pink-50 px-2 py-0.5 rounded-full border border-pink-200">
+          <span className="text-[10px] text-slate-600 font-bold bg-slate-50 px-2 py-0.5 rounded-full border border-slate-200">
             Ưu đãi hoàn 5%
           </span>
         </div>
@@ -281,7 +281,7 @@ export function PaymentMethodDetailsPanel({
           </p>
           <div className="flex items-center justify-between bg-white p-2 rounded border border-slate-200 text-xs">
             <span className="font-medium text-slate-600">Số tiền giao dịch:</span>
-            <strong className="text-teal-700 font-bold">{fmt(finalTotal)}</strong>
+            <strong className="text-emerald-700 font-bold">{fmt(finalTotal)}</strong>
           </div>
         </div>
       </div>
@@ -292,24 +292,24 @@ export function PaymentMethodDetailsPanel({
     return (
       <div className="bg-white border border-[#e2e8f0] rounded-xl p-3 px-4 w-full shadow-2xs">
         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-          <h3 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-xs md:text-sm">
+          <h3 className="font-bold text-[#0f172a] text-xs md:text-sm">
             Thanh toán trực tiếp tại quầy lễ tân
           </h3>
-          <span className="text-[10px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+          <span className="text-[10px] text-slate-700 font-bold bg-slate-50 px-2 py-0.5 rounded-full border border-slate-200">
             Giữ chỗ 24 giờ
           </span>
         </div>
 
         <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 mt-2 text-xs text-slate-700 flex flex-col gap-1.5">
           <div className="flex items-center gap-2">
-            <span className="text-teal-600 font-bold shrink-0">🏢 Cơ sở tiếp nhận:</span>
+            <span className="text-emerald-600 font-bold shrink-0">🏢 Cơ sở tiếp nhận:</span>
             <span className="text-slate-900 font-semibold">{formData?.branch || "Chi nhánh Quận 1 - Flagship Center"}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-teal-600 font-bold shrink-0">💵 Số tiền cần thanh toán:</span>
-            <strong className="text-teal-700 font-extrabold">{fmt(finalTotal)}</strong>
+            <span className="text-emerald-600 font-bold shrink-0">💵 Số tiền cần thanh toán:</span>
+            <strong className="text-emerald-700 font-extrabold">{fmt(finalTotal)}</strong>
           </div>
-          <div className="p-2 rounded bg-amber-50/80 border border-amber-200/80 text-amber-900 text-[10px] leading-relaxed">
+          <div className="p-2 rounded bg-slate-50/80 border border-slate-200/80 text-slate-900 text-[10px] leading-relaxed">
             💡 <strong>Lưu ý:</strong> Đơn đăng ký giữ chỗ có hiệu lực trong <strong>24 giờ</strong>. Khi đến quầy, bạn chỉ cần đọc Số điện thoại <span className="font-bold">{formData?.phone || "đăng ký"}</span> để Lễ tân xuất hóa đơn và bàn giao thẻ hội viên ngay.
           </div>
         </div>

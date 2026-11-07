@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { avatarTopbar, iSearch, iBell } from '../shared';
 import { UserAvatar } from '../../../components/UserAvatar';
 import { notificationApi, type ManagerNotification } from '../../../hooks/notificationApi';
+import { ThemeToggle } from '../../../components/ThemeToggle';
 
 export function TopBar({ breadcrumb, title, onProfileClick, onNotificationClick }: { breadcrumb: string; title: string; onProfileClick?: () => void; onNotificationClick?: (notification: ManagerNotification) => void }) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -90,7 +91,7 @@ export function TopBar({ breadcrumb, title, onProfileClick, onNotificationClick 
         <p className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{title}</p>
       </div>
       <div className="flex gap-3 items-center">
-        <div className="hidden md:flex bg-slate-100 dark:bg-slate-800/80 items-center gap-2 px-3 py-2.5 rounded-xl w-[260px] border border-transparent focus-within:border-rose-500/50 focus-within:bg-white dark:focus-within:bg-slate-900 transition-all">
+        <div className="hidden md:flex bg-slate-100 dark:bg-slate-800/80 items-center gap-2 px-3 py-2.5 rounded-xl w-[260px] border border-transparent focus-within:border-emerald-500/50 focus-within:bg-white dark:focus-within:bg-slate-900 transition-all">
           <img src={iSearch} alt="" className="size-4 shrink-0 opacity-50" />
           <input 
             type="text" 
@@ -98,6 +99,7 @@ export function TopBar({ breadcrumb, title, onProfileClick, onNotificationClick 
             className="bg-transparent border-none outline-none text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 w-full"
           />
         </div>
+        <ThemeToggle className="p-2.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition-colors cursor-pointer" />
         <div ref={notificationsRef} className="relative">
           <button
             type="button"
@@ -108,7 +110,7 @@ export function TopBar({ breadcrumb, title, onProfileClick, onNotificationClick 
           >
             <img src={iBell} alt="" className="size-5 brightness-50 dark:brightness-150" />
             {unreadCount > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex min-w-4 h-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
+              <span className="absolute -right-0.5 -top-0.5 flex min-w-4 h-4 items-center justify-center rounded-full bg-emerald-600 px-1 text-[10px] font-bold text-white">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
@@ -121,7 +123,7 @@ export function TopBar({ breadcrumb, title, onProfileClick, onNotificationClick 
                   type="button"
                   onClick={markAllAsRead}
                   disabled={unreadCount === 0}
-                  className="text-xs font-semibold text-rose-500 transition-colors hover:text-rose-600 disabled:cursor-not-allowed disabled:text-slate-400"
+                  className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 transition-colors hover:text-emerald-700 disabled:cursor-not-allowed disabled:text-slate-400"
                 >
                   Đánh dấu đã đọc
                 </button>
@@ -150,10 +152,10 @@ export function TopBar({ breadcrumb, title, onProfileClick, onNotificationClick 
                         setIsNotificationsOpen(false);
                         onNotificationClick?.(notification);
                       }}
-                      className={`block w-full border-b border-slate-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/70 ${notification.isRead ? '' : 'bg-rose-50/60 dark:bg-rose-950/20'}`}
+                      className={`block w-full border-b border-slate-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/70 ${notification.isRead ? '' : 'bg-emerald-50/60 dark:bg-emerald-950/20'}`}
                     >
                       <div className="flex items-start gap-3">
-                        <span className={`mt-1.5 size-2 shrink-0 rounded-full ${notification.isRead ? 'bg-slate-300' : 'bg-rose-500'}`} />
+                        <span className={`mt-1.5 size-2 shrink-0 rounded-full ${notification.isRead ? 'bg-slate-300' : 'bg-emerald-500'}`} />
                         <span className="min-w-0">
                           <span className="block text-sm font-semibold text-slate-800 dark:text-white">{notification.title}</span>
                           {notification.message && <span className="mt-1 block text-xs leading-5 text-slate-500 dark:text-slate-400">{notification.message}</span>}
@@ -170,7 +172,7 @@ export function TopBar({ breadcrumb, title, onProfileClick, onNotificationClick 
         <UserAvatar 
           src={avatarUrl} 
           name={userName}
-          className="rounded-full size-11 object-cover cursor-pointer border-2 border-slate-200 dark:border-slate-700 hover:border-rose-500 dark:hover:border-rose-500 transition-colors shadow-sm" 
+          className="rounded-full size-11 object-cover cursor-pointer border-2 border-slate-200 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-500 transition-colors shadow-sm" 
           onClick={onProfileClick}
         />
       </div>

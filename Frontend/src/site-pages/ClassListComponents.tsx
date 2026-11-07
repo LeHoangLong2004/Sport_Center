@@ -36,7 +36,7 @@ function StatusBadge({
 
   return (
     <span
-      className={`px-3 py-1 rounded-full font-['Inter:Bold'] font-bold text-[12px] ${styles[status]}`}
+      className={`px-3 py-1 rounded-full font-bold text-[12px] ${styles[status]}`}
     >
       {label}
     </span>
@@ -62,7 +62,7 @@ export function ClassCard({ item }: { item: ClassItem }) {
       </div>
       <div className="flex-1 min-w-0 flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
-          <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[18px] leading-normal truncate max-w-[280px] group-hover:text-[#10b981] transition-colors">
+          <p className="font-extrabold text-[#1e293b] text-[18px] leading-normal truncate max-w-[280px] group-hover:text-[#10b981] transition-colors">
             {item.title}
           </p>
           <StatusBadge status={item.status} label={item.statusLabel} />
@@ -70,13 +70,13 @@ export function ClassCard({ item }: { item: ClassItem }) {
         <div className="flex gap-4 items-center flex-wrap">
           <span className="flex gap-1.5 items-center shrink-0">
             <img src={imgUser} alt="" className="w-[11px] h-[11px]" />
-            <span className="font-['Inter:Regular'] font-normal text-[#64748b] text-[13px] whitespace-nowrap">
+            <span className="font-normal text-[#64748b] text-[13px] whitespace-nowrap">
               {item.trainer}
             </span>
           </span>
           <span className="flex gap-1.5 items-center shrink-0">
             <img src={imgClock} alt="" className="w-[11px] h-[11px]" />
-            <span className="font-['Inter:Regular'] font-normal text-[#64748b] text-[13px] whitespace-nowrap">
+            <span className="font-normal text-[#64748b] text-[13px] whitespace-nowrap">
               {item.schedule}
             </span>
           </span>
@@ -86,20 +86,20 @@ export function ClassCard({ item }: { item: ClassItem }) {
               alt=""
               className="w-[11px] h-[11px] shrink-0"
             />
-            <span className="font-['Inter:Regular'] font-normal text-[#64748b] text-[13px] truncate">
+            <span className="font-normal text-[#64748b] text-[13px] truncate">
               {item.location}
             </span>
           </span>
         </div>
         <div className="flex items-center justify-between">
           <span
-            className={`font-['Inter:Semi_Bold'] font-semibold text-[13px] ${item.status === "full" ? "text-[#64748b]" : "text-[#059669]"}`}
+            className={`font-bold font-semibold text-[13px] ${item.status === "full" ? "text-[#64748b]" : "text-[#059669]"}`}
           >
             {item.spots}
           </span>
           {isAvailable ? (
             <button
-              className="bg-[#2563eb] text-white font-['Inter:Bold'] font-bold text-[13px] px-4 py-2 rounded-lg hover:bg-[#1d4ed8] transition-colors"
+              className="bg-emerald-600 text-white font-bold text-[13px] px-4 py-2 rounded-lg hover:bg-[#1d4ed8] transition-colors"
               data-name="btn-detail"
               data-class-id={item.id}
               type="button"
@@ -108,7 +108,7 @@ export function ClassCard({ item }: { item: ClassItem }) {
             </button>
           ) : (
             <button
-              className="bg-[#94a3b8] text-white font-['Inter:Bold'] font-bold text-[13px] px-4 py-2 rounded-lg cursor-not-allowed"
+              className="bg-[#94a3b8] text-white font-bold text-[13px] px-4 py-2 rounded-lg cursor-not-allowed"
               type="button"
               disabled
             >

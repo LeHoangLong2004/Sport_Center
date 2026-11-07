@@ -15,8 +15,8 @@ function paletteFor(item: any) {
 
   return isPersonalTraining
     ? {
-        card: "bg-amber-50/60 border-amber-200 hover:border-amber-400",
-        badge: "bg-amber-100 text-amber-800",
+        card: "bg-slate-50/60 border-slate-200 hover:border-slate-400",
+        badge: "bg-slate-100 text-slate-800",
         text: "text-slate-800",
       }
     : {
@@ -48,7 +48,7 @@ export const ScheduleCalendarView: React.FC<ScheduleCalendarViewProps> = ({
             <div
               key={day.iso}
               className={`p-3 text-xs font-semibold text-center border-r border-slate-200 last:border-0 ${
-                isToday ? "bg-orange-50/60 text-orange-600 font-bold" : "text-slate-700"
+                isToday ? "bg-emerald-50 text-emerald-700 font-bold" : "text-slate-700"
               }`}
             >
               <div>{day.label}</div>
@@ -103,7 +103,7 @@ export const ScheduleCalendarView: React.FC<ScheduleCalendarViewProps> = ({
                             <span className={`text-[9px] font-extrabold uppercase tracking-wide px-1.5 py-0.5 rounded ${style.badge}`}>
                               {sport}
                             </span>
-                            <span className="text-[10px] text-slate-400 font-mono">
+                            <span className="text-[10px] text-slate-400 ">
                               {start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}
                             </span>
                           </div>

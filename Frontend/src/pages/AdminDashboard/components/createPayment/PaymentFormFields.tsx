@@ -43,7 +43,7 @@ export function PaymentFormFields({
         <select
           value={selectedUserId}
           onChange={(e) => setSelectedUserId(e.target.value)}
-          className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50/50 focus:bg-white outline-none focus:border-blue-500 transition-colors"
+          className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50/50 focus:bg-white outline-none focus:border-slate-500 transition-colors"
           required
         >
           <option value="">-- Chọn hội viên --</option>
@@ -63,7 +63,7 @@ export function PaymentFormFields({
         <select
           value={selectedPackageId}
           onChange={(e) => onPackageChange(e.target.value)}
-          className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50/50 focus:bg-white outline-none focus:border-blue-500 transition-colors"
+          className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50/50 focus:bg-white outline-none focus:border-slate-500 transition-colors"
         >
           <option value="">-- Thu dịch vụ tự do (nhập số tiền) --</option>
           {packages.map((p) => (
@@ -83,7 +83,7 @@ export function PaymentFormFields({
           <select
             value={billingPeriod}
             onChange={(e) => onPeriodChange(e.target.value as any)}
-            className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50/50 focus:bg-white outline-none focus:border-blue-500 transition-colors"
+            className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50/50 focus:bg-white outline-none focus:border-slate-500 transition-colors"
           >
             <option value="monthly">Theo tháng (1 Tháng)</option>
             <option value="yearly">Theo năm (12 Tháng)</option>
@@ -96,7 +96,7 @@ export function PaymentFormFields({
           <select
             value={method}
             onChange={(e) => setMethod(e.target.value as any)}
-            className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50/50 focus:bg-white outline-none focus:border-blue-500 transition-colors"
+            className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50/50 focus:bg-white outline-none focus:border-slate-500 transition-colors"
           >
             <option value="Cash">Tiền mặt tại quầy</option>
             <option value="QRCode">Quét mã QR / Chuyển khoản</option>
@@ -115,7 +115,7 @@ export function PaymentFormFields({
           step={10000}
           value={amount}
           onChange={(e) => setAmount(Number(e.target.value))}
-          className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-base font-bold text-blue-600 bg-slate-50/50 focus:bg-white outline-none focus:border-blue-500 transition-colors"
+          className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-base font-bold text-slate-600 bg-slate-50/50 focus:bg-white outline-none focus:border-slate-500 transition-colors"
           required
         />
       </div>

@@ -2,6 +2,7 @@ import React, { useState } from "react"
 import { Search } from "lucide-react"
 import { A } from "../shared"
 import StatusBadge from "../components/StatusBadge"
+import { UserAvatar } from "../../../components/UserAvatar"
 
 export function LookupPage({ onDetail }: { onDetail: (member: any) => void }) {
   const [query, setQuery] = useState("")
@@ -52,12 +53,12 @@ export function LookupPage({ onDetail }: { onDetail: (member: any) => void }) {
         <div className="bg-[#f1f5f9] flex gap-[12px] items-center p-[14px] rounded-[8px] w-full">
           <Search className="size-[20px] shrink-0 text-[#64748b]" />
           <input
-            className="flex-1 bg-transparent font-['Manrope:Regular'] text-[#0f172a] text-[15px] outline-none min-w-0"
+            className="flex-1 bg-transparent font-normal text-[#0f172a] text-[15px] outline-none min-w-0"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Tìm theo tên, SĐT, mã thẻ..."
           />
-          <span className="bg-white border border-[#e2e8f0] font-['Manrope:SemiBold'] font-semibold px-[6px] py-[2px] rounded-[4px] text-[#64748b] text-[11px] shrink-0">
+          <span className="bg-white border border-[#e2e8f0] font-bold font-semibold px-[6px] py-[2px] rounded-[4px] text-[#64748b] text-[11px] shrink-0">
             F3
           </span>
         </div>
@@ -70,17 +71,17 @@ export function LookupPage({ onDetail }: { onDetail: (member: any) => void }) {
                 onClick={() => setFilter(chip)}
                 className={`flex items-start px-[14px] py-[8px] rounded-[6px] shrink-0 transition-colors ${
                   filter === chip
-                    ? "bg-[#3b82f6] text-white font-['Manrope:Bold'] font-bold"
-                    : "bg-[#f1f5f9] text-[#64748b] font-['Manrope:Medium'] font-medium"
+                    ? "bg-emerald-600 text-white font-bold"
+                    : "bg-[#f1f5f9] text-[#64748b] font-medium"
                 } text-[13px]`}
               >
                 {chip}
               </button>
             ))}
           </div>
-          <span className="font-['Manrope:SemiBold'] font-semibold text-[#64748b] text-[14px]">
+          <span className="font-bold font-semibold text-[#64748b] text-[14px]">
             Tổng số kết quả:{" "}
-            <span className="font-['Manrope:Bold'] font-bold text-[#0f172a]">
+            <span className="font-bold text-[#0f172a]">
               {filtered.length} thành viên
             </span>
           </span>
@@ -89,7 +90,7 @@ export function LookupPage({ onDetail }: { onDetail: (member: any) => void }) {
 
       {/* Table */}
       <div className="bg-white border border-[#e2e8f0] flex flex-col items-start overflow-hidden rounded-[12px] shrink-0 w-full">
-        <div className="bg-[#f1f5f9] flex font-['Manrope:ExtraBold'] font-extrabold items-center px-[24px] py-[14px] text-[#64748b] text-[13px] w-full">
+        <div className="bg-[#f1f5f9] flex font-extrabold items-center px-[24px] py-[14px] text-[#64748b] text-[13px] w-full">
           <span className="w-[120px] shrink-0">MÃ THÀNH VIÊN</span>
           <span className="flex-1 min-w-0">HỌ VÀ TÊN</span>
           <span className="w-[180px] shrink-0">SỐ ĐIỆN THOẠI</span>
@@ -104,26 +105,26 @@ export function LookupPage({ onDetail }: { onDetail: (member: any) => void }) {
               key={m.memberCode}
               className="border-[#e2e8f0] border-b border-solid flex items-center px-[24px] py-[12px] shrink-0 w-full"
             >
-              <span className="font-['Manrope:Bold'] font-bold text-[#3b82f6] text-[13px] w-[120px] shrink-0">
+              <span className="font-bold text-slate-800 text-[13px] w-[120px] shrink-0">
                 {m.memberCode}
               </span>
               <div className="flex flex-1 gap-[10px] items-center min-w-0">
-                <img
+                <UserAvatar
                   src={m.avatarUrl}
-                  alt=""
-                  className="shrink-0 size-[28px] rounded-full object-cover"
+                  name={m.fullName}
+                  className="shrink-0 size-[28px] rounded-full object-cover text-xs"
                 />
-                <span className="font-['Manrope:Bold'] font-bold text-[#0f172a] text-[13px] whitespace-nowrap">
+                <span className="font-bold text-[#0f172a] text-[13px] whitespace-nowrap">
                   {m.fullName}
                 </span>
               </div>
-              <span className="font-['Manrope:Regular'] font-normal text-[#64748b] text-[13px] w-[180px] shrink-0">
+              <span className="font-normal text-[#64748b] text-[13px] w-[180px] shrink-0">
                 {m.phoneNumber}
               </span>
-              <span className="font-['Manrope:SemiBold'] font-semibold text-[#0f172a] text-[13px] w-[200px] shrink-0">
+              <span className="font-bold font-semibold text-[#0f172a] text-[13px] w-[200px] shrink-0">
                 {m.packageName}
               </span>
-              <span className="font-['Manrope:Regular'] font-normal text-[#64748b] text-[13px] w-[160px] shrink-0">
+              <span className="font-normal text-[#64748b] text-[13px] w-[160px] shrink-0">
                 {m.expiryDate
                   ? new Date(m.expiryDate).toLocaleDateString("vi-VN")
                   : "N/A"}
@@ -137,7 +138,7 @@ export function LookupPage({ onDetail }: { onDetail: (member: any) => void }) {
                   onClick={() => onDetail(m)}
                   className="border border-[#e2e8f0] border-solid flex items-start px-[12px] py-[6px] rounded-[6px] shrink-0 hover:bg-slate-50 transition-colors"
                 >
-                  <span className="font-['Manrope:Bold'] font-bold text-[#0f172a] text-[12px]">
+                  <span className="font-bold text-[#0f172a] text-[12px]">
                     Chi tiết
                   </span>
                 </button>

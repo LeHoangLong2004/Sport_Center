@@ -131,14 +131,14 @@ export const CoachAiPlanWorkspace: React.FC<CoachAiPlanWorkspaceProps> = ({
       <div className="p-5 sm:p-6 flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Dumbbell className="w-4 h-4 text-orange-500" />
+            <Dumbbell className="w-4 h-4" />
             <span>Danh sách bài tập ({plan.exercises.length} bài)</span>
           </h4>
           {isDraft && (
             <button
               type="button"
               onClick={addExercise}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800 hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Thêm bài tập</span>

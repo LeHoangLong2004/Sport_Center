@@ -169,7 +169,7 @@ export function CounterPaymentsPage() {
       {/* Orders List */}
       {loading && orders.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-12 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
-          <RefreshCw className="w-8 h-8 text-purple-600 animate-spin mb-3" />
+          <RefreshCw className="w-8 h-8 animate-spin mb-3" />
           <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">
             Đang tải danh sách đơn thanh toán...
           </p>

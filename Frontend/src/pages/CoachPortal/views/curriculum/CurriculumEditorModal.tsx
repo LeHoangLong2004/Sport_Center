@@ -46,7 +46,7 @@ export const CurriculumEditorModal: React.FC<CurriculumEditorModalProps> = ({
         <div className="p-5 overflow-y-auto flex flex-col gap-4 text-xs">
           {error && (
             <div className="p-3.5 rounded-xl text-xs flex items-center gap-2.5 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 animate-in fade-in duration-200">
-              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
+              <AlertCircle className="w-4 h-4 shrink-0" />
               <span className="font-semibold">{error}</span>
             </div>
           )}

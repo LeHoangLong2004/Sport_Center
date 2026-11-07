@@ -39,7 +39,7 @@ export function ScheduleHeader({
           >
             Yêu cầu ca dạy
             {shiftRequestCount > 0 && (
-              <span className="ml-1 rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold text-orange-800">{shiftRequestCount}</span>
+              <span className="ml-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">{shiftRequestCount}</span>
             )}
           </button>
           <button
@@ -54,7 +54,7 @@ export function ScheduleHeader({
           >
             <span>Đề xuất lớp học</span>
             {proposalCount > 0 && (
-              <span className="ml-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
+              <span className="ml-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-800">
                 {proposalCount}
               </span>
             )}
@@ -63,7 +63,7 @@ export function ScheduleHeader({
         {activeTab === "calendar" && (
           <button
             onClick={onCreate}
-            className="bg-rose-600 hover:bg-rose-700 text-white flex gap-2 items-center px-4 py-2.5 rounded-xl transition-all shadow-md shadow-rose-600/20 active:scale-95 cursor-pointer"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white flex gap-2 items-center px-4 py-2.5 rounded-xl transition-all shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer"
           >
             <span className="font-semibold text-white text-sm">
               + Tạo lớp mới

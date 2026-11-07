@@ -29,7 +29,7 @@ export const SePaySuccessView: React.FC<Props> = ({
         </h4>
         <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mt-1 mx-auto leading-relaxed">
           Hệ thống SePay đã đối soát tự động thành công đơn hàng{" "}
-          <strong className="text-slate-800 dark:text-slate-200 font-mono">
+          <strong className="text-slate-800 dark:text-slate-200 ">
             {transferMemo}
           </strong>
           . Quyền lợi gói tập của bạn đã được kích hoạt ngay lập tức!
@@ -39,7 +39,7 @@ export const SePaySuccessView: React.FC<Props> = ({
       <div className="w-full p-4 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/80 text-xs text-emerald-900 dark:text-emerald-200 space-y-2">
         <div className="flex justify-between">
           <span>Mã đơn hàng:</span>
-          <span className="font-mono font-bold">{orderId}</span>
+          <span className="font-bold">{orderId}</span>
         </div>
         <div className="flex justify-between">
           <span>Số tiền đã thanh toán:</span>

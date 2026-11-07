@@ -104,9 +104,9 @@ export function ProductPaymentFlow({ order, onBack, onCompleted }: Props) {
               <p className="mt-2 text-sm text-[#64748b]">Đơn hàng sản phẩm đã được ghi nhận và gửi tới lễ tân.</p>
               <div className="mx-auto mt-6 max-w-md rounded-xl bg-slate-50 p-4 text-left text-sm">
                 <div className="flex justify-between gap-4"><span className="text-slate-500">Mã đơn hàng</span><strong className="text-slate-800">{order.id.slice(0, 8).toUpperCase()}</strong></div>
-                <div className="mt-3 flex justify-between gap-4"><span className="text-slate-500">Tổng thanh toán</span><strong className="text-teal-600">{order.totalAmount.toLocaleString("vi-VN")} đ</strong></div>
+                <div className="mt-3 flex justify-between gap-4"><span className="text-slate-500">Tổng thanh toán</span><strong className="text-emerald-600">{order.totalAmount.toLocaleString("vi-VN")} đ</strong></div>
               </div>
-              <button type="button" onClick={onCompleted} className="mt-7 rounded-xl bg-teal-500 px-6 py-3 text-sm font-bold text-white hover:bg-teal-600">Quay lại cửa hàng</button>
+              <button type="button" onClick={onCompleted} className="mt-7 rounded-xl bg-emerald-500 px-6 py-3 text-sm font-bold text-white hover:bg-emerald-600">Quay lại cửa hàng</button>
             </div>
           </div>
         </div>

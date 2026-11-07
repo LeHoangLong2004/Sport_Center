@@ -145,9 +145,9 @@ export default function MemberBooking({ onNavigate }: Props) {
         >
           <div className="flex items-center gap-2.5">
             {feedback.type === "error" ? (
-              <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
+              <AlertCircle className="w-5 h-5 shrink-0" />
             ) : (
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <CheckCircle2 className="w-5 h-5 shrink-0" />
             )}
             <span>{feedback.message}</span>
           </div>

@@ -58,7 +58,7 @@ export default function AttendanceGateList({
                 Ghi nhận thời gian đến và rời khỏi cơ sở Sport Center qua cổng kiểm soát tự động.
               </p>
             </div>
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
               {gateCheckIns.length} lượt đã ghi nhận
             </span>
           </div>
@@ -86,7 +86,7 @@ export default function AttendanceGateList({
                         {item.gate}
                       </span>
                       {item.packageName && (
-                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
+                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                           {item.packageName}
                         </span>
                       )}
@@ -123,7 +123,7 @@ export default function AttendanceGateList({
 
                 <div className="sm:text-right shrink-0">
                   <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold">
-                    <Timer className="w-3.5 h-3.5 text-teal-500" />
+                    <Timer className="w-3.5 h-3.5" />
                     {item.durationMinutes ? `${item.durationMinutes} phút` : "Đang tính giờ"}
                   </div>
                 </div>

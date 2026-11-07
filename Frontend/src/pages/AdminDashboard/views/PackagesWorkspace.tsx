@@ -142,7 +142,7 @@ export function PackagesWorkspace() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <span className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700">CENTER MANAGER · GÓI TẬP</span>
+          <span className="text-xs font-bold uppercase tracking-[0.16em] text-slate-700">CENTER MANAGER · GÓI TẬP</span>
           <h1 className="mt-1 text-2xl font-extrabold text-slate-900 sm:text-3xl">
             {category ? (category === "membership" ? "Quản lý gói thành viên" : "Quản lý gói môn tập") : "Quản lí gói"}
           </h1>
@@ -153,7 +153,7 @@ export function PackagesWorkspace() {
         <div className="flex flex-wrap gap-2">
           {category && (
             <button type="button" onClick={() => { setCategory(null); setActiveTab("catalog") }}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 hover:border-blue-300">
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 hover:border-slate-300">
               <ArrowLeft size={16} /> Chọn loại gói
             </button>
           )}
@@ -161,12 +161,12 @@ export function PackagesWorkspace() {
             className={`inline-flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold ${activeTab === "orders" ? "bg-slate-900 text-white" : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}>
             <PackageCheck size={16} /> Đơn thanh toán{" "}
             {pendingOrders.length > 0 && (
-              <span className="rounded-full bg-amber-400 px-2 py-0.5 text-xs text-amber-950">{pendingOrders.length}</span>
+              <span className="rounded-full bg-slate-400 px-2 py-0.5 text-xs text-slate-950">{pendingOrders.length}</span>
             )}
           </button>
           {category === "sport" && (
             <button type="button" onClick={() => setDraft(blankPackage("sport"))}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800">
+              className="inline-flex items-center gap-2 rounded-lg bg-slate-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-800">
               <Plus size={17} /> Tạo gói môn
             </button>
           )}
@@ -187,7 +187,7 @@ export function PackagesWorkspace() {
             </div>
             <input value={orderSearch} onChange={(e) => setOrderSearch(e.target.value)}
               placeholder="Tìm tên, mã đơn, gói..."
-              className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 sm:max-w-xs" />
+              className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-500 sm:max-w-xs" />
           </div>
           {visibleOrders.length === 0 ? (
             <div className="mt-5 rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">Chưa có đơn phù hợp.</div>
@@ -199,7 +199,7 @@ export function PackagesWorkspace() {
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <strong className="text-sm text-slate-900">{order.packageSnapshot.name}</strong>
-                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${order.status === "pending" ? "bg-amber-50 text-amber-800" : order.status === "paid" ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-800"}`}>
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${order.status === "pending" ? "bg-slate-50 text-slate-800" : order.status === "paid" ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-800"}`}>
                           {order.status === "pending" ? "Chờ thanh toán" : order.status === "paid" ? (order.startDate && new Date(order.startDate) > new Date() ? "Đã thanh toán · Chờ hiệu lực" : "Đã thanh toán") : "Thất bại"}
                         </span>
                       </div>
@@ -248,7 +248,7 @@ export function PackagesWorkspace() {
                       type="button"
                       onClick={() => typeof p === 'number' && setOrderPage(p)}
                       disabled={p === '...'}
-                      className={`flex items-center px-3 py-1.5 rounded-md text-[13px] transition-colors ${p === orderPage ? "bg-rose-600 font-semibold text-white shadow-xs shadow-rose-600/20" : p === '...' ? "bg-transparent text-slate-400 cursor-default" : "bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 cursor-pointer"}`}
+                      className={`flex items-center px-3 py-1.5 rounded-md text-[13px] transition-colors ${p === orderPage ? "bg-emerald-600 font-semibold text-white shadow-xs shadow-emerald-600/20" : p === '...' ? "bg-transparent text-slate-400 cursor-default" : "bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 cursor-pointer"}`}
                     >
                       {p}
                     </button>
@@ -269,26 +269,26 @@ export function PackagesWorkspace() {
       ) : !category ? (
         <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <button type="button" onClick={() => setCategory("membership")}
-            className="rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition hover:border-blue-300 hover:shadow-lg">
-            <span className="inline-flex rounded-xl bg-blue-50 p-3 text-blue-700"><Sparkles size={22} /></span>
+            className="rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition hover:border-slate-300 hover:shadow-lg">
+            <span className="inline-flex rounded-xl bg-slate-50 p-3 text-slate-700"><Sparkles size={22} /></span>
             <h2 className="mt-4 text-xl font-bold text-slate-900">Gói thành viên</h2>
             <p className="mt-1 text-sm leading-6 text-slate-500">Cấu hình Cơ bản, Plus, Premium, giá theo kỳ hạn và ưu đãi.</p>
-            <span className="mt-4 inline-flex text-sm font-semibold text-blue-700">Quản lý hạng thành viên →</span>
+            <span className="mt-4 inline-flex text-sm font-semibold text-slate-700">Quản lý hạng thành viên →</span>
           </button>
           <button type="button" onClick={() => setCategory("sport")}
-            className="rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition hover:border-teal-300 hover:shadow-lg">
-            <span className="inline-flex rounded-xl bg-teal-50 p-3 text-teal-700"><Dumbbell size={22} /></span>
+            className="rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition hover:border-emerald-300 hover:shadow-lg">
+            <span className="inline-flex rounded-xl bg-emerald-50 p-3 text-emerald-700"><Dumbbell size={22} /></span>
             <h2 className="mt-4 text-xl font-bold text-slate-900">Gói môn tập</h2>
             <p className="mt-1 text-sm leading-6 text-slate-500">Quản lý môn, khu tập, hình thức, hạn mức, giá và quyền lợi.</p>
-            <span className="mt-4 inline-flex text-sm font-semibold text-teal-700">Quản lý danh mục môn →</span>
+            <span className="mt-4 inline-flex text-sm font-semibold text-emerald-700">Quản lý danh mục môn →</span>
           </button>
-          <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-950 md:col-span-2">
+          <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm leading-6 text-slate-950 md:col-span-2">
             <strong>Danh mục dùng chung:</strong> thay đổi cấu hình sẽ hiển thị ngay cho Member khi mua gói mới. Đơn đã tạo giữ nguyên snapshot về giá, quyền lợi và điều kiện.
           </div>
         </section>
       ) : category === "membership" ? (
         <section>
-          <div className="mb-4 flex gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+          <div className="mb-4 flex gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-950">
             <ShieldCheck size={17} className="mt-0.5 shrink-0" />
             <span>Chỉ có ba mã hạng ổn định. Cơ bản miễn phí và không thể ngừng bán; thay đổi chỉ ảnh hưởng đơn mới.</span>
           </div>

@@ -249,8 +249,8 @@ export function CoachScheduleRequestsSection({ requests, loading, onAction }: Pr
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800">
-            <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
+          <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-800">
+            <span className="h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
             <span>{pendingCount} chờ duyệt</span>
           </div>
           <div className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800">
@@ -293,7 +293,7 @@ export function CoachScheduleRequestsSection({ requests, loading, onAction }: Pr
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Tìm theo lớp, HLV, lý do..."
-            className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition-all"
           />
         </div>
       </div>

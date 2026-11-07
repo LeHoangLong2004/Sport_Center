@@ -28,7 +28,7 @@ export function PackageEditor({
     onChange({ ...draft, prices: { ...draft.prices, [period]: value } })
 
   const fieldClass =
-    "mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+    "mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-100"
 
   const labelClass = "block text-sm font-semibold text-slate-700"
 
@@ -48,7 +48,7 @@ export function PackageEditor({
       >
         <header className="flex items-start justify-between border-b border-slate-100 px-6 py-5">
           <div>
-            <span className="text-xs font-bold uppercase tracking-widest text-blue-600">
+            <span className="text-xs font-bold uppercase tracking-widest text-slate-600">
               {isMembership
                 ? "Cấu hình hạng thành viên"
                 : "Danh mục gói môn tập"}
@@ -223,14 +223,14 @@ export function PackageEditor({
               <button
                 type="button"
                 onClick={() => setField("benefits", [...draft.benefits, ""])}
-                className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 w-fit px-2 py-1.5 -ml-2 rounded-lg hover:bg-blue-50 transition-colors"
+                className="flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-700 w-fit px-2 py-1.5 -ml-2 rounded-lg hover:bg-slate-50 transition-colors"
               >
                 <Plus size={16} />
                 Thêm quyền lợi
               </button>
             </div>
           </section>
-          <div className="flex gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
+          <div className="flex gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-900">
             <ShieldCheck size={17} className="mt-0.5 shrink-0" />
             <span>
               Giá và quyền lợi được chụp lại khi tạo đơn. Chỉnh sửa danh mục chỉ
@@ -252,7 +252,7 @@ export function PackageEditor({
             type="button"
             disabled={saving}
             onClick={onSave}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-lg bg-slate-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
           >
             <Check size={16} />
             {saving ? "Đang lưu..." : "Lưu cấu hình"}

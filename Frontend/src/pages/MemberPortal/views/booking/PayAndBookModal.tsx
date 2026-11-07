@@ -131,9 +131,9 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
     >
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden max-h-[92vh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-gradient-to-r from-teal-500/10 via-emerald-500/5 to-transparent">
+        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent">
           <div>
-            <span className="text-[10px] font-black uppercase tracking-wider text-teal-600 dark:text-teal-400">
+            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
               Xác nhận thanh toán & Đặt chỗ
             </span>
             <h3 className="text-lg font-black text-slate-900 dark:text-white">
@@ -157,7 +157,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
               role="alert"
               className="flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200"
             >
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <div>
                 <p className="font-extrabold">Không thể đặt lớp</p>
                 <p className="mt-0.5 leading-relaxed">{paymentError}</p>
@@ -183,7 +183,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                     : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600 dark:text-slate-300"
                 }`}
               >
-                <QrCode className="w-5 h-5 text-emerald-600 shrink-0" />
+                <QrCode className="w-5 h-5 shrink-0" />
                 <span className="text-[11px] font-bold">Mã VietQR</span>
               </button>
 
@@ -205,11 +205,11 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                 onClick={() => setPaymentMethod("counter")}
                 className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5 cursor-pointer ${
                   paymentMethod === "counter"
-                    ? "border-amber-600 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 shadow-sm ring-2 ring-amber-500/20"
+                    ? "border-slate-600 bg-slate-50 dark:bg-slate-950/40 text-slate-800 dark:text-slate-200 shadow-sm ring-2 ring-slate-500/20"
                     : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600 dark:text-slate-300"
                 }`}
               >
-                <Building className="w-5 h-5 text-amber-600 shrink-0" />
+                <Building className="w-5 h-5 text-slate-600 shrink-0" />
                 <span className="text-[11px] font-bold">Tại quầy lễ tân</span>
               </button>
             </div>
@@ -247,7 +247,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-500">Số tài khoản:</span>
-                  <span className="font-mono font-bold flex items-center gap-1 text-slate-900 dark:text-white">
+                  <span className="font-bold flex items-center gap-1 text-slate-900 dark:text-white">
                     {bankConfig.accountNumber}
                     <button
                       type="button"
@@ -255,7 +255,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                       className="p-1 text-slate-400 hover:text-emerald-600 cursor-pointer"
                       title="Sao chép"
                     >
-                      {copiedKey === "acc" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedKey === "acc" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </span>
                 </div>
@@ -273,13 +273,13 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                       className="p-1 text-slate-400 hover:text-emerald-600 cursor-pointer"
                       title="Sao chép"
                     >
-                      {copiedKey === "amt" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedKey === "amt" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </span>
                 </div>
                 <div className="flex justify-between items-center border-t border-slate-100 dark:border-slate-800 pt-1.5">
                   <span className="text-slate-500">Nội dung CK:</span>
-                  <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                  <span className="font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
                     {bookingMemo}
                     <button
                       type="button"
@@ -287,7 +287,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                       className="p-1 text-slate-400 hover:text-emerald-600 cursor-pointer"
                       title="Sao chép"
                     >
-                      {copiedKey === "memo" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedKey === "memo" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </span>
                 </div>
@@ -297,8 +297,8 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
               <div
                 className={`p-3.5 rounded-2xl border transition-all ${
                   isPaid
-                    ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 text-white border-emerald-400 shadow-md animate-in fade-in"
-                    : "bg-amber-50/90 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800"
+                    ? "bg-gradient-to-r from-emerald-600 via-emerald-600 to-emerald-500 text-white border-emerald-400 shadow-md animate-in fade-in"
+                    : "bg-slate-50/90 dark:bg-slate-950/40 border-slate-300 dark:border-slate-800"
                 }`}
               >
                 <div className="flex items-center justify-between gap-3">
@@ -309,14 +309,14 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                       </div>
                     ) : (
                       <span className="relative flex h-3.5 w-3.5 shrink-0">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500"></span>
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-slate-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-slate-500"></span>
                       </span>
                     )}
                     <div className="text-left">
                       <div
                         className={`text-xs font-black flex items-center gap-1.5 ${
-                          isPaid ? "text-white" : "text-amber-950 dark:text-amber-200"
+                          isPaid ? "text-white" : "text-slate-950 dark:text-slate-200"
                         }`}
                       >
                         {isPaid
@@ -325,7 +325,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                       </div>
                       <div
                         className={`text-[11px] mt-0.5 ${
-                          isPaid ? "text-emerald-100" : "text-amber-800 dark:text-amber-300"
+                          isPaid ? "text-emerald-100" : "text-slate-800 dark:text-slate-300"
                         }`}
                       >
                         {isPaid
@@ -338,7 +338,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                     className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg border shadow-2xs shrink-0 ${
                       isPaid
                         ? "bg-white text-emerald-700 border-white font-bold"
-                        : "bg-amber-100 dark:bg-slate-900 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700"
+                        : "bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-300 border-slate-300 dark:border-slate-700"
                     }`}
                   >
                     {isPaid ? "Đã thanh toán ✓" : "Chờ chuyển tiền ⏳"}
@@ -349,7 +349,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
               {/* Cảnh báo rõ ràng nếu bấm kiểm tra mà chưa thấy tiền */}
               {!isPaid && checkStatusText && (
                 <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200 text-xs text-left flex items-start gap-2.5 animate-in fade-in">
-                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <div className="space-y-0.5">
                     <p className="font-extrabold text-rose-700 dark:text-rose-300">Chưa nhận được tiền thanh toán!</p>
                     <p className="text-[11px] leading-relaxed">{checkStatusText}</p>

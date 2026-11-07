@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-export function ThemeToggle() {
+export function ThemeToggle({ className }: { className?: string } = {}) {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
@@ -16,6 +16,17 @@ export function ThemeToggle() {
       document.documentElement.classList.remove('dark');
       setIsDark(false);
     }
+
+    const handleStorage = () => {
+      const cur = localStorage.getItem('theme');
+      setIsDark(cur === 'dark');
+    };
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('theme-change', handleStorage);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('theme-change', handleStorage);
+    };
   }, []);
 
   function toggleTheme() {
@@ -28,14 +39,18 @@ export function ThemeToggle() {
       localStorage.setItem('theme', 'dark');
       setIsDark(true);
     }
+    window.dispatchEvent(new Event('theme-change'));
   }
+
+  const defaultClasses = "absolute top-6 right-6 p-2.5 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors z-50 shadow-sm cursor-pointer";
 
   return (
     <button
       type="button"
       onClick={toggleTheme}
-      className="absolute top-6 right-6 p-2.5 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors z-50 shadow-sm"
+      className={className || defaultClasses}
       title={isDark ? "Chuyển sang nền sáng" : "Chuyển sang nền tối"}
+      aria-label={isDark ? "Chuyển sang nền sáng" : "Chuyển sang nền tối"}
     >
       {isDark ? (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>

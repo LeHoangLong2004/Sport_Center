@@ -21,7 +21,7 @@ interface Props {
 }
 
 const STATUS_STYLE: Record<string, string> = {
-  "sắp diễn ra":  "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800",
+  "sắp diễn ra":  "bg-slate-50 text-slate-700 dark:bg-slate-950/40 dark:text-slate-300 border border-slate-200 dark:border-slate-800",
   "đang diễn ra": "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800",
   "hoàn thành":   "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700",
   "đã hủy":       "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300 border border-red-200 dark:border-red-800",
@@ -65,7 +65,7 @@ export default function CoachClassDetail({ sessionId, navigateTo }: Props) {
   if (loading) {
     return (
       <div className="py-24 text-center text-slate-400 max-w-4xl mx-auto">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-orange-500 mb-3"></div>
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-emerald-500 mb-3"></div>
         <p className="text-sm">Đang tải thông tin chi tiết ca dạy...</p>
       </div>
     );
@@ -77,7 +77,7 @@ export default function CoachClassDetail({ sessionId, navigateTo }: Props) {
         <p>Không tìm thấy buổi học trong hệ thống.</p>
         <button
           type="button"
-          className="text-orange-600 hover:underline text-sm font-semibold"
+          className="text-emerald-600 hover:underline text-sm font-semibold"
           onClick={() => navigateTo("schedule")}
         >
           ← Quay lại lịch dạy
@@ -94,7 +94,7 @@ export default function CoachClassDetail({ sessionId, navigateTo }: Props) {
       <div className="flex items-center justify-between">
         <button
           type="button"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
           onClick={() => navigateTo("schedule")}
         >
           <ArrowLeft className="w-4 h-4" />
@@ -102,7 +102,7 @@ export default function CoachClassDetail({ sessionId, navigateTo }: Props) {
         </button>
 
         <span className="text-xs text-slate-400">
-          Mã ca dạy: <strong className="font-mono text-slate-700 dark:text-slate-200">{session.id}</strong>
+          Mã ca dạy: <strong className="text-slate-700 dark:text-slate-200">{session.id}</strong>
         </span>
       </div>
 
@@ -147,7 +147,7 @@ export default function CoachClassDetail({ sessionId, navigateTo }: Props) {
               <button
                 type="button"
                 onClick={() => navigateTo("attendance", { sessionId: session.id })}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-xl transition-colors shadow-sm shadow-orange-500/20"
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-sm shadow-emerald-500/20"
               >
                 <UserCheck className="w-4 h-4" />
                 Điểm danh lớp ngay

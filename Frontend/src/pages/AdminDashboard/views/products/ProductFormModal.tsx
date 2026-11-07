@@ -130,7 +130,7 @@ export function ProductFormModal({
         {/* Header */}
         <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold text-rose-500 uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
               {editingProduct ? 'Chỉnh sửa mặt hàng' : 'Bổ sung sản phẩm mới'}
             </span>
             <h3 className="text-base font-black text-slate-900 dark:text-white">

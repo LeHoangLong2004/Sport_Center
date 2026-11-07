@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { breadcrumbs, A, Page } from '../shared';
 import { UserAvatar } from '../../../components/UserAvatar';
 import { notificationApi, type ManagerNotification } from '../../../hooks/notificationApi';
+import { ThemeToggle } from '../../../components/ThemeToggle';
 
 const DERIVED_READ_KEY = 'receptionist_read_derived_notifications';
 
@@ -182,11 +183,12 @@ export function TopBar({ breadcrumb, title, shiftLabel, onProfileClick, onNaviga
         <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">{breadcrumb}</p>
         <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{title}</p>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold text-xs rounded-full border border-emerald-200/50 dark:border-emerald-500/20">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           {currentShift}
         </div>
+        <ThemeToggle className="p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition-colors cursor-pointer" />
         <div ref={notificationsRef} className="relative">
         <button
           type="button"
@@ -197,7 +199,7 @@ export function TopBar({ breadcrumb, title, shiftLabel, onProfileClick, onNaviga
         >
           <img src={`${A}/06b01.svg`} alt="" className="size-5 brightness-50 dark:brightness-150" />
           {unreadCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex min-w-4 h-4 items-center justify-center rounded-full bg-purple-500 px-1 text-[10px] font-bold text-white">
+            <span className="absolute -right-0.5 -top-0.5 flex min-w-4 h-4 items-center justify-center rounded-full bg-emerald-600 px-1 text-[10px] font-bold text-white">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
@@ -210,7 +212,7 @@ export function TopBar({ breadcrumb, title, shiftLabel, onProfileClick, onNaviga
                 type="button"
                 onClick={() => void markAllAsRead()}
                 disabled={unreadCount === 0}
-                className="text-xs font-semibold text-purple-600 dark:text-purple-400 hover:underline transition-colors disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
+                className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline transition-colors disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
               >
                 Đánh dấu đã đọc
               </button>
@@ -228,16 +230,16 @@ export function TopBar({ breadcrumb, title, shiftLabel, onProfileClick, onNaviga
                     type="button"
                     key={notification.id}
                     onClick={() => void handleNotificationClick(notification)}
-                    className={`block w-full px-4 py-3 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/70 group ${notification.isRead ? '' : 'bg-purple-50/60 dark:bg-purple-950/20'}`}
+                    className={`block w-full px-4 py-3 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/70 group ${notification.isRead ? '' : 'bg-emerald-50/60 dark:bg-emerald-950/20'}`}
                   >
                     <div className="flex items-start gap-3">
-                      <span className={`mt-1.5 size-2 shrink-0 rounded-full ${notification.isRead ? 'bg-slate-300 dark:bg-slate-600' : 'bg-purple-500 ring-4 ring-purple-100 dark:ring-purple-950/40'}`} />
+                      <span className={`mt-1.5 size-2 shrink-0 rounded-full ${notification.isRead ? 'bg-slate-300 dark:bg-slate-600' : 'bg-emerald-500 ring-4 ring-emerald-100 dark:ring-emerald-950/40'}`} />
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center justify-between gap-2">
                           <span className={`text-sm font-semibold ${notification.isRead ? 'text-slate-700 dark:text-slate-300' : 'text-slate-900 dark:text-white font-bold'}`}>
                             {notification.title}
                           </span>
-                          <span className="text-[11px] text-purple-600 dark:text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                          <span className="text-[11px] text-emerald-600 dark:text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                             Xem ngay &rarr;
                           </span>
                         </span>
@@ -261,7 +263,7 @@ export function TopBar({ breadcrumb, title, shiftLabel, onProfileClick, onNaviga
         <UserAvatar 
           src={avatarUrl} 
           name={userName}
-          className="rounded-full size-11 object-cover cursor-pointer border-2 border-slate-200 dark:border-slate-700 hover:border-purple-500 dark:hover:border-purple-500 transition-colors shadow-sm" 
+          className="rounded-full size-11 object-cover cursor-pointer border-2 border-slate-200 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-500 transition-colors shadow-sm" 
           onClick={onProfileClick}
         />
       </div>

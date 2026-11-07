@@ -16,8 +16,8 @@ export function MembershipCard({
     item.tier === "premium"
       ? "from-amber-500 to-orange-500"
       : item.tier === "plus"
-        ? "from-blue-600 to-indigo-500"
-        : "from-slate-600 to-slate-500"
+        ? "from-emerald-600 to-teal-500"
+        : "from-slate-700 to-slate-600"
 
   return (
     <article className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -72,12 +72,12 @@ export function MembershipCard({
               key={`${benefit}-${index}`}
               className="flex gap-2 text-sm leading-5 text-slate-700"
             >
-              <Check size={16} className="mt-0.5 shrink-0 text-teal-600" />
+              <Check size={16} className="mt-0.5 shrink-0 text-emerald-600" />
               {benefit}
             </p>
           ))}
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-2 rounded-xl bg-blue-50 p-3 text-xs text-blue-950">
+        <div className="mt-4 grid grid-cols-2 gap-2 rounded-xl bg-emerald-50/70 p-3 text-xs text-emerald-950">
           <span>Ưu đãi tự tập/lớp nhóm</span>
           <strong className="text-right">{item.groupDiscountPct}%</strong>
           <span>Ưu đãi Coach 1–1</span>
@@ -89,7 +89,7 @@ export function MembershipCard({
           <button
             type="button"
             onClick={onEdit}
-            className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 hover:border-blue-300 hover:text-blue-700"
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700"
           >
             <Edit3 size={15} /> Chỉnh sửa
           </button>

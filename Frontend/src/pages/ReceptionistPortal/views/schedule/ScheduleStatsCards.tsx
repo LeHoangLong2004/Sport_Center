@@ -19,7 +19,7 @@ export const ScheduleStatsCards: React.FC<Props> = ({
         onClick={() => onSelectFilter("all")}
         className={`flex items-center justify-between p-2.5 rounded-lg border text-left transition cursor-pointer ${
           statusFilter === "all"
-            ? "bg-blue-50/70 border-blue-300 ring-1 ring-blue-300"
+            ? "bg-slate-50/70 border-slate-300 ring-1 ring-slate-300"
             : "bg-white border-slate-200 hover:bg-slate-50"
         }`}
       >
@@ -29,7 +29,7 @@ export const ScheduleStatsCards: React.FC<Props> = ({
             {stats.total}
           </span>
         </div>
-        <div className="w-7 h-7 rounded-md bg-blue-100/70 text-blue-700 flex items-center justify-center text-xs font-bold">
+        <div className="w-7 h-7 rounded-md bg-slate-100/70 text-slate-700 flex items-center justify-center text-xs font-bold">
           All
         </div>
       </button>
@@ -38,17 +38,17 @@ export const ScheduleStatsCards: React.FC<Props> = ({
         onClick={() => onSelectFilter("Đang chờ khách")}
         className={`flex items-center justify-between p-2.5 rounded-lg border text-left transition cursor-pointer ${
           statusFilter === "Đang chờ khách"
-            ? "bg-amber-50/80 border-amber-300 ring-1 ring-amber-300"
+            ? "bg-slate-50/80 border-slate-300 ring-1 ring-slate-300"
             : "bg-white border-slate-200 hover:bg-slate-50"
         }`}
       >
         <div>
-          <span className="text-[11px] text-amber-700 font-medium block">Chờ tiếp đón</span>
-          <span className="text-lg font-extrabold text-amber-700 leading-tight">
+          <span className="text-[11px] text-slate-700 font-medium block">Chờ tiếp đón</span>
+          <span className="text-lg font-extrabold text-slate-700 leading-tight">
             {stats.waiting}
           </span>
         </div>
-        <div className="w-7 h-7 rounded-md bg-amber-100 text-amber-800 flex items-center justify-center">
+        <div className="w-7 h-7 rounded-md bg-slate-100 text-slate-800 flex items-center justify-center">
           <Clock className="w-4 h-4 animate-pulse" />
         </div>
       </button>

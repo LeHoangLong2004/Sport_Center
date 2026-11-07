@@ -34,7 +34,7 @@ export function ProductCard({ product, onEdit, onDelete, onToggleStatus }: Props
       className={`bg-white dark:bg-slate-900 rounded-2xl border transition-all duration-200 shadow-xs hover:shadow-md flex flex-col justify-between overflow-hidden group ${
         !product.status
           ? 'border-slate-200/60 dark:border-slate-800/60 opacity-60'
-          : 'border-slate-200/90 dark:border-slate-800 hover:border-rose-500/50'
+          : 'border-slate-200/90 dark:border-slate-800 hover:border-emerald-500/50'
       }`}
     >
       <div>
@@ -80,7 +80,7 @@ export function ProductCard({ product, onEdit, onDelete, onToggleStatus }: Props
         {/* Product Info */}
         <div className="p-4 space-y-2">
           <h3
-            className="font-extrabold text-sm text-slate-900 dark:text-white line-clamp-1 group-hover:text-rose-600 transition-colors"
+            className="font-bold text-sm text-slate-900 dark:text-white line-clamp-1 transition-colors"
             title={product.name}
           >
             {product.name}
@@ -89,9 +89,9 @@ export function ProductCard({ product, onEdit, onDelete, onToggleStatus }: Props
           <div className="flex items-baseline justify-between pt-1">
             <div>
               <span className="text-[10px] font-medium text-slate-400 block">Đơn giá bán:</span>
-              <strong className="text-base font-black text-rose-600 dark:text-rose-400">
+              <span className="text-sm font-normal text-slate-800 dark:text-slate-200">
                 {product.price.toLocaleString('vi-VN')} đ
-              </strong>
+              </span>
             </div>
 
             <div className="text-right">
@@ -101,7 +101,7 @@ export function ProductCard({ product, onEdit, onDelete, onToggleStatus }: Props
                   isOutOfStock
                     ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200'
                     : isLowStock
-                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200'
+                    ? 'bg-slate-100 text-slate-800 dark:bg-slate-950/60 dark:text-slate-400 border border-slate-200'
                     : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400'
                 }`}
               >

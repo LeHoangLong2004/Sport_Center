@@ -28,19 +28,19 @@ export function SuccessScreen({
             {pkg.orderStatus === "paid" ? (
               <img src={`${A}/48b1a.svg`} className="absolute block inset-0 size-full" alt="" />
             ) : (
-              <div className="flex size-20 items-center justify-center rounded-full bg-amber-100 text-3xl text-amber-600 border-2 border-amber-300">
+              <div className="flex size-20 items-center justify-center rounded-full bg-slate-100 text-3xl text-slate-600 border-2 border-slate-300">
                 🎫
               </div>
             )}
           </div>
           <div className="flex flex-col gap-2 items-center text-center">
-            <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[28px]">
+            <p className="font-extrabold text-[#0f172a] text-[28px]">
               {pkg.orderStatus === "paid" ? "Thanh toán thành công!" : "Đã tạo phiếu đăng ký tại quầy!"}
             </p>
-            <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-sm max-w-lg">
+            <p className="font-normal text-[#64748b] text-sm max-w-lg">
               {pkg.orderStatus === "paid"
-                ? <>Chào mừng hội viên <span className="font-['Inter:Bold'] font-bold text-[#0f172a]">{formData.fullName || "Khách hàng mới"}</span> gia nhập câu lạc bộ SportCenter</>
-                : <>Phiếu đăng ký của <span className="font-['Inter:Bold'] font-bold text-[#0f172a]">{formData.fullName || "hội viên"}</span> đã được gửi tới quầy lễ tân. Vui lòng hoàn tất thanh toán trong <strong>24 giờ</strong> để kích hoạt gói tập.</>}
+                ? <>Chào mừng hội viên <span className="font-bold text-[#0f172a]">{formData.fullName || "Khách hàng mới"}</span> gia nhập câu lạc bộ SportCenter</>
+                : <>Phiếu đăng ký của <span className="font-bold text-[#0f172a]">{formData.fullName || "hội viên"}</span> đã được gửi tới quầy lễ tân. Vui lòng hoàn tất thanh toán trong <strong>24 giờ</strong> để kích hoạt gói tập.</>}
             </p>
           </div>
 
@@ -52,8 +52,8 @@ export function SuccessScreen({
               ["Cơ sở kích hoạt", formData.branch],
             ].map(([label, val]) => (
               <div key={label} className="flex items-start justify-between w-full">
-                <span className="font-['Inter:Medium'] font-medium text-[#64748b] text-[13px]">{label}</span>
-                <span className="font-['Inter:Bold'] font-bold text-[#0f172a] text-sm">{val}</span>
+                <span className="font-medium text-[#64748b] text-[13px]">{label}</span>
+                <span className="font-bold text-[#0f172a] text-sm">{val}</span>
               </div>
             ))}
             {pkg.description && <p className="w-full text-sm leading-6 text-slate-600">{pkg.description}</p>}
@@ -85,25 +85,25 @@ export function SuccessScreen({
               </div>
             </div>
             <div className="flex items-center justify-between w-full">
-              <span className="font-['Inter:Semi_Bold'] font-semibold text-[#0f172a] text-sm">
+              <span className="font-bold font-semibold text-[#0f172a] text-sm">
                 {pkg.orderStatus === "paid" ? "Tổng tiền đã thanh toán" : "Tổng tiền đơn hàng"}
               </span>
-              <span className="font-['Inter:Extra_Bold'] font-extrabold text-[#10b981] text-xl">{fmt(total)}</span>
+              <span className="font-extrabold text-[#10b981] text-xl">{fmt(total)}</span>
             </div>
           </div>
 
           {pkg.orderStatus === "paid" ? (
-            <div className="bg-teal-50 flex gap-2.5 items-center p-[16px] rounded-[12px] w-full border border-teal-200">
-              <svg className="w-[20px] h-[20px] text-teal-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-              <p className="font-['Inter:Medium'] font-medium text-teal-800 text-[13px] flex-1 leading-[18px]">
+            <div className="bg-emerald-50 flex gap-2.5 items-center p-[16px] rounded-[12px] w-full border border-emerald-200">
+              <svg className="w-[20px] h-[20px] text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <p className="font-medium text-emerald-800 text-[13px] flex-1 leading-[18px]">
                 Gói tập đã được thanh toán thành công và quyền lợi được áp dụng theo thời hạn hiển thị trong đơn hàng.
               </p>
             </div>
           ) : (
-            <div className="bg-amber-50 flex gap-3 items-start p-[16px] rounded-[12px] w-full border border-amber-300">
+            <div className="bg-slate-50 flex gap-3 items-start p-[16px] rounded-[12px] w-full border border-slate-300">
               <span className="text-xl shrink-0">📍</span>
-              <div className="flex flex-col gap-1 text-[13px] text-amber-900">
-                <p className="font-['Inter:Bold'] font-bold">Hướng dẫn thanh toán tại quầy lễ tân:</p>
+              <div className="flex flex-col gap-1 text-[13px] text-slate-900">
+                <p className="font-bold">Hướng dẫn thanh toán tại quầy lễ tân:</p>
                 <p className="leading-5">
                   1. Đến quầy lễ tân tại cơ sở <strong>{formData.branch || "SportCenter"}</strong> trong vòng <strong>24 giờ</strong>.<br />
                   2. Đọc <strong>Số điện thoại</strong> ({formData.phone || "đã đăng ký"}) hoặc đưa <strong>Mã đơn hàng</strong> cho lễ tân.<br />
@@ -117,7 +117,7 @@ export function SuccessScreen({
             <button
               type="button"
               onClick={onInvoice}
-              className="bg-white border border-[#cbd5e1] flex-1 flex items-center justify-center py-[12px] rounded-[10px] font-['Inter:Semi_Bold'] font-semibold text-[#64748b] text-sm hover:bg-[#f8fafc] hover:text-[#0f172a] transition-colors"
+              className="bg-white border border-[#cbd5e1] flex-1 flex items-center justify-center py-[12px] rounded-[10px] font-bold font-semibold text-[#64748b] text-sm hover:bg-[#f8fafc] hover:text-[#0f172a] transition-colors"
             >
               {pkg.orderStatus === "paid" ? "Xem hóa đơn điện tử" : "Xem phiếu hẹn tạm tính"}
             </button>
@@ -127,7 +127,7 @@ export function SuccessScreen({
             <button
               type="button"
               onClick={onHome}
-              className="bg-white border border-[#cbd5e1] flex flex-1 items-center justify-center py-[16px] rounded-[12px] font-['Inter:Bold'] font-bold text-[#0f172a] text-[15px] hover:bg-[#f8fafc] transition-colors cursor-pointer"
+              className="bg-white border border-[#cbd5e1] flex flex-1 items-center justify-center py-[16px] rounded-[12px] font-bold text-[#0f172a] text-[15px] hover:bg-[#f8fafc] transition-colors cursor-pointer"
             >
               Về Member Portal
             </button>
@@ -136,7 +136,7 @@ export function SuccessScreen({
                 <button
                   type="button"
                   onClick={onActivate}
-                  className="bg-teal-500 flex flex-1 items-center justify-center py-[16px] rounded-[12px] font-['Inter:Bold'] font-bold text-white text-[15px] hover:bg-teal-600 transition-colors cursor-pointer"
+                  className="bg-emerald-500 flex flex-1 items-center justify-center py-[16px] rounded-[12px] font-bold text-white text-[15px] hover:bg-emerald-600 transition-colors cursor-pointer"
                 >
                   Kích hoạt thẻ thành viên ngay →
                 </button>
@@ -144,7 +144,7 @@ export function SuccessScreen({
                 <button
                   type="button"
                   onClick={onHome}
-                  className="bg-teal-500 flex flex-1 items-center justify-center py-[16px] rounded-[12px] font-['Inter:Bold'] font-bold text-white text-[15px] hover:bg-teal-600 transition-colors cursor-pointer"
+                  className="bg-emerald-500 flex flex-1 items-center justify-center py-[16px] rounded-[12px] font-bold text-white text-[15px] hover:bg-emerald-600 transition-colors cursor-pointer"
                 >
                   Vào xem lịch tập ngay →
                 </button>
@@ -153,7 +153,7 @@ export function SuccessScreen({
               <button
                 type="button"
                 onClick={onHome}
-                className="bg-amber-600 flex flex-1 items-center justify-center py-[16px] rounded-[12px] font-['Inter:Bold'] font-bold text-white text-[15px] hover:bg-amber-700 transition-colors cursor-pointer"
+                className="bg-slate-600 flex flex-1 items-center justify-center py-[16px] rounded-[12px] font-bold text-white text-[15px] hover:bg-slate-700 transition-colors cursor-pointer"
               >
                 Đã hiểu, về Member Portal →
               </button>

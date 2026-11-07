@@ -60,8 +60,8 @@ export const CurriculumGrid: React.FC<CurriculumGridProps> = ({
                       {c.name}
                     </h3>
                     {isAiPlan && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300 flex items-center gap-1 shrink-0">
-                        <Sparkles className="w-2.5 h-2.5 text-orange-500" />
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 flex items-center gap-1 shrink-0">
+                        <Sparkles className="w-2.5 h-2.5" />
                         AI Gợi ý
                       </span>
                     )}
@@ -135,10 +135,10 @@ export const CurriculumGrid: React.FC<CurriculumGridProps> = ({
                     type="button"
                     disabled={approvingId === c.id}
                     onClick={() => onApprove(c)}
-                    className="px-3 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 rounded-lg border border-blue-200 dark:border-blue-800 transition-colors flex items-center gap-1.5 shadow-sm whitespace-nowrap shrink-0"
+                    className="px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950/60 dark:hover:bg-slate-900/60 rounded-lg border border-slate-200 dark:border-slate-800 transition-colors flex items-center gap-1.5 shadow-sm whitespace-nowrap shrink-0"
                     title="Đánh dấu giáo án này là sẵn sàng giao cho học viên"
                   >
-                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 shrink-0" />
                     <span className="whitespace-nowrap">{approvingId === c.id ? "Đang xử lý..." : "Sẵn sàng giao"}</span>
                   </button>
                 )}

@@ -21,7 +21,7 @@ export function DataState({ loading, error, forbidden, count, emptyText, onRetry
 
   if (forbidden) {
     return (
-      <p className="px-6 py-6 text-[#b45309] text-sm">
+      <p className="px-6 py-6 text-slate-700 text-sm">
         Tài khoản hiện tại không có quyền xem dữ liệu này (chỉ Center Manager hoặc Admin).
       </p>
     );

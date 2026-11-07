@@ -4,12 +4,12 @@ import { assets } from './shared';
 export function Brand() {
   return (
     <div className="flex gap-3 items-center z-10 relative">
-      <div className="bg-[#14b8a6] flex items-center justify-center rounded-[10px] w-12 h-12 shadow-lg shadow-teal-500/20">
+      <div className="bg-emerald-600 flex items-center justify-center rounded-[10px] w-12 h-12 shadow-lg shadow-emerald-500/20">
         <span className="font-extrabold text-white dark:text-[#0f172a] text-xl">SC</span>
       </div>
       <div className="flex flex-col">
         <span className="font-extrabold text-slate-900 dark:text-white text-lg tracking-wider">SPORTCENTER</span>
-        <span className="font-bold text-[#14b8a6] text-[10px] tracking-widest uppercase">Operating System</span>
+        <span className="font-bold text-emerald-600 text-[10px] tracking-widest uppercase">Operating System</span>
       </div>
     </div>
   )
@@ -28,7 +28,7 @@ export function AuthVisual({ emphasized = false }: { emphasized?: boolean }) {
       <Brand />
 
       <div className="z-10 relative mt-auto mb-16">
-        <span className="inline-block px-3 py-1 mb-4 text-xs font-bold tracking-widest text-orange-600 bg-orange-100 border-orange-200 dark:text-orange-400 dark:bg-orange-400/10 rounded-full border dark:border-orange-400/20 transition-colors duration-300">
+        <span className="inline-block px-3 py-1 mb-4 text-xs font-bold tracking-widest text-emerald-600 bg-emerald-100 border-emerald-200 dark:text-slate-400 dark:bg-slate-400/10 rounded-full border dark:border-slate-400/20 transition-colors duration-300">
           VẬN HÀNH ĐA BỘ MÔN
         </span>
         <h1 className={`text-5xl font-extrabold text-slate-900 dark:text-white leading-tight mb-4 transition-colors duration-300 ${emphasized ? 'text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-500 dark:from-white dark:to-[#cbd5e1]' : ''}`}>

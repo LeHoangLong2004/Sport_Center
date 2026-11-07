@@ -53,7 +53,7 @@ export default function CertsEditSection({
             className="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 flex items-center justify-between gap-2"
           >
             <div className="flex items-center gap-2 flex-1">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span className="font-medium text-slate-800 dark:text-slate-200">{c}</span>
             </div>
             <button

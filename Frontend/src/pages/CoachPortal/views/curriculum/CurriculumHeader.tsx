@@ -40,7 +40,7 @@ export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
             onClick={() => {
               window.location.hash = "#coach-ai";
             }}
-            className="flex items-center gap-2 px-3.5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 rounded-xl transition-all shadow-md shadow-orange-500/20 active:scale-95"
+            className="flex items-center gap-2 px-3.5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-emerald-600 to-emerald-600 hover:from-emerald-700 hover:to-emerald-700 rounded-xl transition-all shadow-md shadow-emerald-600/20 active:scale-95"
             title="Sử dụng AI gợi ý và tạo nhanh giáo án bài tập"
           >
             <Sparkles className="w-4 h-4" /> Soạn với Coach AI
@@ -63,19 +63,19 @@ export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
         </div>
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl">
           <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Sẵn sàng giao</span>
-          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
+          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
             {curricula.filter((c) => c.status === "Đã duyệt").length}
           </div>
         </div>
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl">
           <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Đã giao cho học viên</span>
-          <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
             {curricula.filter((c) => c.status === "Đã giao").length}
           </div>
         </div>
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl">
           <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Bản nháp đang soạn</span>
-          <div className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">
+          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
             {curricula.filter((c) => c.status === "Nháp").length}
           </div>
         </div>

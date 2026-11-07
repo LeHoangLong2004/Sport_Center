@@ -52,7 +52,7 @@ export default function ReportPaymentModal({
               </span>
               <Building className="w-4 h-4 text-slate-400" />
             </div>
-            <div className="text-lg font-mono font-bold tracking-widest text-white">
+            <div className="text-lg font-bold tracking-widest text-white">
               0979 977 428
             </div>
             <div className="text-[11px] text-slate-300">
@@ -69,7 +69,7 @@ export default function ReportPaymentModal({
             </div>
             <div className="flex justify-between items-center text-[11px]">
               <span className="text-slate-400">Nội dung CK:</span>
-              <span className="font-mono font-bold text-white bg-slate-800 px-2 py-0.5 rounded border border-slate-600">
+              <span className="font-bold text-white bg-slate-800 px-2 py-0.5 rounded border border-slate-600">
                 {activePaymentModal.id}
               </span>
             </div>

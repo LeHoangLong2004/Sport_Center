@@ -73,7 +73,7 @@ export function NotificationModal({
           <div className="w-full pt-4">
             <button
               onClick={onHide}
-              className="w-full px-4 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold transition-colors shadow-lg shadow-teal-600/20"
+              className="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-colors shadow-lg shadow-emerald-600/20"
             >
               Đóng
             </button>

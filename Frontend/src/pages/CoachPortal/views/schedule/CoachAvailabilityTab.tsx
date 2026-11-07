@@ -82,7 +82,7 @@ export default function CoachAvailabilityTab({
                     <button
                       type="button"
                       onClick={() => onToggleSlot(slot.id)}
-                      className="text-xs font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400 hover:underline"
+                      className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 hover:underline"
                     >
                       {slot.isOpen ? "Tắt nhận ca" : "Bật nhận ca"}
                     </button>

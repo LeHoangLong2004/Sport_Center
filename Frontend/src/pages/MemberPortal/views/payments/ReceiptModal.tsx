@@ -17,7 +17,7 @@ export default function ReceiptModal({ receiptModal, userName, onClose }: Props)
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md shadow-xl overflow-hidden flex flex-col">
         <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-850">
           <div className="flex items-center gap-2">
-            <Receipt className="w-5 h-5 text-emerald-600" />
+            <Receipt className="w-5 h-5" />
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">
               Phiếu thu điện tử
             </h3>
@@ -30,7 +30,7 @@ export default function ReceiptModal({ receiptModal, userName, onClose }: Props)
           </button>
         </div>
 
-        <div className="p-6 space-y-4 text-xs font-mono">
+        <div className="p-6 space-y-4 text-xs ">
           <div className="text-center pb-3 border-b border-dashed border-slate-200 dark:border-slate-700">
             <h4 className="font-bold text-slate-900 dark:text-white text-base">SPORTCENTER</h4>
             <p className="text-[11px] text-slate-500">Trung tâm thể thao & chăm sóc sức khỏe</p>

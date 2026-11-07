@@ -426,7 +426,7 @@ export function useCoachAi(initialMemberId?: string | null) {
       toast.custom(
         (t) => (
           <div className="flex items-center gap-3.5 bg-white dark:bg-slate-900 border border-emerald-500/30 text-slate-900 dark:text-white px-4 py-3.5 rounded-2xl shadow-xl shadow-emerald-500/10 min-w-[340px] max-w-md ring-1 ring-black/5 dark:ring-white/10">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/30">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-emerald-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/30">
               <CheckCircle2 className="w-5 h-5" />
             </div>
             <div className="flex-1 min-w-0">

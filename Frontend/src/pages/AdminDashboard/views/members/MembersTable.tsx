@@ -20,8 +20,8 @@ interface MembersTableProps {
 }
 
 const statusStyle: Record<string, string> = {
-  "Đang hoạt động": "bg-[#dcfce7] text-[#15803d]",
-  "Sắp hết hạn":    "bg-[#fef3c7] text-[#b45309]",
+  "Đang hoạt động": "bg-emerald-50 text-emerald-700",
+  "Sắp hết hạn":    "bg-slate-100 text-slate-700",
   "Tạm khóa":       "bg-[#fee2e2] text-[#b91c1c]",
 };
 
@@ -68,7 +68,7 @@ export function MembersTable({
                 }}
                 onChange={onToggleSelectAll}
                 aria-label="Chọn tất cả hội viên trên trang này"
-                className="size-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
+                className="size-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
               />
             </div>
             <div className="py-3.5 flex-1 min-w-[220px] shrink-0">HỘI VIÊN</div>
@@ -81,7 +81,7 @@ export function MembersTable({
 
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <div className="size-8 border-2 border-rose-600 border-t-transparent rounded-full animate-spin" />
+              <div className="size-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
               <p className="text-[#64748b] text-sm font-medium">Đang tải danh sách...</p>
             </div>
           ) : members.length === 0 ? (
@@ -95,7 +95,7 @@ export function MembersTable({
                 <div
                   key={m.id}
                   className={`border-b border-[#f1f5f9] flex h-16 items-center px-6 transition-colors ${
-                    isSelected ? 'bg-rose-50/50' : 'hover:bg-slate-50/70'
+                    isSelected ? 'bg-emerald-50/50' : 'hover:bg-slate-50/70'
                   }`}
                 >
                   <div className="w-10 shrink-0 flex items-center">
@@ -104,19 +104,19 @@ export function MembersTable({
                       checked={isSelected}
                       onChange={() => onToggleSelect && onToggleSelect(m.realId)}
                       aria-label={`Chọn hội viên ${m.name}`}
-                      className="size-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
+                      className="size-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                     />
                   </div>
                   <div className="flex gap-3 items-center flex-1 min-w-[220px] shrink-0 pr-4">
                     <UserAvatar src={m.avatar} name={m.name} className="rounded-full size-9.5 object-cover shrink-0 ring-1 ring-slate-200" />
                     <div className="min-w-0">
                       <p className="font-semibold text-[#0f172a] text-sm truncate" title={m.name}>{m.name}</p>
-                      <p className="text-[#64748b] text-[12px] font-mono">{m.id}</p>
+                      <p className="text-[#64748b] text-[12px] ">{m.id}</p>
                     </div>
                   </div>
                   <div className="w-[160px] shrink-0 whitespace-nowrap">
                     <span className="text-[#0f172a] text-sm font-medium">{m.pkg}</span>
-                    {m.vip && <span className="bg-[#fef3c7] font-bold ml-1.5 px-1.5 py-0.5 rounded text-[#b45309] text-[10px]">VIP</span>}
+                    {m.vip && <span className="bg-slate-100 font-bold ml-1.5 px-1.5 py-0.5 rounded text-slate-700 text-[10px]">VIP</span>}
                   </div>
                   <div className="w-[210px] shrink-0 pr-3">
                     <p className="text-[#0f172a] text-sm">{m.phone}</p>
@@ -175,7 +175,7 @@ export function MembersTable({
               key={i} 
               onClick={() => typeof p === 'number' && onPageChange(p)}
               disabled={p === '...'}
-              className={`flex items-center px-3 py-1.5 rounded-md text-[13px] transition-colors ${p === currentPage ? "bg-rose-600 font-semibold text-white shadow-xs shadow-rose-600/20" : p === '...' ? "bg-transparent text-slate-400 cursor-default" : "bg-white border border-[#e2e8f0] text-[#0f172a] hover:bg-slate-50 cursor-pointer"}`}
+              className={`flex items-center px-3 py-1.5 rounded-md text-[13px] transition-colors ${p === currentPage ? "bg-emerald-600 font-semibold text-white shadow-xs shadow-emerald-600/20" : p === '...' ? "bg-transparent text-slate-400 cursor-default" : "bg-white border border-[#e2e8f0] text-[#0f172a] hover:bg-slate-50 cursor-pointer"}`}
             >
               {p}
             </button>

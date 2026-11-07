@@ -88,7 +88,7 @@ export default function CoachScheduleRequestModal(props: Props) {
                       Chọn ca dạy cần điều chỉnh: <span className="text-rose-500">*</span>
                     </label>
                     {upcomingSessions.length === 0 ? (
-                      <div className="p-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 text-xs">
+                      <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/30 text-slate-700 dark:text-slate-400 text-xs">
                         Không có ca dạy nào trong tương lai để gửi yêu cầu điều chỉnh.
                       </div>
                     ) : (

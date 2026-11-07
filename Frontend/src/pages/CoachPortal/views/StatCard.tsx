@@ -15,7 +15,7 @@ export function StatCard({ icon, label, value, sub, highlight, onClick }: StatCa
       onClick={onClick}
       className={`p-5 rounded-2xl border bg-white dark:bg-slate-900 transition-all ${
         highlight
-          ? "border-amber-300 dark:border-amber-700/60 shadow-sm"
+          ? "border-emerald-300 dark:border-emerald-700/60 shadow-sm"
           : "border-slate-200/90 dark:border-slate-800 shadow-sm"
       } ${onClick ? "cursor-pointer hover:border-slate-400" : ""}`}
     >

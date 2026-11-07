@@ -66,7 +66,7 @@ export default function ReportsTabHR() {
                 <span className="font-semibold text-[#0f172a] text-[12px]">{a.checkins} lượt</span>
               </div>
               <div className="bg-[#f1f5f9] h-1.5 rounded-full w-full">
-                <div className="bg-[#14b8a6] h-1.5 rounded-full" style={{ width: `${Math.round((a.checkins / maxCheckins) * 100)}%` }} />
+                <div className="bg-emerald-600 h-1.5 rounded-full" style={{ width: `${Math.round((a.checkins / maxCheckins) * 100)}%` }} />
               </div>
             </div>
           ))}

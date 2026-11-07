@@ -12,15 +12,34 @@ export function SportCard({
   onEdit: () => void
   onToggle: () => void
 }) {
+  const s = (item.sport || "").toLowerCase()
+  const sportBadgeClass =
+    s.includes("bơi") || s.includes("swim")
+      ? "bg-sky-100 text-sky-800"
+      : s.includes("yoga") || s.includes("pilates")
+        ? "bg-violet-100 text-violet-800"
+        : s.includes("box") || s.includes("kick")
+          ? "bg-rose-100 text-rose-800"
+          : s.includes("cầu lông") || s.includes("tennis")
+            ? "bg-amber-100 text-amber-800"
+            : "bg-emerald-100 text-emerald-800"
+
+  const formatBadgeClass =
+    item.format === "coach"
+      ? "bg-amber-50 text-amber-700 border border-amber-200/70"
+      : item.format === "group"
+        ? "bg-blue-50 text-blue-700 border border-blue-200/70"
+        : "bg-slate-100 text-slate-600"
+
   return (
     <article className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap gap-2">
-            <span className="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-800">
+            <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${sportBadgeClass}`}>
               {item.sport}
             </span>
-            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+            <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${formatBadgeClass}`}>
               {formatLabels[item.format || "self"]}
             </span>
           </div>
@@ -66,7 +85,7 @@ export function SportCard({
             key={`${benefit}-${index}`}
             className="flex gap-2 text-sm text-slate-700"
           >
-            <Check size={15} className="mt-0.5 shrink-0 text-teal-600" />
+            <Check size={15} className="mt-0.5 shrink-0 text-emerald-600" />
             {benefit}
           </p>
         ))}
@@ -75,7 +94,7 @@ export function SportCard({
         <button
           type="button"
           onClick={onEdit}
-          className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 hover:border-blue-300 hover:text-blue-700"
+          className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700"
         >
           <Edit3 size={15} /> Chỉnh sửa
         </button>

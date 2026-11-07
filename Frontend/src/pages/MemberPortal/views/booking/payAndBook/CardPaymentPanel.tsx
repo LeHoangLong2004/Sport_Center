@@ -5,7 +5,7 @@ export const CardPaymentPanel: React.FC = () => {
   return (
     <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-2">
       <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-semibold text-xs mb-1">
-        <ShieldCheck className="w-4 h-4 text-emerald-600" /> Cổng thanh toán thẻ bảo mật 256-bit
+        <ShieldCheck className="w-4 h-4" /> Cổng thanh toán thẻ bảo mật 256-bit
       </div>
       <input
         placeholder="Số thẻ (VD: 9704 0000 ....)"

@@ -173,7 +173,7 @@ export default function MemberShellModern({ currentScreen, onNavigate, onLogout,
       {/* Toast popup */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-[100] px-4 py-3 rounded-2xl bg-slate-900 text-white dark:bg-emerald-500 dark:text-slate-950 font-bold text-xs shadow-2xl flex items-center gap-2.5 animate-fadeIn">
-          <Sparkles className="w-4 h-4 shrink-0 text-amber-400 dark:text-slate-950" />
+          <Sparkles className="w-4 h-4 shrink-0 text-slate-400 dark:text-slate-950" />
           <span>{toastMessage}</span>
         </div>
       )}

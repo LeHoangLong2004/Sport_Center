@@ -65,17 +65,17 @@ export function PackageCard({
         <div>
           <div className="flex flex-wrap items-center gap-2">
             {item.category === "sport" && item.sport && (
-              <span className="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-800">{item.sport}</span>
+              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">{item.sport}</span>
             )}
             {format && <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">{format}</span>}
             {item.tier === "premium" && (
-              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">Nổi bật</span>
+              <span className="rounded-full bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700">Nổi bật</span>
             )}
           </div>
           <h3 className="mt-3 text-xl font-bold text-slate-900">{item.name}</h3>
           <p className="mt-1 text-sm leading-6 text-slate-500">{item.description}</p>
         </div>
-        <div className="rounded-xl bg-teal-50 p-2.5 text-teal-700">
+        <div className="rounded-xl bg-emerald-50 p-2.5 text-emerald-700">
           {item.category === "membership" ? <Sparkles size={20} /> : <Dumbbell size={20} />}
         </div>
       </div>
@@ -91,7 +91,7 @@ export function PackageCard({
       )}
       <label className="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-500" htmlFor={`period-${item.id}`}>Thời hạn</label>
       <select id={`period-${item.id}`} value={duration} onChange={(e) => onDurationChange(Number(e.target.value) as PackagePeriod)}
-        className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100">
+        className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100">
         {periods.map((period) => (
           <option key={period} value={period}>{period} tháng · {money(item.prices[period])}</option>
         ))}
@@ -110,13 +110,13 @@ export function PackageCard({
         <ul className="mt-2 space-y-2">
           {item.benefits.map((benefit, index) => (
             <li key={`${benefit}-${index}`} className="flex gap-2 text-sm leading-5 text-slate-700">
-              <Check size={16} className="mt-0.5 shrink-0 text-teal-600" />{benefit}
+              <Check size={16} className="mt-0.5 shrink-0" />{benefit}
             </li>
           ))}
         </ul>
         {(item.terms.length > 0 || item.lockerTerms) && (
           <details className="mt-3 text-sm text-slate-600">
-            <summary className="cursor-pointer font-semibold text-teal-700">Điều kiện sử dụng</summary>
+            <summary className="cursor-pointer font-semibold text-emerald-700">Điều kiện sử dụng</summary>
             <ul className="mt-2 list-disc space-y-1 pl-5">
               {item.terms.map((term, i) => <li key={`${term}-${i}`}>{term}</li>)}
               {item.lockerTerms && <li>{item.lockerTerms}</li>}
@@ -125,7 +125,7 @@ export function PackageCard({
         )}
       </div>
       {item.category === "membership" && (
-        <p className="mt-4 flex gap-2 rounded-lg bg-amber-50 p-3 text-xs leading-5 text-amber-900">
+        <p className="mt-4 flex gap-2 rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-900">
           <Info size={16} className="mt-0.5 shrink-0" />
           Gói thành viên chỉ cấp ưu đãi, không bao gồm quyền vào khu tập.
         </p>
@@ -136,7 +136,7 @@ export function PackageCard({
         </p>
       )}
       <button type="button" onClick={onChoose} disabled={disabled}
-        className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-100 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-600">
+        className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-600">
         {disabled ? "Hạng mặc định" : "Chọn gói này"}
       </button>
     </article>
@@ -145,10 +145,10 @@ export function PackageCard({
 
 export function MembershipSummary({ membership }: { membership: MembershipStatus }) {
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 p-5 text-white shadow-lg sm:p-6">
+    <div className="rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 p-5 text-white shadow-lg sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <span className="text-xs font-bold uppercase tracking-[0.16em] text-teal-300">Hạng thành viên hiện tại</span>
+          <span className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-300">Hạng thành viên hiện tại</span>
           <h2 className="mt-2 text-2xl font-extrabold">{membership.name}</h2>
           <p className="mt-1 text-sm text-slate-300">
             {membership.tier === "basic"
@@ -157,7 +157,7 @@ export function MembershipSummary({ membership }: { membership: MembershipStatus
           </p>
         </div>
         {membership.tier !== "basic" && (
-          <span className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-teal-100">
+          <span className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-emerald-100">
             {membership.endDate && new Date(membership.endDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0) ? "Hết hạn" : "Đang hiệu lực"}
           </span>
         )}
@@ -165,7 +165,7 @@ export function MembershipSummary({ membership }: { membership: MembershipStatus
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
         {membership.benefits.map((benefit, index) => (
           <div key={`${benefit}-${index}`} className="flex gap-2 rounded-xl bg-white/10 p-3 text-sm leading-5 text-slate-100">
-            <Check size={16} className="mt-0.5 shrink-0 text-teal-300" />{benefit}
+            <Check size={16} className="mt-0.5 shrink-0" />{benefit}
           </div>
         ))}
       </div>
@@ -194,7 +194,7 @@ export function OrderList({ orders, title = "Đơn mua và gói đã đăng ký"
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <strong className="text-sm text-slate-900">{order.packageSnapshot.name}</strong>
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${order.status === "pending" ? "bg-amber-50 text-amber-800" : orderStatusLabel(order).includes("Hết hạn") ? "bg-slate-100 text-slate-600" : "bg-emerald-50 text-emerald-800"}`}>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${order.status === "pending" ? "bg-slate-50 text-slate-800" : orderStatusLabel(order).includes("Hết hạn") ? "bg-slate-100 text-slate-600" : "bg-emerald-50 text-emerald-800"}`}>
                     {orderStatusLabel(order)}
                   </span>
                 </div>
@@ -229,7 +229,7 @@ export function ConfirmOrderModal({
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div role="dialog" aria-modal="true" aria-labelledby="package-confirm-title"
         className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
-        <span className="inline-flex rounded-lg bg-teal-50 p-2 text-teal-700"><TicketCheck size={20} /></span>
+        <span className="inline-flex rounded-lg bg-emerald-50 p-2 text-emerald-700"><TicketCheck size={20} /></span>
         <h2 id="package-confirm-title" className="mt-3 text-xl font-bold text-slate-900">Xác nhận gói tập</h2>
         <p className="mt-1 text-sm text-slate-500">Kiểm tra thông tin và điều kiện trước khi chuyển đến các bước thanh toán.</p>
         <div className="mt-5 space-y-3 rounded-xl bg-slate-50 p-4 text-sm">
@@ -246,7 +246,7 @@ export function ConfirmOrderModal({
           )}
           <div className="flex justify-between gap-3 border-t border-slate-200 pt-3 text-base">
             <strong className="text-slate-900">Tổng cần thanh toán</strong>
-            <strong className="text-teal-800">{money(total)}</strong>
+            <strong className="text-emerald-800">{money(total)}</strong>
           </div>
         </div>
         <ul className="mt-4 space-y-1 text-sm text-slate-600">
@@ -257,7 +257,7 @@ export function ConfirmOrderModal({
             {selected.terms.map((term, i) => <li key={`${term}-${i}`}>{term}</li>)}
           </ul>
         )}
-        <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
+        <p className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-900">
           Đơn hàng sẽ được tạo với giá và quyền lợi do hệ thống xác nhận khi bạn hoàn tất bước thanh toán.
         </p>
         <label className="mt-4 flex cursor-pointer items-start gap-2 text-sm text-slate-700">
@@ -270,7 +270,7 @@ export function ConfirmOrderModal({
           <button type="button" onClick={() => {
             const checkbox = document.getElementById("terms-accepted") as HTMLInputElement | null
             if (checkbox?.checked) onConfirm()
-          }} className="flex-1 rounded-xl bg-teal-700 px-4 py-3 text-sm font-semibold text-white hover:bg-teal-800">
+          }} className="flex-1 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-800">
             Tiếp tục thanh toán
           </button>
         </div>

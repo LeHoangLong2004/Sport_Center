@@ -29,7 +29,7 @@ export function SportScheduleSection({ name, schedule }: SportScheduleSectionPro
           {schedule.map((row, index) => (
             <div key={`${row.name}-${row.time}`} className={`flex gap-[20px] items-center min-w-[1000px] p-[16px] w-full ${index < schedule.length - 1 ? "border-b border-[#e2e8f0]" : ""}`}>
               <span className="font-semibold text-[#1e293b] text-[13px] w-[180px]">{row.time}</span>
-              <span className="font-bold text-[#2563eb] text-[13px] w-[220px]">{row.name}</span>
+              <span className="font-bold text-slate-800 text-[13px] w-[220px]">{row.name}</span>
               <span className="text-[#1e293b] text-[13px] w-[200px]">{row.coach}</span>
               <span className="text-[#64748b] text-[13px] w-[180px]">{row.room}</span>
               <span className={`font-semibold text-[13px] w-[150px] ${row.full ? "text-[#94a3b8]" : "text-[#059669]"}`}>{row.slots}</span>

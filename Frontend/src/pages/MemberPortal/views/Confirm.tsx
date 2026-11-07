@@ -110,9 +110,9 @@ export function Confirm({
           </div>
 
           {access === "denied" && (
-            <div className="mt-4 flex flex-col gap-3 rounded-xl border border-teal-200 bg-teal-50 p-4 text-sm text-teal-950 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-4 flex flex-col gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950 sm:flex-row sm:items-center sm:justify-between">
               <span>Hội viên cơ bản / Chưa có gói môn: Áp dụng thanh toán theo giá gốc <strong>150.000 đ</strong> cho buổi học này.</span>
-              <button type="button" onClick={() => onNavigate("packages" as any)} className="shrink-0 font-semibold text-teal-800 underline">Đăng ký gói tiết kiệm hơn</button>
+              <button type="button" onClick={() => onNavigate("packages" as any)} className="shrink-0 font-semibold text-emerald-800 underline">Đăng ký gói tiết kiệm hơn</button>
             </div>
           )}
 

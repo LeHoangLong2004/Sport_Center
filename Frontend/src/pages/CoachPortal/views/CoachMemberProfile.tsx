@@ -85,7 +85,7 @@ export default function CoachMemberProfile({ memberId, navigateTo }: Props) {
   if (loading) {
     return (
       <div className="py-24 text-center text-slate-400 max-w-4xl mx-auto">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-orange-500 mb-3"></div>
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-emerald-500 mb-3"></div>
         <p className="text-sm">Đang tải hồ sơ học viên...</p>
       </div>
     );
@@ -97,7 +97,7 @@ export default function CoachMemberProfile({ memberId, navigateTo }: Props) {
         <p>Không tìm thấy học viên trong hệ thống.</p>
         <button
           type="button"
-          className="text-orange-600 hover:underline text-sm font-semibold"
+          className="text-emerald-600 hover:underline text-sm font-semibold"
           onClick={() => navigateTo("members")}
         >
           ← Quay lại danh sách học viên

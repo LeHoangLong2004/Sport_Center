@@ -4,7 +4,7 @@ import { asset, ClassItem } from '../shared';
 export function ClassCard({ item, onSelect }: { item: any, onSelect: (item: any) => void }) {
   return (
 <article
-                    className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-200 hover:shadow-xl hover:shadow-teal-900/5 hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex flex-col"
+                    className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-200 hover:shadow-xl hover:shadow-emerald-900/5 hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex flex-col"
                     
                     onClick={() => onSelect(item)}
                   >
@@ -41,7 +41,7 @@ export function ClassCard({ item, onSelect }: { item: any, onSelect: (item: any)
                             onSelect(item);
                           }}
                           type="button"
-                          className="px-4 py-2 bg-teal-50 hover:bg-teal-600 text-teal-700 hover:text-white font-bold text-sm rounded-xl transition-colors duration-200"
+                          className="px-4 py-2 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white font-bold text-sm rounded-xl transition-colors duration-200"
                         >
                           Đặt chỗ
                         </button>

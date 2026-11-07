@@ -117,8 +117,8 @@ export function MemberEditPage({ memberData, onBack }: { memberData?: any, onBac
   return (
     <div className="relative flex-1 min-h-0 flex flex-col">
       {toast && (
-        <div className={`absolute top-4 right-1/2 translate-x-1/2 z-50 flex items-center gap-2 px-5 py-3 rounded-lg shadow-lg shadow-black/10 border ${toast.type === "success" ? "bg-[#f0fdf4] border-[#bbf7d0] text-[#15803d]" : "bg-[#fef2f2] border-[#fecaca] text-[#b91c1c]"} transition-all animate-in slide-in-from-top-4 fade-in duration-300`}>
-          <div className={`flex items-center justify-center size-6 rounded-full ${toast.type === "success" ? "bg-[#22c55e]" : "bg-[#ef4444]"}`}>
+        <div className={`absolute top-4 right-1/2 translate-x-1/2 z-50 flex items-center gap-2 px-5 py-3 rounded-lg shadow-lg shadow-black/10 border ${toast.type === "success" ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-[#fef2f2] border-[#fecaca] text-[#b91c1c]"} transition-all animate-in slide-in-from-top-4 fade-in duration-300`}>
+          <div className={`flex items-center justify-center size-6 rounded-full ${toast.type === "success" ? "bg-emerald-600" : "bg-[#ef4444]"}`}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               {toast.type === "success" ? <polyline points="20 6 9 17 4 12"></polyline> : <line x1="18" y1="6" x2="6" y2="18"></line>}
               {toast.type === "error" && <line x1="6" y1="6" x2="18" y2="18"></line>}
@@ -207,10 +207,10 @@ export function MemberEditPage({ memberData, onBack }: { memberData?: any, onBac
           <div className="bg-white border border-[#e2e8f0] p-6 rounded-xl">
             <p className="font-extrabold text-[#475569] text-[11px] tracking-wider uppercase mb-3">Trạng thái hiện tại</p>
             <div className="flex gap-2 flex-wrap">
-              <span className={`font-semibold px-3 py-1 rounded-full text-[12px] ${member.statusRaw ? 'bg-[#dcfce7] text-[#15803d]' : 'bg-[#fee2e2] text-[#b91c1c]'}`}>
+              <span className={`font-semibold px-3 py-1 rounded-full text-[12px] ${member.statusRaw ? 'bg-emerald-50 text-emerald-700' : 'bg-[#fee2e2] text-[#b91c1c]'}`}>
                 {member.statusRaw ? "Đang hoạt động" : "Tạm khóa"}
               </span>
-              {member.vip && <span className="bg-[#dbeafe] font-semibold px-3 py-1 rounded-full text-[#1d4ed8] text-[12px]">Hội Viên VIP</span>}
+              {member.vip && <span className="bg-slate-100 font-semibold px-3 py-1 rounded-full text-slate-800 text-[12px]">Hội Viên VIP</span>}
             </div>
           </div>
         </div>
@@ -221,7 +221,7 @@ export function MemberEditPage({ memberData, onBack }: { memberData?: any, onBac
         <button type="button" onClick={onBack} className="bg-white border border-[#e2e8f0] px-6 py-2.5 rounded-lg">
           <span className="font-semibold text-[#0f172a] text-sm">Hủy bỏ</span>
         </button>
-        <button type="submit" disabled={isSaving} className="bg-rose-600 hover:bg-rose-700 disabled:bg-rose-300 px-6 py-2.5 rounded-lg shadow-sm shadow-rose-600/20 cursor-pointer transition-colors">
+        <button type="submit" disabled={isSaving} className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 px-6 py-2.5 rounded-lg shadow-sm shadow-emerald-600/20 cursor-pointer transition-colors">
           <span className="font-semibold text-white text-sm">{isSaving ? "Đang lưu..." : "Lưu thay đổi"}</span>
         </button>
       </div>

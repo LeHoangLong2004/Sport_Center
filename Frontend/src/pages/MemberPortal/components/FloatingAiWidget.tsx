@@ -33,6 +33,8 @@ const ACTION_TO_SCREEN: Partial<Record<MemberAiAction, MemberScreen>> = {
   schedule: "schedule",
   booking: "booking",
   packages: "packages",
+  packages_sport: "packages",
+  packages_membership: "packages",
   payments: "payments",
   workouts: "workouts",
   attendance: "attendance",
@@ -176,6 +178,22 @@ export default function FloatingAiWidget({ onNavigate, userName = "Hội viên",
 
   const handleAction = (action?: MemberAiAction) => {
     if (!action || action === "none") return;
+    if (action === "packages_sport") {
+      onNavigate("packages");
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("switch-packages-tab", { detail: "sport" }));
+      }, 50);
+      setIsOpen(false);
+      return;
+    }
+    if (action === "packages_membership") {
+      onNavigate("packages");
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("switch-packages-tab", { detail: "membership" }));
+      }, 50);
+      setIsOpen(false);
+      return;
+    }
     const screen = ACTION_TO_SCREEN[action];
     if (screen) {
       onNavigate(screen);
@@ -209,12 +227,12 @@ export default function FloatingAiWidget({ onNavigate, userName = "Hội viên",
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="group relative flex items-center gap-2.5 p-3.5 sm:px-4 sm:py-3.5 rounded-full bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 text-white shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+          className="group relative flex items-center gap-2.5 p-3.5 sm:px-4 sm:py-3.5 rounded-full bg-gradient-to-r from-emerald-600 via-emerald-600 to-emerald-500 text-white shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
           title="Mở Trợ lý AI SportCenter"
         >
           <div className="relative">
             <Bot className="w-5 h-5 text-white" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-emerald-600 animate-pulse" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-slate-400 ring-2 ring-emerald-600 animate-pulse" />
           </div>
           <span className="hidden sm:inline text-xs font-bold tracking-wide">
             Hỏi Trợ lý AI
@@ -230,7 +248,7 @@ export default function FloatingAiWidget({ onNavigate, userName = "Hội viên",
       {isOpen && (
         <div className="w-[92vw] sm:w-[400px] h-[550px] max-h-[82vh] bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200">
           {/* Header Bar */}
-          <div className="px-4 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white flex items-center justify-between shrink-0 shadow-xs">
+          <div className="px-4 py-3 bg-gradient-to-r from-emerald-600 to-emerald-600 text-white flex items-center justify-between shrink-0 shadow-xs">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center">
                 <Bot className="w-4.5 h-4.5 text-white" />
@@ -342,15 +360,15 @@ export default function FloatingAiWidget({ onNavigate, userName = "Hội viên",
 
           {/* Voice Listening Bar Indicator */}
           {isListening && (
-            <div className="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 border-t border-amber-200 dark:border-amber-800/50 flex items-center justify-between text-xs text-amber-800 dark:text-amber-300 animate-pulse">
+            <div className="px-3 py-1.5 bg-slate-50 dark:bg-slate-950/40 border-t border-slate-200 dark:border-slate-800/50 flex items-center justify-between text-xs text-slate-800 dark:text-slate-300 animate-pulse">
               <span className="flex items-center gap-1.5">
-                <Mic className="w-3.5 h-3.5 text-amber-600" />
+                <Mic className="w-3.5 h-3.5 text-slate-600" />
                 Đang lắng nghe bạn nói tiếng Việt...
               </span>
               <button
                 type="button"
                 onClick={toggleListening}
-                className="text-[11px] font-bold text-amber-700 underline cursor-pointer"
+                className="text-[11px] font-bold text-slate-700 underline cursor-pointer"
               >
                 Dừng lại
               </button>
@@ -399,10 +417,10 @@ export default function FloatingAiWidget({ onNavigate, userName = "Hội viên",
 
             <div className="flex items-center justify-between text-[10px] text-slate-400 px-1">
               <span className="flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                <ShieldCheck className="w-3 h-3" />
                 AI tự động hiểu hồ sơ & HLV
               </span>
-              <span className="font-mono text-[9px]">v2.1</span>
+              <span className="text-[9px]">v2.1</span>
             </div>
           </div>
         </div>

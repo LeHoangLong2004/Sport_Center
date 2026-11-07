@@ -55,7 +55,7 @@ const offerCards = [
   {
     img: imgRectangle4,
     badge: "ƯU ĐÃI",
-    badgeColor: "bg-[#2563eb]",
+    badgeColor: "bg-emerald-600",
     title: "Học sinh - Sinh viên giảm 20%",
     desc: "Luôn đồng hành cùng năng lượng trẻ, bứt phá thể chất vững vàng vượt qua kỳ thi.",
     expiry: "31/12/2026",
@@ -93,11 +93,11 @@ function TimerBox({ value, label }: { value: number; label: string }) {
   return (
     <div className="flex gap-[4px] items-center">
       <div className="bg-[#1e293b] flex items-center justify-center rounded-[8px] size-[54px]">
-        <p className="font-['Inter:Extra_Bold'] font-extrabold text-[20px] text-white">
+        <p className="font-extrabold text-[20px] text-white">
           {String(value).padStart(2, "0")}
         </p>
       </div>
-      <p className="font-['Inter:Regular'] font-normal text-[#e0f2fe] text-[12px]">{label}</p>
+      <p className="font-normal text-[#e0f2fe] text-[12px]">{label}</p>
     </div>
   );
 }
@@ -113,10 +113,10 @@ export default function UuDaiKhuyenMaiRedesign() {
       {/* Hero */}
       <div className="bg-[#0f172a] flex flex-col gap-[16px] items-start px-[80px] py-[64px] w-full">
         <div className="bg-[rgba(16,185,129,0.1)] border border-[#10b981] flex items-center px-[12px] py-[6px] rounded-[100px]">
-          <p className="font-['Inter:Bold'] font-bold text-[#10b981] text-[12px] uppercase">CHƯƠNG TRÌNH ƯU ĐÃI THÀNH VIÊN</p>
+          <p className="font-bold text-[#10b981] text-[12px] uppercase">CHƯƠNG TRÌNH ƯU ĐÃI THÀNH VIÊN</p>
         </div>
-        <p className="font-['Inter:Extra_Bold'] font-extrabold text-[44px] text-white leading-[1.2]">Ưu đãi dành riêng cho bạn</p>
-        <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[16px] leading-[1.6] w-[640px]">
+        <p className="font-extrabold text-[44px] text-white leading-[1.2]">Ưu đãi dành riêng cho bạn</p>
+        <p className="font-normal text-[#94a3b8] text-[16px] leading-[1.6] w-[640px]">
           Nhận ngay các ưu đãi đặc quyền từ SportCenter để bắt đầu hành trình bứt phá năng lượng thể chất và tinh thần ngay hôm nay.
         </p>
       </div>
@@ -133,24 +133,24 @@ export default function UuDaiKhuyenMaiRedesign() {
           <div className="flex flex-1 flex-col gap-[24px] h-full items-start justify-center p-[48px]">
             <div className="flex flex-col gap-[8px] items-start w-full">
               <div className="bg-[#ef4444] flex items-center px-[10px] py-[4px] rounded-[4px]">
-                <p className="font-['Inter:Bold'] font-bold text-[12px] text-white">GIỚI HẠN</p>
+                <p className="font-bold text-[12px] text-white">GIỚI HẠN</p>
               </div>
-              <p className="font-['Inter:Extra_Bold'] font-extrabold text-[32px] text-white leading-tight">GIẢM 30% GÓI 12 THÁNG</p>
-              <p className="font-['Inter:Regular'] font-normal text-[#e0f2fe] text-[16px]">
+              <p className="font-extrabold text-[32px] text-white leading-tight">GIẢM 30% GÓI 12 THÁNG</p>
+              <p className="font-normal text-[#e0f2fe] text-[16px]">
                 Áp dụng cho tất cả các bộ môn: Bơi lội, Yoga, Gym HIIT, Boxing, Bóng rổ.
               </p>
             </div>
             <div className="flex gap-[8px] items-center flex-wrap">
               <TimerBox value={days} label="Ngày" />
-              <span className="font-['Inter:Extra_Bold'] font-extrabold text-[20px] text-white">:</span>
+              <span className="font-extrabold text-[20px] text-white">:</span>
               <TimerBox value={hours} label="Giờ" />
-              <span className="font-['Inter:Extra_Bold'] font-extrabold text-[20px] text-white">:</span>
+              <span className="font-extrabold text-[20px] text-white">:</span>
               <TimerBox value={minutes} label="Phút" />
-              <span className="font-['Inter:Extra_Bold'] font-extrabold text-[20px] text-white">:</span>
+              <span className="font-extrabold text-[20px] text-white">:</span>
               <TimerBox value={seconds} label="Giây" />
             </div>
             <div className="bg-[#10b981] flex items-center px-[32px] py-[14px] rounded-[8px] cursor-pointer">
-              <p className="font-['Inter:Bold'] font-bold text-[15px] text-white">Đăng ký ngay →</p>
+              <p className="font-bold text-[15px] text-white">Đăng ký ngay →</p>
             </div>
           </div>
         </div>
@@ -159,8 +159,8 @@ export default function UuDaiKhuyenMaiRedesign() {
       {/* Offer Cards Grid */}
       <div className="flex flex-col gap-[32px] items-start px-[80px] py-[48px] w-full">
         <div className="flex flex-col gap-[8px] items-start w-full">
-          <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[32px]">Các chương trình ưu đãi hiện có</p>
-          <div className="bg-[#2563eb] h-[4px] rounded-[2px] w-[80px]" />
+          <p className="font-extrabold text-[#0f172a] text-[32px]">Các chương trình ưu đãi hiện có</p>
+          <div className="bg-emerald-600 h-[4px] rounded-[2px] w-[80px]" />
         </div>
         <div className="grid grid-cols-3 gap-[24px] w-full">
           {offerCards.map((card, i) => (
@@ -168,17 +168,17 @@ export default function UuDaiKhuyenMaiRedesign() {
               <div className="relative h-[180px] w-full">
                 <img alt={card.title} className="absolute inset-0 w-full h-full object-cover pointer-events-none" src={card.img} />
                 <div className={`absolute left-[16px] top-[16px] ${card.badgeColor} flex items-center px-[12px] py-[6px] rounded-[100px]`}>
-                  <p className="font-['Inter:Bold'] font-bold text-[12px] text-white">{card.badge}</p>
+                  <p className="font-bold text-[12px] text-white">{card.badge}</p>
                 </div>
               </div>
               <div className="flex flex-col gap-[16px] items-start p-[24px] w-full">
-                <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[18px] w-full">{card.title}</p>
-                <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px] leading-[1.5] w-full h-[64px]">{card.desc}</p>
+                <p className="font-extrabold text-[#0f172a] text-[18px] w-full">{card.title}</p>
+                <p className="font-normal text-[#64748b] text-[14px] leading-[1.5] w-full h-[64px]">{card.desc}</p>
                 <div className="border-t border-[#e2e8f0] w-full" />
                 <div className="flex items-center justify-between w-full">
-                  <p className="font-['Inter:Semi_Bold'] font-semibold text-[#94a3b8] text-[13px]">Hạn dùng: {card.expiry}</p>
-                  <div className="bg-[#eff6ff] flex items-center px-[16px] py-[8px] rounded-[8px] cursor-pointer">
-                    <p className="font-['Inter:Bold'] font-bold text-[#2563eb] text-[13px]">Xem chi tiết</p>
+                  <p className="font-bold font-semibold text-[#94a3b8] text-[13px]">Hạn dùng: {card.expiry}</p>
+                  <div className="bg-emerald-50 flex items-center px-[16px] py-[8px] rounded-[8px] cursor-pointer">
+                    <p className="font-bold text-slate-800 text-[13px]">Xem chi tiết</p>
                   </div>
                 </div>
               </div>
@@ -190,8 +190,8 @@ export default function UuDaiKhuyenMaiRedesign() {
       {/* Steps Section */}
       <div className="bg-white border-t border-b border-[#e2e8f0] flex flex-col gap-[48px] items-start px-[80px] py-[64px] w-full">
         <div className="flex flex-col gap-[8px] items-center w-full">
-          <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[32px] text-center">3 bước cực kỳ đơn giản để nhận ưu đãi</p>
-          <div className="bg-[#2563eb] h-[4px] rounded-[2px] w-[80px]" />
+          <p className="font-extrabold text-[#0f172a] text-[32px] text-center">3 bước cực kỳ đơn giản để nhận ưu đãi</p>
+          <div className="bg-emerald-600 h-[4px] rounded-[2px] w-[80px]" />
         </div>
         <div className="flex gap-[32px] items-start w-full">
           {[
@@ -201,14 +201,14 @@ export default function UuDaiKhuyenMaiRedesign() {
           ].map((step) => (
             <div key={step.num} className="bg-[#f8fafc] flex flex-1 flex-col gap-[20px] items-start p-[32px] rounded-[16px]">
               <div className="flex items-center justify-between w-full">
-                <div className="bg-[#eff6ff] flex items-center justify-center rounded-[12px] size-[48px]">
+                <div className="bg-emerald-50 flex items-center justify-center rounded-[12px] size-[48px]">
                   <span className="text-[24px]">{step.icon}</span>
                 </div>
-                <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#94a3b8] text-[28px]">{step.num}</p>
+                <p className="font-extrabold text-[#94a3b8] text-[28px]">{step.num}</p>
               </div>
               <div className="flex flex-col gap-[8px] items-start w-full">
-                <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[18px] w-full">{step.title}</p>
-                <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px] leading-[1.5] w-full">{step.desc}</p>
+                <p className="font-extrabold text-[#0f172a] text-[18px] w-full">{step.title}</p>
+                <p className="font-normal text-[#64748b] text-[14px] leading-[1.5] w-full">{step.desc}</p>
               </div>
             </div>
           ))}
@@ -219,26 +219,26 @@ export default function UuDaiKhuyenMaiRedesign() {
       <div className="flex flex-col items-start px-[80px] py-[64px] w-full">
         <div className="bg-[#0f172a] flex flex-col gap-[32px] items-start p-[48px] rounded-[24px] w-full">
           <div className="flex flex-col gap-[12px] items-start text-center w-full">
-            <p className="font-['Inter:Extra_Bold'] font-extrabold text-[32px] text-white w-full">
+            <p className="font-extrabold text-[32px] text-white w-full">
               Trải nghiệm tập thử miễn phí 01 buổi bộ môn bạn yêu thích
             </p>
-            <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[16px] w-full">
+            <p className="font-normal text-[#94a3b8] text-[16px] w-full">
               Để lại thông tin, đội ngũ tư vấn sẽ thiết kế buổi trải nghiệm chuẩn quốc tế dành riêng cho bạn.
             </p>
           </div>
           <div className="flex gap-[16px] items-center w-full">
             <div className="bg-[#1e293b] border border-[#334155] flex flex-1 items-start px-[16px] py-[14px] rounded-[8px]">
-              <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[14px]">Họ và tên của bạn</p>
+              <p className="font-normal text-[#94a3b8] text-[14px]">Họ và tên của bạn</p>
             </div>
             <div className="bg-[#1e293b] border border-[#334155] flex flex-1 items-start px-[16px] py-[14px] rounded-[8px]">
-              <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[14px]">Số điện thoại liên hệ</p>
+              <p className="font-normal text-[#94a3b8] text-[14px]">Số điện thoại liên hệ</p>
             </div>
             <div className="bg-[#1e293b] border border-[#334155] flex flex-1 items-center justify-between px-[16px] py-[14px] rounded-[8px]">
-              <p className="font-['Inter:Regular'] font-normal text-white text-[14px]">Chọn bộ môn muốn thử</p>
+              <p className="font-normal text-white text-[14px]">Chọn bộ môn muốn thử</p>
               <span className="text-[#94a3b8] text-[12px]">▾</span>
             </div>
             <div className="bg-[#10b981] flex flex-1 items-center justify-center px-[24px] py-[14px] rounded-[8px] cursor-pointer">
-              <p className="font-['Inter:Extra_Bold'] font-extrabold text-[14px] text-white whitespace-nowrap">Nhận vé tập thử ngay</p>
+              <p className="font-extrabold text-[14px] text-white whitespace-nowrap">Nhận vé tập thử ngay</p>
             </div>
           </div>
         </div>

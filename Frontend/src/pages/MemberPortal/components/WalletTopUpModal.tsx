@@ -121,7 +121,7 @@ export default function WalletTopUpModal({
       title="Sao chép"
     >
       {copiedKey === id ? (
-        <Check className="w-3.5 h-3.5 text-emerald-600" />
+        <Check className="w-3.5 h-3.5" />
       ) : (
         <Copy className="w-3.5 h-3.5" />
       )}
@@ -230,8 +230,8 @@ export default function WalletTopUpModal({
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { id: "qr" as const, label: "Mã VietQR", icon: QrCode, color: "text-emerald-600" },
-                    { id: "card" as const, label: "Thẻ ATM / Visa", icon: CreditCard, color: "text-blue-600" },
-                    { id: "counter" as const, label: "Tại quầy", icon: Building, color: "text-amber-600" },
+                    { id: "card" as const, label: "Thẻ ATM / Visa", icon: CreditCard, color: "text-slate-600" },
+                    { id: "counter" as const, label: "Tại quầy", icon: Building, color: "text-slate-600" },
                   ].map((m) => (
                     <button key={m.id} type="button" onClick={() => setMethod(m.id)}
                       className={`p-2.5 rounded-xl border text-center flex flex-col items-center gap-1 cursor-pointer transition-all ${method === m.id ? "bg-emerald-50 border-emerald-500 text-emerald-700 ring-2 ring-emerald-500/20" : "bg-white dark:bg-slate-800 border-slate-200 text-slate-600 dark:text-slate-400 hover:border-slate-300"}`}>
@@ -283,7 +283,7 @@ export default function WalletTopUpModal({
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-500">Số tài khoản:</span>
-                      <span className="font-mono font-bold flex items-center gap-1">
+                      <span className="font-bold flex items-center gap-1">
                         {bankConfig.accountNumber} <CopyBtn text={bankConfig.accountNumber} id="acc" />
                       </span>
                     </div>
@@ -299,14 +299,14 @@ export default function WalletTopUpModal({
                     </div>
                     <div className="flex justify-between border-t pt-1">
                       <span className="text-slate-500">Nội dung:</span>
-                      <span className="font-mono font-bold text-emerald-700 flex items-center gap-1">
+                      <span className="font-bold text-emerald-700 flex items-center gap-1">
                         {transferMemo} <CopyBtn text={transferMemo} id="memo" />
                       </span>
                     </div>
                   </div>
 
                   {/* VIETQR STATUS BADGE */}
-                  <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between gap-3">
+                  <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-50 to-emerald-50 dark:from-emerald-950/40 dark:to-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5">
                       <span className="relative flex h-3 w-3 shrink-0">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -322,12 +322,12 @@ export default function WalletTopUpModal({
                       </div>
                     </div>
                     <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300 bg-white dark:bg-slate-900 px-2 py-1 rounded-lg border border-emerald-200 shadow-2xs shrink-0">
-                      Napas 24/7 ⚡
+                      Napas 24/7
                     </span>
                   </div>
 
                   {checkStatusText && (
-                    <div className="text-[11px] text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/60 p-2.5 rounded-xl border border-amber-200 dark:border-amber-800 text-center animate-in fade-in">
+                    <div className="text-[11px] text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center animate-in fade-in">
                       {checkStatusText}
                     </div>
                   )}
@@ -345,18 +345,18 @@ export default function WalletTopUpModal({
               )}
 
               {method === "counter" && (
-                <div className="p-4 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 space-y-3 text-xs animate-in fade-in duration-200">
+                <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800 space-y-3 text-xs animate-in fade-in duration-200">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0 shadow-xs">
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0 shadow-xs">
                       <Building className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-amber-900 dark:text-amber-200 text-xs uppercase tracking-wide">Nạp tiền tại quầy Lễ tân</h4>
-                      <p className="text-[11px] text-amber-700 dark:text-amber-300">Quầy Thu ngân SportCenter • Tầng 1 (06:00 - 22:00)</p>
+                      <h4 className="font-bold text-slate-900 dark:text-slate-200 text-xs uppercase tracking-wide">Nạp tiền tại quầy Lễ tân</h4>
+                      <p className="text-[11px] text-slate-700 dark:text-slate-300">Quầy Thu ngân SportCenter • Tầng 1 (06:00 - 22:00)</p>
                     </div>
                   </div>
 
-                  <div className="bg-white dark:bg-slate-900 rounded-xl p-3.5 border border-amber-200/60 space-y-3 text-slate-700 dark:text-slate-300 text-xs">
+                  <div className="bg-white dark:bg-slate-900 rounded-xl p-3.5 border border-slate-200/60 space-y-3 text-slate-700 dark:text-slate-300 text-xs">
                     <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700">
                       <div>
                         <span className="text-slate-400 block text-[10px]">Hội viên</span>
@@ -364,17 +364,17 @@ export default function WalletTopUpModal({
                       </div>
                       <div className="text-right">
                         <span className="text-slate-400 block text-[10px]">Số điện thoại</span>
-                        <strong className="text-emerald-700 dark:text-emerald-400 font-mono font-bold text-xs">{phone}</strong>
+                        <strong className="text-emerald-700 dark:text-emerald-400 font-bold text-xs">{phone}</strong>
                       </div>
                     </div>
 
                     <div className="space-y-2 text-[11px] text-slate-600 dark:text-slate-300">
                       <div className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-500 mt-1.5 shrink-0" />
                         <p><strong>Đến quầy Thu ngân (Tầng 1):</strong> Đọc số điện thoại của bạn cho nhân viên.</p>
                       </div>
                       <div className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-500 mt-1.5 shrink-0" />
                         <p><strong>Thanh toán linh hoạt:</strong> Hỗ trợ tiền mặt hoặc quẹt thẻ POS theo số tiền bạn muốn nạp.</p>
                       </div>
                       <div className="flex items-start gap-2">
@@ -384,8 +384,8 @@ export default function WalletTopUpModal({
                     </div>
                   </div>
 
-                  <div className="text-[10px] text-amber-700 dark:text-amber-400 flex items-center gap-1.5 font-medium">
-                    <Sparkles className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+                  <div className="text-[10px] text-slate-700 dark:text-slate-400 flex items-center gap-1.5 font-medium">
+                    <Sparkles className="w-3.5 h-3.5 shrink-0 text-slate-600" />
                     <span>Không cần thao tác gì thêm, thu ngân tại quầy sẽ hỗ trợ bạn trực tiếp!</span>
                   </div>
                 </div>

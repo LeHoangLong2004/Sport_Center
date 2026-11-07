@@ -111,7 +111,7 @@ export default function ReceptionistPortal({ onExit }: { onExit: () => void }) {
   const { bc, title, shift } = breadcrumbs[page]
 
   return (
-    <div className="flex w-full h-screen bg-slate-50 dark:bg-[#0f172a] transition-colors duration-300 font-sans text-slate-900 dark:text-white selection:bg-purple-500 selection:text-white overflow-hidden">
+    <div className="flex w-full h-screen bg-slate-50 dark:bg-[#0f172a] transition-colors duration-300 font-sans text-slate-900 dark:text-white selection:bg-emerald-600 selection:text-white overflow-hidden">
       <Sidebar page={page} onNavigate={setPage} onLogout={onExit} />
       <div className="flex flex-col flex-1 min-w-0 h-full">
         <TopBar breadcrumb={bc} title={title} shiftLabel={shift} onProfileClick={() => setPage("profile")} onNavigate={setPage} />

@@ -72,7 +72,7 @@ export function OverviewPage({ onNavigate }: { onNavigate?: (page: any) => void 
           <div className="flex-1 flex items-end w-full h-[240px]">
             {monthly.loading && <span className="text-slate-400 text-sm">Đang tải dữ liệu doanh thu...</span>}
             {!monthly.loading && monthly.forbidden && (
-              <span className="text-[#b45309] text-sm">Tài khoản không có quyền xem báo cáo doanh thu.</span>
+              <span className="text-slate-700 text-sm">Tài khoản không có quyền xem báo cáo doanh thu.</span>
             )}
             {!monthly.loading && !monthly.forbidden && monthly.error && (
               <span className="text-[#b91c1c] text-sm">{monthly.error}</span>
@@ -85,7 +85,7 @@ export function OverviewPage({ onNavigate }: { onNavigate?: (page: any) => void 
                 {months.map((m) => (
                   <div key={m.month} className="flex flex-col flex-1 h-full items-stretch justify-end min-w-0">
                     <div
-                      className="bg-rose-500/80 dark:bg-rose-400 rounded-t-md w-full"
+                      className="bg-emerald-500/80 dark:bg-emerald-400 rounded-t-md w-full"
                       title={`${m.month}: ${formatVnd(m.revenue)} (${m.invoices} hóa đơn)`}
                       style={{ height: `${Math.max(2, Math.round((m.revenue / maxRevenue) * 100))}%` }}
                     />
@@ -117,7 +117,7 @@ export function OverviewPage({ onNavigate }: { onNavigate?: (page: any) => void 
                   <img src={act.icon} alt="" className="size-5 brightness-0 dark:invert opacity-70" />
                 </div>
                 <div>
-                  <p className="text-slate-900 dark:text-slate-200 text-sm font-semibold leading-tight group-hover:text-rose-500 dark:group-hover:text-rose-400 transition-colors">{act.text}</p>
+                  <p className="text-slate-900 dark:text-slate-200 text-sm font-semibold leading-tight group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors">{act.text}</p>
                   <p className="text-slate-500 dark:text-slate-400 text-[12px] mt-1.5 font-medium">{act.time}</p>
                 </div>
               </div>

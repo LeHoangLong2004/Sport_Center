@@ -80,14 +80,14 @@ export default function MembershipTab({
                 key={pkg.id}
                 className={`p-6 rounded-3xl border flex flex-col justify-between transition-all relative ${
                   isPremium
-                    ? "bg-gradient-to-b from-amber-50/50 via-white to-white dark:from-amber-950/20 dark:via-slate-900 dark:to-slate-900 border-amber-300 dark:border-amber-700/60 shadow-lg ring-1 ring-amber-400/40"
+                    ? "bg-gradient-to-b from-amber-50/60 via-white to-white dark:from-amber-950/25 dark:via-slate-900 dark:to-slate-900 border-amber-400 dark:border-amber-500/80 shadow-lg ring-1 ring-amber-400/40"
                     : isPlus
-                    ? "bg-gradient-to-b from-emerald-50/40 via-white to-white dark:from-emerald-950/20 dark:via-slate-900 dark:to-slate-900 border-emerald-300 dark:border-emerald-700/60 shadow-sm"
-                    : "bg-slate-50/60 dark:bg-slate-850/60 border-slate-200 dark:border-slate-800"
+                    ? "bg-gradient-to-b from-emerald-50/50 via-white to-white dark:from-emerald-950/20 dark:via-slate-900 dark:to-slate-900 border-emerald-400 dark:border-emerald-600/70 shadow-sm ring-1 ring-emerald-500/20"
+                    : "bg-slate-50/70 dark:bg-slate-850/60 border-slate-200 dark:border-slate-800"
                 }`}
               >
                 {isPremium && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 text-[10px] font-black uppercase tracking-wider shadow-md">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-black uppercase tracking-wider shadow-md shadow-amber-500/25">
                     Phổ biến nhất
                   </div>
                 )}
@@ -98,9 +98,9 @@ export default function MembershipTab({
                       <div
                         className={`size-8 rounded-lg flex items-center justify-center ${
                           isPremium
-                            ? "bg-amber-400 text-slate-950"
+                            ? "bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-sm shadow-amber-500/30"
                             : isPlus
-                            ? "bg-emerald-400 text-slate-950"
+                            ? "bg-emerald-500 text-white shadow-sm shadow-emerald-500/20"
                             : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
                         }`}
                       >
@@ -112,7 +112,15 @@ export default function MembershipTab({
                     </div>
 
                     {isCurrentTier && (
-                      <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] font-bold">
+                      <span
+                        className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                          isPremium
+                            ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                            : isPlus
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                            : "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                        }`}
+                      >
                         Đang dùng
                       </span>
                     )}
@@ -123,7 +131,15 @@ export default function MembershipTab({
                   </p>
 
                   <div className="mt-4 pb-4 border-b border-slate-100 dark:border-slate-800">
-                    <div className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                    <div
+                      className={`text-2xl font-black tracking-tight ${
+                        isPremium
+                          ? "text-amber-600 dark:text-amber-400"
+                          : isPlus
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-slate-900 dark:text-white"
+                      }`}
+                    >
                       {price === 0 ? "Miễn phí" : `${price.toLocaleString("vi-VN")} đ`}
                     </div>
                     <span className="text-[11px] text-slate-400">
@@ -184,7 +200,7 @@ export default function MembershipTab({
                     </div>
 
                     <div className="flex items-center gap-2 text-xs">
-                      <Activity className="w-4 h-4 text-pink-500 shrink-0" />
+                      <Activity className="w-4 h-4 text-rose-500 shrink-0" />
                       <span className="text-slate-700 dark:text-slate-300">
                         Phân tích InBody: <strong>{isPremium ? "Không giới hạn" : isPlus ? "1 lần / tháng" : "Chưa hỗ trợ"}</strong>
                       </span>
@@ -207,7 +223,7 @@ export default function MembershipTab({
                       onClick={() => onStartPurchase(pkg)}
                       className={`w-full py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer ${
                         isPremium
-                          ? "bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 shadow-amber-500/20"
+                          ? "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-amber-500/25"
                           : isPlus
                           ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20"
                           : "bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-800 dark:hover:bg-slate-700"

@@ -86,7 +86,7 @@ export default function CancelSessionModal({
           </div>
 
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-[11px] text-slate-500 dark:text-slate-400 flex items-start gap-2">
-            <Info className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+            <Info className="w-4 h-4 shrink-0 mt-0.5" />
             <span>
               Chính sách: Suất học sẽ được hoàn lại tự động vào gói tập của bạn và thông báo tới HLV để mở lại suất cho học viên khác.
             </span>

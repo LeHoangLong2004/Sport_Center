@@ -35,7 +35,7 @@ export function CoachScheduleHeader({
           <button
             type="button"
             onClick={onOpenSlotModal}
-            className="px-4 py-2 text-xs font-bold text-white bg-orange-500 hover:bg-orange-600 rounded-xl transition-all shadow-sm hover:shadow-md cursor-pointer"
+            className="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-600 rounded-xl transition-all shadow-sm hover:shadow-md cursor-pointer"
           >
             Đăng lịch trống 1–1
           </button>
@@ -65,7 +65,7 @@ export function CoachScheduleHeader({
           onClick={() => setActiveTab("schedule")}
           className={`pb-3 border-b-2 transition-colors cursor-pointer ${
             activeTab === "schedule"
-              ? "border-orange-500 text-orange-600 dark:text-orange-400"
+              ? "border-emerald-500 text-emerald-600 dark:text-emerald-400"
               : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
           }`}
         >
@@ -76,7 +76,7 @@ export function CoachScheduleHeader({
           onClick={() => setActiveTab("availability")}
           className={`pb-3 border-b-2 transition-colors cursor-pointer ${
             activeTab === "availability"
-              ? "border-orange-500 text-orange-600 dark:text-orange-400"
+              ? "border-emerald-500 text-emerald-600 dark:text-emerald-400"
               : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
           }`}
         >
@@ -87,7 +87,7 @@ export function CoachScheduleHeader({
           onClick={() => setActiveTab("requests")}
           className={`pb-3 border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${
             activeTab === "requests"
-              ? "border-orange-500 text-orange-600 dark:text-orange-400"
+              ? "border-emerald-500 text-emerald-600 dark:text-emerald-400"
               : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
           }`}
         >

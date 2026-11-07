@@ -64,7 +64,7 @@ export const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-xs space-y-5">
         <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
           <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <User className="w-4 h-4 text-emerald-500" />
+            <User className="w-4 h-4" />
             Hồ sơ cá nhân & Liên hệ
           </h2>
           <button
@@ -80,7 +80,7 @@ export const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80">
             <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
-              <Phone className="w-3.5 h-3.5 text-emerald-500" />
+              <Phone className="w-3.5 h-3.5" />
               <span>Số điện thoại</span>
             </div>
             <p className="font-bold text-slate-900 dark:text-white text-sm">
@@ -92,7 +92,7 @@ export const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
 
           <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80">
             <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
-              <Mail className="w-3.5 h-3.5 text-blue-500" />
+              <Mail className="w-3.5 h-3.5 text-slate-500" />
               <span>Email tài khoản</span>
             </div>
             <p
@@ -105,7 +105,7 @@ export const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
 
           <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80">
             <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
-              <Calendar className="w-3.5 h-3.5 text-purple-500" />
+              <Calendar className="w-3.5 h-3.5" />
               <span>Ngày sinh</span>
             </div>
             <p className="font-bold text-slate-900 dark:text-white text-sm">
@@ -121,7 +121,7 @@ export const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
 
           <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80">
             <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
-              <Shield className="w-3.5 h-3.5 text-amber-500" />
+              <Shield className="w-3.5 h-3.5 text-slate-500" />
               <span>Giới tính</span>
             </div>
             <p className="font-bold text-slate-900 dark:text-white text-sm">
@@ -135,7 +135,7 @@ export const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
 
           <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80">
             <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
-              <Clock className="w-3.5 h-3.5 text-teal-500" />
+              <Clock className="w-3.5 h-3.5" />
               <span>Khung giờ ưu tiên</span>
             </div>
             <p className="font-bold text-slate-900 dark:text-white text-xs truncate">
@@ -145,7 +145,7 @@ export const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
 
           <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80">
             <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
-              <HeartPulse className="w-3.5 h-3.5 text-rose-500" />
+              <HeartPulse className="w-3.5 h-3.5" />
               <span>Liên hệ khẩn cấp</span>
             </div>
             <p className="font-bold text-slate-900 dark:text-white text-xs truncate">

@@ -84,7 +84,7 @@ export function FacilityFormModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={activeType === 'sport' ? 'VD: Bơi lội, Yoga, Boxing' : 'VD: Phòng Gym Tầng 1, Yoga Studio'}
-              className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
             />
           </div>
 
@@ -97,7 +97,7 @@ export function FacilityFormModal({
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
                   placeholder="Dán link ảnh hoặc tải tệp lên"
-                  className="flex-1 px-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="flex-1 px-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
                 />
                 <label className="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg text-xs font-semibold border border-slate-300 flex items-center gap-1">
                   <Upload className="size-3.5" />
@@ -130,7 +130,7 @@ export function FacilityFormModal({
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
                   placeholder="Dán link ảnh hoặc tải tệp lên"
-                  className="flex-1 px-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="flex-1 px-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
                 />
                 <label className="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg text-xs font-semibold border border-slate-300 flex items-center gap-1">
                   <Upload className="size-3.5" />
@@ -155,7 +155,7 @@ export function FacilityFormModal({
                     className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center bg-slate-100 text-slate-500 text-xs"
                   >
                     <span className="font-semibold text-slate-600">Đã chọn ảnh thành công</span>
-                    <span className="text-[11px] text-slate-400 mt-1 truncate max-w-full px-2 font-mono">{imageUrl}</span>
+                    <span className="text-[11px] text-slate-400 mt-1 truncate max-w-full px-2 ">{imageUrl}</span>
                   </div>
                   <button
                     type="button"
@@ -176,7 +176,7 @@ export function FacilityFormModal({
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="VD: Tầng 2, Tòa nhà A"
-                className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
               />
             </div>
           )}
@@ -193,7 +193,7 @@ export function FacilityFormModal({
           <button
             onClick={onSave}
             disabled={!name.trim() || isSubmitting || isUploading}
-            className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors cursor-pointer"
+            className="px-4 py-2 text-xs font-semibold text-white bg-slate-600 rounded-lg hover:bg-slate-700 disabled:opacity-50 transition-colors cursor-pointer"
           >
             {isSubmitting ? 'Đang lưu...' : modalMode === 'edit' ? 'Lưu thay đổi' : 'Xác nhận thêm'}
           </button>

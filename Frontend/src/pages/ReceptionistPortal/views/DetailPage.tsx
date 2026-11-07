@@ -1,5 +1,6 @@
 import React from "react"
 import { Edit3 } from "lucide-react"
+import { UserAvatar } from "../../../components/UserAvatar"
 
 export function DetailPage({
   member,
@@ -83,22 +84,22 @@ export function DetailPage({
       {/* Header card */}
       <div className="bg-white border border-[#e2e8f0] flex items-center justify-between p-[24px] rounded-[12px] shrink-0 w-full">
         <div className="flex gap-[20px] items-center shrink-0">
-          <img
-            src={m.avatarUrl || "https://ui-avatars.com/api/?name=" + encodeURIComponent(m.fullName)}
-            alt=""
-            className="shrink-0 size-[72px] rounded-full object-cover border border-[#e2e8f0]"
+          <UserAvatar
+            src={m.avatarUrl}
+            name={m.fullName}
+            className="shrink-0 size-[72px] rounded-full object-cover border border-[#e2e8f0] text-xl"
           />
           <div className="flex flex-col gap-[6px] items-start shrink-0">
             <div className="flex gap-[12px] items-center shrink-0">
-              <span className="font-['Manrope:ExtraBold'] font-extrabold text-[#0f172a] text-[22px]">
+              <span className="font-extrabold text-[#0f172a] text-[22px]">
                 {m.fullName}
               </span>
               <span
-                className={`font-['Manrope:Bold'] font-bold px-[8px] py-[4px] rounded-[6px] text-[11px] ${
+                className={`font-bold px-[8px] py-[4px] rounded-[6px] text-[11px] ${
                   m.status === "Đang hoạt động"
-                    ? "bg-[#dcfce7] text-[#15803d]"
+                    ? "bg-emerald-50 text-emerald-700"
                     : m.status === "Hết hạn"
-                    ? "bg-[#ffedd5] text-[#c2410c]"
+                    ? "bg-slate-100 text-slate-700"
                     : "bg-[#fee2e2] text-[#ef4444]"
                 }`}
               >
@@ -106,11 +107,11 @@ export function DetailPage({
               </span>
             </div>
             <div className="flex gap-[16px] items-center shrink-0 text-[14px]">
-              <span className="font-['Manrope:Bold'] font-bold text-[#3b82f6]">
+              <span className="font-bold text-slate-800">
                 Mã thẻ: {m.memberCode}
               </span>
               <span className="text-[#64748b]">•</span>
-              <span className="font-['Manrope:SemiBold'] font-semibold text-[#64748b]">
+              <span className="font-bold font-semibold text-[#64748b]">
                 {m.packageName}
               </span>
             </div>
@@ -118,16 +119,16 @@ export function DetailPage({
         </div>
 
         <div className="flex gap-[12px] items-start shrink-0">
-          <button type="button" className="bg-purple-600 text-white px-[18px] py-[10px] rounded-[8px] font-['Manrope:Bold'] font-bold text-[14px] hover:bg-purple-700 shadow-sm shadow-purple-600/20 transition-all">
+          <button type="button" className="bg-emerald-600 text-white px-[18px] py-[10px] rounded-[8px] font-bold text-[14px] hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 transition-all">
             Gia hạn gói tập
           </button>
-          <button type="button" className="bg-white border border-[#e2e8f0] px-[18px] py-[10px] rounded-[8px] font-['Manrope:Bold'] font-bold text-[#0f172a] text-[14px] hover:bg-slate-50 transition-colors">
+          <button type="button" className="bg-white border border-[#e2e8f0] px-[18px] py-[10px] rounded-[8px] font-bold text-[#0f172a] text-[14px] hover:bg-slate-50 transition-colors">
             In thẻ thành viên
           </button>
-          <button type="button" className="bg-[#fee2e2] text-[#ef4444] px-[18px] py-[10px] rounded-[8px] font-['Manrope:Bold'] font-bold text-[14px] hover:bg-red-200 transition-colors">
+          <button type="button" className="bg-[#fee2e2] text-[#ef4444] px-[18px] py-[10px] rounded-[8px] font-bold text-[14px] hover:bg-red-200 transition-colors">
             Tạm khóa thẻ
           </button>
-          <button type="button" onClick={onBack} className="border border-[#e2e8f0] px-[18px] py-[10px] rounded-[8px] font-['Manrope:Bold'] font-bold text-[#64748b] text-[14px] hover:bg-slate-50 transition-colors">
+          <button type="button" onClick={onBack} className="border border-[#e2e8f0] px-[18px] py-[10px] rounded-[8px] font-bold text-[#64748b] text-[14px] hover:bg-slate-50 transition-colors">
             ← Quay lại
           </button>
         </div>
@@ -140,7 +141,7 @@ export function DetailPage({
           {/* Thông tin cá nhân */}
           <div className="bg-white border border-[#e2e8f0] flex flex-col gap-[16px] items-start p-[24px] rounded-[12px] w-full">
             <div className="flex items-center justify-between w-full">
-              <span className="font-['Manrope:ExtraBold'] font-extrabold text-[#0f172a] text-[16px]">
+              <span className="font-extrabold text-[#0f172a] text-[16px]">
                 Thông tin cá nhân
               </span>
               <Edit3 className="size-[16px] text-[#64748b] cursor-pointer" />
@@ -148,10 +149,10 @@ export function DetailPage({
             <div className="bg-[#e2e8f0] h-px w-full" />
             {personalInfo.map((row) => (
               <div key={row.label} className="flex gap-[12px] items-start w-full text-[13px]">
-                <span className="font-['Manrope:Regular'] font-normal text-[#64748b] w-[130px] shrink-0">
+                <span className="font-normal text-[#64748b] w-[130px] shrink-0">
                   {row.label}
                 </span>
-                <span className="font-['Manrope:SemiBold'] font-semibold text-[#0f172a] flex-1 min-w-0">
+                <span className="font-bold font-semibold text-[#0f172a] flex-1 min-w-0">
                   {row.value}
                 </span>
               </div>
@@ -160,33 +161,33 @@ export function DetailPage({
 
           {/* Thông tin gói tập hiện tại */}
           <div className="bg-white border border-[#e2e8f0] flex flex-col gap-[16px] items-start p-[24px] rounded-[12px] w-full">
-            <span className="font-['Manrope:ExtraBold'] font-extrabold text-[#0f172a] text-[16px]">
+            <span className="font-extrabold text-[#0f172a] text-[16px]">
               Thông tin gói tập hiện tại
             </span>
             <div className="bg-[#e2e8f0] h-px w-full" />
             {packageInfo.map((row) => (
               <div key={row.label} className="flex gap-[12px] items-start w-full text-[13px]">
-                <span className="font-['Manrope:Regular'] font-normal text-[#64748b] w-[140px] shrink-0">
+                <span className="font-normal text-[#64748b] w-[140px] shrink-0">
                   {row.label}
                 </span>
-                <span className={row.highlight ? "font-['Manrope:ExtraBold'] font-extrabold text-[#3b82f6]" : "font-['Manrope:SemiBold'] font-semibold text-[#0f172a]"}>
+                <span className={row.highlight ? "font-extrabold text-slate-800" : "font-bold font-semibold text-[#0f172a]"}>
                   {row.value}
                 </span>
               </div>
             ))}
             <div className="flex gap-[12px] items-start w-full text-[13px]">
-              <span className="font-['Manrope:Regular'] font-normal text-[#64748b] w-[140px] shrink-0">
+              <span className="font-normal text-[#64748b] w-[140px] shrink-0">
                 Số ngày còn lại:
               </span>
-              <span className="bg-[#eff6ff] font-['Manrope:Bold'] font-bold px-[8px] py-[2px] rounded-[4px] text-[#3b82f6] text-[12px]">
+              <span className="bg-emerald-50 font-bold px-[8px] py-[2px] rounded-[4px] text-slate-800 text-[12px]">
                 {daysRemaining} ngày
               </span>
             </div>
             <div className="flex gap-[12px] items-start w-full text-[13px]">
-              <span className="font-['Manrope:Regular'] font-normal text-[#64748b] w-[140px] shrink-0">
+              <span className="font-normal text-[#64748b] w-[140px] shrink-0">
                 Trạng thái thanh toán:
               </span>
-              <span className="bg-[#dcfce7] font-['Manrope:Bold'] font-bold px-[8px] py-[2px] rounded-[4px] text-[#15803d] text-[11px]">
+              <span className="bg-emerald-50 font-bold px-[8px] py-[2px] rounded-[4px] text-emerald-700 text-[11px]">
                 Đã thanh toán 100%
               </span>
             </div>
@@ -198,15 +199,15 @@ export function DetailPage({
           {/* Lịch sử tập luyện */}
           <div className="bg-white border border-[#e2e8f0] flex flex-col gap-[16px] items-start px-[24px] py-[20px] rounded-[12px] w-full">
             <div className="flex items-center justify-between shrink-0 w-full">
-              <span className="font-['Manrope:ExtraBold'] font-extrabold text-[#0f172a] text-[16px]">
+              <span className="font-extrabold text-[#0f172a] text-[16px]">
                 Lịch sử tập luyện gần đây
               </span>
-              <span className="font-['Manrope:Bold'] font-bold text-[#3b82f6] text-[13px] cursor-pointer">
+              <span className="font-bold text-slate-800 text-[13px] cursor-pointer">
                 Xem tất cả
               </span>
             </div>
             <div className="border border-[#e2e8f0] flex flex-col items-start overflow-hidden rounded-[8px] w-full">
-              <div className="bg-[#f1f5f9] flex font-['Manrope:ExtraBold'] font-extrabold items-center px-[16px] py-[10px] text-[#64748b] text-[12px] w-full">
+              <div className="bg-[#f1f5f9] flex font-extrabold items-center px-[16px] py-[10px] text-[#64748b] text-[12px] w-full">
                 <span className="w-[110px] shrink-0">NGÀY</span>
                 <span className="flex-1 min-w-0">PHÒNG / HOẠT ĐỘNG</span>
                 <span className="w-[120px] shrink-0">HLV HƯỚNG DẪN</span>
@@ -215,11 +216,11 @@ export function DetailPage({
               </div>
               {trainingHistory.map((r) => (
                 <div key={r.date} className="bg-white border-[#e2e8f0] border-b flex items-center px-[16px] py-[12px] text-[13px] w-full last:border-b-0">
-                  <span className="font-['Manrope:SemiBold'] font-semibold text-[#0f172a] w-[110px] shrink-0">{r.date}</span>
-                  <span className="flex-1 font-['Manrope:SemiBold'] font-semibold min-w-0 text-[#0f172a]">{r.activity}</span>
-                  <span className="font-['Manrope:Regular'] font-normal text-[#64748b] w-[120px] shrink-0">{r.trainer}</span>
-                  <span className="font-['Manrope:Regular'] font-normal text-[#64748b] w-[100px] shrink-0">{r.duration}</span>
-                  <span className="font-['Manrope:Bold'] font-bold text-[#15803d] text-right w-[100px] shrink-0">{r.checkin}</span>
+                  <span className="font-bold font-semibold text-[#0f172a] w-[110px] shrink-0">{r.date}</span>
+                  <span className="flex-1 font-bold font-semibold min-w-0 text-[#0f172a]">{r.activity}</span>
+                  <span className="font-normal text-[#64748b] w-[120px] shrink-0">{r.trainer}</span>
+                  <span className="font-normal text-[#64748b] w-[100px] shrink-0">{r.duration}</span>
+                  <span className="font-bold text-emerald-700 text-right w-[100px] shrink-0">{r.checkin}</span>
                 </div>
               ))}
             </div>
@@ -228,15 +229,15 @@ export function DetailPage({
           {/* Lịch sử giao dịch */}
           <div className="bg-white border border-[#e2e8f0] flex flex-col gap-[16px] items-start px-[24px] py-[20px] rounded-[12px] w-full">
             <div className="flex items-center justify-between shrink-0 w-full">
-              <span className="font-['Manrope:ExtraBold'] font-extrabold text-[#0f172a] text-[16px]">
+              <span className="font-extrabold text-[#0f172a] text-[16px]">
                 Lịch sử giao dịch thanh toán
               </span>
-              <span className="font-['Manrope:Bold'] font-bold text-[#3b82f6] text-[13px] cursor-pointer">
+              <span className="font-bold text-slate-800 text-[13px] cursor-pointer">
                 Xem tất cả hóa đơn
               </span>
             </div>
             <div className="border border-[#e2e8f0] flex flex-col items-start overflow-hidden rounded-[8px] w-full">
-              <div className="bg-[#f1f5f9] flex font-['Manrope:ExtraBold'] font-extrabold items-center px-[16px] py-[10px] text-[#64748b] text-[12px] w-full">
+              <div className="bg-[#f1f5f9] flex font-extrabold items-center px-[16px] py-[10px] text-[#64748b] text-[12px] w-full">
                 <span className="w-[110px] shrink-0">NGÀY GD</span>
                 <span className="flex-1 min-w-0">NỘI DUNG THANH TOÁN</span>
                 <span className="w-[120px] shrink-0">HÌNH THỨC</span>
@@ -245,13 +246,13 @@ export function DetailPage({
               </div>
               {paymentHistory.map((r, i) => (
                 <div key={i} className="bg-white border-[#e2e8f0] border-b flex items-center px-[16px] py-[12px] w-full last:border-b-0 text-[13px]">
-                  <span className="font-['Manrope:SemiBold'] font-semibold text-[#0f172a] w-[110px] shrink-0">{r.date}</span>
-                  <span className="flex-1 font-['Manrope:SemiBold'] font-semibold min-w-0 text-[#0f172a] truncate">{r.content}</span>
-                  <span className="font-['Manrope:Regular'] font-normal text-[#64748b] w-[120px] shrink-0">{r.method}</span>
+                  <span className="font-bold font-semibold text-[#0f172a] w-[110px] shrink-0">{r.date}</span>
+                  <span className="flex-1 font-bold font-semibold min-w-0 text-[#0f172a] truncate">{r.content}</span>
+                  <span className="font-normal text-[#64748b] w-[120px] shrink-0">{r.method}</span>
                   <div className="w-[120px] shrink-0">
-                    <span className="bg-[#dcfce7] font-['Manrope:Bold'] font-bold px-[6px] py-[2px] rounded-[4px] text-[#15803d] text-[11px]">Thành công</span>
+                    <span className="bg-emerald-50 font-bold px-[6px] py-[2px] rounded-[4px] text-emerald-700 text-[11px]">Thành công</span>
                   </div>
-                  <span className="font-['Manrope:Bold'] font-bold text-[#0f172a] text-right w-[110px] shrink-0">{r.amount}</span>
+                  <span className="font-bold text-[#0f172a] text-right w-[110px] shrink-0">{r.amount}</span>
                 </div>
               ))}
             </div>

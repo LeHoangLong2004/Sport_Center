@@ -70,7 +70,7 @@ export function Registration({
   }
 
   return (
-    <main className="relative min-h-screen flex items-center justify-center p-4 font-sans selection:bg-[#14b8a6] selection:text-white overflow-hidden">
+    <main className="relative min-h-screen flex items-center justify-center p-4 font-sans selection:bg-emerald-600 selection:text-white overflow-hidden">
       {/* Full-screen Background */}
       <img 
         className="absolute inset-0 w-full h-full object-cover scale-105" 
@@ -90,7 +90,7 @@ export function Registration({
         <div className="w-full lg:w-5/12 p-10 lg:p-12 flex flex-col justify-between bg-gradient-to-br from-[#14b8a6]/20 to-transparent border-b lg:border-b-0 lg:border-r border-white/10">
           <div>
             <div className="flex gap-3 items-center mb-12">
-              <div className="bg-[#14b8a6] flex items-center justify-center rounded-xl w-14 h-14 shadow-lg shadow-[#14b8a6]/30">
+              <div className="bg-emerald-600 flex items-center justify-center rounded-xl w-14 h-14 shadow-lg shadow-[#14b8a6]/30">
                 <span className="font-black text-white text-2xl">SC</span>
               </div>
               <div className="flex flex-col">
@@ -127,7 +127,7 @@ export function Registration({
             )}
 
             <div className="mb-10">
-              <span className="inline-block px-3 py-1 bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 font-bold text-xs tracking-widest uppercase rounded-full mb-4">Tạo tài khoản mới</span>
+              <span className="inline-block px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-bold text-xs tracking-widest uppercase rounded-full mb-4">Tạo tài khoản mới</span>
               <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Đăng ký</h2>
             </div>
             
@@ -161,7 +161,7 @@ export function Registration({
                     name="name"
                     placeholder="Nguyễn Văn A"
                     required
-                    className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/40 focus:border-[#14b8a6] transition-all focus:bg-white"
+                    className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/40 focus:border-[#14b8a6] transition-all focus:bg-white dark:focus:bg-slate-800"
                   />
                 </div>
               </div>
@@ -178,7 +178,7 @@ export function Registration({
                     placeholder="nguyenvana@email.com"
                     required
                     type="email"
-                    className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/40 focus:border-[#14b8a6] transition-all focus:bg-white"
+                    className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/40 focus:border-[#14b8a6] transition-all focus:bg-white dark:focus:bg-slate-800"
                   />
                 </div>
               </div>
@@ -196,7 +196,7 @@ export function Registration({
                     placeholder="0901 234 567"
                     required
                     type="tel"
-                    className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/40 focus:border-[#14b8a6] transition-all focus:bg-white"
+                    className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/40 focus:border-[#14b8a6] transition-all focus:bg-white dark:focus:bg-slate-800"
                   />
                 </div>
               </div>
@@ -214,7 +214,7 @@ export function Registration({
                       placeholder="••••••••"
                       required
                       type="password"
-                      className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/40 focus:border-[#14b8a6] transition-all focus:bg-white"
+                      className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/40 focus:border-[#14b8a6] transition-all focus:bg-white dark:focus:bg-slate-800"
                     />
                   </div>
                 </div>
@@ -231,7 +231,7 @@ export function Registration({
                       placeholder="••••••••"
                       required
                       type="password"
-                      className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/40 focus:border-[#14b8a6] transition-all focus:bg-white"
+                      className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/40 focus:border-[#14b8a6] transition-all focus:bg-white dark:focus:bg-slate-800"
                     />
                   </div>
                 </div>
@@ -245,7 +245,7 @@ export function Registration({
               className={`w-full flex items-center justify-center gap-2 font-bold py-4 px-6 rounded-xl shadow-lg transition-all active:scale-[0.98] hover:-translate-y-1 mt-8 ${
                 successMsg 
                   ? "bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed shadow-none" 
-                  : "bg-[#14b8a6] hover:bg-[#0d9488] text-white shadow-teal-500/30"
+                  : "bg-emerald-600 hover:bg-[#0d9488] text-white shadow-emerald-500/30"
               }`}
             >
               Đăng ký tài khoản
@@ -257,7 +257,7 @@ export function Registration({
               <button 
                 type="button" 
                 onClick={onLogin}
-                className="font-bold text-[#14b8a6] hover:text-[#0d9488] transition-colors ml-1"
+                className="font-bold text-emerald-600 hover:text-[#0d9488] transition-colors ml-1"
               >
                 Đăng nhập ngay
               </button>

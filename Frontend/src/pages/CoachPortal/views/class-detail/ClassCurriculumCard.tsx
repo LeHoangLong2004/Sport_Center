@@ -17,7 +17,7 @@ export const ClassCurriculumCard: React.FC<ClassCurriculumCardProps> = ({
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-xs">
       <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-2">
-          <Dumbbell className="w-4 h-4 text-orange-500" />
+          <Dumbbell className="w-4 h-4" />
           <h2 className="font-bold text-sm text-slate-900 dark:text-white">Giáo án của ca dạy</h2>
         </div>
         {hasCurriculum ? (
@@ -54,7 +54,7 @@ export const ClassCurriculumCard: React.FC<ClassCurriculumCardProps> = ({
                     <span>
                       Khối lượng: <strong className="text-slate-700 dark:text-slate-300">{ex.reps}</strong>
                     </span>
-                    <span className="text-orange-600 dark:text-orange-400 font-medium">Nghỉ: {ex.rest}</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">Nghỉ: {ex.rest}</span>
                   </div>
                   {ex.note && (
                     <div className="text-[10px] text-slate-400 italic mt-1 pt-1 border-t border-slate-200/40 dark:border-slate-700/40">
@@ -68,7 +68,7 @@ export const ClassCurriculumCard: React.FC<ClassCurriculumCardProps> = ({
         ))
       ) : (
         <div className="py-8 px-4 text-center">
-          <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 dark:bg-orange-950/30 text-orange-500 ring-1 ring-orange-200 dark:ring-orange-800/40">
+          <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-500 ring-1 ring-emerald-200 dark:ring-emerald-800/40">
             <Dumbbell className="h-5 w-5" />
           </div>
           <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
@@ -81,7 +81,7 @@ export const ClassCurriculumCard: React.FC<ClassCurriculumCardProps> = ({
             <button
               type="button"
               onClick={onNavigateToCurriculum}
-              className="mt-4 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold shadow-xs transition-colors"
+              className="mt-4 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-colors"
             >
               <BookOpen className="w-3.5 h-3.5" />
               <span>Soạn giáo án ngay</span>
