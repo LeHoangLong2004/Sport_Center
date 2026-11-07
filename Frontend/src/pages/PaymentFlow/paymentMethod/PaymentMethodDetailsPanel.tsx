@@ -1,6 +1,7 @@
-import React, { useState } from "react";
-import { A, PaymentMethodId } from "../shared";
+import React, { useState, useEffect } from "react";
+import { PaymentMethodId } from "../shared";
 import { BankConfigService } from "../../MemberPortal/services/bankConfig";
+import { WalletService, MEMBER_WALLET_UPDATED_EVENT } from "../../MemberPortal/services/walletService";
 
 interface PaymentMethodDetailsPanelProps {
   method: PaymentMethodId;
@@ -28,6 +29,21 @@ export function PaymentMethodDetailsPanel({
   const bankConfig = BankConfigService.getConfig();
   const qrUrl = BankConfigService.getVietQrUrl(finalTotal, transferMemo, bankConfig);
   const [showZoomModal, setShowZoomModal] = useState(false);
+  const [currentBalance, setCurrentBalance] = useState<number>(() => {
+    return Number(WalletService.getLocalWallet()?.balance || 0);
+  });
+
+  useEffect(() => {
+    const handleWalletUpdate = (e: any) => {
+      if (e?.detail?.balance !== undefined) {
+        setCurrentBalance(Number(e.detail.balance));
+      } else {
+        setCurrentBalance(Number(WalletService.getLocalWallet()?.balance || 0));
+      }
+    };
+    window.addEventListener(MEMBER_WALLET_UPDATED_EVENT, handleWalletUpdate);
+    return () => window.removeEventListener(MEMBER_WALLET_UPDATED_EVENT, handleWalletUpdate);
+  }, []);
 
   if (method === "qr") {
     return (
@@ -265,24 +281,40 @@ export function PaymentMethodDetailsPanel({
   }
 
   if (method === "wallet") {
+    const isSufficient = currentBalance >= finalTotal;
+    const remainingNeeded = Math.max(0, finalTotal - currentBalance);
+
+    const balanceNotice = isSufficient ? (
+      <div className="p-2 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] leading-relaxed">
+        ✓ <strong>Đủ số dư:</strong> Số dư ví của bạn đủ để thanh toán ngay lập tức. Sau khi bấm hoàn tất, hệ thống sẽ tự động trừ ví và kích hoạt tài khoản ngay.
+      </div>
+    ) : (
+      <div className="p-2 rounded bg-amber-50 border border-amber-200 text-amber-800 text-[11px] leading-relaxed">
+        ⚠️ <strong>Số dư ví chưa đủ:</strong> Bạn còn thiếu <strong>{remainingNeeded.toLocaleString("vi-VN")} đ</strong>. Bạn có thể nạp thêm vào ví hoặc chọn hình thức <strong>Mã QR Sacombank</strong> để quét thanh toán trực tiếp.
+      </div>
+    );
+
     return (
       <div className="bg-white border border-[#e2e8f0] rounded-xl p-3 px-4 w-full shadow-2xs">
         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-          <h3 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-xs md:text-sm">
-            Ví điện tử MoMo & ZaloPay
+          <h3 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-xs md:text-sm flex items-center gap-1.5">
+            <span>Ví hội viên SmartGym & Ví điện tử</span>
           </h3>
-          <span className="text-[10px] text-pink-600 font-bold bg-pink-50 px-2 py-0.5 rounded-full border border-pink-200">
-            Ưu đãi hoàn 5%
+          <span className="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
+            Số dư: {currentBalance.toLocaleString("vi-VN")} đ
           </span>
         </div>
         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mt-2 text-xs text-slate-600 flex flex-col gap-2">
-          <p className="leading-relaxed text-[11px]">
-            Sau khi nhấn xác nhận, bạn sẽ được liên kết trực tiếp tới ứng dụng <strong>MoMo</strong> hoặc <strong>ZaloPay</strong> để hoàn tất thanh toán trong 1 chạm.
-          </p>
-          <div className="flex items-center justify-between bg-white p-2 rounded border border-slate-200 text-xs">
-            <span className="font-medium text-slate-600">Số tiền giao dịch:</span>
-            <strong className="text-teal-700 font-bold">{fmt(finalTotal)}</strong>
+          <div className="flex items-center justify-between bg-white p-2.5 rounded border border-slate-200 text-xs">
+            <span className="font-medium text-slate-600">Số dư ví hiện tại:</span>
+            <strong className="text-indigo-700 font-bold font-mono">{currentBalance.toLocaleString("vi-VN")} đ</strong>
           </div>
+          <div className="flex items-center justify-between bg-white p-2.5 rounded border border-slate-200 text-xs">
+            <span className="font-medium text-slate-600">Số tiền cần thanh toán:</span>
+            <strong className="text-teal-700 font-bold font-mono">{fmt(finalTotal)}</strong>
+          </div>
+
+          {balanceNotice}
         </div>
       </div>
     );

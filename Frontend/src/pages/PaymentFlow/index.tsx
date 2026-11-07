@@ -11,6 +11,7 @@ import { FailedScreen } from "./FailedScreen";
 import { InvoiceScreen } from "./InvoiceScreen";
 import { MembershipCardScreen } from "./MembershipCardScreen";
 import { PackageAPI, CatalogPackage, PackageCheckout, PackagePeriod } from "../../services/packageApi";
+import { WalletService } from "../MemberPortal/services/walletService";
 import { FlowPackage } from "./shared";
 import { toFlowPackage } from "./packageMapper";
 
@@ -201,6 +202,10 @@ export default function PaymentFlow({
         method,
         formData.startDate || undefined,
       );
+      if (method === "wallet") {
+        const totalAmount = pkgData.checkoutTotal || (period === "yearly" ? pkgData.yearly : pkgData.monthly) || 0;
+        await WalletService.pay(totalAmount, `Thanh toán gói tập ${pkgData.name}`, "Ví hội viên");
+      }
       window.localStorage.setItem("latestInvoiceId", checkout.invoiceId);
       window.localStorage.setItem("latestPackageName", checkout.order.packageSnapshot?.name || pkgData.name || "Gói hội viên");
       const checkedPackage = toFlowPackage(

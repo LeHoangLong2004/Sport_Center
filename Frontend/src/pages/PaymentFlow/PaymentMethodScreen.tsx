@@ -195,8 +195,8 @@ export function PaymentMethodScreen({
     {
       id: "wallet",
       icon: `${A}/d8a69.svg`,
-      label: "Ví điện tử (MoMo / ZaloPay)",
-      badge: "Hoàn 5%",
+      label: "Ví hội viên & Ví điện tử",
+      badge: "1-chạm ⚡",
     },
     {
       id: "counter",
