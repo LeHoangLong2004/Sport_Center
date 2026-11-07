@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { CheckoutHeader, CheckoutFooter } from "./CheckoutHeader";
 import { PaymentMethodScreen } from "./PaymentMethodScreen";
 import { FlowPackage, PaymentMethodId, Stepper } from "./shared";
+import { WalletService } from "../MemberPortal/services/walletService";
 
 type ProductPaymentOrder = {
   id: string;
@@ -77,6 +78,13 @@ export function ProductPaymentFlow({ order, onBack, onCompleted }: Props) {
     setProcessing(true);
     setError("");
     try {
+      if (method === "wallet") {
+        await WalletService.pay(
+          order.totalAmount,
+          `Thanh toán đơn hàng sản phẩm #${order.id.slice(0, 8).toUpperCase()}`,
+          "Ví hội viên"
+        );
+      }
       const response = await fetch(`/api/payments/${order.id}/process`, {
         method: "POST",
         headers: authHeaders(),
