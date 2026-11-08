@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MemberAPI } from "../../services/api";
+import { WalletService, MEMBER_WALLET_UPDATED_EVENT } from "../../services/walletService";
 import {
   type BookingFeedback,
   addCounterPendingId,
@@ -109,7 +110,7 @@ export function useMemberBookingActions({
   const handleCancelBooking = async (classId: string) => {
     setCancelTarget(null);
     try {
-      await MemberAPI.cancelClassBooking(classId);
+      const res: any = await MemberAPI.cancelClassBooking(classId);
       removeCounterPendingId(classId);
       setGroupClasses((classes) =>
         classes.map((c) =>
@@ -129,7 +130,23 @@ export function useMemberBookingActions({
         channel.close();
         localStorage.setItem("smartgym_order_event", String(Date.now()));
       } catch { }
-      showFeedback("Đã hủy đặt lớp thành công.");
+
+      // Cập nhật và phát event số dư ví hội viên được hoàn tiền tức thì
+      if (res?.refunded && typeof res?.newBalance === "number") {
+        window.dispatchEvent(
+          new CustomEvent(MEMBER_WALLET_UPDATED_EVENT, { detail: { balance: res.newBalance } })
+        );
+      } else {
+        void WalletService.getWallet(undefined, true).then((w) => {
+          if (typeof w?.balance === "number") {
+            window.dispatchEvent(
+              new CustomEvent(MEMBER_WALLET_UPDATED_EVENT, { detail: { balance: w.balance } })
+            );
+          }
+        });
+      }
+
+      showFeedback(res?.message || "Đã hủy đặt lớp thành công.");
     } catch (error: any) {
       void loadGroupClasses(true);
       showFeedback(error?.message || "Không thể hủy đặt lớp.", "error");

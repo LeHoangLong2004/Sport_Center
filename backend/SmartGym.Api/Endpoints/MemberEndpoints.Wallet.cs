@@ -870,6 +870,111 @@ namespace SmartGym.Api.Endpoints
         }
 
         /// <summary>
+        /// Hoàn tiền hủy đặt lớp học hoặc dịch vụ vào Ví hội viên (ghi vào CSDL PostgreSQL & cập nhật RAM cache).
+        /// </summary>
+        public static async Task<(bool Success, decimal NewBalance, WalletTransactionDto? Tx)> RefundToWalletAsync(
+            SmartGymDbContext db,
+            Guid userGuid,
+            decimal amount,
+            string note)
+        {
+            if (amount <= 0) return (false, 0m, null);
+
+            var cur = await GetMemberBalanceFromDbAsync(userGuid, db);
+            var newBal = cur + amount;
+            var txId = $"REFUND-{DateTime.UtcNow:yyyyMMddHHmmss}-{Random.Shared.Next(100, 999)}";
+            var cleanNote = string.IsNullOrWhiteSpace(note) ? "Hoàn tiền dịch vụ vào ví hội viên" : note;
+
+            await RecordWalletTransactionInDbAsync(
+                db,
+                userGuid,
+                txId,
+                "refund",
+                amount,
+                newBal,
+                "Ví hoàn tiền",
+                cleanNote,
+                "completed",
+                DateTime.UtcNow
+            );
+
+            _memberWallets[userGuid.ToString()] = newBal;
+
+            var tx = new WalletTransactionDto(
+                txId,
+                "refund",
+                amount,
+                "Ví hoàn tiền",
+                cleanNote,
+                DateTime.UtcNow,
+                "completed"
+            );
+
+            var txList = _memberWalletTransactions.GetOrAdd(userGuid.ToString(), _ => new List<WalletTransactionDto>());
+            lock (txList)
+            {
+                txList.Insert(0, tx);
+            }
+
+            return (true, newBal, tx);
+        }
+
+        /// <summary>
+        /// Trừ tiền ví hội viên khi đặt lớp học hoặc thanh toán dịch vụ.
+        /// </summary>
+        public static async Task<(bool Success, decimal NewBalance, string? ErrorMessage)> DeductFromWalletAsync(
+            SmartGymDbContext db,
+            Guid userGuid,
+            decimal amount,
+            string note)
+        {
+            if (amount <= 0) return (false, 0m, "Số tiền trừ phải lớn hơn 0.");
+
+            var cur = await GetMemberBalanceFromDbAsync(userGuid, db);
+            if (cur < amount)
+            {
+                return (false, cur, $"Số dư ví không đủ (hiện có {cur:N0} đ). Vui lòng nạp thêm tiền vào ví!");
+            }
+
+            var newBal = cur - amount;
+            var txId = $"PAY-{DateTime.UtcNow:yyyyMMddHHmmss}-{Random.Shared.Next(100, 999)}";
+            var cleanNote = string.IsNullOrWhiteSpace(note) ? "Thanh toán dịch vụ từ ví hội viên" : note;
+
+            await RecordWalletTransactionInDbAsync(
+                db,
+                userGuid,
+                txId,
+                "payment",
+                amount,
+                newBal,
+                "Ví hội viên",
+                cleanNote,
+                "completed",
+                DateTime.UtcNow
+            );
+
+            _memberWallets[userGuid.ToString()] = newBal;
+
+            var tx = new WalletTransactionDto(
+                txId,
+                "payment",
+                amount,
+                "Ví hội viên",
+                cleanNote,
+                DateTime.UtcNow,
+                "completed"
+            );
+
+            var txList = _memberWalletTransactions.GetOrAdd(userGuid.ToString(), _ => new List<WalletTransactionDto>());
+            lock (txList)
+            {
+                txList.Insert(0, tx);
+            }
+
+            return (true, newBal, null);
+        }
+
+        /// <summary>
         /// Xử lý giao dịch SePay/Casso nạp tiền tự động kèm hỗ trợ ghi trực tiếp vào Database.
         /// </summary>
         public static async Task<(bool Success, decimal NewBalance, string MatchedUserId, WalletTransactionDto? Tx)> ProcessSePayInboundAsync(
