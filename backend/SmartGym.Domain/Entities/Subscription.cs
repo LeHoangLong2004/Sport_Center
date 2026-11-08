@@ -9,7 +9,6 @@ public class Subscription
     public string? PackageId { get; set; }
     public Guid? SportId { get; set; }
     public Guid? FacilityId { get; set; }
-    public Guid? VoucherId { get; set; }
 
     public string? BillingPeriod { get; set; } // 'monthly' | 'yearly'
     public int? DurationMonths { get; set; }
