@@ -5,6 +5,7 @@ import { CancelBookingModal, NotificationModal } from '../components/ClassesModa
 import { ClassCard } from '../components/ClassCard';
 import { MyBookingsPanel } from './MyBookingsPanel';
 import { DateInput } from '../../../components/DateInput';
+import { WalletService, MEMBER_WALLET_UPDATED_EVENT } from '../services/walletService';
 export function Classes({
   onNavigate,
   onSelect,
@@ -62,7 +63,16 @@ export function Classes({
       });
       const d = await res.json();
       if (res.ok) {
-        setNotification({ show: true, type: 'success', message: "Hủy đặt chỗ thành công!" });
+        if (d?.refunded && typeof d?.newBalance === "number") {
+          window.dispatchEvent(new CustomEvent(MEMBER_WALLET_UPDATED_EVENT, { detail: { balance: d.newBalance } }));
+        } else {
+          void WalletService.getWallet(undefined, true).then((w) => {
+            if (typeof w?.balance === "number") {
+              window.dispatchEvent(new CustomEvent(MEMBER_WALLET_UPDATED_EVENT, { detail: { balance: w.balance } }));
+            }
+          });
+        }
+        setNotification({ show: true, type: 'success', message: d.message || "Hủy đặt chỗ thành công!" });
         fetchMyBookings();
       } else {
         setNotification({ show: true, type: 'error', message: d.message || "Không thể hủy đặt chỗ." });
