@@ -4,13 +4,14 @@ import {
   MEMBER_WALLET_UPDATED_EVENT,
   getStoredUser,
   getAuthHeaders,
+  getUserIdFromToken,
   sanitizeWalletData,
   cleanAllLocalWallets,
 } from "./walletUtils";
 import { BankConfigService } from "./bankConfig";
 
 export type { WalletTransaction, MemberWalletData };
-export { MEMBER_WALLET_UPDATED_EVENT, sanitizeWalletData, cleanAllLocalWallets };
+export { MEMBER_WALLET_UPDATED_EVENT, sanitizeWalletData, cleanAllLocalWallets, getUserIdFromToken };
 
 // Chạy dọn dẹp ngay khi load file
 cleanAllLocalWallets();
@@ -18,13 +19,15 @@ cleanAllLocalWallets();
 export const WalletService = {
   getStorageKey(userId?: string): string {
     const user = getStoredUser();
-    const u = userId || user?.id || user?.email || "default";
+    const tokenUid = getUserIdFromToken();
+    const u = userId || user?.id || user?.userId || user?.memberId || user?.email || tokenUid || "default";
     return `member_wallet_${u}`;
   },
 
   getLocalWallet(userId?: string): MemberWalletData {
     const user = getStoredUser();
-    const targetUserId = userId || user?.id || user?.email;
+    const tokenUid = getUserIdFromToken();
+    const targetUserId = userId || user?.id || user?.userId || user?.memberId || user?.email || tokenUid;
     const key = this.getStorageKey(targetUserId);
     try {
       const saved = localStorage.getItem(key);
@@ -56,7 +59,8 @@ export const WalletService = {
 
   saveLocalWallet(data: MemberWalletData, userId?: string) {
     const user = getStoredUser();
-    const targetUserId = userId || user?.id || user?.email;
+    const tokenUid = getUserIdFromToken();
+    const targetUserId = userId || user?.id || user?.userId || user?.memberId || user?.email || tokenUid;
     const key = this.getStorageKey(targetUserId);
     const sanitized = sanitizeWalletData(data);
     try {
@@ -71,7 +75,8 @@ export const WalletService = {
 
   async getWallet(userId?: string): Promise<MemberWalletData> {
     const user = getStoredUser();
-    const targetUserId = userId || user?.id || user?.email;
+    const tokenUid = getUserIdFromToken();
+    const targetUserId = userId || user?.id || user?.userId || user?.memberId || user?.email || tokenUid;
     try {
       const queryParam = targetUserId ? `?userId=${encodeURIComponent(targetUserId)}` : "";
       const res = await fetch(`/api/member/wallet${queryParam}`, {
