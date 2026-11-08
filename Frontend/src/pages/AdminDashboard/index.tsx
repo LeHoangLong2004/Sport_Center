@@ -51,6 +51,18 @@ function getAdminPageFromHash(): AdminPage {
   return "overview";
 }
 
+/**
+ * Component Bảng điều khiển Quản trị viên (Admin & Manager Dashboard).
+ * Phân hệ điều hành toàn diện dành cho Ban giám đốc và Quản lý trung tâm thể thao:
+ * - Overview: Đo lường KPI doanh thu, số hội viên mới, tỷ lệ lấp đầy phòng tập và tỷ lệ giữ chân khách hàng.
+ * - Member & Staff Management: Quản lý tài khoản hội viên, huấn luyện viên, nhân sự và phân quyền.
+ * - Packages & Facilities: Quản lý bảng giá gói tập, phòng tập và các bộ môn thể thao.
+ * - Product Inventory: Quản lý danh mục sản phẩm, phụ kiện, số lượng tồn kho và bán hàng.
+ * - Financial & Operations: Quản lý ngân sách (Budget), chi phí vận hành (Expenses), tính lương (Payroll), báo cáo P&L (Profit & Loss) và hóa đơn.
+ * - Schedule & Classes: Lịch trình toàn trung tâm, phê duyệt đề xuất mở lớp của HLV.
+ * 
+ * @param onLogout Callback xử lý khi Quản trị viên đăng xuất
+ */
 export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [page, setPageState] = useState<AdminPage>(getAdminPageFromHash);
 

@@ -8,8 +8,18 @@ using SmartGym.Domain.Enums;
 
 namespace SmartGym.Api.Endpoints;
 
+/// <summary>
+/// Endpoint quản lý Đặt chỗ lớp học và Lịch cá nhân (Class Booking & Schedule).
+/// Cung cấp các thao tác: Tìm kiếm lịch lớp học, đặt chỗ tham gia lớp (hỗ trợ danh sách chờ Waitlist),
+/// hủy đặt chỗ (áp dụng phạt No-show nếu hủy muộn), và xem danh sách các lớp đã đặt của hội viên.
+/// </summary>
 public static class BookingEndpoints
 {
+    /// <summary>
+    /// Đăng ký các route đặt chỗ lớp học vào hệ thống.
+    /// Nhóm route: /api/classes, /api/bookings, /api/schedule
+    /// </summary>
+    /// <param name="app">Đối tượng WebApplication để định tuyến</param>
     public static void MapBookingEndpoints(this WebApplication app)
     {
         var classes = app.MapGroup("/api/classes").WithTags("Classes");
@@ -18,6 +28,11 @@ public static class BookingEndpoints
 
         // ── Class listing (public, any authenticated user) ──
 
+        /// <summary>
+        /// GET /api/classes
+        /// Tìm kiếm và xem danh sách lịch các lớp học thể thao theo bộ môn hoặc ngày.
+        /// Không giới hạn quyền truy cập.
+        /// </summary>
         classes.MapGet(
             "/",
             async (
@@ -41,6 +56,13 @@ public static class BookingEndpoints
 
         // ── Booking management (Member, Receptionist) ──
 
+        /// <summary>
+        /// POST /api/bookings
+        /// Đặt chỗ tham gia một lớp học theo lịch (ScheduleId).
+        /// - Nếu lớp còn chỗ: Đặt thành công (Confirmed).
+        /// - Nếu lớp đã đầy: Tự động đưa vào danh sách chờ (Waitlist).
+        /// Quyền hạn yêu cầu: Member hoặc Receptionist.
+        /// </summary>
         bookings
             .MapPost(
                 "/",
@@ -73,6 +95,13 @@ public static class BookingEndpoints
             )
             .AddEndpointFilter(Authorize.Roles(UserRole.Member, UserRole.Receptionist));
 
+        /// <summary>
+        /// DELETE /api/bookings/{id}
+        /// Hủy đặt chỗ lớp học.
+        /// - Nếu hủy sát giờ (Late Cancellation): Trừ 1 buổi tập theo chính sách No-show.
+        /// - Tự động đôn người đứng đầu danh sách chờ (Waitlist) lên thành viên chính thức.
+        /// Quyền hạn yêu cầu: Member hoặc Receptionist.
+        /// </summary>
         bookings
             .MapDelete(
                 "/{id:guid}",
@@ -136,6 +165,11 @@ public static class BookingEndpoints
         .AddEndpointFilter(Authorize.Roles(UserRole.CenterManager, UserRole.Receptionist))
         .WithSummary("Tất cả đơn đặt chỗ (Dành cho Quản lý)"); */
 
+        /// <summary>
+        /// GET /api/bookings/my
+        /// Lấy toàn bộ danh sách các lượt đặt chỗ lớp học của hội viên đang đăng nhập.
+        /// Quyền hạn yêu cầu: Member hoặc Receptionist.
+        /// </summary>
         bookings
             .MapGet(
                 "/my",
@@ -182,12 +216,18 @@ public static class BookingEndpoints
         .AddEndpointFilter(Authorize.Roles(UserRole.Member, UserRole.Coach, UserRole.Receptionist)); */
     }
 
+    /// <summary>
+    /// Tiện ích trích xuất User ID (Guid) từ Claims trong HttpContext.
+    /// </summary>
     private static Guid? GetUserId(HttpContext context)
     {
         var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
         return Guid.TryParse(userId, out var id) ? id : null;
     }
 
+    /// <summary>
+    /// Chuyển đổi thực thể ClassSchedule sang DTO phản hồi ClassScheduleResponse kèm thông tin HLV và số chỗ trống.
+    /// </summary>
     private static async Task<ClassScheduleResponse> ToClassResponseAsync(
         ClassSchedule s,
         IUserRepository userRepo

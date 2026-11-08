@@ -13,11 +13,24 @@ using SmartGym.Infrastructure.Persistence.EF;
 
 namespace SmartGym.Api.Endpoints;
 
+/// <summary>
+/// Phần mở rộng (partial) của ClassEndpoints chuyên xử lý nghiệp vụ Đặt chỗ lớp học (Class Booking).
+/// Bao gồm: Đặt chỗ bằng số buổi trong gói, thanh toán trực tiếp/tại quầy, hủy đặt lớp và nhân viên đặt hộ.
+/// </summary>
 public static partial class ClassEndpoints
 {
+    /// <summary>
+    /// Đăng ký các route đặt chỗ lớp học vào nhóm route của lớp học.
+    /// </summary>
+    /// <param name="classGroup">Nhóm route /api/classes</param>
     private static void MapClassBookingEndpoints(RouteGroupBuilder classGroup)
     {
         // 1. Standard Book Class (Membership slot)
+        /// <summary>
+        /// POST /api/classes/{id}/book
+        /// Đặt chỗ tham gia lớp học bằng cách trừ số buổi trong gói tập hội viên.
+        /// Quyền hạn yêu cầu: Member, Admin hoặc Manager.
+        /// </summary>
         classGroup.MapPost(
             "/{id:guid}/book",
             async (Guid id, HttpContext context, ClassService service) =>
@@ -61,6 +74,11 @@ public static partial class ClassEndpoints
         .RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
 
         // 2. Pay and Book Class (Direct purchase or Pay at Counter)
+        /// <summary>
+        /// POST /api/classes/{id}/pay-and-book
+        /// Đặt chỗ lớp học kèm thanh toán trực tiếp (qua mã QR chuyển khoản hoặc thanh toán tại quầy).
+        /// Tự động tạo bản ghi Payment & Invoice tương ứng.
+        /// </summary>
         classGroup.MapPost(
             "/{id:guid}/pay-and-book",
             async (Guid id, [FromBody] PayAndBookClassRequest? request, HttpContext context, ClassService service, SmartGymDbContext db) =>
@@ -146,6 +164,11 @@ public static partial class ClassEndpoints
         .RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
 
         // 3. Cancel Booking
+        /// <summary>
+        /// POST /api/classes/{id}/cancel-booking
+        /// Hủy lượt đặt chỗ của hội viên đối với một lớp học.
+        /// Quyền hạn yêu cầu: Member, Admin hoặc Manager.
+        /// </summary>
         classGroup.MapPost(
             "/{id:guid}/cancel-booking",
             async (Guid id, HttpContext context, ClassService service) =>
@@ -163,6 +186,11 @@ public static partial class ClassEndpoints
         .RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
 
         // 4. Receptionist / Manager Book For Member
+        /// <summary>
+        /// POST /api/classes/{id}/book-for-member
+        /// Nhân viên lễ tân hoặc Quản lý đặt chỗ lớp học hộ cho một hội viên tại quầy.
+        /// Quyền hạn yêu cầu: Manager, Receptionist hoặc Admin.
+        /// </summary>
         classGroup.MapPost(
             "/{id:guid}/book-for-member",
             async (Guid id, [FromBody] BookForMemberRequest request, ClassService service) =>

@@ -4,6 +4,11 @@ using SmartGym.Domain.Enums;
 
 namespace SmartGym.Application.Services;
 
+/// <summary>
+/// Dịch vụ nghiệp vụ Đặt chỗ lớp học (Class Booking Service).
+/// Quản lý logic đặt chỗ trước tối thiểu 30 phút, kiểm tra giới hạn sĩ số lớp, tự động đưa vào Waitlist (tối đa 5 người)
+/// và xử lý hủy đặt chỗ (áp dụng phạt No-show nếu hủy sát giờ).
+/// </summary>
 public sealed class BookingService
 {
     private readonly IBookingRepository _bookingRepository;

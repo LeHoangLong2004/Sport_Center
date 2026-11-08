@@ -15,6 +15,23 @@ import { WalletService } from "../MemberPortal/services/walletService";
 import { FlowPackage } from "./shared";
 import { toFlowPackage } from "./packageMapper";
 
+/**
+ * Component Luồng thanh toán gói tập (Step-by-step Payment & Checkout Flow).
+ * Điều phối tuần tự các bước mua gói dịch vụ và kích hoạt thẻ thành viên:
+ * 1. Package Selection: Chọn gói tập (Gym, Yoga, Bơi lội...) và kỳ hạn thanh toán (tháng/năm).
+ * 2. Member Info: Điền hoặc xác thực thông tin người mua.
+ * 3. Payment Method: Chọn phương thức (Chuyển khoản QR SePay, Thẻ nội địa/quốc tế, Ví điện tử, Trả tại quầy).
+ * 4. OTP Verification: Xác thực mã bảo mật một lần cho giao dịch.
+ * 5. Processing & Webhook reconciliation: Hệ thống chờ Webhook SePay/Ngân hàng tự động khớp lệnh.
+ * 6. Success / Invoice: Xuất hóa đơn thanh toán thành công và cấp thẻ hội viên điện tử.
+ * 
+ * @param onExit Callback khi thoát khỏi luồng thanh toán
+ * @param initialPlan Mã gói tập chọn trước (nếu có)
+ * @param initialPeriod Kỳ hạn thanh toán ban đầu (monthly / yearly)
+ * @param initialPackage Dữ liệu gói từ catalog
+ * @param initialDuration Thời lượng tháng đăng ký
+ * @param initialDiscountPct Tỷ lệ phần trăm giảm giá áp dụng
+ */
 export default function PaymentFlow({
   onExit,
   initialPlan,
