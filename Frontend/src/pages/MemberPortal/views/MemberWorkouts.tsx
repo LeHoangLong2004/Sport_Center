@@ -32,6 +32,13 @@ const getExerciseDescription = (exercise: HomeworkExercise) =>
     .filter(Boolean)
     .join(". ");
 
+/**
+ * Màn hình Giáo án & Bài tập được giao của Hội viên (Member Workouts View).
+ * Hiển thị các bài tập về nhà (homework), giáo án chi tiết từ HLV phụ trách (sets, reps, thời gian nghỉ)
+ * và cho phép hội viên đánh dấu hoàn thành bài tập.
+ * 
+ * @param onNavigate Hàm điều hướng màn hình
+ */
 export default function MemberWorkouts({ onNavigate }: Props) {
   const [homeworks, setHomeworks] = useState<MemberHomework[]>([]);
   const [selectedHomework, setSelectedHomework] = useState<MemberHomework | null>(null);

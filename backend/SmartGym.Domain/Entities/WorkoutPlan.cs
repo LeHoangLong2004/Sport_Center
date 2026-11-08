@@ -4,6 +4,10 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SmartGym.Domain.Entities;
 
+/// <summary>
+/// Thực thể Giáo án tập luyện (Workout Plan Entity).
+/// Quản lý kế hoạch tập luyện do HLV tạo hoặc AI gợi ý, gồm mục tiêu, trình độ và các bài tập chi tiết.
+/// </summary>
 public class WorkoutPlan
 {
     public Guid Id { get; set; }

@@ -17,6 +17,18 @@ import CoachProfile from "./views/CoachProfile";
 import CoachSettings from "./views/CoachSettings";
 import { PageTransition } from "../../components/PageTransition";
 
+/**
+ * Component Cổng thông tin Huấn luyện viên (Coach Portal).
+ * Điều phối toàn bộ các phân hệ nghiệp vụ dành cho Coach / Personal Trainer:
+ * - Dashboard: Tổng quan lịch dạy trong ngày, số học viên, thông báo mới.
+ * - Schedule & Class Detail: Xem lịch giảng dạy, chi tiết lớp và đề xuất mở lớp mới.
+ * - Attendance & Assessment: Điểm danh học viên theo buổi và chấm điểm đánh giá tiến bộ sau ca tập.
+ * - Members & Member Profile: Quản lý danh sách học viên, hồ sơ bệnh lý, mục tiêu và chỉ số cơ thể.
+ * - Curriculum: Xây dựng và quản lý giáo án bài tập (sets, reps, trọng lượng).
+ * - Chat, Reviews & Coach AI: Trao đổi với học viên, xem đánh giá chất lượng và trợ lý AI gợi ý giáo án.
+ * 
+ * @param onExit Callback khi HLV thoát hoặc đăng xuất
+ */
 export default function CoachPortal({ onExit }: { onExit?: () => void } = {}) {
   const getInitialScreen = (): CoachScreen => {
     const hash = window.location.hash.replace("#coach-", "");

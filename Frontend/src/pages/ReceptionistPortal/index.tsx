@@ -41,6 +41,18 @@ function getReceptionistPageFromHash(): Page {
   return "checkin";
 }
 
+/**
+ * Component Cổng thông tin Nhân viên Lễ tân (Receptionist Portal).
+ * Phục vụ các nghiệp vụ trực tiếp tại quầy tiếp đón của trung tâm thể thao:
+ * - Check-in / Check-out: Quét mã QR, mã vạch hội viên hoặc tìm kiếm thủ công khi khách vào/ra phòng tập.
+ * - Counter Payments: Xác nhận thu tiền mặt tại quầy cho các đơn mua gói tập hoặc lớp học.
+ * - Member Registration: Tiếp nhận và đăng ký tài khoản hội viên mới ngay tại quầy lễ tân.
+ * - Classes & Schedule Booking: Tra cứu lịch học và thực hiện đặt chỗ lớp học thay cho khách hàng.
+ * - POS & Product Orders: Bán lẻ tại quầy (Point of Sale) nước uống, phụ kiện và hỗ trợ khách nhận đơn hàng.
+ * - Member Lookup: Tra cứu nhanh lịch sử tập, gói cước và công nợ của hội viên.
+ * 
+ * @param onExit Callback khi lễ tân thoát hoặc đăng xuất
+ */
 export default function ReceptionistPortal({ onExit }: { onExit: () => void }) {
   const [page, setPageState] = useState<Page>(getReceptionistPageFromHash);
 

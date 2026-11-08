@@ -79,8 +79,7 @@ public sealed partial class PackageCatalogService
         await EnsureDefaultsAsync(cancellationToken);
 
         var package = await db
-            .Packages.Include(item => item.Features)
-            .Include(item => item.Benefits)
+            .Packages
             .FirstOrDefaultAsync(item => item.Id == id, cancellationToken);
 
         if (create)
@@ -128,21 +127,70 @@ public sealed partial class PackageCatalogService
         package.Status = request.IsActive;
         package.CatalogJson = JsonSerializer.Serialize(request, JsonOptions);
 
-        db.PackageFeatures.RemoveRange(package.Features);
-        db.MembershipBenefits.RemoveRange(package.Benefits);
-        package.Features = request
-            .Benefits.Select(text => new PackageFeature { PackageId = id, FeatureText = text })
-            .ToList();
-        package.Benefits = request
-            .Benefits.Select(text => new MembershipBenefit
-            {
-                PackageId = id,
-                BenefitType = "general",
-                Description = text,
-            })
-            .ToList();
-
         await db.SaveChangesAsync(cancellationToken);
+
+        // Đồng bộ danh sách tính năng (Features & Benefits) an toàn không gây Concurrency Exception
+        try
+        {
+            await db.Database.ExecuteSqlInterpolatedAsync($"DELETE FROM package_features WHERE package_id = {id}");
+            await db.Database.ExecuteSqlInterpolatedAsync($"DELETE FROM membership_benefits WHERE package_id = {id}");
+
+            if (request.Benefits is not null && request.Benefits.Count > 0)
+            {
+                foreach (var text in request.Benefits)
+                {
+                    if (string.IsNullOrWhiteSpace(text)) continue;
+                    var fId = Guid.NewGuid();
+                    var bId = Guid.NewGuid();
+                    await db.Database.ExecuteSqlInterpolatedAsync($@"
+                        INSERT INTO package_features (id, package_id, feature_text, is_highlighted)
+                        VALUES ({fId}, {id}, {text.Trim()}, false)
+                        ON CONFLICT DO NOTHING;
+                    ");
+                    await db.Database.ExecuteSqlInterpolatedAsync($@"
+                        INSERT INTO membership_benefits (id, package_id, benefit_type, description)
+                        VALUES ({bId}, {id}, 'general', {text.Trim()})
+                        ON CONFLICT DO NOTHING;
+                    ");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[PackageCatalog] Warning syncing package features: {ex.Message}");
+        }
+
+        // Tự động đồng bộ liên kết gói môn vào bảng quan hệ package_sports
+        if (request.Category == "sport" && !string.IsNullOrWhiteSpace(request.Sport))
+        {
+            try
+            {
+                var sportNames = request.Sport.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                await db.Database.ExecuteSqlInterpolatedAsync($"DELETE FROM package_sports WHERE package_id = {id}");
+                foreach (var sName in sportNames)
+                {
+                    var sportRows = await db.Database.SqlQueryRaw<Guid>(
+                        @"SELECT id AS ""Value"" FROM sports WHERE name ILIKE {0} LIMIT 1",
+                        $"%{sName}%"
+                    ).ToListAsync(cancellationToken);
+
+                    var matchedSport = sportRows.FirstOrDefault();
+                    if (matchedSport != Guid.Empty)
+                    {
+                        await db.Database.ExecuteSqlInterpolatedAsync($@"
+                            INSERT INTO package_sports (package_id, sport_id)
+                            VALUES ({id}, {matchedSport})
+                            ON CONFLICT DO NOTHING;
+                        ");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[PackageCatalog] Error syncing package_sports: {ex.Message}");
+            }
+        }
+
         return request;
     }
 

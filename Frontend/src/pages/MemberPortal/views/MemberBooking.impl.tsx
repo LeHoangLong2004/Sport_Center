@@ -3,7 +3,7 @@ Clock, MapPin, User, Users, Search, CheckCircle2,
 AlertCircle, X, Dumbbell, Plus, Sparkles, Filter,
 LoaderCircle, CreditCard, QrCode, MessageCircle, Star, Award,
 Phone, ShieldCheck, Receipt, ChevronRight, ExternalLink, Check,
-Building, } from "lucide-react"; import { DateInput } from "../../../components/DateInput"; import { CoachAvatar, getRealCoachAvatar } from "../utils/coachAvatar"; import { BankConfigService } from "../services/bankConfig"; interface Props { onNavigate: (screen: MemberScreen) => void;
+Building, } from "lucide-react"; import { DateInput } from "../../../components/DateInput"; import { CoachAvatar, getRealCoachAvatar } from "../utils/coachAvatar"; import { BankConfigService } from "../services/bankConfig"; import { WalletService, MEMBER_WALLET_UPDATED_EVENT } from "../services/walletService"; interface Props { onNavigate: (screen: MemberScreen) => void;
 } type Feedback = { message: string; type: "success" | "error"; }; export default function MemberBooking({ onNavigate }: Props) {
 // Tabs: "group" (Khám phá lớp nhóm), "pt" (Kèm riêng 1-1), "my_classes" (Lớp đã đăng ký)
 const [activeTab, setActiveTab] = useState<"group" | "pt" | "my_classes">("group");
@@ -78,10 +78,20 @@ setBookingSuccessInfo({ classItem: classToBook, bookingId: `BK-${Date.now().toSt
 bookedAt: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }), }); setClassToBook(null); void loadGroupClasses(true); } catch (error: any) { setPaymentError(error?.message || "Không thể hoàn tất thanh toán và đặt lớp. Vui lòng thử lại.");
 showFeedback(error?.message || "Không thể hoàn tất thanh toán và đặt lớp. Vui lòng thử lại.", "error"); } finally { setIsProcessingPayment(false); } };
 // Hủy đặt lớp
-const handleCancelBooking = async (classId: string) => { setCancelTarget(null); try { await MemberAPI.cancelClassBooking(classId); setGroupClasses((currentClasses) => currentClasses.map((currentClass) =>
+const handleCancelBooking = async (classId: string) => { setCancelTarget(null); try { const res: any = await MemberAPI.cancelClassBooking(classId); setGroupClasses((currentClasses) => currentClasses.map((currentClass) =>
 currentClass.id === classId ? { ...currentClass, registeredCount: Math.max(0, currentClass.registeredCount - 1), availableSpots: Math.min(currentClass.capacity, currentClass.availableSpots + 1), }
 : currentClass ) ); setMySessions((currentSessions) => currentSessions.map((session) => (session as any).classId === classId ? { ...session, status: "đã hủy" as any, bookingStatus: "cancelled" } : session
-) ); void loadGroupClasses(true); setSelectedClassDetail(null); showFeedback("Đã hủy đặt lớp thành công."); } catch (error: any) {
+) ); void loadGroupClasses(true); setSelectedClassDetail(null); 
+if (res?.refunded && typeof res?.newBalance === "number") {
+  window.dispatchEvent(new CustomEvent(MEMBER_WALLET_UPDATED_EVENT, { detail: { balance: res.newBalance } }));
+} else {
+  void WalletService.getWallet(undefined, true).then((w) => {
+    if (typeof w?.balance === "number") {
+      window.dispatchEvent(new CustomEvent(MEMBER_WALLET_UPDATED_EVENT, { detail: { balance: w.balance } }));
+    }
+  });
+}
+showFeedback(res?.message || "Đã hủy đặt lớp thành công."); } catch (error: any) {
 void loadGroupClasses(true); showFeedback(error?.message || "Không thể hủy đặt lớp.", "error"); } };
 // Đặt lịch PT 1-1
 const handleConfirmPtBooking = async (event: React.FormEvent) => { event.preventDefault(); if (!bookingPtSlot) return; try { await MemberAPI.bookPtSlot({ slotId: bookingPtSlot.id,

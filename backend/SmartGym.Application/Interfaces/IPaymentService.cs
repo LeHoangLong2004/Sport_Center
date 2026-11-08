@@ -5,6 +5,10 @@ using SmartGym.Domain.Enums;
 
 namespace SmartGym.Application.Interfaces;
 
+/// <summary>
+/// Giao diện dịch vụ Xử lý thanh toán & Hóa đơn (Payment Service).
+/// Quản lý vòng đời giao dịch: khởi tạo, thanh toán SePay/VNPay/tiền mặt, hoàn tiền và gửi hóa đơn điện tử qua email.
+/// </summary>
 public interface IPaymentService
 {
     /// <summary>

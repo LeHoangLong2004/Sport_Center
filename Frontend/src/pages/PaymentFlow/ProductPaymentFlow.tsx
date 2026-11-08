@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { CheckoutHeader, CheckoutFooter } from "./CheckoutHeader";
 import { PaymentMethodScreen } from "./PaymentMethodScreen";
 import { FlowPackage, PaymentMethodId, Stepper } from "./shared";
+import { WalletService } from "../MemberPortal/services/walletService";
 
 type ProductPaymentOrder = {
   id: string;
@@ -32,6 +33,17 @@ async function readError(response: Response): Promise<string> {
   }
 }
 
+/**
+ * Component Luồng thanh toán đơn mua sản phẩm / phụ kiện phòng tập (Product Checkout Flow).
+ * Xử lý thanh toán nhanh cho các đơn hàng từ Product Shop:
+ * - Hiển thị chi tiết giỏ hàng và tổng tiền.
+ * - Chọn phương thức (QR SePay hoặc Thanh toán tại quầy).
+ * - Cập nhật trạng thái nhận hàng (tại quầy hoặc giao tại vị trí trong trung tâm).
+ * 
+ * @param order Dữ liệu đơn hàng sản phẩm cần thanh toán
+ * @param onBack Callback quay lại màn hình trước
+ * @param onCompleted Callback khi thanh toán thành công
+ */
 export function ProductPaymentFlow({ order, onBack, onCompleted }: Props) {
   const [method, setMethod] = useState<PaymentMethodId>("qr");
   const [processing, setProcessing] = useState(false);
@@ -77,6 +89,13 @@ export function ProductPaymentFlow({ order, onBack, onCompleted }: Props) {
     setProcessing(true);
     setError("");
     try {
+      if (method === "wallet") {
+        await WalletService.pay(
+          order.totalAmount,
+          `Thanh toán đơn hàng sản phẩm #${order.id.slice(0, 8).toUpperCase()}`,
+          "Ví hội viên"
+        );
+      }
       const response = await fetch(`/api/payments/${order.id}/process`, {
         method: "POST",
         headers: authHeaders(),

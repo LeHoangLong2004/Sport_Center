@@ -13,12 +13,27 @@ using SmartGym.Domain.Enums;
 
 namespace SmartGym.Api.Endpoints;
 
+/// <summary>
+/// Endpoint quản lý Thanh toán & Giao dịch (Payment Processing).
+/// Cung cấp: Khởi tạo đơn thanh toán gói tập, xử lý kết quả thanh toán, hủy giao dịch,
+/// liên kết tới module Hóa đơn (Invoices) và Báo cáo tài chính (Financial Reports).
+/// </summary>
 public static partial class PaymentEndpoints
 {
+    /// <summary>
+    /// Đăng ký các route thanh toán vào hệ thống.
+    /// Nhóm route gốc: /api/payments
+    /// </summary>
+    /// <param name="app">Đối tượng IEndpointRouteBuilder</param>
     public static void MapPaymentEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/payments").WithTags("Payments");
 
+        /// <summary>
+        /// POST /api/payments/create
+        /// Tạo giao dịch thanh toán gói tập mới và phát hành hóa đơn (Invoice) ở trạng thái chờ.
+        /// Kiểm tra chống tạo đơn trùng lặp (Duplicate Detection).
+        /// </summary>
         group
             .MapPost(
                 "/create",
@@ -47,6 +62,10 @@ public static partial class PaymentEndpoints
             .Produces<CreatePaymentResponse>(StatusCodes.Status400BadRequest);
 
         // Alias tương thích client cũ: POST /api/payments/process { invoiceId }
+        /// <summary>
+        /// POST /api/payments/process
+        /// Xử lý thanh toán thành công cho một hóa đơn (hỗ trợ client cũ truyền JSON body).
+        /// </summary>
         group
             .MapPost(
                 "/process",
@@ -63,6 +82,11 @@ public static partial class PaymentEndpoints
             .Produces<PaymentStatusResponse>(StatusCodes.Status200OK)
             .Produces<PaymentStatusResponse>(StatusCodes.Status400BadRequest);
 
+        /// <summary>
+        /// POST /api/payments/{invoiceId}/process
+        /// Xác nhận thanh toán thành công theo mã Invoice ID trên URL.
+        /// Kích hoạt gói tập tương ứng cho hội viên.
+        /// </summary>
         group
             .MapPost(
                 "/{invoiceId:guid}/process",
@@ -79,6 +103,10 @@ public static partial class PaymentEndpoints
             .Produces<PaymentStatusResponse>(StatusCodes.Status200OK)
             .Produces<PaymentStatusResponse>(StatusCodes.Status400BadRequest);
 
+        /// <summary>
+        /// POST /api/payments/{invoiceId}/cancel
+        /// Hủy đơn thanh toán và đánh dấu hóa đơn là Cancelled.
+        /// </summary>
         group
             .MapPost(
                 "/{invoiceId:guid}/cancel",

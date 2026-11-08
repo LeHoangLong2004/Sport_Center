@@ -71,7 +71,9 @@ export interface MembershipStatus {
   lockerTerms: string
 }
 
-const API_BASE_URL = `${(import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/$/, "")}/api`
+const API_BASE_URL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL.replace(/\/$/, "")}/api`
+  : "/api"
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token =

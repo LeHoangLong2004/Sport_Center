@@ -36,7 +36,11 @@ export const BookingClassSummary: React.FC<BookingClassSummaryProps> = ({ info }
               isCounter ? "text-slate-600 dark:text-slate-400" : "text-slate-700 dark:text-slate-300"
             }`}
           >
-            {isCounter ? "Thanh toán tại quầy lễ tân" : "Thanh toán trực tuyến"}
+            {isCounter
+              ? "Thanh toán tại quầy lễ tân"
+              : info.paymentMethod === "wallet"
+              ? "Ví thành viên SmartGym"
+              : "Thanh toán trực tuyến"}
           </span>
         </div>
         <div className="flex justify-between text-slate-500 items-center">

@@ -1,5 +1,9 @@
 namespace SmartGym.Domain.Entities;
 
+/// <summary>
+/// Thực thể Gói tập (Package Entity).
+/// Đại diện cho các gói dịch vụ thể thao (bơi lội, yoga, gym...) hoặc gói thẻ thành viên trung tâm.
+/// </summary>
 public class Package
 {
     public string Id { get; set; } = null!; // e.g. 'swim', 'yoga', 'vip'

@@ -7,6 +7,10 @@ using SmartGym.Domain.Entities;
 
 namespace SmartGym.Application.Services;
 
+/// <summary>
+/// Triển khai dịch vụ Quản lý Gói tập (Package Service Implementation).
+/// Xử lý tạo gói tập, cấu hình danh sách tính năng (Features) và quyền lợi thành viên (Benefits).
+/// </summary>
 public class PackageService : IPackageService
 {
     private readonly IPackageRepository _packageRepository;

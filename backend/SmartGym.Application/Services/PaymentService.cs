@@ -8,6 +8,10 @@ using SmartGym.Domain.Entities;
 
 namespace SmartGym.Application.Services;
 
+/// <summary>
+/// Triển khai dịch vụ Thanh toán (Payment Service Implementation).
+/// Quản lý giao dịch mua gói tập, phát hiện giao dịch trùng lặp trong 10 phút, tích hợp VNPay và gửi email hóa đơn.
+/// </summary>
 public class PaymentService(
     ISubscriptionRepository subscriptionRepo,
     IInvoiceRepository invoiceRepo,

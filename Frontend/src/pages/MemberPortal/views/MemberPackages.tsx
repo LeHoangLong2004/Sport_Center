@@ -23,6 +23,16 @@ interface Props {
   ) => void;
 }
 
+/**
+ * Màn hình Quản lý & Mua gói tập (Member Packages View).
+ * Cung cấp danh mục gói cước và trạng thái thẻ hội viên:
+ * - Gói thẻ thành viên (Membership): Thẻ Basic, Standard, VIP vào toàn bộ hệ thống.
+ * - Gói chuyên sâu theo môn (Sport Packages): Yoga, Bơi lội, Boxing, Pilates...
+ * - Modal thanh toán nhanh (Quick Checkout): Thanh toán bằng mã QR chuyển khoản hoặc tại quầy.
+ * 
+ * @param onNavigate Hàm chuyển hướng trang
+ * @param onCheckout Callback khi bắt đầu thanh toán gói
+ */
 export default function MemberPackages({ onNavigate, onCheckout }: Props) {
   const [activeTab, setActiveTab] = useState<"membership" | "sport">("membership");
   const [catalog, setCatalog] = useState<CatalogPackage[]>([]);

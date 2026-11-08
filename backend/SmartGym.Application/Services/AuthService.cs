@@ -6,6 +6,10 @@ using System.Threading.Tasks;
 
 namespace SmartGym.Application.Services;
 
+/// <summary>
+/// Triển khai dịch vụ Xác thực & Phân quyền tài khoản (Auth Service Implementation).
+/// Xử lý đăng ký hội viên/nhân viên, kiểm tra trùng lặp email/SĐT, băm mật khẩu BCrypt và cấp JWT Token khi đăng nhập.
+/// </summary>
 public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
