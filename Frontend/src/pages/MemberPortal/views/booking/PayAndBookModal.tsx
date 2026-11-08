@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { BankConfigService } from "../../services/bankConfig";
 import { WalletService, MEMBER_WALLET_UPDATED_EVENT } from "../../services/walletService";
+import { PackageAPI, getMembershipStatus, type MembershipStatus } from "../../../../services/packageApi";
 import WalletTopUpModal from "../../components/WalletTopUpModal";
 import { BookingClassHeader } from "./payAndBook/BookingClassHeader";
 import { CardPaymentPanel } from "./payAndBook/CardPaymentPanel";
@@ -42,8 +43,36 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
 }) => {
   if (!classToBook) return null;
 
+  const [membership, setMembership] = useState<MembershipStatus | null>(null);
+
+  // Tự động nhận diện hạng thành viên của hội viên để áp dụng ưu đãi giảm giá
+  useEffect(() => {
+    let isCancelled = false;
+    Promise.all([
+      PackageAPI.getMyOrders().catch(() => []),
+      PackageAPI.getPackages().catch(() => []),
+    ]).then(([orders, catalog]) => {
+      if (!isCancelled) {
+        const mem = getMembershipStatus(orders, catalog);
+        setMembership(mem);
+      }
+    });
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  const originalPrice = classToBook.price || 150000;
+  const discountPct = membership?.tier === "premium"
+    ? (membership.groupDiscountPct || 10)
+    : membership?.tier === "plus"
+    ? (membership.groupDiscountPct || 5)
+    : 0;
+
+  const discountAmount = Math.round(originalPrice * (discountPct / 100));
+  const classPrice = Math.max(0, originalPrice - discountAmount);
+
   const bankConfig = BankConfigService.getConfig();
-  const classPrice = classToBook.price || 150000;
   const bookingMemo = `DATLOP ${classToBook.id ? String(classToBook.id).slice(0, 8).toUpperCase() : "CLASS"}`;
   const vietQrUrl = BankConfigService.getVietQrUrl(classPrice, bookingMemo, bankConfig);
 
@@ -231,8 +260,15 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
               </div>
             )}
 
-            {/* Lớp & Chi tiết hóa đơn */}
-            <BookingClassHeader classToBook={classToBook} classPrice={classPrice} />
+            {/* Lớp & Chi tiết hóa đơn kèm ưu đãi thành viên */}
+            <BookingClassHeader 
+              classToBook={classToBook} 
+              originalPrice={originalPrice}
+              discountPct={discountPct}
+              discountAmount={discountAmount}
+              finalPrice={classPrice}
+              membership={membership}
+            />
 
             {/* CHỌN PHƯƠNG THỨC THANH TOÁN (4 PHƯƠNG THỨC) */}
             <div>
