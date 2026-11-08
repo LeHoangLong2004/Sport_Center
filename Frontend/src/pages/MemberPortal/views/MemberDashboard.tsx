@@ -17,6 +17,12 @@ interface Props {
   onNavigate: (screen: MemberScreen) => void;
 }
 
+/**
+ * Màn hình Tổng quan cá nhân Hội viên (Member Dashboard View).
+ * Hiển thị lời chào cá nhân hóa, gói tập hiện tại, số dư ví, ca tập sắp diễn ra và danh sách nhiệm vụ bài tập hàng ngày.
+ * 
+ * @param onNavigate Hàm điều hướng nhanh sang các màn hình chức năng khác
+ */
 export default function MemberDashboard({ onNavigate }: Props) {
   const { profile } = useUserProfile("member");
   const userStr = localStorage.getItem("user");

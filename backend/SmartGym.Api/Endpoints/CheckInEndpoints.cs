@@ -8,8 +8,18 @@ using SmartGym.Domain.Enums;
 
 namespace SmartGym.Api.Endpoints;
 
+/// <summary>
+/// Endpoint quản lý Check-in / Check-out và Gói tập của hội viên (Attendance & Access Control).
+/// Hỗ trợ: Hội viên tự điểm danh hoặc Lễ tân/Quản lý điểm danh tại quầy, tra cứu lịch sử check-in,
+/// xem các gói tập cá nhân đang sở hữu và danh mục gói tập công khai.
+/// </summary>
 public static class CheckInEndpoints
 {
+    /// <summary>
+    /// Đăng ký các route Check-in và Packages vào ứng dụng.
+    /// Nhóm route: /api/checkin và /api/packages
+    /// </summary>
+    /// <param name="app">Đối tượng WebApplication để định tuyến</param>
     public static void MapCheckInEndpoints(this WebApplication app)
     {
         var checkin = app.MapGroup("/api/checkin").WithTags("Check-in");
@@ -17,6 +27,13 @@ public static class CheckInEndpoints
 
         // ── Check-in (FR-016, BR-007) ──
 
+        /// <summary>
+        /// POST /api/checkin
+        /// Thực hiện Check-in cho hội viên khi bước vào phòng tập.
+        /// - Kiểm tra tính hợp lệ của gói tập (còn hạn, còn lượt, đúng khung giờ truy cập).
+        /// - Ghi nhận thời gian check-in vào hệ thống.
+        /// Quyền hạn yêu cầu: CenterManager, Receptionist, hoặc Member (tự check-in).
+        /// </summary>
         checkin.MapPost("/", async (
             CheckInRequest request,
             CheckInService checkInService,
@@ -42,6 +59,13 @@ public static class CheckInEndpoints
         })
         .AddEndpointFilter(Authorize.Roles(UserRole.CenterManager, UserRole.Receptionist, UserRole.Member));
 
+        /// <summary>
+        /// POST /api/checkin/checkout
+        /// Thực hiện Check-out khi hội viên rời khỏi phòng tập.
+        /// - Tính toán tổng thời gian tập luyện (phút).
+        /// - Cập nhật trạng thái lượt check-in thành CHECKED_OUT.
+        /// Quyền hạn yêu cầu: CenterManager, Receptionist, hoặc Member.
+        /// </summary>
         checkin.MapPost("/checkout", async (
             CheckOutRequest request,
             CheckInService checkInService,
@@ -72,6 +96,13 @@ public static class CheckInEndpoints
         })
         .AddEndpointFilter(Authorize.Roles(UserRole.CenterManager, UserRole.Receptionist, UserRole.Member));
 
+        /// <summary>
+        /// GET /api/checkin/history
+        /// Xem lịch sử check-in / check-out.
+        /// - Nếu truyền `memberId`: Lấy lịch sử của hội viên cụ thể.
+        /// - Nếu là Manager/Receptionist: Lấy toàn bộ lượt check-in trong ngày hôm nay.
+        /// - Nếu là Member: Lấy toàn bộ lịch sử điểm danh của chính mình.
+        /// </summary>
         checkin.MapGet("/history", async (
             HttpContext context,
             ICheckInRepository checkInRepo,
@@ -126,6 +157,11 @@ public static class CheckInEndpoints
 
         // ── Member packages (view own packages) ──
 
+        /// <summary>
+        /// GET /api/packages/my
+        /// Lấy danh sách các gói tập mà hội viên hiện tại đang sở hữu (kèm số buổi còn lại, hạn sử dụng, giờ tập).
+        /// Quyền hạn yêu cầu: Member.
+        /// </summary>
         packages.MapGet("/my", async (
             HttpContext context,
             IMemberPackageRepository packageRepo) =>
@@ -156,6 +192,11 @@ public static class CheckInEndpoints
 
         // ── Package Plans (public) ──
 
+        /// <summary>
+        /// GET /api/packages/plans
+        /// Danh mục các gói tập đang mở bán công khai cho hội viên tham khảo.
+        /// Không yêu cầu đăng nhập.
+        /// </summary>
         packages.MapGet("/plans", async (IPackageRepository packageRepo) =>
         {
             var packages = await packageRepo.GetAllAsync();

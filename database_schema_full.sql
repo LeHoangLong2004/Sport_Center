@@ -611,6 +611,20 @@ CREATE TABLE IF NOT EXISTS product_order_messages (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- 44.1. Bảng số dư và lịch sử biến động số dư ví hội viên (Member Wallet Transactions)
+CREATE TABLE IF NOT EXISTS wallet_transactions (
+    id              UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id         UUID            NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    type            VARCHAR(20)     NOT NULL, -- 'topup', 'payment', 'refund'
+    amount          DECIMAL(18, 2)  NOT NULL CHECK (amount > 0),
+    balance_after   DECIMAL(18, 2)  NOT NULL DEFAULT 0.00,
+    method          VARCHAR(50)     DEFAULT 'VietQR',
+    status          VARCHAR(20)     NOT NULL DEFAULT 'completed',
+    reference_code  VARCHAR(100)    UNIQUE,
+    note            TEXT,
+    created_at      TIMESTAMPTZ     DEFAULT now()
+);
+
 
 -- ==============================================================
 -- PHẦN 13: WEBSITE, TIN TỨC & HỆ THỐNG THÔNG BÁO

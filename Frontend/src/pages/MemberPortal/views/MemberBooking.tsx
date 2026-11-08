@@ -14,6 +14,15 @@ interface Props {
   onNavigate: (screen: MemberScreen) => void;
 }
 
+/**
+ * Màn hình Đặt lịch lớp học & Huấn luyện viên cá nhân (Member Booking View).
+ * Cung cấp giao diện lọc theo ngày, bộ môn, HLV và đặt chỗ:
+ * - Tab Lớp học nhóm (Group Classes): Đặt chỗ tham gia lớp học thể thao theo lịch.
+ * - Tab Thuê PT (1-on-1 PT Slots): Đặt lịch tập riêng với HLV cá nhân.
+ * - Tab Lớp đã đặt (My Classes): Xem danh sách lớp đã đăng ký và hỗ trợ hủy lịch.
+ * 
+ * @param onNavigate Hàm chuyển hướng trang
+ */
 export default function MemberBooking({ onNavigate }: Props) {
   const [activeTab, setActiveTab] = useState<"group" | "pt" | "my_classes">("group");
   const [selectedDate, setSelectedDate] = useState("");

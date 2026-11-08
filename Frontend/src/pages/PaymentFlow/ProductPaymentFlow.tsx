@@ -33,6 +33,17 @@ async function readError(response: Response): Promise<string> {
   }
 }
 
+/**
+ * Component Luồng thanh toán đơn mua sản phẩm / phụ kiện phòng tập (Product Checkout Flow).
+ * Xử lý thanh toán nhanh cho các đơn hàng từ Product Shop:
+ * - Hiển thị chi tiết giỏ hàng và tổng tiền.
+ * - Chọn phương thức (QR SePay hoặc Thanh toán tại quầy).
+ * - Cập nhật trạng thái nhận hàng (tại quầy hoặc giao tại vị trí trong trung tâm).
+ * 
+ * @param order Dữ liệu đơn hàng sản phẩm cần thanh toán
+ * @param onBack Callback quay lại màn hình trước
+ * @param onCompleted Callback khi thanh toán thành công
+ */
 export function ProductPaymentFlow({ order, onBack, onCompleted }: Props) {
   const [method, setMethod] = useState<PaymentMethodId>("qr");
   const [processing, setProcessing] = useState(false);

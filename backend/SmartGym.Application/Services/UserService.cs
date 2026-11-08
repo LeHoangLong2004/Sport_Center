@@ -8,6 +8,10 @@ using System.Threading.Tasks;
 
 namespace SmartGym.Application.Services;
 
+/// <summary>
+/// Triển khai dịch vụ Quản lý người dùng (User Service Implementation).
+/// Xử lý nghiệp vụ tra cứu danh sách người dùng, cập nhật quyền hạn, trạng thái tài khoản và thông tin hồ sơ.
+/// </summary>
 public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;

@@ -18,12 +18,30 @@ import { CatalogPackage, PackagePeriod } from "../../services/packageApi";
 import PaymentFlow from "../PaymentFlow";
 import { PageTransition } from "../../components/PageTransition";
 
+/**
+ * Thông tin lựa chọn gói tập khi tiến hành Checkout
+ */
 export type CheckoutSelection = {
   item: CatalogPackage;
   duration: PackagePeriod;
   discountPct: number;
 };
 
+/**
+ * Component Cổng thông tin Hội viên (Member Portal).
+ * Điều phối toàn bộ các phân hệ dành cho hội viên Sport Center:
+ * - Dashboard: Tổng quan chỉ số sức khỏe, KPI buổi tập, lớp học sắp diễn ra.
+ * - Booking & Schedule: Đặt chỗ lớp học thể thao, xem lịch tập cá nhân.
+ * - Packages & Payments: Tra cứu gói tập, mua gói, lịch sử hóa đơn và thanh toán.
+ * - Workouts & Attendance: Xem giáo án tập luyện, lịch sử điểm danh check-in/out.
+ * - Reviews & Chat: Đánh giá chất lượng Huấn luyện viên, chat với HLV và AI Assistant.
+ * - Shop: Mua sắm sản phẩm, thực phẩm bổ sung và phụ kiện phòng gym.
+ * 
+ * @param initialPage Trang khởi tạo hiển thị mặc định
+ * @param onCheckout Callback khi hội viên chọn mua gói tập
+ * @param onProductPayment Callback khi hội viên thanh toán đơn hàng sản phẩm
+ * @param onLogout Callback xử lý khi hội viên đăng xuất
+ */
 export default function MemberPortal({
   initialPage = "dashboard",
   onCheckout: onExternalCheckout,

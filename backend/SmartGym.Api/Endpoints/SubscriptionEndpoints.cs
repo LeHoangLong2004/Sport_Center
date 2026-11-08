@@ -10,12 +10,26 @@ using SmartGym.Application.Interfaces;
 
 namespace SmartGym.Api.Endpoints;
 
+/// <summary>
+/// Endpoint quản lý Đăng ký gói tập cá nhân (Member Subscriptions).
+/// Hỗ trợ: Xem các gói hội viên đang đăng ký (active/expired), đăng ký gói tập mới.
+/// Yêu cầu xác thực JWT cho toàn bộ các route.
+/// </summary>
 public static class SubscriptionEndpoints
 {
+    /// <summary>
+    /// Đăng ký các route đăng ký gói tập vào hệ thống.
+    /// Nhóm route gốc: /api/subscriptions
+    /// </summary>
+    /// <param name="app">Đối tượng IEndpointRouteBuilder</param>
     public static void MapSubscriptionEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/subscriptions").RequireAuthorization();
 
+        /// <summary>
+        /// GET /api/subscriptions/me
+        /// Lấy toàn bộ danh sách các gói đăng ký tập luyện của hội viên đang đăng nhập.
+        /// </summary>
         group.MapGet(
             "/me",
             async (HttpContext context, ISubscriptionService subscriptionService) =>
@@ -32,6 +46,10 @@ public static class SubscriptionEndpoints
             }
         );
 
+        /// <summary>
+        /// POST /api/subscriptions
+        /// Đăng ký gói tập mới cho hội viên hiện tại.
+        /// </summary>
         group.MapPost(
             "/",
             async (

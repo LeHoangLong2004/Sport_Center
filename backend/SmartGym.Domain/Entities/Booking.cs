@@ -2,6 +2,10 @@ using SmartGym.Domain.Enums;
 
 namespace SmartGym.Domain.Entities;
 
+/// <summary>
+/// Thực thể Đặt chỗ lớp học (Class Booking Entity).
+/// Đại diện cho một lượt đặt chỗ của hội viên vào một lịch học, hỗ trợ trạng thái Confirmed hoặc danh sách chờ Waitlist.
+/// </summary>
 public sealed class Booking
 {
     public Booking(

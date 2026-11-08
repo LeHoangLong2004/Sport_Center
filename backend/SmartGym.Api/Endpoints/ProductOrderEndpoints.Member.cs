@@ -10,8 +10,15 @@ using SmartGym.Infrastructure.Persistence.Supabase.Models;
 
 namespace SmartGym.Api.Endpoints;
 
+/// <summary>
+/// Phần mở rộng (partial) của ProductOrderEndpoints dành cho Hội viên (Member Operations).
+/// Xử lý tạo đơn hàng từ giỏ hàng, tra cứu đơn cá nhân và gửi nhận tin nhắn trao đổi.
+/// </summary>
 public static partial class ProductOrderEndpoints
 {
+    /// <summary>
+    /// Xử lý tạo mới đơn đặt mua sản phẩm của hội viên. Kiểm tra số lượng tồn kho trước khi phát hành hóa đơn.
+    /// </summary>
     private static async Task<IResult> CreateOrderAsync(
         CreateProductOrderRequest request,
         SmartGymDbContext db,

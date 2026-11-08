@@ -17,6 +17,10 @@ import { Verification } from "./components/Auth/Verification";
 import { ResetPassword } from "./components/Auth/ResetPassword";
 import { MemberPage } from "./pages/MemberPortal/shared";
 
+/**
+ * Component điều hướng phân hệ Xác thực và Bảng điều khiển quản trị (Auth & Admin Routing Container).
+ * Quản lý trạng thái giữa các bước: Đăng ký (Register), Đăng nhập (Login), Quên/Đổi mật khẩu, và điều hướng vào MemberPortal / AdminDashboard.
+ */
 function AdminPortal({
   onExit,
   initialStep = "register",
@@ -227,6 +231,16 @@ function isCoachHash(hash: string) {
   return hash.startsWith("#coach-") || hash.startsWith("#coach/") || coachHashes.has(hash)
 }
 
+/**
+ * Component gốc của ứng dụng (Root Application Component).
+ * Lắng nghe URL Hash (`window.location.hash`) để điều hướng giữa các phân hệ:
+ * - Landing Page công khai (`SiteApp`)
+ * - Cổng thông tin Hội viên (`MemberPortal`)
+ * - Bảng điều khiển Quản trị viên (`AdminDashboard`)
+ * - Cổng thông tin Huấn luyện viên (`CoachPortal`)
+ * - Cổng nghiệp vụ Lễ tân quầy tiếp đón (`ReceptionistPortal`)
+ * - Luồng thanh toán Checkout trực tuyến (`PaymentFlow` & `ProductPaymentFlow`)
+ */
 export default function App() {
   const [adminOpen, setAdminOpen] = useState(
     () => isAdminHash(window.location.hash),

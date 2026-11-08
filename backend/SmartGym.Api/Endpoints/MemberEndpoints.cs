@@ -8,6 +8,11 @@ using Microsoft.AspNetCore.Routing;
 
 namespace SmartGym.Api.Endpoints
 {
+    /// <summary>
+    /// Endpoint trung tâm quản lý các chức năng dành cho Hội viên (Member Portal APIs).
+    /// Điều phối các module: Dashboard tổng quan, đặt lịch lớp học, gửi yêu cầu hỗ trợ,
+    /// trò chuyện cùng AI Assistant & HLV, quản lý ví điểm thưởng / thanh toán, và lịch sử điểm danh.
+    /// </summary>
     public static partial class MemberEndpoints
     {
         // Thread-safe in-memory collections for member-specific real-time operations
@@ -17,6 +22,11 @@ namespace SmartGym.Api.Endpoints
         private static readonly ConcurrentDictionary<string, List<object>> _memberCustomMetrics = new();
         private static readonly ConcurrentDictionary<string, List<object>> _memberCustomReviews = new();
 
+        /// <summary>
+        /// Đăng ký toàn bộ các route dành cho Hội viên vào ứng dụng.
+        /// Nhóm route gốc: /api/member
+        /// </summary>
+        /// <param name="app">Đối tượng IEndpointRouteBuilder</param>
         public static void MapMemberEndpoints(this IEndpointRouteBuilder app)
         {
             var group = app.MapGroup("/api/member");

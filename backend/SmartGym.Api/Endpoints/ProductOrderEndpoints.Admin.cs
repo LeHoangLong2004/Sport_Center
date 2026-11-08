@@ -10,8 +10,15 @@ using SmartGym.Infrastructure.Persistence.EF;
 
 namespace SmartGym.Api.Endpoints;
 
+/// <summary>
+/// Phần mở rộng (partial) của ProductOrderEndpoints chuyên xử lý logic phía Quản lý / Lễ tân (Admin Fulfillment).
+/// Bao gồm xác nhận thanh toán, trừ kho hàng an toàn qua Database Transaction và cập nhật tiến độ giao nhận.
+/// </summary>
 public static partial class ProductOrderEndpoints
 {
+    /// <summary>
+    /// Xử lý xác nhận thanh toán đơn hàng sản phẩm, trừ số lượng tồn kho tương ứng trong CSDL.
+    /// </summary>
     private static async Task<IResult> ConfirmOrderAsync(
         Guid invoiceId,
         SmartGymDbContext db,

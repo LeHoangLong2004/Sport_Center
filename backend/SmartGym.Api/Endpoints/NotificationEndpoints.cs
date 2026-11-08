@@ -14,16 +14,34 @@ namespace SmartGym.Api.Endpoints;
 /// </summary>
 public static class NotificationEndpoints
 {
+    /// <summary>
+    /// Đăng ký các route thông báo vào hệ thống.
+    /// Nhóm route gốc: /api/notifications (Yêu cầu xác thực JWT).
+    /// </summary>
+    /// <param name="app">Đối tượng IEndpointRouteBuilder</param>
     public static void MapNotificationEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/notifications")
             .WithTags("Notifications")
             .RequireAuthorization();
 
+        /// <summary>
+        /// GET /api/notifications
+        /// Lấy danh sách 20 thông báo mới nhất của người dùng hiện tại (hội viên, HLV hoặc nhân viên).
+        /// Tự động tổng hợp cảnh báo công việc đối với vai trò Manager/Staff.
+        /// </summary>
         group.MapGet("", GetNotificationsAsync);
 
+        /// <summary>
+        /// POST /api/notifications/{notificationId}/read
+        /// Đánh dấu một thông báo cụ thể là đã đọc.
+        /// </summary>
         group.MapPost("/{notificationId:guid}/read", MarkAsReadAsync);
 
+        /// <summary>
+        /// POST /api/notifications/read-all
+        /// Đánh dấu toàn bộ thông báo chưa đọc của người dùng là đã đọc.
+        /// </summary>
         group.MapPost("/read-all", MarkAllAsReadAsync);
     }
 
