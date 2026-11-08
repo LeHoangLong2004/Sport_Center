@@ -111,12 +111,25 @@ namespace SmartGym.Api.Endpoints
         }
 
         /// <summary>
-        /// Truy vấn số dư ví thực tế từ CSDL PostgreSQL (bảng wallet_transactions).
+        /// Truy vấn số dư ví thực tế từ CSDL PostgreSQL (ưu tiên đọc trực tiếp từ bảng member_wallet_balances, fallback tính SUM từ wallet_transactions).
         /// </summary>
         private static async Task<decimal> GetMemberBalanceFromDbAsync(Guid userGuid, SmartGymDbContext db)
         {
             try
             {
+                var balFromTable = await db.Database.SqlQueryRaw<decimal>(
+                    @"SELECT COALESCE(balance, 0.00) AS ""Value"" 
+                      FROM member_wallet_balances 
+                      WHERE user_id = {0}",
+                    userGuid
+                ).ToListAsync();
+
+                if (balFromTable.Count > 0)
+                {
+                    return balFromTable.First();
+                }
+
+                // Nếu user chưa có trong bảng member_wallet_balances, tính số dư ban đầu và khởi tạo
                 var balanceList = await db.Database.SqlQueryRaw<decimal>(
                     @"SELECT COALESCE(
                         SUM(
@@ -132,7 +145,19 @@ namespace SmartGym.Api.Endpoints
                     userGuid
                 ).ToListAsync();
 
-                return balanceList.FirstOrDefault();
+                var initialBal = balanceList.FirstOrDefault();
+
+                try
+                {
+                    await db.Database.ExecuteSqlInterpolatedAsync($@"
+                        INSERT INTO member_wallet_balances (user_id, balance, last_updated_at)
+                        VALUES ({userGuid}, {initialBal}, now())
+                        ON CONFLICT (user_id) DO NOTHING;
+                    ");
+                }
+                catch { }
+
+                return initialBal;
             }
             catch (Exception ex)
             {
@@ -209,6 +234,18 @@ namespace SmartGym.Api.Endpoints
                     )
                     ON CONFLICT (reference_code) DO NOTHING;
                 ");
+
+                try
+                {
+                    await db.Database.ExecuteSqlInterpolatedAsync($@"
+                        INSERT INTO member_wallet_balances (user_id, balance, last_updated_at)
+                        VALUES ({userGuid}, {balanceAfter}, now())
+                        ON CONFLICT (user_id) 
+                        DO UPDATE SET balance = {balanceAfter}, last_updated_at = now();
+                    ");
+                }
+                catch { }
+
                 return true;
             }
             catch (Exception ex)
@@ -237,6 +274,18 @@ namespace SmartGym.Api.Endpoints
                       AND (reference_code = {txId} OR id::text = {txId}) 
                       AND status = 'pending';
                 ");
+
+                try
+                {
+                    await db.Database.ExecuteSqlInterpolatedAsync($@"
+                        INSERT INTO member_wallet_balances (user_id, balance, last_updated_at)
+                        VALUES ({userGuid}, {amount}, now())
+                        ON CONFLICT (user_id) 
+                        DO UPDATE SET balance = member_wallet_balances.balance + {amount}, last_updated_at = now();
+                    ");
+                }
+                catch { }
+
                 return true;
             }
             catch (Exception ex)

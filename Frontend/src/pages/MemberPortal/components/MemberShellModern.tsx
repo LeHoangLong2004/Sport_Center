@@ -114,9 +114,12 @@ export default function MemberShellModern({ currentScreen, onNavigate, onLogout,
     };
   }, []);
 
+  const { profile } = useUserProfile("member");
+
   useEffect(() => {
     let cancelled = false;
-    WalletService.getWallet().then((w) => {
+    const uid = profile?.id;
+    WalletService.getWallet(uid).then((w) => {
       if (!cancelled && typeof w.balance === "number") {
         setWalletBalance(w.balance);
       }
@@ -124,9 +127,7 @@ export default function MemberShellModern({ currentScreen, onNavigate, onLogout,
     return () => {
       cancelled = true;
     };
-  }, []);
-
-  const { profile } = useUserProfile("member");
+  }, [profile?.id]);
   const userStr = localStorage.getItem("user");
   let userName = profile?.fullName;
   let userEmail = profile?.email;
