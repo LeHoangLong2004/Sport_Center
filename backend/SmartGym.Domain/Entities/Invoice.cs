@@ -3,6 +3,10 @@ using SmartGym.Domain.Enums;
 
 namespace SmartGym.Domain.Entities;
 
+/// <summary>
+/// Thực thể Hóa đơn thanh toán (Invoice Entity).
+/// Đại diện cho hóa đơn phát hành khi hội viên mua gói tập, sản phẩm hoặc đặt lớp học.
+/// </summary>
 public class Invoice
 {
     public Guid Id { get; set; } = Guid.NewGuid();

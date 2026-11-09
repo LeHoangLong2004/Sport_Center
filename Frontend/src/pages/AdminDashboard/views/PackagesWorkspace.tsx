@@ -86,8 +86,8 @@ export function PackagesWorkspace() {
     if ([draft.groupDiscountPct, draft.coachDiscountPct].some((v) => !Number.isFinite(v) || v < 0 || v > 100)) {
       setError("Tỷ lệ ưu đãi phải nằm trong khoảng 0–100%."); return
     }
-    if (draft.category === "sport" && (!draft.sport?.trim() || !draft.area?.trim() || !draft.format)) {
-      setError("Gói môn tập cần có bộ môn, khu sử dụng và hình thức."); return
+    if (draft.category === "sport" && (!draft.sport?.trim() || !draft.format)) {
+      setError("Gói môn tập cần có bộ môn và hình thức."); return
     }
     if (draft.category === "sport" && draft.format !== "self" && (!draft.sessionsPerMonth || !draft.minutesPerSession)) {
       setError("Gói có Coach cần có số buổi và thời lượng mỗi buổi."); return
@@ -99,10 +99,11 @@ export function PackagesWorkspace() {
     try {
       setSaving(true)
       await PackageAPI.savePackage(
-        { ...draft, name: draft.name.trim(), description: draft.description.trim(), sport: draft.sport?.trim(), area: draft.area?.trim() },
+        { ...draft, name: draft.name.trim(), description: draft.description.trim(), sport: draft.sport?.trim(), area: (draft.area || "").trim() },
         !catalog.some((item) => item.id === draft.id)
       )
       setDraft(null)
+      setError("")
       setNotice("Đã lưu cấu hình. Danh mục Member được cập nhật cho các lần mua mới.")
       await loadData()
     } catch (saveError) {
@@ -347,7 +348,7 @@ export function PackagesWorkspace() {
       )}
 
       {draft && (
-        <PackageEditor draft={draft} onChange={setDraft} onClose={() => setDraft(null)} onSave={() => void save()} saving={saving} />
+        <PackageEditor draft={draft} onChange={setDraft} onClose={() => { setDraft(null); setError(""); }} onSave={() => void save()} saving={saving} error={error} />
       )}
     </div>
   )

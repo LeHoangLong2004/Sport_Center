@@ -15,14 +15,29 @@ using SmartGym.Infrastructure.Persistence.EF;
 
 namespace SmartGym.Api.Endpoints;
 
+/// <summary>
+/// Endpoint quản lý Đánh giá & Nhận xét Huấn luyện viên (Coach Reviews & Ratings).
+/// Cho phép hội viên gửi đánh giá số sao (Rating 1-5), kèm nhận xét sau buổi tập hoặc lớp học,
+/// và hỗ trợ hiển thị phản hồi chất lượng đào tạo của HLV.
+/// </summary>
 public static class ReviewEndpoints
 {
+    /// <summary>
+    /// Đăng ký các route đánh giá vào hệ thống.
+    /// Nhóm route gốc: /api/reviews
+    /// </summary>
+    /// <param name="app">Đối tượng IEndpointRouteBuilder</param>
     public static void MapReviewEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/reviews");
 
         // Reviews are written to PostgreSQL through IReviewService. There is no
         // local JSON fallback, so a successful response means the DB write succeeded.
+        /// <summary>
+        /// POST /api/reviews
+        /// Hội viên gửi đánh giá mới cho Huấn luyện viên (kèm xếp hạng sao và nội dung góp ý).
+        /// Yêu cầu xác thực JWT (Member).
+        /// </summary>
         group
             .MapPost(
                 "/",
@@ -103,6 +118,10 @@ public static class ReviewEndpoints
 
         // Anyone can view a coach's anonymous reviews. The UI may send users.id,
         // while group-class data uses coaches.id, so resolve both representations.
+        /// <summary>
+        /// GET /api/reviews/coach/{coachId}
+        /// Lấy danh sách các bài đánh giá công khai của một HLV (tên học viên được ẩn danh bảo mật).
+        /// </summary>
         group
             .MapGet(
                 "/coach/{coachId}",
@@ -135,6 +154,10 @@ public static class ReviewEndpoints
             .WithTags("Reviews")
             .WithSummary("Get anonymous reviews from the database for a coach");
 
+        /// <summary>
+        /// GET /api/reviews/{id}
+        /// Lấy thông tin chi tiết một bài đánh giá theo ID.
+        /// </summary>
         group
             .MapGet(
                 "/{id:guid}",
@@ -178,6 +201,10 @@ public static class ReviewEndpoints
             .WithTags("Reviews")
             .WithSummary("Get a specific review details by ID");
 
+        /// <summary>
+        /// GET /api/reviews/my
+        /// Lấy toàn bộ danh sách các đánh giá do hội viên hiện tại đã gửi.
+        /// </summary>
         group
             .MapGet(
                 "/my",

@@ -15,12 +15,26 @@ using SmartGym.Infrastructure.Persistence.Supabase.Repositories;
 
 namespace SmartGym.Api.Endpoints;
 
+/// <summary>
+/// Endpoint quản lý Lịch hẹn Huấn luyện viên cá nhân (1-on-1 PT Appointments).
+/// Hỗ trợ: Xem danh sách lịch hẹn, đặt lịch hẹn mới kèm kiểm tra xung đột lịch và tự động đồng bộ sang lớp 1-kèm-1,
+/// cập nhật trạng thái (Xác nhận, Hoàn thành, Hủy) và xóa lịch hẹn.
+/// </summary>
 public static class AppointmentEndpoints
 {
+    /// <summary>
+    /// Đăng ký các route lịch hẹn vào ứng dụng.
+    /// Nhóm route gốc: /api/appointments
+    /// </summary>
+    /// <param name="app">Đối tượng WebApplication để định tuyến</param>
     public static void MapAppointmentEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/appointments").WithTags("Appointments");
 
+        /// <summary>
+        /// GET /api/appointments
+        /// Lấy danh sách lịch hẹn PT, hỗ trợ lọc theo tên Huấn luyện viên (coach) hoặc tên Hội viên (member).
+        /// </summary>
         group.MapGet("", async (
             string? coach,
             string? member,
@@ -62,6 +76,12 @@ public static class AppointmentEndpoints
             return Results.Ok(appointments);
         });
 
+        /// <summary>
+        /// POST /api/appointments
+        /// Tạo mới lịch hẹn PT (1-kèm-1).
+        /// - Kiểm tra ràng buộc thời gian, tên khách hàng và huấn luyện viên.
+        /// - Tự động tạo bản ghi lớp học cá nhân tương ứng trong cơ sở dữ liệu để đồng bộ lịch dạy.
+        /// </summary>
         group.MapPost("", async (
             CreateAppointmentRequest request,
             global::Supabase.Client supabase,
@@ -157,6 +177,11 @@ public static class AppointmentEndpoints
                 });
         });
 
+        /// <summary>
+        /// PUT /api/appointments/{id}/status
+        /// Cập nhật trạng thái lịch hẹn (Confirmed, Cancelled, Completed, Pending...).
+        /// Nếu khôi phục trạng thái hoạt động: Tự động kiểm tra xung đột thời gian với lịch dạy của HLV.
+        /// </summary>
         group.MapPut("/{id:guid}/status", async (
             Guid id,
             UpdateAppointmentStatusRequest request,
@@ -235,6 +260,10 @@ public static class AppointmentEndpoints
             });
         });
 
+        /// <summary>
+        /// DELETE /api/appointments/{id}
+        /// Xóa bản ghi lịch hẹn khỏi hệ thống cơ sở dữ liệu Supabase.
+        /// </summary>
         group.MapDelete("/{id:guid}", async (
             Guid id,
             global::Supabase.Client supabase) =>

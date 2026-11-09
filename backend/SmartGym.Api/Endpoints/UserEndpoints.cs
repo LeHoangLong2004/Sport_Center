@@ -10,14 +10,30 @@ using SmartGym.Application.Interfaces;
 
 namespace SmartGym.Api.Endpoints;
 
+/// <summary>
+/// Endpoint quản lý Người dùng và Phân quyền (User & Role Management).
+/// Hỗ trợ các chức năng: Xem danh sách người dùng, tạo hội viên mới, tra cứu nhanh hội viên,
+/// xem chi tiết hồ sơ, cập nhật vai trò (Role), thay đổi trạng thái kích hoạt, cập nhật thông tin cá nhân và tải ảnh đại diện (Avatar).
+/// </summary>
 public static class UserEndpoints
 {
+    /// <summary>
+    /// Đăng ký các route quản lý người dùng vào hệ thống.
+    /// Nhóm route gốc: /api/users và /api/roles
+    /// Yêu cầu xác thực JWT (RequireAuthorization).
+    /// </summary>
+    /// <param name="app">Đối tượng IEndpointRouteBuilder để định tuyến</param>
     public static void MapUserEndpoints(this IEndpointRouteBuilder app)
     {
         var managerAuth = new AuthorizeAttribute { Roles = "manager,receptionist" };
 
         var group = app.MapGroup("/api/users").RequireAuthorization();
 
+        /// <summary>
+        /// GET /api/users
+        /// Lấy toàn bộ danh sách người dùng trong hệ thống (kèm theo môn thể thao phụ trách nếu là HLV).
+        /// Quyền hạn yêu cầu: Manager hoặc Receptionist.
+        /// </summary>
         group
             .MapGet(
                 "/",
@@ -77,6 +93,11 @@ public static class UserEndpoints
             )
             .RequireAuthorization(managerAuth);
 
+        /// <summary>
+        /// POST /api/users/members
+        /// Tạo mới hồ sơ hội viên tại quầy.
+        /// Quyền hạn yêu cầu: Manager hoặc Receptionist.
+        /// </summary>
         group
             .MapPost(
                 "/members",
@@ -99,6 +120,10 @@ public static class UserEndpoints
             )
             .RequireAuthorization(managerAuth);
 
+        /// <summary>
+        /// GET /api/users/members-lookup
+        /// Tra cứu nhanh danh sách hội viên (ID, họ tên, email, SĐT) phục vụ việc tìm kiếm và chọn lựa.
+        /// </summary>
         group.MapGet(
             "/members-lookup",
             async (SmartGym.Application.Interfaces.IUserRepository userRepo) =>
@@ -107,6 +132,12 @@ public static class UserEndpoints
                 return Results.Ok(members);
             }
         );
+
+        /// <summary>
+        /// GET /api/users/{id}
+        /// Lấy chi tiết thông tin một người dùng theo ID.
+        /// Quyền hạn: Chính chủ sở hữu tài khoản, hoặc Manager/Admin/Receptionist.
+        /// </summary>
         group.MapGet(
             "/{id:guid}",
             async (Guid id, HttpContext context, IUserService userService) =>
@@ -135,6 +166,11 @@ public static class UserEndpoints
             }
         );
 
+        /// <summary>
+        /// PUT /api/users/{id}/role
+        /// Phân quyền lại hoặc thay đổi vai trò (Role) của một người dùng.
+        /// Quyền hạn yêu cầu: Manager hoặc Receptionist.
+        /// </summary>
         group
             .MapPut(
                 "/{id:guid}/role",
@@ -159,6 +195,11 @@ public static class UserEndpoints
             )
             .RequireAuthorization(managerAuth);
 
+        /// <summary>
+        /// PUT /api/users/{id}/status
+        /// Cập nhật trạng thái kích hoạt/vô hiệu hóa tài khoản (Active/Inactive).
+        /// Quyền hạn yêu cầu: Manager hoặc Receptionist.
+        /// </summary>
         group
             .MapPut(
                 "/{id:guid}/status",
@@ -178,6 +219,11 @@ public static class UserEndpoints
             )
             .RequireAuthorization(managerAuth);
 
+        /// <summary>
+        /// PUT /api/users/{id}/profile
+        /// Cập nhật thông tin hồ sơ người dùng (họ tên, số điện thoại, ngày sinh, địa chỉ...).
+        /// Quyền hạn: Chính chủ sở hữu tài khoản, hoặc Manager/Admin.
+        /// </summary>
         group.MapPut(
             "/{id:guid}/profile",
             async (
@@ -221,6 +267,11 @@ public static class UserEndpoints
             }
         );
 
+        /// <summary>
+        /// POST /api/users/{id}/avatar
+        /// Tải lên và cập nhật ảnh đại diện (Avatar) cho tài khoản.
+        /// Quyền hạn: Chính chủ sở hữu tài khoản, hoặc Manager/Admin.
+        /// </summary>
         group.MapPost(
             "/{id:guid}/avatar",
             async (
@@ -275,6 +326,11 @@ public static class UserEndpoints
 
         var roleGroup = app.MapGroup("/api/roles").RequireAuthorization(managerAuth);
 
+        /// <summary>
+        /// GET /api/roles
+        /// Lấy danh sách tất cả các vai trò (Roles) trong hệ thống.
+        /// Quyền hạn yêu cầu: Manager hoặc Receptionist.
+        /// </summary>
         roleGroup.MapGet(
             "/",
             async (IUserService userService) =>

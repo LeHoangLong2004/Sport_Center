@@ -5,6 +5,10 @@ using SmartGym.Application.DTOs.Reports;
 
 namespace SmartGym.Application.Interfaces;
 
+/// <summary>
+/// Giao diện dịch vụ Báo cáo & Thống kê tài chính, vận hành (Report & Business Analytics Service).
+/// Tính toán doanh thu, tỷ lệ lấp đầy, số hội viên mới, retention rate và xuất báo cáo Excel.
+/// </summary>
 public interface IReportService
 {
     /// <summary>

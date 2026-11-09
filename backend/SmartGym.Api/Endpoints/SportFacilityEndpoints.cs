@@ -10,11 +10,25 @@ using SmartGym.Infrastructure.Persistence.Supabase.Models;
 
 namespace SmartGym.Api.Endpoints;
 
+/// <summary>
+/// Endpoint quản lý Bộ môn thể thao (Sports) và Cơ sở vật chất / Phòng tập (Facilities).
+/// Hỗ trợ CRUD cho danh mục các môn thể thao, upload hình ảnh lên thư mục tĩnh, và quản lý các phòng/sân tập trong trung tâm.
+/// </summary>
 public static class SportFacilityEndpoints
 {
+    /// <summary>
+    /// Đăng ký các route môn thể thao và cơ sở vật chất vào hệ thống.
+    /// Nhóm route: /api/sports, /api/facilities, /api/upload/image
+    /// </summary>
+    /// <param name="app">Đối tượng IEndpointRouteBuilder</param>
     public static void MapSportFacilityEndpoints(this IEndpointRouteBuilder app)
     {
         // ── SPORTS ENDPOINTS ──────────────────────────────────────────────────
+        /// <summary>
+        /// GET /api/sports
+        /// Lấy danh sách toàn bộ các môn thể thao tại trung tâm (Yoga, Gym, Boxing, Bơi lội...).
+        /// Không yêu cầu đăng nhập.
+        /// </summary>
         app.MapGet(
             "/api/sports",
             async (global::Supabase.Client client) =>
@@ -30,6 +44,11 @@ public static class SportFacilityEndpoints
             }
         );
 
+        /// <summary>
+        /// POST /api/sports
+        /// Thêm mới một môn thể thao vào hệ thống.
+        /// Quyền hạn yêu cầu: Manager hoặc Admin.
+        /// </summary>
         app.MapPost(
             "/api/sports",
             async (SportSaveRequest request, global::Supabase.Client client) =>
@@ -52,6 +71,11 @@ public static class SportFacilityEndpoints
             }
         ).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
 
+        /// <summary>
+        /// PUT /api/sports/{id}
+        /// Cập nhật thông tin một môn thể thao (tên, ảnh, mô tả).
+        /// Quyền hạn yêu cầu: Manager hoặc Admin.
+        /// </summary>
         app.MapPut(
             "/api/sports/{id:guid}",
             async (Guid id, SportSaveRequest request, global::Supabase.Client client) =>
@@ -79,6 +103,11 @@ public static class SportFacilityEndpoints
             }
         ).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
 
+        /// <summary>
+        /// DELETE /api/sports/{id}
+        /// Xóa một môn thể thao khỏi hệ thống (kiểm tra ràng buộc không có lớp học nào đang dùng).
+        /// Quyền hạn yêu cầu: Manager hoặc Admin.
+        /// </summary>
         app.MapDelete(
             "/api/sports/{id:guid}",
             async (Guid id, global::Supabase.Client client) =>
@@ -102,6 +131,11 @@ public static class SportFacilityEndpoints
         ).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
 
         // ── IMAGE UPLOAD (CLOUDINARY / LOCAL FALLBACK) ────────────────────────
+        /// <summary>
+        /// POST /api/upload/image
+        /// Tải lên tệp hình ảnh (hỗ trợ lưu trữ Cloudinary hoặc Local Disk fallback).
+        /// Nhận form-data có file và thư mục chỉ định (sports, facilities, products).
+        /// </summary>
         app.MapPost(
             "/api/upload/image",
             async (HttpRequest request, SmartGym.Application.Interfaces.IPhotoService photoService) =>
@@ -146,6 +180,10 @@ public static class SportFacilityEndpoints
         .DisableAntiforgery();
 
         // ── FACILITIES ENDPOINTS ──────────────────────────────────────────────
+        /// <summary>
+        /// GET /api/facilities
+        /// Lấy danh sách tất cả các phòng tập, sân tập (Cơ sở vật chất) của trung tâm.
+        /// </summary>
         app.MapGet(
             "/api/facilities",
             async (global::Supabase.Client client) =>
@@ -161,6 +199,11 @@ public static class SportFacilityEndpoints
             }
         );
 
+        /// <summary>
+        /// POST /api/facilities
+        /// Thêm mới cơ sở vật chất / phòng tập.
+        /// Quyền hạn yêu cầu: Manager hoặc Admin.
+        /// </summary>
         app.MapPost(
             "/api/facilities",
             async (FacilitySaveRequest request, global::Supabase.Client client) =>
@@ -177,6 +220,11 @@ public static class SportFacilityEndpoints
             }
         ).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
 
+        /// <summary>
+        /// PUT /api/facilities/{id}
+        /// Cập nhật thông tin phòng tập / cơ sở vật chất.
+        /// Quyền hạn yêu cầu: Manager hoặc Admin.
+        /// </summary>
         app.MapPut(
             "/api/facilities/{id:guid}",
             async (Guid id, FacilitySaveRequest request, global::Supabase.Client client) =>
@@ -198,6 +246,11 @@ public static class SportFacilityEndpoints
             }
         ).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
 
+        /// <summary>
+        /// DELETE /api/facilities/{id}
+        /// Xóa phòng tập khỏi hệ thống (kiểm tra không có lớp học nào đang xếp lịch tại đây).
+        /// Quyền hạn yêu cầu: Manager hoặc Admin.
+        /// </summary>
         app.MapDelete(
             "/api/facilities/{id:guid}",
             async (Guid id, global::Supabase.Client client) =>

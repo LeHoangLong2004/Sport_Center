@@ -4,6 +4,10 @@ using SmartGym.Domain.Enums;
 
 namespace SmartGym.Application.Services;
 
+/// <summary>
+/// Dịch vụ nghiệp vụ Điểm danh & Kiểm soát ra vào phòng tập (Access Control & Attendance Service).
+/// Xác thực gói tập còn hạn, kiểm tra khung giờ cho phép (All / Off-peak) và ghi nhận thời gian check-in/check-out.
+/// </summary>
 public sealed class CheckInService
 {
     private readonly IMemberPackageRepository _packageRepository;

@@ -2,6 +2,10 @@ using SmartGym.Domain.Enums;
 
 namespace SmartGym.Domain.Entities;
 
+/// <summary>
+/// Thực thể Gói tập đã mua của hội viên (Member Package Subscription Entity).
+/// Theo dõi số buổi tập còn lại, thời hạn hiệu lực, lịch sử đóng băng (freeze) và cấu hình tự động gia hạn.
+/// </summary>
 public sealed class MemberPackage
 {
     public MemberPackage(
