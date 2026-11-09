@@ -6,7 +6,7 @@ namespace SmartGym.Infrastructure.Persistence.Supabase.Models;
 [Table("sports")]
 public class SportModel : BaseModel
 {
-    [PrimaryKey("id", false)]
+    [PrimaryKey("id", true)]
     public Guid Id { get; set; }
 
     [Column("name")]
@@ -22,7 +22,7 @@ public class SportModel : BaseModel
 [Table("facilities")]
 public class FacilityModel : BaseModel
 {
-    [PrimaryKey("id", false)]
+    [PrimaryKey("id", true)]
     public Guid Id { get; set; }
 
     [Column("name")]
