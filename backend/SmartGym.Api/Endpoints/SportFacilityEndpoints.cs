@@ -60,13 +60,14 @@ public static class SportFacilityEndpoints
                     ImageUrl = request.ImageUrl,
                     Description = request.Description,
                 };
-                await client.From<SportModel>().Insert(model);
+                var insertResponse = await client.From<SportModel>().Insert(model);
+                var created = insertResponse.Models.FirstOrDefault() ?? model;
                 return Results.Ok(new
                 {
-                    id = model.Id,
-                    name = model.Name,
-                    imageUrl = model.ImageUrl,
-                    description = model.Description,
+                    id = created.Id,
+                    name = created.Name,
+                    imageUrl = created.ImageUrl,
+                    description = created.Description,
                 });
             }
         ).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
@@ -82,6 +83,14 @@ public static class SportFacilityEndpoints
             {
                 var response = await client.From<SportModel>().Where(s => s.Id == id).Get();
                 var existing = response.Models.FirstOrDefault();
+
+                // Fallback cứu hộ: nếu không tìm thấy theo id (do lệch ID client vs DB), tìm theo tên bộ môn
+                if (existing == null && !string.IsNullOrWhiteSpace(request.Name))
+                {
+                    var nameResponse = await client.From<SportModel>().Where(s => s.Name == request.Name.Trim()).Get();
+                    existing = nameResponse.Models.FirstOrDefault();
+                }
+
                 if (existing == null)
                     return Results.NotFound(new { message = "Không tìm thấy bộ môn." });
 
@@ -215,8 +224,9 @@ public static class SportFacilityEndpoints
                     ImageUrl = request.ImageUrl,
                     Address = string.IsNullOrWhiteSpace(request.Address) ? "Chưa cập nhật" : request.Address.Trim(),
                 };
-                await client.From<FacilityModel>().Insert(model);
-                return Results.Ok(new { id = model.Id, name = model.Name, imageUrl = model.ImageUrl, address = model.Address });
+                var insertResponse = await client.From<FacilityModel>().Insert(model);
+                var created = insertResponse.Models.FirstOrDefault() ?? model;
+                return Results.Ok(new { id = created.Id, name = created.Name, imageUrl = created.ImageUrl, address = created.Address });
             }
         ).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
 
@@ -231,6 +241,14 @@ public static class SportFacilityEndpoints
             {
                 var response = await client.From<FacilityModel>().Where(f => f.Id == id).Get();
                 var existing = response.Models.FirstOrDefault();
+
+                // Fallback nếu lệch ID client vs DB, tìm theo tên phòng
+                if (existing == null && !string.IsNullOrWhiteSpace(request.Name))
+                {
+                    var nameResponse = await client.From<FacilityModel>().Where(f => f.Name == request.Name.Trim()).Get();
+                    existing = nameResponse.Models.FirstOrDefault();
+                }
+
                 if (existing == null)
                     return Results.NotFound(new { message = "Không tìm thấy phòng tập." });
 

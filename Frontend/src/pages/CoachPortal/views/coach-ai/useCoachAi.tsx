@@ -315,6 +315,7 @@ export function useCoachAi(initialMemberId?: string | null) {
         equipment: dynamicEquipment,
         exerciseCount,
         target,
+        memberProfile: selectedMemberProfile,
       });
 
       setCurrentPlan(clientDraft);

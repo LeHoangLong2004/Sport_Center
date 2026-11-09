@@ -88,6 +88,12 @@ User requirements:
 - Total duration in minutes: {{request.DurationMinutes}}
 - Requested exercise count: {{exerciseCount}}
 
+Body Metrics & Physical Adaptation Guidelines (Crucial):
+- Carefully inspect member's "latestBodyMetrics" in the database context (weight, height, BMI, bodyFat, muscleMass):
+  * If BMI >= 25 or bodyFat is high (Overweight/Obesity): Strictly protect knee, ankle, and lumbar joints by avoiding high-impact jumping exercises (e.g. Box Jumps, Burpees, heavy jumping lunges). Select joint-friendly exercises such as machine compound presses, cycling, and controlled resistance movements.
+  * If BMI < 18.5 or muscleMass is low (Underweight/Skinny-fat): Focus on progressive hypertrophy resistance training (8-12 reps) using compound lifts (Squat, Bench Press, Lat Pulldown) and minimize excessive high-intensity cardio.
+  * Always tailor exercise intensity, rest periods, and safety notes to the member's real body metrics and level.
+
 Context from the database (already minimized and without direct contact PII):
 {contextJson}
 
