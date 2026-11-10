@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Bell } from 'lucide-react';
 import { avatarTopbar, iSearch, iBell } from '../shared';
 import { UserAvatar } from '../../../components/UserAvatar';
 import { notificationApi, type ManagerNotification } from '../../../hooks/notificationApi';
@@ -99,18 +100,22 @@ export function TopBar({ breadcrumb, title, onProfileClick, onNotificationClick 
             className="bg-transparent border-none outline-none text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 w-full"
           />
         </div>
-        <ThemeToggle className="p-2.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition-colors cursor-pointer" />
+        <ThemeToggle className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100/90 hover:bg-indigo-50 dark:bg-slate-800/90 dark:hover:bg-slate-700/90 border border-slate-200/80 hover:border-indigo-200 dark:border-slate-700/80 text-slate-600 hover:text-indigo-600 dark:text-amber-400 dark:hover:text-amber-300 transition-all shadow-2xs cursor-pointer group" />
         <div ref={notificationsRef} className="relative">
           <button
             type="button"
             aria-label="Thông báo"
             aria-expanded={isNotificationsOpen}
             onClick={() => setIsNotificationsOpen((current) => !current)}
-            className="relative p-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition-colors"
+            className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all shadow-2xs relative cursor-pointer group ${
+              isNotificationsOpen
+                ? "bg-emerald-50 dark:bg-emerald-500/20 border-emerald-300 dark:border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
+                : "bg-slate-100/90 hover:bg-emerald-50/80 dark:bg-slate-800/90 dark:hover:bg-slate-700/90 border-slate-200/80 hover:border-emerald-200 dark:border-slate-700/80 text-slate-600 hover:text-emerald-600 dark:text-slate-300 dark:hover:text-emerald-400"
+            }`}
           >
-            <img src={iBell} alt="" className="size-5 brightness-50 dark:brightness-150" />
+            <Bell className="w-[17px] h-[17px] group-hover:scale-110 transition-transform" />
             {unreadCount > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex min-w-4 h-4 items-center justify-center rounded-full bg-emerald-600 px-1 text-[10px] font-bold text-white">
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-gradient-to-r from-rose-500 to-red-500 text-white text-[10px] font-black flex items-center justify-center ring-2 ring-white dark:ring-slate-900 shadow-xs">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}

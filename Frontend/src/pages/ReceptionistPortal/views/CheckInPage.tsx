@@ -5,7 +5,8 @@ import { WalletService } from '../../MemberPortal/services/walletService';
 import { UserAvatar } from '../../../components/UserAvatar';
 
 export function CheckInPage() {
-  const [scanValue, setScanValue] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null)
   const [confirmed, setConfirmed] = useState(false)
   const [historyRows, setHistoryRows] = useState<any[]>([])
   const [members, setMembers] = useState<any[]>([])
@@ -46,8 +47,31 @@ export function CheckInPage() {
     fetchHistory();
   }, []);
 
-  const isTopUpTicket = scanValue.trim().toUpperCase().startsWith("TOPUP-");
-  const foundMember = members.find(m => m.memberCode === scanValue || m.phoneNumber === scanValue);
+  const trimmedQuery = searchQuery.trim();
+  const isTopUpTicket = trimmedQuery.toUpperCase().startsWith("TOPUP-");
+
+  const matchedMembers = React.useMemo(() => {
+    if (!trimmedQuery || isTopUpTicket) return [];
+    const q = trimmedQuery.toLowerCase();
+    return members.filter(
+      (m) =>
+        m.memberCode?.toLowerCase().includes(q) ||
+        m.phoneNumber?.toLowerCase().includes(q) ||
+        m.fullName?.toLowerCase().includes(q)
+    ).slice(0, 6);
+  }, [members, trimmedQuery, isTopUpTicket]);
+
+  const exactMember = members.find(
+    (m) =>
+      m.memberCode?.toLowerCase() === trimmedQuery.toLowerCase() ||
+      m.phoneNumber === trimmedQuery
+  );
+
+  const foundMember =
+    members.find((m) => m.id === selectedMemberId) ||
+    exactMember ||
+    (matchedMembers.length === 1 ? matchedMembers[0] : null);
+
   const openCheckIn = foundMember
     ? historyRows.find(row => row.memberId === foundMember.id && !row.checkOutTime)
     : null;
@@ -55,14 +79,14 @@ export function CheckInPage() {
   const handleConfirmTopUp = async () => {
     setProcessing(true);
     try {
-      const ticketId = scanValue.trim().toUpperCase();
+      const ticketId = trimmedQuery.toUpperCase();
       const res = await WalletService.confirmPendingTopUp(ticketId);
       if (res.success) {
         setNotice({
           type: "success",
           text: `Thu ngân đã xác nhận thu tiền thành công cho phiếu ${ticketId}! Số dư đã được cộng vào ví hội viên.`
         });
-        setScanValue("");
+        setSearchQuery("");
       } else {
         setNotice({ type: "error", text: "Không tìm thấy phiếu nạp hoặc phiếu đã được xử lý trước đó." });
       }
@@ -162,25 +186,49 @@ export function CheckInPage() {
         ))}
       </div>
 
-      {/* Scan + Result */}
+      {/* Manual Lookup + Result */}
       <div className="flex gap-[20px] items-start shrink-0 w-full">
-        {/* Scanner */}
+        {/* Manual Lookup Input */}
         <div className="bg-white border border-[#e2e8f0] flex flex-1 flex-col gap-[16px] items-start min-w-0 p-[24px] rounded-[12px]">
-          <span className="font-extrabold text-[#0f172a] text-[16px]">Nhập mã hoặc quét thẻ hội viên / phiếu nạp ví</span>
+          <span className="font-extrabold text-[#0f172a] text-[16px]">Tra cứu & Check-in thủ công (SĐT / Mã hội viên / Họ tên)</span>
           <div className="bg-[#f1f5f9] flex gap-[12px] items-center p-[16px] rounded-[8px] shrink-0 w-full">
             <img src={`${A}/f6f1f.svg`} alt="" className="size-[20px] shrink-0 opacity-60" />
             <input
               className="flex-1 bg-transparent font-normal text-[#0f172a] text-[15px] outline-none min-w-0"
-              value={scanValue}
-              onChange={(e) => { setScanValue(e.target.value); setConfirmed(false) }}
-              placeholder="Nhập mã thẻ, SĐT hoặc mã phiếu nạp (TOPUP-...)"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setSelectedMemberId(null);
+                setConfirmed(false);
+              }}
+              placeholder="Nhập SĐT, mã hội viên, họ tên hoặc mã phiếu nạp (TOPUP-...)"
             />
-            <span className={`font-bold px-[10px] py-[4px] rounded-[6px] text-[11px] text-white whitespace-nowrap shrink-0 shadow-xs ${isTopUpTicket ? "bg-slate-500" : "bg-emerald-600"}`}>
-              {isTopUpTicket ? "PHIẾU NẠP VÍ" : foundMember ? "ĐÃ NHẬN DIỆN" : "ĐANG CHỜ QUÉT"}
+            <span className={`font-bold px-[10px] py-[4px] rounded-[6px] text-[11px] text-white whitespace-nowrap shrink-0 shadow-xs ${isTopUpTicket ? "bg-slate-500" : foundMember ? "bg-emerald-600" : "bg-slate-400"}`}>
+              {isTopUpTicket ? "PHIẾU NẠP VÍ" : foundMember ? "ĐÃ CHỌN HỘI VIÊN" : "TRA CỨU THỦ CÔNG"}
             </span>
           </div>
+          {matchedMembers.length > 1 && (
+            <div className="w-full border border-slate-200 rounded-lg divide-y divide-slate-100 overflow-hidden bg-slate-50/60">
+              {matchedMembers.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedMemberId(m.id);
+                    setConfirmed(false);
+                  }}
+                  className={`w-full px-3.5 py-2.5 text-left flex items-center justify-between text-xs hover:bg-emerald-50 transition-colors cursor-pointer ${
+                    foundMember?.id === m.id ? "bg-emerald-50 font-bold text-emerald-700" : "text-slate-700"
+                  }`}
+                >
+                  <span>{m.fullName} ({m.memberCode})</span>
+                  <span className="text-slate-500">{m.phoneNumber || "Chưa có SĐT"}</span>
+                </button>
+              ))}
+            </div>
+          )}
           <span className="font-normal text-[#64748b] text-[13px]">
-            Gợi ý: Quét mã QR phiếu nạp tiền hoặc mã thẻ hội viên để thực hiện nghiệp vụ tức thì.
+            Gợi ý: Nhập Số điện thoại, Mã hội viên hoặc Họ tên để tìm kiếm và bấm Xác nhận Check-in / Check-out.
           </span>
         </div>
 
@@ -194,7 +242,7 @@ export function CheckInPage() {
               </div>
               <div className="p-4 bg-slate-50/70 border border-slate-200 rounded-xl w-full space-y-2">
                 <span className="text-xs text-slate-700 font-bold block">MÃ PHIẾU NẠP HỘI VIÊN:</span>
-                <span className="text-xl font-black text-slate-900 block">{scanValue.trim().toUpperCase()}</span>
+                <span className="text-xl font-black text-slate-900 block">{trimmedQuery.toUpperCase()}</span>
                 <p className="text-xs text-slate-800">
                   Hội viên xuất trình phiếu này để nộp tiền mặt/quẹt thẻ nạp tiền vào ví SportCenter.
                 </p>

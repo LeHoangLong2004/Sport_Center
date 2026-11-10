@@ -259,7 +259,7 @@ export const ProfileHeroCard: React.FC<ProfileHeroCardProps> = ({
             </div>
           </div>
 
-          {/* Card Bottom: Mini QR code & Quick checkin button */}
+          {/* Card Bottom: Member Code badge */}
           <div className="relative z-10 pt-3 border-t border-white/10 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -268,19 +268,9 @@ export const ProfileHeroCard: React.FC<ProfileHeroCardProps> = ({
               </span>
             </div>
 
-            {/* Click to open full check-in pass */}
-            <button
-              type="button"
-              onClick={() => {
-                const checkinBtn = document.getElementById("btn-quick-checkin");
-                if (checkinBtn) checkinBtn.click();
-                else window.dispatchEvent(new CustomEvent("open-checkin-modal"));
-              }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition-all shadow-sm shadow-emerald-500/20 cursor-pointer"
-            >
-              <QrCode className="w-3.5 h-3.5" />
-              Quét Check-in
-            </button>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/10 border border-white/15 text-emerald-300 text-xs font-bold">
+              <span>Mã Check-in: {memberCode}</span>
+            </div>
           </div>
         </div>
       </div>

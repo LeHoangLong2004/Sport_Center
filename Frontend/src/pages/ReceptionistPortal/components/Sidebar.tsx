@@ -70,7 +70,7 @@ export function Sidebar({ page, onNavigate, onLogout }: { page: Page; onNavigate
       <div className="bg-[#1e293b] border border-[#334155] border-solid flex flex-col gap-[8px] items-start p-[16px] rounded-[12px] shrink-0 w-full">
         <span className="font-bold text-[13px] text-white w-full">Hỗ trợ Lễ Tân</span>
         <span className="font-normal leading-[1.4] text-emerald-400 text-[11px] w-full">
-          Ấn nút F2 để mở nhanh ô quét mã check-in tức thì.
+          Tra cứu theo SĐT hoặc Mã hội viên để xác nhận Check-in / Check-out thủ công.
         </span>
       </div>
 

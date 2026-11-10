@@ -68,8 +68,8 @@ export default function MemberUserDropdown({
               {userName}
             </h4>
             <p className="text-xs text-slate-400 truncate">{userEmail}</p>
-            <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.2 rounded-full text-[10px] font-extrabold bg-slate-100 dark:bg-slate-950/70 text-slate-800 dark:text-slate-300">
-              <Crown className="w-3 h-3 text-slate-500" />
+            <span className="inline-flex items-center gap-1 mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-50 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-500/30">
+              <Crown className="w-3 h-3 text-amber-500 fill-amber-400" />
               {userTier}
             </span>
           </div>

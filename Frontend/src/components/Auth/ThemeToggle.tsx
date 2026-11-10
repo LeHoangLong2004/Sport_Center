@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Sun, Moon } from 'lucide-react';
 
 export function ThemeToggle({ className }: { className?: string } = {}) {
   const [isDark, setIsDark] = useState(false);
@@ -42,20 +43,20 @@ export function ThemeToggle({ className }: { className?: string } = {}) {
     window.dispatchEvent(new Event('theme-change'));
   }
 
-  const defaultClasses = "absolute top-6 right-6 p-2.5 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors z-50 shadow-sm cursor-pointer";
+  const defaultClasses = "absolute top-6 right-6 w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100/90 hover:bg-indigo-50 dark:bg-slate-800/90 dark:hover:bg-slate-700/90 border border-slate-200/80 hover:border-indigo-200 dark:border-slate-700/80 text-slate-600 hover:text-indigo-600 dark:text-amber-400 dark:hover:text-amber-300 transition-all z-50 shadow-2xs cursor-pointer group";
 
   return (
     <button
       type="button"
       onClick={toggleTheme}
       className={className || defaultClasses}
-      title={isDark ? "Chuyển sang nền sáng" : "Chuyển sang nền tối"}
-      aria-label={isDark ? "Chuyển sang nền sáng" : "Chuyển sang nền tối"}
+      title={isDark ? "Chuyển sang giao diện Sáng" : "Chuyển sang giao diện Tối"}
+      aria-label={isDark ? "Chuyển sang giao diện Sáng" : "Chuyển sang giao diện Tối"}
     >
       {isDark ? (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+        <Sun className="w-[17px] h-[17px] text-amber-400 fill-amber-400/20 group-hover:rotate-45 transition-transform duration-300" />
       ) : (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        <Moon className="w-[17px] h-[17px] text-indigo-600/90 fill-indigo-500/15 group-hover:-rotate-12 transition-transform duration-300" />
       )}
     </button>
   );

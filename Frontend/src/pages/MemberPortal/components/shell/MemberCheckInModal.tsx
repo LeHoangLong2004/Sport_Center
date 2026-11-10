@@ -98,8 +98,8 @@ export default function MemberCheckInModal({
             {memberCode}
           </span>
         </p>
-        <div className="mt-2 px-3 py-1 rounded-full bg-slate-50 dark:bg-slate-950/60 text-slate-700 dark:text-slate-300 font-extrabold text-[11px] flex items-center gap-1">
-          <Crown className="w-3.5 h-3.5" />
+        <div className="mt-2 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-500/30 font-extrabold text-[11px] flex items-center gap-1">
+          <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
           <span>{userTier}</span>
         </div>
 

@@ -158,9 +158,10 @@ export function MemberTopBar({
         {/* Membership Tier Pill */}
         <div
           onClick={() => onNavigate("packages")}
-          className="hidden md:flex items-center gap-1.5 px-3 py-1 bg-slate-50 dark:bg-slate-500/10 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-full border border-slate-200/60 dark:border-slate-500/20 cursor-pointer hover:opacity-85 transition-opacity"
+          className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-50 via-amber-50/90 to-orange-50/80 dark:from-amber-500/15 dark:via-amber-500/10 dark:to-orange-500/10 hover:from-amber-100/80 hover:to-orange-100/70 dark:hover:from-amber-500/25 dark:hover:to-orange-500/20 text-amber-800 dark:text-amber-300 font-extrabold text-xs rounded-xl border border-amber-300/70 dark:border-amber-500/30 shadow-xs cursor-pointer transition-all group"
+          title="Xem hạng thành viên & Đặc quyền"
         >
-          <Crown className="w-3.5 h-3.5 text-slate-500" />
+          <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-400 group-hover:scale-110 transition-transform" />
           <span>{userTier}</span>
         </div>
 
@@ -168,10 +169,14 @@ export function MemberTopBar({
         <button
           type="button"
           onClick={onToggleTheme}
-          className="p-2 rounded-xl text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100/90 hover:bg-indigo-50 dark:bg-slate-800/90 dark:hover:bg-slate-700/90 border border-slate-200/80 hover:border-indigo-200 dark:border-slate-700/80 text-slate-600 hover:text-indigo-600 dark:text-amber-400 dark:hover:text-amber-300 transition-all shadow-2xs cursor-pointer group"
           title={isDark ? "Chuyển sang giao diện Sáng" : "Chuyển sang giao diện Tối"}
         >
-          {isDark ? <Sun className="w-4 h-4 text-slate-400" /> : <Moon className="w-4 h-4" />}
+          {isDark ? (
+            <Sun className="w-[17px] h-[17px] text-amber-400 fill-amber-400/20 group-hover:rotate-45 transition-transform duration-300" />
+          ) : (
+            <Moon className="w-[17px] h-[17px] text-indigo-600/90 fill-indigo-500/15 group-hover:-rotate-12 transition-transform duration-300" />
+          )}
         </button>
 
         {/* Notifications Toggle */}
@@ -179,12 +184,18 @@ export function MemberTopBar({
           <button
             type="button"
             onClick={() => setShowNotifications(!showNotifications)}
-            className="p-2 rounded-xl text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative cursor-pointer"
+            className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all shadow-2xs relative cursor-pointer group ${
+              showNotifications
+                ? "bg-emerald-50 dark:bg-emerald-500/20 border-emerald-300 dark:border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
+                : "bg-slate-100/90 hover:bg-emerald-50/80 dark:bg-slate-800/90 dark:hover:bg-slate-700/90 border-slate-200/80 hover:border-emerald-200 dark:border-slate-700/80 text-slate-600 hover:text-emerald-600 dark:text-slate-300 dark:hover:text-emerald-400"
+            }`}
             title="Thông báo"
           >
-            <Bell className="w-4 h-4" />
+            <Bell className="w-[17px] h-[17px] group-hover:scale-110 transition-transform" />
             {notificationCount > 0 && (
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900"></span>
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-gradient-to-r from-rose-500 to-red-500 text-white text-[10px] font-black flex items-center justify-center ring-2 ring-white dark:ring-slate-900 shadow-xs">
+                {notificationCount > 9 ? "9+" : notificationCount}
+              </span>
             )}
           </button>
 
