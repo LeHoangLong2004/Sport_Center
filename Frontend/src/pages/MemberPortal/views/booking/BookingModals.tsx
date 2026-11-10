@@ -18,7 +18,7 @@ interface BookingModalsProps {
   setPaymentMethod: (m: "qr" | "card" | "counter" | "wallet") => void;
   isProcessingPayment: boolean;
   paymentError: string | null;
-  onConfirmPayment: () => void;
+  onConfirmPayment: (amount?: number) => void;
 
   bookingSuccessInfo: any | null;
   onCloseSuccessModal: () => void;

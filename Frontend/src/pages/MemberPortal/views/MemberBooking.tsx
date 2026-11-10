@@ -47,6 +47,7 @@ export default function MemberBooking({ onNavigate }: Props) {
     findActiveBooking,
     isBooked,
     myActiveClasses,
+    myUpcomingClasses,
   } = useMemberBookingData();
 
   const {
@@ -172,7 +173,7 @@ export default function MemberBooking({ onNavigate }: Props) {
         setActiveTab={setActiveTab}
         groupClassesCount={groupClasses.length}
         ptSlotsCount={ptSlots.length}
-        myActiveClassesCount={myActiveClasses.length}
+        myActiveClassesCount={myUpcomingClasses.length}
         coaches={coaches}
         selectedCoachId={selectedCoachId}
         setSelectedCoachId={setSelectedCoachId}
@@ -217,6 +218,7 @@ export default function MemberBooking({ onNavigate }: Props) {
       {activeTab === "my_classes" && (
         <MyClassesTab
           myActiveClasses={myActiveClasses}
+          mySessions={mySessions}
           getBookingStatus={getBookingStatus}
           onStartChatWithCoach={handleStartChatWithCoach}
           onCancelBooking={setCancelTarget}

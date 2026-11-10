@@ -146,6 +146,30 @@ public static class AuthEndpoints
                             avatarUrl = memberUser.AvatarUrl ?? "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=256&q=80"
                         });
                     }
+                    else if (cleanEmail == "long@gmail.com")
+                    {
+                        var memberId = Guid.Parse("cd431e48-c84b-4b16-815e-971f3387fd83");
+                        var memberUser = new SmartGym.Domain.Entities.User
+                        {
+                            Id = memberId,
+                            FullName = "H Long",
+                            Email = "long@gmail.com",
+                            PhoneNumber = "0987123456",
+                            Status = true
+                        };
+                        var token = tokenService.GenerateJwtToken(memberUser, "member");
+                        return Results.Ok(new
+                        {
+                            id = memberId,
+                            token = token,
+                            fullName = memberUser.FullName,
+                            email = memberUser.Email,
+                            phoneNumber = memberUser.PhoneNumber,
+                            role = "member",
+                            roleName = "member",
+                            avatarUrl = memberUser.AvatarUrl ?? "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=256&q=80"
+                        });
+                    }
                 }
                 return Results.BadRequest(new { message = ex.Message });
             }
@@ -292,15 +316,19 @@ public static class AuthEndpoints
                 catch { }
             }
 
-            var isMember = string.Equals(roleParam, "member", StringComparison.OrdinalIgnoreCase)
+            var isLong = string.Equals(emailParam, "long@gmail.com", StringComparison.OrdinalIgnoreCase);
+            var isMember = isLong
+                        || string.Equals(roleParam, "member", StringComparison.OrdinalIgnoreCase)
                         || string.Equals(emailParam, "hoxuananhnam@gmail.com", StringComparison.OrdinalIgnoreCase);
 
-            var targetId = isMember
-                ? Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
-                : Guid.Parse("d426d2a7-f099-4377-9673-160e02f8dc1b");
+            var targetId = isLong
+                ? Guid.Parse("cd431e48-c84b-4b16-815e-971f3387fd83")
+                : (isMember
+                    ? Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+                    : Guid.Parse("d426d2a7-f099-4377-9673-160e02f8dc1b"));
             var targetRole = isMember ? "member" : "coach";
-            var targetEmail = isMember ? "hoxuananhnam@gmail.com" : "coach_flow2@smartgym.com";
-            var defaultName = isMember ? "Hồ Xuân Ánh Nam (Member)" : "Coach Đỗ Hoàng E";
+            var targetEmail = isLong ? "long@gmail.com" : (isMember ? "hoxuananhnam@gmail.com" : "coach_flow2@smartgym.com");
+            var defaultName = isLong ? "H Long" : (isMember ? "Hồ Xuân Ánh Nam (Member)" : "Coach Đỗ Hoàng E");
 
             var targetUser = await userRepo.GetByIdAsync(targetId);
             if (targetUser == null)

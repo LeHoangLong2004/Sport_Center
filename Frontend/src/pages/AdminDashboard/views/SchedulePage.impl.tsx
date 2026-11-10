@@ -40,7 +40,7 @@ const next = new Date(currentWeekStart); next.setDate(next.getDate() + 7); setCu
 const day = today.getDay(); const diff = today.getDate() - day + (day === 0 ? -6 : 1); const monday = new Date(today); monday.setDate(diff); monday.setHours(0, 0, 0, 0); setCurrentWeekStart(monday);
 };
 // Lọc các lớp trong tuần đang chọn
-const weekEnd = new Date(currentWeekStart); weekEnd.setDate(weekEnd.getDate() + 6); weekEnd.setHours(23, 59, 59, 999); let classesThisWeek = classes.filter( (c) => c.rawStart >= currentWeekStart && c.rawStart <= weekEnd, );
+const weekEnd = new Date(currentWeekStart); weekEnd.setDate(weekEnd.getDate() + 6); weekEnd.setHours(23, 59, 59, 999); let classesThisWeek = classes.filter( (c) => c.rawStart >= currentWeekStart && c.rawStart <= weekEnd && (c.approvalStatus === "approved" || !c.approvalStatus), );
 if (searchQuery.trim()) { const q = searchQuery.toLowerCase(); classesThisWeek = classesThisWeek.filter( (c) => c.name.toLowerCase().includes(q) || (c.coach && c.coach.toLowerCase().includes(q)),
 ); } if (selectedRooms.length > 0) { classesThisWeek = classesThisWeek.filter((c) => selectedRooms.some((r) => { const classRoom = String(c.room || "").trim().toLowerCase();
 const selectedRoom = r.trim().toLowerCase(); const classRoomBase = classRoom.split(" (")[0]; const selectedRoomBase = selectedRoom.split(" (")[0]; return classRoom === selectedRoom || classRoomBase === selectedRoomBase; }), );

@@ -64,52 +64,59 @@ public static partial class ClassEndpoints
                     SmartGymDbContext db,
                     ClassService service) =>
                 {
-                    var userIdValue = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                        ?? context.User.FindFirst("sub")?.Value;
-                    if (!Guid.TryParse(userIdValue, out var userId))
-                        return Results.Unauthorized();
-
-                    var coachId = await CoachProfileResolver.FindByUserIdAsync(db, userId, activeOnly: true);
-                    if (coachId == null)
-                        return Results.BadRequest(new { message = "Tài khoản Coach chưa có hồ sơ hoạt động." });
-
-                    var scheduleTimeUtc = request.ScheduleTime.Kind == DateTimeKind.Utc
-                        ? request.ScheduleTime
-                        : request.ScheduleTime.ToUniversalTime();
-
-                    if (scheduleTimeUtc < DateTime.UtcNow.AddHours(24))
+                    try
                     {
-                        return Results.BadRequest(new { message = "Thời gian bắt đầu lớp học đề xuất phải cách thời điểm hiện tại ít nhất 24 giờ để Ban quản lý kịp phê duyệt và hội viên đăng ký." });
-                    }
+                        var userIdValue = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                            ?? context.User.FindFirst("sub")?.Value;
+                        if (!Guid.TryParse(userIdValue, out var userId))
+                            return Results.Unauthorized();
 
-                    if (request.SportId != Guid.Empty)
-                    {
-                        var isAssignedSport = await db.Database.SqlQueryRaw<int>(
-                            @"SELECT 1 AS ""Value"" FROM coach_sports WHERE coach_id = {0} AND sport_id = {1}",
-                            coachId.Value, request.SportId
-                        ).AnyAsync();
+                        var coachId = await CoachProfileResolver.FindByUserIdAsync(db, userId, activeOnly: true);
+                        if (coachId == null)
+                            return Results.BadRequest(new { message = "Tài khoản Coach chưa có hồ sơ hoạt động." });
 
-                        if (!isAssignedSport)
+                        var scheduleTimeUtc = request.ScheduleTime.Kind == DateTimeKind.Utc
+                            ? request.ScheduleTime
+                            : request.ScheduleTime.ToUniversalTime();
+
+                        if (scheduleTimeUtc < DateTime.UtcNow.AddHours(24))
                         {
-                            return Results.BadRequest(new { message = "Bạn chưa được phân công phụ trách bộ môn này. Vui lòng liên hệ Quản lý để được cấp quyền chuyên môn trước khi đề xuất mở lớp." });
+                            return Results.BadRequest(new { message = "Thời gian bắt đầu lớp học đề xuất phải cách thời điểm hiện tại ít nhất 24 giờ để Ban quản lý kịp phê duyệt và hội viên đăng ký." });
                         }
+
+                        if (request.SportId != Guid.Empty)
+                        {
+                            var isAssignedSport = await db.Database.SqlQueryRaw<int>(
+                                @"SELECT 1 AS ""Value"" FROM coach_sports WHERE coach_id = {0} AND sport_id = {1}",
+                                coachId.Value, request.SportId
+                            ).AnyAsync();
+
+                            if (!isAssignedSport)
+                            {
+                                return Results.BadRequest(new { message = "Bạn chưa được phân công phụ trách bộ môn này. Vui lòng liên hệ Quản lý để được cấp quyền chuyên môn trước khi đề xuất mở lớp." });
+                            }
+                        }
+
+                        var createRequest = new CreateClassRequest
+                        {
+                            SportId = request.SportId,
+                            FacilityId = request.FacilityId,
+                            CoachId = coachId.Value,
+                            ClassName = request.ClassName,
+                            ScheduleTime = request.ScheduleTime,
+                            DurationMinutes = request.DurationMinutes,
+                            Capacity = request.Capacity,
+                        };
+                        var (isSuccess, errorMessage) = await service.CreateClassAsync(createRequest, "pending");
+                        if (!isSuccess)
+                            return Results.BadRequest(new { message = errorMessage });
+
+                        return Results.Ok(new { message = "Đề xuất lớp học đã được gửi và đang chờ Manager duyệt." });
                     }
-
-                    var createRequest = new CreateClassRequest
+                    catch (Exception ex)
                     {
-                        SportId = request.SportId,
-                        FacilityId = request.FacilityId,
-                        CoachId = coachId.Value,
-                        ClassName = request.ClassName,
-                        ScheduleTime = request.ScheduleTime,
-                        DurationMinutes = request.DurationMinutes,
-                        Capacity = request.Capacity,
-                    };
-                    var (isSuccess, errorMessage) = await service.CreateClassAsync(createRequest, "pending");
-                    if (!isSuccess)
-                        return Results.BadRequest(new { message = errorMessage });
-
-                    return Results.Ok(new { message = "Đề xuất lớp học đã được gửi và đang chờ Manager duyệt." });
+                        return Results.Problem(detail: ex.ToString(), statusCode: 500);
+                    }
                 }
             )
             .RequireAuthorization(policy => policy.RequireRole("coach"));

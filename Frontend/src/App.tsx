@@ -76,12 +76,12 @@ function AdminPortal({
     const role = user?.role?.toLowerCase()
     if (!user || (role !== "member" && role !== "user" && role !== "customer")) {
       const demoMember = {
-        id: "mem-01",
-        fullName: "Nguyễn Minh Thu",
-        phoneNumber: "0912345678",
+        id: "cd431e48-c84b-4b16-815e-971f3387fd83",
+        fullName: "H Long",
+        phoneNumber: "0987123456",
         role: "Member",
-        email: "nguyenminhthu@sportcenter.com",
-        avatarUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=256&q=80",
+        email: "long@gmail.com",
+        avatarUrl: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=256&q=80",
       }
       localStorage.setItem("user", JSON.stringify(demoMember))
     }

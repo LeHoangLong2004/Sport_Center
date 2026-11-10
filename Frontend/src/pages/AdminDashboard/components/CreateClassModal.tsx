@@ -308,7 +308,21 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager
 
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Tên lớp học</label>
-              <input required type="text" name="className" value={formData.className} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="VD: Yoga thư giãn" />
+              <input
+                required
+                type="text"
+                name="className"
+                value={formData.className}
+                onChange={(e) => {
+                  e.target.setCustomValidity("");
+                  handleChange(e);
+                }}
+                onInvalid={(e) => {
+                  (e.target as HTMLInputElement).setCustomValidity("Vui lòng nhập tên lớp học.");
+                }}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                placeholder="VD: Yoga thư giãn"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -321,7 +335,20 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Giờ học</label>
-                <input required type="time" name="scheduleTime" value={formData.scheduleTime} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" />
+                <input
+                  required
+                  type="time"
+                  name="scheduleTime"
+                  value={formData.scheduleTime}
+                  onChange={(e) => {
+                    e.target.setCustomValidity("");
+                    handleChange(e);
+                  }}
+                  onInvalid={(e) => {
+                    (e.target as HTMLInputElement).setCustomValidity("Vui lòng nhập đầy đủ giờ học và chọn buổi sáng/chiều (AM hoặc PM).");
+                  }}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500"
+                />
                 {isCoachMode && (
                   <p className="mt-1 text-[11px] text-slate-500">Cách hiện tại ≥ 24h</p>
                 )}
@@ -384,11 +411,37 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Thời lượng (Phút)</label>
-                <input required type="number" name="durationMinutes" value={formData.durationMinutes} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" />
+                <input
+                  required
+                  type="number"
+                  name="durationMinutes"
+                  value={formData.durationMinutes}
+                  onChange={(e) => {
+                    e.target.setCustomValidity("");
+                    handleChange(e);
+                  }}
+                  onInvalid={(e) => {
+                    (e.target as HTMLInputElement).setCustomValidity("Vui lòng nhập thời lượng lớp học (phút).");
+                  }}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500"
+                />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Sức chứa (Người)</label>
-                <input required type="number" name="capacity" value={formData.capacity} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" />
+                <input
+                  required
+                  type="number"
+                  name="capacity"
+                  value={formData.capacity}
+                  onChange={(e) => {
+                    e.target.setCustomValidity("");
+                    handleChange(e);
+                  }}
+                  onInvalid={(e) => {
+                    (e.target as HTMLInputElement).setCustomValidity("Vui lòng nhập sức chứa tối đa của lớp học.");
+                  }}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500"
+                />
               </div>
             </div>
 

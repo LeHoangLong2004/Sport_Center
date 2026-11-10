@@ -1,0 +1,265 @@
+erDiagram
+    %% ==============================================================
+    %% SMARTGYM OS - CONCEPTUAL ENTITY-RELATIONSHIP DIAGRAM (CONCEPTUAL ERD)
+    %% Mức quan niệm (Business Conceptual Level):
+    %% - Tập trung vào Thực thể nghiệp vụ (Business Entities)
+    %% - Quan hệ ngữ nghĩa thực tế (Semantic Cardinalities)
+    %% - Không chứa bảng trung gian kỹ thuật (No physical junction tables)
+    %% - Chỉ giữ lại thuộc tính định danh và thuộc tính nghiệp vụ cốt lõi
+    %% ==============================================================
+
+    %% --------------------------------------------------------------
+    %% 1. USER & ORGANIZATION DOMAIN
+    %% --------------------------------------------------------------
+    ROLE ||--o{ USER : "authorizes"
+    USER ||--o| COACH : "operates as"
+    USER ||--o{ BODY_METRICS : "tracks"
+    USER ||--o| WALLET : "owns"
+    FACILITY ||--o{ CLASS : "hosts"
+    FACILITY ||--o{ SUBSCRIPTION : "serves"
+
+    %% --------------------------------------------------------------
+    %% 2. MEMBERSHIP & COMMERCE DOMAIN
+    %% --------------------------------------------------------------
+    USER ||--o{ SUBSCRIPTION : "registers"
+    PACKAGE ||--o{ SUBSCRIPTION : "instantiates"
+    PACKAGE }o--o{ SPORT : "covers"
+    USER ||--o{ INVOICE : "pays"
+    INVOICE ||--o{ PRODUCT : "purchases"
+    WALLET ||--o{ INVOICE : "funds"
+
+    %% --------------------------------------------------------------
+    %% 3. CLASS BOOKING & OPERATIONS DOMAIN
+    %% --------------------------------------------------------------
+    COACH ||--o{ CLASS : "instructs"
+    SPORT ||--o{ CLASS : "categorizes"
+    USER ||--o{ CLASS_BOOKING : "reserves"
+    CLASS ||--o{ CLASS_BOOKING : "contains"
+    SUBSCRIPTION ||--o{ CLASS_BOOKING : "validates"
+    CLASS ||--o{ ATTENDANCE : "monitors"
+    USER ||--o{ ATTENDANCE : "checks in"
+    COACH ||--o{ SCHEDULE_REQUEST : "requests"
+    CLASS ||--o{ SCHEDULE_REQUEST : "reschedules"
+
+    %% --------------------------------------------------------------
+    %% 4. COACH SPECIALIZATION & EVALUATION
+    %% --------------------------------------------------------------
+    COACH }o--o{ SPORT : "specializes in"
+    COACH ||--o{ AVAILABILITY_SLOT : "opens"
+    USER ||--o{ REVIEW : "writes"
+    COACH ||--o{ REVIEW : "receives"
+    COACH ||--o{ ASSESSMENT : "evaluates"
+    USER ||--o{ ASSESSMENT : "evaluated in"
+
+    %% --------------------------------------------------------------
+    %% 5. AI WORKOUT & HOMEWORK PROGRESS
+    %% --------------------------------------------------------------
+    USER ||--o{ WORKOUT_PLAN : "follows"
+    COACH ||--o{ WORKOUT_PLAN : "customizes"
+    SPORT ||--o{ WORKOUT_PLAN : "focuses on"
+    WORKOUT_PLAN ||--|{ EXERCISE : "consists of"
+    WORKOUT_PLAN ||--o{ HOMEWORK : "assigns"
+    USER ||--o{ HOMEWORK : "completes"
+
+    %% --------------------------------------------------------------
+    %% 6. COMMUNICATION & MESSAGING
+    %% --------------------------------------------------------------
+    USER ||--o{ NOTIFICATION : "receives"
+    USER ||--o{ CHAT_THREAD : "participates in"
+    CHAT_THREAD ||--|{ MESSAGE : "contains"
+
+    %% ==============================================================
+    %% CORE BUSINESS ATTRIBUTES (CONCEPTUAL ATTRIBUTES ONLY)
+    %% ==============================================================
+
+    ROLE {
+        uuid role_id PK
+        string role_name
+        string description
+    }
+
+    USER {
+        uuid user_id PK
+        string member_code
+        string full_name
+        string email
+        string phone_number
+        string training_goal
+        string training_level
+        string status
+    }
+
+    COACH {
+        uuid coach_id PK
+        string specialties
+        string certifications
+        int experience_years
+        float rating_avg
+        string status
+    }
+
+    FACILITY {
+        uuid facility_id PK
+        string branch_name
+        string address
+        string hotline
+    }
+
+    SPORT {
+        uuid sport_id PK
+        string sport_name
+        string description
+    }
+
+    PACKAGE {
+        uuid package_id PK
+        string package_name
+        string package_type
+        decimal monthly_price
+        decimal yearly_price
+        string description
+    }
+
+    SUBSCRIPTION {
+        uuid subscription_id PK
+        date start_date
+        date end_date
+        decimal total_amount
+        string payment_status
+        string subscription_status
+    }
+
+    CLASS {
+        uuid class_id PK
+        string class_name
+        datetime schedule_time
+        int duration_minutes
+        int capacity
+        int current_enrolled
+        string level
+        string class_status
+    }
+
+    CLASS_BOOKING {
+        uuid booking_id PK
+        datetime booking_time
+        string booking_status
+    }
+
+    ATTENDANCE {
+        uuid attendance_id PK
+        datetime checkin_time
+        string attendance_status
+        string method
+    }
+
+    SCHEDULE_REQUEST {
+        uuid request_id PK
+        string request_type
+        string reason
+        string request_status
+    }
+
+    AVAILABILITY_SLOT {
+        uuid slot_id PK
+        datetime start_time
+        datetime end_time
+        string room
+        string slot_status
+    }
+
+    WORKOUT_PLAN {
+        uuid plan_id PK
+        string plan_name
+        string goal
+        string level
+        int duration_minutes
+        string plan_type
+        string plan_status
+    }
+
+    EXERCISE {
+        uuid exercise_id PK
+        string exercise_name
+        int sets
+        int reps
+        int rest_seconds
+        string target_muscle
+    }
+
+    HOMEWORK {
+        uuid homework_id PK
+        float progress_pct
+        datetime assigned_date
+        datetime due_date
+        string homework_status
+    }
+
+    BODY_METRICS {
+        uuid metric_id PK
+        float height_cm
+        float weight_kg
+        float body_fat_pct
+        float bmi
+        date recorded_date
+    }
+
+    ASSESSMENT {
+        uuid assessment_id PK
+        int performance_rating
+        int effort_rating
+        string feedback
+    }
+
+    WALLET {
+        uuid wallet_id PK
+        decimal balance
+        datetime last_updated
+    }
+
+    INVOICE {
+        uuid invoice_id PK
+        decimal total_amount
+        string invoice_type
+        string payment_method
+        string payment_status
+        datetime created_at
+    }
+
+    PRODUCT {
+        uuid product_id PK
+        string product_name
+        string category
+        decimal price
+        int stock_quantity
+    }
+
+    REVIEW {
+        uuid review_id PK
+        int rating
+        string comment
+        datetime created_at
+    }
+
+    NOTIFICATION {
+        uuid notification_id PK
+        string title
+        string message
+        string notification_type
+        datetime created_at
+    }
+
+    CHAT_THREAD {
+        uuid thread_id PK
+        string title
+        string category
+        string last_message
+    }
+
+    MESSAGE {
+        uuid message_id PK
+        string sender
+        string message_text
+        datetime sent_time
+    }
+

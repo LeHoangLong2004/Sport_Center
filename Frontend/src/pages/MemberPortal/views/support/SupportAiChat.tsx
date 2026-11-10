@@ -27,6 +27,7 @@ const ACTION_TO_SCREEN: Partial<Record<MemberAiAction, MemberScreen>> = {
   workouts: "workouts",
   attendance: "attendance",
   chat: "chat",
+  shop: "shop",
 };
 
 const nowLabel = () => new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
