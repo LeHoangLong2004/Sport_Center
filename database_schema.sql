@@ -105,3 +105,25 @@ CREATE TABLE Class_Bookings (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT UC_ClassBooking UNIQUE (member_id, class_id) -- Tránh book 1 lớp 2 lần
 );
+
+-- BẢNG CHỈ SỐ CƠ THỂ HỘI VIÊN (Body Metrics / InBody)
+-- Dùng để theo dõi tiến độ thể trạng và làm đầu vào cho AI (Flow 5) may đo giáo án tập luyện
+CREATE TABLE Body_Metrics (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    member_id INT NOT NULL FOREIGN KEY REFERENCES Members(id) ON DELETE CASCADE,
+    
+    weight DECIMAL(5,2) NOT NULL,       -- Cân nặng (kg) Vd: 72.50
+    height DECIMAL(5,2) NOT NULL,       -- Chiều cao (cm) Vd: 175.00
+    body_fat DECIMAL(4,2) NULL,         -- Tỷ lệ mỡ (%) Vd: 18.50
+    muscle_mass DECIMAL(5,2) NULL,      -- Khối lượng cơ (kg) Vd: 32.40
+    bmi DECIMAL(4,2) NULL,              -- Chỉ số BMI Vd: 23.67
+    
+    recorded_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IX_BodyMetrics_MemberDate ON Body_Metrics(member_id, recorded_at DESC);
+
+-- DỮ LIỆU MẪU CHỈ SỐ CƠ THỂ (Sample Body Metrics for Testing Flow 5 AI)
+-- Ví dụ: Hội viên 1 có chỉ số thể trạng thừa cân nhẹ (BMI 24.2, mỡ 22.5%)
+-- INSERT INTO Body_Metrics (member_id, weight, height, body_fat, muscle_mass, bmi) 
+-- VALUES (1, 74.00, 175.00, 22.50, 31.80, 24.16);
