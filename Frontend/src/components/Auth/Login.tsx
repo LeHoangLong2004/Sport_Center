@@ -92,15 +92,25 @@ export function Login({
         avatarUrl: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=256&q=80",
       },
       member: {
-        id: "mem-01",
-        fullName: "Hội viên Hồ Nam",
+        id: "cd431e48-c84b-4b16-815e-971f3387fd83",
+        fullName: "H Long",
         role: "Member",
-        email: "hoxuananhnam@gmail.com",
+        email: "long@gmail.com",
         avatarUrl: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=256&q=80",
       },
     }
-    localStorage.setItem("token", "mock-valid-token-demo")
-    localStorage.setItem("user", JSON.stringify(demos[role]))
+    const targetUser = demos[role]
+    localStorage.setItem("user", JSON.stringify(targetUser))
+
+    // Fetch genuine JWT dev-token asynchronously so authenticated APIs succeed immediately
+    fetch(`/api/auth/dev-token?role=${role}&email=${encodeURIComponent(targetUser.email)}`, { method: "POST" })
+      .then(res => res.json())
+      .then(data => {
+        if (data?.token) {
+          localStorage.setItem("token", data.token)
+        }
+      })
+      .catch(() => {})
     if (onLoginAs) {
       onLoginAs(role)
     } else {

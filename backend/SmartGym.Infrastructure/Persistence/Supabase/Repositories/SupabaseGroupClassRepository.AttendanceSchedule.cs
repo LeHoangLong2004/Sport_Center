@@ -133,15 +133,8 @@ public sealed partial class SupabaseGroupClassRepository
                 .ToList();
         }
 
-        var ptSessions = await _dbContext
-            .Database.SqlQueryRaw<PtSessionMemberSqlDto>(
-                @"SELECT ps.id, ps.schedule_time, ps.duration_minutes, ps.status 
-              FROM pt_sessions ps 
-              INNER JOIN pt_enrollments pe ON ps.enrollment_id = pe.id 
-              WHERE pe.user_id = {0}",
-                userId
-            )
-            .ToListAsync();
+        // Bảng pt_sessions / pt_enrollments không tồn tại trong schema hiện tại
+        var ptSessions = new List<PtSessionMemberSqlDto>();
 
         if (ptSessions.Any())
         {

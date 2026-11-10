@@ -1,0 +1,521 @@
+erDiagram
+    %% ==============================================================
+    %% SMARTGYM OS - 100% LIVE SUPABASE DATABASE SCHEMA (38 TABLES)
+    %% All tables and ALL attributes generated directly from live database
+    %% ==============================================================
+
+    %% --------------------------------------------------------------
+    %% RELATIONSHIPS (FOREIGN KEYS)
+    %% --------------------------------------------------------------
+    CHAT_CONVERSATIONS ||--o{ CHAT_MESSAGES : "conversation"
+    CLASSES ||--o{ CLASS_ATTENDANCE_RECORDS : "session"
+    CLASSES ||--o{ CLASS_BOOKINGS : "class"
+    CLASSES ||--o{ COACH_ASSESSMENTS : "session"
+    CLASSES ||--o{ COACH_SCHEDULE_REQUESTS : "session"
+    CLASSES ||--o| CLASS_ATTENDANCE_SHEETS : "session"
+    COACHES ||--o{ CLASSES : "coach"
+    COACHES ||--o{ COACH_ASSESSMENTS : "coach"
+    COACHES ||--o{ COACH_AVAILABILITY_SLOTS : "coach"
+    COACHES ||--o{ COACH_SCHEDULE_REQUESTS : "coach"
+    COACHES ||--o{ COACH_SCHEDULE_REQUESTS : "substitute coach"
+    COACHES ||--o{ COACH_SPORTS : "coach"
+    COACHES ||--o{ COMMUNICATIONS : "coach"
+    COACHES ||--o{ NOTIFICATIONS : "sender"
+    COACHES ||--o{ REVIEWS : "coach"
+    COACHES ||--o{ WORKOUT_PLANS : "coach"
+    COMMUNICATIONS ||--o{ HOMEWORK_PROGRESS : "communication"
+    FACILITIES ||--o{ CHECK_IN_LOGS : "facility"
+    FACILITIES ||--o{ CLASSES : "facility"
+    FACILITIES ||--o{ INVOICES : "facility"
+    FACILITIES ||--o{ SUBSCRIPTIONS : "facility"
+    INVOICES ||--o{ INVOICE_ITEMS : "invoice"
+    INVOICES ||--o{ PRODUCT_ORDER_MESSAGES : "invoice"
+    PACKAGES ||--o{ MEMBERSHIP_BENEFITS : "package"
+    PACKAGES ||--o{ PACKAGE_FEATURES : "package"
+    PACKAGES ||--o{ PACKAGE_SPORTS : "package"
+    PACKAGES ||--o{ SUBSCRIPTIONS : "package"
+    PRODUCTS ||--o{ INVOICE_ITEMS : "product"
+    ROLES ||--o{ USERS : "role"
+    SPORTS ||--o{ CLASSES : "sport"
+    SPORTS ||--o{ COACH_SPORTS : "sport"
+    SPORTS ||--o{ PACKAGE_SPORTS : "sport"
+    SPORTS ||--o{ SUBSCRIPTIONS : "sport"
+    SPORTS ||--o{ SUBSCRIPTION_SPORTS : "sport"
+    SPORTS ||--o{ WORKOUT_PLANS : "sport"
+    SUBSCRIPTIONS ||--o{ CHECK_IN_LOGS : "subscription"
+    SUBSCRIPTIONS ||--o{ CLASS_BOOKINGS : "subscription"
+    SUBSCRIPTIONS ||--o{ SUBSCRIPTION_SPORTS : "subscription"
+    USERS ||--o{ BODY_METRICS : "user"
+    USERS ||--o{ CHECK_IN_LOGS : "user"
+    USERS ||--o{ CLASS_ATTENDANCE_RECORDS : "member"
+    USERS ||--o{ CLASS_ATTENDANCE_SHEETS : "finalized by"
+    USERS ||--o{ CLASS_BOOKINGS : "user"
+    USERS ||--o{ COACHES : "user"
+    USERS ||--o{ COACH_ASSESSMENTS : "member"
+    USERS ||--o{ COMMUNICATIONS : "user"
+    USERS ||--o{ HOMEWORK_PROGRESS : "member"
+    USERS ||--o{ INVOICES : "assigned to"
+    USERS ||--o{ INVOICES : "created by"
+    USERS ||--o{ INVOICES : "user"
+    USERS ||--o{ NOTIFICATIONS : "user"
+    USERS ||--o{ PRODUCT_ORDER_MESSAGES : "sender"
+    USERS ||--o{ REVIEWS : "user"
+    USERS ||--o{ SUBSCRIPTIONS : "user"
+    USERS ||--o{ WALLET_TRANSACTIONS : "user"
+    USERS ||--o{ WORKOUT_PLANS : "user"
+    USERS ||--o| COACH_PROFILES : "user"
+    USERS ||--o| MEMBER_WALLET_BALANCES : "user"
+    WORKOUT_PLANS ||--o{ HOMEWORK_PROGRESS : "plan"
+    WORKOUT_PLANS ||--o{ WORKOUT_PLAN_EXERCISES : "plan"
+
+    %% --------------------------------------------------------------
+    %% ENTITIES AND EXACT LIVE ATTRIBUTES
+    %% --------------------------------------------------------------
+    ROLES {
+        uuid id PK
+        varchar name
+        text description
+    }
+
+    SPORTS {
+        uuid id PK
+        text name
+        text description
+        text image_url
+        boolean status
+    }
+
+    FACILITIES {
+        uuid id PK
+        text name
+        text address
+        varchar hotline
+        boolean status
+        text image_url
+    }
+
+    PRODUCTS {
+        uuid id PK
+        text name
+        varchar category
+        numeric price
+        int stock_quantity
+        text image_url
+        boolean status
+    }
+
+    PACKAGES {
+        varchar id PK
+        text name
+        text tagline
+        varchar package_type
+        numeric monthly_price
+        numeric yearly_price
+        text description
+        boolean status
+        jsonb catalog_json
+    }
+
+    USERS {
+        uuid id PK
+        uuid role_id FK
+        text full_name
+        varchar phone_number
+        varchar email
+        text password_hash
+        text avatar_url
+        date date_of_birth
+        varchar gender
+        text emergency_contact
+        boolean status
+        timestamptz created_at
+        varchar member_code
+        text training_goal
+        varchar training_level
+        text address
+    }
+
+    BODY_METRICS {
+        uuid id PK
+        uuid user_id FK
+        numeric weight
+        numeric height
+        numeric body_fat
+        numeric muscle_mass
+        numeric bmi
+        timestamptz recorded_at
+    }
+
+    MEMBER_WALLET_BALANCES {
+        uuid user_id PK
+        numeric balance
+        timestamptz last_updated_at
+    }
+
+    WALLET_TRANSACTIONS {
+        uuid id PK
+        uuid user_id FK
+        varchar type
+        numeric amount
+        numeric balance_after
+        varchar method
+        varchar status
+        varchar reference_code
+        text note
+        timestamptz created_at
+    }
+
+    PACKAGE_FEATURES {
+        uuid id PK
+        varchar package_id FK
+        text feature_text
+        boolean is_highlighted
+    }
+
+    PACKAGE_SPORTS {
+        uuid id PK
+        varchar package_id FK
+        uuid sport_id FK
+    }
+
+    MEMBERSHIP_BENEFITS {
+        uuid id PK
+        varchar package_id FK
+        varchar benefit_type
+        text benefit_value
+        text description
+    }
+
+    COACHES {
+        uuid id PK
+        uuid user_id FK
+        text specialty
+        text bio
+        int experience_years
+        numeric rating
+        boolean status
+    }
+
+    COACH_PROFILES {
+        uuid user_id PK
+        text specialties
+        text certifications
+        int experience_years
+        text bio
+    }
+
+    COACH_SPORTS {
+        uuid id PK
+        uuid coach_id FK
+        uuid sport_id FK
+    }
+
+    COACH_AVAILABILITY_SLOTS {
+        uuid id PK
+        uuid coach_id FK
+        timestamptz start_time
+        timestamptz end_time
+        text sport
+        text room
+        text note
+        varchar status
+        uuid booked_member_id
+        text booked_member_name
+        varchar booked_member_phone
+        text goal
+        timestamptz created_at
+    }
+
+    COACH_SCHEDULE_REQUESTS {
+        uuid id PK
+        uuid coach_id FK
+        uuid session_id FK
+        varchar request_type
+        uuid substitute_coach_id FK
+        date new_date
+        varchar new_time
+        text reason
+        varchar status
+        text manager_note
+        timestamptz created_at
+        varchar class_name
+        varchar session_time
+        varchar sport_name
+        varchar room_name
+    }
+
+    INVOICES {
+        uuid id PK
+        uuid user_id FK
+        uuid created_by FK
+        numeric total_amount
+        varchar payment_method
+        timestamptz created_at
+        varchar payment_status
+        uuid facility_id FK
+        timestamptz paid_at
+        varchar fulfillment_method
+        varchar fulfillment_status
+        text delivery_location
+        uuid assigned_to FK
+        timestamptz fulfilled_at
+    }
+
+    INVOICE_ITEMS {
+        uuid id PK
+        uuid invoice_id FK
+        uuid product_id FK
+        int quantity
+        numeric unit_price
+    }
+
+    PRODUCT_ORDER_MESSAGES {
+        uuid id PK
+        uuid invoice_id FK
+        uuid sender_id FK
+        text message
+        timestamptz created_at
+    }
+
+    SUBSCRIPTIONS {
+        uuid id PK
+        uuid user_id FK
+        varchar package_id FK
+        uuid sport_id FK
+        uuid facility_id FK
+        varchar billing_period
+        numeric total_amount
+        varchar payment_method
+        varchar payment_status
+        date start_date
+        date end_date
+        boolean auto_renew
+        timestamptz created_at
+        int duration_months
+        numeric discount_pct
+        numeric discount_amount
+        jsonb package_snapshot_json
+        timestamptz paid_at
+    }
+
+    SUBSCRIPTION_SPORTS {
+        uuid id PK
+        uuid subscription_id FK
+        uuid sport_id FK
+    }
+
+    CHECK_IN_LOGS {
+        uuid id PK
+        uuid user_id FK
+        uuid facility_id FK
+        uuid subscription_id FK
+        timestamptz check_in_time
+        timestamptz check_out_time
+        varchar method
+    }
+
+    GATE_CHECKINS {
+        uuid id PK
+        uuid member_id
+        uuid branch_id
+        uuid member_package_id
+        timestamptz check_in_time
+        uuid receptionist_id
+    }
+
+    CLASSES {
+        uuid id PK
+        uuid sport_id FK
+        uuid coach_id FK
+        uuid facility_id FK
+        text class_name
+        timestamptz schedule_time
+        int duration_minutes
+        int capacity
+        int current_enrolled
+        boolean status
+        timestamptz created_at
+        varchar level
+        varchar room
+        varchar approval_status
+    }
+
+    CLASS_BOOKINGS {
+        uuid id PK
+        uuid user_id FK
+        uuid class_id FK
+        uuid subscription_id FK
+        varchar status
+        timestamptz created_at
+    }
+
+    CLASS_ATTENDANCE_SHEETS {
+        uuid session_id PK
+        varchar state
+        int version
+        uuid finalized_by FK
+        timestamptz finalized_at
+        timestamptz updated_at
+    }
+
+    CLASS_ATTENDANCE_RECORDS {
+        uuid id PK
+        uuid session_id FK
+        uuid member_id FK
+        varchar status
+        text note
+        timestamptz updated_at
+    }
+
+    COACH_ASSESSMENTS {
+        uuid id PK
+        uuid coach_id FK
+        uuid session_id FK
+        uuid member_id FK
+        int completion
+        jsonb metrics_json
+        text comment
+        text next_step
+        timestamptz created_at
+    }
+
+    APPOINTMENTS {
+        uuid id PK
+        varchar time
+        text title
+        text customer_name
+        text coach_name
+        varchar status
+        varchar date
+    }
+
+    WORKOUT_PLANS {
+        uuid id PK
+        uuid user_id FK
+        uuid coach_id FK
+        text plan_name
+        text description
+        date start_date
+        date end_date
+        uuid sport_id FK
+        text goal
+        varchar level
+        int duration_minutes
+        varchar status
+        timestamptz updated_at
+        int version
+        timestamptz created_at
+        text source
+        uuid parent_plan_id
+        text recommendation_target_type
+        uuid recommendation_target_id
+        text ai_metadata_json
+        timestamptz approved_at
+        uuid approved_by
+        text approval_note
+        timestamptz archived_at
+        uuid archived_by
+    }
+
+    WORKOUT_PLAN_EXERCISES {
+        uuid id PK
+        uuid plan_id FK
+        text name
+        text reps
+        text rest
+        text note
+        text sets
+        text duration
+        int exercise_order
+    }
+
+    COMMUNICATIONS {
+        uuid id PK
+        uuid user_id FK
+        text title
+        text message
+        boolean is_read
+        timestamptz created_at
+        varchar type
+        varchar target_type
+        uuid target_id
+        timestamptz deadline
+        uuid coach_id FK
+        varchar state
+        timestamptz published_at
+    }
+
+    HOMEWORK_PROGRESS {
+        uuid id PK
+        uuid communication_id FK
+        uuid member_id FK
+        varchar status
+        timestamptz completed_at
+        uuid plan_id FK
+        uuid assigned_by
+        numeric progress_pct
+        timestamptz assigned_date
+        timestamptz due_date
+        text notes
+        timestamptz created_at
+    }
+
+    NOTIFICATIONS {
+        uuid id PK
+        uuid sender_id FK
+        uuid user_id FK
+        varchar target_type
+        uuid target_id
+        varchar type
+        varchar state
+        text title
+        text message
+        timestamptz deadline
+        boolean is_read
+        timestamptz created_at
+    }
+
+    REVIEWS {
+        uuid id PK
+        uuid user_id FK
+        uuid coach_id FK
+        int rating
+        text comment
+        timestamptz created_at
+        text session_id
+        text session_name
+        text tags_json
+    }
+
+    CHAT_CONVERSATIONS {
+        varchar id PK
+        varchar type
+        varchar coach_title
+        varchar coach_subtitle
+        varchar member_title
+        varchar member_subtitle
+        text avatar
+        text coach_avatar
+        text last_message
+        varchar last_time
+        int unread_count
+        boolean online
+        varchar coach_id
+        varchar coach_name
+        varchar member_id
+        varchar member_name
+        timestamptz updated_at
+        varchar category
+        varchar role_tag
+        varchar badge_color
+    }
+
+    CHAT_MESSAGES {
+        varchar id PK
+        varchar conversation_id FK
+        varchar sender
+        varchar sender_name
+        text text
+        varchar timestamp
+        timestamptz created_at
+    }

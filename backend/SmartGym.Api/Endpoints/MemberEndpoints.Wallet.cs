@@ -969,6 +969,14 @@ namespace SmartGym.Api.Endpoints
         }
 
         /// <summary>
+        /// Lấy số dư ví hiện tại của hội viên từ CSDL.
+        /// </summary>
+        public static async Task<decimal> GetMemberBalanceAsync(SmartGymDbContext db, Guid userGuid)
+        {
+            return await GetMemberBalanceFromDbAsync(userGuid, db);
+        }
+
+        /// <summary>
         /// Trừ tiền ví hội viên khi đặt lớp học hoặc thanh toán dịch vụ.
         /// </summary>
         public static async Task<(bool Success, decimal NewBalance, string? ErrorMessage)> DeductFromWalletAsync(
