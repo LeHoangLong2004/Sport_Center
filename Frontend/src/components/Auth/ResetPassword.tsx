@@ -134,7 +134,7 @@ export function ResetPassword({ onLogin }: { onLogin: () => void }) {
           </button>
 
           <div className="mb-8">
-            <span className="text-[#3b82f6] font-bold text-xs tracking-widest uppercase">KHÔI PHỤC MẬT KHẨU</span>
+            <span className="text-slate-800 font-bold text-xs tracking-widest uppercase">KHÔI PHỤC MẬT KHẨU</span>
             <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white mt-2 mb-2">
               {isOtpStep ? "Xác minh OTP" : "Đặt lại mật khẩu"}
             </h2>
@@ -147,7 +147,7 @@ export function ResetPassword({ onLogin }: { onLogin: () => void }) {
 
           <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
             Email
-            <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" required disabled={!isOtpStep} className="mt-1.5 block w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-normal disabled:opacity-70" />
+            <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" required disabled={!isOtpStep} className="mt-1.5 block w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-normal disabled:opacity-70" />
           </label>
 
           {isOtpStep ? (
@@ -173,7 +173,7 @@ export function ResetPassword({ onLogin }: { onLogin: () => void }) {
                 </div>
               </div>
               {demoToken && (
-                <div className="mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+                <div className="mt-4 p-3 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-sm">
                   SMTP chưa cấu hình. Mã OTP demo local: <strong className="tracking-widest">{demoToken}</strong>
                 </div>
               )}
@@ -182,11 +182,11 @@ export function ResetPassword({ onLogin }: { onLogin: () => void }) {
             <div className="space-y-4 mt-4">
               <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
                 Mật khẩu mới
-                <input value={newPassword} onChange={(event) => setNewPassword(event.target.value)} type="password" minLength={6} autoFocus required className="mt-1.5 block w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-normal" />
+                <input value={newPassword} onChange={(event) => setNewPassword(event.target.value)} type="password" minLength={6} autoFocus required className="mt-1.5 block w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-normal" />
               </label>
               <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
                 Xác nhận mật khẩu mới
-                <input value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} type="password" minLength={6} required className="mt-1.5 block w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-normal" />
+                <input value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} type="password" minLength={6} required className="mt-1.5 block w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-normal" />
               </label>
             </div>
           )}

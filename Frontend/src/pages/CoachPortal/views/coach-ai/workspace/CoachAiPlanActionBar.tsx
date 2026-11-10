@@ -56,7 +56,7 @@ export function CoachAiPlanActionBar({
               disabled={isSaving}
               className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
             >
-              <Save className="w-4 h-4 text-orange-500" />
+              <Save className="w-4 h-4" />
               <span>{isSaving ? "Đang lưu..." : "Lưu bản nháp"}</span>
             </button>
 
@@ -66,7 +66,7 @@ export function CoachAiPlanActionBar({
               disabled={isApproving}
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-white dark:bg-slate-800 border border-emerald-600 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-all shadow-sm cursor-pointer disabled:opacity-50 active:scale-95"
             >
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <CheckCircle2 className="w-4 h-4" />
               <span>{isApproving ? "Đang lưu..." : "✓ Lưu vào Thư viện"}</span>
             </button>
 
@@ -75,7 +75,7 @@ export function CoachAiPlanActionBar({
                 type="button"
                 onClick={onApproveAndAssign}
                 disabled={isApproving}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white transition-all shadow-md shadow-orange-500/25 cursor-pointer disabled:opacity-50 active:scale-95"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-emerald-600 to-emerald-600 hover:from-emerald-700 hover:to-emerald-700 text-white transition-all shadow-md shadow-emerald-600/25 cursor-pointer disabled:opacity-50 active:scale-95"
               >
                 <Zap className="w-4 h-4" />
                 <span>🚀 Duyệt & Giao ngay</span>
@@ -113,7 +113,7 @@ export function CoachAiPlanActionBar({
               }}
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 text-white transition-all shadow-md cursor-pointer active:scale-95"
             >
-              <BookOpen className="w-4 h-4 text-emerald-400 dark:text-emerald-600" />
+              <BookOpen className="w-4 h-4" />
               <span>Đi đến Thư viện Giáo án & Bài tập</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>

@@ -11,7 +11,7 @@ export const TopUpBalanceBanner: React.FC<Props> = ({ currentBalance, userName }
     <div className="p-3.5 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white shadow-md flex items-center justify-between border border-slate-700/50">
       <div>
         <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-          <Wallet className="w-3 h-3 text-emerald-400" /> Số dư khả dụng
+          <Wallet className="w-3 h-3" /> Số dư khả dụng
         </span>
         <div className="text-xl font-black text-white mt-0.5">
           {currentBalance.toLocaleString("vi-VN")}{" "}

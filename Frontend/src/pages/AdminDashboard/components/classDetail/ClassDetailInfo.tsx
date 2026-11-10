@@ -21,15 +21,15 @@ export function ClassDetailInfo({ classDetail, isPendingProposal }: ClassDetailI
     <>
       {/* Proposal Banner */}
       {isPendingProposal && (
-        <div className="flex items-center gap-3 rounded-xl border border-amber-200/80 bg-amber-50/70 p-3.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white shadow-xs">
+        <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-500 text-white shadow-xs">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
           <div className="text-xs">
-            <p className="font-bold text-amber-900">Đề xuất lịch dạy từ HLV {classDetail.coachName || 'Coach'}</p>
-            <p className="text-amber-700 mt-0.5">Vui lòng kiểm tra kỹ thời gian và phòng tập trước khi phê duyệt.</p>
+            <p className="font-bold text-slate-900">Đề xuất lịch dạy từ HLV {classDetail.coachName || 'Coach'}</p>
+            <p className="text-slate-700 mt-0.5">Vui lòng kiểm tra kỹ thời gian và phòng tập trước khi phê duyệt.</p>
           </div>
         </div>
       )}
@@ -37,11 +37,11 @@ export function ClassDetailInfo({ classDetail, isPendingProposal }: ClassDetailI
       {/* Class Title Card */}
       <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4">
         <div className="flex items-center gap-2 mb-1.5">
-          <span className="inline-flex items-center rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-bold text-indigo-700 ring-1 ring-inset ring-indigo-200">
+          <span className="inline-flex items-center rounded-md bg-slate-50 px-2 py-0.5 text-xs font-bold text-slate-700 ring-1 ring-inset ring-slate-200">
             {classDetail.sportName}
           </span>
           <span className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-0.5 text-xs font-medium text-slate-600 ring-1 ring-slate-200">
-            📍 {classDetail.facilityName}
+            {classDetail.facilityName}
           </span>
         </div>
         <h3 className="text-base font-bold text-slate-900">

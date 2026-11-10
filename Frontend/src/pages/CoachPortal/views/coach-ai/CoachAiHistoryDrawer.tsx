@@ -46,7 +46,7 @@ export const CoachAiHistoryDrawer: React.FC<CoachAiHistoryDrawerProps> = ({
         {/* Header */}
         <div className="p-5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
@@ -81,7 +81,7 @@ export const CoachAiHistoryDrawer: React.FC<CoachAiHistoryDrawerProps> = ({
               onClick={() => setFilter(tab.id)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition-colors cursor-pointer ${
                 filter === tab.id
-                  ? "bg-orange-500 text-white font-bold"
+                  ? "bg-emerald-600 text-white font-bold"
                   : "bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
               }`}
             >
@@ -106,16 +106,16 @@ export const CoachAiHistoryDrawer: React.FC<CoachAiHistoryDrawerProps> = ({
                     onSelectPlan(plan.id);
                     onClose();
                   }}
-                  className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-orange-50/50 dark:hover:bg-orange-950/30 hover:border-orange-300 dark:hover:border-orange-700 transition-all cursor-pointer flex items-center justify-between group"
+                  className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all cursor-pointer flex items-center justify-between group"
                 >
                   <div className="min-w-0 flex-1 pr-3">
                     <div className="flex items-center gap-2 mb-1">
                       <span
                         className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                           plan.status === "Nháp"
-                            ? "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300"
+                            ? "bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-300"
                             : plan.status === "Đã giao"
-                            ? "bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300"
+                            ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
                             : "bg-slate-200 dark:bg-slate-700 text-slate-600"
                         }`}
                       >
@@ -126,18 +126,18 @@ export const CoachAiHistoryDrawer: React.FC<CoachAiHistoryDrawerProps> = ({
                       </span>
                     </div>
 
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-orange-600 dark:group-hover:text-orange-400">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
                       {plan.name}
                     </h4>
 
                     <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2 truncate">
                       <span className="flex items-center gap-1">
-                        <Dumbbell className="w-3 h-3 text-orange-500" />
+                        <Dumbbell className="w-3 h-3" />
                         {exerciseCount} bài
                       </span>
                       <span>·</span>
                       <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-amber-500" />
+                        <Clock className="w-3 h-3 text-slate-500" />
                         {plan.duration}p
                       </span>
                       {plan.level && (
@@ -149,7 +149,7 @@ export const CoachAiHistoryDrawer: React.FC<CoachAiHistoryDrawerProps> = ({
                     </div>
                   </div>
 
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-orange-600 dark:group-hover:text-orange-400 shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-slate-400 dark: shrink-0" />
                 </div>
               );
             })

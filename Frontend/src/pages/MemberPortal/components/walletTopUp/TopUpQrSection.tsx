@@ -36,7 +36,7 @@ export const TopUpQrSection: React.FC<Props> = ({
       title="Sao chép"
     >
       {copiedKey === id ? (
-        <Check className="w-3.5 h-3.5 text-emerald-600" />
+        <Check className="w-3.5 h-3.5" />
       ) : (
         <Copy className="w-3.5 h-3.5" />
       )}
@@ -79,7 +79,7 @@ export const TopUpQrSection: React.FC<Props> = ({
           </div>
           <div className="flex justify-between">
             <span className="text-slate-500">Số tài khoản:</span>
-            <span className="font-mono font-bold flex items-center gap-1">
+            <span className="font-bold flex items-center gap-1">
               {bankConfig.accountNumber}{" "}
               <CopyBtn text={bankConfig.accountNumber} id="acc" />
             </span>
@@ -99,14 +99,14 @@ export const TopUpQrSection: React.FC<Props> = ({
           </div>
           <div className="flex justify-between border-t pt-1">
             <span className="text-slate-500">Nội dung:</span>
-            <span className="font-mono font-bold text-emerald-700 flex items-center gap-1">
+            <span className="font-bold text-emerald-700 flex items-center gap-1">
               {transferMemo} <CopyBtn text={transferMemo} id="memo" />
             </span>
           </div>
         </div>
 
         {/* VIETQR STATUS BADGE */}
-        <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between gap-3">
+        <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-50 to-emerald-50 dark:from-emerald-950/40 dark:to-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <span className="relative flex h-3 w-3 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -122,12 +122,12 @@ export const TopUpQrSection: React.FC<Props> = ({
             </div>
           </div>
           <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300 bg-white dark:bg-slate-900 px-2 py-1 rounded-lg border border-emerald-200 shadow-2xs shrink-0">
-            Napas 24/7 ⚡
+            Napas 24/7
           </span>
         </div>
 
         {checkStatusText && (
-          <div className="text-[11px] text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/60 p-2.5 rounded-xl border border-amber-200 dark:border-amber-800 text-center animate-in fade-in">
+          <div className="text-[11px] text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center animate-in fade-in">
             {checkStatusText}
           </div>
         )}

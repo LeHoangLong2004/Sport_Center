@@ -66,7 +66,7 @@ export function CoachAiSportParameters({
           <select
             value={sportId}
             onChange={(e) => setSportId(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-orange-500 focus:outline-none"
+            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
           >
             {sports.length === 0 ? (
               <option value="">Đang tải bộ môn...</option>
@@ -94,7 +94,7 @@ export function CoachAiSportParameters({
                   onClick={() => setLevel(lvl)}
                   className={`py-2 px-1.5 text-xs font-semibold rounded-xl border text-center transition-all cursor-pointer ${
                     active
-                      ? "bg-orange-500 text-white border-orange-500 shadow-sm"
+                      ? "bg-emerald-600 text-white border-emerald-500 shadow-sm"
                       : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                   }`}
                 >
@@ -121,7 +121,7 @@ export function CoachAiSportParameters({
           value={goal}
           onChange={(e) => setGoal(e.target.value)}
           placeholder="Nhập mục tiêu buổi tập của bạn hoặc chọn gợi ý nhanh..."
-          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-orange-500 focus:outline-none placeholder:text-slate-400"
+          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none placeholder:text-slate-400"
         />
         <div className="flex flex-col gap-1.5 pt-0.5">
           <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
@@ -137,8 +137,8 @@ export function CoachAiSportParameters({
                   onClick={() => setGoal(isSelected ? "" : p)}
                   className={`text-[11px] px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
                     isSelected
-                      ? "bg-orange-500 text-white border-orange-500 font-semibold shadow-xs"
-                      : "border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-300 hover:border-orange-300 dark:hover:border-orange-700"
+                      ? "bg-emerald-600 text-white border-emerald-600 font-semibold shadow-xs"
+                      : "border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-300 hover:border-emerald-300 dark:hover:border-emerald-700"
                   }`}
                 >
                   + {p}
@@ -155,7 +155,7 @@ export function CoachAiSportParameters({
           <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
             <span>Dụng cụ / Thiết bị có sẵn</span>
           </label>
-          <span className="text-[11px] font-semibold text-orange-600 dark:text-orange-400">
+          <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
             {equipment.length > 0 ? `(${equipment.length} đã chọn)` : "(Chưa chọn dụng cụ)"}
           </span>
         </div>
@@ -173,12 +173,12 @@ export function CoachAiSportParameters({
               }
             }}
             placeholder="Nhập dụng cụ / thiết bị khác nếu chưa có trong gợi ý (VD: Dây nhảy, Máy chèo thuyền...)"
-            className="flex-1 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none placeholder:text-slate-400"
+            className="flex-1 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none placeholder:text-slate-400"
           />
           <button
             type="button"
             onClick={handleAddCustomTool}
-            className="px-3.5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
+            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Thêm</span>
@@ -195,14 +195,14 @@ export function CoachAiSportParameters({
               {customAddedEquipment.map((item) => (
                 <span
                   key={item}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-orange-500 text-white border border-orange-500 shadow-sm"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-emerald-600 text-white border border-emerald-500 shadow-sm"
                 >
                   <Check className="w-3 h-3 text-white" />
                   <span>{item}</span>
                   <button
                     type="button"
                     onClick={() => toggleEquipment(item)}
-                    className="hover:bg-orange-600 p-0.5 rounded-full cursor-pointer transition ml-0.5"
+                    className="hover:bg-emerald-700 p-0.5 rounded-full cursor-pointer transition ml-0.5"
                     title="Xóa dụng cụ này"
                   >
                     <X className="w-3 h-3 text-white" />
@@ -228,7 +228,7 @@ export function CoachAiSportParameters({
                   onClick={() => toggleEquipment(item)}
                   className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
                     isSelected
-                      ? "bg-orange-500 text-white border-orange-500 shadow-sm shadow-orange-500/20"
+                      ? "bg-emerald-600 text-white border-emerald-500 shadow-sm shadow-emerald-600/20"
                       : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800"
                   }`}
                 >
@@ -248,7 +248,7 @@ export function CoachAiSportParameters({
             <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
               Thời lượng
             </label>
-            <span className="text-xs font-bold text-orange-600 dark:text-orange-400">
+            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
               {durationMinutes} phút
             </span>
           </div>
@@ -260,7 +260,7 @@ export function CoachAiSportParameters({
                 onClick={() => setDurationMinutes(mins)}
                 className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border text-center transition-colors cursor-pointer ${
                   durationMinutes === mins
-                    ? "bg-orange-500 text-white border-orange-500 shadow-sm"
+                    ? "bg-emerald-600 text-white border-emerald-500 shadow-sm"
                     : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800"
                 }`}
               >
@@ -275,7 +275,7 @@ export function CoachAiSportParameters({
             <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
               Số bài tập đề xuất
             </label>
-            <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
+            <span className="text-xs font-bold text-slate-900 dark:text-white">
               {exerciseCount} bài
             </span>
           </div>
@@ -293,7 +293,7 @@ export function CoachAiSportParameters({
               max={10}
               value={exerciseCount}
               onChange={(e) => setExerciseCount(Number(e.target.value))}
-              className="flex-1 accent-orange-500 cursor-pointer h-2"
+              className="flex-1 accent-emerald-600 cursor-pointer h-2"
             />
             <button
               type="button"

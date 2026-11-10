@@ -16,7 +16,7 @@ export const MemberStatsCards: React.FC<Props> = ({ stats }) => {
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/90 dark:border-slate-800 p-4 shadow-xs">
         <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
           <span>ĐỘ CHUYÊN CẦN</span>
-          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+          <CheckCircle2 className="w-4 h-4" />
         </div>
         <div className="mt-2 flex items-baseline gap-2">
           <span className="text-2xl font-bold text-slate-900 dark:text-white">{formatNumber(attendanceRate, "%")}</span>
@@ -31,13 +31,13 @@ export const MemberStatsCards: React.FC<Props> = ({ stats }) => {
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/90 dark:border-slate-800 p-4 shadow-xs">
         <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
           <span>CHỈ SỐ THỂ CHẤT</span>
-          <Activity className="w-4 h-4 text-blue-500" />
+          <Activity className="w-4 h-4 text-slate-500" />
         </div>
         <div className="mt-2 flex items-baseline gap-2">
           <span className="text-2xl font-bold text-slate-900 dark:text-white">
             {formatNumber(stats.weight)}{stats.weight != null && <span className="text-sm font-normal text-slate-500"> kg</span>}
           </span>
-          <span className="text-xs text-blue-600 font-medium">BMI {formatNumber(stats.bmi)}</span>
+          <span className="text-xs text-slate-600 font-medium">BMI {formatNumber(stats.bmi)}</span>
         </div>
         <p className="text-[11px] text-slate-400 mt-1">Cao: {formatNumber(stats.height, "cm")} · Mỡ: {formatNumber(stats.bodyFat, "%")}</p>
       </div>
@@ -46,7 +46,7 @@ export const MemberStatsCards: React.FC<Props> = ({ stats }) => {
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/90 dark:border-slate-800 p-4 shadow-xs">
         <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
           <span>BUỔI GẦN NHẤT</span>
-          <Clock className="w-4 h-4 text-purple-500" />
+          <Clock className="w-4 h-4" />
         </div>
         <div className="mt-2">
           <span className="text-sm font-bold text-slate-900 dark:text-white block truncate">{latest?.className || "Chưa có dữ liệu"}</span>
@@ -59,11 +59,11 @@ export const MemberStatsCards: React.FC<Props> = ({ stats }) => {
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/90 dark:border-slate-800 p-4 shadow-xs">
         <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
           <span>TIẾN ĐỘ MỤC TIÊU</span>
-          <TrendingUp className="w-4 h-4 text-orange-500" />
+          <TrendingUp className="w-4 h-4" />
         </div>
         <div className="mt-2 flex items-baseline gap-2">
           <span className="text-2xl font-bold text-slate-900 dark:text-white">{formatNumber(stats.goalProgress, "%")}</span>
-          <span className="text-xs text-orange-600 font-medium">Theo giáo án đã giao</span>
+          <span className="text-xs text-emerald-600 font-medium">Theo giáo án đã giao</span>
         </div>
         <p className="text-[11px] text-slate-400 mt-1">Tiến độ trung bình từ dữ liệu bài tập</p>
       </div>

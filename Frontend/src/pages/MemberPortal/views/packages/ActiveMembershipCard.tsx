@@ -23,8 +23,8 @@ export function ActiveMembershipCard({
   onStartPurchase,
 }: ActiveMembershipCardProps) {
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-gradient-to-br from-slate-900 via-slate-850 to-slate-950 text-white p-7 shadow-xl">
-      <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 rounded-full bg-gradient-to-br from-amber-500/15 via-emerald-500/10 to-transparent blur-3xl pointer-events-none" />
+    <div className="relative overflow-hidden rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 text-white p-7 shadow-xl">
+      <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 rounded-full bg-gradient-to-br from-emerald-500/15 via-emerald-500/10 to-transparent blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-60 h-60 rounded-full bg-gradient-to-tr from-emerald-500/20 to-transparent blur-2xl pointer-events-none" />
 
       <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/10">
@@ -34,15 +34,15 @@ export function ActiveMembershipCard({
               membershipStatus.tier === "premium"
                 ? "bg-gradient-to-br from-amber-400 to-amber-500 text-slate-950 shadow-amber-500/30"
                 : membershipStatus.tier === "plus"
-                ? "bg-gradient-to-br from-emerald-400 to-teal-600 text-slate-950 shadow-emerald-500/30"
-                : "bg-gradient-to-br from-slate-600 to-slate-800 text-white"
+                ? "bg-gradient-to-br from-emerald-400 to-emerald-600 text-slate-950 shadow-emerald-500/30"
+                : "bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 border border-emerald-400/30 text-emerald-300"
             }`}
           >
             <Crown className="w-8 h-8" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
+              <span className="text-xs font-semibold tracking-wider text-emerald-300/90 uppercase">
                 Thẻ Thành Viên Số
               </span>
               <span
@@ -51,7 +51,7 @@ export function ActiveMembershipCard({
                     ? "bg-amber-400 text-slate-950"
                     : membershipStatus.tier === "plus"
                     ? "bg-emerald-400 text-slate-950"
-                    : "bg-slate-700 text-slate-200"
+                    : "bg-emerald-500/20 text-emerald-300 border border-emerald-400/30"
                 }`}
               >
                 {membershipStatus.name}
@@ -59,10 +59,10 @@ export function ActiveMembershipCard({
             </div>
             <h3 className="text-2xl font-black tracking-tight mt-1">
               {membershipStatus.tier === "premium"
-                ? "👑 Hạng Premium VIP"
+                ? "Hạng Premium VIP"
                 : membershipStatus.tier === "plus"
-                ? "🥈 Hạng Plus Member"
-                : "🥉 Hạng Cơ Bản (Basic)"}
+                ? "Hạng Plus Member"
+                : "Hạng Cơ Bản (Basic)"}
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
               {membershipStatus.tier === "basic"
@@ -79,7 +79,7 @@ export function ActiveMembershipCard({
               const plusPkg = catalog.find((p) => p.tier === "plus");
               if (plusPkg) onStartPurchase(plusPkg);
             }}
-            className="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-extrabold text-xs shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+            className="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-500 hover:from-emerald-400 hover:to-emerald-400 text-white font-extrabold text-xs shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
           >
             <Sparkles className="w-4 h-4" />
             <span>Nâng cấp nhận thêm đặc quyền</span>
@@ -105,12 +105,12 @@ export function ActiveMembershipCard({
       <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-6">
         <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs flex flex-col justify-between">
           <div className="flex items-center gap-2 text-slate-400">
-            <Flame className="w-4 h-4 text-amber-400" />
+            <Flame className="w-4 h-4 text-slate-400" />
             <span className="text-[11px] font-semibold">Ưu đãi mua môn</span>
           </div>
           <div className="mt-2 text-sm font-black text-white">
             {membershipStatus.tier === "premium" ? (
-              <span className="text-amber-400">Giảm 10% / 5%</span>
+              <span className="text-emerald-400">Giảm 10% / 5%</span>
             ) : membershipStatus.tier === "plus" ? (
               <span className="text-emerald-400">Giảm 5% / 2%</span>
             ) : (
@@ -122,7 +122,7 @@ export function ActiveMembershipCard({
 
         <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs flex flex-col justify-between">
           <div className="flex items-center gap-2 text-slate-400">
-            <Clock className="w-4 h-4 text-blue-400" />
+            <Clock className="w-4 h-4 text-slate-400" />
             <span className="text-[11px] font-semibold">Đặt lịch trước</span>
           </div>
           <div className="mt-2 text-sm font-black text-white">
@@ -135,7 +135,7 @@ export function ActiveMembershipCard({
 
         <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs flex flex-col justify-between">
           <div className="flex items-center gap-2 text-slate-400">
-            <Ticket className="w-4 h-4 text-emerald-400" />
+            <Ticket className="w-4 h-4 text-slate-400" />
             <span className="text-[11px] font-semibold">Vé mời bạn bè</span>
           </div>
           <div className="mt-2 text-sm font-black text-white">
@@ -152,12 +152,12 @@ export function ActiveMembershipCard({
 
         <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs flex flex-col justify-between">
           <div className="flex items-center gap-2 text-slate-400">
-            <Droplets className="w-4 h-4 text-cyan-400" />
+            <Droplets className="w-4 h-4 text-slate-400" />
             <span className="text-[11px] font-semibold">Xông hơi & Bồn sục</span>
           </div>
           <div className="mt-2 text-sm font-black text-white">
             {membershipStatus.tier === "premium" ? (
-              <span className="text-cyan-300">Miễn phí Sauna</span>
+              <span className="text-emerald-300">Miễn phí Sauna</span>
             ) : (
               <span className="text-slate-500">Chưa hỗ trợ</span>
             )}
@@ -167,7 +167,7 @@ export function ActiveMembershipCard({
 
         <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs flex flex-col justify-between">
           <div className="flex items-center gap-2 text-slate-400">
-            <Lock className="w-4 h-4 text-purple-400" />
+            <Lock className="w-4 h-4 text-slate-400" />
             <span className="text-[11px] font-semibold">Tủ đồ & Khăn tập</span>
           </div>
           <div className="mt-2 text-sm font-black text-white truncate">
@@ -182,14 +182,14 @@ export function ActiveMembershipCard({
 
         <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs flex flex-col justify-between">
           <div className="flex items-center gap-2 text-slate-400">
-            <Activity className="w-4 h-4 text-pink-400" />
+            <Activity className="w-4 h-4 text-slate-400" />
             <span className="text-[11px] font-semibold">InBody & Trợ lý AI</span>
           </div>
           <div className="mt-2 text-sm font-black text-white">
             {membershipStatus.tier === "premium" ? (
-              <span className="text-pink-300">Không giới hạn</span>
+              <span className="text-emerald-300">Không giới hạn</span>
             ) : membershipStatus.tier === "plus" ? (
-              <span className="text-pink-300">1 lần / tháng</span>
+              <span className="text-emerald-300">1 lần / tháng</span>
             ) : (
               <span className="text-slate-400">1 lần kích hoạt</span>
             )}

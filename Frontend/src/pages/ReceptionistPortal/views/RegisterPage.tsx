@@ -164,7 +164,7 @@ export function RegisterPage() {
             {plans.map((plan) => {
               const active = selectedPlan === plan.id
               return (
-                <button key={plan.id} type="button" onClick={() => setSelectedPlan(plan.id)} className={`flex items-center justify-between p-[14px] rounded-[8px] shrink-0 w-full text-left ${active ? "bg-[#eff6ff] border-[#3b82f6] border-[1.5px]" : "border border-[#e2e8f0]"}`}>
+                <button key={plan.id} type="button" onClick={() => setSelectedPlan(plan.id)} className={`flex items-center justify-between p-[14px] rounded-[8px] shrink-0 w-full text-left ${active ? "bg-emerald-50 border-emerald-600 border-[1.5px]" : "border border-[#e2e8f0]"}`}>
                   <div>
                     <span className="font-bold text-[#0f172a] text-[14px]">{plan.planName}</span>
                     <span className="block text-[#64748b] text-[12px]">{plan.description}</span>
@@ -184,8 +184,8 @@ export function RegisterPage() {
             </select>
           </Field>
           {error && <p className="text-[#dc2626] text-[14px]">{error}</p>}
-          {submitted && <p className="text-[#16a34a] text-[14px]">Đã tạo tài khoản và gói đăng ký trong database.</p>}
-          <button type="button" disabled={submitting || loadingPlans || plans.length === 0} onClick={submitRegistration} className="bg-[#3b82f6] disabled:opacity-60 flex items-center justify-center p-[14px] rounded-[8px] w-full">
+          {submitted && <p className="text-emerald-600 text-[14px]">Đã tạo tài khoản và gói đăng ký trong database.</p>}
+          <button type="button" disabled={submitting || loadingPlans || plans.length === 0} onClick={submitRegistration} className="bg-emerald-600 disabled:opacity-60 flex items-center justify-center p-[14px] rounded-[8px] w-full">
             <span className="font-bold text-[15px] text-white">{submitting ? "ĐANG XỬ LÝ..." : submitted ? "ĐÃ ĐĂNG KÝ THÀNH CÔNG" : "HOÀN TẤT ĐĂNG KÝ HỘI VIÊN"}</span>
           </button>
         </div>

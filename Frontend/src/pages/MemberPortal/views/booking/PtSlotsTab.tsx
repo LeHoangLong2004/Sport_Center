@@ -32,25 +32,25 @@ export const PtSlotsTab: React.FC<PtSlotsTabProps> = ({ slots, onBookPtSlot }) =
               >
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200/80 dark:border-teal-800">
+                    <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800">
                       {slot.sport || "PT 1-1"} • Kèm riêng cá nhân
                     </span>
-                    <span className="text-xs font-black text-teal-700 dark:text-teal-400">
+                    <span className="text-xs font-black text-emerald-700 dark:text-emerald-400">
                       Slot 60 phút
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-3 my-3 p-3 bg-teal-50/50 dark:bg-teal-950/20 rounded-2xl border border-teal-100 dark:border-teal-900/40">
+                  <div className="flex items-center gap-3 my-3 p-3 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-100 dark:border-emerald-900/40">
                     <CoachAvatar
                       src={coachAvatar}
                       name={slot.coachName}
-                      className="w-11 h-11 rounded-full border-2 border-teal-500 shrink-0"
+                      className="w-11 h-11 rounded-full border-2 border-emerald-500 shrink-0"
                     />
                     <div>
                       <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">
                         {slot.coachName}
                       </h4>
-                      <p className="text-[11px] font-semibold text-teal-600 dark:text-teal-400">
+                      <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
                         Chuyên gia huấn luyện thể hình
                       </p>
                     </div>

@@ -138,7 +138,7 @@ export function Login({
   }
 
   return (
-    <main className="relative min-h-screen flex items-center justify-center p-4 font-sans selection:bg-[#14b8a6] selection:text-white overflow-hidden">
+    <main className="relative min-h-screen flex items-center justify-center p-4 font-sans selection:bg-emerald-600 selection:text-white overflow-hidden">
       {/* Full-screen Background */}
       <img 
         className="absolute inset-0 w-full h-full object-cover scale-105" 
@@ -158,7 +158,7 @@ export function Login({
         <div className="w-full lg:w-5/12 p-10 lg:p-12 flex flex-col justify-between bg-gradient-to-br from-[#14b8a6]/20 to-transparent border-b lg:border-b-0 lg:border-r border-white/10">
           <div>
             <div className="flex gap-3 items-center mb-12">
-              <div className="bg-[#14b8a6] flex items-center justify-center rounded-xl w-14 h-14 shadow-lg shadow-[#14b8a6]/30">
+              <div className="bg-emerald-600 flex items-center justify-center rounded-xl w-14 h-14 shadow-lg shadow-[#14b8a6]/30">
                 <span className="font-black text-white text-2xl">SC</span>
               </div>
               <div className="flex flex-col">
@@ -195,7 +195,7 @@ export function Login({
             )}
 
             <div className="mb-6">
-              <span className="inline-block px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold text-xs tracking-widest uppercase rounded-full mb-3">Chào mừng trở lại</span>
+              <span className="inline-block px-3 py-1 bg-slate-50 dark:bg-slate-900/30 text-slate-600 dark:text-slate-400 font-bold text-xs tracking-widest uppercase rounded-full mb-3">Chào mừng trở lại</span>
               <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Đăng nhập</h2>
             </div>
 
@@ -212,7 +212,7 @@ export function Login({
                     onChange={(e) => { setEmail(e.target.value); setError("") }}
                     type="text"
                     required
-                    className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/40 focus:border-[#14b8a6] transition-all focus:bg-white"
+                    className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/40 focus:border-[#14b8a6] transition-all focus:bg-white dark:focus:bg-slate-800"
                     placeholder="Nhập email của bạn"
                   />
                 </div>
@@ -229,7 +229,7 @@ export function Login({
                     onChange={(e) => { setPassword(e.target.value); setError("") }}
                     type="password"
                     required
-                    className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/40 focus:border-[#14b8a6] transition-all focus:bg-white"
+                    className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/40 focus:border-[#14b8a6] transition-all focus:bg-white dark:focus:bg-slate-800"
                     placeholder="••••••••"
                   />
                 </div>
@@ -247,7 +247,7 @@ export function Login({
               <button 
                 type="button" 
                 onClick={onForgotPassword}
-                className="text-sm font-bold text-[#14b8a6] hover:text-[#0d9488] transition-colors"
+                className="text-sm font-bold text-emerald-600 hover:text-[#0d9488] transition-colors"
               >
                 Quên mật khẩu?
               </button>
@@ -256,7 +256,7 @@ export function Login({
             <button
               disabled={loading}
               type="submit"
-              className="w-full flex items-center justify-center gap-2 bg-[#14b8a6] hover:bg-[#0d9488] text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-teal-500/30 transition-all active:scale-[0.98] hover:-translate-y-1 disabled:opacity-70 disabled:pointer-events-none disabled:transform-none"
+              className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-[#0d9488] text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-emerald-500/30 transition-all active:scale-[0.98] hover:-translate-y-1 disabled:opacity-70 disabled:pointer-events-none disabled:transform-none"
             >
               {loading ? (
                 <>
@@ -276,7 +276,7 @@ export function Login({
               <button 
                 type="button" 
                 onClick={onRegister}
-                className="font-bold text-[#14b8a6] hover:text-[#0d9488] transition-colors ml-1"
+                className="font-bold text-emerald-600 hover:text-[#0d9488] transition-colors ml-1"
               >
                 Đăng ký ngay
               </button>

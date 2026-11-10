@@ -16,7 +16,7 @@ import type { MockSession, AttendanceRecord } from "../../services/api";
 import { type Appointment, parseAppointmentCustomer } from "../../../../services/appointmentService";
 
 const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> = {
-  "sắp diễn ra": { label: "Sắp diễn ra", bg: "bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800", text: "text-blue-700 dark:text-blue-400" },
+  "sắp diễn ra": { label: "Sắp diễn ra", bg: "bg-slate-50 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800", text: "text-slate-700 dark:text-slate-400" },
   "đang diễn ra": { label: "Đang diễn ra", bg: "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800", text: "text-emerald-700 dark:text-emerald-400" },
   "hoàn thành": { label: "Hoàn thành", bg: "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700", text: "text-slate-600 dark:text-slate-400" },
   "đã hủy": { label: "Đã hủy", bg: "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800", text: "text-rose-700 dark:text-rose-400" },
@@ -43,16 +43,16 @@ export const TodaySessionsList: React.FC<TodaySessionsListProps> = ({
     <div className="xl:col-span-2 flex flex-col gap-5">
       {/* 1. LỊCH HẸN KHÁCH TỪ LỄ TÂN (Nổi bật dành cho HLV) */}
       {appointments.length > 0 && (
-        <div className="rounded-2xl border border-amber-200/90 dark:border-amber-900/60 bg-gradient-to-br from-amber-50/70 via-white to-orange-50/30 dark:from-amber-950/20 dark:via-slate-900 dark:to-orange-950/20 p-4 sm:p-5 shadow-xs flex flex-col gap-3.5">
+        <div className="rounded-2xl border border-emerald-200/90 dark:border-emerald-900/60 bg-gradient-to-br from-emerald-50/70 via-white to-emerald-50/30 dark:from-emerald-950/20 dark:via-slate-900 dark:to-emerald-950/20 p-4 sm:p-5 shadow-xs flex flex-col gap-3.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
+              <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                 <CalendarCheck className="w-4 h-4" />
               </div>
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <span>Lịch hẹn tiếp đón từ Lễ tân</span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">
                     {appointments.length} lịch hẹn
                   </span>
                 </h3>
@@ -61,7 +61,7 @@ export const TodaySessionsList: React.FC<TodaySessionsListProps> = ({
                 </p>
               </div>
             </div>
-            <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-400">
+            <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
               <Sparkles className="w-3.5 h-3.5" />
               Hôm nay
             </span>
@@ -77,13 +77,13 @@ export const TodaySessionsList: React.FC<TodaySessionsListProps> = ({
               return (
                 <div
                   key={appt.id}
-                  className={`p-3.5 sm:p-4 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs hover:border-amber-300 dark:hover:border-amber-700/80 transition-all ${
+                  className={`p-3.5 sm:p-4 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs hover:border-emerald-300 dark:hover:border-emerald-700/80 transition-all ${
                     isCancelled ? "opacity-60" : ""
                   }`}
                 >
                   <div className="flex items-start gap-3.5 min-w-0 flex-1">
-                    <div className="px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200/70 dark:border-amber-800/60 text-center shrink-0 min-w-[72px]">
-                      <span className="block text-xs font-bold text-amber-700 dark:text-amber-400 font-mono">
+                    <div className="px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/70 dark:border-emerald-800/60 text-center shrink-0 min-w-[72px]">
+                      <span className="block text-xs font-bold text-emerald-700 dark:text-emerald-400 ">
                         {appt.time}
                       </span>
                       <span className="block text-[10px] text-slate-400 font-medium">
@@ -102,7 +102,7 @@ export const TodaySessionsList: React.FC<TodaySessionsListProps> = ({
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wider bg-orange-100 text-orange-800 dark:bg-orange-950/60 dark:text-orange-300">
+                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
                           Lễ tân xếp
                         </span>
                         <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
@@ -114,7 +114,7 @@ export const TodaySessionsList: React.FC<TodaySessionsListProps> = ({
                               ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400"
                               : isCancelled
                               ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400"
-                              : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400"
+                              : "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950/40 dark:text-slate-400"
                           }`}
                         >
                           {appt.status}
@@ -129,7 +129,7 @@ export const TodaySessionsList: React.FC<TodaySessionsListProps> = ({
                         {custPhone && (
                           <a
                             href={`tel:${custPhone}`}
-                            className="flex items-center gap-1 text-slate-500 hover:text-orange-600 dark:hover:text-orange-400 font-medium"
+                            className="flex items-center gap-1 text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium"
                           >
                             <Phone className="w-3 h-3 text-slate-400" />
                             {custPhone}
@@ -177,7 +177,7 @@ export const TodaySessionsList: React.FC<TodaySessionsListProps> = ({
           <button
             type="button"
             onClick={() => navigateTo("schedule")}
-            className="text-xs font-semibold text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-1"
+            className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
           >
             Xem tất cả <ArrowRight className="w-3.5 h-3.5" />
           </button>
@@ -243,7 +243,7 @@ export const TodaySessionsList: React.FC<TodaySessionsListProps> = ({
                     </div>
 
                     {pending > 0 && !isCancelled && (
-                      <div className="mt-2 text-xs text-amber-700 dark:text-amber-400 font-medium flex items-center gap-1.5">
+                      <div className="mt-2 text-xs text-emerald-700 dark:text-emerald-400 font-medium flex items-center gap-1.5">
                         <AlertCircle className="w-3.5 h-3.5" />
                         Còn {pending} học viên chưa được điểm danh
                       </div>
@@ -255,7 +255,7 @@ export const TodaySessionsList: React.FC<TodaySessionsListProps> = ({
                       <button
                         type="button"
                         onClick={() => navigateTo("attendance", { sessionId: s.id })}
-                        className="px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors shadow-sm shadow-orange-600/20"
+                        className="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-sm shadow-emerald-600/20"
                       >
                         Điểm danh
                       </button>

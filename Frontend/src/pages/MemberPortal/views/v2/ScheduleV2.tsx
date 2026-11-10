@@ -186,12 +186,12 @@ export function Schedule({ onNavigate }: { onNavigate: Navigate }) {
             </div>
 
             <div className="flex items-center gap-2">
-              <button type="button" onClick={() => setCurrentWeekStart(getMonday())} className="px-3.5 py-2 rounded-xl border border-teal-200 bg-teal-50 text-teal-700 text-xs font-bold">
+              <button type="button" onClick={() => setCurrentWeekStart(getMonday())} className="px-3.5 py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-bold">
                 Hôm nay
               </button>
               <div className="flex flex-wrap gap-4 bg-slate-50 px-4 py-2.5 rounded-full border border-slate-200/60">
-                <LegendDot color="bg-teal-500" label="Lớp nhóm" />
-                <LegendDot color="bg-orange-400" label="PT cá nhân" />
+                <LegendDot color="bg-emerald-500" label="Lớp nhóm" />
+                <LegendDot color="bg-slate-400" label="PT cá nhân" />
                 <LegendDot color="bg-emerald-400" label="Tự tập tự do" />
               </div>
             </div>
@@ -201,7 +201,7 @@ export function Schedule({ onNavigate }: { onNavigate: Navigate }) {
         </div>
 
         <aside className="w-full xl:w-[320px] shrink-0 flex flex-col gap-6">
-          <button type="button" className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold text-sm py-4 rounded-2xl shadow-md shadow-teal-600/20 transition-all hover:-translate-y-0.5" onClick={() => onNavigate("classes")}>
+          <button type="button" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm py-4 rounded-2xl shadow-md shadow-emerald-600/20 transition-all hover:-translate-y-0.5" onClick={() => onNavigate("classes")}>
             + Đặt lớp mới
           </button>
 
@@ -210,7 +210,7 @@ export function Schedule({ onNavigate }: { onNavigate: Navigate }) {
             {nextEvent ? (
               <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
                 <div className="flex flex-col items-center justify-center bg-white border border-slate-200 w-14 h-16 rounded-xl shadow-sm shrink-0">
-                  <span className="text-[10px] font-bold text-teal-600 uppercase">{DAYS[nextEvent.column - 1]}</span>
+                  <span className="text-[10px] font-bold text-emerald-600 uppercase">{DAYS[nextEvent.column - 1]}</span>
                   <b className="text-xl font-black text-slate-800">{nextEvent.rawStart.getDate()}</b>
                 </div>
                 <div className="flex-1 min-w-0">
@@ -227,7 +227,7 @@ export function Schedule({ onNavigate }: { onNavigate: Navigate }) {
             <strong className="block text-[11px] font-bold text-slate-400 tracking-widest uppercase mb-4">Tiến trình tháng {currentMonth + 1}</strong>
             <dl className="space-y-4">
               <div className="flex justify-between items-center pb-4 border-b border-slate-100"><dt className="text-sm font-medium text-slate-500">Số buổi tập</dt><dd className="text-sm font-bold text-slate-800">{monthEventCount} buổi</dd></div>
-              <div className="flex justify-between items-center pb-4 border-b border-slate-100"><dt className="text-sm font-medium text-slate-500">Tiêu thụ calo (ước tính)</dt><dd className="text-sm font-bold text-orange-600">{(monthEventCount * 450).toLocaleString("vi-VN")} kcal</dd></div>
+              <div className="flex justify-between items-center pb-4 border-b border-slate-100"><dt className="text-sm font-medium text-slate-500">Tiêu thụ calo (ước tính)</dt><dd className="text-sm font-bold text-slate-600">{(monthEventCount * 450).toLocaleString("vi-VN")} kcal</dd></div>
               <div className="flex justify-between items-center"><dt className="text-sm font-medium text-slate-500">Chuỗi tập</dt><dd className="text-sm font-bold text-emerald-600">✓ -- ngày</dd></div>
             </dl>
           </div>
@@ -238,7 +238,7 @@ export function Schedule({ onNavigate }: { onNavigate: Navigate }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" role="dialog" aria-modal="true" aria-label="Chi tiết lịch học">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
-              <div><p className="text-xs font-bold uppercase tracking-widest text-teal-600">Chi tiết lịch học</p><h3 className="mt-2 text-xl font-bold text-slate-800">{selectedEvent.title}</h3></div>
+              <div><p className="text-xs font-bold uppercase tracking-widest text-emerald-600">Chi tiết lịch học</p><h3 className="mt-2 text-xl font-bold text-slate-800">{selectedEvent.title}</h3></div>
               <button type="button" onClick={() => setSelectedEvent(null)} className="rounded-lg p-2 text-xl leading-none text-slate-400 hover:bg-slate-100" aria-label="Đóng">×</button>
             </div>
             <div className="mt-5 space-y-3 text-sm text-slate-600">
@@ -247,7 +247,7 @@ export function Schedule({ onNavigate }: { onNavigate: Navigate }) {
               <p><strong className="text-slate-800">Địa điểm:</strong> {selectedEvent.meta}</p>
               {selectedEvent.status && <p><strong className="text-slate-800">Trạng thái:</strong> {selectedEvent.status}</p>}
             </div>
-            <button type="button" onClick={() => setSelectedEvent(null)} className="mt-6 w-full rounded-xl bg-teal-600 py-3 text-sm font-bold text-white hover:bg-teal-700">Đóng</button>
+            <button type="button" onClick={() => setSelectedEvent(null)} className="mt-6 w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700">Đóng</button>
           </div>
         </div>
       )}

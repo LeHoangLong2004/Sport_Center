@@ -12,7 +12,7 @@ export default function WalletBanner({ balance, onOpenTopUp }: Props) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold border border-emerald-500/30">
-            <Wallet className="w-3.5 h-3.5 text-emerald-400" />
+            <Wallet className="w-3.5 h-3.5" />
             <span>Ví tài khoản hội viên SportCenter</span>
           </div>
           <div>

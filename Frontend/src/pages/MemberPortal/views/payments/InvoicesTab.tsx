@@ -80,7 +80,7 @@ export default function InvoicesTab({
                   key={p.id}
                   className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40"
                 >
-                  <td className="p-4 font-mono font-semibold text-slate-900 dark:text-white">
+                  <td className="p-4 font-semibold text-slate-900 dark:text-white">
                     {p.id}
                   </td>
                   <td className="p-4 font-medium">{p.packageName}</td>
@@ -96,17 +96,17 @@ export default function InvoicesTab({
                       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${
                         p.status === "paid"
                           ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300"
-                          : "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300"
+                          : "bg-slate-100 dark:bg-slate-950/60 text-slate-700 dark:text-slate-300"
                       }`}
                     >
                       {p.status === "paid" ? (
                         <>
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <CheckCircle2 className="w-3 h-3" />
                           Đã thanh toán
                         </>
                       ) : (
                         <>
-                          <Clock className="w-3 h-3 text-amber-600" />
+                          <Clock className="w-3 h-3 text-slate-600" />
                           Chờ thanh toán
                         </>
                       )}

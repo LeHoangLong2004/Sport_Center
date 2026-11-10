@@ -71,7 +71,7 @@ export function MemberSidebar({
               key={destination}
               type="button"
               onClick={() => onNavigate(destination as MemberPage)}
-              className={`flex gap-[12px] items-center px-[16px] py-[12px] rounded-[8px] shrink-0 w-full text-left transition-all duration-200 cursor-pointer active:scale-[0.98] ${active ? "bg-[#3b82f6]" : "bg-transparent hover:bg-white/5"}`}
+              className={`flex gap-[12px] items-center px-[16px] py-[12px] rounded-[8px] shrink-0 w-full text-left transition-all duration-200 cursor-pointer active:scale-[0.98] ${active ? "bg-emerald-600" : "bg-transparent hover:bg-white/5"}`}
             >
               <img 
                 src={asset(currentVisualPage, icon)} 

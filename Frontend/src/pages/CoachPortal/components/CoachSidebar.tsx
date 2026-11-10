@@ -45,12 +45,14 @@ export default function CoachSidebar({
         title="Quay lại Trang chủ SportCenter"
         aria-label="Quay lại Trang chủ"
       >
-        <div className="bg-[#f97316] flex flex-col items-center justify-center rounded-[10px] shrink-0 size-[40px] shadow-lg shadow-orange-500/20 transition-all duration-200 group-hover:scale-105 group-hover:shadow-orange-500/40 group-active:scale-95">
-          <span className="font-bold text-white text-[18px]">SC</span>
+        <div className="bg-emerald-600 flex flex-col items-center justify-center rounded-xl shrink-0 size-10 shadow-sm transition-transform duration-200 group-hover:scale-105">
+          <span className="font-extrabold text-white text-lg">SC</span>
         </div>
-        <div className="flex flex-col gap-[2px] items-start shrink-0">
-          <span className="font-extrabold text-[15px] text-white whitespace-nowrap tracking-wide group-hover:text-orange-400 transition-colors">SPORTCENTER</span>
-          <span className="font-bold text-[#f97316] text-[10px] whitespace-nowrap uppercase tracking-widest">COACH PORTAL</span>
+        <div className="flex flex-col gap-0.5 items-start shrink-0">
+          <span className="font-bold text-[15px] text-white whitespace-nowrap tracking-wide group-hover:text-emerald-400 transition-colors">SPORTCENTER</span>
+          <div className="bg-emerald-500/10 flex items-start px-2 py-0.5 rounded shrink-0 border border-emerald-500/20">
+            <span className="font-semibold text-emerald-400 text-[10px] whitespace-nowrap tracking-wider">HUẤN LUYỆN VIÊN</span>
+          </div>
         </div>
       </button>
 
@@ -65,17 +67,14 @@ export default function CoachSidebar({
           return (
             <button
               key={key}
-              className={`sidebar-nav-btn btn-tactile group relative flex gap-[12px] items-center px-[16px] py-[11px] rounded-[10px] shrink-0 w-full text-left cursor-pointer ${
+              className={`sidebar-nav-btn btn-tactile group relative flex gap-[12px] items-center px-[16px] py-[11px] rounded-[10px] shrink-0 w-full text-left cursor-pointer transition-colors ${
                 isActive
-                  ? "bg-gradient-to-r from-[#f97316] to-[#ea580c] text-white shadow-lg shadow-orange-500/25 font-bold"
-                  : "bg-transparent text-[#94a3b8] hover:bg-white/5 hover:text-white font-medium"
+                  ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 font-semibold"
+                  : "bg-transparent text-[#cbd5e1] hover:bg-white/5 hover:text-white font-medium"
               }`}
               onClick={() => onNavigate(key)}
               type="button"
             >
-              {isActive && (
-                <span className="absolute left-1 top-2 bottom-2 w-1 bg-white rounded-full shadow-sm" />
-              )}
               <div className="shrink-0 size-5 flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
                 <Icon />
               </div>
@@ -97,7 +96,7 @@ export default function CoachSidebar({
           <UserAvatar
             src={avatarUrl || storedUser?.avatarUrl || undefined}
             name={userName}
-            className="rounded-full size-10 shrink-0 object-cover border-2 border-[#1e293b] group-hover:border-[#f97316] transition-colors"
+            className="rounded-full size-10 shrink-0 object-cover border-2 border-[#1e293b] group-hover:border-emerald-500 transition-colors"
           />
           <div className="flex flex-col flex-1 min-w-0 justify-center">
             <strong className="font-bold text-white text-[13px] truncate">{userName}</strong>

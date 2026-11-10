@@ -59,7 +59,7 @@ export default function PackageCheckoutModal({
         {/* Modal Body */}
         <div className="p-6 space-y-5 text-xs max-h-[70vh] overflow-y-auto">
           {/* Summary Card */}
-          <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50/50 to-teal-50/20 dark:from-emerald-950/30 dark:to-slate-850 border border-emerald-200/80 dark:border-emerald-800/80">
+          <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50/50 to-emerald-50/20 dark:from-emerald-950/30 dark:to-slate-850 border border-emerald-200/80 dark:border-emerald-800/80">
             <div className="flex items-center justify-between">
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
                 {selectedPackage.sport || "Hội viên"}
@@ -88,7 +88,7 @@ export default function PackageCheckoutModal({
                 </span>
               </div>
               {discountPct > 0 && (
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-300">
                   Đã giảm {discountPct}%
                 </span>
               )}
@@ -111,7 +111,7 @@ export default function PackageCheckoutModal({
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <QrCode className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  <QrCode className="w-5 h-5" />
                   <span className="font-bold text-xs">Chuyển khoản QR</span>
                 </div>
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-2">
@@ -129,7 +129,7 @@ export default function PackageCheckoutModal({
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <Building className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <Building className="w-5 h-5 text-slate-600 dark:text-slate-400" />
                   <span className="font-bold text-xs">Tiền mặt tại quầy</span>
                 </div>
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-2">
@@ -142,7 +142,7 @@ export default function PackageCheckoutModal({
           {/* Important notice */}
           <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-[11px] space-y-1">
             <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
-              <Info className="w-4 h-4 text-emerald-500" />
+              <Info className="w-4 h-4" />
               <span>Lưu ý thanh toán:</span>
             </div>
             {checkoutMethod === "counter" ? (

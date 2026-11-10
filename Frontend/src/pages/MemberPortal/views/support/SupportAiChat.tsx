@@ -23,6 +23,8 @@ const ACTION_TO_SCREEN: Partial<Record<MemberAiAction, MemberScreen>> = {
   schedule: "schedule",
   booking: "booking",
   packages: "packages",
+  packages_sport: "packages",
+  packages_membership: "packages",
   payments: "payments",
   workouts: "workouts",
   attendance: "attendance",
@@ -160,6 +162,20 @@ export const SupportAiChat: React.FC<SupportAiChatProps> = ({
       onOpenTickets?.();
       return;
     }
+    if (action === "packages_sport") {
+      onNavigate?.("packages");
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("switch-packages-tab", { detail: "sport" }));
+      }, 50);
+      return;
+    }
+    if (action === "packages_membership") {
+      onNavigate?.("packages");
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("switch-packages-tab", { detail: "membership" }));
+      }, 50);
+      return;
+    }
     const screen = ACTION_TO_SCREEN[action];
     if (screen) onNavigate?.(screen);
   };
@@ -174,7 +190,7 @@ export const SupportAiChat: React.FC<SupportAiChatProps> = ({
       {/* Header */}
       <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="relative w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-xs">
+          <div className="relative w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-600 to-emerald-500 text-white flex items-center justify-center shadow-xs">
             <Bot className="w-4.5 h-4.5" />
             <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" />
           </div>
@@ -207,7 +223,7 @@ export const SupportAiChat: React.FC<SupportAiChatProps> = ({
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
                   isAi
-                    ? "bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-xs"
+                    ? "bg-gradient-to-tr from-emerald-600 to-emerald-500 text-white shadow-xs"
                     : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
                 }`}
               >
@@ -236,7 +252,7 @@ export const SupportAiChat: React.FC<SupportAiChatProps> = ({
                 <div className="flex items-center gap-2 px-1">
                   <span className="text-[10px] text-slate-400">{m.time}</span>
                   {isAi && idx > 0 && m.source && m.source !== "ai" && (
-                    <span className="text-[10px] text-amber-600 dark:text-amber-400" title="AI tạm thời không khả dụng, đang dùng câu trả lời dự phòng">
+                    <span className="text-[10px] text-slate-600 dark:text-slate-400" title="AI tạm thời không khả dụng, đang dùng câu trả lời dự phòng">
                       • Chế độ dự phòng
                     </span>
                   )}
@@ -248,7 +264,7 @@ export const SupportAiChat: React.FC<SupportAiChatProps> = ({
 
         {isThinking && (
           <div className="flex gap-3 max-w-[85%] self-start">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-xs">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-tr from-emerald-600 to-emerald-500 text-white shadow-xs">
               <Bot className="w-4 h-4" />
             </div>
             <div className="px-4 py-3.5 rounded-2xl rounded-tl-xs bg-slate-100 dark:bg-slate-800 flex items-center gap-1.5">
@@ -284,15 +300,15 @@ export const SupportAiChat: React.FC<SupportAiChatProps> = ({
 
       {/* Voice Listening Bar Indicator */}
       {isListening && (
-        <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/40 border-t border-amber-200 dark:border-amber-800 flex items-center justify-between text-xs text-amber-800 dark:text-amber-300 animate-pulse shrink-0">
+        <div className="px-4 py-2 bg-slate-50 dark:bg-slate-950/40 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-800 dark:text-slate-300 animate-pulse shrink-0">
           <span className="flex items-center gap-2 font-medium">
-            <Mic className="w-4 h-4 text-amber-600 animate-bounce" />
+            <Mic className="w-4 h-4 text-slate-600 animate-bounce" />
             Đang lắng nghe bạn nói tiếng Việt...
           </span>
           <button
             type="button"
             onClick={toggleListening}
-            className="text-xs font-bold text-amber-700 underline cursor-pointer"
+            className="text-xs font-bold text-slate-700 underline cursor-pointer"
           >
             Dừng lại
           </button>
@@ -341,7 +357,7 @@ export const SupportAiChat: React.FC<SupportAiChatProps> = ({
           </button>
         </form>
         <p className="flex items-center gap-1.5 text-[10px] text-slate-400 px-1">
-          <ShieldCheck className="w-3 h-3 text-emerald-500" />
+          <ShieldCheck className="w-3 h-3" />
           Trợ lý AI chỉ đưa ra gợi ý tham khảo, không thay thế chẩn đoán y khoa. Các thao tác đặt/hủy lớp, thanh toán bạn vẫn tự thực hiện.
         </p>
       </div>

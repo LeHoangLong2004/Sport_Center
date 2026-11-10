@@ -96,7 +96,7 @@ export default function AttendanceQrModal({
           <p className="mt-3 text-xs font-bold text-slate-800 dark:text-slate-200">
             {memberName}
           </p>
-          <p className="text-[11px] font-mono text-slate-400">
+          <p className="text-[11px] text-slate-400">
             {memberId.slice(0, 8).toUpperCase()}-MEMBER
           </p>
         </div>
@@ -107,7 +107,7 @@ export default function AttendanceQrModal({
 
         <button
           onClick={onClose}
-          className="w-full py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs transition-colors"
+          className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors"
         >
           Hoàn tất
         </button>

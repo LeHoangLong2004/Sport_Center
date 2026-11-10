@@ -5,10 +5,10 @@ import { iPrinter } from "../shared";
 import type { InvoiceResponse } from "../../../hooks/flow3Api";
 
 const STATUS_STYLE: Record<string, { badge: string; text: string }> = {
-  completed: { badge: "bg-[#dcfce7] text-[#15803d]", text: "Đã thanh toán thành công" },
-  pending: { badge: "bg-[#fef3c7] text-[#b45309]", text: "Đang chờ thanh toán" },
+  completed: { badge: "bg-emerald-50 text-emerald-700", text: "Đã thanh toán thành công" },
+  pending: { badge: "bg-slate-100 text-slate-700", text: "Đang chờ thanh toán" },
   failed: { badge: "bg-[#fee2e2] text-[#b91c1c]", text: "Thanh toán thất bại" },
-  refunded: { badge: "bg-[#e0e7ff] text-[#4338ca]", text: "Đã hoàn tiền" },
+  refunded: { badge: "bg-slate-100 text-slate-700", text: "Đã hoàn tiền" },
   expired: { badge: "bg-[#f1f5f9] text-[#475569]", text: "Hóa đơn đã hết hạn" },
 };
 
@@ -61,7 +61,7 @@ export function InvoiceDetailModal({
               invoice.status === "completed"
                 ? "bg-green-50/80 border-green-200 text-green-900"
                 : invoice.status === "pending"
-                ? "bg-amber-50/80 border-amber-200 text-amber-900"
+                ? "bg-slate-50/80 border-slate-200 text-slate-900"
                 : "bg-slate-50 border-slate-200 text-slate-800"
             }`}
           >
@@ -89,7 +89,7 @@ export function InvoiceDetailModal({
                 {invoice.memberName ?? "Khách vãng lai"}
               </p>
               <p className="text-xs text-[#64748b] truncate mt-0.5">
-                Mã định danh: <span className="font-mono font-medium">{invoice.userId.substring(0, 8).toUpperCase()}</span>
+                Mã định danh: <span className="font-medium">{invoice.userId.substring(0, 8).toUpperCase()}</span>
               </p>
             </div>
           </div>
@@ -116,7 +116,7 @@ export function InvoiceDetailModal({
             </div>
             <div className="bg-slate-50/50 p-3.5 rounded-xl border border-slate-100">
               <span className="text-xs text-[#64748b] block mb-1">Mã tham chiếu CSDL</span>
-              <span className="font-mono text-xs text-[#64748b] truncate block" title={invoice.id}>
+              <span className="text-xs text-[#64748b] truncate block" title={invoice.id}>
                 {invoice.id}
               </span>
             </div>
@@ -125,7 +125,7 @@ export function InvoiceDetailModal({
           {/* Total Amount Box */}
           <div className="border-t border-dashed border-slate-200 pt-4 flex items-center justify-between">
             <span className="font-bold text-base text-[#0f172a]">Tổng thanh toán:</span>
-            <span className="font-black text-2xl text-blue-600">
+            <span className="font-black text-2xl text-slate-600">
               {formatVnd(invoice.totalAmount)}
             </span>
           </div>

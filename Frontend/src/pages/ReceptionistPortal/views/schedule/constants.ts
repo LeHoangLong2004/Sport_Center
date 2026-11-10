@@ -85,16 +85,16 @@ export const getServiceTag = (title: string): { label: string; bg: string } => {
     return { label: "InBody", bg: "bg-emerald-50 text-emerald-700 border-emerald-200" };
   }
   if (lower.includes("kickfit")) {
-    return { label: "Kickfit 1:1", bg: "bg-amber-50 text-amber-700 border-amber-200" };
+    return { label: "Kickfit 1:1", bg: "bg-slate-50 text-slate-700 border-slate-200" };
   }
   if (lower.includes("dinh dưỡng") || lower.includes("giảm mỡ")) {
     return { label: "Dinh dưỡng", bg: "bg-rose-50 text-rose-700 border-rose-200" };
   }
   if (lower.includes("pilates")) {
-    return { label: "Pilates 1:1", bg: "bg-purple-50 text-purple-700 border-purple-200" };
+    return { label: "Pilates 1:1", bg: "bg-emerald-50 text-emerald-700 border-emerald-200" };
   }
   if (lower.includes("gia hạn") || lower.includes("gói")) {
-    return { label: "Tư vấn gói", bg: "bg-indigo-50 text-indigo-700 border-indigo-200" };
+    return { label: "Tư vấn gói", bg: "bg-emerald-50 text-emerald-700 border-emerald-200" };
   }
-  return { label: "PT Gym 1:1", bg: "bg-blue-50 text-blue-700 border-blue-200" };
+  return { label: "PT Gym 1:1", bg: "bg-slate-50 text-slate-700 border-slate-200" };
 };

@@ -73,7 +73,7 @@ export default function ProfilePaymentReportModal({
               <div className="flex justify-between items-center text-slate-500">
                 <span>Số tài khoản:</span>
                 <div className="flex items-center gap-1.5">
-                  <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">
                     {bankConfig.accountNumber}
                   </span>
                   <button
@@ -99,7 +99,7 @@ export default function ProfilePaymentReportModal({
               </div>
               <div className="flex justify-between items-center text-slate-500">
                 <span>Nội dung chuyển khoản (bắt buộc):</span>
-                <span className="font-mono font-bold bg-white dark:bg-slate-700 px-2 py-0.5 rounded text-slate-900 dark:text-white border border-slate-200 dark:border-slate-600">
+                <span className="font-bold bg-white dark:bg-slate-700 px-2 py-0.5 rounded text-slate-900 dark:text-white border border-slate-200 dark:border-slate-600">
                   {activePaymentReportModal.id}{" "}
                   {profile?.phone || phone || storedUser?.phoneNumber || storedUser?.phone || ""}
                 </span>

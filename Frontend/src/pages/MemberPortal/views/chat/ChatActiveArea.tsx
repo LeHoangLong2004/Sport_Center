@@ -75,16 +75,16 @@ export const ChatActiveArea: React.FC<ChatActiveAreaProps> = ({
               <h3 className="font-bold text-slate-800 dark:text-white text-sm truncate">
                 {activeConv.title}
               </h3>
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
               <span
                 className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
                   cat === "coach"
-                    ? "bg-teal-100 text-teal-800 dark:bg-teal-950/50 dark:text-teal-300"
+                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
                     : cat === "manager"
-                    ? "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300"
+                    ? "bg-slate-100 text-slate-700 dark:bg-slate-950/50 dark:text-slate-300"
                     : cat === "member"
                     ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"
-                    : "bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300"
+                    : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"
                 }`}
               >
                 {activeConv.roleTag || "LIÊN HỆ"}
@@ -103,20 +103,20 @@ export const ChatActiveArea: React.FC<ChatActiveAreaProps> = ({
                 onClick={() => onNavigate?.("workouts")}
                 className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50"
               >
-                <Dumbbell className="w-3.5 h-3.5 text-emerald-500" />
+                <Dumbbell className="w-3.5 h-3.5" />
                 Giáo án
               </button>
               <button
                 onClick={() => onNavigate?.("schedule")}
                 className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50"
               >
-                <Calendar className="w-3.5 h-3.5 text-blue-500" />
+                <Calendar className="w-3.5 h-3.5 text-slate-500" />
                 Lịch tập
               </button>
             </>
           )}
           {cat === "manager" && (
-            <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/50 border border-blue-200 text-blue-700 dark:text-blue-300 text-[11px] font-semibold">
+            <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 text-slate-700 dark:text-slate-300 text-[11px] font-semibold">
               <Headphones className="w-3 h-3" />
               Hotline: 1900 6868
             </span>
@@ -131,7 +131,7 @@ export const ChatActiveArea: React.FC<ChatActiveAreaProps> = ({
       <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
         <div className="flex justify-center my-2">
           <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-400 bg-white/80 dark:bg-slate-800/80 px-3 py-1 rounded-full border border-slate-200/60 dark:border-slate-700/60 shadow-2xs">
-            <Shield className="w-3 h-3 text-emerald-500" />
+            <Shield className="w-3 h-3" />
             Tin nhắn được mã hóa và lưu trữ an toàn trên hệ thống SmartGym
           </span>
         </div>
@@ -167,9 +167,9 @@ export const ChatActiveArea: React.FC<ChatActiveAreaProps> = ({
                     <span
                       className={`px-1.5 py-0.2 rounded text-[9px] font-semibold ${
                         m.sender === "coach"
-                          ? "bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300"
+                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
                           : m.sender === "manager"
-                          ? "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
+                          ? "bg-slate-100 text-slate-700 dark:bg-slate-950/60 dark:text-slate-300"
                           : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
                       }`}
                     >
@@ -194,7 +194,7 @@ export const ChatActiveArea: React.FC<ChatActiveAreaProps> = ({
                   }`}
                 >
                   <span>{m.timestamp}</span>
-                  {isMe && <CheckCheck className="w-3.5 h-3.5 text-emerald-500" />}
+                  {isMe && <CheckCheck className="w-3.5 h-3.5" />}
                 </div>
               </div>
             );
@@ -206,7 +206,7 @@ export const ChatActiveArea: React.FC<ChatActiveAreaProps> = ({
       {/* Quick Prompt Chips */}
       <div className="px-4 py-2 border-t border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900 flex items-center gap-2 overflow-x-auto scrollbar-none">
         <span className="text-[11px] font-semibold text-slate-400 shrink-0 flex items-center gap-1">
-          <Sparkles className="w-3 h-3 text-emerald-500" />
+          <Sparkles className="w-3 h-3" />
           Gợi ý:
         </span>
         {quickPrompts.map((q, idx) => (

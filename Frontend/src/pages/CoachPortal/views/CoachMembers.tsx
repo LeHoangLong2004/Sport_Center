@@ -143,7 +143,7 @@ export default function CoachMembers({ navigateTo }: Props) {
       {/* Grid Member Cards */}
       {loading ? (
         <div className="p-16 text-center text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col items-center justify-center gap-3">
-          <RefreshCw className="w-6 h-6 animate-spin text-emerald-500" />
+          <RefreshCw className="w-6 h-6 animate-spin" />
           <p className="text-xs font-medium">Đang tải danh sách học viên theo thời gian thực...</p>
         </div>
       ) : error ? (

@@ -62,7 +62,7 @@ export function CustomDatePicker({ value, onChange, placeholder = "dd/mm/yyyy" }
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className="flex-1 outline-none px-[16px] py-[12px] font-['Inter:Medium'] font-medium text-[#0f172a] text-[14px] bg-transparent min-w-0"
+        className="flex-1 outline-none px-[16px] py-[12px] font-medium text-[#0f172a] text-[14px] bg-transparent min-w-0"
       />
       <div className="w-[48px] border-l border-[#cbd5e1] flex items-center justify-center bg-[#f8fafc] shrink-0">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500">
@@ -100,7 +100,7 @@ export function Stepper({ active }: { active: 1 | 2 | 3 | 4 }) {
             return (
               <div key={i} className="h-0.5 w-8 md:w-16 bg-slate-200 relative shrink-0">
                 <div
-                  className={`absolute inset-0 bg-teal-500 transition-all ${
+                  className={`absolute inset-0 bg-emerald-500 transition-all ${
                     (i === 1 && currentStep >= 2) || (i === 3 && currentStep >= 3)
                       ? "w-full"
                       : "w-0"
@@ -120,18 +120,18 @@ export function Stepper({ active }: { active: 1 | 2 | 3 | 4 }) {
                   </svg>
                 </div>
               ) : isActive ? (
-                <div className="bg-teal-500 text-white flex items-center justify-center rounded-full size-6 shadow-sm ring-4 ring-teal-100">
-                  <span className="font-['Inter'] font-bold text-xs">{item.n}</span>
+                <div className="bg-emerald-500 text-white flex items-center justify-center rounded-full size-6 shadow-sm ring-4 ring-emerald-100">
+                  <span className=" font-bold text-xs">{item.n}</span>
                 </div>
               ) : (
                 <div className="border border-slate-300 text-slate-400 bg-white flex items-center justify-center rounded-full size-6">
-                  <span className="font-['Inter'] font-semibold text-xs">{item.n}</span>
+                  <span className=" font-semibold text-xs">{item.n}</span>
                 </div>
               )}
               <span
-                className={`font-['Inter'] text-xs md:text-sm whitespace-nowrap transition-colors ${
+                className={` text-xs md:text-sm whitespace-nowrap transition-colors ${
                   isActive
-                    ? "font-bold text-teal-700"
+                    ? "font-bold text-emerald-700"
                     : done
                     ? "font-medium text-slate-700"
                     : "font-medium text-slate-400"
@@ -193,11 +193,11 @@ export function OrderSummarySidebar({
 
   return (
     <div className="bg-white border border-[#e2e8f0] flex flex-col gap-5 items-start p-6 rounded-[16px] w-[416px] shrink-0">
-      <p className="font-['Inter'] font-bold text-[#0f172a] text-lg w-full">{title}</p>
+      <p className=" font-bold text-[#0f172a] text-lg w-full">{title}</p>
       <div className="flex items-center justify-between w-full">
-        <p className="font-['Inter'] font-extrabold text-[#0f172a] text-xl">{pkg.name}</p>
-        <div className="bg-teal-50 flex items-start px-3 py-1 rounded-[12px] border border-teal-200">
-          <p className="font-['Inter'] font-bold text-teal-600 text-xs">{periodLabel}</p>
+        <p className=" font-extrabold text-[#0f172a] text-xl">{pkg.name}</p>
+        <div className="bg-emerald-50 flex items-start px-3 py-1 rounded-[12px] border border-emerald-200">
+          <p className=" font-bold text-emerald-600 text-xs">{periodLabel}</p>
         </div>
       </div>
       {screen !== "otp" && pkg.features && (
@@ -205,7 +205,7 @@ export function OrderSummarySidebar({
           {pkg.features.map((f: string) => (
             <div key={f} className="flex gap-2 items-center w-full">
               <img src={`${A}/6b931.svg`} className="size-[14px] shrink-0" alt="" />
-              <p className="font-['Inter'] font-normal text-[#334155] text-[13px] flex-1">{f}</p>
+              <p className=" font-normal text-[#334155] text-[13px] flex-1">{f}</p>
             </div>
           ))}
         </div>
@@ -218,8 +218,8 @@ export function OrderSummarySidebar({
             ["Thời hạn tập:", dateRange],
           ].map(([label, val]) => (
             <div key={label} className="flex items-start justify-between w-full">
-              <span className="font-['Inter'] font-normal text-[#64748b]">{label}</span>
-              <span className="font-['Inter'] font-semibold text-[#0f172a] text-right truncate max-w-[220px]">{val}</span>
+              <span className=" font-normal text-[#64748b]">{label}</span>
+              <span className=" font-semibold text-[#0f172a] text-right truncate max-w-[220px]">{val}</span>
             </div>
           ))}
         </div>
@@ -231,13 +231,13 @@ export function OrderSummarySidebar({
       </div>
       <div className="flex flex-col gap-3 w-full text-sm">
         <div className="flex items-start justify-between w-full">
-          <span className="font-['Inter'] font-normal text-[#64748b]">Giá niêm yết</span>
-          <span className="font-['Inter'] font-semibold text-[#0f172a]">{fmt(listPrice)}</span>
+          <span className=" font-normal text-[#64748b]">Giá niêm yết</span>
+          <span className=" font-semibold text-[#0f172a]">{fmt(listPrice)}</span>
         </div>
         {discount > 0 && (
           <div className="flex items-start justify-between w-full">
-            <span className="font-['Inter'] font-normal text-[#64748b]">Ưu đãi giảm giá</span>
-            <span className="font-['Inter'] font-bold text-[#16a34a]">-{fmt(discount)}</span>
+            <span className=" font-normal text-[#64748b]">Ưu đãi giảm giá</span>
+            <span className=" font-bold text-emerald-600">-{fmt(discount)}</span>
           </div>
         )}
       </div>
@@ -247,12 +247,12 @@ export function OrderSummarySidebar({
         </div>
       </div>
       <div className="flex items-baseline justify-between w-full">
-        <span className="font-['Inter'] font-semibold text-[#0f172a] text-base">Tổng thanh toán</span>
-        <span className="font-['Inter'] font-extrabold text-teal-600 text-2xl">{fmt(total)}</span>
+        <span className=" font-semibold text-[#0f172a] text-base">Tổng thanh toán</span>
+        <span className=" font-extrabold text-emerald-600 text-2xl">{fmt(total)}</span>
       </div>
       <div className="flex gap-2 items-start w-full">
         <img src={`${A}/5a31b.svg`} className="size-3 mt-0.5 shrink-0" alt="" />
-        <span className="font-['Inter'] font-normal text-[#64748b] text-[11px]">Thanh toán bảo mật và kích hoạt ngay lập tức</span>
+        <span className=" font-normal text-[#64748b] text-[11px]">Thanh toán bảo mật và kích hoạt ngay lập tức</span>
       </div>
     </div>
   );

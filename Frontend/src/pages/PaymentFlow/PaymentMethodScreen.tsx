@@ -226,7 +226,7 @@ export function PaymentMethodScreen({
               <span>Quay lại</span>
             </button>
             <div className="flex items-baseline gap-2 flex-wrap">
-              <h1 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-base md:text-lg tracking-tight">
+              <h1 className="font-bold text-[#0f172a] text-base md:text-lg tracking-tight">
                 Xác nhận thông tin & Thanh toán
               </h1>
               <span className="hidden md:inline text-xs text-slate-400 font-normal">
@@ -236,10 +236,10 @@ export function PaymentMethodScreen({
           </div>
 
           {/* Compact countdown indicator */}
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold shrink-0">
-            <span className="text-amber-600">⏳</span>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-50 border border-slate-200 text-slate-800 text-xs font-semibold shrink-0">
+            <span className="text-slate-600">⏳</span>
             <span className="hidden sm:inline text-[11px]">Ưu đãi giữ trong:</span>
-            <span className="font-mono font-bold text-amber-700">{formattedCountdown}</span>
+            <span className="font-bold text-slate-700">{formattedCountdown}</span>
           </div>
         </div>
       </div>
@@ -261,10 +261,10 @@ export function PaymentMethodScreen({
             {/* 2. COMPACT PAYMENT METHODS SELECTOR */}
             <div className="bg-white border border-[#e2e8f0] rounded-xl p-3 px-4 w-full shadow-2xs">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <h3 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-xs md:text-sm">
+                <h3 className="font-bold text-[#0f172a] text-xs md:text-sm">
                   Chọn phương thức thanh toán
                 </h3>
-                <span className="text-[10px] text-teal-700 font-semibold bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">
+                <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
                   Miễn phí giao dịch
                 </span>
               </div>
@@ -281,14 +281,14 @@ export function PaymentMethodScreen({
                         onClick={() => setMethod(m.id)}
                         className={`flex items-center gap-2.5 p-2 px-3 rounded-lg text-left transition-all cursor-pointer ${
                           isSelected
-                            ? "bg-teal-50/70 border-2 border-teal-500 shadow-2xs"
+                            ? "bg-emerald-50/70 border-2 border-emerald-500 shadow-2xs"
                             : "bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50/50"
                         }`}
                       >
                         {/* Radio circle */}
                         <div
                           className={`size-4 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                            isSelected ? "bg-teal-600 text-white" : "border-2 border-slate-300"
+                            isSelected ? "bg-emerald-600 text-white" : "border-2 border-slate-300"
                           }`}
                         >
                           {isSelected && <div className="size-1.5 rounded-full bg-white" />}
@@ -299,14 +299,14 @@ export function PaymentMethodScreen({
 
                         {/* Text */}
                         <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                          <span className="font-['Inter:Semi_Bold'] font-semibold text-slate-900 text-xs truncate">
+                          <span className="font-bold font-semibold text-slate-900 text-xs truncate">
                             {m.label}
                           </span>
                           {m.badge && (
                             <span
                               className={`text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0 ${
                                 isSelected
-                                  ? "bg-teal-600 text-white"
+                                  ? "bg-emerald-600 text-white"
                                   : "bg-slate-100 text-slate-600"
                               }`}
                             >
@@ -336,7 +336,7 @@ export function PaymentMethodScreen({
             {/* Bottom Security Guarantee */}
             <div className="flex items-center justify-between text-[11px] text-slate-400 px-1 w-full pt-0.5">
               <span className="flex items-center gap-1.5">
-                <span className="text-teal-600">🛡️</span>
+                <span className="text-emerald-600">🛡️</span>
                 <span>Bảo mật chuẩn quốc tế SSL 256-bit | Đảm bảo an toàn 100% cho mọi giao dịch</span>
               </span>
               <span className="hidden sm:inline text-[10px]">SportCenter SafeCheckout</span>

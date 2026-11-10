@@ -94,12 +94,12 @@ export default function MemberCheckInModal({
         <h4 className="text-base font-black text-slate-900 dark:text-white">{userName}</h4>
         <p className="text-xs text-slate-400 mt-0.5">
           Mã số:{" "}
-          <span className="font-mono font-bold text-slate-700 dark:text-slate-300">
+          <span className="font-bold text-slate-700 dark:text-slate-300">
             {memberCode}
           </span>
         </p>
-        <div className="mt-2 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-extrabold text-[11px] flex items-center gap-1">
-          <Crown className="w-3.5 h-3.5" />
+        <div className="mt-2 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-500/30 font-extrabold text-[11px] flex items-center gap-1">
+          <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
           <span>{userTier}</span>
         </div>
 

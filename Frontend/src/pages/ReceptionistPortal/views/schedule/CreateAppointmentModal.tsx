@@ -177,7 +177,7 @@ export const CreateAppointmentModal: React.FC<Props> = ({
         {/* Compact Header */}
         <div className="px-4 py-2.5 bg-slate-900 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-purple-500/20 border border-purple-400/30 flex items-center justify-center text-purple-400">
+            <div className="w-6 h-6 rounded bg-emerald-600/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400">
               <Calendar className="w-3.5 h-3.5" />
             </div>
             <h3 className="text-sm font-bold text-white">
@@ -197,7 +197,7 @@ export const CreateAppointmentModal: React.FC<Props> = ({
         <form onSubmit={handleSubmit} className="p-4 overflow-y-auto flex-1 flex flex-col gap-3 text-xs">
           {formError && (
             <div className="p-2 bg-rose-50 border border-rose-200 text-rose-700 rounded text-[11px] flex items-start gap-1.5">
-              <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-rose-500" />
+              <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
               <span>{formError}</span>
             </div>
           )}
@@ -256,7 +256,7 @@ export const CreateAppointmentModal: React.FC<Props> = ({
             <button
               type="submit"
               disabled={submitting}
-              className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 rounded transition shadow-xs shadow-purple-600/20 cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded transition shadow-xs shadow-emerald-600/20 cursor-pointer disabled:opacity-50"
             >
               {submitting ? (
                 <>

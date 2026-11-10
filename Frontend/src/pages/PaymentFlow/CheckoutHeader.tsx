@@ -47,7 +47,7 @@ export function CheckoutHeader({ onExit }: Props) {
           </button>
 
           <div className="hidden sm:flex items-center gap-1.5 ml-4 pl-4 border-l border-slate-200 text-slate-500 text-xs">
-            <ShieldCheck className="w-4 h-4 text-emerald-500" />
+            <ShieldCheck className="w-4 h-4" />
             <span className="font-medium text-slate-600 text-[11px]">Bảo mật SSL 256-bit</span>
           </div>
         </div>

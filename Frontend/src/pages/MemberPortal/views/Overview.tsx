@@ -135,7 +135,7 @@ export function Overview({
             <div className="mp-card">
               <div className="flex items-center justify-between mb-3">
                 <strong className="mp-card-label">Lịch sắp tới</strong>
-                <button onClick={() => onNavigate("classes")} className="text-xs text-teal-600 font-bold hover:underline">
+                <button onClick={() => onNavigate("classes")} className="text-xs text-emerald-600 font-bold hover:underline">
                   Quản lý đơn đặt
                 </button>
               </div>

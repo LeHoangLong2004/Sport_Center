@@ -103,14 +103,14 @@ export default function AttendanceDetailModal({
         );
       case "đi muộn":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
             <AlertCircle className="w-3.5 h-3.5" />
             Đi muộn
           </span>
         );
       case "chưa diễn ra":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
             <Calendar className="w-3.5 h-3.5" />
             Sắp diễn ra
           </span>
@@ -140,7 +140,7 @@ export default function AttendanceDetailModal({
         <div className="flex items-start justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
-              <span className="px-2.5 py-0.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400">
+              <span className="px-2.5 py-0.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
                 {session.sport} • {session.type === "pt" ? "Kèm 1-1" : "Lớp nhóm"}
               </span>
               {session.packageName && (
@@ -173,7 +173,7 @@ export default function AttendanceDetailModal({
         <div className="grid grid-cols-2 gap-3 text-xs">
           <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80">
             <p className="text-slate-400 mb-0.5 flex items-center gap-1.5 font-medium text-[11px]">
-              <Calendar className="w-3.5 h-3.5 text-teal-500" />
+              <Calendar className="w-3.5 h-3.5" />
               Ngày học
             </p>
             <p className="font-bold text-slate-800 dark:text-slate-200">
@@ -183,7 +183,7 @@ export default function AttendanceDetailModal({
 
           <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80">
             <p className="text-slate-400 mb-0.5 flex items-center gap-1.5 font-medium text-[11px]">
-              <Clock className="w-3.5 h-3.5 text-teal-500" />
+              <Clock className="w-3.5 h-3.5" />
               Thời gian
             </p>
             <p className="font-bold text-slate-800 dark:text-slate-200">
@@ -193,7 +193,7 @@ export default function AttendanceDetailModal({
 
           <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80">
             <p className="text-slate-400 mb-0.5 flex items-center gap-1.5 font-medium text-[11px]">
-              <Building className="w-3.5 h-3.5 text-teal-500" />
+              <Building className="w-3.5 h-3.5" />
               Phòng tập
             </p>
             <p className="font-bold text-slate-800 dark:text-slate-200 truncate">
@@ -203,7 +203,7 @@ export default function AttendanceDetailModal({
 
           <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80">
             <p className="text-slate-400 mb-0.5 flex items-center gap-1.5 font-medium text-[11px]">
-              <UserCheck className="w-3.5 h-3.5 text-teal-500" />
+              <UserCheck className="w-3.5 h-3.5" />
               Huấn luyện viên
             </p>
             <p className="font-bold text-slate-800 dark:text-slate-200 truncate">
@@ -214,13 +214,13 @@ export default function AttendanceDetailModal({
 
         {/* Coach Assessment & Progress Card (If available) */}
         {assessment && (
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-orange-50/70 via-amber-50/40 to-white dark:from-orange-950/20 dark:via-slate-800/50 dark:to-slate-900 border border-orange-200/80 dark:border-orange-800/40 shadow-xs space-y-3.5">
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/70 via-emerald-50/40 to-white dark:from-emerald-950/20 dark:via-slate-800/50 dark:to-slate-900 border border-emerald-200/80 dark:border-emerald-800/40 shadow-xs space-y-3.5">
             <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-700 dark:text-orange-400 uppercase tracking-wider">
-                <Award className="w-4 h-4 text-orange-500" />
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+                <Award className="w-4 h-4" />
                 Đánh giá kết quả từ HLV {session.coachName}
               </span>
-              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/50 text-orange-800 dark:text-orange-300">
+              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300">
                 Hoàn thành: {assessment.completion}%
               </span>
             </div>
@@ -230,7 +230,7 @@ export default function AttendanceDetailModal({
               <div className="h-2 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                 <div
                   style={{ width: `${Math.min(100, Math.max(0, assessment.completion))}%` }}
-                  className="h-full bg-gradient-to-r from-orange-500 to-amber-500 rounded-full transition-all duration-300"
+                  className="h-full bg-gradient-to-r from-emerald-500 to-emerald-500 rounded-full transition-all duration-300"
                 />
               </div>
             </div>
@@ -247,7 +247,7 @@ export default function AttendanceDetailModal({
                       key={idx}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs shadow-2xs"
                     >
-                      <Dumbbell className="w-3.5 h-3.5 text-orange-500" />
+                      <Dumbbell className="w-3.5 h-3.5" />
                       <span className="text-slate-500 dark:text-slate-400">{m.name}:</span>
                       <span className="font-bold text-slate-900 dark:text-white">
                         {m.value} {m.unit || ""}
@@ -262,7 +262,7 @@ export default function AttendanceDetailModal({
             {assessment.comment && (
               <div className="p-3 rounded-xl bg-white/80 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 text-xs space-y-1">
                 <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5 text-blue-500" />
+                  <MessageSquare className="w-3.5 h-3.5" />
                   Nhận xét của Huấn luyện viên:
                 </span>
                 <p className="text-slate-600 dark:text-slate-300 italic leading-relaxed pl-5">
@@ -273,12 +273,12 @@ export default function AttendanceDetailModal({
 
             {/* Next Steps Direction */}
             {assessment.nextStep && (
-              <div className="p-3 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/40 text-xs space-y-1">
-                <span className="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
-                  <Target className="w-3.5 h-3.5 text-amber-600" />
+              <div className="p-3 rounded-xl bg-slate-50/80 dark:bg-slate-950/30 border border-slate-200/80 dark:border-slate-800/40 text-xs space-y-1">
+                <span className="font-bold text-slate-800 dark:text-slate-300 flex items-center gap-1.5">
+                  <Target className="w-3.5 h-3.5 text-slate-600" />
                   Kế hoạch & Định hướng buổi tiếp theo:
                 </span>
-                <p className="text-amber-900 dark:text-amber-200 leading-relaxed pl-5 font-medium">
+                <p className="text-slate-900 dark:text-slate-200 leading-relaxed pl-5 font-medium">
                   {assessment.nextStep}
                 </p>
               </div>
@@ -289,9 +289,9 @@ export default function AttendanceDetailModal({
         {/* Coach Attendance Short Note (if no assessment yet or supplementary) */}
         {!assessment && (
           isFuture ? (
-            <div className="p-4 rounded-2xl bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 text-xs space-y-1">
-              <p className="font-bold text-blue-800 dark:text-blue-300 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-blue-500" />
+            <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-950/20 border border-slate-200/50 dark:border-slate-800/30 text-xs space-y-1">
+              <p className="font-bold text-slate-800 dark:text-slate-300 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-slate-500" />
                 Buổi học sắp diễn ra
               </p>
               <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -301,7 +301,7 @@ export default function AttendanceDetailModal({
           ) : session.coachNote ? (
             <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/50 dark:border-emerald-800/30 space-y-1">
               <p className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                <Sparkles className="w-3.5 h-3.5" />
                 Ghi chú từ Huấn luyện viên
               </p>
               <p className="text-xs text-slate-600 dark:text-slate-300 italic leading-relaxed">
@@ -322,7 +322,7 @@ export default function AttendanceDetailModal({
               onClose();
               onNavigate("chat");
             }}
-            className="flex-1 py-3 rounded-2xl bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            className="flex-1 py-3 rounded-2xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
             <MessageSquare className="w-4 h-4" />
             Nhắn tin với HLV

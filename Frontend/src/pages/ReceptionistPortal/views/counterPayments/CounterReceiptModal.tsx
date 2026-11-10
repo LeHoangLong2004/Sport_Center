@@ -36,7 +36,7 @@ export default function CounterReceiptModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-          <span className="text-xs font-bold uppercase tracking-wider text-purple-600">
+          <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">
             Phiếu thu SportCenter
           </span>
           <button
@@ -51,7 +51,7 @@ export default function CounterReceiptModal({
         {/* Receipt printable container */}
         <div
           id="printable-receipt"
-          className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 flex flex-col gap-4 text-xs font-mono"
+          className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 flex flex-col gap-4 text-xs "
         >
           <div className="text-center pb-2 border-b border-dashed border-slate-300 dark:border-slate-700">
             <p className="font-extrabold text-base font-sans text-slate-900 dark:text-white">
@@ -86,7 +86,7 @@ export default function CounterReceiptModal({
             )}
             <div className="flex justify-between">
               <span>Trạng thái:</span>
-              <span className="font-bold uppercase text-teal-600">
+              <span className="font-bold uppercase text-emerald-600">
                 {receiptOrder.status === "paid"
                   ? "ĐÃ THANH TOÁN"
                   : "CHỜ THANH TOÁN TẠI QUẦY"}
@@ -111,7 +111,7 @@ export default function CounterReceiptModal({
             )}
             <div className="flex justify-between border-t border-dashed border-slate-300 dark:border-slate-700 pt-2 text-sm font-bold text-slate-900 dark:text-white">
               <span>TỔNG THANH TOÁN:</span>
-              <span className="text-teal-600 font-extrabold">
+              <span className="text-emerald-600 font-extrabold">
                 {formatMoney(receiptOrder.total)}
               </span>
             </div>

@@ -98,7 +98,7 @@ export function SiteHeader({
         }}
         title="Quay lại Trang chủ SportCenter"
       >
-        <div className="bg-teal-500 flex items-center justify-center rounded-[8px] size-[36px] shadow-lg shadow-teal-500/30">
+        <div className="bg-emerald-500 flex items-center justify-center rounded-[8px] size-[36px] shadow-lg shadow-emerald-500/30">
           <svg
             width="20"
             height="20"
@@ -124,7 +124,7 @@ export function SiteHeader({
           >
             SPORTCENTER
           </p>
-          <p className="font-semibold text-teal-500 text-[9px] uppercase leading-none tracking-widest">
+          <p className="font-semibold text-emerald-500 text-[9px] uppercase leading-none tracking-widest">
             Energy Platform
           </p>
         </div>
@@ -143,12 +143,12 @@ export function SiteHeader({
                 <p
                   className={`text-[15px] whitespace-nowrap transition-colors ${
                     active
-                      ? "font-bold text-teal-500"
+                      ? "font-bold text-emerald-500"
                       : `font-medium ${
                           forceSolidDark
                             ? "text-slate-300 hover:text-white"
                             : scrolled
-                              ? "text-slate-600 hover:text-teal-500"
+                              ? "text-slate-600 hover:text-emerald-500"
                               : "text-slate-700 lg:text-slate-200 lg:hover:text-white"
                         }`
                   }`}
@@ -158,8 +158,8 @@ export function SiteHeader({
                 <div
                   className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-[3px] rounded-t-md w-[24px] transition-all duration-300 ${
                     active
-                      ? "bg-teal-500 opacity-100"
-                      : "bg-teal-500 opacity-0 group-hover:opacity-50"
+                      ? "bg-emerald-500 opacity-100"
+                      : "bg-emerald-500 opacity-0 group-hover:opacity-50"
                   }`}
                 />
               </div>
@@ -217,10 +217,10 @@ export function SiteHeader({
                       <span
                         className={`text-[10px] font-semibold uppercase tracking-wider ${
                           forceSolidDark
-                            ? "text-teal-300"
+                            ? "text-emerald-300"
                             : scrolled
-                              ? "text-teal-600"
-                              : "text-teal-600 lg:text-teal-300"
+                              ? "text-emerald-600"
+                              : "text-emerald-600 lg:text-emerald-300"
                         }`}
                       >
                         Bảng điều khiển
@@ -265,7 +265,7 @@ export function SiteHeader({
                 Đăng nhập
               </button>
               <button
-                className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-teal-500/25 transition-transform hover:-translate-y-0.5 active:translate-y-0"
+                className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-emerald-500/25 transition-transform hover:-translate-y-0.5 active:translate-y-0"
                 data-name="btn-register"
               >
                 Đăng ký ngay

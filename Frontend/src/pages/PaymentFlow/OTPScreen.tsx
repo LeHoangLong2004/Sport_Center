@@ -59,8 +59,8 @@ export function OTPScreen({
           <div className="flex flex-1 flex-col items-start min-w-0">
             <div className="bg-white border border-[#e2e8f0] flex flex-col gap-7 items-start p-8 rounded-[16px] w-full">
               <div className="flex flex-col gap-2 w-full">
-                <p className="font-['Inter'] font-bold text-[#0b1f3a] text-[24px]">Xác minh mã giao dịch OTP</p>
-                <p className="font-['Inter'] font-normal text-[#64748b] text-sm leading-[20px]">
+                <p className=" font-bold text-[#0b1f3a] text-[24px]">Xác minh mã giao dịch OTP</p>
+                <p className=" font-normal text-[#64748b] text-sm leading-[20px]">
                   Mã xác thực giao dịch OTP gồm 6 chữ số đã được gửi đến số điện thoại{" "}
                   <strong className="text-[#0f172a]">{memberPhone || "số điện thoại của bạn"}</strong>
                   {memberEmail ? (
@@ -84,23 +84,23 @@ export function OTPScreen({
                           onKeyDown={(e) => handleKey(i, e)}
                           maxLength={1}
                           inputMode="numeric"
-                          className={`size-16 rounded-[12px] text-center font-['Inter'] font-bold text-[#0f172a] text-[28px] outline-none ${
+                          className={`size-16 rounded-[12px] text-center  font-bold text-[#0f172a] text-[28px] outline-none ${
                             isActive
-                              ? "border-2 border-teal-500"
+                              ? "border-2 border-emerald-500"
                               : "border border-[#e2e8f0]"
                           } bg-white`}
                         />
                         {isActive && !d && (
-                          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-teal-500 h-6 w-0.5 animate-pulse" />
+                          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-emerald-500 h-6 w-0.5 animate-pulse" />
                         )}
                       </div>
                     )
                   })}
                 </div>
                 <div className="flex gap-1.5 items-start justify-center w-full text-[#64748b] text-[13px]">
-                  <span className="font-['Inter'] font-normal">Không nhận được mã?</span>
-                  <span className="font-['Inter'] font-semibold">
-                    Gửi lại mã sau <span className="text-teal-600">{seconds}s</span>
+                  <span className=" font-normal">Không nhận được mã?</span>
+                  <span className=" font-semibold">
+                    Gửi lại mã sau <span className="text-emerald-600">{seconds}s</span>
                   </span>
                 </div>
               </div>
@@ -115,14 +115,14 @@ export function OTPScreen({
                 <button
                   type="button"
                   onClick={onCancel}
-                  className="border border-[#64748b] flex flex-1 items-center justify-center py-[14px] rounded-[8px] font-['Inter'] font-bold text-[#64748b] text-[15px] hover:bg-[#f8fafc] transition-colors"
+                  className="border border-[#64748b] flex flex-1 items-center justify-center py-[14px] rounded-[8px]  font-bold text-[#64748b] text-[15px] hover:bg-[#f8fafc] transition-colors"
                 >
                   Hủy giao dịch
                 </button>
                 <button
                   type="button"
                   onClick={onConfirm}
-                  className="bg-teal-500 flex flex-1 items-center justify-center py-[14px] rounded-[8px] font-['Inter'] font-bold text-white text-[15px] hover:bg-teal-600 transition-colors"
+                  className="bg-emerald-500 flex flex-1 items-center justify-center py-[14px] rounded-[8px]  font-bold text-white text-[15px] hover:bg-emerald-600 transition-colors"
                 >
                   Xác nhận OTP
                 </button>

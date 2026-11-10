@@ -90,19 +90,19 @@ export const MemberHistoryAndWorkouts: React.FC<MemberHistoryAndWorkoutsProps> =
               <div className="shrink-0">
                 {item.status === "attended" && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                    <CheckCircle2 className="w-3 h-3" />
                     Có mặt
                   </span>
                 )}
                 {item.status === "excused" && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800/40">
-                    <AlertCircle className="w-3 h-3 text-blue-600" />
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-50 text-slate-700 dark:bg-slate-950/40 dark:text-slate-300 border border-slate-200 dark:border-slate-800/40">
+                    <AlertCircle className="w-3 h-3 text-slate-600" />
                     Có phép
                   </span>
                 )}
                 {item.status === "late" && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40">
-                    <Clock className="w-3 h-3 text-amber-600" />
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-50 text-slate-700 dark:bg-slate-950/40 dark:text-slate-300 border border-slate-200 dark:border-slate-800/40">
+                    <Clock className="w-3 h-3 text-slate-600" />
                     Đi trễ
                   </span>
                 )}
@@ -126,9 +126,9 @@ export const MemberHistoryAndWorkouts: React.FC<MemberHistoryAndWorkoutsProps> =
             <button
               type="button"
               onClick={() => navigateTo("ai", { memberId: memberId || undefined })}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800 transition-colors shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800 transition-colors shadow-2xs cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5 text-orange-500" />
+              <Sparkles className="w-3.5 h-3.5" />
               <span>AI gợi ý bài tiếp theo</span>
             </button>
             <button
@@ -196,7 +196,7 @@ export const MemberHistoryAndWorkouts: React.FC<MemberHistoryAndWorkoutsProps> =
                           <div className="font-semibold text-slate-800 dark:text-slate-200">{ex.name}</div>
                           <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center justify-between">
                             <span>{ex.reps}</span>
-                            <span className="text-orange-600 dark:text-orange-400">Nghỉ: {ex.rest}</span>
+                            <span className="text-emerald-600 dark:text-emerald-400">Nghỉ: {ex.rest}</span>
                           </div>
                           {ex.note && (
                             <div className="text-[10px] text-slate-400 italic mt-1 border-t border-slate-100 dark:border-slate-700 pt-1">

@@ -23,14 +23,14 @@ export default function PendingTicketModal({
       <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col">
         <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-xl bg-slate-500 text-white flex items-center justify-center font-bold">
               <Clock className="w-4 h-4 animate-pulse" />
             </div>
             <div>
               <h4 className="text-sm font-bold text-slate-900 dark:text-white">
                 Phiếu nạp tiền tại quầy
               </h4>
-              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold uppercase">
+              <span className="text-[10px] text-slate-600 dark:text-slate-400 font-bold uppercase">
                 Đang chờ thanh toán • Chưa cộng ví
               </span>
             </div>
@@ -57,7 +57,7 @@ export default function PendingTicketModal({
                 <span className="text-[10px] text-slate-400 font-bold block uppercase">
                   Mã phiếu nạp
                 </span>
-                <span className="text-base font-mono font-bold text-emerald-600">
+                <span className="text-base font-bold text-emerald-600">
                   {pendingTicketModal.id}
                 </span>
               </div>
@@ -73,7 +73,7 @@ export default function PendingTicketModal({
             </div>
           </div>
 
-          <div className="bg-amber-50/60 dark:bg-amber-950/30 rounded-xl p-3 text-[11px] text-amber-800 dark:text-amber-200 space-y-1">
+          <div className="bg-slate-50/60 dark:bg-slate-950/30 rounded-xl p-3 text-[11px] text-slate-800 dark:text-slate-200 space-y-1">
             <div className="font-bold flex items-center gap-1.5">
               <Building className="w-3.5 h-3.5" />
               <span>Hướng dẫn tại quầy Lễ tân:</span>

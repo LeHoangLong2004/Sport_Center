@@ -40,9 +40,9 @@ export function BookClassMemberList({
 
       {/* If member is selected: show clean profile card */}
       {selectedMember ? (
-        <div className="p-3.5 bg-purple-50/70 border border-purple-200 rounded-2xl flex items-center justify-between animate-in fade-in zoom-in-95 duration-150 shadow-2xs">
+        <div className="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-2xl flex items-center justify-between animate-in fade-in zoom-in-95 duration-150 shadow-2xs">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="size-10 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-xs ring-2 ring-purple-300">
+            <div className="size-10 rounded-full bg-gradient-to-br from-emerald-600 to-emerald-700 text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-xs ring-2 ring-emerald-300">
               {(selectedMember.fullName || "M").charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
@@ -64,7 +64,7 @@ export function BookClassMemberList({
           <button
             type="button"
             onClick={onClearSelectedMember}
-            className="px-2.5 py-1 text-xs font-semibold text-purple-700 hover:text-purple-800 bg-white hover:bg-purple-100/80 border border-purple-200 rounded-lg transition-colors shrink-0 flex items-center gap-1 shadow-2xs cursor-pointer"
+            className="px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-white hover:bg-emerald-100/80 border border-emerald-200 rounded-lg transition-colors shrink-0 flex items-center gap-1 shadow-2xs cursor-pointer"
           >
             Đổi người
           </button>
@@ -75,7 +75,7 @@ export function BookClassMemberList({
           <div className="relative flex items-center">
             <input
               type="text"
-              className="w-full pl-8 pr-7 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+              className="w-full pl-8 pr-7 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
               placeholder="Gõ tên, SĐT hoặc email hội viên..."
               value={memberSearch}
               onChange={(e) => {
@@ -120,14 +120,14 @@ export function BookClassMemberList({
                   onClick={() => {
                     onSelectMember(m.id);
                   }}
-                  className="w-full text-left px-3.5 py-2.5 hover:bg-purple-50/80 active:bg-purple-100/80 flex items-center justify-between text-xs transition-colors group cursor-pointer"
+                  className="w-full text-left px-3.5 py-2.5 hover:bg-emerald-50/80 active:bg-emerald-100/80 flex items-center justify-between text-xs transition-colors group cursor-pointer"
                 >
                   <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                    <div className="size-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                    <div className="size-8 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
                       {(m.fullName || "M").charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <span className="font-bold text-slate-800 group-hover:text-purple-700 block truncate">
+                      <span className="font-bold text-slate-800 group-hover:text-emerald-700 block truncate">
                         {m.fullName}
                       </span>
                       <span className="text-[11px] text-slate-400 truncate block">
@@ -137,7 +137,7 @@ export function BookClassMemberList({
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {m.packageName ? (
-                      <span className="text-[10px] bg-purple-50 text-purple-700 border border-purple-200/80 px-2 py-0.5 rounded-md font-semibold">
+                      <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-2 py-0.5 rounded-md font-semibold">
                         {m.packageName}
                       </span>
                     ) : (
@@ -146,7 +146,7 @@ export function BookClassMemberList({
                       </span>
                     )}
                     <svg
-                      className="size-3.5 text-slate-300 group-hover:text-purple-600 transition-colors"
+                      className="size-3.5 text-slate-300 group-hover:text-emerald-600 transition-colors"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -168,7 +168,7 @@ export function BookClassMemberList({
                     onClick={() => {
                       onSearchChange("");
                     }}
-                    className="mt-2 text-xs font-semibold text-purple-600 hover:underline cursor-pointer"
+                    className="mt-2 text-xs font-semibold text-emerald-600 hover:underline cursor-pointer"
                   >
                     Xóa từ khóa tìm kiếm
                   </button>
@@ -192,7 +192,7 @@ export function BookClassMemberList({
                 >
                   ‹ Trước
                 </button>
-                <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100">
+                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                   {memberPage} / {totalMemberPages}
                 </span>
                 <button

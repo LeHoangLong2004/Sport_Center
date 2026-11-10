@@ -19,15 +19,15 @@ export function FailedScreen({
             <img src={`${A}/ef3a3.svg`} className="size-10" alt="" />
           </div>
           <div className="flex flex-col gap-2 items-center text-center">
-            <p className="font-['Inter'] font-extrabold text-[#0f172a] text-[28px]">Giao Dịch Thất Bại</p>
-            <p className="font-['Inter'] font-normal text-[#64748b] text-sm">
+            <p className=" font-extrabold text-[#0f172a] text-[28px]">Giao Dịch Thất Bại</p>
+            <p className=" font-normal text-[#64748b] text-sm">
               Hệ thống không thể xử lý thanh toán từ tài khoản của bạn
             </p>
           </div>
 
           <div className="bg-[#fef2f2] border border-[#dc2626] border-[0.5px] flex flex-col gap-2.5 items-start p-5 rounded-[12px] w-full">
-            <p className="font-['Inter'] font-bold text-[#dc2626] text-[15px]">Lý do lỗi thanh toán:</p>
-            <p className="font-['Inter'] font-normal text-[#0f172a] text-sm leading-[20px]">
+            <p className=" font-bold text-[#dc2626] text-[15px]">Lý do lỗi thanh toán:</p>
+            <p className=" font-normal text-[#0f172a] text-sm leading-[20px]">
               {error || "Hệ thống không thể xác nhận giao dịch. Vui lòng kiểm tra thông tin thanh toán hoặc thử lại."}
             </p>
           </div>
@@ -37,21 +37,21 @@ export function FailedScreen({
               <button
                 type="button"
                 onClick={onChangeMethod}
-                className="border border-[#64748b] flex flex-1 items-center justify-center py-[14px] rounded-[8px] font-['Inter'] font-bold text-[#64748b] text-[15px] hover:bg-[#f8fafc] transition-colors"
+                className="border border-[#64748b] flex flex-1 items-center justify-center py-[14px] rounded-[8px]  font-bold text-[#64748b] text-[15px] hover:bg-[#f8fafc] transition-colors"
               >
                 Chọn phương thức khác
               </button>
               <button
                 type="button"
                 onClick={onRetry}
-                className="bg-teal-500 flex flex-1 items-center justify-center py-[14px] rounded-[8px] font-['Inter'] font-bold text-white text-[15px] hover:bg-teal-600 transition-colors"
+                className="bg-emerald-500 flex flex-1 items-center justify-center py-[14px] rounded-[8px]  font-bold text-white text-[15px] hover:bg-emerald-600 transition-colors"
               >
                 Thử lại ngay
               </button>
             </div>
             <div className="flex gap-1.5 items-start justify-center w-full text-[13px]">
-              <span className="font-['Inter'] font-normal text-[#64748b]">Cần hỗ trợ kỹ thuật?</span>
-              <span className="font-['Inter'] font-bold text-teal-600 cursor-pointer">Liên hệ ngay 1900 1234 (Miễn phí)</span>
+              <span className=" font-normal text-[#64748b]">Cần hỗ trợ kỹ thuật?</span>
+              <span className=" font-bold text-emerald-600 cursor-pointer">Liên hệ ngay 1900 1234 (Miễn phí)</span>
             </div>
           </div>
         </div>

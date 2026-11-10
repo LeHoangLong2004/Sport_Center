@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { A } from '../shared';
 import StatusBadge from '../components/StatusBadge';
 import { WalletService } from '../../MemberPortal/services/walletService';
+import { UserAvatar } from '../../../components/UserAvatar';
 
 export function CheckInPage() {
-  const [scanValue, setScanValue] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null)
   const [confirmed, setConfirmed] = useState(false)
   const [historyRows, setHistoryRows] = useState<any[]>([])
   const [members, setMembers] = useState<any[]>([])
@@ -45,8 +47,31 @@ export function CheckInPage() {
     fetchHistory();
   }, []);
 
-  const isTopUpTicket = scanValue.trim().toUpperCase().startsWith("TOPUP-");
-  const foundMember = members.find(m => m.memberCode === scanValue || m.phoneNumber === scanValue);
+  const trimmedQuery = searchQuery.trim();
+  const isTopUpTicket = trimmedQuery.toUpperCase().startsWith("TOPUP-");
+
+  const matchedMembers = React.useMemo(() => {
+    if (!trimmedQuery || isTopUpTicket) return [];
+    const q = trimmedQuery.toLowerCase();
+    return members.filter(
+      (m) =>
+        m.memberCode?.toLowerCase().includes(q) ||
+        m.phoneNumber?.toLowerCase().includes(q) ||
+        m.fullName?.toLowerCase().includes(q)
+    ).slice(0, 6);
+  }, [members, trimmedQuery, isTopUpTicket]);
+
+  const exactMember = members.find(
+    (m) =>
+      m.memberCode?.toLowerCase() === trimmedQuery.toLowerCase() ||
+      m.phoneNumber === trimmedQuery
+  );
+
+  const foundMember =
+    members.find((m) => m.id === selectedMemberId) ||
+    exactMember ||
+    (matchedMembers.length === 1 ? matchedMembers[0] : null);
+
   const openCheckIn = foundMember
     ? historyRows.find(row => row.memberId === foundMember.id && !row.checkOutTime)
     : null;
@@ -54,14 +79,14 @@ export function CheckInPage() {
   const handleConfirmTopUp = async () => {
     setProcessing(true);
     try {
-      const ticketId = scanValue.trim().toUpperCase();
+      const ticketId = trimmedQuery.toUpperCase();
       const res = await WalletService.confirmPendingTopUp(ticketId);
       if (res.success) {
         setNotice({
           type: "success",
           text: `Thu ngân đã xác nhận thu tiền thành công cho phiếu ${ticketId}! Số dư đã được cộng vào ví hội viên.`
         });
-        setScanValue("");
+        setSearchQuery("");
       } else {
         setNotice({ type: "error", text: "Không tìm thấy phiếu nạp hoặc phiếu đã được xử lý trước đó." });
       }
@@ -134,7 +159,7 @@ export function CheckInPage() {
     <div className="flex flex-col gap-[24px] items-start p-[32px] w-full">
       {notice ? (
         <div className={`flex items-center justify-between gap-4 px-4 py-3 rounded-lg border w-full ${notice.type === "success" ? "bg-green-50 border-green-200 text-green-700" : "bg-red-50 border-red-200 text-red-700"}`}>
-          <span className="font-['Manrope:Bold'] font-bold text-[14px]">{notice.text}</span>
+          <span className="font-bold text-[14px]">{notice.text}</span>
           <button type="button" onClick={() => setNotice(null)} className="font-bold text-[18px] leading-none" aria-label="Đóng thông báo">×</button>
         </div>
       ) : null}
@@ -147,11 +172,11 @@ export function CheckInPage() {
         ].map((stat) => (
           <div
             key={stat.label}
-            className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 flex flex-1 flex-col justify-between min-w-0 p-[20px] rounded-[16px] shadow-xs hover:border-purple-400 dark:hover:border-purple-600 transition-all group"
+            className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 flex flex-1 flex-col justify-between min-w-0 p-[20px] rounded-[16px] shadow-xs hover:border-emerald-400 dark:hover:border-emerald-600 transition-all group"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="font-semibold text-slate-500 dark:text-slate-400 text-[12px] uppercase tracking-wider">{stat.label}</span>
-              <span className={`size-2 rounded-full ${stat.highlight ? "bg-purple-600 animate-pulse" : "bg-purple-400"}`} />
+              <span className={`size-2 rounded-full ${stat.highlight ? "bg-emerald-600 animate-pulse" : "bg-emerald-400"}`} />
             </div>
             <div className="flex items-baseline gap-2 mt-2">
               <span className="font-extrabold text-slate-900 dark:text-white text-[26px] tracking-tight">{stat.value}</span>
@@ -161,25 +186,49 @@ export function CheckInPage() {
         ))}
       </div>
 
-      {/* Scan + Result */}
+      {/* Manual Lookup + Result */}
       <div className="flex gap-[20px] items-start shrink-0 w-full">
-        {/* Scanner */}
+        {/* Manual Lookup Input */}
         <div className="bg-white border border-[#e2e8f0] flex flex-1 flex-col gap-[16px] items-start min-w-0 p-[24px] rounded-[12px]">
-          <span className="font-['Manrope:ExtraBold'] font-extrabold text-[#0f172a] text-[16px]">Nhập mã hoặc quét thẻ hội viên / phiếu nạp ví</span>
+          <span className="font-extrabold text-[#0f172a] text-[16px]">Tra cứu & Check-in thủ công (SĐT / Mã hội viên / Họ tên)</span>
           <div className="bg-[#f1f5f9] flex gap-[12px] items-center p-[16px] rounded-[8px] shrink-0 w-full">
             <img src={`${A}/f6f1f.svg`} alt="" className="size-[20px] shrink-0 opacity-60" />
             <input
-              className="flex-1 bg-transparent font-['Manrope:Regular'] text-[#0f172a] text-[15px] outline-none min-w-0"
-              value={scanValue}
-              onChange={(e) => { setScanValue(e.target.value); setConfirmed(false) }}
-              placeholder="Nhập mã thẻ, SĐT hoặc mã phiếu nạp (TOPUP-...)"
+              className="flex-1 bg-transparent font-normal text-[#0f172a] text-[15px] outline-none min-w-0"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setSelectedMemberId(null);
+                setConfirmed(false);
+              }}
+              placeholder="Nhập SĐT, mã hội viên, họ tên hoặc mã phiếu nạp (TOPUP-...)"
             />
-            <span className={`font-['Manrope:Bold'] font-bold px-[10px] py-[4px] rounded-[6px] text-[11px] text-white whitespace-nowrap shrink-0 shadow-xs ${isTopUpTicket ? "bg-amber-500" : "bg-purple-600"}`}>
-              {isTopUpTicket ? "PHIẾU NẠP VÍ" : foundMember ? "ĐÃ NHẬN DIỆN" : "ĐANG CHỜ QUÉT"}
+            <span className={`font-bold px-[10px] py-[4px] rounded-[6px] text-[11px] text-white whitespace-nowrap shrink-0 shadow-xs ${isTopUpTicket ? "bg-slate-500" : foundMember ? "bg-emerald-600" : "bg-slate-400"}`}>
+              {isTopUpTicket ? "PHIẾU NẠP VÍ" : foundMember ? "ĐÃ CHỌN HỘI VIÊN" : "TRA CỨU THỦ CÔNG"}
             </span>
           </div>
-          <span className="font-['Manrope:Regular'] font-normal text-[#64748b] text-[13px]">
-            Gợi ý: Quét mã QR phiếu nạp tiền hoặc mã thẻ hội viên để thực hiện nghiệp vụ tức thì.
+          {matchedMembers.length > 1 && (
+            <div className="w-full border border-slate-200 rounded-lg divide-y divide-slate-100 overflow-hidden bg-slate-50/60">
+              {matchedMembers.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedMemberId(m.id);
+                    setConfirmed(false);
+                  }}
+                  className={`w-full px-3.5 py-2.5 text-left flex items-center justify-between text-xs hover:bg-emerald-50 transition-colors cursor-pointer ${
+                    foundMember?.id === m.id ? "bg-emerald-50 font-bold text-emerald-700" : "text-slate-700"
+                  }`}
+                >
+                  <span>{m.fullName} ({m.memberCode})</span>
+                  <span className="text-slate-500">{m.phoneNumber || "Chưa có SĐT"}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          <span className="font-normal text-[#64748b] text-[13px]">
+            Gợi ý: Nhập Số điện thoại, Mã hội viên hoặc Họ tên để tìm kiếm và bấm Xác nhận Check-in / Check-out.
           </span>
         </div>
 
@@ -188,13 +237,13 @@ export function CheckInPage() {
           {isTopUpTicket ? (
             <>
               <div className="flex items-center justify-between shrink-0 w-full">
-                <span className="font-['Manrope:Bold'] font-bold text-[#94a3b8] text-[13px]">PHIẾU NẠP TIỀN TẠI QUẦY</span>
-                <span className="bg-amber-100 font-['Manrope:Bold'] font-bold px-[10px] py-[4px] rounded-[99px] text-amber-800 text-[12px]">CHỜ THU TIỀN</span>
+                <span className="font-bold text-[#94a3b8] text-[13px]">PHIẾU NẠP TIỀN TẠI QUẦY</span>
+                <span className="bg-slate-100 font-bold px-[10px] py-[4px] rounded-[99px] text-slate-800 text-[12px]">CHỜ THU TIỀN</span>
               </div>
-              <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-xl w-full space-y-2">
-                <span className="text-xs text-amber-700 font-bold block">MÃ PHIẾU NẠP HỘI VIÊN:</span>
-                <span className="text-xl font-mono font-black text-amber-900 block">{scanValue.trim().toUpperCase()}</span>
-                <p className="text-xs text-amber-800">
+              <div className="p-4 bg-slate-50/70 border border-slate-200 rounded-xl w-full space-y-2">
+                <span className="text-xs text-slate-700 font-bold block">MÃ PHIẾU NẠP HỘI VIÊN:</span>
+                <span className="text-xl font-black text-slate-900 block">{trimmedQuery.toUpperCase()}</span>
+                <p className="text-xs text-slate-800">
                   Hội viên xuất trình phiếu này để nộp tiền mặt/quẹt thẻ nạp tiền vào ví SportCenter.
                 </p>
               </div>
@@ -210,35 +259,35 @@ export function CheckInPage() {
           ) : foundMember ? (
             <>
               <div className="flex gap-[16px] items-center shrink-0 w-full">
-                <img src={foundMember.avatarUrl || `${A}/87fb4.png`} alt="" className="shrink-0 size-[64px] rounded-full object-cover" />
+                <UserAvatar src={foundMember.avatarUrl} name={foundMember.fullName} className="shrink-0 size-[64px] rounded-full object-cover text-lg" />
                 <div className="flex flex-col gap-[4px] items-start shrink-0">
-                  <span className="font-['Manrope:ExtraBold'] font-extrabold text-[#0f172a] text-[18px]">{foundMember.fullName}</span>
+                  <span className="font-extrabold text-[#0f172a] text-[18px]">{foundMember.fullName}</span>
                   <div className="flex gap-[8px] items-center shrink-0">
-                    <span className="font-['Manrope:SemiBold'] font-semibold text-[#64748b] text-[13px]">Mã: {foundMember.memberCode}</span>
-                    <span className="bg-[#eef2ff] border border-[#c7d2fe] font-['Manrope:Bold'] font-bold px-[6px] py-px rounded-[4px] text-[#4f46e5] text-[9px] uppercase">{foundMember.packageName || "KHÔNG GÓI"}</span>
+                    <span className="font-bold font-semibold text-[#64748b] text-[13px]">Mã: {foundMember.memberCode}</span>
+                    <span className="bg-slate-100 border border-slate-200 font-bold px-[6px] py-px rounded-[4px] text-slate-700 text-[9px] uppercase">{foundMember.packageName || "KHÔNG GÓI"}</span>
                   </div>
                 </div>
               </div>
               <div className="bg-[#f1f5f9] h-px shrink-0 w-full" />
               <div className="flex items-start justify-between shrink-0 text-[13px] w-full">
-                <span className="font-['Manrope:Regular'] font-normal text-[#64748b]">Ngày hết hạn gói:</span>
-                <span className="font-['Manrope:Bold'] font-bold text-[#0f172a]">{foundMember.expiryDate ? new Date(foundMember.expiryDate).toLocaleDateString('vi-VN') : "N/A"}</span>
+                <span className="font-normal text-[#64748b]">Ngày hết hạn gói:</span>
+                <span className="font-bold text-[#0f172a]">{foundMember.expiryDate ? new Date(foundMember.expiryDate).toLocaleDateString('vi-VN') : "N/A"}</span>
               </div>
               <button
                 type="button"
                  onClick={openCheckIn ? handleCheckOut : handleCheckIn}
                  disabled={processing}
-                className={`flex gap-[8px] items-center justify-center p-[14px] rounded-[8px] shrink-0 w-full transition-colors ${confirmed ? "bg-[#16a34a]" : "bg-[#22c55e]"}`}
+                className={`flex gap-[8px] items-center justify-center p-[14px] rounded-[8px] shrink-0 w-full transition-colors ${confirmed ? "bg-emerald-600" : "bg-emerald-600"}`}
               >
                 <img src={`${A}/b6b07.svg`} alt="" className="size-[18px]" />
-                <span className="font-['Manrope:Bold'] font-bold text-[15px] text-white">
+                <span className="font-bold text-[15px] text-white">
                   {openCheckIn ? "XÁC NHẬN CHECK-OUT" : confirmed ? "✓ ĐÃ CHECK-IN THÀNH CÔNG" : "XÁC NHẬN CHECK-IN"}
                 </span>
               </button>
             </>
           ) : (
             <div className="flex flex-1 items-center justify-center py-6">
-               <span className="font-['Manrope:Regular'] font-normal text-[#64748b] text-[13px]">Chưa tìm thấy hội viên</span>
+               <span className="font-normal text-[#64748b] text-[13px]">Chưa tìm thấy hội viên</span>
             </div>
           )}
         </div>
@@ -247,9 +296,9 @@ export function CheckInPage() {
       {/* History table */}
       <div className="bg-white border border-[#e2e8f0] flex flex-col items-start overflow-hidden rounded-[12px] shrink-0 w-full">
         <div className="bg-white flex items-start p-[20px] shrink-0 w-full">
-          <span className="font-['Manrope:ExtraBold'] font-extrabold text-[#0f172a] text-[16px]">Lịch sử check-in hôm nay</span>
+          <span className="font-extrabold text-[#0f172a] text-[16px]">Lịch sử check-in hôm nay</span>
         </div>
-        <div className="bg-[#f1f5f9] flex font-['Manrope:Bold'] font-bold h-[44px] items-center px-[24px] shrink-0 text-[#64748b] text-[12px] w-full">
+        <div className="bg-[#f1f5f9] flex font-bold h-[44px] items-center px-[24px] shrink-0 text-[#64748b] text-[12px] w-full">
           <span className="w-[120px] shrink-0">THỜI GIAN</span>
           <span className="flex-1 min-w-0">HỘI VIÊN</span>
           <span className="w-[150px] shrink-0">MÃ SỐ</span>
@@ -259,19 +308,19 @@ export function CheckInPage() {
         </div>
         {historyRows.map((row) => (
           <div key={row.id} className="border border-[#f1f5f9] border-solid flex h-[54px] items-center px-[24px] shrink-0 w-full">
-            <span className="font-['Manrope:Regular'] font-normal text-[#0f172a] text-[13px] w-[120px] shrink-0">
+            <span className="font-normal text-[#0f172a] text-[13px] w-[120px] shrink-0">
               {new Date(row.checkInTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
             </span>
             <div className="flex flex-1 gap-[10px] items-center min-w-0">
-              <img src={`${A}/12161.png`} alt="" className="shrink-0 size-[28px] rounded-full object-cover" />
-              <span className="font-['Manrope:Bold'] font-bold text-[#0f172a] text-[13px] whitespace-nowrap">{row.memberName}</span>
+              <UserAvatar name={row.memberName || "HV"} className="shrink-0 size-[28px] rounded-full object-cover text-xs" />
+              <span className="font-bold text-[#0f172a] text-[13px] whitespace-nowrap">{row.memberName}</span>
             </div>
-            <span className="font-['Manrope:Regular'] font-normal text-[#64748b] text-[13px] w-[150px] shrink-0">{"..."}</span>
-            <span className="font-['Manrope:Regular'] font-normal text-[#0f172a] text-[13px] w-[180px] shrink-0">{"..."}</span>
+            <span className="font-normal text-[#64748b] text-[13px] w-[150px] shrink-0">{"..."}</span>
+            <span className="font-normal text-[#0f172a] text-[13px] w-[180px] shrink-0">{"..."}</span>
             <div className="flex items-start w-[150px] shrink-0">
               <StatusBadge text={row.result === "APPROVED" || row.result === "CHECKED_OUT" ? "Hợp lệ" : "Từ chối"} color={row.result === "APPROVED" || row.result === "CHECKED_OUT" ? "green" : "red"} />
             </div>
-             <span className="font-['Manrope:Regular'] font-normal text-right w-[100px] shrink-0 text-[13px]" style={{ color: row.checkOutTime ? "#64748b" : "#22c55e" }}>
+             <span className="font-normal text-right w-[100px] shrink-0 text-[13px]" style={{ color: row.checkOutTime ? "#64748b" : "#22c55e" }}>
                {row.checkOutTime ? `${row.durationMinutes ?? 0} phút` : "Đang tập"}
              </span>
           </div>

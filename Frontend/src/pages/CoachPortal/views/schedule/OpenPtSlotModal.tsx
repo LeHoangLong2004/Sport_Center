@@ -152,7 +152,7 @@ export default function OpenPtSlotModal({ isOpen, onClose, onSuccess, sportOptio
                   )}
                 </select>
                 {sportOptions.length === 0 && (
-                  <p className="mt-1 text-[11px] text-amber-600 font-medium">Bạn chưa được Quản lý phân công môn nào để đăng lịch 1–1.</p>
+                  <p className="mt-1 text-[11px] text-slate-600 font-medium">Bạn chưa được Quản lý phân công môn nào để đăng lịch 1–1.</p>
                 )}
               </div>
               <div>

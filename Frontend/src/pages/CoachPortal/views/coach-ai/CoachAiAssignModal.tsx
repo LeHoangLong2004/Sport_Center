@@ -72,7 +72,7 @@ export const CoachAiAssignModal: React.FC<CoachAiAssignModalProps> = ({
         {/* Header */}
         <div className="p-5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
               <Send className="w-5 h-5" />
             </div>
             <div>
@@ -102,7 +102,7 @@ export const CoachAiAssignModal: React.FC<CoachAiAssignModalProps> = ({
             </div>
             <div className="text-xs text-slate-500 dark:text-slate-400">
               Đối tượng nhận:{" "}
-              <span className="font-bold text-orange-600 dark:text-orange-400">
+              <span className="font-bold text-emerald-600 dark:text-emerald-400">
                 {target.type === "member" ? "Học viên" : "Lớp"}: {targetName}
               </span>
             </div>
@@ -114,7 +114,7 @@ export const CoachAiAssignModal: React.FC<CoachAiAssignModalProps> = ({
           {/* Due Date Input */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-orange-500" />
+              <Calendar className="w-3.5 h-3.5" />
               <span>Hạn hoàn thành (Due Date)</span>
             </label>
             <input
@@ -122,14 +122,14 @@ export const CoachAiAssignModal: React.FC<CoachAiAssignModalProps> = ({
               required
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-orange-500 focus:outline-none"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
             />
           </div>
 
           {/* Notes Input */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5 text-amber-500" />
+              <FileText className="w-3.5 h-3.5 text-slate-500" />
               <span>Lời dặn dò của HLV</span>
             </label>
             <textarea
@@ -137,7 +137,7 @@ export const CoachAiAssignModal: React.FC<CoachAiAssignModalProps> = ({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="VD: Nhớ khởi động khớp gối và cổ tay 5 phút trước khi bắt đầu..."
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-orange-500 focus:outline-none resize-none"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none resize-none"
             />
           </div>
 
@@ -154,7 +154,7 @@ export const CoachAiAssignModal: React.FC<CoachAiAssignModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white transition-all shadow-md shadow-orange-500/25 cursor-pointer disabled:opacity-50 active:scale-95"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-emerald-600 to-emerald-600 hover:from-emerald-700 hover:to-emerald-700 text-white transition-all shadow-md shadow-emerald-600/25 cursor-pointer disabled:opacity-50 active:scale-95"
             >
               <Send className="w-4 h-4" />
               <span>{isSubmitting ? "Đang giao bài..." : "Xác nhận giao bài tập"}</span>

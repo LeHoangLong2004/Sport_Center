@@ -30,7 +30,7 @@ export function PosProductGrid({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Tìm kiếm sản phẩm theo tên..."
-            className="w-full pl-9 pr-8 py-2 bg-white border border-[#e2e8f0] rounded-xl text-xs font-medium outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6] shadow-xs"
+            className="w-full pl-9 pr-8 py-2 bg-white border border-[#e2e8f0] rounded-xl text-xs font-medium outline-none focus:border-emerald-600 focus:ring-1 focus:ring-[#3b82f6] shadow-xs"
           />
           <svg
             className="absolute left-3 top-2.5 size-3.5 text-slate-400 pointer-events-none"
@@ -61,8 +61,8 @@ export function PosProductGrid({
               onClick={() => onSelectTab(tab)}
               className={`flex items-start px-[14px] py-[8px] rounded-[8px] shrink-0 transition-colors ${
                 activeTab === tab
-                  ? "bg-white border-[#3b82f6] border-[1.5px] border-solid text-[#3b82f6] font-['Manrope:Bold'] font-bold shadow-xs"
-                  : "bg-white border border-[#e2e8f0] border-solid text-[#64748b] font-['Manrope:Medium'] font-medium hover:border-slate-300"
+                  ? "bg-white border-emerald-600 border-[1.5px] border-solid text-slate-800 font-bold shadow-xs"
+                  : "bg-white border border-[#e2e8f0] border-solid text-[#64748b] font-medium hover:border-slate-300"
               } text-[13px]`}
             >
               {tab}
@@ -92,7 +92,7 @@ export function PosProductGrid({
                   className={`bg-white border flex flex-col items-start min-w-0 overflow-hidden rounded-[12px] text-left transition-all ${
                     isOutOfStock
                       ? "opacity-60 border-slate-200 cursor-not-allowed bg-slate-50"
-                      : "border-[#e2e8f0] hover:border-[#3b82f6] hover:shadow-md cursor-pointer active:scale-[0.99]"
+                      : "border-[#e2e8f0] hover:border-emerald-600 hover:shadow-md cursor-pointer active:scale-[0.99]"
                   }`}
                 >
                   <div className="h-[110px] relative shrink-0 w-full overflow-hidden bg-gray-100 flex items-center justify-center">
@@ -113,7 +113,7 @@ export function PosProductGrid({
                   </div>
                   <div className="flex flex-col gap-[3px] items-start p-[12px] w-full">
                     <div className="flex items-center justify-between w-full">
-                      <span className="font-semibold text-[#14b8a6] text-[11px] uppercase">
+                      <span className="font-semibold text-slate-600 dark:text-slate-400 text-[11px] uppercase">
                         {p.category}
                       </span>
                       <span className="text-[10px] text-slate-400">
@@ -121,12 +121,12 @@ export function PosProductGrid({
                       </span>
                     </div>
                     <span
-                      className="font-bold text-[#0f172a] text-[13px] w-full overflow-hidden text-ellipsis whitespace-nowrap"
+                      className="font-semibold text-slate-900 dark:text-white text-[13px] w-full overflow-hidden text-ellipsis whitespace-nowrap"
                       title={p.name}
                     >
                       {p.name}
                     </span>
-                    <span className="font-extrabold text-[#3b82f6] text-[14px]">
+                    <span className="font-normal text-slate-800 dark:text-slate-200 text-[14px]">
                       {p.price?.toLocaleString("vi-VN")}₫
                     </span>
                   </div>

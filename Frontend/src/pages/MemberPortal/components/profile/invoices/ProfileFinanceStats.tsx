@@ -26,7 +26,7 @@ export default function ProfileFinanceStats({
           <span className="text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
             Số dư ví
           </span>
-          <Wallet className="w-4 h-4 text-emerald-500" />
+          <Wallet className="w-4 h-4" />
         </div>
         <div className="mt-3">
           <div className="text-2xl font-bold text-slate-900 dark:text-white">
@@ -52,7 +52,7 @@ export default function ProfileFinanceStats({
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             Tổng chi tiêu
           </span>
-          <Receipt className="w-4 h-4 text-emerald-500" />
+          <Receipt className="w-4 h-4" />
         </div>
         <div className="mt-3">
           <div className="text-2xl font-bold text-slate-900 dark:text-white">
@@ -69,13 +69,13 @@ export default function ProfileFinanceStats({
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             Giao dịch hoàn tất
           </span>
-          <CheckCircle2 className="w-4 h-4 text-blue-500" />
+          <CheckCircle2 className="w-4 h-4 text-slate-500" />
         </div>
         <div className="mt-3">
           <div className="text-2xl font-bold text-slate-900 dark:text-white">
             {paidCount} đơn
           </div>
-          <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 font-medium">
+          <div className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">
             Phiếu thu hợp lệ
           </div>
         </div>
@@ -86,13 +86,13 @@ export default function ProfileFinanceStats({
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             Chờ thanh toán
           </span>
-          <Clock className="w-4 h-4 text-amber-500" />
+          <Clock className="w-4 h-4 text-slate-500" />
         </div>
         <div className="mt-3">
           <div className="text-2xl font-bold text-slate-900 dark:text-white">
             {pendingCount} đơn
           </div>
-          <div className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium">
+          <div className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">
             {pendingCount > 0 ? "Cần hoàn tất đối soát" : "Không có công nợ"}
           </div>
         </div>
@@ -103,13 +103,13 @@ export default function ProfileFinanceStats({
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             Hạng hội viên
           </span>
-          <Award className="w-4 h-4 text-purple-500" />
+          <Award className="w-4 h-4" />
         </div>
         <div className="mt-3">
           <div className="text-2xl font-bold text-slate-900 dark:text-white">
             {memberTier || (hasPaidInvoices ? "Hội viên Hoạt động" : "Thành viên mới")}
           </div>
-          <div className="text-xs text-purple-600 dark:text-purple-400 mt-1 font-medium">
+          <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-medium">
             {hasPaidInvoices ? "Gói tập đang kích hoạt" : "Chưa đăng ký gói tập"}
           </div>
         </div>

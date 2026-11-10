@@ -143,7 +143,7 @@ export default function MemberPayments({ onNavigate }: Props) {
       {feedback && (
         <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-semibold flex items-center justify-between shadow-md">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-5 h-5 shrink-0" />
             <span>{feedback}</span>
           </div>
           <button onClick={() => setFeedback(null)} className="text-emerald-600">

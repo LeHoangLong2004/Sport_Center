@@ -108,7 +108,7 @@ export function CurriculumRecipientDropdown({
                       }`}
                     >
                       <span className="truncate">{cls.name}</span>
-                      {isSelected && <Check className="w-4 h-4 text-emerald-600 shrink-0" />}
+                      {isSelected && <Check className="w-4 h-4 shrink-0" />}
                     </button>
                   );
                 })
@@ -135,7 +135,7 @@ export function CurriculumRecipientDropdown({
                       <span className="font-medium">{m.name}</span>
                       <span className="ml-1.5 text-[11px] text-slate-400">({m.code})</span>
                     </div>
-                    {isSelected && <Check className="w-4 h-4 text-emerald-600 shrink-0" />}
+                    {isSelected && <Check className="w-4 h-4 shrink-0" />}
                   </button>
                 );
               })

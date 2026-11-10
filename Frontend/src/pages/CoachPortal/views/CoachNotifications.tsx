@@ -247,7 +247,7 @@ export default function CoachNotifications() {
     const category = getNotificationCategory(n);
     if (category === "reviews") {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800">
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-50 text-slate-700 dark:bg-slate-950/60 dark:text-slate-300 border border-slate-200/80 dark:border-slate-800">
           <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
           Đánh giá HLV
         </span>
@@ -256,14 +256,14 @@ export default function CoachNotifications() {
     if (category === "approvals") {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800">
-          <CalendarCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+          <CalendarCheck className="w-3 h-3" />
           Phê duyệt
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300 border border-sky-200/80 dark:border-sky-800">
-        <Info className="w-3 h-3 text-sky-600 dark:text-sky-400" />
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-50 text-slate-700 dark:bg-slate-950/60 dark:text-slate-300 border border-slate-200/80 dark:border-slate-800">
+        <Info className="w-3 h-3 text-slate-600 dark:text-slate-400" />
         Hệ thống
       </span>
     );
@@ -273,7 +273,7 @@ export default function CoachNotifications() {
     const category = getNotificationCategory(n);
     if (category === "reviews") {
       return (
-        <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 shadow-xs border border-amber-200/60 dark:border-amber-800/60">
+        <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-950/60 text-slate-600 dark:text-slate-400 flex items-center justify-center shrink-0 shadow-xs border border-slate-200/60 dark:border-slate-800/60">
           <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
         </div>
       );
@@ -286,7 +286,7 @@ export default function CoachNotifications() {
       );
     }
     return (
-      <div className="w-10 h-10 rounded-xl bg-teal-100 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0 shadow-xs border border-teal-200/60 dark:border-teal-800/60">
+      <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-xs border border-emerald-200/60 dark:border-emerald-800/60">
         <Bell className="w-5 h-5" />
       </div>
     );
@@ -297,7 +297,7 @@ export default function CoachNotifications() {
       {/* 1. Header Card */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-600 to-emerald-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-teal-500/20">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-emerald-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/20">
             <Bell className="w-6 h-6" />
           </div>
           <div>
@@ -325,16 +325,16 @@ export default function CoachNotifications() {
             className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-300 transition-colors shadow-xs cursor-pointer"
             title="Làm mới thông báo"
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin text-teal-600" : ""}`} />
+            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin text-emerald-600" : ""}`} />
           </button>
 
           {unreadCount > 0 && (
             <button
               type="button"
               onClick={handleMarkAllAsRead}
-              className="flex items-center gap-1.5 px-3.5 py-2.5 bg-teal-50 dark:bg-teal-950/50 hover:bg-teal-100 dark:hover:bg-teal-900/50 border border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-2.5 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
             >
-              <CheckCheck className="w-4 h-4 text-teal-600" />
+              <CheckCheck className="w-4 h-4" />
               <span>Đọc tất cả</span>
             </button>
           )}
@@ -345,7 +345,7 @@ export default function CoachNotifications() {
       {feedback && (
         <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl text-emerald-800 dark:text-emerald-200 text-xs font-semibold flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>{feedback}</span>
           </div>
           <button
@@ -368,7 +368,7 @@ export default function CoachNotifications() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Tìm kiếm nội dung thông báo..."
-            className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/80 rounded-xl text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-all"
+            className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/80 rounded-xl text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all"
           />
           {searchQuery && (
             <button
@@ -400,7 +400,7 @@ export default function CoachNotifications() {
             onClick={() => setActiveTab("unread")}
             className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
               activeTab === "unread"
-                ? "bg-teal-600 text-white shadow-xs"
+                ? "bg-emerald-600 text-white shadow-xs"
                 : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
             }`}
           >
@@ -412,11 +412,11 @@ export default function CoachNotifications() {
             onClick={() => setActiveTab("reviews")}
             className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
               activeTab === "reviews"
-                ? "bg-amber-500 text-white shadow-xs"
+                ? "bg-emerald-600 text-white shadow-xs"
                 : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
             }`}
           >
-            <Star className="w-3.5 h-3.5 fill-current" />
+            <Star className={`w-3.5 h-3.5 ${activeTab === "reviews" ? "fill-white text-white" : "fill-amber-500 text-amber-500"}`} />
             Đánh giá HLV ({reviewCount})
           </button>
 
@@ -438,7 +438,7 @@ export default function CoachNotifications() {
             onClick={() => setActiveTab("system")}
             className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
               activeTab === "system"
-                ? "bg-sky-600 text-white shadow-xs"
+                ? "bg-slate-600 text-white shadow-xs"
                 : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
             }`}
           >
@@ -452,7 +452,7 @@ export default function CoachNotifications() {
       <div className="space-y-3">
         {loading ? (
           <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-12 text-center text-xs text-slate-400 space-y-3">
-            <RefreshCw className="w-8 h-8 mx-auto animate-spin text-teal-600" />
+            <RefreshCw className="w-8 h-8 mx-auto animate-spin" />
             <p>Đang tải thông báo...</p>
           </div>
         ) : filteredNotifications.length === 0 ? (
@@ -483,7 +483,7 @@ export default function CoachNotifications() {
                 onClick={() => handleNotificationClick(n)}
                 className={`relative group bg-white dark:bg-slate-900 border rounded-2xl p-4 sm:p-5 transition-all duration-200 cursor-pointer ${
                   isUnread
-                    ? "border-teal-300 dark:border-teal-800 bg-teal-50/20 dark:bg-teal-950/10 shadow-xs hover:border-teal-400"
+                    ? "border-emerald-300 dark:border-emerald-800 bg-emerald-50/20 dark:bg-emerald-950/10 shadow-xs hover:border-emerald-400"
                     : "border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-2xs"
                 } ${isReviewNotification ? "hover:border-amber-300 dark:hover:border-amber-700" : ""}`}
               >
@@ -496,7 +496,7 @@ export default function CoachNotifications() {
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       {renderBadge(n)}
                       {isUnread && (
-                        <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" title="Chưa đọc" />
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Chưa đọc" />
                       )}
                       <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 ml-auto flex items-center gap-1">
                         <Clock className="w-3 h-3" />
@@ -543,7 +543,7 @@ export default function CoachNotifications() {
                         e.stopPropagation();
                         void handleMarkAsRead(n.id);
                       }}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-950/60 transition-colors shrink-0 cursor-pointer"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 transition-colors shrink-0 cursor-pointer"
                       title="Đánh dấu đã đọc"
                     >
                       <CheckCircle2 className="w-4 h-4" />

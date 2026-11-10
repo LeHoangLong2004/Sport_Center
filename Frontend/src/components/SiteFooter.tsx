@@ -30,7 +30,7 @@ export function SiteFooter() {
             }}
             title="Quay lại Trang chủ SportCenter"
           >
-            <div className="bg-teal-500 flex items-center justify-center rounded-[8px] size-[40px] shrink-0 shadow-lg shadow-teal-500/20">
+            <div className="bg-emerald-500 flex items-center justify-center rounded-[8px] size-[40px] shrink-0 shadow-lg shadow-emerald-500/20">
               <svg
                 width="24"
                 height="24"
@@ -48,7 +48,7 @@ export function SiteFooter() {
               <p className="font-extrabold text-white text-[20px] leading-none tracking-tight">
                 SPORTCENTER
               </p>
-              <p className="font-semibold text-teal-500 text-[10px] uppercase tracking-widest">
+              <p className="font-semibold text-emerald-500 text-[10px] uppercase tracking-widest">
                 Energy Platform
               </p>
             </div>
@@ -97,7 +97,7 @@ export function SiteFooter() {
           ].map((item) => (
             <p
               key={item}
-              className="cursor-pointer hover:text-teal-400 transition-colors"
+              className="cursor-pointer hover:text-emerald-400 transition-colors"
             >
               {item}
             </p>
@@ -118,7 +118,7 @@ export function SiteFooter() {
           ].map((item) => (
             <p
               key={item}
-              className="cursor-pointer hover:text-teal-400 transition-colors"
+              className="cursor-pointer hover:text-emerald-400 transition-colors"
             >
               {item}
             </p>
@@ -137,9 +137,9 @@ export function SiteFooter() {
             <input
               type="email"
               placeholder="Email của bạn..."
-              className="bg-slate-800 border-y border-l border-slate-700 text-white text-sm rounded-l-xl px-4 py-2.5 w-full focus:outline-none focus:border-teal-500"
+              className="bg-slate-800 border-y border-l border-slate-700 text-white text-sm rounded-l-xl px-4 py-2.5 w-full focus:outline-none focus:border-emerald-500"
             />
-            <button className="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2.5 rounded-r-xl transition-colors font-bold text-sm shrink-0 shadow-lg shadow-teal-500/20">
+            <button className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-r-xl transition-colors font-bold text-sm shrink-0 shadow-lg shadow-emerald-500/20">
               Gửi
             </button>
           </div>
@@ -223,7 +223,7 @@ export function SiteFooter() {
               <button
                 key={i}
                 aria-label={social.name}
-                className="bg-slate-800 text-slate-400 flex items-center justify-center rounded-[10px] size-[38px] hover:bg-teal-500 hover:text-white transition-all transform hover:-translate-y-1"
+                className="bg-slate-800 text-slate-400 flex items-center justify-center rounded-[10px] size-[38px] hover:bg-emerald-500 hover:text-white transition-all transform hover:-translate-y-1"
               >
                 {social.icon}
               </button>

@@ -225,11 +225,11 @@ export function ProductOrdersPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-purple-500">Lễ tân / Đơn hàng Member</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-600">Lễ tân / Đơn hàng Member</p>
           <h1 className="mt-2 text-2xl font-extrabold text-slate-900">Quản lý đơn mua hàng</h1>
           <p className="mt-1 text-sm text-slate-500">Xác nhận thanh toán, chuẩn bị hàng và trao đổi với Member theo từng đơn. Tin nhắn nằm trong nút <strong>Xem chat</strong> của mỗi đơn.</p>
         </div>
-        <button type="button" onClick={() => void loadOrders()} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 hover:border-purple-300 hover:text-purple-600">Làm mới</button>
+        <button type="button" onClick={() => void loadOrders()} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 hover:border-emerald-300 hover:text-emerald-600">Làm mới</button>
       </div>
 
       {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>}
@@ -241,7 +241,7 @@ export function ProductOrdersPage() {
           ["preparing", "Đang chuẩn bị", counts.preparing],
           ["delivering", "Đang giao", counts.delivering],
         ] as const).map(([status, label, count]) => (
-          <button key={status} type="button" onClick={() => setFilter(status)} className={`rounded-xl border bg-white p-4 text-left shadow-sm transition ${filter === status ? "border-purple-400 ring-2 ring-purple-100" : "border-slate-200"}`}>
+          <button key={status} type="button" onClick={() => setFilter(status)} className={`rounded-xl border bg-white p-4 text-left shadow-sm transition ${filter === status ? "border-emerald-500 ring-2 ring-emerald-100" : "border-slate-200"}`}>
             <span className="text-sm text-slate-500">{label}</span>
             <strong className="mt-2 block text-2xl text-slate-900">{count}</strong>
           </button>
@@ -274,7 +274,7 @@ export function ProductOrdersPage() {
                         <span className={`rounded-full px-2 py-1 text-xs font-bold ${isPaid ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
                           {isPaid ? "Đã thanh toán" : "Chờ thanh toán"}
                         </span>
-                        <span className="rounded-full bg-purple-50 px-2 py-1 text-xs font-bold text-purple-700">
+                        <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">
                           {fulfillmentLabels[order.fulfillmentStatus]}
                         </span>
                       </div>
@@ -283,9 +283,9 @@ export function ProductOrdersPage() {
                       <p className="mt-2 text-xs font-semibold text-slate-600">{order.fulfillmentMethod === "in_center_delivery" ? `Giao tại: ${order.deliveryLocation || "Chưa nhập vị trí"}` : "Nhận tại quầy lễ tân"}{order.assignedToName ? ` · Phụ trách: ${order.assignedToName}` : ""}</p>
                     </div>
                     <div className="flex flex-wrap items-center justify-end gap-2">
-                      <strong className="mr-2 text-lg text-purple-600">{money(order.totalAmount)}</strong>
+                      <strong className="mr-2 text-lg text-emerald-600">{money(order.totalAmount)}</strong>
                       {order.status === "pending" && (
-                        <button type="button" disabled={processingId === order.id} onClick={() => void confirmPayment(order.id)} className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-bold text-white hover:bg-purple-700 disabled:opacity-50">
+                        <button type="button" disabled={processingId === order.id} onClick={() => void confirmPayment(order.id)} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
                           {processingId === order.id ? "Đang xử lý..." : "Xác nhận đã thu tiền"}
                         </button>
                       )}
@@ -299,7 +299,7 @@ export function ProductOrdersPage() {
                           Hủy
                         </button>
                       )}
-                      <button type="button" onClick={() => void toggleChat(order.id)} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-600 hover:border-purple-300 hover:text-purple-600">
+                      <button type="button" onClick={() => void toggleChat(order.id)} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-600 hover:border-emerald-300 hover:text-emerald-600">
                         {openChatId === order.id ? "Đóng chat" : order.messageCount > 0 ? `Xem chat (${order.messageCount})` : "Nhắn Member"}
                       </button>
                     </div>
@@ -320,8 +320,8 @@ export function ProductOrdersPage() {
                         )}
                       </div>
                       <div className="mt-3 flex gap-2">
-                        <input value={drafts[order.id] || ""} onChange={(event) => setDrafts((current) => ({ ...current, [order.id]: event.target.value }))} onKeyDown={(event) => { if (event.key === "Enter") void sendMessage(order.id) }} placeholder="Nhập tin nhắn cho Member..." className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-purple-400" />
-                        <button type="button" onClick={() => void sendMessage(order.id)} className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-bold text-white">
+                        <input value={drafts[order.id] || ""} onChange={(event) => setDrafts((current) => ({ ...current, [order.id]: event.target.value }))} onKeyDown={(event) => { if (event.key === "Enter") void sendMessage(order.id) }} placeholder="Nhập tin nhắn cho Member..." className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500" />
+                        <button type="button" onClick={() => void sendMessage(order.id)} className="rounded-lg bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-sm font-bold text-white">
                           Gửi
                         </button>
                       </div>
@@ -382,7 +382,7 @@ export function ProductOrdersPage() {
                       onClick={() => setCurrentPage(p)}
                       className={`flex items-center justify-center size-8 rounded-lg border text-xs font-bold transition cursor-pointer ${
                         isActive
-                          ? "bg-purple-600 text-white border-purple-600 shadow-sm"
+                          ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
                           : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100"
                       }`}
                     >

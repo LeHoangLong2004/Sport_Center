@@ -304,7 +304,7 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
           </button>
           <button
             onClick={() => { setCreateError(""); setShowCreateMember(true); }}
-            className="bg-rose-600 hover:bg-rose-700 text-white transition-all flex gap-2 items-center px-4 py-2.5 rounded-xl cursor-pointer shadow-md shadow-rose-600/20 active:scale-95"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white transition-all flex gap-2 items-center px-4 py-2.5 rounded-xl cursor-pointer shadow-md shadow-emerald-600/20 active:scale-95"
           >
             <span className="font-semibold text-white text-sm">+ Thêm hội viên mới</span>
           </button>
@@ -320,7 +320,7 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
             <button 
               key={t.label} 
               onClick={() => setActiveTab(t.label)}
-              className={`pb-3 text-sm transition-colors cursor-pointer ${isActive ? "border-b-2 border-rose-600 font-bold text-rose-600 dark:text-rose-400" : "font-medium text-[#64748b] dark:text-slate-400 hover:text-[#0f172a] dark:hover:text-white"}`}
+              className={`pb-3 text-sm transition-colors cursor-pointer ${isActive ? "border-b-2 border-emerald-600 font-bold text-emerald-600 dark:text-emerald-400" : "font-medium text-[#64748b] dark:text-slate-400 hover:text-[#0f172a] dark:hover:text-white"}`}
             >
               {t.label} ({count})
             </button>
@@ -342,7 +342,7 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
       {selectedIds.length >= 2 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-full bg-slate-900/95 text-white px-5 py-2.5 shadow-2xl backdrop-blur-md border border-slate-700/80 animate-in slide-in-from-bottom-5 duration-200 select-none max-w-[calc(100vw-32px)]">
           <div className="flex items-center gap-2 pr-3 border-r border-slate-700/80 shrink-0">
-            <span className="flex size-5.5 items-center justify-center rounded-full bg-rose-600 text-white font-bold text-[11px] shadow-xs">
+            <span className="flex size-5.5 items-center justify-center rounded-full bg-emerald-600 text-white font-bold text-[11px] shadow-xs">
               {selectedIds.length}
             </span>
             <span className="text-xs font-semibold text-slate-200 whitespace-nowrap">
@@ -353,7 +353,7 @@ export function MembersPage({ onEditMember }: { onEditMember: (member: any) => v
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => handleRequestBulkStatus(false)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-rose-600 hover:bg-rose-500 px-3.5 py-1.5 text-xs font-semibold text-white transition-all shadow-xs active:scale-95 cursor-pointer whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-500 px-3.5 py-1.5 text-xs font-semibold text-white transition-all shadow-xs active:scale-95 cursor-pointer whitespace-nowrap"
             >
               <LockKeyhole className="size-3.5" />
               <span>Khóa hàng loạt</span>

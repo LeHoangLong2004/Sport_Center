@@ -158,8 +158,8 @@ export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: Class
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-bold text-slate-900">Chi tiết lớp học</h2>
             {isPendingProposal ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-0.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+                <span className="h-1.5 w-1.5 rounded-full bg-slate-500 animate-pulse" />
                 Chờ duyệt
               </span>
             ) : (

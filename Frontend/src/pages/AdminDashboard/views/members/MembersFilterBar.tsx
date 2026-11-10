@@ -53,7 +53,7 @@ export function MembersFilterBar({
           <button
             type="button"
             onClick={onClearSelection}
-            className="text-xs text-rose-600 hover:text-rose-700 hover:underline cursor-pointer font-medium"
+            className="text-xs text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer font-medium"
           >
             (Bỏ chọn)
           </button>

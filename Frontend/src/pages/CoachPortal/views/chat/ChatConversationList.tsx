@@ -46,7 +46,7 @@ export const ChatConversationList: React.FC<ChatConversationListProps> = ({
               onClick={() => onFilterChange(type)}
               className={`text-[11px] px-2.5 py-1 rounded-lg font-medium transition-colors ${
                 filterType === type
-                  ? "bg-orange-500 text-white font-bold shadow-xs"
+                  ? "bg-emerald-600 text-white font-bold shadow-xs"
                   : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
@@ -108,7 +108,7 @@ export const ChatConversationList: React.FC<ChatConversationListProps> = ({
                     {conv.subtitle}
                   </span>
                   {conv.unreadCount ? (
-                    <span className="text-[10px] font-bold px-1.5 py-0.2 bg-orange-500 text-white rounded-full">
+                    <span className="text-[10px] font-bold px-1.5 py-0.2 bg-emerald-600 text-white rounded-full">
                       {conv.unreadCount}
                     </span>
                   ) : null}

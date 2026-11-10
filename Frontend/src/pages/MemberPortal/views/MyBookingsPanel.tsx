@@ -15,7 +15,7 @@ export function MyBookingsPanel({ loading, bookings, cancellingId, onExplore, on
           <div className="space-y-6">
               {loadingMyBookings ? (
                 <div className="text-center py-20 bg-white rounded-3xl border border-slate-200">
-                  <div className="animate-spin inline-block w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full mb-4"></div>
+                  <div className="animate-spin inline-block w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full mb-4"></div>
                   <p className="text-slate-600 font-medium">Đang tải danh sách đơn đặt lớp của bạn...</p>
                 </div>
               ) : myBookings.length === 0 ? (
@@ -25,7 +25,7 @@ export function MyBookingsPanel({ loading, bookings, cancellingId, onExplore, on
                   <p className="text-slate-500 mb-6">Bạn chưa đăng ký lớp học nào. Hãy chọn tab "Tìm & Đặt lớp" để đăng ký lớp tập phù hợp!</p>
                   <button
                     onClick={() => onExplore()}
-                    className="px-6 py-2.5 bg-teal-600 text-white font-bold rounded-xl shadow-lg shadow-teal-600/20 hover:bg-teal-700 transition-colors"
+                    className="px-6 py-2.5 bg-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-colors"
                   >
                     Khám phá lớp học ngay
                   </button>
@@ -43,19 +43,19 @@ export function MyBookingsPanel({ loading, bookings, cancellingId, onExplore, on
                     let statusLabel = "🟢 Đã xác nhận";
 
                     if (status === 'pending') {
-                      badgeClass = "bg-yellow-100 text-yellow-800 border-yellow-200";
+                      badgeClass = "bg-slate-100 text-slate-800 border-slate-200";
                       statusLabel = "⏳ Chờ duyệt";
                     } else if (status === 'rejected') {
                       badgeClass = "bg-red-100 text-red-800 border-red-200";
                       statusLabel = "❌ Bị từ chối";
                     } else if (status === 'attended') {
-                      badgeClass = "bg-blue-100 text-blue-800 border-blue-200";
+                      badgeClass = "bg-slate-100 text-slate-800 border-slate-200";
                       statusLabel = "🔵 Đã tham gia";
                     } else if (status === 'cancelled') {
                       badgeClass = "bg-rose-100 text-rose-800 border-rose-200";
                       statusLabel = "🔴 Đã hủy";
                     } else if (status === 'no_show') {
-                      badgeClass = "bg-amber-100 text-amber-800 border-amber-200";
+                      badgeClass = "bg-slate-100 text-slate-800 border-slate-200";
                       statusLabel = "🟡 Vắng mặt";
                     }
 
@@ -86,28 +86,28 @@ export function MyBookingsPanel({ loading, bookings, cancellingId, onExplore, on
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="font-bold text-slate-800 text-sm truncate">{b.coachName || 'HLV Trung Tâm'}</span>
                                 {b.coachRating ? (
-                                  <span className="inline-flex items-center gap-0.5 text-xs font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
+                                  <span className="inline-flex items-center gap-0.5 text-xs font-bold text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded">
                                     ⭐ {b.coachRating}
                                   </span>
                                 ) : null}
                               </div>
-                              <p className="text-xs text-teal-700 font-medium truncate">{b.coachSpecialty || 'Huấn luyện viên chuyên nghiệp'}</p>
+                              <p className="text-xs text-emerald-700 font-medium truncate">{b.coachSpecialty || 'Huấn luyện viên chuyên nghiệp'}</p>
                             </div>
                           </div>
 
                           <div className="space-y-1.5 text-xs text-slate-600">
                             <div className="flex items-center gap-2">
-                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-teal-600 shrink-0"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-600 shrink-0"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
                               <span className="font-semibold text-slate-700">{dateStr}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-teal-600 shrink-0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-600 shrink-0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
                               <span>Phòng: <strong className="text-slate-800">{b.roomName || 'Studio trung tâm'}</strong></span>
                             </div>
                             {b.coachPhone && (
                               <div className="flex items-center gap-2">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-teal-600 shrink-0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
-                                <span>Hotline HLV: <a href={`tel:${b.coachPhone}`} className="text-teal-700 font-bold hover:underline">{b.coachPhone}</a></span>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-600 shrink-0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
+                                <span>Hotline HLV: <a href={`tel:${b.coachPhone}`} className="text-emerald-700 font-bold hover:underline">{b.coachPhone}</a></span>
                               </div>
                             )}
                             <div className="flex items-center justify-between pt-1 border-t border-slate-200/40">

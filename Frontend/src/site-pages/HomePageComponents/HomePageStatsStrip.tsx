@@ -39,8 +39,8 @@ export function HomePageStatsStrip() {
           key={label}
           className={`flex-1 flex flex-col gap-[8px] items-center justify-center py-[52px] px-[32px] ${index < stats.length - 1 ? "border-r border-[#1e293b]" : ""}`}
         >
-          <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#10b981] text-[44px] leading-none m-0">{value}</p>
-          <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[14px] text-center m-0">{label}</p>
+          <p className="font-extrabold text-[#10b981] text-[44px] leading-none m-0">{value}</p>
+          <p className="font-normal text-[#94a3b8] text-[14px] text-center m-0">{label}</p>
         </FadeUp>
       ))}
     </section>

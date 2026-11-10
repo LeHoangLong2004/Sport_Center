@@ -70,7 +70,7 @@ export default function ProfileElectronicReceiptModal({
           <div className="grid grid-cols-2 gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
             <div>
               <span className="text-slate-400 block mb-0.5">Mã số phiếu thu:</span>
-              <span className="font-mono font-bold text-sm text-slate-900 dark:text-white">
+              <span className="font-bold text-sm text-slate-900 dark:text-white">
                 {receiptModal.id}
               </span>
             </div>
@@ -155,7 +155,7 @@ export default function ProfileElectronicReceiptModal({
           {/* Electronic Stamp */}
           <div className="flex items-center justify-between p-3.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40">
             <div className="flex items-center gap-2.5">
-              <FileCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <FileCheck className="w-5 h-5" />
               <div>
                 <p className="font-bold text-emerald-800 dark:text-emerald-300 text-xs">
                   XÁC NHẬN ĐÃ THU TIỀN THÀNH CÔNG
@@ -165,7 +165,7 @@ export default function ProfileElectronicReceiptModal({
                 </p>
               </div>
             </div>
-            <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+            <CheckCircle2 className="w-6 h-6" />
           </div>
         </div>
 
