@@ -1,65 +1,73 @@
 # ==============================================================================
-# .gitignore — SWP391 Sport Center (Fullstack .NET 10 + React Vite)
+# .gitignore — SWP391 Sport Center (Fullstack .NET 10 + React 19 Vite)
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
-# 1. Hệ điều hành (Operating System Files)
+# 1. Operating System Files
 # ------------------------------------------------------------------------------
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
 .DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
-ehthumbs.db
-Thumbs.db
-Desktop.ini
-$RECYCLE.BIN/
+
+# Linux
+*~
 
 # ------------------------------------------------------------------------------
-# 2. Trình soạn thảo & IDE (IDEs & Code Editors)
+# 2. Microsoft Office Temporary & Lock Files (Word / Excel / PowerPoint)
 # ------------------------------------------------------------------------------
+~$*
+~$*.docx
+~$*.xlsx
+~$*.pptx
+*.tmp
+*.bak
+*.swp
+
+# ------------------------------------------------------------------------------
+# 3. IDEs & Code Editors
+# ------------------------------------------------------------------------------
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.VC.db
+*.opendb
+*.pdb
+
+# Visual Studio Code
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+# JetBrains (Rider, WebStorm, IntelliJ)
 .idea/
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
-*.swp
-*.bak
-*.tmp
-*~
+*.iws
 
 # ------------------------------------------------------------------------------
-# 3. Backend (.NET 10 / ASP.NET Core / C#)
+# 4. Backend (.NET 10 / ASP.NET Core / C#)
 # ------------------------------------------------------------------------------
 # Build outputs
 [Bb]in/
 [Oo]bj/
 [Oo]ut/
-backend/bin/
-backend/obj/
-backend/*/bin/
-backend/*/obj/
-backend/SmartGym.Api/bin/
-backend/SmartGym.Api/obj/
-backend/SmartGym.Application/bin/
-backend/SmartGym.Application/obj/
-backend/SmartGym.Domain/bin/
-backend/SmartGym.Domain/obj/
-backend/SmartGym.Infrastructure/bin/
-backend/SmartGym.Infrastructure/obj/
+backend/**/bin/
+backend/**/obj/
+backend/**/out/
 
-# Visual Studio Cache
-.vs/
-*.pdb
-*.opendb
-*.VC.db
-
-# File cấu hình cục bộ & Bảo mật (Secrets)
+# Local configuration files & Secrets (Do not commit to public repositories)
 backend/**/appsettings.Development.json
 backend/**/appsettings.Local.json
 backend/**/secrets.json
@@ -67,33 +75,57 @@ backend/**/secrets.json
 **/*.p12
 **/*.key
 **/*.cer
+**/*.pem
+**/*.cert
 
-# Thư mục upload ảnh cục bộ (fallback khi không dùng Cloudinary CDN)
+# Local uploaded media directory fallback (when not using Cloudinary CDN)
 **/wwwroot/uploads/**
 !**/wwwroot/uploads/
 !**/wwwroot/uploads/**/.gitkeep
 
 # Logs & Test Results
-backend/**/*.log
 *.log
+backend/**/*.log
+logs/
+**/logs/
 [Tt]est[Rr]esult*/
 coverage*/
 *.trx
 *.coverage
 
 # ------------------------------------------------------------------------------
-# 4. Frontend (React / Vite / TypeScript / Tailwind)
+# 5. Frontend (React 19 / Vite / TypeScript / Tailwind CSS)
 # ------------------------------------------------------------------------------
-Frontend/node_modules/
+# Dependencies
 node_modules/
+**/node_modules/
+.pnp
+.pnp.js
+
+# Production build outputs
+dist/
+dist-ssr/
+build/
+out/
 Frontend/dist/
 Frontend/dist-ssr/
 Frontend/build/
-Frontend/.vite/
-dist/
-dist-ssr/
 
-# Biến môi trường Frontend (Chứa API keys nhạy cảm)
+# Vite & tool caching
+.vite/
+Frontend/.vite/
+.eslintcache
+.stylelintcache
+Frontend/.eslintcache
+Frontend/.stylelintcache
+.cache/
+Frontend/.cache/
+*.tsbuildinfo
+
+# Frontend Environment variables (contain API keys and private tokens)
+.env
+.env.local
+.env.*.local
 Frontend/.env
 Frontend/.env.local
 Frontend/.env.development.local
@@ -103,26 +135,27 @@ Frontend/.env.*.local
 !.env.example
 !Frontend/.env.example
 
-# Logs gói cài đặt Node
+# Package manager logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 Frontend/npm-debug.log*
 Frontend/yarn-debug.log*
 Frontend/yarn-error.log*
 Frontend/pnpm-debug.log*
 
-# Cache linting & build tools
-Frontend/.eslintcache
-Frontend/.stylelintcache
-Frontend/.cache/
-.eslintcache
-*.tsbuildinfo
-
 # ------------------------------------------------------------------------------
-# 5. Antigravity, AI Assistants & .NET Tooling Cache
+# 6. AI Assistants, CLI Tools & .NET Global Caches
 # ------------------------------------------------------------------------------
 .gemini/
 **/.gemini/
 .agents/
 **/.agents/
+.cursor/
+.windsurf/
+.claude/
+.copilot/
 .dotnet/
 **/.dotnet/
 .dotnet*
@@ -130,37 +163,38 @@ Frontend/.cache/
 .dotnet_temp/
 *.dotnetUserLevelCache
 *.toolpath.sentinel
-.cursor/
-.windsurf/
-.claude/
-.copilot/
 
 # ------------------------------------------------------------------------------
-# 6. Scratch & Thư mục kiểm thử tạm thời (Temporary Workspace / Scripts)
+# 7. Scratch Scripts & Temporary Testing Artifacts
 # ------------------------------------------------------------------------------
 scratch/
 **/scratch/
 *CheckDbTables*
 CheckDbTablesTest.cs
 
-# Flow 5/6 planning documents (keep the shared implementation plan)
+# Planning documents (keep shared implementation plan)
 docs/Flow_5*.md
 docs/Flow_6*.md
 !docs/Flow_5_6_AI_Implementation_Plan.md
 
 # ------------------------------------------------------------------------------
-# 7. Dữ liệu trích xuất kiểm thử, Logs nhạy cảm & Tunneling (Dumps & Local Tools)
+# 8. Test Data Dumps, Sensitive Logs & Tunneling
 # ------------------------------------------------------------------------------
 cracked_accounts.json
 users_dump.json
 users_summary.txt
 test_github.txt
 *.dump
+*.dmp
 *.sql.bak
 dump/
 dumps/
 ngrok.log
 .ngrok*
-*.pem
-*.cert
 
+# ------------------------------------------------------------------------------
+# 9. Python Cache (if running auxiliary scripts)
+# ------------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class

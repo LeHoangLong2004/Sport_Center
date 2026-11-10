@@ -1,242 +1,27 @@
 import React, { useState, useEffect } from "react";
 import SiteApp from "./SiteApp";
-import MemberPortal from "./pages/MemberPortal";
 import CoachPortal from "./pages/CoachPortal";
-import AdminDashboard from "./pages/AdminDashboard";
 import PaymentFlow from "./pages/PaymentFlow";
 import { ProductPaymentFlow } from "./pages/PaymentFlow/ProductPaymentFlow";
 import ReceptionistPortal from "./pages/ReceptionistPortal";
+import AdminPortal from "./components/AdminPortal";
 import type { CatalogPackage, PackagePeriod } from "./services/packageApi";
-import type { CheckoutSelection } from "./pages/MemberPortal";
 import type { ProductOrder } from "./pages/MemberPortal/views/ProductShopPage";
-
-import { Registration } from "./components/Auth/Registration";
-import { Login } from "./components/Auth/Login";
-import { ForgotPassword } from "./components/Auth/ForgotPassword";
-import { Verification } from "./components/Auth/Verification";
-import { ResetPassword } from "./components/Auth/ResetPassword";
-import { MemberPage } from "./pages/MemberPortal/shared";
-
-/**
- * Component điều hướng phân hệ Xác thực và Bảng điều khiển quản trị (Auth & Admin Routing Container).
- * Quản lý trạng thái giữa các bước: Đăng ký (Register), Đăng nhập (Login), Quên/Đổi mật khẩu, và điều hướng vào MemberPortal / AdminDashboard.
- */
-function AdminPortal({
-  onExit,
-  initialStep = "register",
-  initialMemberPage = "overview",
-  onMemberCheckout,
-  onMemberProductPayment,
-  onRoleSwitch,
-}: {
-  onExit: () => void
-  initialStep?: "register" | "login" | "verify" | "forgotPassword" | "resetPassword" | "member" | "dashboard"
-  initialMemberPage?: MemberPage
-  onMemberCheckout?: (selection: CheckoutSelection) => void
-  onMemberProductPayment?: (order: ProductOrder) => void
-  onRoleSwitch?: (role: "admin" | "coach" | "receptionist" | "member") => void
-}) {
-  const [step, setStep] = useState<
-    "register" | "login" | "verify" | "forgotPassword" | "resetPassword" | "member" | "dashboard"
-  >(initialStep)
-  const [verifyTarget, setVerifyTarget] = useState<"member" | "login">("member")
-
-  useEffect(() => {
-    const handleHash = () => {
-      const h = window.location.hash
-      if (h.startsWith("#dashboard")) {
-        setStep("dashboard")
-      } else if (
-        h.startsWith("#member") ||
-        [
-          "#classes",
-          "#booking-confirm",
-          "#schedule",
-          "#booking-success",
-          "#workout-detail",
-          "#move-ai",
-          "#ai",
-          "#support",
-        ].includes(h)
-      ) {
-        setStep("member")
-      } else if (h === "#login" || h === "#admin") {
-        setStep("login")
-      } else if (h === "#register") {
-        setStep("register")
-      }
-    }
-    window.addEventListener("hashchange", handleHash)
-    return () => window.removeEventListener("hashchange", handleHash)
-  }, [])
-
-  if (step === "member") {
-    const userStr = localStorage.getItem("user")
-    const user = userStr ? JSON.parse(userStr) : null
-    const role = user?.role?.toLowerCase()
-    if (!user || (role !== "member" && role !== "user" && role !== "customer")) {
-      const demoMember = {
-        id: "cd431e48-c84b-4b16-815e-971f3387fd83",
-        fullName: "H Long",
-        phoneNumber: "0987123456",
-        role: "Member",
-        email: "long@gmail.com",
-        avatarUrl: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=256&q=80",
-      }
-      localStorage.setItem("user", JSON.stringify(demoMember))
-    }
-
-    return (
-      <MemberPortal
-        initialPage={initialMemberPage}
-        onCheckout={onMemberCheckout}
-        onProductPayment={onMemberProductPayment}
-        onLogout={() => {
-          localStorage.removeItem("token")
-          localStorage.removeItem("accessToken")
-          localStorage.removeItem("user")
-          window.location.hash = "login"
-          setStep("login")
-        }}
-      />
-    )
-  }
-
-  if (step === "dashboard") {
-    return (
-      <AdminDashboard
-        onLogout={() => {
-          localStorage.removeItem("token")
-          localStorage.removeItem("accessToken")
-          localStorage.removeItem("user")
-          window.location.hash = "login"
-          setStep("login")
-        }}
-      />
-    )
-  }
-
-  if (step === "register") {
-    return (
-      <Registration
-        onLogin={() => setStep("login")}
-        onRegistered={() => {
-          setVerifyTarget("member")
-          setStep("verify")
-        }}
-        onHome={onExit}
-      />
-    )
-  }
-
-  if (step === "forgotPassword") {
-    return (
-      <ForgotPassword
-        onLogin={() => setStep("login")}
-        onSubmit={() => setStep("resetPassword")}
-      />
-    )
-  }
-
-  if (step === "resetPassword") {
-    return <ResetPassword onLogin={() => setStep("login")} />
-  }
-
-  if (step === "verify") {
-    return (
-      <Verification onVerified={() => setStep(verifyTarget)} />
-    )
-  }
-
-  return (
-    <Login
-      onLogin={() => {
-        window.location.hash = "member"
-        setStep("member")
-        onRoleSwitch?.("member")
-      }}
-      onLoginAs={(role) => {
-        if (role === "admin") {
-          window.location.hash = "dashboard"
-          setStep("dashboard")
-          onRoleSwitch?.("admin")
-        } else if (role === "coach") {
-          window.location.hash = "coach-portal"
-          onRoleSwitch?.("coach")
-        } else if (role === "receptionist") {
-          window.location.hash = "receptionist"
-          onRoleSwitch?.("receptionist")
-        } else {
-          window.location.hash = "member"
-          setStep("member")
-          onRoleSwitch?.("member")
-        }
-        window.dispatchEvent(new HashChangeEvent("hashchange"))
-      }}
-      onRegister={() => setStep("register")}
-      onForgotPassword={() => setStep("forgotPassword")}
-      onHome={onExit}
-    />
-  )
-}
-
-const coachHashes = new Set([
-  "#coach-portal",
-  "#coach-dashboard",
-  "#coach-schedule",
-  "#coach-class-detail",
-  "#coach-attendance",
-  "#coach-members",
-  "#coach-member-profile",
-  "#coach-curriculum",
-  "#coach-assessment",
-  "#coach-notifications",
-  "#coach-profile",
-  "#coach-settings",
-  "#coach-ai",
-  "#coach-chat",
-  "#coach-reviews",
-])
-
-const adminHashes = new Set([
-  "#admin",
-  "#login",
-  "#dashboard",
-  "#register",
-  "#member",
-  "#classes",
-  "#booking-confirm",
-  "#schedule",
-  "#booking-success",
-  "#workout-detail",
-  "#move-ai",
-  "#ai",
-  "#support",
-])
-
-const paymentHashes = new Set(["#payment"])
-const receptionistHashes = new Set(["#receptionist"])
-
-function isAdminHash(hash: string) {
-  return hash.startsWith("#member") || hash.startsWith("#dashboard") || adminHashes.has(hash)
-}
-
-function isReceptionistHash(hash: string) {
-  return hash.startsWith("#receptionist") || receptionistHashes.has(hash)
-}
-
-function isCoachHash(hash: string) {
-  // `#coach` is the public coach directory page. Only the explicit portal
-  // hashes should render the authenticated Coach Portal.
-  return hash.startsWith("#coach-") || hash.startsWith("#coach/") || coachHashes.has(hash)
-}
+import {
+  coachHashes,
+  adminHashes,
+  paymentHashes,
+  receptionistHashes,
+  isAdminHash,
+  isReceptionistHash,
+  isCoachHash,
+} from "./utils/routeHashes";
 
 /**
  * Component gốc của ứng dụng (Root Application Component).
  * Lắng nghe URL Hash (`window.location.hash`) để điều hướng giữa các phân hệ:
  * - Landing Page công khai (`SiteApp`)
- * - Cổng thông tin Hội viên (`MemberPortal`)
- * - Bảng điều khiển Quản trị viên (`AdminDashboard`)
+ * - Cổng thông tin Hội viên & Quản trị viên (`AdminPortal` điều phối MemberPortal / AdminDashboard / Auth)
  * - Cổng thông tin Huấn luyện viên (`CoachPortal`)
  * - Cổng nghiệp vụ Lễ tân quầy tiếp đón (`ReceptionistPortal`)
  * - Luồng thanh toán Checkout trực tuyến (`PaymentFlow` & `ProductPaymentFlow`)
@@ -244,22 +29,22 @@ function isCoachHash(hash: string) {
 export default function App() {
   const [adminOpen, setAdminOpen] = useState(
     () => isAdminHash(window.location.hash),
-  )
+  );
   const [coachOpen, setCoachOpen] = useState(
     () => isCoachHash(window.location.hash),
-  )
+  );
   const [paymentOpen, setPaymentOpen] = useState(
     () => paymentHashes.has(window.location.hash),
-  )
+  );
   const [receptionistOpen, setReceptionistOpen] = useState(
     () => isReceptionistHash(window.location.hash),
-  )
-  const [selectedPlanId, setSelectedPlanId] = useState<string | undefined>()
-  const [selectedPeriod, setSelectedPeriod] = useState<string | undefined>()
-  const [selectedPackage, setSelectedPackage] = useState<CatalogPackage | undefined>()
-  const [selectedDuration, setSelectedDuration] = useState<PackagePeriod | undefined>()
-  const [selectedDiscountPct, setSelectedDiscountPct] = useState(0)
-  const [selectedProductOrder, setSelectedProductOrder] = useState<ProductOrder | undefined>()
+  );
+  const [selectedPlanId, setSelectedPlanId] = useState<string | undefined>();
+  const [selectedPeriod, setSelectedPeriod] = useState<string | undefined>();
+  const [selectedPackage, setSelectedPackage] = useState<CatalogPackage | undefined>();
+  const [selectedDuration, setSelectedDuration] = useState<PackagePeriod | undefined>();
+  const [selectedDiscountPct, setSelectedDiscountPct] = useState(0);
+  const [selectedProductOrder, setSelectedProductOrder] = useState<ProductOrder | undefined>();
 
   useEffect(() => {
     if (paymentOpen && !selectedPlanId && !selectedPackage && !selectedProductOrder) {
@@ -277,19 +62,19 @@ export default function App() {
 
   useEffect(() => {
     const sync = () => {
-      setAdminOpen(isAdminHash(window.location.hash))
-      setCoachOpen(isCoachHash(window.location.hash))
-      setPaymentOpen(paymentHashes.has(window.location.hash))
-      setReceptionistOpen(isReceptionistHash(window.location.hash))
-    }
-    window.addEventListener("hashchange", sync)
-    return () => window.removeEventListener("hashchange", sync)
-  }, [])
+      setAdminOpen(isAdminHash(window.location.hash));
+      setCoachOpen(isCoachHash(window.location.hash));
+      setPaymentOpen(paymentHashes.has(window.location.hash));
+      setReceptionistOpen(isReceptionistHash(window.location.hash));
+    };
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
+  }, []);
 
   if (receptionistOpen) {
-    const userStr = localStorage.getItem("user")
-    const user = userStr ? JSON.parse(userStr) : null
-    const role = user?.role?.toLowerCase()
+    const userStr = localStorage.getItem("user");
+    const user = userStr ? JSON.parse(userStr) : null;
+    const role = user?.role?.toLowerCase();
     if (!user || (role !== "receptionist" && role !== "admin" && role !== "manager")) {
       const demoRec = {
         id: "rec-01",
@@ -297,25 +82,25 @@ export default function App() {
         role: "Receptionist",
         email: "receptionist01@smartgym.com",
         avatarUrl: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=256&q=80",
-      }
-      localStorage.setItem("user", JSON.stringify(demoRec))
+      };
+      localStorage.setItem("user", JSON.stringify(demoRec));
       if (!localStorage.getItem("token")) {
-        localStorage.setItem("token", "mock-valid-token-demo")
+        localStorage.setItem("token", "mock-valid-token-demo");
       }
     }
 
     return (
       <ReceptionistPortal
         onExit={() => {
-          localStorage.removeItem("token")
-          localStorage.removeItem("accessToken")
-          localStorage.removeItem("user")
-          window.location.hash = "home"
-          setReceptionistOpen(false)
-          window.dispatchEvent(new HashChangeEvent("hashchange"))
+          localStorage.removeItem("token");
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("user");
+          window.location.hash = "home";
+          setReceptionistOpen(false);
+          window.dispatchEvent(new HashChangeEvent("hashchange"));
         }}
       />
-    )
+    );
   }
 
   if (paymentOpen) {
@@ -325,10 +110,10 @@ export default function App() {
 
     if (selectedProductOrder) {
       const exitProductPayment = () => {
-        setSelectedProductOrder(undefined)
-        setPaymentOpen(false)
-        window.location.hash = "member-shop"
-      }
+        setSelectedProductOrder(undefined);
+        setPaymentOpen(false);
+        window.location.hash = "member-shop";
+      };
 
       return (
         <ProductPaymentFlow
@@ -336,36 +121,34 @@ export default function App() {
           onBack={exitProductPayment}
           onCompleted={exitProductPayment}
         />
-      )
+      );
     }
 
     return (
       <PaymentFlow
-        initialPlan={selectedPackage ? undefined : selectedPlanId as any}
-        initialPeriod={selectedPackage ? undefined : selectedPeriod as any}
+        initialPlan={selectedPackage ? undefined : (selectedPlanId as any)}
+        initialPeriod={selectedPackage ? undefined : (selectedPeriod as any)}
         initialPackage={selectedPackage}
         initialDuration={selectedDuration}
         initialDiscountPct={selectedDiscountPct}
         onExit={(dest = "home") => {
-          window.location.hash = selectedPackage && dest === "member"
-            ? "member-packages"
-            : dest
-          setPaymentOpen(false)
-          setSelectedPlanId(undefined)
-          setSelectedPeriod(undefined)
-          setSelectedPackage(undefined)
-          setSelectedDuration(undefined)
-          setSelectedDiscountPct(0)
-          setSelectedProductOrder(undefined)
+          window.location.hash = selectedPackage && dest === "member" ? "member-packages" : dest;
+          setPaymentOpen(false);
+          setSelectedPlanId(undefined);
+          setSelectedPeriod(undefined);
+          setSelectedPackage(undefined);
+          setSelectedDuration(undefined);
+          setSelectedDiscountPct(0);
+          setSelectedProductOrder(undefined);
         }}
       />
-    )
+    );
   }
 
   if (coachOpen) {
-    const userStr = localStorage.getItem("user")
-    const user = userStr ? JSON.parse(userStr) : null
-    const role = user?.role?.toLowerCase()
+    const userStr = localStorage.getItem("user");
+    const user = userStr ? JSON.parse(userStr) : null;
+    const role = user?.role?.toLowerCase();
     if (!user || (role !== "coach" && role !== "admin" && role !== "manager")) {
       const demoCoach = {
         id: "coach-01",
@@ -373,25 +156,25 @@ export default function App() {
         role: "Coach",
         email: "hoxuananhnam1@gmail.com",
         avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80",
-      }
-      localStorage.setItem("user", JSON.stringify(demoCoach))
+      };
+      localStorage.setItem("user", JSON.stringify(demoCoach));
       if (!localStorage.getItem("token")) {
-        localStorage.setItem("token", "mock-valid-token-demo")
+        localStorage.setItem("token", "mock-valid-token-demo");
       }
     }
     return (
       <CoachPortal
         onExit={() => {
-          localStorage.removeItem("token")
-          localStorage.removeItem("accessToken")
-          localStorage.removeItem("user")
-          window.location.hash = "login"
-          setCoachOpen(false)
-          setAdminOpen(true)
-          window.dispatchEvent(new HashChangeEvent("hashchange"))
+          localStorage.removeItem("token");
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("user");
+          window.location.hash = "login";
+          setCoachOpen(false);
+          setAdminOpen(true);
+          window.dispatchEvent(new HashChangeEvent("hashchange"));
         }}
       />
-    )
+    );
   }
 
   if (adminOpen) {
@@ -399,45 +182,43 @@ export default function App() {
       <AdminPortal
         onRoleSwitch={(role) => {
           if (role === "coach") {
-            setCoachOpen(true)
-            setAdminOpen(false)
-            setReceptionistOpen(false)
-            setPaymentOpen(false)
+            setCoachOpen(true);
+            setAdminOpen(false);
+            setReceptionistOpen(false);
+            setPaymentOpen(false);
           } else if (role === "receptionist") {
-            setReceptionistOpen(true)
-            setCoachOpen(false)
-            setAdminOpen(false)
-            setPaymentOpen(false)
+            setReceptionistOpen(true);
+            setCoachOpen(false);
+            setAdminOpen(false);
+            setPaymentOpen(false);
           } else if (role === "admin") {
-            setAdminOpen(true)
-            setCoachOpen(false)
-            setReceptionistOpen(false)
-            setPaymentOpen(false)
+            setAdminOpen(true);
+            setCoachOpen(false);
+            setReceptionistOpen(false);
+            setPaymentOpen(false);
           } else {
-            setAdminOpen(true)
-            setCoachOpen(false)
-            setReceptionistOpen(false)
-            setPaymentOpen(false)
+            setAdminOpen(true);
+            setCoachOpen(false);
+            setReceptionistOpen(false);
+            setPaymentOpen(false);
           }
         }}
         initialStep={
           window.location.hash.startsWith("#dashboard")
             ? "dashboard"
-            : (window.location.hash === "#admin" || window.location.hash === "#login")
+            : window.location.hash === "#admin" || window.location.hash === "#login"
               ? "login"
-              : (
-                window.location.hash.startsWith("#member") ||
-                [
-                  "#classes",
-                  "#booking-confirm",
-                  "#schedule",
-                  "#booking-success",
-                  "#workout-detail",
-                  "#move-ai",
-                  "#ai",
-                  "#support",
-                ].includes(window.location.hash)
-              )
+              : window.location.hash.startsWith("#member") ||
+                  [
+                    "#classes",
+                    "#booking-confirm",
+                    "#schedule",
+                    "#booking-success",
+                    "#workout-detail",
+                    "#move-ai",
+                    "#ai",
+                    "#support",
+                  ].includes(window.location.hash)
                 ? "member"
                 : "register"
         }
@@ -452,69 +233,72 @@ export default function App() {
                   ? "success"
                   : window.location.hash === "#workout-detail"
                     ? "workout"
-                    : (window.location.hash === "#move-ai" || window.location.hash === "#ai" || window.location.hash === "#support" || window.location.hash.startsWith("#member-support"))
+                    : window.location.hash === "#move-ai" ||
+                        window.location.hash === "#ai" ||
+                        window.location.hash === "#support" ||
+                        window.location.hash.startsWith("#member-support")
                       ? "ai"
                       : "overview"
         }
         onMemberCheckout={(selection) => {
-          window.scrollTo({ top: 0, left: 0, behavior: "instant" })
-          document.documentElement.scrollTop = 0
-          document.body.scrollTop = 0
-          setSelectedPlanId(undefined)
-          setSelectedPeriod(undefined)
-          setSelectedPackage(selection.item)
-          setSelectedDuration(selection.duration)
-          setSelectedDiscountPct(selection.discountPct)
-          setSelectedProductOrder(undefined)
-          window.location.hash = "payment"
-          setPaymentOpen(true)
+          window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+          document.documentElement.scrollTop = 0;
+          document.body.scrollTop = 0;
+          setSelectedPlanId(undefined);
+          setSelectedPeriod(undefined);
+          setSelectedPackage(selection.item);
+          setSelectedDuration(selection.duration);
+          setSelectedDiscountPct(selection.discountPct);
+          setSelectedProductOrder(undefined);
+          window.location.hash = "payment";
+          setPaymentOpen(true);
         }}
         onMemberProductPayment={(order) => {
-          window.scrollTo({ top: 0, left: 0, behavior: "instant" })
-          document.documentElement.scrollTop = 0
-          document.body.scrollTop = 0
-          setSelectedPlanId(undefined)
-          setSelectedPeriod(undefined)
-          setSelectedPackage(undefined)
-          setSelectedDuration(undefined)
-          setSelectedDiscountPct(0)
-          setSelectedProductOrder(order)
-          window.location.hash = "payment"
-          setPaymentOpen(true)
+          window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+          document.documentElement.scrollTop = 0;
+          document.body.scrollTop = 0;
+          setSelectedPlanId(undefined);
+          setSelectedPeriod(undefined);
+          setSelectedPackage(undefined);
+          setSelectedDuration(undefined);
+          setSelectedDiscountPct(0);
+          setSelectedProductOrder(order);
+          window.location.hash = "payment";
+          setPaymentOpen(true);
         }}
         onExit={() => {
-          localStorage.removeItem("token")
-          localStorage.removeItem("user")
-          window.location.hash = "home"
-          setAdminOpen(false)
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          window.location.hash = "home";
+          setAdminOpen(false);
         }}
       />
-    )
+    );
   }
 
   return (
     <SiteApp
       onOpenAdmin={() => {
-        window.location.hash = "login"
-        setAdminOpen(true)
+        window.location.hash = "login";
+        setAdminOpen(true);
       }}
       onOpenRegister={() => {
-        window.location.hash = "register"
-        setAdminOpen(true)
+        window.location.hash = "register";
+        setAdminOpen(true);
       }}
       onOpenPayment={(planId, periodId) => {
-        window.scrollTo({ top: 0, left: 0, behavior: "instant" })
-        document.documentElement.scrollTop = 0
-        document.body.scrollTop = 0
-        setSelectedPlanId(planId)
-        setSelectedPeriod(periodId)
-        setSelectedPackage(undefined)
-        setSelectedDuration(undefined)
-        setSelectedDiscountPct(0)
-        setSelectedProductOrder(undefined)
-        window.location.hash = "payment"
-        setPaymentOpen(true)
+        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        setSelectedPlanId(planId);
+        setSelectedPeriod(periodId);
+        setSelectedPackage(undefined);
+        setSelectedDuration(undefined);
+        setSelectedDiscountPct(0);
+        setSelectedProductOrder(undefined);
+        window.location.hash = "payment";
+        setPaymentOpen(true);
       }}
     />
-  )
+  );
 }
