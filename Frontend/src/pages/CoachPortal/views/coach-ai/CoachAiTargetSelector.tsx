@@ -213,7 +213,6 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
                       </span>
                     </div>
                   </div>
-                  </div>
 
                   {(memberProfile?.stats?.bodyFat != null || memberProfile?.stats?.muscleMass != null) && (
                     <div className="grid grid-cols-2 gap-1.5 text-[11px]">
