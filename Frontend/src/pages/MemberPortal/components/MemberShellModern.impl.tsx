@@ -59,14 +59,16 @@ import { WalletService, MEMBER_WALLET_UPDATED_EVENT } from "../services/walletSe
             window.removeEventListener("open-checkin-modal", handleOpenCheckin);
             window.removeEventListener("open-wallet-modal", handleOpenWallet); window.removeEventListener(MEMBER_WALLET_UPDATED_EVENT, handleWalletUpdate);
         };
-    }, []); useEffect(() => {
-        let cancelled = false;
-        WalletService.getWallet().then((w) => { if (!cancelled && typeof w.balance === "number") { setWalletBalance(w.balance); } }); return () => {
-            cancelled = true;
-        };
     }, []);
     // Load reactive profile
-    const { profile } = useUserProfile("member"); const userStr = localStorage.getItem("user"); let userName = profile?.fullName; let userEmail = profile?.email; let avatarUrl = profile?.avatarUrl; let memberCode = profile?.id ? profile.id.substring(0, 8).toUpperCase() : "";
+    const { profile } = useUserProfile("member");
+    useEffect(() => {
+        let cancelled = false;
+        WalletService.getWallet(profile?.id).then((w) => { if (!cancelled && typeof w.balance === "number") { setWalletBalance(w.balance); } }); return () => {
+            cancelled = true;
+        };
+    }, [profile?.id]);
+    const userStr = localStorage.getItem("user"); let userName = profile?.fullName; let userEmail = profile?.email; let avatarUrl = profile?.avatarUrl; let memberCode = profile?.id ? profile.id.substring(0, 8).toUpperCase() : "";
     if (userStr) {
         try {
             const u = JSON.parse(userStr); if (u.role?.toLowerCase() !== "coach") {

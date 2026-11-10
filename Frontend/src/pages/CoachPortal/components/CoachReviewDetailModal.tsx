@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { Star, ShieldCheck, Calendar, Clock, X, MessageSquare, Award, ExternalLink } from "lucide-react";
 import type { SyncedCoachReview } from "../../../services/sync/reviewSync";
 
@@ -17,7 +18,7 @@ export default function CoachReviewDetailModal({
   loading = false,
   onNavigateToAllReviews,
 }: CoachReviewDetailModalProps) {
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === "undefined") return null;
 
   const formatDate = (isoString?: string) => {
     if (!isoString) return "Hôm nay";
@@ -43,11 +44,16 @@ export default function CoachReviewDetailModal({
     return "Không hài lòng (1/5 sao)";
   };
 
-  return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col my-auto max-h-[90vh] animate-in zoom-in-95 duration-200">
         {/* Modal Header */}
-        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-amber-500/10 via-teal-500/5 to-transparent">
+        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-amber-500/10 via-teal-500/5 to-transparent shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20">
               <Star className="w-5 h-5 fill-white" />
@@ -71,7 +77,7 @@ export default function CoachReviewDetailModal({
         </div>
 
         {/* Modal Content */}
-        <div className="p-6 space-y-5 overflow-y-auto max-h-[75vh]">
+        <div className="p-6 space-y-5 overflow-y-auto flex-1">
           {loading ? (
             <div className="py-12 text-center text-sm text-slate-400 space-y-2">
               <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto" />
@@ -183,7 +189,7 @@ export default function CoachReviewDetailModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 flex items-center justify-between gap-2.5">
+        <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 flex items-center justify-between gap-2.5 shrink-0">
           {onNavigateToAllReviews ? (
             <button
               type="button"
@@ -209,7 +215,8 @@ export default function CoachReviewDetailModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

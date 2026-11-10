@@ -1,12 +1,28 @@
 import React from "react";
 import { CoachAvatar } from "../../../utils/coachAvatar";
+import { type MembershipStatus } from "../../../../../services/packageApi";
+import { Sparkles } from "lucide-react";
 
 interface Props {
   classToBook: any;
-  classPrice: number;
+  originalPrice: number;
+  discountPct: number;
+  discountAmount: number;
+  finalPrice: number;
+  membership: MembershipStatus | null;
 }
 
-export const BookingClassHeader: React.FC<Props> = ({ classToBook, classPrice }) => {
+export const BookingClassHeader: React.FC<Props> = ({
+  classToBook,
+  originalPrice,
+  discountPct,
+  discountAmount,
+  finalPrice,
+  membership,
+}) => {
+  const isPremium = membership?.tier === "premium";
+  const isPlus = membership?.tier === "plus";
+
   return (
     <>
       {/* Lớp & Coach info box */}
@@ -31,35 +47,51 @@ export const BookingClassHeader: React.FC<Props> = ({ classToBook, classPrice })
         </div>
       </div>
 
-      {/* BẢNG CHI TIẾT THANH TOÁN GIÁ GỐC */}
-      <div className="p-4 rounded-2xl bg-emerald-50/50 dark:bg-slate-800/80 border border-emerald-200 dark:border-slate-700 space-y-2.5">
-        <h4 className="font-extrabold text-xs uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+      {/* BẢNG CHI TIẾT THANH TOÁN KÈM ƯU ĐÃI THÀNH VIÊN */}
+      <div className="p-4 rounded-2xl bg-teal-50/50 dark:bg-slate-800/80 border border-teal-200 dark:border-slate-700 space-y-2.5">
+        <h4 className="font-extrabold text-xs uppercase tracking-wider text-teal-800 dark:text-teal-300">
           Chi tiết hóa đơn đăng ký
         </h4>
         <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
           <span>Hạng thành viên của bạn:</span>
-          <span className="font-bold text-slate-800 dark:text-slate-200">
-            🥉 Cơ bản (Basic Member)
-          </span>
+          {isPremium ? (
+            <span className="font-black text-amber-600 dark:text-amber-400 flex items-center gap-1">
+              <Sparkles className="w-3.5 h-3.5" /> 👑 Premium VIP (-{discountPct}%)
+            </span>
+          ) : isPlus ? (
+            <span className="font-black text-teal-600 dark:text-teal-400 flex items-center gap-1">
+              🥈 Plus Member (-{discountPct}%)
+            </span>
+          ) : (
+            <span className="font-bold text-slate-800 dark:text-slate-200">
+              🥉 Cơ bản (Basic Member)
+            </span>
+          )}
         </div>
         <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
           <span>Giá gốc niêm yết buổi học:</span>
           <span className="font-bold text-slate-800 dark:text-slate-200">
-            {classPrice.toLocaleString("vi-VN")} đ
+            {originalPrice.toLocaleString("vi-VN")} đ
           </span>
         </div>
         <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
           <span>Ưu đãi thành viên:</span>
-          <span className="font-bold text-slate-500">
-            0 đ (Áp dụng 100% giá gốc)
-          </span>
+          {discountAmount > 0 ? (
+            <span className="font-bold text-emerald-600 dark:text-emerald-400">
+              - {discountAmount.toLocaleString("vi-VN")} đ ({isPremium ? "Giảm 10% Hạng Premium" : "Giảm 5% Hạng Plus"})
+            </span>
+          ) : (
+            <span className="font-bold text-slate-500">
+              0 đ (Áp dụng 100% giá gốc)
+            </span>
+          )}
         </div>
         <div className="flex justify-between items-center pt-2.5 border-t border-emerald-200 dark:border-slate-700 text-sm">
           <span className="font-extrabold text-slate-900 dark:text-white">
             Tổng tiền thanh toán:
           </span>
           <strong className="text-xl font-black text-emerald-600 dark:text-emerald-400">
-            {classPrice.toLocaleString("vi-VN")} đ
+            {finalPrice.toLocaleString("vi-VN")} đ
           </strong>
         </div>
       </div>
