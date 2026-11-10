@@ -195,7 +195,10 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
   weekEnd.setHours(23, 59, 59, 999);
 
   let classesThisWeek = classes.filter(
-    (c) => c.rawStart >= currentWeekStart && c.rawStart <= weekEnd,
+    (c) =>
+      c.rawStart >= currentWeekStart &&
+      c.rawStart <= weekEnd &&
+      (c.approvalStatus === "approved" || !c.approvalStatus),
   );
 
   if (searchQuery.trim()) {

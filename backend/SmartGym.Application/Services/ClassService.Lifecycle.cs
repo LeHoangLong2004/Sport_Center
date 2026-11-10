@@ -162,7 +162,7 @@ public sealed partial class ClassService
             if (existingClasses.Any(c =>
                 c.Id != classId &&
                 c.Status &&
-                c.ApprovalStatus != "rejected" &&
+                string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase) &&
                 Overlaps(newStart, newEnd, c.ScheduleTime, c.DurationMinutes)))
             {
                 return (false, "Không thể duyệt: huấn luyện viên đã có lịch khác trùng thời gian.");
@@ -195,7 +195,7 @@ public sealed partial class ClassService
         if (existingFacilityClasses.Any(c =>
             c.Id != classId &&
             c.Status &&
-            c.ApprovalStatus != "rejected" &&
+            string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase) &&
             Overlaps(newStart, newEnd, c.ScheduleTime, c.DurationMinutes)))
         {
             return (false, "Không thể duyệt: phòng tập đã có lớp khác trùng thời gian.");

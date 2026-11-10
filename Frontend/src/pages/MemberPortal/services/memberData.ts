@@ -70,6 +70,7 @@ export type MemberAiAction =
   | "workouts"
   | "attendance"
   | "chat"
+  | "shop"
   | "support_ticket";
 
 export interface MemberAiAnswer {

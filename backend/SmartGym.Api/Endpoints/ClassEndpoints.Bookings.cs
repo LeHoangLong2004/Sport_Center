@@ -90,94 +90,122 @@ public static partial class ClassEndpoints
                 var method = request?.PaymentMethod ?? "qr";
                 var amount = request?.Amount ?? 150000m;
                 var isWallet = method.ToLower() is "wallet" or "ewallet";
+                var deductedFromWallet = false;
 
+                // 1. Kiểm tra số dư ví trước (KHÔNG trừ tiền trước) nếu thanh toán bằng Ví
                 if (isWallet)
                 {
-                    var (deductOk, _, deductErr) = await MemberEndpoints.DeductFromWalletAsync(
-                        db,
-                        userId,
-                        amount,
-                        $"Thanh toán đặt lớp học (Mã: {id.ToString()[..8]})"
-                    );
-                    if (!deductOk)
+                    var curBalance = await MemberEndpoints.GetMemberBalanceAsync(db, userId);
+                    if (curBalance < amount)
                     {
-                        return Results.BadRequest(new { message = deductErr ?? "Số dư ví không đủ để thanh toán." });
+                        return Results.BadRequest(new { message = $"Số dư ví không đủ (hiện có {curBalance:N0} đ). Vui lòng nạp thêm tiền vào ví!" });
                     }
                 }
 
-                var (isSuccess, errorMessage) = await service.BookClassAsync(userId, id);
-                if (!isSuccess)
-                {
-                    if (isWallet)
-                    {
-                        await MemberEndpoints.RefundToWalletAsync(db, userId, amount, "Hoàn tiền ví do lỗi đặt lớp");
-                    }
-                    if (errorMessage != null && (errorMessage.Contains("đã đặt chỗ") || errorMessage.Contains("đã đăng ký")))
-                    {
-                        ClassDetailResponse? existingDetail = null;
-                        try { existingDetail = await service.GetClassDetailAsync(id); } catch { }
-                        return Results.Ok(new
-                        {
-                            success = true,
-                            alreadyBooked = true,
-                            message = "Bạn đã hoàn tất đặt chỗ lớp học này trước đó rồi.",
-                            classInfo = existingDetail
-                        });
-                    }
-                    return Results.BadRequest(new { message = errorMessage });
-                }
-
-                var isCounter = method.ToLower() is "counter" or "cashatcounter";
-                if (isCounter)
-                {
-                    try
-                    {
-                        await db.Database.ExecuteSqlRawAsync(
-                            "UPDATE class_bookings SET status = 'pending' WHERE user_id = {0} AND class_id = {1}",
-                            userId, id);
-                    }
-                    catch { }
-                }
-
-                var invoice = new Invoice
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = userId,
-                    TotalAmount = amount,
-                    PaymentMethod = method.ToLower() switch
-                    {
-                        "card" or "creditcard" or "credit_card" => PaymentMethod.CreditCard,
-                        "counter" or "cashatcounter" => PaymentMethod.CashAtCounter,
-                        "wallet" or "ewallet" => PaymentMethod.EWallet,
-                        "bank_transfer" or "banktransfer" => PaymentMethod.BankTransfer,
-                        _ => PaymentMethod.QRCode
-                    },
-                    Status = isCounter ? PaymentStatus.Pending : PaymentStatus.Completed,
-                    PaidAt = isCounter ? null : DateTime.UtcNow,
-                    CreatedAt = DateTime.UtcNow
-                };
-                await db.Invoices.AddAsync(invoice);
-                await db.SaveChangesAsync();
-
-                ClassDetailResponse? classDetail = null;
                 try
                 {
-                    classDetail = await service.GetClassDetailAsync(id);
-                }
-                catch { }
+                    // 2. Kiểm tra tính hợp lệ và thực hiện đặt lớp trước (kiểm tra trùng lịch, sĩ số, v.v.)
+                    var (isSuccess, errorMessage) = await service.BookClassAsync(userId, id);
+                    if (!isSuccess)
+                    {
+                        // Đặt lớp thất bại: KHÔNG trừ tiền ví, báo lỗi trực tiếp về client
+                        if (errorMessage != null && (errorMessage.Contains("đã đặt chỗ") || errorMessage.Contains("đã đăng ký")))
+                        {
+                            ClassDetailResponse? existingDetail = null;
+                            try { existingDetail = await service.GetClassDetailAsync(id); } catch { }
+                            return Results.Ok(new
+                            {
+                                success = true,
+                                alreadyBooked = true,
+                                message = "Bạn đã hoàn tất đặt chỗ lớp học này trước đó rồi.",
+                                classInfo = existingDetail
+                            });
+                        }
+                        return Results.BadRequest(new { message = errorMessage });
+                    }
 
-                return Results.Ok(new
+                    // 3. Đặt lớp thành công -> Mới tiến hành trừ tiền từ ví hội viên
+                    if (isWallet)
+                    {
+                        var (deductOk, _, deductErr) = await MemberEndpoints.DeductFromWalletAsync(
+                            db,
+                            userId,
+                            amount,
+                            $"Thanh toán đặt lớp học (Mã: {id.ToString()[..8]})"
+                        );
+                        if (!deductOk)
+                        {
+                            // Nếu trừ ví thất bại thì hủy lượt đặt giữ chỗ vừa tạo
+                            await service.CancelBookingAsync(userId, id);
+                            return Results.BadRequest(new { message = deductErr ?? "Số dư ví không đủ để thanh toán." });
+                        }
+                        deductedFromWallet = true;
+                    }
+
+                    var isCounter = method.ToLower() is "counter" or "cashatcounter";
+                    if (isCounter)
+                    {
+                        try
+                        {
+                            await db.Database.ExecuteSqlRawAsync(
+                                "UPDATE class_bookings SET status = 'pending' WHERE user_id = {0} AND class_id = {1}",
+                                userId, id);
+                        }
+                        catch { }
+                    }
+
+                    var invoice = new Invoice
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = userId,
+                        TotalAmount = amount,
+                        PaymentMethod = method.ToLower() switch
+                        {
+                            "card" or "creditcard" or "credit_card" => PaymentMethod.CreditCard,
+                            "counter" or "cashatcounter" => PaymentMethod.CashAtCounter,
+                            "wallet" or "ewallet" => PaymentMethod.EWallet,
+                            "bank_transfer" or "banktransfer" => PaymentMethod.BankTransfer,
+                            _ => PaymentMethod.QRCode
+                        },
+                        Status = isCounter ? PaymentStatus.Pending : PaymentStatus.Completed,
+                        PaidAt = isCounter ? null : DateTime.UtcNow,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    await db.Invoices.AddAsync(invoice);
+                    await db.SaveChangesAsync();
+
+                    ClassDetailResponse? classDetail = null;
+                    try
+                    {
+                        classDetail = await service.GetClassDetailAsync(id);
+                    }
+                    catch { }
+
+                    return Results.Ok(new
+                    {
+                        success = true,
+                        isCounter = isCounter,
+                        paymentStatus = isCounter ? "pending" : "completed",
+                        message = isCounter
+                            ? "Đã đặt giữ chỗ thành công! Vui lòng thanh toán tại quầy lễ tân trước giờ học."
+                            : "Thanh toán với giá gốc và đặt lịch thành công!",
+                        invoiceId = invoice.Id,
+                        amount = amount,
+                        classInfo = classDetail
+                    });
+                }
+                catch (Exception ex)
                 {
-                    success = true,
-                    isCounter = isCounter,
-                    paymentStatus = isCounter ? "pending" : "completed",
-                    message = isCounter
-                        ? "Đã đặt giữ chỗ thành công! Vui lòng thanh toán tại quầy lễ tân trước giờ học."
-                        : "Thanh toán với giá gốc và đặt lịch thành công!",
-                    invoiceId = invoice.Id,
-                    amount = amount,
-                    classInfo = classDetail
-                });
+                    if (deductedFromWallet)
+                    {
+                        try
+                        {
+                            await MemberEndpoints.RefundToWalletAsync(db, userId, amount, "Hoàn tiền ví do lỗi hệ thống khi đặt lớp");
+                        }
+                        catch { }
+                    }
+                    return Results.Problem(detail: ex.Message, title: "Lỗi hệ thống khi đặt lớp học");
+                }
             }
         )
         .RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
