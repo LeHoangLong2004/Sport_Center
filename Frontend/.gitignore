@@ -1,5 +1,5 @@
 # ==============================================================================
-# .gitignore — Frontend (React + Vite + TypeScript + Tailwind)
+# .gitignore — Frontend (React 19 + Vite + TypeScript + Tailwind CSS)
 # ==============================================================================
 
 # Dependencies
@@ -13,18 +13,19 @@ dist-ssr/
 build/
 out/
 
-# Cache & temporary directories
+# Cache & temporary build directories
 .vite/
 .eslintcache
 .stylelintcache
 .cache/
+*.tsbuildinfo
 
-# Environment files (Chứa secret API keys không đưa lên Git)
+# Environment files (sensitive tokens & local variables)
 .env
 .env.*
 !.env.example
 
-# Logs
+# Package manager & server logs
 logs/
 *.log
 npm-debug.log*
@@ -32,6 +33,11 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+
+# Microsoft Office temporary lock files
+~$*
+~$*.docx
+~$*.xlsx
 
 # Editor & OS files
 .vscode/*
@@ -42,16 +48,10 @@ lerna-debug.log*
 .idea/
 .DS_Store
 Thumbs.db
+Desktop.ini
 *.suo
 *.user
 *.swp
+*.bak
+*.tmp
 *~
-
-# Build cache & TypeScript
-*.tsbuildinfo
-
-# AI Assistant & Tooling
-.gemini/
-**/.gemini/
-.agents/
-**/.agents/
