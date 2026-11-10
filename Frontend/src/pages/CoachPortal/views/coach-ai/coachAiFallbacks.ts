@@ -306,6 +306,7 @@ interface CreateClientDraftParams {
   equipment: string[];
   exerciseCount: number;
   target: Flow5Target;
+  memberProfile?: any;
 }
 
 export function createClientDraft({
@@ -317,15 +318,31 @@ export function createClientDraft({
   equipment,
   exerciseCount,
   target,
+  memberProfile,
 }: CreateClientDraftParams): Flow5WorkoutPlan {
   const fallbackExercises = getFallbackExercises(selectedSport);
+
+  let bodyMetricsNote = "";
+  if (memberProfile?.stats) {
+    const { weight, height, bmi, bodyFat, muscleMass } = memberProfile.stats;
+    const parts: string[] = [];
+    if (weight) parts.push(`${weight}kg`);
+    if (height) parts.push(`${height}cm`);
+    if (bmi) parts.push(`BMI: ${bmi}`);
+    if (bodyFat) parts.push(`Mỡ: ${bodyFat}%`);
+    if (muscleMass) parts.push(`Cơ: ${muscleMass}kg`);
+
+    if (parts.length > 0) {
+      bodyMetricsNote = ` (Đã cá nhân hóa theo thể trạng InBody: ${parts.join(" · ")})`;
+    }
+  }
 
   return {
     id: window.crypto.randomUUID ? window.crypto.randomUUID() : `plan_${Date.now()}`,
     coachId: "",
     sportId,
     planName: `${selectedSport} - ${goal || "Cải thiện thể lực toàn diện"}`,
-    description: `Kế hoạch tập luyện môn ${selectedSport} tối ưu thời lượng ${durationMinutes} phút, tập trung vào ${goal || "cải thiện thể lực & kỹ thuật động tác"}.`,
+    description: `Kế hoạch tập luyện môn ${selectedSport} tối ưu thời lượng ${durationMinutes} phút, tập trung vào ${goal || "cải thiện thể lực & kỹ thuật động tác"}.${bodyMetricsNote}`,
     goal,
     level,
     durationMinutes,

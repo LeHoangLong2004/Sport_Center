@@ -68,8 +68,8 @@ public static partial class CoachEndpoints
                          metrics_json::text AS ""MetricsJson"", comment AS ""Comment"",
                          next_step AS ""NextStep"", created_at AS ""CreatedAt""
                   FROM coach_assessments
-                  WHERE coach_id = {0} AND member_id = {1}
-                  ORDER BY created_at DESC", coachId.Value, memberId).ToListAsync();
+                  WHERE (coach_id = {0} OR coach_id = {1}) AND member_id = {2}
+                  ORDER BY created_at DESC", coachId.Value, coachUserId, memberId).ToListAsync();
 
             var fitnessTestsList = new List<object>();
             try
@@ -108,7 +108,9 @@ public static partial class CoachEndpoints
                     {
                         foreach (var elem in doc.RootElement.EnumerateArray())
                         {
-                            var mName = elem.TryGetProperty("metricName", out var mProp) ? mProp.GetString() : null;
+                            var mName = (elem.TryGetProperty("metricName", out var mProp) ? mProp.GetString() : null)
+                                ?? (elem.TryGetProperty("label", out var lProp) ? lProp.GetString() : null)
+                                ?? (elem.TryGetProperty("name", out var nProp) ? nProp.GetString() : null);
                             if (string.IsNullOrWhiteSpace(mName)) continue;
 
                             decimal val = 0;
@@ -117,6 +119,13 @@ public static partial class CoachEndpoints
                                 if (vProp.ValueKind == JsonValueKind.Number)
                                     val = vProp.GetDecimal();
                                 else if (decimal.TryParse(vProp.GetString(), out var parsedVal))
+                                    val = parsedVal;
+                            }
+                            else if (elem.TryGetProperty("val", out var valProp))
+                            {
+                                if (valProp.ValueKind == JsonValueKind.Number)
+                                    val = valProp.GetDecimal();
+                                else if (decimal.TryParse(valProp.GetString(), out var parsedVal))
                                     val = parsedVal;
                             }
 

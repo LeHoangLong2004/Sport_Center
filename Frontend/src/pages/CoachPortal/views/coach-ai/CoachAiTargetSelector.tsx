@@ -192,25 +192,44 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
 
               {/* Health Metrics & Vitals Row */}
               {(memberProfile?.stats?.weight || selectedMember.healthMetrics) && (
-                <div className="grid grid-cols-3 gap-1.5 pt-0.5 text-[11px]">
-                  <div className="px-2 py-1 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-orange-100 dark:border-orange-900/40 text-center">
-                    <span className="text-[10px] text-slate-400 block">Chiều cao</span>
-                    <span className="font-bold text-slate-700 dark:text-slate-300">
-                      {memberProfile?.stats?.height || selectedMember.healthMetrics?.heightCm || 170} cm
-                    </span>
+                <div className="flex flex-col gap-1.5 pt-0.5">
+                  <div className="grid grid-cols-3 gap-1.5 text-[11px]">
+                    <div className="px-2 py-1 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-orange-100 dark:border-orange-900/40 text-center">
+                      <span className="text-[10px] text-slate-400 block">Chiều cao</span>
+                      <span className="font-bold text-slate-700 dark:text-slate-300">
+                        {memberProfile?.stats?.height || selectedMember.healthMetrics?.heightCm || 170} cm
+                      </span>
+                    </div>
+                    <div className="px-2 py-1 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-orange-100 dark:border-orange-900/40 text-center">
+                      <span className="text-[10px] text-slate-400 block">Cân nặng</span>
+                      <span className="font-bold text-slate-700 dark:text-slate-300">
+                        {memberProfile?.stats?.weight || selectedMember.healthMetrics?.weightKg || 65} kg
+                      </span>
+                    </div>
+                    <div className="px-2 py-1 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-orange-100 dark:border-orange-900/40 text-center">
+                      <span className="text-[10px] text-slate-400 block">Chỉ số BMI</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                        {memberProfile?.stats?.bmi || selectedMember.healthMetrics?.bmi || "22.5"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="px-2 py-1 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-orange-100 dark:border-orange-900/40 text-center">
-                    <span className="text-[10px] text-slate-400 block">Cân nặng</span>
-                    <span className="font-bold text-slate-700 dark:text-slate-300">
-                      {memberProfile?.stats?.weight || selectedMember.healthMetrics?.weightKg || 65} kg
-                    </span>
-                  </div>
-                  <div className="px-2 py-1 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-orange-100 dark:border-orange-900/40 text-center">
-                    <span className="text-[10px] text-slate-400 block">Chỉ số BMI</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                      {memberProfile?.stats?.bmi || selectedMember.healthMetrics?.bmi || "22.5"} (Chuẩn)
-                    </span>
-                  </div>
+
+                  {(memberProfile?.stats?.bodyFat != null || memberProfile?.stats?.muscleMass != null) && (
+                    <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                      <div className="px-2 py-1 rounded-lg bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200/50 dark:border-amber-800/40 text-center">
+                        <span className="text-[10px] text-amber-700 dark:text-amber-400 block font-semibold">Tỷ lệ mỡ (Body Fat)</span>
+                        <span className="font-extrabold text-amber-900 dark:text-amber-200">
+                          {memberProfile.stats.bodyFat}%
+                        </span>
+                      </div>
+                      <div className="px-2 py-1 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/50 dark:border-emerald-800/40 text-center">
+                        <span className="text-[10px] text-emerald-700 dark:text-emerald-400 block font-semibold">Khối lượng cơ (Muscle)</span>
+                        <span className="font-extrabold text-emerald-900 dark:text-emerald-200">
+                          {memberProfile.stats.muscleMass} kg
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

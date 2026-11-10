@@ -134,24 +134,47 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
   const handleSave = async () => {
     if (!draft.comment && !draft.completion) return;
     setIsSaving(true);
+    const sanitizedMetrics = (draft.metrics || [])
+      .filter((m) => (m.label || (m as any).metricName || "").trim() !== "")
+      .map((m) => {
+        const name = (m.label || (m as any).metricName || "").trim();
+        return {
+          label: name,
+          metricName: name,
+          value: m.value,
+          unit: m.unit || "",
+        };
+      });
+
     const full: AssessmentRecord = {
-      id: draft.id!,
-      sessionId: draft.sessionId!,
-      memberId: draft.memberId!,
+      id: draft.id || `as_${Date.now()}`,
+      sessionId: draft.sessionId || selectedSessionId,
+      memberId: draft.memberId || selectedMemberId,
       completion: draft.completion || 0,
-      metrics: draft.metrics || [],
+      metrics: sanitizedMetrics,
       comment: draft.comment || "",
       nextStep: draft.nextStep || "",
       createdAt: draft.createdAt || new Date().toISOString(),
     };
     try {
-      await CoachAPI.saveAssessment(full);
+      const res = await CoachAPI.saveAssessment(full);
+      const savedRecord: AssessmentRecord = res?.data ? {
+        id: String(res.data.id || full.id),
+        sessionId: String(res.data.sessionId || full.sessionId),
+        memberId: String(res.data.memberId || full.memberId),
+        completion: res.data.completion ?? full.completion,
+        metrics: res.data.metrics ?? full.metrics,
+        comment: res.data.comment ?? full.comment,
+        nextStep: res.data.nextStep ?? full.nextStep,
+        createdAt: res.data.createdAt ?? full.createdAt,
+      } : full;
+
       const ass = await CoachAPI.getAssessments();
       if (Array.isArray(ass) && ass.length > 0) {
         setAssessments(ass);
       } else {
         setAssessments((prev) => [
-          full,
+          savedRecord,
           ...prev.filter((p) => p.sessionId !== full.sessionId || p.memberId !== full.memberId),
         ]);
       }
@@ -259,11 +282,14 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {a.metrics.filter((m) => m.value).map((m) => (
-                      <span key={m.label} className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full font-medium">
-                        {m.label}: {m.value}{m.unit}
-                      </span>
-                    ))}
+                    {a.metrics?.filter((m) => m && (m.value !== undefined && m.value !== "")).map((m, idx) => {
+                      const metricLabel = m.label || (m as any).metricName || `Chỉ số ${idx + 1}`;
+                      return (
+                        <span key={idx} className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full font-medium">
+                          {metricLabel}: {m.value}{m.unit ? ` ${m.unit}` : ""}
+                        </span>
+                      );
+                    })}
                   </div>
                   {a.comment && <div className="text-sm text-slate-600 dark:text-slate-300 mt-2 italic">"{a.comment}"</div>}
                   {a.nextStep && <div className="text-xs text-orange-600 dark:text-orange-400 font-medium mt-1">→ Hướng tiếp: {a.nextStep}</div>}
