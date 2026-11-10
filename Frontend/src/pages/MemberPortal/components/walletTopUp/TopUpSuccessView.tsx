@@ -24,7 +24,7 @@ export const TopUpSuccessView: React.FC<Props> = ({ successResult, onClose }) =>
           vào ví
         </p>
       </div>
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-lg space-y-1">
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg space-y-1">
         <span className="text-[11px] font-semibold text-emerald-100 uppercase tracking-wider">
           Số dư tài khoản mới
         </span>

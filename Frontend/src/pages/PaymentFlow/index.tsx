@@ -200,7 +200,7 @@ export default function PaymentFlow({
     return (
       <div role="alert" className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#f8fafc] p-6 text-center">
         <p className="text-sm text-red-700">{loadError || "Không tìm thấy thông tin gói tập."}</p>
-        <button type="button" onClick={() => onExit("member")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white">
+        <button type="button" onClick={() => onExit("member")} className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white">
           Quay lại
         </button>
       </div>

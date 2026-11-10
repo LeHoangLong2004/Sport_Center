@@ -80,19 +80,19 @@ export function Verification({ onVerified }: { onVerified: () => void }) {
   const countdown = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`
 
   return (
-    <main className="flex min-h-screen bg-slate-50 dark:bg-[#0f172a] font-sans selection:bg-[#14b8a6] selection:text-white transition-colors duration-300">
+    <main className="flex min-h-screen bg-slate-50 dark:bg-[#0f172a] font-sans selection:bg-emerald-600 selection:text-white transition-colors duration-300">
       <AuthVisual emphasized />
 
       <section className="flex-1 flex flex-col justify-center items-center p-8 lg:p-12 relative overflow-y-auto">
         <ThemeToggle />
         
         {/* Glow effect in background */}
-        <div className="absolute top-1/4 -right-20 w-72 h-72 bg-[#14b8a6]/10 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-1/4 -left-20 w-72 h-72 bg-[#3b82f6]/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute top-1/4 -right-20 w-72 h-72 bg-emerald-600/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-1/4 -left-20 w-72 h-72 bg-emerald-600/10 rounded-full blur-[100px] pointer-events-none" />
 
         <form className="w-full max-w-md relative z-10" onSubmit={verify}>
           <div className="mb-10 text-center">
-            <span className="inline-block text-[#3b82f6] font-bold text-xs tracking-widest uppercase mb-2">XÁC MINH TÀI KHOẢN</span>
+            <span className="inline-block text-slate-800 font-bold text-xs tracking-widest uppercase mb-2">XÁC MINH TÀI KHOẢN</span>
             <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-2 tracking-tight">Xác minh qua Email</h2>
             <p className="text-slate-500 dark:text-[#94a3b8] text-sm max-w-xs mx-auto">
               Chúng tôi đã gửi mã xác minh gồm 6 chữ số đến email của bạn. Vui
@@ -101,7 +101,7 @@ export function Verification({ onVerified }: { onVerified: () => void }) {
           </div>
 
           <div className="flex items-center justify-center gap-3 bg-white dark:bg-[#1e293b]/50 border border-slate-200 dark:border-[#334155] rounded-xl p-4 mb-8 shadow-sm dark:shadow-none">
-            <svg className="text-[#14b8a6]" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            <svg className="text-emerald-600" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
             <span className="font-semibold text-slate-900 dark:text-white">nguyenvana@email.com</span>
             <span className="text-[10px] font-bold px-2 py-0.5 bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400 rounded uppercase">ĐÃ GỬI</span>
           </div>
@@ -146,7 +146,7 @@ export function Verification({ onVerified }: { onVerified: () => void }) {
 
           <button
             type="submit"
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#14b8a6] to-[#0d9488] hover:from-[#0d9488] hover:to-[#0f766e] text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-teal-500/20 dark:shadow-teal-500/10 transition-all active:scale-[0.98]"
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#14b8a6] to-[#0d9488] hover:from-[#0d9488] hover:to-[#0f766e] text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-500/20 dark:shadow-emerald-500/10 transition-all active:scale-[0.98]"
           >
             Xác minh tài khoản
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
@@ -157,7 +157,7 @@ export function Verification({ onVerified }: { onVerified: () => void }) {
             <button 
               type="button" 
               onClick={resend}
-              className="font-bold text-slate-900 hover:text-[#14b8a6] dark:text-white dark:hover:text-[#14b8a6] transition-colors"
+              className="font-bold text-slate-900 hover:text-emerald-600 dark:text-white dark:hover:text-emerald-600 transition-colors"
             >
               Gửi lại mã
             </button>

@@ -154,7 +154,7 @@ export function ReceptionistBookClassModal({
             type="button"
             onClick={handleBookForMember}
             disabled={!memberId || loadingBook}
-            className="px-5 py-2 rounded-xl font-bold text-xs bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md shadow-purple-500/20 flex items-center gap-1.5 cursor-pointer"
+            className="px-5 py-2 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md shadow-emerald-600/20 flex items-center gap-1.5 cursor-pointer"
           >
             {loadingBook ? (
               <>

@@ -35,7 +35,7 @@ export default function VeTrungTamRedesign() {
         <FadeUp className="flex flex-col gap-[24px] items-start flex-1 min-w-0">
           <div className="flex flex-col gap-[8px] items-start w-full">
             <h2 className="font-extrabold text-[#0f172a] text-[32px]">Sứ mệnh & Tầm nhìn</h2>
-            <div className="bg-[#2563eb] h-[4px] rounded-[2px] w-[80px]" />
+            <div className="bg-emerald-600 h-[4px] rounded-[2px] w-[80px]" />
           </div>
           <p className="text-[#1e293b] text-[16px] leading-[1.6]">
             SportCenter đồng hành cùng hội viên trong quá trình rèn luyện, xây dựng thói quen vận động và nâng cao chất lượng cuộc sống.
@@ -65,7 +65,7 @@ export default function VeTrungTamRedesign() {
       <section className="bg-[#f8fafc] flex flex-col gap-[32px] items-start p-[80px] w-full shrink-0">
         <div className="flex flex-col gap-[8px] items-start w-full">
           <h2 className="font-extrabold text-[#0f172a] text-[32px]">Không gian luyện tập</h2>
-          <div className="bg-[#2563eb] h-[4px] rounded-[2px] w-[80px]" />
+          <div className="bg-emerald-600 h-[4px] rounded-[2px] w-[80px]" />
         </div>
         {error ? <DataMessage message={error} error /> : facilities.length === 0 && !isLoading ? <DataMessage message="Chưa có phòng tập trong hệ thống." /> : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-[24px] w-full">
@@ -89,7 +89,7 @@ export default function VeTrungTamRedesign() {
       <section className="bg-white flex flex-col gap-[32px] items-start p-[80px] w-full shrink-0">
         <div className="flex flex-col gap-[8px] items-start w-full">
           <h2 className="font-extrabold text-[#0f172a] text-[32px]">Đội ngũ huấn luyện viên</h2>
-          <div className="bg-[#2563eb] h-[4px] rounded-[2px] w-[80px]" />
+          <div className="bg-emerald-600 h-[4px] rounded-[2px] w-[80px]" />
         </div>
         {team.length === 0 && !isLoading ? <DataMessage message="Chưa có huấn luyện viên trong hệ thống." /> : (
           <div className="flex flex-wrap gap-[24px] items-start w-full">
@@ -100,7 +100,7 @@ export default function VeTrungTamRedesign() {
                 </div>
                 <div className="flex flex-col gap-[12px] items-start p-[24px] w-full">
                   <p className="font-extrabold text-[#0f172a] text-[18px]">{coach.name}</p>
-                  <p className="font-semibold text-[#2563eb] text-[14px]">{coach.title}</p>
+                  <p className="font-semibold text-slate-800 text-[14px]">{coach.title}</p>
                   <p className="text-[#64748b] text-[13px] leading-[1.5]">{coach.desc}</p>
                 </div>
               </FadeUp>

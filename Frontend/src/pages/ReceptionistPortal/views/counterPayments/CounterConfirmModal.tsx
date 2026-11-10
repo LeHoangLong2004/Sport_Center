@@ -53,7 +53,7 @@ export default function CounterConfirmModal({
       >
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
           <div className="flex items-center gap-2.5">
-            <div className="size-10 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 flex items-center justify-center font-bold">
+            <div className="size-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center font-bold">
               💰
             </div>
             <div>
@@ -92,7 +92,7 @@ export default function CounterConfirmModal({
             <span className="font-bold text-slate-700 dark:text-slate-300">
               Tổng tiền cần thu:
             </span>
-            <strong className="font-black text-teal-600 dark:text-teal-400 text-lg">
+            <strong className="font-black text-emerald-600 dark:text-emerald-400 text-lg">
               {formatMoney(confirmOrder.total)}
             </strong>
           </div>
@@ -109,11 +109,11 @@ export default function CounterConfirmModal({
               onClick={() => onSelectPayMethod("counter")}
               className={`p-3 rounded-xl border text-center flex flex-col items-center gap-1.5 transition-all cursor-pointer ${
                 selectedPayMethod === "counter"
-                  ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-bold ring-2 ring-purple-600/20"
+                  ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold ring-2 ring-emerald-600/20"
                   : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50"
               }`}
             >
-              <Banknote className="w-5 h-5 text-emerald-600" />
+              <Banknote className="w-5 h-5" />
               <span className="text-xs font-semibold">Tiền mặt</span>
             </button>
 
@@ -122,11 +122,11 @@ export default function CounterConfirmModal({
               onClick={() => onSelectPayMethod("card")}
               className={`p-3 rounded-xl border text-center flex flex-col items-center gap-1.5 transition-all cursor-pointer ${
                 selectedPayMethod === "card"
-                  ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-bold ring-2 ring-purple-600/20"
+                  ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold ring-2 ring-emerald-600/20"
                   : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50"
               }`}
             >
-              <CreditCard className="w-5 h-5 text-blue-600" />
+              <CreditCard className="w-5 h-5 text-slate-600" />
               <span className="text-xs font-semibold">Quẹt thẻ POS</span>
             </button>
 
@@ -135,11 +135,11 @@ export default function CounterConfirmModal({
               onClick={() => onSelectPayMethod("qr")}
               className={`p-3 rounded-xl border text-center flex flex-col items-center gap-1.5 transition-all cursor-pointer ${
                 selectedPayMethod === "qr"
-                  ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-bold ring-2 ring-purple-600/20"
+                  ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold ring-2 ring-emerald-600/20"
                   : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50"
               }`}
             >
-              <QrCode className="w-5 h-5 text-purple-600" />
+              <QrCode className="w-5 h-5" />
               <span className="text-xs font-semibold">Mã VietQR</span>
             </button>
           </div>
@@ -158,16 +158,16 @@ export default function CounterConfirmModal({
               />
             </div>
             <div className="text-xs space-y-0.5">
-              <p className="font-bold text-slate-900 dark:text-white">{bankConfig.bankName}: <span className="font-mono text-purple-600">{bankConfig.accountNumber}</span></p>
+              <p className="font-bold text-slate-900 dark:text-white">{bankConfig.bankName}: <span className="text-emerald-600">{bankConfig.accountNumber}</span></p>
               <p className="text-[11px] text-slate-500">Chủ TK: <strong>{bankConfig.accountName}</strong></p>
-              <p className="text-[11px] text-slate-500">Nội dung CK: <strong className="font-mono text-indigo-600">{orderMemo}</strong></p>
+              <p className="text-[11px] text-slate-500">Nội dung CK: <strong className="text-emerald-600">{orderMemo}</strong></p>
               <p className="text-[11px] text-emerald-600 font-semibold">Đưa mã này cho khách hàng quét bằng bất kỳ App Ngân hàng nào.</p>
             </div>
           </div>
         )}
 
-        <div className="bg-amber-50 dark:bg-amber-950/30 p-3 rounded-xl border border-amber-200 dark:border-amber-800 text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed flex items-start gap-2">
-          <ShieldCheck className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
+        <div className="bg-slate-50 dark:bg-slate-950/30 p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-[11px] text-slate-800 dark:text-slate-300 leading-relaxed flex items-start gap-2">
+          <ShieldCheck className="w-4 h-4 shrink-0 text-slate-600 mt-0.5" />
           <span>
             Khi bấm <strong>"Xác nhận đã nhận tiền"</strong>, quyền lợi gói tập sẽ lập tức kích hoạt cho hội viên. Hệ thống tự động cập nhật hóa đơn.
           </span>
@@ -185,7 +185,7 @@ export default function CounterConfirmModal({
             type="button"
             disabled={processingId === confirmOrder.id}
             onClick={onConfirm}
-            className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs shadow-lg shadow-purple-600/25 flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+            className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-lg shadow-emerald-600/25 flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
           >
             {processingId === confirmOrder.id ? (
               <>

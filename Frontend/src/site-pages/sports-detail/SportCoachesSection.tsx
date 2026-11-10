@@ -25,7 +25,7 @@ export function SportCoachesSection({ name, coaches }: SportCoachesSectionProps)
               </div>
               <div className="flex flex-col gap-[12px] items-start p-[20px] w-full">
                 <p className="font-extrabold text-[#1e293b] text-[18px]">{coach.name}</p>
-                <p className="font-semibold text-[#2563eb] text-[14px]">{coach.spec}</p>
+                <p className="font-semibold text-slate-800 text-[14px]">{coach.spec}</p>
                 <p className="text-[#64748b] text-[13px] leading-[1.4] w-full">{coach.desc}</p>
               </div>
             </div>

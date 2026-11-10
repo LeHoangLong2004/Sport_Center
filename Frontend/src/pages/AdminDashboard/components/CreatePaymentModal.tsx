@@ -183,7 +183,7 @@ export function CreatePaymentModal({ onClose, onSuccess }: CreatePaymentModalPro
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-rose-600 text-white font-semibold py-2.5 rounded-xl hover:bg-rose-700 transition-colors text-sm shadow-md shadow-rose-600/20 disabled:opacity-60 cursor-pointer"
+              className="flex-1 bg-emerald-600 text-white font-semibold py-2.5 rounded-xl hover:bg-emerald-700 transition-colors text-sm shadow-md shadow-emerald-600/20 disabled:opacity-60 cursor-pointer"
             >
               {loading ? "Đang xử lý..." : "Xác nhận tạo đơn"}
             </button>

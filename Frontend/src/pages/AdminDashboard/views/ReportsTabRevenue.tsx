@@ -4,7 +4,7 @@ import { useApiResource } from '../../../hooks/useApiResource';
 import { type MonthlyRevenueResponse, type RevenueByPaymentMethodResponse, type RevenueByPackageResponse } from '../../../hooks/flow3Api';
 import { formatVnd } from '../../../hooks/apiClient';
 
-const DONUT_COLORS = ['#e11d48', '#14b8a6', '#f97316', '#a855f7', '#94a3b8'];
+const DONUT_COLORS = ['#059669', '#10b981', '#334155', '#64748b', '#94a3b8'];
 const CIRCUMFERENCE = 2 * Math.PI * 55;
 
 export default function ReportsTabRevenue() {
@@ -38,7 +38,7 @@ export default function ReportsTabRevenue() {
             <p className="text-[#64748b] text-[12px] mt-1">Tổng: {formatVnd(totalRevenue)}</p>
           </div>
           <div className="flex gap-1.5 items-center">
-            <img src={iDotBlue} alt="" className="size-2" />
+            <span className="size-2 rounded-full bg-emerald-600 shrink-0" />
             <span className="text-[#64748b] text-[12px]">Doanh thu gói dịch vụ</span>
           </div>
         </div>
@@ -63,7 +63,7 @@ export default function ReportsTabRevenue() {
                     </div>
                   )}
                   <div
-                    className="bg-rose-600 w-full rounded-t-md"
+                    className="bg-emerald-600 w-full rounded-t-md"
                     title={`${m.month}: ${formatVnd(m.revenue)} (${m.invoices} hóa đơn)`}
                     style={{ height: `${Math.round((m.revenue / maxRevenue) * 100)}%` }}
                   />

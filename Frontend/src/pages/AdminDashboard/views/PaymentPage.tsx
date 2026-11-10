@@ -15,10 +15,10 @@ import {
 import { apiDownloadFile, formatVnd, apiPost, formatDateTime } from "../../../hooks/apiClient";
 
 const STATUS_STYLE: Record<string, string> = {
-  completed: "bg-[#dcfce7] text-[#15803d]",
-  pending: "bg-[#fef3c7] text-[#b45309]",
+  completed: "bg-emerald-50 text-emerald-700",
+  pending: "bg-slate-100 text-slate-700",
   failed: "bg-[#fee2e2] text-[#b91c1c]",
-  refunded: "bg-[#e0e7ff] text-[#4338ca]",
+  refunded: "bg-slate-100 text-slate-700",
   expired: "bg-[#f1f5f9] text-[#475569]",
 };
 

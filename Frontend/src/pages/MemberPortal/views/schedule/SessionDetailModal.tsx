@@ -65,7 +65,7 @@ export default function SessionDetailModal({
             <span
               className={`text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
                 session.type === "pt"
-                  ? "bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300"
+                  ? "bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-300"
                   : "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
               }`}
             >
@@ -116,13 +116,13 @@ export default function SessionDetailModal({
                     {session.coachName}
                   </strong>
                   {session.coachRating ? (
-                    <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded">
+                    <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-slate-600 bg-slate-50 dark:bg-slate-950/60 px-1.5 py-0.5 rounded">
                       <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
                       {session.coachRating}
                     </span>
                   ) : null}
                 </div>
-                <p className="text-[11px] text-teal-600 dark:text-teal-400 font-medium truncate">
+                <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium truncate">
                   {session.coachSpecialty || "Huấn luyện viên thể hình"}
                   {session.coachExperienceYears ? ` • ${session.coachExperienceYears} năm kinh nghiệm` : ""}
                 </p>
@@ -138,8 +138,8 @@ export default function SessionDetailModal({
             <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-200/60 dark:border-slate-700/60">
               {session.coachPhone ? (
                 <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300">
-                  <Phone className="w-3 h-3 text-teal-600" />
-                  <a href={`tel:${session.coachPhone}`} className="text-teal-600 dark:text-teal-400 font-bold hover:underline">
+                  <Phone className="w-3 h-3" />
+                  <a href={`tel:${session.coachPhone}`} className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">
                     {session.coachPhone}
                   </a>
                 </span>
@@ -147,7 +147,7 @@ export default function SessionDetailModal({
                 <span className="text-slate-400">HLV SmartGym</span>
               )}
               <span className="font-semibold text-slate-700 dark:text-slate-300">
-                Phí buổi học: <strong className="text-teal-700 dark:text-teal-400">{session.price ? `${session.price.toLocaleString('vi-VN')} đ` : "150.000 đ (Giá gốc)"}</strong>
+                Phí buổi học: <strong className="text-emerald-700 dark:text-emerald-400">{session.price ? `${session.price.toLocaleString('vi-VN')} đ` : "150.000 đ (Giá gốc)"}</strong>
               </span>
             </div>
           </div>
@@ -155,12 +155,12 @@ export default function SessionDetailModal({
 
         {/* Coach Note / Feedback */}
         {session.coachNote && (
-          <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 text-xs">
-            <div className="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5 mb-1">
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/80 text-xs">
+            <div className="font-bold text-slate-800 dark:text-slate-300 flex items-center gap-1.5 mb-1">
               <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
               Lời nhận xét & dặn dò từ HLV:
             </div>
-            <p className="text-amber-900 dark:text-amber-200 leading-relaxed italic">
+            <p className="text-slate-900 dark:text-slate-200 leading-relaxed italic">
               "{session.coachNote}"
             </p>
           </div>
@@ -183,7 +183,7 @@ export default function SessionDetailModal({
           {effectiveStatus === "hoàn thành" && (
             isReviewed ? (
               <span className="py-2.5 px-4 rounded-xl text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                <CheckCircle2 className="w-4 h-4" />
                 <span>Đã đánh giá</span>
               </span>
             ) : (
@@ -207,7 +207,7 @@ export default function SessionDetailModal({
                     onNavigate("reviews");
                   }
                 }}
-                className="py-2.5 px-4 rounded-xl text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="py-2.5 px-4 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
                 <span>Đánh giá HLV</span>

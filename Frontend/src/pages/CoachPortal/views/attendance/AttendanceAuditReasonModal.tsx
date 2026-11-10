@@ -31,7 +31,7 @@ export default function AttendanceAuditReasonModal({
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-950/40 text-slate-600 dark:text-slate-400 flex items-center justify-center shrink-0">
               <AlertTriangle className="w-5 h-5" />
             </div>
             <div>
@@ -69,7 +69,7 @@ export default function AttendanceAuditReasonModal({
                 onClick={() => setAuditReason(preset)}
                 className={`text-xs px-2.5 py-1 rounded-lg border text-left transition-colors ${
                   auditReason === preset
-                    ? "bg-orange-50 border-orange-300 text-orange-700 dark:bg-orange-950/30 dark:border-orange-600 dark:text-orange-300 font-medium"
+                    ? "bg-emerald-50 border-emerald-300 text-emerald-700 dark:bg-emerald-950/30 dark:border-emerald-600 dark:text-emerald-300 font-medium"
                     : "bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100"
                 }`}
               >
@@ -89,7 +89,7 @@ export default function AttendanceAuditReasonModal({
             placeholder="Nhập lý do chi tiết..."
             value={auditReason}
             onChange={(e) => setAuditReason(e.target.value)}
-            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
           />
         </div>
 

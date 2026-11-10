@@ -32,7 +32,7 @@ export function ScheduleFilters({
       <div className="flex flex-wrap items-end gap-4">
         <label className="flex flex-col gap-1.5">
           <span className="text-xs font-semibold text-slate-700">Tìm lớp, HLV...</span>
-          <span className="flex items-center gap-2 min-w-[220px] px-3.5 py-2 bg-white border border-slate-300 rounded-xl shadow-xs focus-within:ring-2 focus-within:ring-orange-500">
+          <span className="flex items-center gap-2 min-w-[220px] px-3.5 py-2 bg-white border border-slate-300 rounded-xl shadow-xs focus-within:ring-2 focus-within:ring-slate-500">
             <Search className="w-4 h-4 text-slate-400 shrink-0" />
             <input
               value={searchQuery}
@@ -49,7 +49,7 @@ export function ScheduleFilters({
             value={selectedRooms[0] ?? ""}
             onChange={(event) => onRoomChange(event.target.value)}
             aria-label="Lọc theo phòng tập"
-            className="min-w-[240px] max-w-[360px] px-3.5 py-2 bg-white border border-slate-300 rounded-xl shadow-xs text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-orange-500"
+            className="min-w-[240px] max-w-[360px] px-3.5 py-2 bg-white border border-slate-300 rounded-xl shadow-xs text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-slate-500"
           >
             <option value="">Tất cả phòng tập</option>
             {facilities.length === 0 && (

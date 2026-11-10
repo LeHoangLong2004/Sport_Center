@@ -29,7 +29,7 @@ interface PayAndBookModalProps {
   setPaymentMethod: (method: "qr" | "card" | "counter" | "wallet") => void;
   isProcessingPayment: boolean;
   paymentError: string | null;
-  onConfirmPayment: () => void;
+  onConfirmPayment: (finalAmount?: number) => void;
 }
 
 export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
@@ -128,7 +128,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
           setIsPaid(true);
           setCheckStatusText(null);
           setTimeout(() => {
-            onConfirmPayment();
+            onConfirmPayment(classPrice);
           }, 1000);
         }
       } catch {}
@@ -148,7 +148,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
 
   const handleCheckPayment = async () => {
     if (isPaid) {
-      onConfirmPayment();
+      onConfirmPayment(classPrice);
       return;
     }
 
@@ -160,7 +160,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
         setIsPaid(true);
         setCheckStatusText(null);
         setTimeout(() => {
-          onConfirmPayment();
+          onConfirmPayment(classPrice);
         }, 1000);
         return;
       } else {
@@ -176,41 +176,14 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
     }
   };
 
-  const handlePayWithWallet = async () => {
-    if (isPaid) {
-      onConfirmPayment();
-      return;
-    }
-
+  const handlePayWithWallet = () => {
     if (walletBalance < classPrice) {
       setShowTopUpModal(true);
       return;
     }
 
-    setIsPayingWallet(true);
     setCheckStatusText(null);
-
-    try {
-      const res = await WalletService.pay(
-        classPrice,
-        `Đặt lớp: ${classToBook.name}`,
-        "Ví thành viên"
-      );
-
-      if (res.success) {
-        setIsPaid(true);
-        setWalletBalance(res.newBalance);
-        setTimeout(() => {
-          onConfirmPayment();
-        }, 800);
-      } else {
-        setCheckStatusText(res.message || "Không thể thanh toán từ ví. Vui lòng kiểm tra lại số dư!");
-      }
-    } catch (err: any) {
-      setCheckStatusText(err?.message || "Đã xảy ra lỗi khi trừ ví. Vui lòng thử lại!");
-    } finally {
-      setIsPayingWallet(false);
-    }
+    onConfirmPayment(classPrice);
   };
 
   const isBusy = isProcessingPayment || isCheckingPayment || isPayingWallet;
@@ -247,19 +220,6 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
 
           {/* Body */}
           <div className="p-6 overflow-y-auto space-y-4 text-xs">
-            {paymentError && (
-              <div
-                role="alert"
-                className="flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200"
-              >
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
-                <div>
-                  <p className="font-extrabold">Không thể đặt lớp</p>
-                  <p className="mt-0.5 leading-relaxed">{paymentError}</p>
-                </div>
-              </div>
-            )}
-
             {/* Lớp & Chi tiết hóa đơn kèm ưu đãi thành viên */}
             <BookingClassHeader 
               classToBook={classToBook} 
@@ -346,7 +306,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                 currentBalance={walletBalance}
                 classPrice={classPrice}
                 onOpenTopUp={() => setShowTopUpModal(true)}
-                isPaid={isPaid}
+                isPaid={false}
               />
             )}
 
@@ -498,7 +458,20 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="p-4 border-t border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50/50 dark:bg-slate-850">
+          <div className="p-4 border-t border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50/50 dark:bg-slate-850 space-y-3">
+            {paymentError && (
+              <div
+                role="alert"
+                className="flex items-start gap-2.5 rounded-2xl border-2 border-rose-300 dark:border-rose-700 bg-rose-50/95 dark:bg-rose-950/70 p-3 text-rose-800 dark:text-rose-200 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-200"
+              >
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400 animate-pulse" />
+                <div className="text-left flex-1 min-w-0">
+                  <p className="font-black text-xs text-rose-700 dark:text-rose-300">Không thể đặt lớp</p>
+                  <p className="mt-0.5 leading-relaxed text-[11px] font-semibold text-rose-800 dark:text-rose-200">{paymentError}</p>
+                </div>
+              </div>
+            )}
+
             {paymentMethod === "wallet" ? (
               <div className="flex items-center justify-end gap-2.5 w-full">
                 <button
@@ -522,23 +495,14 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                 ) : (
                   <button
                     type="button"
-                    disabled={isBusy || isPaid}
+                    disabled={isBusy}
                     onClick={handlePayWithWallet}
-                    className={`px-6 py-2.5 font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer ${
-                      isPaid
-                        ? "bg-emerald-600 text-white shadow-emerald-600/30 cursor-wait"
-                        : "bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white shadow-indigo-600/20 disabled:opacity-50"
-                    }`}
+                    className="px-6 py-2.5 font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white shadow-indigo-600/20 disabled:opacity-50"
                   >
-                    {isPaid ? (
-                      <>
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>✓ Đã trừ ví • Đang đặt chỗ...</span>
-                      </>
-                    ) : isPayingWallet || isProcessingPayment ? (
+                    {isProcessingPayment ? (
                       <>
                         <LoaderCircle className="w-4 h-4 animate-spin" />
-                        <span>Đang trừ tiền ví...</span>
+                        <span>Đang kiểm tra & đặt chỗ...</span>
                       </>
                     ) : (
                       <>
@@ -600,7 +564,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                 <button
                   type="button"
                   disabled={isBusy}
-                  onClick={onConfirmPayment}
+                  onClick={() => onConfirmPayment(classPrice)}
                   className="px-6 py-2.5 font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 text-white bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
                 >
                   {isProcessingPayment ? (

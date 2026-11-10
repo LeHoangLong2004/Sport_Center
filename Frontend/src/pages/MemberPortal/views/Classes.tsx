@@ -160,10 +160,10 @@ export function Classes({
                 type="button"
                 onClick={() => setViewMode('available')}
                 className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
-                  viewMode === 'available' ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  viewMode === 'available' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                📅 Tìm & Đặt lớp
+                Tìm & Đặt lớp
               </button>
               <button
                 type="button"
@@ -172,12 +172,12 @@ export function Classes({
                   fetchMyBookings();
                 }}
                 className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 ${
-                  viewMode === 'my_bookings' ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  viewMode === 'my_bookings' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                📌 Lịch đã đặt
+                Lịch đã đặt
                 {myBookings.length > 0 && (
-                  <span className="bg-teal-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">
+                  <span className="bg-emerald-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">
                     {myBookings.length}
                   </span>
                 )}
@@ -194,7 +194,7 @@ export function Classes({
                       <button
                         className={`px-5 py-2.5 rounded-full font-bold text-sm transition-all duration-200 ${
                           category === item
-                            ? 'bg-teal-600 text-white shadow-md shadow-teal-500/20'
+                            ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/20'
                             : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                         }`}
                         key={item}
@@ -217,7 +217,7 @@ export function Classes({
                       onChange={event => setCoachQuery(event.target.value)}
                       placeholder="Lọc theo HLV..."
                       value={coachQuery}
-                      className="pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all outline-none text-slate-800 bg-slate-50 focus:bg-white w-full lg:w-64 font-medium"
+                      className="pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all outline-none text-slate-800 bg-slate-50 focus:bg-white w-full lg:w-64 font-medium"
                     />
                   </div>
                 </div>
@@ -229,12 +229,12 @@ export function Classes({
                       value={selectedDate}
                       onChange={setSelectedDate}
                       placeholder="dd/mm/yyyy"
-                      className="px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all outline-none bg-white shadow-sm font-bold w-full md:w-auto cursor-pointer"
+                      className="px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all outline-none bg-white shadow-sm font-bold w-full md:w-auto cursor-pointer"
                     />
                     {selectedDate && (
                       <button
                         onClick={() => setSelectedDate("")}
-                        className="text-sm font-bold text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-4 py-2.5 rounded-xl transition-colors"
+                        className="text-sm font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-4 py-2.5 rounded-xl transition-colors"
                       >
                         Xem tất cả ngày
                       </button>
@@ -254,7 +254,7 @@ export function Classes({
                       <button
                         className={`px-5 py-2.5 rounded-xl border font-bold text-sm transition-all duration-200 ${
                           shift === item
-                            ? 'bg-teal-600 border-teal-600 text-white shadow-md shadow-teal-500/20'
+                            ? 'bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-500/20'
                             : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                         }`}
                         key={item}

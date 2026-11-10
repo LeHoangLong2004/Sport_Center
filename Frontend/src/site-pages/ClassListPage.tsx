@@ -215,12 +215,12 @@ export default function ClassListPage() {
         </FadeIn>
         <div className="relative z-10 flex flex-col gap-4 items-center w-full">
           <FadeUp>
-            <p className="font-['Inter:Extra_Bold'] font-extrabold text-white text-[48px] leading-normal">
+            <p className="font-extrabold text-white text-[48px] leading-normal">
               Lịch lớp học hàng tuần
             </p>
           </FadeUp>
           <FadeUp delay={0.2}>
-            <p className="font-['Inter:Regular'] font-normal text-[#cbd5e1] text-[18px] leading-normal max-w-2xl mx-auto">
+            <p className="font-normal text-[#cbd5e1] text-[18px] leading-normal max-w-2xl mx-auto">
               Tìm lớp phù hợp với thời gian và mục tiêu chuyển động của bạn. Lớp
               mới cập nhật liên tục mỗi tuần.
             </p>
@@ -239,7 +239,7 @@ export default function ClassListPage() {
             <select
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-lg px-4 py-3 appearance-none font-['Inter:Regular'] font-normal text-[#1e293b] text-[14px] cursor-pointer pr-9"
+              className="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-lg px-4 py-3 appearance-none font-normal text-[#1e293b] text-[14px] cursor-pointer pr-9"
             >
               <option value="">Tất cả bộ môn</option>
               {sports.map((s) => (
@@ -258,7 +258,7 @@ export default function ClassListPage() {
             <select
               value={day}
               onChange={(e) => setDay(e.target.value)}
-              className="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-lg px-4 py-3 appearance-none font-['Inter:Regular'] font-normal text-[#1e293b] text-[14px] cursor-pointer pr-9"
+              className="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-lg px-4 py-3 appearance-none font-normal text-[#1e293b] text-[14px] cursor-pointer pr-9"
             >
               <option value="">Chọn ngày trong tuần</option>
               <option value="2">Thứ Hai</option>
@@ -279,7 +279,7 @@ export default function ClassListPage() {
             <select
               value={shift}
               onChange={(e) => setShift(e.target.value)}
-              className="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-lg px-4 py-3 appearance-none font-['Inter:Regular'] font-normal text-[#1e293b] text-[14px] cursor-pointer pr-9"
+              className="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-lg px-4 py-3 appearance-none font-normal text-[#1e293b] text-[14px] cursor-pointer pr-9"
             >
               <option value="">Khung giờ (Sáng / Chiều / Tối)</option>
               <option value="sang">Sáng (06:00 – 12:00)</option>
@@ -296,11 +296,11 @@ export default function ClassListPage() {
             onClick={() => {
               setPage(1);
             }}
-            className="bg-[#2563eb] flex gap-2.5 items-center justify-center px-6 py-3 rounded-lg w-[180px] shrink-0 hover:bg-[#1d4ed8] transition-colors"
+            className="bg-emerald-600 flex gap-2.5 items-center justify-center px-6 py-3 rounded-lg w-[180px] shrink-0 hover:bg-[#1d4ed8] transition-colors"
             type="button"
           >
             <img src={imgSearch} alt="" className="w-3.5 h-3.5" />
-            <span className="font-['Inter:Bold'] font-bold text-white text-[14px] whitespace-nowrap">
+            <span className="font-bold text-white text-[14px] whitespace-nowrap">
               Tìm kiếm
             </span>
           </button>
@@ -325,7 +325,7 @@ export default function ClassListPage() {
         ))}
 
         {filtered.length === 0 && (
-          <div className="text-center py-16 text-[#64748b] font-['Inter:Regular'] font-normal text-[15px]">
+          <div className="text-center py-16 text-[#64748b] font-normal text-[15px]">
             Không tìm thấy lớp phù hợp. Vui lòng thử lại với bộ lọc khác.
           </div>
         )}
@@ -352,8 +352,8 @@ export default function ClassListPage() {
                 type="button"
                 className={`flex items-center justify-center rounded-lg size-10 text-[14px] border transition-colors ${
                   p === currentPage
-                    ? "bg-[#2563eb] text-white border-[#2563eb] font-['Inter:Bold'] font-bold shadow-sm"
-                    : "bg-white border-[#e2e8f0] text-[#1e293b] font-['Inter:Semi_Bold'] font-semibold hover:bg-[#f1f5f9]"
+                    ? "bg-emerald-600 text-white border-emerald-600 font-bold shadow-sm"
+                    : "bg-white border-[#e2e8f0] text-[#1e293b] font-semibold hover:bg-[#f1f5f9]"
                 }`}
               >
                 {p}

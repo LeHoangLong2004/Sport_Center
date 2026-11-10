@@ -26,7 +26,7 @@ export function HomeworkDetails({ homework, onClose }: HomeworkDetailsProps) {
                 <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
                   <span className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">Mục tiêu huấn luyện:</span>
                   <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{selectedHomework.plan.goal || selectedHomework.plan.description || "Thực hiện theo hướng dẫn của huấn luyện viên."}</p>
-                  {selectedHomework.notes && <p className="mt-2 text-amber-600 dark:text-amber-400">Ghi chú: {selectedHomework.notes}</p>}
+                  {selectedHomework.notes && <p className="mt-2 text-slate-600 dark:text-slate-400">Ghi chú: {selectedHomework.notes}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -36,7 +36,7 @@ export function HomeworkDetails({ homework, onClose }: HomeworkDetailsProps) {
                       <div key={exercise.id || index} className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-850">
                         <p className="font-bold text-slate-900 dark:text-white">{index + 1}. {exercise.name}</p>
                         <p className="text-[11px] text-slate-500 mt-1">{exercise.reps || "Theo hướng dẫn"}{exercise.rest ? ` • Nghỉ ${exercise.rest}` : ""}</p>
-                        {exercise.note && <p className="text-[10px] text-amber-600 dark:text-amber-400 italic mt-1">Lưu ý: {exercise.note}</p>}
+                        {exercise.note && <p className="text-[10px] text-slate-600 dark:text-slate-400 italic mt-1">Lưu ý: {exercise.note}</p>}
                       </div>
                     ))}
                   </div>

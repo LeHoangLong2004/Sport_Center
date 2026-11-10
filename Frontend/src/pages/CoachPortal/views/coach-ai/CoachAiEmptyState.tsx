@@ -12,8 +12,8 @@ export const CoachAiEmptyState: React.FC<CoachAiEmptyStateProps> = ({ onQuickDem
     <div className="bg-white dark:bg-slate-800/95 rounded-2xl border border-slate-200 dark:border-slate-700/80 p-6 sm:p-8 shadow-sm flex flex-col items-center justify-center text-center min-h-[560px]">
       {/* Top AI Badge */}
       <div className="relative mb-4">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-orange-500 via-amber-500 to-orange-400 p-0.5 shadow-lg shadow-orange-500/20">
-          <div className="w-full h-full bg-white dark:bg-slate-900 rounded-[14px] flex items-center justify-center text-orange-500 dark:text-orange-400">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500 via-slate-500 to-emerald-400 p-0.5 shadow-lg shadow-emerald-600/20">
+          <div className="w-full h-full bg-white dark:bg-slate-900 rounded-[14px] flex items-center justify-center text-emerald-500 dark:text-emerald-400">
             <Bot className="w-8 h-8 animate-pulse" />
           </div>
         </div>
@@ -33,7 +33,7 @@ export const CoachAiEmptyState: React.FC<CoachAiEmptyStateProps> = ({ onQuickDem
       <div className="w-full max-w-xl mb-6 text-left">
         <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center justify-between">
           <span>Khám phá các mẫu giáo án được đề xuất:</span>
-          <span className="text-[11px] text-orange-600 dark:text-orange-400 normal-case font-semibold">
+          <span className="text-[11px] text-emerald-600 dark:text-emerald-400 normal-case font-semibold">
             Bấm để nạp thông số ngay
           </span>
         </div>
@@ -43,16 +43,16 @@ export const CoachAiEmptyState: React.FC<CoachAiEmptyStateProps> = ({ onQuickDem
             <div
               key={preset.id}
               onClick={() => onApplyPreset?.(preset)}
-              className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-900/60 hover:bg-orange-50/80 dark:hover:bg-orange-950/40 hover:border-orange-300 dark:hover:border-orange-700/60 transition-all cursor-pointer group flex flex-col justify-between gap-2 shadow-xs"
+              className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-900/60 hover:bg-emerald-50/80 dark:hover:bg-emerald-950/40 hover:border-emerald-300 dark:hover:border-emerald-700/60 transition-all cursor-pointer group flex flex-col justify-between gap-2 shadow-xs"
             >
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-100 dark:bg-orange-900/60 text-orange-700 dark:text-orange-300">
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
                     {preset.badge}
                   </span>
                   <span className="text-[10px] text-slate-400">{preset.durationMinutes}p</span>
                 </div>
-                <div className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors line-clamp-1">
+                <div className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-1">
                   {preset.title}
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 mt-1 leading-snug">
@@ -60,7 +60,7 @@ export const CoachAiEmptyState: React.FC<CoachAiEmptyStateProps> = ({ onQuickDem
                 </p>
               </div>
 
-              <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 dark:border-slate-800 text-[11px] text-orange-600 dark:text-orange-400 font-semibold group-hover:translate-x-0.5 transition-transform">
+              <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 dark:border-slate-800 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold group-hover:translate-x-0.5 transition-transform">
                 <span>Chọn mẫu này</span>
                 <ArrowRight className="w-3 h-3" />
               </div>
@@ -72,8 +72,8 @@ export const CoachAiEmptyState: React.FC<CoachAiEmptyStateProps> = ({ onQuickDem
       {/* 4 Steps Showcase */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full max-w-xl mb-6 text-left">
         <div className="p-3 rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-900/50 flex flex-col gap-1">
-          <div className="text-[11px] font-bold text-orange-600 dark:text-orange-400 flex items-center gap-1">
-            <span className="w-4 h-4 rounded-full bg-orange-100 dark:bg-orange-900 text-center leading-4 text-[10px]">1</span>
+          <div className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+            <span className="w-4 h-4 rounded-full bg-emerald-100 dark:bg-emerald-900 text-center leading-4 text-[10px]">1</span>
             <span>Thể trạng & Bệnh lý</span>
           </div>
           <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
@@ -82,8 +82,8 @@ export const CoachAiEmptyState: React.FC<CoachAiEmptyStateProps> = ({ onQuickDem
         </div>
 
         <div className="p-3 rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-900/50 flex flex-col gap-1">
-          <div className="text-[11px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-            <span className="w-4 h-4 rounded-full bg-amber-100 dark:bg-amber-900 text-center leading-4 text-[10px]">2</span>
+          <div className="text-[11px] font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1">
+            <span className="w-4 h-4 rounded-full bg-slate-100 dark:bg-slate-900 text-center leading-4 text-[10px]">2</span>
             <span>Lọc an toàn AI</span>
           </div>
           <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
@@ -92,8 +92,8 @@ export const CoachAiEmptyState: React.FC<CoachAiEmptyStateProps> = ({ onQuickDem
         </div>
 
         <div className="p-3 rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-900/50 flex flex-col gap-1">
-          <div className="text-[11px] font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
-            <span className="w-4 h-4 rounded-full bg-blue-100 dark:bg-blue-900 text-center leading-4 text-[10px]">3</span>
+          <div className="text-[11px] font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1">
+            <span className="w-4 h-4 rounded-full bg-slate-100 dark:bg-slate-900 text-center leading-4 text-[10px]">3</span>
             <span>HLV kiểm duyệt</span>
           </div>
           <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
@@ -116,10 +116,10 @@ export const CoachAiEmptyState: React.FC<CoachAiEmptyStateProps> = ({ onQuickDem
         <button
           type="button"
           onClick={onQuickDemo}
-          className="text-xs font-semibold px-4 py-2.5 rounded-xl text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800 hover:bg-orange-50 dark:hover:bg-orange-950/50 transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
+          className="text-xs font-semibold px-4 py-2.5 rounded-xl text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
         >
           <Zap className="w-3.5 h-3.5" />
-          <span>⚡ Nạp nhanh dữ liệu mẫu & Tạo bài tập ngay</span>
+          <span>Nạp nhanh dữ liệu mẫu & Tạo bài tập ngay</span>
         </button>
       )}
     </div>

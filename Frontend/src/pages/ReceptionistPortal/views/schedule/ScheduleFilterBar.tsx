@@ -64,7 +64,7 @@ export const ScheduleFilterBar: React.FC<Props> = ({
             onClick={() => setDateFilter("all")}
             className={`px-2 py-0.5 rounded transition cursor-pointer ${
               dateFilter === "all"
-                ? "bg-white text-blue-700 shadow-2xs font-bold"
+                ? "bg-white text-slate-700 shadow-2xs font-bold"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -75,7 +75,7 @@ export const ScheduleFilterBar: React.FC<Props> = ({
             onClick={() => setDateFilter("today")}
             className={`px-2 py-0.5 rounded transition cursor-pointer ${
               dateFilter === "today"
-                ? "bg-white text-blue-700 shadow-2xs font-bold"
+                ? "bg-white text-slate-700 shadow-2xs font-bold"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -86,7 +86,7 @@ export const ScheduleFilterBar: React.FC<Props> = ({
             onClick={() => setDateFilter("tomorrow")}
             className={`px-2 py-0.5 rounded transition cursor-pointer ${
               dateFilter === "tomorrow"
-                ? "bg-white text-blue-700 shadow-2xs font-bold"
+                ? "bg-white text-slate-700 shadow-2xs font-bold"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -102,7 +102,7 @@ export const ScheduleFilterBar: React.FC<Props> = ({
             placeholder="Tìm khách, SĐT, HLV..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-7 py-1 text-xs bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:border-blue-500 focus:bg-white transition"
+            className="w-full pl-8 pr-7 py-1 text-xs bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:border-slate-500 focus:bg-white transition"
           />
           {searchQuery && (
             <button

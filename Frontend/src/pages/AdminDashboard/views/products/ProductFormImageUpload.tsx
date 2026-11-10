@@ -54,7 +54,7 @@ export function ProductFormImageUpload({
             onClick={() => onChangeImageUrl(img.url)}
             className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold border transition cursor-pointer ${
               imageUrl === img.url
-                ? 'border-rose-500 bg-rose-50 text-rose-600 dark:bg-rose-950/40'
+                ? 'border-emerald-500 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40'
                 : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50'
             }`}
           >

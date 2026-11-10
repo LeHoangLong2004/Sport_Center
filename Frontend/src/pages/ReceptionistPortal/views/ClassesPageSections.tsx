@@ -9,13 +9,13 @@ export function ClassesToast({
         <div
           className={`fixed top-6 right-1/2 translate-x-1/2 z-[100] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border ${
             toast.type === "success"
-              ? "bg-[#f0fdf4] border-[#bbf7d0] text-[#15803d]"
+              ? "bg-emerald-50 border-emerald-200 text-emerald-700"
               : "bg-[#fef2f2] border-[#fecaca] text-[#b91c1c]"
           } transition-all animate-in slide-in-from-top-4 fade-in duration-300`}
         >
           <div
             className={`flex items-center justify-center size-7 shrink-0 rounded-full ${
-              toast.type === "success" ? "bg-[#22c55e]" : "bg-[#ef4444]"
+              toast.type === "success" ? "bg-emerald-600" : "bg-[#ef4444]"
             }`}
           >
             <svg
@@ -77,7 +77,7 @@ export function ClassesFilters(props: {
             <button
               className={`px-4 py-2 rounded-full font-bold text-sm transition-all duration-200 ${
                 category === item
-                  ? "bg-[#a855f7] text-white shadow-md shadow-purple-500/20"
+                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/20"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
               key={item}
@@ -110,7 +110,7 @@ export function ClassesFilters(props: {
             onChange={(event) => setCoachQuery(event.target.value)}
             placeholder="Lọc theo HLV..."
             value={coachQuery}
-            className="pl-10 pr-3 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all outline-none text-slate-800 bg-slate-50 focus:bg-white w-full text-sm font-medium"
+            className="pl-10 pr-3 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all outline-none text-slate-800 bg-slate-50 focus:bg-white w-full text-sm font-medium"
           />
         </div>
       </div>
@@ -124,7 +124,7 @@ export function ClassesFilters(props: {
             onClick={() => setSelectedDate(0)}
             className={`text-xs font-bold px-3 py-1 rounded-full transition-colors ${
               selectedDate === 0
-                ? "bg-purple-100 text-purple-700"
+                ? "bg-emerald-100 text-emerald-700"
                 : "bg-slate-100 text-slate-500 hover:bg-slate-200"
             }`}
           >
@@ -151,7 +151,7 @@ export function ClassesFilters(props: {
               <button
                 className={`flex flex-col items-center justify-center min-w-[70px] p-2.5 rounded-xl border transition-all duration-200 ${
                   selectedDate === dateNum
-                    ? "bg-purple-50 border-purple-200"
+                    ? "bg-emerald-50 border-emerald-200"
                     : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50"
                 }`}
                 key={dateNum}
@@ -161,7 +161,7 @@ export function ClassesFilters(props: {
                 <span
                   className={`text-[11px] font-bold uppercase mb-1 ${
                     selectedDate === dateNum
-                      ? "text-purple-600"
+                      ? "text-emerald-600"
                       : "text-slate-400"
                   }`}
                 >
@@ -170,7 +170,7 @@ export function ClassesFilters(props: {
                 <strong
                   className={`text-xl font-black ${
                     selectedDate === dateNum
-                      ? "text-purple-700"
+                      ? "text-emerald-700"
                       : "text-slate-700"
                   }`}
                 >
@@ -221,7 +221,7 @@ export function ClassesGrid(props: {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {visibleClasses.map((item) => (
         <article
-          className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 hover:shadow-lg hover:border-purple-200 transition-all duration-300 flex flex-col group cursor-pointer"
+          className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 hover:shadow-lg hover:border-emerald-300 transition-all duration-300 flex flex-col group cursor-pointer"
           key={item.id}
           onClick={() => setSelectedClass(item)}
         >

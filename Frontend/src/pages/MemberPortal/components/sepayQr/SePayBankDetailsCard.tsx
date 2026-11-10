@@ -35,7 +35,7 @@ export const SePayBankDetailsCard: React.FC<Props> = ({
       <div className="flex items-center justify-between">
         <div>
           <span className="text-[10px] text-slate-400 block">Số tài khoản:</span>
-          <span className="text-lg font-mono font-black tracking-widest text-white">
+          <span className="text-lg font-black tracking-widest text-white">
             {bankConfig.accountNumber}
           </span>
         </div>
@@ -46,7 +46,7 @@ export const SePayBankDetailsCard: React.FC<Props> = ({
         >
           {copiedKey === "acc" ? (
             <>
-              <Check className="w-3.5 h-3.5 text-emerald-400" />
+              <Check className="w-3.5 h-3.5" />
               <span className="text-emerald-400">Đã chép</span>
             </>
           ) : (
@@ -83,7 +83,7 @@ export const SePayBankDetailsCard: React.FC<Props> = ({
         >
           {copiedKey === "amount" ? (
             <>
-              <Check className="w-3.5 h-3.5 text-emerald-400" />
+              <Check className="w-3.5 h-3.5" />
               <span className="text-emerald-400">Đã chép</span>
             </>
           ) : (
@@ -99,11 +99,11 @@ export const SePayBankDetailsCard: React.FC<Props> = ({
       <div className="p-3 rounded-xl bg-slate-950 border border-emerald-500/40 flex items-center justify-between">
         <div>
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-black uppercase text-amber-400">
+            <span className="text-[10px] font-black uppercase text-slate-400">
               Nội dung chuyển khoản (Bắt buộc):
             </span>
           </div>
-          <span className="font-mono font-black text-sm text-emerald-400 tracking-wider">
+          <span className="font-black text-sm text-emerald-400 tracking-wider">
             {transferMemo}
           </span>
         </div>

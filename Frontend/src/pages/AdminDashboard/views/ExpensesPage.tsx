@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
+import { Receipt } from 'lucide-react';
 import { A, avatarSidebar, avatarTopbar, iDashboard, iUsers, iPackage, iCalendar, iReceipt, iBarChart, iSettings, iSearch, iBell, iSearch2, iDownload, iPlus, iWallet, iCheckCircle, iClock, iRotateCcw, iChevron, iEye, iPrinter, iMore, mAvatar0, mAvatar1, mAvatar2, mAvatar3, mAvatar4, iBell2, iDownload2, iKpiRevenue, iKpiMembers, iKpiClasses, iKpiRetain, iSeg1, iSeg2, iSeg3, iSeg4, iDotBlue, iDotTeal, iDotOrange, iDotPurple, iActivity0, iActivity1, iActivity2, iActivity3, iLineChart, iBarFill, coachAvatar1, coachAvatar2, coachAvatar3, coachAvatar4, hrAvatar1, hrAvatar2, hrAvatar3, hrAvatar4, iBudgetIcon, iExpenseIcon, iBudgetChevron, iPLRevIcon, memberEditAvatar, transactions, reportBarData, reportMonths, members } from '../shared';
 import KpiCard from '../components/KpiCard';
 import SimpleLineChart from '../components/SimpleLineChart';
@@ -13,7 +14,7 @@ export function ExpensesPage() {
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
       <div>
-        <p className="font-extrabold text-rose-600 text-[11px] tracking-wider uppercase">MÔ ĐUN TÀI CHÍNH TRUNG TÂM</p>
+        <p className="font-extrabold text-emerald-600 text-[11px] tracking-wider uppercase">MÔ ĐUN TÀI CHÍNH TRUNG TÂM</p>
         <div className="flex items-end justify-between mt-1">
           <div>
             <p className="font-extrabold text-[#0f172a] text-[28px]">Chi phí vận hành</p>
@@ -21,7 +22,7 @@ export function ExpensesPage() {
           </div>
           <button
             onClick={() => toast.info("Tính năng tạo phiếu chi mới đang được đồng bộ với bộ phận Kế toán.")}
-            className="bg-rose-600 hover:bg-rose-700 active:scale-95 transition-all cursor-pointer flex items-center px-4 py-2.5 rounded-lg shadow-sm shadow-rose-600/20"
+            className="bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all cursor-pointer flex items-center px-4 py-2.5 rounded-lg shadow-sm shadow-emerald-600/20"
           >
             <span className="font-semibold text-white text-sm">+ Tạo phiếu chi mới</span>
           </button>
@@ -33,7 +34,7 @@ export function ExpensesPage() {
           <button
             key={t}
             onClick={() => setActiveTab(t)}
-            className={`pb-3 text-sm cursor-pointer transition-colors ${activeTab===t?"border-b-2 border-rose-600 font-bold text-rose-600":"font-medium text-[#64748b] hover:text-[#0f172a]"}`}
+            className={`pb-3 text-sm cursor-pointer transition-colors ${activeTab===t?"border-b-2 border-emerald-600 font-bold text-emerald-600":"font-medium text-[#64748b] hover:text-[#0f172a]"}`}
           >
             {t}
           </button>
@@ -66,8 +67,8 @@ export function ExpensesPage() {
         </div>
         {expenses.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-            <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 mb-3 text-xl">
-              🧾
+            <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 mb-3">
+              <Receipt className="size-6" />
             </div>
             <p className="font-semibold text-slate-800 text-base">Chưa có phiếu chi nào</p>
             <p className="text-slate-500 text-sm mt-1 max-w-sm">Chưa có phiếu đề xuất chi phí trong danh mục "{activeTab}".</p>
@@ -83,8 +84,8 @@ export function ExpensesPage() {
               <div className="w-[140px]"><p className="text-[#0f172a] text-sm">{e.requester}</p></div>
               <div className="w-[100px]">
                 <span className={`font-semibold px-2 py-1 rounded-full text-[11px] ${
-                  e.statusC==="green"?"bg-[#dcfce7] text-[#15803d]":
-                  e.statusC==="yellow"?"bg-[#fef3c7] text-[#b45309]":
+                  e.statusC==="green"?"bg-emerald-50 text-emerald-700":
+                  e.statusC==="yellow"?"bg-slate-100 text-slate-700":
                   "bg-[#fee2e2] text-[#b91c1c]"}`}>{e.status}</span>
               </div>
             </div>
@@ -100,7 +101,7 @@ export function ExpensesPage() {
                   if (p === "1") setPageNumber(1);
                   else toast.info(`Chuyển trang: ${p}`);
                 }}
-                className={`flex items-center px-3 py-1.5 rounded-md text-[13px] cursor-pointer transition-colors ${p===String(pageNumber)?"bg-rose-600 font-semibold text-white shadow-xs shadow-rose-600/20":"bg-white border border-[#e2e8f0] text-[#0f172a] hover:bg-slate-50"}`}
+                className={`flex items-center px-3 py-1.5 rounded-md text-[13px] cursor-pointer transition-colors ${p===String(pageNumber)?"bg-emerald-600 font-semibold text-white shadow-xs shadow-emerald-600/20":"bg-white border border-[#e2e8f0] text-[#0f172a] hover:bg-slate-50"}`}
               >
                 {p}
               </button>

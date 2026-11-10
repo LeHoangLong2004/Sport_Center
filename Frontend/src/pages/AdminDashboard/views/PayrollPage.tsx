@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
+import { ClipboardList, CheckCircle2, Clock, Briefcase } from 'lucide-react';
 import { A, avatarSidebar, avatarTopbar, iDashboard, iUsers, iPackage, iCalendar, iReceipt, iBarChart, iSettings, iSearch, iBell, iSearch2, iDownload, iPlus, iWallet, iCheckCircle, iClock, iRotateCcw, iChevron, iEye, iPrinter, iMore, mAvatar0, mAvatar1, mAvatar2, mAvatar3, mAvatar4, iBell2, iDownload2, iKpiRevenue, iKpiMembers, iKpiClasses, iKpiRetain, iSeg1, iSeg2, iSeg3, iSeg4, iDotBlue, iDotTeal, iDotOrange, iDotPurple, iActivity0, iActivity1, iActivity2, iActivity3, iLineChart, iBarFill, coachAvatar1, coachAvatar2, coachAvatar3, coachAvatar4, hrAvatar1, hrAvatar2, hrAvatar3, hrAvatar4, iBudgetIcon, iExpenseIcon, iBudgetChevron, iPLRevIcon, memberEditAvatar, transactions, reportBarData, reportMonths, members } from '../shared';
 import KpiCard from '../components/KpiCard';
 import SimpleLineChart from '../components/SimpleLineChart';
@@ -12,7 +13,7 @@ export function PayrollPage() {
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
       <div>
-        <p className="font-extrabold text-rose-600 text-[11px] tracking-wider uppercase">MÔ ĐUN TÀI CHÍNH TRUNG TÂM</p>
+        <p className="font-extrabold text-emerald-600 text-[11px] tracking-wider uppercase">MÔ ĐUN TÀI CHÍNH TRUNG TÂM</p>
         <div className="flex items-end justify-between mt-1">
           <div>
             <p className="font-extrabold text-[#0f172a] text-[28px]">Báo bảng lương nhân viên</p>
@@ -37,7 +38,7 @@ export function PayrollPage() {
             </button>
             <button
               onClick={() => toast.success(`Đã hoàn tất chốt bảng lương cho ${selectedMonth}!`)}
-              className="bg-rose-600 hover:bg-rose-700 active:scale-95 flex items-center px-4 py-2.5 rounded-lg cursor-pointer transition-all shadow-sm shadow-rose-600/20"
+              className="bg-emerald-600 hover:bg-emerald-700 active:scale-95 flex items-center px-4 py-2.5 rounded-lg cursor-pointer transition-all shadow-sm shadow-emerald-600/20"
             >
               <span className="font-semibold text-white text-sm">Chốt lương</span>
             </button>
@@ -47,14 +48,14 @@ export function PayrollPage() {
       {/* KPIs */}
       <div className="flex gap-5">
         {[
-          {label:"Tổng quỹ lương đã duyệt",value:"-- đ",sub:"Thực nhận nhân viên",icon:"📋",bg:"#f0f9ff"},
-          {label:"Số nhân viên áp dụng",    value:"-- Nhân sự",   sub:"--% tính",      icon:"✓", bg:"#f0fdf4"},
-          {label:"Lương trung bình / người",value:"-- đ", sub:"Bình ổn",            icon:"⏱",bg:"#fffbeb"},
+          {label:"Tổng quỹ lương đã duyệt",value:"-- đ",sub:"Thực nhận nhân viên",icon:<ClipboardList className="size-4 text-slate-600" />},
+          {label:"Số nhân viên áp dụng",    value:"-- Nhân sự",   sub:"--% tính",      icon:<CheckCircle2 className="size-4 text-slate-600" />},
+          {label:"Lương trung bình / người",value:"-- đ", sub:"Bình ổn",            icon:<Clock className="size-4 text-slate-600" />},
         ].map(k=>(
           <div key={k.label} className="bg-white border border-[#e2e8f0] flex flex-1 flex-col gap-3 min-w-0 p-5 rounded-xl">
             <div className="flex items-center justify-between">
               <p className="font-medium text-[#64748b] text-sm flex-1">{k.label}</p>
-              <div className="flex items-center justify-center rounded-lg size-9 text-lg" style={{background:k.bg}}>{k.icon}</div>
+              <div className="flex items-center justify-center rounded-lg size-9 bg-slate-100 text-slate-600">{k.icon}</div>
             </div>
             <p className="font-bold text-[#0f172a] text-[22px]">{k.value}</p>
             <span className="text-[#64748b] text-[12px]">{k.sub}</span>
@@ -78,8 +79,8 @@ export function PayrollPage() {
         </div>
         {rows.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-            <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 mb-3 text-xl">
-              💼
+            <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 mb-3">
+              <Briefcase className="size-6" />
             </div>
             <p className="font-semibold text-slate-800 text-base">Bảng lương tháng đang được tổng hợp</p>
             <p className="text-slate-500 text-sm mt-1 max-w-sm">Dữ liệu chấm công, hoa hồng và KPI của nhân sự sẽ được tự động kết chuyển vào kỳ lương.</p>
@@ -92,9 +93,9 @@ export function PayrollPage() {
               <div className="w-[160px]"><p className="text-[#64748b] text-[12px]">{r.role}</p></div>
               <div className="w-[130px]"><p className="text-[#0f172a] text-sm">{r.base} đ</p></div>
               <div className="w-[90px]"><p className="text-[#0f172a] text-sm">{r.allowance} đ</p></div>
-              <div className="w-[130px]"><p className="font-semibold text-[#14b8a6] text-sm">{r.commission} đ</p></div>
+              <div className="w-[130px]"><p className="font-semibold text-emerald-600 text-sm">{r.commission} đ</p></div>
               <div className="w-[100px]"><p className="font-semibold text-[#dc2626] text-sm">{r.deduct} đ</p></div>
-              <div className="w-[120px] text-right"><p className="font-bold text-rose-600 text-sm">{r.net} đ</p></div>
+              <div className="w-[120px] text-right"><p className="font-bold text-emerald-600 text-sm">{r.net} đ</p></div>
             </div>
           ))
         )}

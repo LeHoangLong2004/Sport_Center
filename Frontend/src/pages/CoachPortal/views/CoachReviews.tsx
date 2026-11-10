@@ -87,7 +87,7 @@ export default function CoachReviews() {
                 PHẢN HỒI HỌC VIÊN
               </span>
               <span className="flex items-center gap-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                <ShieldCheck className="w-3.5 h-3.5 text-blue-500" /> Đánh giá ẩn danh bảo mật
+                <ShieldCheck className="w-3.5 h-3.5 text-slate-500" /> Đánh giá ẩn danh bảo mật
               </span>
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white mt-2">
@@ -115,7 +115,7 @@ export default function CoachReviews() {
                 const pct = stats.count > 0 ? (count / stats.count) * 100 : 0;
                 return (
                   <div key={star} className="flex items-center gap-2 text-[11px] text-slate-500 font-medium">
-                    <span className="w-3">{star}★</span>
+                    <span className="w-3">{star}<span className="text-amber-400">★</span></span>
                     <div className="w-20 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                       <div className="h-full bg-amber-400 rounded-full" style={{ width: `${pct}%` }}></div>
                     </div>

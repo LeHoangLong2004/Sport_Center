@@ -165,7 +165,7 @@ export default function CoachSchedule({ navigateTo }: Props) {
 
       {feedbackMsg && (
         <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 rounded-xl text-emerald-800 dark:text-emerald-300 text-sm flex items-center gap-3">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <CheckCircle2 className="w-5 h-5 shrink-0" />
           <span>{feedbackMsg}</span>
         </div>
       )}

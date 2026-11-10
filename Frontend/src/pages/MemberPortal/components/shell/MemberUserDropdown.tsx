@@ -29,7 +29,7 @@ interface Props {
   onClose: () => void;
   onToggleTheme: () => void;
   onToggleLang: () => void;
-  onOpenCheckIn: () => void;
+  onOpenCheckIn?: () => void;
   onOpenWallet?: () => void;
   onSwitchToInvoices: () => void;
   onSwitchToSecurity: () => void;
@@ -68,8 +68,8 @@ export default function MemberUserDropdown({
               {userName}
             </h4>
             <p className="text-xs text-slate-400 truncate">{userEmail}</p>
-            <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.2 rounded-full text-[10px] font-extrabold bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300">
-              <Crown className="w-3 h-3 text-amber-500" />
+            <span className="inline-flex items-center gap-1 mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-50 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-500/30">
+              <Crown className="w-3 h-3 text-amber-500 fill-amber-400" />
               {userTier}
             </span>
           </div>
@@ -97,9 +97,9 @@ export default function MemberUserDropdown({
             onNavigate("packages");
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
-          className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
+          className="group w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
         >
-          <CreditCard className="w-4 h-4 text-emerald-500" />
+          <CreditCard className="w-4 h-4 text-slate-400 group-hover:text-emerald-500 transition-colors shrink-0" />
           <span className="flex-1">Gói dịch vụ & Nâng cấp hạng</span>
         </button>
 
@@ -110,11 +110,11 @@ export default function MemberUserDropdown({
             onNavigate("payments");
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
-          className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
+          className="group w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
         >
-          <Receipt className="w-4 h-4 text-blue-500" />
+          <Receipt className="w-4 h-4 text-slate-400 transition-colors shrink-0" />
           <span className="flex-1">Lịch sử giao dịch & Hóa đơn</span>
-          <span className="text-[10px] px-1.5 py-0.2 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold rounded-md">
+          <span className="text-[10px] px-1.5 py-0.2 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold rounded-md">
             Mới
           </span>
         </button>
@@ -130,9 +130,9 @@ export default function MemberUserDropdown({
               window.scrollTo({ top: 0, behavior: "smooth" });
             }
           }}
-          className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
+          className="group w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
         >
-          <Ticket className="w-4 h-4 text-purple-500" />
+          <Ticket className="w-4 h-4 text-slate-400 transition-colors shrink-0" />
           <span className="flex-1">Ví đặc quyền (2 vé mời bạn)</span>
         </button>
       </div>
@@ -146,9 +146,9 @@ export default function MemberUserDropdown({
             onNavigate("workouts");
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
-          className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
+          className="group w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
         >
-          <FileText className="w-4 h-4 text-orange-500" />
+          <FileText className="w-4 h-4 text-slate-400 transition-colors shrink-0" />
           <span className="flex-1">Giáo án & Bài tập HLV giao</span>
         </button>
 
@@ -159,22 +159,10 @@ export default function MemberUserDropdown({
             onNavigate("workouts");
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
-          className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
+          className="group w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
         >
-          <Activity className="w-4 h-4 text-pink-500" />
+          <Activity className="w-4 h-4 text-slate-400 transition-colors shrink-0" />
           <span className="flex-1">Chỉ số cơ thể & InBody</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            onClose();
-            onOpenCheckIn();
-          }}
-          className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
-        >
-          <QrCode className="w-4 h-4 text-teal-500" />
-          <span className="flex-1">Mã QR cá nhân Check-in</span>
         </button>
       </div>
 
@@ -183,13 +171,13 @@ export default function MemberUserDropdown({
         <button
           type="button"
           onClick={onToggleTheme}
-          className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer"
+          className="group w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-2.5">
             {isDark ? (
-              <Sun className="w-4 h-4 text-amber-400" />
+              <Sun className="w-4 h-4 text-slate-400 shrink-0" />
             ) : (
-              <Moon className="w-4 h-4 text-slate-500" />
+              <Moon className="w-4 h-4 text-slate-400 transition-colors shrink-0" />
             )}
             <span>Giao diện: {isDark ? "Tối (Dark)" : "Sáng (Light)"}</span>
           </div>
@@ -201,10 +189,10 @@ export default function MemberUserDropdown({
         <button
           type="button"
           onClick={onToggleLang}
-          className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer"
+          className="group w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-2.5">
-            <Globe className="w-4 h-4 text-blue-500" />
+            <Globe className="w-4 h-4 text-slate-400 transition-colors shrink-0" />
             <span>Ngôn ngữ:</span>
           </div>
           <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
@@ -215,9 +203,9 @@ export default function MemberUserDropdown({
         <button
           type="button"
           onClick={onSwitchToSecurity}
-          className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
+          className="group w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
         >
-          <Lock className="w-4 h-4 text-slate-400" />
+          <Lock className="w-4 h-4 text-slate-400 transition-colors shrink-0" />
           <span className="flex-1">Đổi mật khẩu & Bảo mật</span>
         </button>
 
@@ -228,9 +216,9 @@ export default function MemberUserDropdown({
             onNavigate("support");
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
-          className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
+          className="group w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
         >
-          <Bot className="w-4 h-4 text-indigo-500" />
+          <Bot className="w-4 h-4 text-slate-400 transition-colors shrink-0" />
           <span className="flex-1">Trợ lý AI & Hỗ trợ kỹ thuật</span>
         </button>
       </div>
@@ -245,18 +233,18 @@ export default function MemberUserDropdown({
             window.dispatchEvent(new HashChangeEvent("hashchange"));
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
-          className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer text-slate-700 dark:text-slate-300"
+          className="group w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer text-slate-700 dark:text-slate-300"
         >
-          <Home className="w-4 h-4 text-emerald-500" />
+          <Home className="w-4 h-4 text-slate-400 transition-colors shrink-0" />
           <span className="flex-1">Về Trang chủ website</span>
         </button>
 
         <button
           type="button"
           onClick={onLogout}
-          className="w-full px-3 py-2 text-left rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold text-rose-600 dark:text-rose-400 flex items-center gap-2.5 transition-colors cursor-pointer"
+          className="group w-full px-3 py-2 text-left rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold text-rose-600 dark:text-rose-400 flex items-center gap-2.5 transition-colors cursor-pointer"
         >
-          <LogOut className="w-4 h-4" />
+          <LogOut className="w-4 h-4 transition-colors shrink-0" />
           <span>Đăng xuất tài khoản</span>
         </button>
       </div>

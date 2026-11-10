@@ -57,7 +57,7 @@ export const AppointmentCard: React.FC<Props> = ({
     <div
       className={`bg-white rounded-lg border transition-all duration-150 hover:shadow-xs p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
         isWaiting
-          ? "border-amber-300 bg-white"
+          ? "border-slate-300 bg-white"
           : isCompleted
           ? "border-emerald-200 bg-emerald-50/20"
           : "border-slate-200 opacity-75 bg-slate-50/40"
@@ -66,7 +66,7 @@ export const AppointmentCard: React.FC<Props> = ({
       {/* Left: Time + Main Info */}
       <div className="flex items-start gap-2.5 min-w-0 flex-1">
         {/* Compact Time & Date Badge */}
-        <div className="flex flex-col items-center justify-center w-14 py-1 px-1 bg-slate-900 text-white rounded font-mono text-xs font-bold shrink-0 text-center">
+        <div className="flex flex-col items-center justify-center w-14 py-1 px-1 bg-slate-900 text-white rounded text-xs font-bold shrink-0 text-center">
           <span>{slot.time}</span>
           <span className="text-[9px] text-slate-300 font-sans font-medium">
             {getDateBadgeLabel()}
@@ -98,11 +98,11 @@ export const AppointmentCard: React.FC<Props> = ({
                   <button
                     type="button"
                     onClick={() => onCopyPhone(customer.phone)}
-                    className="text-slate-400 hover:text-purple-600 transition cursor-pointer"
+                    className="text-slate-400 hover:text-emerald-600 transition cursor-pointer"
                     title="Sao chép SĐT"
                   >
                     {copiedPhone === customer.phone ? (
-                      <Check className="w-3 h-3 text-emerald-600" />
+                      <Check className="w-3 h-3" />
                     ) : (
                       <Copy className="w-3 h-3" />
                     )}
@@ -113,7 +113,7 @@ export const AppointmentCard: React.FC<Props> = ({
 
             {/* Coach */}
             <div className="flex items-center gap-1 text-slate-500">
-              <Dumbbell className="w-3 h-3 text-amber-600" />
+              <Dumbbell className="w-3 h-3 text-slate-600" />
               <span>
                 HLV:{" "}
                 <strong className="text-slate-700">
@@ -135,7 +135,7 @@ export const AppointmentCard: React.FC<Props> = ({
                 className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded transition cursor-pointer"
                 title="Gọi nhắc trước 30 phút"
               >
-                <Phone className="w-3 h-3 text-purple-600" />
+                <Phone className="w-3 h-3" />
                 <span className="hidden sm:inline">Gọi</span>
               </a>
             )}
@@ -182,7 +182,7 @@ export const AppointmentCard: React.FC<Props> = ({
             <button
               disabled={updatingId === slot.id}
               onClick={() => onUpdateStatus(slot.id, "Đang chờ khách")}
-              className="px-2 py-0.5 text-[10px] font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded border border-amber-200 transition cursor-pointer"
+              className="px-2 py-0.5 text-[10px] font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 rounded border border-slate-200 transition cursor-pointer"
             >
               Khôi phục
             </button>

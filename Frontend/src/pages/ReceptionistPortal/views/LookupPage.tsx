@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react"
 import { Search, ChevronLeft, ChevronRight } from "lucide-react"
 import StatusBadge from "../components/StatusBadge"
+import { UserAvatar } from "../../../components/UserAvatar"
 
 export function MemberAvatar({
   url,
@@ -149,12 +150,12 @@ export function LookupPage({ onDetail }: { onDetail: (member: any) => void }) {
         <div className="bg-[#f1f5f9] flex gap-[12px] items-center p-[14px] rounded-[8px] w-full">
           <Search className="size-[20px] shrink-0 text-[#64748b]" />
           <input
-            className="flex-1 bg-transparent font-['Manrope:Regular'] text-[#0f172a] text-[15px] outline-none min-w-0"
+            className="flex-1 bg-transparent font-normal text-[#0f172a] text-[15px] outline-none min-w-0"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Tìm theo tên, SĐT, mã thẻ..."
           />
-          <span className="bg-white border border-[#e2e8f0] font-['Manrope:SemiBold'] font-semibold px-[6px] py-[2px] rounded-[4px] text-[#64748b] text-[11px] shrink-0">
+          <span className="bg-white border border-[#e2e8f0] font-bold font-semibold px-[6px] py-[2px] rounded-[4px] text-[#64748b] text-[11px] shrink-0">
             F3
           </span>
         </div>
@@ -167,17 +168,17 @@ export function LookupPage({ onDetail }: { onDetail: (member: any) => void }) {
                 onClick={() => setFilter(chip)}
                 className={`flex items-start px-[14px] py-[8px] rounded-[6px] shrink-0 transition-colors cursor-pointer ${
                   filter === chip
-                    ? "bg-[#3b82f6] text-white font-['Manrope:Bold'] font-bold"
-                    : "bg-[#f1f5f9] text-[#64748b] font-['Manrope:Medium'] font-medium hover:bg-slate-200"
+                    ? "bg-emerald-600 text-white font-bold"
+                    : "bg-[#f1f5f9] text-[#64748b] font-medium hover:bg-slate-200"
                 } text-[13px]`}
               >
                 {chip}
               </button>
             ))}
           </div>
-          <span className="font-['Manrope:SemiBold'] font-semibold text-[#64748b] text-[14px]">
+          <span className="font-bold font-semibold text-[#64748b] text-[14px]">
             Tổng số kết quả:{" "}
-            <span className="font-['Manrope:Bold'] font-bold text-[#0f172a]">
+            <span className="font-bold text-[#0f172a]">
               {filtered.length} thành viên
             </span>
           </span>
@@ -186,7 +187,7 @@ export function LookupPage({ onDetail }: { onDetail: (member: any) => void }) {
 
       {/* Table */}
       <div className="bg-white border border-[#e2e8f0] flex flex-col items-start overflow-hidden rounded-[12px] shrink-0 w-full shadow-sm">
-        <div className="bg-[#f1f5f9] flex font-['Manrope:ExtraBold'] font-extrabold items-center px-[24px] py-[14px] text-[#64748b] text-[13px] w-full">
+        <div className="bg-[#f1f5f9] flex font-extrabold items-center px-[24px] py-[14px] text-[#64748b] text-[13px] w-full">
           <span className="w-[120px] shrink-0">MÃ THÀNH VIÊN</span>
           <span className="flex-1 min-w-0">HỌ VÀ TÊN</span>
           <span className="w-[180px] shrink-0">SỐ ĐIỆN THOẠI</span>
@@ -210,22 +211,22 @@ export function LookupPage({ onDetail }: { onDetail: (member: any) => void }) {
                 key={m.memberCode}
                 className="border-[#e2e8f0] border-b border-solid flex items-center px-[24px] py-[12px] shrink-0 w-full hover:bg-slate-50/70 transition-colors"
               >
-                <span className="font-['Manrope:Bold'] font-bold text-[#3b82f6] text-[13px] w-[120px] shrink-0">
+                <span className="font-bold text-slate-800 text-[13px] w-[120px] shrink-0">
                   {m.memberCode}
                 </span>
                 <div className="flex flex-1 gap-[10px] items-center min-w-0">
                   <MemberAvatar url={m.avatarUrl} name={m.fullName} size={28} />
-                  <span className="font-['Manrope:Bold'] font-bold text-[#0f172a] text-[13px] whitespace-nowrap truncate">
+                  <span className="font-bold text-[#0f172a] text-[13px] whitespace-nowrap truncate">
                     {m.fullName}
                   </span>
                 </div>
-                <span className="font-['Manrope:Regular'] font-normal text-[#64748b] text-[13px] w-[180px] shrink-0">
+                <span className="font-normal text-[#64748b] text-[13px] w-[180px] shrink-0">
                   {m.phoneNumber || "Chưa cập nhật"}
                 </span>
-                <span className="font-['Manrope:SemiBold'] font-semibold text-[#0f172a] text-[13px] w-[200px] shrink-0 truncate">
+                <span className="font-semibold text-[#0f172a] text-[13px] w-[200px] shrink-0 truncate">
                   {m.packageName || "Chưa đăng ký"}
                 </span>
-                <span className="font-['Manrope:Regular'] font-normal text-[#64748b] text-[13px] w-[160px] shrink-0">
+                <span className="font-normal text-[#64748b] text-[13px] w-[160px] shrink-0">
                   {m.expiryDate
                     ? new Date(m.expiryDate).toLocaleDateString("vi-VN")
                     : "N/A"}
@@ -237,9 +238,9 @@ export function LookupPage({ onDetail }: { onDetail: (member: any) => void }) {
                   <button
                     type="button"
                     onClick={() => onDetail(m)}
-                    className="border border-[#e2e8f0] border-solid flex items-start px-[12px] py-[6px] rounded-[6px] shrink-0 hover:bg-white hover:border-blue-400 hover:text-blue-600 transition-colors cursor-pointer shadow-2xs"
+                    className="border border-[#e2e8f0] border-solid flex items-start px-[12px] py-[6px] rounded-[6px] shrink-0 hover:bg-white hover:border-emerald-400 hover:text-emerald-600 transition-colors cursor-pointer shadow-2xs"
                   >
-                    <span className="font-['Manrope:Bold'] font-bold text-[#0f172a] text-[12px]">
+                    <span className="font-bold text-[#0f172a] text-[12px]">
                       Chi tiết
                     </span>
                   </button>
@@ -252,13 +253,13 @@ export function LookupPage({ onDetail }: { onDetail: (member: any) => void }) {
         {/* Pagination Bar */}
         {filtered.length > 0 && (
           <div className="bg-[#f8fafc] border-t border-[#e2e8f0] flex items-center justify-between px-[24px] py-[14px] w-full text-[13px]">
-            <span className="text-[#64748b] font-['Manrope:Medium'] font-medium">
+            <span className="text-[#64748b] font-medium">
               Hiển thị{" "}
-              <strong className="text-[#0f172a] font-['Manrope:Bold']">
+              <strong className="text-[#0f172a] font-bold">
                 {fromIndex} - {toIndex}
               </strong>{" "}
               trên tổng số{" "}
-              <strong className="text-[#0f172a] font-['Manrope:Bold']">
+              <strong className="text-[#0f172a] font-bold">
                 {filtered.length}
               </strong>{" "}
               thành viên
@@ -307,9 +308,9 @@ export function LookupPage({ onDetail }: { onDetail: (member: any) => void }) {
                       key={p}
                       type="button"
                       onClick={() => setCurrentPage(p)}
-                      className={`flex items-center justify-center size-8 rounded-[6px] border text-[12px] font-['Manrope:Bold'] transition-colors cursor-pointer ${
+                      className={`flex items-center justify-center size-8 rounded-[6px] border text-[12px] font-bold transition-colors cursor-pointer ${
                         isActive
-                          ? "bg-[#3b82f6] text-white border-[#3b82f6] font-bold shadow-xs"
+                          ? "bg-emerald-600 text-white border-emerald-600 font-bold shadow-xs"
                           : "bg-white border-[#e2e8f0] text-[#0f172a] hover:bg-slate-100"
                       }`}
                     >

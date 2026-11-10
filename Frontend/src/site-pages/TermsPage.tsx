@@ -33,10 +33,10 @@ export default function ChinhSachDieuKhoanRedesign() {
     <div className="bg-[#f8fafc] flex flex-col items-start w-full min-h-screen">
       {/* Hero */}
       <div className="bg-[#0f172a] flex flex-col gap-[16px] items-start px-[80px] py-[60px] w-full">
-        <p className="font-['Inter:Extra_Bold'] font-extrabold text-[36px] text-white">
+        <p className="font-extrabold text-[36px] text-white">
           Chính sách & Điều khoản sử dụng
         </p>
-        <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[16px] w-[720px] leading-[1.6]">
+        <p className="font-normal text-[#94a3b8] text-[16px] w-[720px] leading-[1.6]">
           Chào mừng bạn đến với SportCenter. Vui lòng đọc kỹ các điều khoản và
           chính sách dưới đây để đảm bảo quyền lợi tốt nhất khi tập luyện tại hệ
           thống của chúng tôi.
@@ -47,7 +47,7 @@ export default function ChinhSachDieuKhoanRedesign() {
       <div className="flex gap-[48px] items-start pb-[80px] pt-[64px] px-[80px] w-full">
         {/* Sidebar Table of Contents */}
         <div className="bg-white border border-[#e2e8f0] flex flex-col gap-[12px] items-start p-[24px] rounded-[16px] w-[280px] shrink-0 sticky top-[88px] drop-shadow-[0px_4px_6px_rgba(0,0,0,0.04)]">
-          <p className="font-['Inter:Bold'] font-bold text-[#94a3b8] text-[12px] uppercase w-full">
+          <p className="font-bold text-[#94a3b8] text-[12px] uppercase w-full">
             Mục lục tài liệu
           </p>
           <div className="flex flex-col gap-[4px] items-start w-full">
@@ -57,12 +57,12 @@ export default function ChinhSachDieuKhoanRedesign() {
                 onClick={() => scrollToSection(section.id)}
                 className={`flex items-start px-[16px] py-[12px] rounded-[8px] w-full text-left transition-colors cursor-pointer ${
                   activeSection === section.id
-                    ? "bg-[#2563eb]"
+                    ? "bg-emerald-600"
                     : "bg-white hover:bg-[#f8fafc]"
                 }`}
               >
                 <p
-                  className={`flex-1 font-['Inter:Semi_Bold'] font-semibold text-[14px] leading-snug ${
+                  className={`flex-1 font-bold font-semibold text-[14px] leading-snug ${
                     activeSection === section.id
                       ? "text-white"
                       : "text-[#0f172a]"
@@ -82,16 +82,16 @@ export default function ChinhSachDieuKhoanRedesign() {
             id="section-1"
             className="flex flex-col gap-[20px] items-start w-full scroll-mt-[100px]"
           >
-            <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[24px] w-full leading-snug">
+            <p className="font-extrabold text-[#0f172a] text-[24px] w-full leading-snug">
               1. Điều khoản sử dụng dịch vụ SportCenter
             </p>
-            <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[15px] leading-[1.6] w-full">
+            <p className="font-normal text-[#64748b] text-[15px] leading-[1.6] w-full">
               Bằng cách hoàn thành quá trình đăng ký tài khoản thành viên hoặc
               sử dụng dịch vụ tại hệ thống câu lạc bộ SportCenter, khách hàng
               (sau đây gọi là "Hội viên") đồng ý tuân thủ toàn bộ các điều khoản
               được thỏa thuận rõ ràng trong tài liệu pháp lý này.
             </p>
-            <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[15px] leading-[1.6] w-full">
+            <p className="font-normal text-[#64748b] text-[15px] leading-[1.6] w-full">
               Các điều khoản chính bao gồm:
             </p>
             <div className="flex flex-col gap-[12px] items-start pl-[20px] w-full">
@@ -104,7 +104,7 @@ export default function ChinhSachDieuKhoanRedesign() {
               ].map((point, i) => (
                 <p
                   key={i}
-                  className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px] leading-[1.5] w-full"
+                  className="font-normal text-[#64748b] text-[14px] leading-[1.5] w-full"
                 >
                   {point}
                 </p>
@@ -117,10 +117,10 @@ export default function ChinhSachDieuKhoanRedesign() {
             id="section-2"
             className="flex flex-col gap-[20px] items-start w-full scroll-mt-[100px]"
           >
-            <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[24px] w-full leading-snug">
+            <p className="font-extrabold text-[#0f172a] text-[24px] w-full leading-snug">
               2. Chính sách bảo mật thông tin khách hàng
             </p>
-            <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[15px] leading-[1.6] w-full">
+            <p className="font-normal text-[#64748b] text-[15px] leading-[1.6] w-full">
               Chúng tôi luôn tôn trọng quyền riêng tư của mọi khách hàng. Toàn
               bộ thông tin thu thập trong quá trình đăng ký, các chỉ số sức khỏe
               sinh học Inbody hay thông tin giao dịch tài chính đều được lưu trữ
@@ -135,7 +135,7 @@ export default function ChinhSachDieuKhoanRedesign() {
               ].map((point, i) => (
                 <p
                   key={i}
-                  className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px] leading-[1.5] w-full"
+                  className="font-normal text-[#64748b] text-[14px] leading-[1.5] w-full"
                 >
                   {point}
                 </p>
@@ -148,10 +148,10 @@ export default function ChinhSachDieuKhoanRedesign() {
             id="section-3"
             className="flex flex-col gap-[20px] items-start w-full scroll-mt-[100px]"
           >
-            <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[24px] w-full leading-snug">
+            <p className="font-extrabold text-[#0f172a] text-[24px] w-full leading-snug">
               3. Chính sách hoàn tiền phí dịch vụ
             </p>
-            <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[15px] leading-[1.6] w-full">
+            <p className="font-normal text-[#64748b] text-[15px] leading-[1.6] w-full">
               Nhằm đảm bảo trải nghiệm dịch vụ minh bạch nhất, SportCenter áp
               dụng chính sách xử lý hoàn trả học phí rõ ràng đối với các trường
               hợp cụ thể dưới đây:
@@ -164,7 +164,7 @@ export default function ChinhSachDieuKhoanRedesign() {
               ].map((point, i) => (
                 <p
                   key={i}
-                  className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px] leading-[1.5] w-full"
+                  className="font-normal text-[#64748b] text-[14px] leading-[1.5] w-full"
                 >
                   {point}
                 </p>
@@ -177,10 +177,10 @@ export default function ChinhSachDieuKhoanRedesign() {
             id="section-4"
             className="flex flex-col gap-[20px] items-start w-full scroll-mt-[100px]"
           >
-            <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[24px] w-full leading-snug">
+            <p className="font-extrabold text-[#0f172a] text-[24px] w-full leading-snug">
               4. Quy định chung khi sinh hoạt tại phòng tập
             </p>
-            <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[15px] leading-[1.6] w-full">
+            <p className="font-normal text-[#64748b] text-[15px] leading-[1.6] w-full">
               Môi trường tập luyện văn minh đòi hỏi ý thức tự giác từ mỗi thành
               viên. Vui lòng tuân thủ tuyệt đối các quy định sinh hoạt sau để
               tạo không gian rèn luyện lành mạnh:
@@ -194,7 +194,7 @@ export default function ChinhSachDieuKhoanRedesign() {
               ].map((point, i) => (
                 <p
                   key={i}
-                  className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px] leading-[1.5] w-full"
+                  className="font-normal text-[#64748b] text-[14px] leading-[1.5] w-full"
                 >
                   {point}
                 </p>
@@ -207,10 +207,10 @@ export default function ChinhSachDieuKhoanRedesign() {
             id="section-5"
             className="flex flex-col gap-[20px] items-start w-full scroll-mt-[100px]"
           >
-            <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[24px] w-full leading-snug">
+            <p className="font-extrabold text-[#0f172a] text-[24px] w-full leading-snug">
               5. Chính sách bảo lưu và hủy bỏ gói dịch vụ
             </p>
-            <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[15px] leading-[1.6] w-full">
+            <p className="font-normal text-[#64748b] text-[15px] leading-[1.6] w-full">
               Quy trình tạm ngưng hoạt động hoặc đơn phương chấm dứt gói tập
               được hướng dẫn chi tiết theo quy định sau:
             </p>
@@ -222,7 +222,7 @@ export default function ChinhSachDieuKhoanRedesign() {
               ].map((point, i) => (
                 <p
                   key={i}
-                  className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px] leading-[1.5] w-full"
+                  className="font-normal text-[#64748b] text-[14px] leading-[1.5] w-full"
                 >
                   {point}
                 </p>
@@ -232,7 +232,7 @@ export default function ChinhSachDieuKhoanRedesign() {
 
           {/* Divider & Last updated */}
           <div className="border-t border-[#e2e8f0] pt-[24px] w-full">
-            <p className="font-['Inter:Semi_Bold'] font-semibold text-[#94a3b8] text-[14px]">
+            <p className="font-bold font-semibold text-[#94a3b8] text-[14px]">
               Cập nhật lần cuối: 01/09/2025
             </p>
           </div>

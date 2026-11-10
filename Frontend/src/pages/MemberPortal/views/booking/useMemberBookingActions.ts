@@ -49,27 +49,35 @@ export function useMemberBookingActions({
     setSelectedClassDetail(null);
   };
 
-  const handleConfirmPaymentAndBook = async () => {
+  const handleConfirmPaymentAndBook = async (customAmount?: number) => {
     if (!classToBook) return;
     setIsProcessingPayment(true);
     setPaymentError(null);
+
+    const paidAmount = customAmount ?? classToBook.price ?? 150000;
 
     try {
       const response = await MemberAPI.payAndBookClass(
         classToBook.id,
         paymentMethod,
-        classToBook.price || 150000
+        paidAmount
       );
 
       if (paymentMethod === "counter") addCounterPendingId(classToBook.id);
 
       setBookingSuccessInfo({
         classItem: classToBook,
-        paidAmount: classToBook.price || 150000,
+        paidAmount,
         paymentMethod,
         invoiceId: response?.invoiceId || `INV-${Date.now().toString().slice(-6)}`,
         bookingStatus: paymentMethod === "counter" ? "pending" : "confirmed",
       });
+
+      // Bắn sự kiện cập nhật ví khi thanh toán thành công
+      try {
+        window.dispatchEvent(new Event("wallet_updated"));
+        window.dispatchEvent(new Event(MEMBER_WALLET_UPDATED_EVENT));
+      } catch { }
 
       if (classToBook.coachName) {
         try {

@@ -20,14 +20,14 @@ export const TopUpCardSection: React.FC<Props> = ({
     <>
       <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2 text-xs">
         <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-          <CreditCard className="w-4 h-4 text-blue-600" /> Thẻ ATM / Visa / Master
+          <CreditCard className="w-4 h-4 text-slate-600" /> Thẻ ATM / Visa / Master
         </span>
         <input
           type="text"
           value={card.number}
           onChange={(e) => setCard({ ...card, number: e.target.value })}
           placeholder="9704 •••• •••• ••••"
-          className="w-full px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono"
+          className="w-full px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 "
         />
         <input
           type="text"
@@ -42,7 +42,7 @@ export const TopUpCardSection: React.FC<Props> = ({
             value={card.exp}
             onChange={(e) => setCard({ ...card, exp: e.target.value })}
             placeholder="MM/YY"
-            className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono"
+            className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 "
           />
           <input
             type="password"
@@ -50,11 +50,11 @@ export const TopUpCardSection: React.FC<Props> = ({
             value={card.cvv}
             onChange={(e) => setCard({ ...card, cvv: e.target.value })}
             placeholder="CVV"
-            className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono"
+            className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 "
           />
         </div>
         <div className="text-[10px] text-slate-500 flex items-center gap-1">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Bảo mật 3D Secure 256-bit SSL
+          <ShieldCheck className="w-3.5 h-3.5" /> Bảo mật 3D Secure 256-bit SSL
         </div>
       </div>
 
@@ -62,7 +62,7 @@ export const TopUpCardSection: React.FC<Props> = ({
         type="button"
         disabled={loading || actualAmount <= 0}
         onClick={onConfirmCard}
-        className="w-full py-3 rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 text-white bg-blue-600 hover:bg-blue-500"
+        className="w-full py-3 rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 text-white bg-slate-600 hover:bg-slate-500"
       >
         {loading ? (
           <span>Đang xử lý thẻ...</span>

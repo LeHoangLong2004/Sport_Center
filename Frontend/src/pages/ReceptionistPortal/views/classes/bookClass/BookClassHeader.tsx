@@ -8,7 +8,7 @@ export function BookClassHeader({ onClose }: Props) {
   return (
     <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
       <div className="flex items-center gap-2.5">
-        <div className="size-2 rounded-full bg-purple-600 animate-pulse" />
+        <div className="size-2 rounded-full bg-emerald-600 animate-pulse" />
         <h3 className="font-bold text-base text-slate-800">
           Đặt hộ lớp học
         </h3>

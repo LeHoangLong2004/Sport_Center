@@ -52,12 +52,12 @@ export const CoachAiLoadingState: React.FC<CoachAiLoadingStateProps> = ({
     <div className="bg-white dark:bg-slate-800/95 rounded-2xl border border-slate-200 dark:border-slate-700/80 p-6 sm:p-10 shadow-sm flex flex-col items-center justify-center max-w-2xl mx-auto w-full my-4 text-center animate-in fade-in duration-300">
       {/* Central Glowing AI Hologram */}
       <div className="relative mb-6">
-        <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-orange-500 via-amber-500 to-orange-400 p-1 shadow-xl shadow-orange-500/25">
-          <div className="w-full h-full bg-slate-900 rounded-[22px] flex items-center justify-center">
-            <Bot className="w-12 h-12 text-orange-400 animate-pulse" />
+        <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-emerald-500 via-slate-500 to-emerald-400 p-1 shadow-xl shadow-emerald-600/25">
+          <div className="w-full h-full bg-slate-900 text-white rounded-[22px] flex items-center justify-center">
+            <Bot className="w-12 h-12 animate-pulse" />
           </div>
         </div>
-        <div className="absolute -inset-4 bg-orange-500/15 rounded-full blur-2xl animate-pulse pointer-events-none" />
+        <div className="absolute -inset-4 bg-emerald-600/15 rounded-full blur-2xl animate-pulse pointer-events-none" />
         <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg ring-4 ring-white dark:ring-slate-800">
           <Sparkles className="w-4 h-4 animate-spin" />
         </div>
@@ -65,8 +65,8 @@ export const CoachAiLoadingState: React.FC<CoachAiLoadingStateProps> = ({
 
       {/* Target Info Pill */}
       {(targetName || sportName) && (
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-50 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-800 text-xs font-semibold text-orange-800 dark:text-orange-200 mb-3 shadow-xs">
-          <Cpu className="w-3.5 h-3.5 text-orange-500" />
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold text-emerald-800 dark:text-emerald-200 mb-3 shadow-xs">
+          <Cpu className="w-3.5 h-3.5" />
           <span>
             Đang tạo bài tập cho: <strong>{targetName || "Học viên"}</strong> {sportName ? `· ${sportName}` : ""} {durationMinutes ? `· ${durationMinutes}p` : ""}
           </span>
@@ -84,7 +84,7 @@ export const CoachAiLoadingState: React.FC<CoachAiLoadingStateProps> = ({
       <div className="w-full max-w-md space-y-2 mb-8">
         <div className="h-2.5 bg-slate-100 dark:bg-slate-700/80 rounded-full overflow-hidden p-0.5">
           <div
-            className="h-full bg-gradient-to-r from-orange-500 via-amber-500 to-emerald-500 transition-all duration-500 rounded-full shadow-sm"
+            className="h-full bg-gradient-to-r from-emerald-500 via-slate-500 to-emerald-500 transition-all duration-500 rounded-full shadow-sm"
             style={{ width: `${Math.min(95, 25 + elapsedSeconds * 12)}%` }}
           />
         </div>
@@ -103,15 +103,15 @@ export const CoachAiLoadingState: React.FC<CoachAiLoadingStateProps> = ({
               s.done
                 ? "bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-100"
                 : s.active
-                ? "bg-orange-50/80 dark:bg-orange-950/30 border-orange-300 dark:border-orange-700/80 text-orange-900 dark:text-orange-100 ring-1 ring-orange-500/20"
+                ? "bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-700/80 text-emerald-900 dark:text-emerald-100 ring-1 ring-emerald-500/20"
                 : "bg-slate-50/50 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 opacity-60"
             }`}
           >
             <div className="shrink-0 mt-0.5">
               {s.done ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <CheckCircle2 className="w-4 h-4" />
               ) : s.active ? (
-                <div className="w-4 h-4 border-2 border-orange-500/40 border-t-orange-600 rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-emerald-500/40 border-t-emerald-600 rounded-full animate-spin" />
               ) : (
                 <div className="w-4 h-4 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center text-[10px]">
                   {idx + 1}

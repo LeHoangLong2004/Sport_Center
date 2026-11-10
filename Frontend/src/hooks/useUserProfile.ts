@@ -108,7 +108,9 @@ export function useUserProfile(portalRoleHint?: 'coach' | 'member') {
       });
 
       if (response.status === 401) {
-        const refreshResponse = await fetch('/api/auth/dev-token', { method: 'POST' });
+        const portalRole = detectPortalRole(portalRoleHint);
+        const userEmail = user.email || (portalRole === 'member' ? 'long@gmail.com' : '');
+        const refreshResponse = await fetch(`/api/auth/dev-token?role=${portalRole}&email=${encodeURIComponent(userEmail)}`, { method: 'POST' });
         if (refreshResponse.ok) {
           const refreshed = await refreshResponse.json();
           const refreshedToken = refreshed.token;

@@ -15,7 +15,7 @@ export function BookingRow({
 
   let statusColor = "bg-gray-100 text-gray-700";
   if (b.status === "Confirmed") statusColor = "bg-green-100 text-green-700";
-  if (b.status === "Pending") statusColor = "bg-yellow-100 text-yellow-700";
+  if (b.status === "Pending") statusColor = "bg-slate-100 text-slate-700";
   if (b.status === "Rejected") statusColor = "bg-red-100 text-red-700 border border-red-200";
   if (b.status === "Cancelled") statusColor = "bg-gray-200 text-gray-600";
 
@@ -60,7 +60,7 @@ export function BookingRow({
           <button
             type="button"
             onClick={() => setIsDetailsOpen(true)}
-            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-1.5 rounded-md transition-colors"
+            className="text-slate-600 hover:text-slate-800 hover:bg-slate-50 p-1.5 rounded-md transition-colors"
             title="Xem chi tiết đặt chỗ"
             aria-label={`Xem chi tiết đặt chỗ của ${b.memberName}`}
           >

@@ -70,7 +70,7 @@ export default function CoachAI({ initialMemberId }: { initialMemberId?: string 
   if (loading) {
     return (
       <div className="py-24 flex flex-col items-center justify-center text-slate-400 gap-3">
-        <div className="w-8 h-8 border-3 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-3 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
         <span className="text-sm font-medium">Đang tải dữ liệu HLV và học viên...</span>
       </div>
     );
@@ -89,10 +89,10 @@ export default function CoachAI({ initialMemberId }: { initialMemberId?: string 
         <div
           className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm animate-in fade-in slide-in-from-top-2 duration-300 shadow-sm ${
             feedback.type === "success"
-              ? "bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50/70 dark:from-emerald-950/50 dark:via-teal-950/40 dark:to-emerald-950/30 border-emerald-300 dark:border-emerald-700/80 text-emerald-900 dark:text-emerald-100"
+              ? "bg-gradient-to-r from-emerald-50 via-emerald-50 to-emerald-50/70 dark:from-emerald-950/50 dark:via-emerald-950/40 dark:to-emerald-950/30 border-emerald-300 dark:border-emerald-700/80 text-emerald-900 dark:text-emerald-100"
               : feedback.type === "error"
               ? "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200"
-              : "bg-orange-50 dark:bg-orange-950/40 border-orange-200 dark:border-orange-800 text-orange-800 dark:text-orange-200"
+              : "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200"
           }`}
         >
           <div className="flex items-start sm:items-center gap-3">
@@ -102,7 +102,7 @@ export default function CoachAI({ initialMemberId }: { initialMemberId?: string 
                   ? "bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-300 ring-1 ring-emerald-500/20"
                   : feedback.type === "error"
                   ? "bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-300"
-                  : "bg-orange-100 dark:bg-orange-900/60 text-orange-600 dark:text-orange-300"
+                  : "bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-300"
               }`}
             >
               {feedback.type === "success" && <CheckCircle2 className="w-5 h-5" />}
@@ -113,7 +113,7 @@ export default function CoachAI({ initialMemberId }: { initialMemberId?: string 
               <div className="font-bold text-sm">
                 {feedback.title || (
                   feedback.type === "success"
-                    ? "✨ Giáo án đề xuất thành công!"
+                    ? "Giáo án đề xuất thành công!"
                     : feedback.type === "error"
                     ? "Đã xảy ra lỗi"
                     : "Thông báo trợ lý AI"

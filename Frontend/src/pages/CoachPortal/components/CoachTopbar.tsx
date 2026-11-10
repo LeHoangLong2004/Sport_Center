@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
+import { Bell } from "lucide-react";
 import { CoachScreen } from "../types";
 import { breadcrumbs, pageTitles } from "../constants";
-import { IconBell } from "../Icons";
 import { notificationApi, type ManagerNotification } from "../../../hooks/notificationApi";
 import { UserAvatar } from "../../../components/UserAvatar";
 import { useUserProfile } from "../../../hooks/useUserProfile";
+import { ThemeToggle } from "../../../components/ThemeToggle";
 
 function getShiftName() {
   const hour = new Date().getHours();
@@ -102,23 +103,28 @@ export default function CoachTopbar({ screen, onProfileClick }: { screen: CoachS
         <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">{breadcrumbs[screen]}</p>
         <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{pageTitles[screen]}</h1>
       </div>
-      <div className="flex items-center gap-4">
-        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 font-bold text-xs rounded-full border border-orange-200/50 dark:border-orange-500/20">
-          <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+      <div className="flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold text-xs rounded-full border border-emerald-200/50 dark:border-emerald-500/20">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           Đang trực tuyến • {shift}
         </div>
+        <ThemeToggle className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100/90 hover:bg-indigo-50 dark:bg-slate-800/90 dark:hover:bg-slate-700/90 border border-slate-200/80 hover:border-indigo-200 dark:border-slate-700/80 text-slate-600 hover:text-indigo-600 dark:text-amber-400 dark:hover:text-amber-300 transition-all shadow-2xs cursor-pointer group" />
         <div ref={notificationsRef} className="relative">
           <button
-            className="relative p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition-colors"
+            className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all shadow-2xs relative cursor-pointer group ${
+              isNotificationsOpen
+                ? "bg-emerald-50 dark:bg-emerald-500/20 border-emerald-300 dark:border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
+                : "bg-slate-100/90 hover:bg-emerald-50/80 dark:bg-slate-800/90 dark:hover:bg-slate-700/90 border-slate-200/80 hover:border-emerald-200 dark:border-slate-700/80 text-slate-600 hover:text-emerald-600 dark:text-slate-300 dark:hover:text-emerald-400"
+            }`}
             aria-label="Thông báo"
             aria-expanded={isNotificationsOpen}
             type="button"
             onClick={() => setIsNotificationsOpen((current) => !current)}
           >
-            <IconBell />
+            <Bell className="w-[17px] h-[17px] group-hover:scale-110 transition-transform" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 flex items-center justify-center bg-red-500 text-white text-[9px] font-bold border-2 border-white dark:border-slate-900 rounded-full">
-                {unreadCount > 99 ? "99+" : unreadCount}
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-gradient-to-r from-rose-500 to-red-500 text-white text-[10px] font-black flex items-center justify-center ring-2 ring-white dark:ring-slate-900 shadow-xs">
+                {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
           </button>
@@ -131,7 +137,7 @@ export default function CoachTopbar({ screen, onProfileClick }: { screen: CoachS
                   type="button"
                   onClick={() => void markAllAsRead()}
                   disabled={unreadCount === 0}
-                  className="text-xs font-semibold text-orange-600 hover:text-orange-700 disabled:cursor-default disabled:text-slate-400"
+                  className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 disabled:cursor-default disabled:text-slate-400"
                 >
                   Đánh dấu đã đọc
                 </button>
@@ -158,9 +164,9 @@ export default function CoachTopbar({ screen, onProfileClick }: { screen: CoachS
                           window.location.hash = "#coach-notifications";
                         }
                       }}
-                      className={`flex w-full gap-3 border-b border-slate-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-orange-50/60 dark:border-slate-800 dark:hover:bg-slate-800/70 ${notification.isRead ? "" : "bg-orange-50/60 dark:bg-orange-950/20"}`}
+                      className={`flex w-full gap-3 border-b border-slate-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-emerald-50/60 dark:border-slate-800 dark:hover:bg-slate-800/70 ${notification.isRead ? "" : "bg-emerald-50/60 dark:bg-emerald-950/20"}`}
                     >
-                      <span className={`mt-1.5 size-2 shrink-0 rounded-full ${notification.isRead ? "bg-slate-300" : "bg-orange-500"}`} />
+                      <span className={`mt-1.5 size-2 shrink-0 rounded-full ${notification.isRead ? "bg-slate-300" : "bg-emerald-500"}`} />
                       <span className="min-w-0">
                         <span className="block text-sm font-semibold text-slate-800 dark:text-white">{notification.title}</span>
                         {notification.message && <span className="mt-1 block text-xs leading-5 text-slate-500 dark:text-slate-400">{notification.message}</span>}
@@ -176,7 +182,7 @@ export default function CoachTopbar({ screen, onProfileClick }: { screen: CoachS
         <UserAvatar
           src={avatarUrl}
           name={userName}
-          className="rounded-full size-10 object-cover cursor-pointer border-2 border-slate-200 dark:border-slate-700 hover:border-orange-500 dark:hover:border-orange-500 transition-colors shadow-sm"
+          className="rounded-full size-10 object-cover cursor-pointer border-2 border-slate-200 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-500 transition-colors shadow-sm"
           onClick={() => {
             if (onProfileClick) onProfileClick();
             else window.location.hash = "#coach-profile";

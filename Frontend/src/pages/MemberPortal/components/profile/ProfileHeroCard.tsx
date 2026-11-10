@@ -73,7 +73,7 @@ export const ProfileHeroCard: React.FC<ProfileHeroCardProps> = ({
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="relative group shrink-0">
-                <div className="p-1 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 shadow-md">
+                <div className="p-1 rounded-2xl bg-gradient-to-tr from-emerald-500 to-emerald-400 shadow-md">
                   <UserAvatar
                     src={avatarUrl || profile?.avatarUrl || ""}
                     name={profile?.fullName || fullName || storedUser?.fullName || storedUser?.name || "Hội viên"}
@@ -100,14 +100,14 @@ export const ProfileHeroCard: React.FC<ProfileHeroCardProps> = ({
                   <h1 className="text-xl md:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
                     {profile?.fullName || fullName || storedUser?.fullName || storedUser?.name || "Hội viên"}
                   </h1>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
-                    <Crown className="w-3 h-3 text-amber-500" />
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800">
+                    <Crown className="w-3 h-3 text-amber-500 fill-amber-500" />
                     {currentTier}
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
                   <span>
-                    Mã HV: <strong className="font-mono text-slate-700 dark:text-slate-200">{memberCode}</strong>
+                    Mã HV: <strong className="text-slate-700 dark:text-slate-200">{memberCode}</strong>
                   </span>
                   <span>•</span>
                   <span>
@@ -139,17 +139,17 @@ export const ProfileHeroCard: React.FC<ProfileHeroCardProps> = ({
           </div>
 
           {/* Streak & Training Level Highlight Bar */}
-          <div className="mt-5 p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-emerald-500/10 border border-amber-500/20 dark:border-amber-400/20 flex flex-wrap items-center justify-between gap-3">
+          <div className="mt-5 p-3.5 rounded-2xl bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-sm shadow-amber-500/20 shrink-0">
-                <Flame className="w-5 h-5 animate-pulse" />
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                <Flame className="w-5 h-5 fill-emerald-500/20" />
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm font-black text-slate-900 dark:text-white">
-                    {completedCount > 0 ? `${completedCount} Buổi Tập Đã Hoàn Thành 🔥` : "Hành Trình Rèn Luyện Mới 🌱"}
+                    {completedCount > 0 ? `${completedCount} Buổi Tập Đã Hoàn Thành` : "Hành Trình Rèn Luyện Mới"}
                   </span>
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800">
                     {completedCount >= 50 ? "Bậc Thầy" : completedCount >= 20 ? "Chiến Binh" : completedCount >= 5 ? "Tích Cực" : "Tập Sự"}
                   </span>
                 </div>
@@ -162,16 +162,16 @@ export const ProfileHeroCard: React.FC<ProfileHeroCardProps> = ({
             </div>
 
             {/* Progress mini bar towards next milestone */}
-            <div className="w-full sm:w-44 space-y-1">
+            <div className="w-full sm:w-44 space-y-1.5">
               <div className="flex justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400">
                 <span>Cấp độ tiếp theo</span>
-                <span className="text-amber-600 dark:text-amber-400">
+                <span className="text-emerald-600 dark:text-emerald-400">
                   {completedCount >= 50 ? "50/50 Max" : `${completedCount}/${completedCount < 10 ? 10 : completedCount < 20 ? 20 : 50}`}
                 </span>
               </div>
-              <div className="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden p-0.5">
+              <div className="h-2 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-amber-400 to-emerald-500 rounded-full transition-all duration-700"
+                  className="h-full bg-emerald-500 rounded-full transition-all duration-700"
                   style={{
                     width: `${
                       completedCount >= 50
@@ -191,7 +191,7 @@ export const ProfileHeroCard: React.FC<ProfileHeroCardProps> = ({
 
         {/* Motivation Quote / Target */}
         <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-          <Target className="w-4 h-4 text-emerald-500 shrink-0" />
+          <Target className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
           <div className="leading-relaxed">
             <strong className="text-slate-800 dark:text-slate-200 mr-1">Mục tiêu rèn luyện cá nhân:</strong>
             {profile?.fitnessGoal || fitnessGoal || "Duy trì lối sống năng động và cải thiện sức bền"}
@@ -201,23 +201,23 @@ export const ProfileHeroCard: React.FC<ProfileHeroCardProps> = ({
 
       {/* Right Column (5 cols): Luxury Digital Member Pass (Thẻ Hội Viên Điện Tử Cao Cấp) */}
       <div className="lg:col-span-5 flex flex-col">
-        <div className="h-full rounded-3xl p-6 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white border border-amber-500/30 dark:border-amber-400/20 shadow-xl relative overflow-hidden flex flex-col justify-between group">
+        <div className="h-full rounded-3xl p-6 bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 text-white border border-emerald-500/30 shadow-xl relative overflow-hidden flex flex-col justify-between group">
           {/* Holographic metallic background effect */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-amber-400/15 via-transparent to-transparent pointer-events-none" />
-          <div className="absolute -bottom-16 -right-16 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-400/20 via-transparent to-transparent pointer-events-none" />
+          <div className="absolute -bottom-16 -right-16 w-48 h-48 bg-emerald-500/15 rounded-full blur-2xl pointer-events-none" />
 
           {/* Card Top: Gym Branding & Smart Chip */}
           <div className="relative z-10 flex items-start justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-amber-400 to-amber-600 flex items-center justify-center font-black text-slate-950 text-xs shadow-xs">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-emerald-500 to-emerald-400 flex items-center justify-center font-black text-white text-xs shadow-xs shadow-emerald-500/30">
                   SG
                 </div>
-                <span className="font-extrabold text-xs tracking-wider text-amber-200/90 uppercase">
+                <span className="font-extrabold text-xs tracking-wider text-emerald-300 uppercase">
                   SmartGym Sports Pass
                 </span>
               </div>
-              <span className="text-[10px] text-slate-400 block mt-0.5 font-mono">
+              <span className="text-[10px] text-slate-300/80 block mt-0.5">
                 ALL-ACCESS VIP MEMBERSHIP
               </span>
             </div>
@@ -236,7 +236,7 @@ export const ProfileHeroCard: React.FC<ProfileHeroCardProps> = ({
 
           {/* Card Middle: Embossed Number & Member Name */}
           <div className="relative z-10 my-4 space-y-1.5">
-            <div className="font-mono tracking-[0.25em] text-base md:text-lg font-bold text-amber-100/95 drop-shadow-sm">
+            <div className="tracking-[0.25em] text-base md:text-lg font-bold text-white drop-shadow-sm">
               •••• •••• •••• {cardNumber}
             </div>
             <div className="flex items-end justify-between">
@@ -252,15 +252,15 @@ export const ProfileHeroCard: React.FC<ProfileHeroCardProps> = ({
                 <span className="text-[9px] uppercase tracking-wider text-slate-400 block">
                   Hiệu lực
                 </span>
-                <span className="text-xs font-mono font-bold text-amber-300">
+                <span className="text-xs font-bold text-emerald-300">
                   {hasPaidInvoice ? "Đang hiệu lực" : "Chưa kích hoạt"}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Card Bottom: Mini QR code & Quick checkin button */}
-          <div className="relative z-10 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+          {/* Card Bottom: Member Code badge */}
+          <div className="relative z-10 pt-3 border-t border-white/10 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-[11px] font-semibold text-emerald-400">
@@ -268,19 +268,9 @@ export const ProfileHeroCard: React.FC<ProfileHeroCardProps> = ({
               </span>
             </div>
 
-            {/* Click to open full check-in pass */}
-            <button
-              type="button"
-              onClick={() => {
-                const checkinBtn = document.getElementById("btn-quick-checkin");
-                if (checkinBtn) checkinBtn.click();
-                else window.dispatchEvent(new CustomEvent("open-checkin-modal"));
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-400/15 hover:bg-amber-400/25 border border-amber-400/30 text-amber-200 text-xs font-bold transition-all"
-            >
-              <QrCode className="w-3.5 h-3.5" />
-              Quét Check-in
-            </button>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/10 border border-white/15 text-emerald-300 text-xs font-bold">
+              <span>Mã Check-in: {memberCode}</span>
+            </div>
           </div>
         </div>
       </div>

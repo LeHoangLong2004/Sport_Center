@@ -2,13 +2,14 @@ import React from "react";
 import { Users, ChevronRight } from "lucide-react";
 import type { CoachScreen } from "../../types";
 import type { MockMember, AttendanceRecord } from "../../services/api";
+import { UserAvatar } from "../../../../components/UserAvatar";
 
 const ATTENDANCE_STYLE: Record<string, string> = {
   "chưa điểm danh": "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
   attended: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800",
   no_show: "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300 border border-red-200 dark:border-red-800",
-  late: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800",
-  excused: "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800",
+  late: "bg-slate-50 text-slate-700 dark:bg-slate-950/40 dark:text-slate-300 border border-slate-200 dark:border-slate-800",
+  excused: "bg-slate-50 text-slate-700 dark:bg-slate-950/40 dark:text-slate-300 border border-slate-200 dark:border-slate-800",
 };
 
 const ATTENDANCE_LABEL: Record<string, string> = {
@@ -45,7 +46,7 @@ export const ClassRosterList: React.FC<ClassRosterListProps> = ({
         <button
           type="button"
           onClick={() => navigateTo("attendance", { sessionId })}
-          className="text-xs font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400"
+          className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
         >
           Vào bảng điểm danh →
         </button>
@@ -64,17 +65,17 @@ export const ClassRosterList: React.FC<ClassRosterListProps> = ({
               className="p-4 flex items-center justify-between gap-4 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 cursor-pointer transition-colors group"
             >
               <div className="flex items-center gap-3.5 min-w-0">
-                <img
+                <UserAvatar
                   src={m.avatar}
-                  alt={m.name}
-                  className="w-10 h-10 rounded-full object-cover shrink-0 border border-slate-200 dark:border-slate-700"
+                  name={m.name}
+                  className="w-10 h-10 rounded-full object-cover shrink-0 border border-slate-200 dark:border-slate-700 text-xs"
                 />
                 <div className="min-w-0">
-                  <h3 className="font-semibold text-xs text-slate-900 dark:text-white group-hover:text-orange-600 transition-colors truncate">
+                  <h3 className="font-semibold text-xs text-slate-900 dark:text-white group-hover:text-emerald-600 transition-colors truncate">
                     {m.name}
                   </h3>
                   <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-400">
-                    <span className="font-mono text-slate-600 dark:text-slate-300 font-medium">{m.code}</span>
+                    <span className="text-slate-600 dark:text-slate-300 font-medium">{m.code}</span>
                     <span>•</span>
                     <span>{m.phone || "0901234568"}</span>
                   </div>

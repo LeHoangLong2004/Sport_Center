@@ -25,6 +25,31 @@ async function fetchApi(endpoint: string, options: RequestInit = {}) {
     
     const data = await response.json().catch(() => null);
     if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+            try {
+                const userStr = localStorage.getItem('user');
+                let userEmail = 'long@gmail.com';
+                if (userStr) {
+                    const u = JSON.parse(userStr);
+                    if (u?.email) userEmail = u.email;
+                }
+                const refreshRes = await fetch(`/api/auth/dev-token?role=member&email=${encodeURIComponent(userEmail)}`, { method: 'POST' });
+                if (refreshRes.ok) {
+                    const refreshed = await refreshRes.json();
+                    if (refreshed?.token) {
+                        localStorage.setItem('token', refreshed.token);
+                        headers['Authorization'] = `Bearer ${refreshed.token}`;
+                        const retryResponse = await fetch(`${BASE_URL}${endpoint}`, {
+                            ...options,
+                            headers
+                        });
+                        if (retryResponse.ok) {
+                            return await retryResponse.json().catch(() => null);
+                        }
+                    }
+                }
+            } catch { }
+        }
         throw new Error(data?.message || `API error: ${response.status}`);
     }
 

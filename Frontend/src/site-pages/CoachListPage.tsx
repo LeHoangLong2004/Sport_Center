@@ -80,7 +80,7 @@ export default function HoSoHlvRedesign() {
       <section className="bg-white flex flex-col gap-[32px] px-[80px] py-[80px] w-full">
         <div className="flex flex-col gap-[10px] items-center text-center">
           <h2 className="font-extrabold text-[#0f172a] text-[32px]">Danh sách huấn luyện viên</h2>
-          <div className="bg-[#2563eb] h-[4px] rounded-[2px] w-[64px]" />
+          <div className="bg-emerald-600 h-[4px] rounded-[2px] w-[64px]" />
         </div>
         {error ? <p className="text-center text-[#dc2626] text-[14px]">{error}</p> : null}
         {!isLoading && !error && coaches.length === 0 ? (
@@ -106,7 +106,7 @@ export default function HoSoHlvRedesign() {
                 </div>
                 <div className="flex flex-col gap-[10px] p-[20px]">
                   <h3 className="font-extrabold text-[#0f172a] text-[18px]">{coach.fullName || "Huấn luyện viên"}</h3>
-                  <p className="font-semibold text-[#2563eb] text-[14px]">{coach.specialty || "Chưa cập nhật chuyên môn"}</p>
+                  <p className="font-semibold text-slate-800 text-[14px]">{coach.specialty || "Chưa cập nhật chuyên môn"}</p>
                   <p className="text-[#64748b] text-[13px] leading-relaxed min-h-[58px]">
                     {coach.bio || "Thông tin huấn luyện viên đang được cập nhật từ hệ thống."}
                   </p>

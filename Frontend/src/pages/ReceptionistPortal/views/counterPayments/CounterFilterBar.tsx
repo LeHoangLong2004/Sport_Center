@@ -29,7 +29,7 @@ export function CounterFilterBar({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Tìm theo SĐT, Tên, Email hoặc Mã đơn..."
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
+          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
         />
         {search && (
           <button
@@ -49,7 +49,7 @@ export function CounterFilterBar({
             onClick={() => onStatusFilterChange("pending")}
             className={`px-3 py-1.5 rounded-lg transition-all ${
               statusFilter === "pending"
-                ? "bg-white dark:bg-slate-800 text-amber-700 dark:text-amber-300 shadow-sm"
+                ? "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-sm"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
             }`}
           >
@@ -71,7 +71,7 @@ export function CounterFilterBar({
             onClick={() => onStatusFilterChange("all")}
             className={`px-3 py-1.5 rounded-lg transition-all ${
               statusFilter === "all"
-                ? "bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-300 shadow-sm"
+                ? "bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 shadow-sm"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
             }`}
           >

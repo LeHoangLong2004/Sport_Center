@@ -34,7 +34,7 @@ export const PtBookingModal: React.FC<PtBookingModalProps> = ({
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-xl overflow-hidden max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
         <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
               Đặt lịch kèm riêng 1-1
             </span>
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
@@ -52,10 +52,10 @@ export const PtBookingModal: React.FC<PtBookingModalProps> = ({
 
         <form onSubmit={onConfirmPtBooking} className="flex-1 flex flex-col overflow-hidden">
           <div className="p-5 overflow-y-auto space-y-4 text-xs">
-            <div className="p-3.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-slate-800 dark:text-slate-200 space-y-1">
+            <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-slate-800 dark:text-slate-200 space-y-1">
               <div className="flex justify-between font-semibold">
                 <span>Thời gian:</span>
-                <span className="text-purple-700 dark:text-purple-300">
+                <span className="text-slate-700 dark:text-slate-300">
                   {bookingPtSlot.startTime} - {bookingPtSlot.endTime} • Ngày {bookingPtSlot.date}
                 </span>
               </div>
@@ -106,7 +106,7 @@ export const PtBookingModal: React.FC<PtBookingModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-5 py-2 font-semibold text-white bg-purple-600 hover:bg-purple-500 rounded-lg shadow-sm transition-colors"
+              className="px-5 py-2 font-semibold text-white bg-slate-600 hover:bg-slate-500 rounded-lg shadow-sm transition-colors"
             >
               Xác nhận đặt lịch PT
             </button>

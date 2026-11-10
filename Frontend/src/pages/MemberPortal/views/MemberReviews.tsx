@@ -182,7 +182,7 @@ export default function MemberReviews({ onNavigate: _onNavigate }: Props) {
       {feedback && (
         <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-semibold flex items-center justify-between shadow-md">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-5 h-5 shrink-0" />
             <span>{feedback}</span>
           </div>
           <button onClick={() => setFeedback(null)} className="text-emerald-600 cursor-pointer">
@@ -203,7 +203,7 @@ export default function MemberReviews({ onNavigate: _onNavigate }: Props) {
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-amber-500" />
+            <Sparkles className="w-4 h-4 text-slate-500" />
             <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
               Ca tập đã tham gia cần bạn gửi cảm nhận ({availableSessions.length})
             </h3>

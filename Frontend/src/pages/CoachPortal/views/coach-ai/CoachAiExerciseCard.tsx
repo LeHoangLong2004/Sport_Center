@@ -25,7 +25,7 @@ export const CoachAiExerciseCard: React.FC<CoachAiExerciseCardProps> = ({
     <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900/60 shadow-xs flex flex-col gap-3 transition-all hover:border-slate-300 dark:hover:border-slate-600">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2.5 flex-1 min-w-0">
-          <span className="w-6 h-6 rounded-lg bg-orange-100 dark:bg-orange-900/60 text-orange-700 dark:text-orange-300 font-bold text-xs flex items-center justify-center shrink-0">
+          <span className="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center justify-center shrink-0">
             {index + 1}
           </span>
           <input
@@ -33,7 +33,7 @@ export const CoachAiExerciseCard: React.FC<CoachAiExerciseCardProps> = ({
             value={exercise.name}
             disabled={!isDraft}
             onChange={(e) => onUpdate({ name: e.target.value })}
-            className="text-sm font-bold text-slate-900 dark:text-white bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-orange-500 focus:outline-none flex-1 truncate"
+            className="text-sm font-bold text-slate-900 dark:text-white bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-emerald-500 focus:outline-none flex-1 truncate"
             placeholder="Tên bài tập"
           />
         </div>
@@ -80,7 +80,7 @@ export const CoachAiExerciseCard: React.FC<CoachAiExerciseCardProps> = ({
             disabled={!isDraft}
             onChange={(e) => onUpdate({ sets: e.target.value })}
             placeholder="VD: 3 hoặc 4"
-            className="w-full mt-0.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-orange-500 focus:outline-none"
+            className="w-full mt-0.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
           />
         </div>
 
@@ -92,7 +92,7 @@ export const CoachAiExerciseCard: React.FC<CoachAiExerciseCardProps> = ({
             disabled={!isDraft}
             onChange={(e) => onUpdate({ reps: e.target.value })}
             placeholder="VD: 12-15 lần"
-            className="w-full mt-0.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-orange-500 focus:outline-none"
+            className="w-full mt-0.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
           />
         </div>
 
@@ -104,7 +104,7 @@ export const CoachAiExerciseCard: React.FC<CoachAiExerciseCardProps> = ({
             disabled={!isDraft}
             onChange={(e) => onUpdate({ duration: e.target.value })}
             placeholder="VD: 45 giây"
-            className="w-full mt-0.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-orange-500 focus:outline-none"
+            className="w-full mt-0.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
           />
         </div>
 
@@ -116,7 +116,7 @@ export const CoachAiExerciseCard: React.FC<CoachAiExerciseCardProps> = ({
             disabled={!isDraft}
             onChange={(e) => onUpdate({ rest: e.target.value })}
             placeholder="VD: 60s"
-            className="w-full mt-0.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-orange-500 focus:outline-none"
+            className="w-full mt-0.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
           />
         </div>
       </div>
@@ -129,7 +129,7 @@ export const CoachAiExerciseCard: React.FC<CoachAiExerciseCardProps> = ({
           disabled={!isDraft}
           onChange={(e) => onUpdate({ note: e.target.value })}
           placeholder="Lưu ý kỹ thuật: VD: Gồng bụng, gót chạm sàn, thở đều..."
-          className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-orange-500 focus:outline-none italic placeholder:not-italic"
+          className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-emerald-500 focus:outline-none italic placeholder:not-italic"
         />
       </div>
     </div>

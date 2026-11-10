@@ -31,13 +31,13 @@ export const BookingClassHeader: React.FC<Props> = ({
           <CoachAvatar
             src={classToBook.coachAvatar}
             name={classToBook.coachName}
-            className="w-12 h-12 rounded-full border-2 border-teal-500 shrink-0"
+            className="w-12 h-12 rounded-full border-2 border-emerald-500 shrink-0"
           />
           <div>
             <p className="font-extrabold text-sm text-slate-900 dark:text-white">
               {classToBook.name}
             </p>
-            <p className="text-xs text-teal-600 dark:text-teal-400 font-semibold">
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
               HLV phụ trách: {classToBook.coachName}
             </p>
             <p className="text-[11px] text-slate-500 mt-0.5">
@@ -86,7 +86,7 @@ export const BookingClassHeader: React.FC<Props> = ({
             </span>
           )}
         </div>
-        <div className="flex justify-between items-center pt-2.5 border-t border-teal-200 dark:border-slate-700 text-sm">
+        <div className="flex justify-between items-center pt-2.5 border-t border-emerald-200 dark:border-slate-700 text-sm">
           <span className="font-extrabold text-slate-900 dark:text-white">
             Tổng tiền thanh toán:
           </span>

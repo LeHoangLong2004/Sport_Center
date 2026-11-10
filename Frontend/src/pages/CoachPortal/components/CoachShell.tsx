@@ -15,7 +15,7 @@ export default function CoachShell({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex w-full h-screen overflow-hidden bg-slate-50 dark:bg-[#0f172a] transition-colors duration-300 font-sans text-slate-900 dark:text-white selection:bg-orange-500 selection:text-white">
+    <div className="flex w-full h-screen overflow-hidden bg-slate-50 dark:bg-[#0f172a] transition-colors duration-300 font-sans text-slate-900 dark:text-white selection:bg-emerald-500 selection:text-white">
       <CoachSidebar screen={screen} onNavigate={onNavigate} onLogout={onExit} />
       <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden">
         <CoachTopbar screen={screen} onProfileClick={() => onNavigate("profile")} />

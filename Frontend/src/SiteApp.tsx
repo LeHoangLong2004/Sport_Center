@@ -251,7 +251,7 @@ export default function SiteApp({
 
       {notice && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-full shadow-2xl shadow-slate-900/20 flex items-center gap-3 z-50 animate-[fadeUp_0.3s_ease-out]">
-          <span className="bg-teal-500 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shrink-0">
+          <span className="bg-emerald-500 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shrink-0">
             ✓
           </span>
           <span className="text-sm font-medium">{notice}</span>

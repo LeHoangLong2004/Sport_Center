@@ -78,7 +78,7 @@ export const AppointmentCustomerSelector: React.FC<AppointmentCustomerSelectorPr
             }}
             className={`px-2 py-0.5 rounded transition cursor-pointer ${
               customerMode === "member"
-                ? "bg-white text-blue-700 shadow-2xs"
+                ? "bg-white text-slate-700 shadow-2xs"
                 : "text-slate-500 hover:text-slate-800"
             }`}
           >
@@ -92,7 +92,7 @@ export const AppointmentCustomerSelector: React.FC<AppointmentCustomerSelectorPr
             }}
             className={`px-2 py-0.5 rounded transition cursor-pointer ${
               customerMode === "guest"
-                ? "bg-white text-blue-700 shadow-2xs"
+                ? "bg-white text-slate-700 shadow-2xs"
                 : "text-slate-500 hover:text-slate-800"
             }`}
           >
@@ -104,9 +104,9 @@ export const AppointmentCustomerSelector: React.FC<AppointmentCustomerSelectorPr
       {customerMode === "member" ? (
         <div className="relative" ref={memberDropdownRef}>
           {selectedMember ? (
-            <div className="flex items-center justify-between p-2 bg-purple-50/80 border border-purple-200 rounded text-xs">
+            <div className="flex items-center justify-between p-2 bg-emerald-50/80 border border-emerald-200 rounded text-xs">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-purple-600 text-white font-bold text-[10px] flex items-center justify-center">
+                <div className="w-6 h-6 rounded-full bg-emerald-600 text-white font-bold text-[10px] flex items-center justify-center">
                   {(selectedMember.fullName || selectedMember.name || "M")
                     .slice(0, 2)
                     .toUpperCase()}
@@ -124,7 +124,7 @@ export const AppointmentCustomerSelector: React.FC<AppointmentCustomerSelectorPr
                   setSelectedMember(null);
                   setMemberSearch("");
                 }}
-                className="text-[11px] font-semibold text-purple-600 hover:underline cursor-pointer"
+                className="text-[11px] font-semibold text-emerald-600 hover:underline cursor-pointer"
               >
                 Đổi
               </button>
@@ -142,7 +142,7 @@ export const AppointmentCustomerSelector: React.FC<AppointmentCustomerSelectorPr
                     setMemberSearch(e.target.value);
                     setShowMemberDropdown(true);
                   }}
-                  className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-blue-500"
+                  className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-slate-500"
                 />
               </div>
 
@@ -162,7 +162,7 @@ export const AppointmentCustomerSelector: React.FC<AppointmentCustomerSelectorPr
                           setSelectedMember(m);
                           setShowMemberDropdown(false);
                         }}
-                        className="w-full flex items-center justify-between p-2 hover:bg-blue-50 text-left text-xs transition cursor-pointer"
+                        className="w-full flex items-center justify-between p-2 hover:bg-slate-50 text-left text-xs transition cursor-pointer"
                       >
                         <span className="font-semibold text-slate-800">
                           {m.fullName || m.name}
@@ -186,7 +186,7 @@ export const AppointmentCustomerSelector: React.FC<AppointmentCustomerSelectorPr
             placeholder="Họ tên khách *"
             value={guestName}
             onChange={(e) => setGuestName(e.target.value)}
-            className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-blue-500"
+            className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-slate-500"
           />
           <input
             type="tel"
@@ -194,7 +194,7 @@ export const AppointmentCustomerSelector: React.FC<AppointmentCustomerSelectorPr
             placeholder="Số điện thoại *"
             value={guestPhone}
             onChange={(e) => setGuestPhone(e.target.value)}
-            className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-blue-500"
+            className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-slate-500"
           />
         </div>
       )}

@@ -47,6 +47,7 @@ export default function MemberBooking({ onNavigate }: Props) {
     findActiveBooking,
     isBooked,
     myActiveClasses,
+    myUpcomingClasses,
   } = useMemberBookingData();
 
   const {
@@ -154,9 +155,9 @@ export default function MemberBooking({ onNavigate }: Props) {
         >
           <div className="flex items-center gap-2.5">
             {feedback.type === "error" ? (
-              <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
+              <AlertCircle className="w-5 h-5 shrink-0" />
             ) : (
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <CheckCircle2 className="w-5 h-5 shrink-0" />
             )}
             <span>{feedback.message}</span>
           </div>
@@ -172,7 +173,7 @@ export default function MemberBooking({ onNavigate }: Props) {
         setActiveTab={setActiveTab}
         groupClassesCount={groupClasses.length}
         ptSlotsCount={ptSlots.length}
-        myActiveClassesCount={myActiveClasses.length}
+        myActiveClassesCount={myUpcomingClasses.length}
         coaches={coaches}
         selectedCoachId={selectedCoachId}
         setSelectedCoachId={setSelectedCoachId}
@@ -217,6 +218,7 @@ export default function MemberBooking({ onNavigate }: Props) {
       {activeTab === "my_classes" && (
         <MyClassesTab
           myActiveClasses={myActiveClasses}
+          mySessions={mySessions}
           getBookingStatus={getBookingStatus}
           onStartChatWithCoach={handleStartChatWithCoach}
           onCancelBooking={setCancelTarget}

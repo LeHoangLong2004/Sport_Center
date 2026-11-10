@@ -23,7 +23,7 @@ export function ProductGrid({
   if (loading) {
     return (
       <div className="p-16 text-center text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-rose-500 mb-3"></div>
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mb-3"></div>
         <p className="text-xs">Đang tải danh sách sản phẩm...</p>
       </div>
     );
@@ -40,7 +40,7 @@ export function ProductGrid({
         <button
           type="button"
           onClick={onOpenCreateModal}
-          className="mt-4 px-4 py-2 bg-rose-600 text-white text-xs font-bold rounded-xl hover:bg-rose-700 transition cursor-pointer"
+          className="mt-4 px-4 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition cursor-pointer"
         >
           + Thêm sản phẩm ngay
         </button>

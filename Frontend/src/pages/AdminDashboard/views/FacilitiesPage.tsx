@@ -222,26 +222,26 @@ export function FacilitiesPage() {
             onClick={() => setActiveTab('sport')}
             className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${
               activeTab === 'sport'
-                ? 'bg-rose-50 text-rose-600 shadow-sm ring-1 ring-rose-200'
+                ? 'bg-emerald-50 text-emerald-600 shadow-sm ring-1 ring-emerald-200'
                 : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
             }`}
           >
             <Dumbbell className="size-4" />
             Bộ môn
-            <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-600">{sports.length}</span>
+            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-600">{sports.length}</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('facility')}
             className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${
               activeTab === 'facility'
-                ? 'bg-blue-50 text-blue-600 shadow-sm ring-1 ring-blue-200'
+                ? 'bg-slate-50 text-slate-600 shadow-sm ring-1 ring-slate-200'
                 : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
             }`}
           >
             <Building2 className="size-4" />
             Phòng tập
-            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-600">{facilities.length}</span>
+            <span className="rounded-full bg-slate-50 px-2 py-0.5 text-xs font-bold text-slate-600">{facilities.length}</span>
           </button>
         </div>
 

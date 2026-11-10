@@ -4,7 +4,7 @@ import { useApiResource } from '../../../hooks/useApiResource';
 import { type ExpiringMemberResponse, type MemberRetentionResponse, type RevenueByPackageResponse } from '../../../hooks/flow3Api';
 import { formatDate } from '../../../hooks/apiClient';
 
-const DONUT_COLORS = ['#e11d48', '#14b8a6', '#f97316', '#f59e0b', '#94a3b8'];
+const DONUT_COLORS = ['#059669', '#10b981', '#334155', '#64748b', '#94a3b8'];
 const CIRCUMFERENCE = 2 * Math.PI * 50;
 
 export default function ReportsTabMembers() {
@@ -55,7 +55,7 @@ export default function ReportsTabMembers() {
             </div>
             <div className="bg-[#f8fafc] flex flex-col gap-1 p-5 rounded-xl">
               <span className="text-[#64748b] text-[12px]">Đã gia hạn</span>
-              <span className="font-extrabold text-[#15803d] text-[32px]">{retention.data.renewedMembers}</span>
+              <span className="font-extrabold text-emerald-700 text-[32px]">{retention.data.renewedMembers}</span>
               <span className="text-[#64748b] text-[12px]">mua kỳ tiếp theo</span>
             </div>
           </div>
@@ -82,7 +82,7 @@ export default function ReportsTabMembers() {
               <span className="font-semibold text-[#0f172a] text-sm flex-1 truncate">{m.memberName ?? "Chưa xác định"}</span>
               <span className="text-[#0f172a] text-sm w-[150px] truncate">{m.packageName ?? "--"}</span>
               <span className="text-[#64748b] text-[13px] w-[120px]">{formatDate(m.expireDate)}</span>
-              <span className="text-[#b45309] text-[13px] w-[90px]">{m.daysLeft} ngày</span>
+              <span className="text-slate-700 text-[13px] w-[90px]">{m.daysLeft} ngày</span>
             </div>
           ))}
         </div>

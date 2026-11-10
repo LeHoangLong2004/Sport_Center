@@ -83,10 +83,10 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
             colorText = "text-gray-500 line-through";
           } else {
             const colorOptions = [
-              { bg: "bg-blue-50 border-blue-200 border-l-blue-500", text: "text-blue-700" },
+              { bg: "bg-slate-50 border-slate-200 border-l-blue-500", text: "text-slate-700" },
               { bg: "bg-emerald-50 border-emerald-200 border-l-emerald-500", text: "text-emerald-700" },
-              { bg: "bg-violet-50 border-violet-200 border-l-violet-500", text: "text-violet-700" },
-              { bg: "bg-orange-50 border-orange-200 border-l-orange-500", text: "text-orange-700" },
+              { bg: "bg-slate-50 border-slate-200 border-l-violet-500", text: "text-slate-700" },
+              { bg: "bg-slate-50 border-slate-200 border-l-orange-500", text: "text-slate-700" },
               { bg: "bg-rose-50 border-rose-200 border-l-rose-500", text: "text-rose-700" },
             ];
             const color = colorOptions[i % colorOptions.length];
@@ -195,7 +195,10 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
   weekEnd.setHours(23, 59, 59, 999);
 
   let classesThisWeek = classes.filter(
-    (c) => c.rawStart >= currentWeekStart && c.rawStart <= weekEnd,
+    (c) =>
+      c.rawStart >= currentWeekStart &&
+      c.rawStart <= weekEnd &&
+      (c.approvalStatus === "approved" || !c.approvalStatus),
   );
 
   if (searchQuery.trim()) {

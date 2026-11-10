@@ -31,7 +31,7 @@ namespace SmartGym.Api.Endpoints
                     var coachProfileId = await CoachProfileResolver.FindByUserIdAsync(db, coachId);
                     var coachKey = coachProfileId ?? coachId;
                     var classes = await db.Database.SqlQueryRaw<ClassSqlRawModel>(
-                        "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status FROM classes WHERE coach_id = {0} OR coach_id = {1}",
+                        "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status FROM classes WHERE (coach_id = {0} OR coach_id = {1}) AND (approval_status = 'approved' OR approval_status IS NULL)",
                         coachKey,
                         coachId).ToListAsync();
                     var classIds = classes.Select(c => c.Id).ToHashSet();
@@ -86,7 +86,7 @@ namespace SmartGym.Api.Endpoints
                         ).FirstOrDefaultAsync();
 
                         var query = db.Database.SqlQueryRaw<ClassSqlRawModel>(
-                            "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status FROM classes WHERE coach_id = {0} OR coach_id = {1}",
+                            "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status FROM classes WHERE (coach_id = {0} OR coach_id = {1}) AND (approval_status = 'approved' OR approval_status IS NULL)",
                             coachProfileKey,
                             coachUserId
                         );

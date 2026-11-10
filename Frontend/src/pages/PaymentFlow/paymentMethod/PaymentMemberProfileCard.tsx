@@ -73,10 +73,10 @@ export function PaymentMemberProfileCard({
     <div className="bg-white border border-[#e2e8f0] rounded-xl p-3 px-4 w-full shadow-2xs transition-all">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="size-6 rounded-full bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center font-bold text-xs">
+          <div className="size-6 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center font-bold text-xs">
             👤
           </div>
-          <h2 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-xs md:text-sm">
+          <h2 className="font-bold text-[#0f172a] text-xs md:text-sm">
             {isProduct ? "Thông tin người nhận đơn hàng" : "Thông tin hội viên nhận gói"}
           </h2>
         </div>
@@ -115,7 +115,7 @@ export function PaymentMemberProfileCard({
             <span className="text-slate-900 font-bold">
               {formData?.phone || "Chưa cập nhật"}
             </span>
-            <span className="text-[10px] text-teal-700 bg-teal-50 px-1 py-0.5 rounded font-medium">Nhận SMS</span>
+            <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded font-medium">Nhận SMS</span>
           </div>
 
           {!isProduct && (
@@ -140,7 +140,7 @@ export function PaymentMemberProfileCard({
                 type="text"
                 value={editForm.fullName}
                 onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
-                className="px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-teal-500 outline-none text-xs text-slate-900 font-medium"
+                className="px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-emerald-500 outline-none text-xs text-slate-900 font-medium"
               />
             </div>
 
@@ -150,7 +150,7 @@ export function PaymentMemberProfileCard({
                 type="text"
                 value={editForm.phone}
                 onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                className="px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-teal-500 outline-none text-xs text-slate-900 font-medium"
+                className="px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-emerald-500 outline-none text-xs text-slate-900 font-medium"
               />
             </div>
 
@@ -160,7 +160,7 @@ export function PaymentMemberProfileCard({
                 type="email"
                 value={editForm.email}
                 onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                className="px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-teal-500 outline-none text-xs text-slate-900 font-medium"
+                className="px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-emerald-500 outline-none text-xs text-slate-900 font-medium"
               />
             </div>
 
@@ -170,7 +170,7 @@ export function PaymentMemberProfileCard({
                 <select
                   value={editForm.branch}
                   onChange={(e) => setEditForm({ ...editForm, branch: e.target.value })}
-                  className="px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-teal-500 outline-none text-xs text-slate-900 font-medium bg-white"
+                  className="px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-emerald-500 outline-none text-xs text-slate-900 font-medium bg-white"
                 >
                   <option value="Chi nhánh Quận 1 - Flagship Center">Q1 - Flagship</option>
                   <option value="Chi nhánh Quận 7 - Riverside Club">Q7 - Riverside</option>
@@ -191,7 +191,7 @@ export function PaymentMemberProfileCard({
             <button
               type="button"
               onClick={handleSaveProfile}
-              className="px-3.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-bold shadow-2xs cursor-pointer"
+              className="px-3.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold shadow-2xs cursor-pointer"
             >
               Lưu thông tin
             </button>
