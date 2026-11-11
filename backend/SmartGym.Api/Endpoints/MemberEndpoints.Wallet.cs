@@ -806,7 +806,11 @@ namespace SmartGym.Api.Endpoints
                                                 });
                                             }
 
-                                            var topupAmount = txAmount > 0 ? txAmount : (amount ?? 100000m);
+                                            var topupAmount = txAmount > 0 ? txAmount : (amount ?? 0m);
+                                            if (topupAmount <= 0)
+                                            {
+                                                return Results.Ok(new { received = false, message = "Không xác định được số tiền giao dịch." });
+                                            }
                                             decimal newBalance;
 
                                             if (memberGuid.HasValue)
@@ -930,7 +934,15 @@ namespace SmartGym.Api.Endpoints
                 }
 
                 var memberGuid = await ResolveMemberGuidAsync(context, db, rawUserId);
-                var amount = request.Amount > 0 ? request.Amount : 100000m;
+                if (request.Amount <= 0)
+                {
+                    return Results.BadRequest(new { message = "Số tiền mô phỏng phải lớn hơn 0." });
+                }
+                if (request.Amount > 100000000m)
+                {
+                    return Results.BadRequest(new { message = "Số tiền mô phỏng không được vượt quá 100.000.000 đ." });
+                }
+                var amount = request.Amount;
                 var note = string.IsNullOrWhiteSpace(request.Note) ? "NAPVI 5667" : request.Note;
                 var txId = $"SEPAY-SIM-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
 
@@ -998,6 +1010,50 @@ namespace SmartGym.Api.Endpoints
             })
             .WithTags("Member Portal")
             .WithSummary("Mô phỏng Webhook báo có tiền dành cho demo");
+
+            // 7. POST /api/member/wallet/reset - Đặt lại hoặc cân chỉnh số dư ví (Dành cho kiểm thử/đối soát)
+            wallet.MapPost("/reset", async (HttpContext context, [FromQuery] decimal? newBalance, SmartGymDbContext db) =>
+            {
+                var rawUserId = GetUserId(context);
+                if (string.IsNullOrWhiteSpace(rawUserId))
+                {
+                    rawUserId = context.Request.Query["userId"].FirstOrDefault()
+                          ?? context.Request.Headers["X-User-Id"].FirstOrDefault()
+                          ?? "m-default";
+                }
+
+                var memberGuid = await ResolveMemberGuidAsync(context, db, rawUserId);
+                var targetBal = Math.Max(0m, newBalance ?? 0m);
+
+                if (memberGuid.HasValue)
+                {
+                    try
+                    {
+                        await db.Database.ExecuteSqlInterpolatedAsync($@"
+                            INSERT INTO member_wallet_balances (user_id, balance, last_updated_at)
+                            VALUES ({memberGuid.Value}, {targetBal}, now())
+                            ON CONFLICT (user_id) 
+                            DO UPDATE SET balance = {targetBal}, last_updated_at = now();
+                        ");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[Wallet DB Reset Warning] {ex.Message}");
+                    }
+                }
+
+                _memberWallets[rawUserId] = targetBal;
+                if (memberGuid.HasValue) _memberWallets[memberGuid.Value.ToString()] = targetBal;
+
+                return Results.Ok(new
+                {
+                    success = true,
+                    balance = targetBal,
+                    message = $"Đã cập nhật lại số dư ví về {targetBal:N0} đ."
+                });
+            })
+            .WithTags("Member Portal")
+            .WithSummary("Đặt lại hoặc cân chỉnh số dư ví hội viên");
         }
 
         /// <summary>

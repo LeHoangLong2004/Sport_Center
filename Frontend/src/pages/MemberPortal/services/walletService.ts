@@ -245,8 +245,17 @@ export const WalletService = {
               };
             }
 
-            // Đã nhận được tiền qua webhook! Tự động hoàn tất nạp tiền vào ví của hội viên
-            const topUpAmount = Number(dataMemo.amount || amount || 0);
+            // Đã nhận được tiền qua webhook! Chỉ cộng đúng số tiền thực nhận, và phải khớp số tiền đã chọn
+            const topUpAmount = Number(dataMemo.amount || 0);
+            if (!(topUpAmount > 0)) {
+              return { received: false, message: "Chưa xác định được số tiền thực nhận từ ngân hàng." };
+            }
+            if (amount && amount > 0 && Math.abs(topUpAmount - amount) >= 1) {
+              return {
+                received: false,
+                message: `Ngân hàng ghi nhận ${topUpAmount.toLocaleString("vi-VN")} đ nhưng bạn đang nạp ${amount.toLocaleString("vi-VN")} đ. Vui lòng chuyển đúng số tiền hiển thị trên mã QR.`,
+              };
+            }
             const sepayTxId = dataMemo.transactionId ? `SEPAY-${dataMemo.transactionId}` : undefined;
             const topUpRes = await this.topUp(
               topUpAmount,
@@ -509,5 +518,44 @@ export const WalletService = {
     };
     this.saveLocalWallet(updated, targetUserId);
     return { success: true, newBalance };
+  },
+
+  /**
+   * Đặt lại hoặc cân chỉnh số dư ví hội viên (Hỗ trợ demo/đối soát)
+   */
+  async resetBalance(newBalance: number = 0, userId?: string): Promise<{ success: boolean; balance: number }> {
+    const user = getStoredUser();
+    const tokenUid = getUserIdFromToken();
+    const targetUserId = userId || user?.id || user?.userId || user?.memberId || user?.email || tokenUid;
+    try {
+      const qUser = targetUserId ? `userId=${encodeURIComponent(targetUserId)}` : "";
+      const qBal = `newBalance=${encodeURIComponent(newBalance)}`;
+      const query = [qUser, qBal].filter(Boolean).join("&");
+      const res = await fetch(`/api/member/wallet/reset?${query}`, {
+        method: "POST",
+        headers: getAuthHeaders(targetUserId),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const current = this.getLocalWallet(targetUserId);
+        const updated: MemberWalletData = {
+          balance: Number(data.balance) || 0,
+          currency: "VND",
+          transactions: current.transactions,
+        };
+        this.saveLocalWallet(updated, targetUserId);
+        return { success: true, balance: updated.balance };
+      }
+    } catch (e) {
+      console.warn("Backend reset failed, updating local wallet:", e);
+    }
+    const current = this.getLocalWallet(targetUserId);
+    const updated: MemberWalletData = {
+      balance: newBalance,
+      currency: "VND",
+      transactions: current.transactions,
+    };
+    this.saveLocalWallet(updated, targetUserId);
+    return { success: true, balance: newBalance };
   },
 };
