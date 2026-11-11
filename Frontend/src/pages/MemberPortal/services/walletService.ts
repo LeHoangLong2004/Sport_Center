@@ -103,7 +103,8 @@ export const WalletService = {
     amount: number,
     method: string = "VietQR",
     note: string = "Nạp tiền vào tài khoản",
-    userId?: string
+    userId?: string,
+    txId?: string
   ): Promise<{ success: boolean; newBalance: number; transaction: WalletTransaction }> {
     const user = getStoredUser();
     const targetUserId = userId || user?.id || user?.email;
@@ -112,11 +113,17 @@ export const WalletService = {
       const res = await fetch(`/api/member/wallet/topup${queryParam}`, {
         method: "POST",
         headers: getAuthHeaders(targetUserId),
-        body: JSON.stringify({ amount, method, note }),
+        body: JSON.stringify({ amount, method, note, ...(txId ? { id: txId } : {}) }),
       });
       if (res.ok) {
         const result = await res.json();
         const newBalance = Number(result.balance) || 0;
+        if (result.duplicate) {
+          // Giao dịch đã được cộng trước đó: chỉ đồng bộ số dư, không thêm giao dịch mới
+          const cur = this.getLocalWallet(targetUserId);
+          this.saveLocalWallet({ ...cur, balance: newBalance }, targetUserId);
+          return { success: true, newBalance, transaction: result.transaction };
+        }
         const current = this.getLocalWallet(targetUserId);
         const updated: MemberWalletData = {
           balance: newBalance,
@@ -240,11 +247,13 @@ export const WalletService = {
 
             // Đã nhận được tiền qua webhook! Tự động hoàn tất nạp tiền vào ví của hội viên
             const topUpAmount = Number(dataMemo.amount || amount || 0);
+            const sepayTxId = dataMemo.transactionId ? `SEPAY-${dataMemo.transactionId}` : undefined;
             const topUpRes = await this.topUp(
               topUpAmount,
               "Chuyển khoản SePay",
               `Nạp tiền qua SePay: ${cleanMemo}`,
-              targetUserId
+              targetUserId,
+              sepayTxId
             );
             return {
               received: true,
