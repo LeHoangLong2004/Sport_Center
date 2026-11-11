@@ -122,7 +122,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
 
     const interval = setInterval(async () => {
       try {
-        const res = await WalletService.checkTransfer(bookingMemo, classPrice);
+        const res = await WalletService.checkServicePayment(bookingMemo, classPrice);
         if (!isCancelled && res.received) {
           clearInterval(interval);
           setIsPaid(true);
@@ -155,7 +155,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
     setIsCheckingPayment(true);
     setCheckStatusText("Đang kiểm tra biến động số dư từ ngân hàng qua SePay...");
     try {
-      const res = await WalletService.checkTransfer(bookingMemo, classPrice, undefined, false);
+      const res = await WalletService.checkServicePayment(bookingMemo, classPrice);
       if (res.received) {
         setIsPaid(true);
         setCheckStatusText(null);

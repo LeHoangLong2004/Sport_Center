@@ -308,8 +308,6 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager
 
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Tên lớp học</label>
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Tên lớp học</label>
               <input
                 required
                 type="text"
@@ -325,7 +323,6 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
                 placeholder="VD: Yoga thư giãn"
               />
-            </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
