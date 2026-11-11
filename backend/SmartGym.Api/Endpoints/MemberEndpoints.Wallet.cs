@@ -724,6 +724,18 @@ namespace SmartGym.Api.Endpoints
 
                                         if (!alreadyProcessed)
                                         {
+                                            // An toàn: Không cộng tiền vào ví nếu đây là đơn thanh toán đặt lớp học (DATLOP)
+                                            bool isClassBooking = cleanMemo.Contains("DATLOP", StringComparison.OrdinalIgnoreCase) || content.Contains("DATLOP", StringComparison.OrdinalIgnoreCase);
+                                            if (isClassBooking)
+                                            {
+                                                return Results.Ok(new
+                                                {
+                                                    received = true,
+                                                    message = "Đã nhận được tiền chuyển khoản đặt lớp học từ ngân hàng!",
+                                                    isLiveBank = true
+                                                });
+                                            }
+
                                             var topupAmount = txAmount > 0 ? txAmount : (amount ?? 100000m);
                                             decimal newBalance;
 

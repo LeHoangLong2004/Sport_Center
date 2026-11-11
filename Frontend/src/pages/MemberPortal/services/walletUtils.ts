@@ -87,6 +87,8 @@ export function isMockTransaction(tx: WalletTransaction): boolean {
   if (/^WTX-\d{8}-001$/.test(tx.id) && tx.amount === 500000) return true;
   if (tx.note?.includes("khả dụng ban đầu")) return true;
   if (tx.amount === 500000 && tx.note === "Nạp tiền ví hội viên SportCenter") return true;
+  // Loại bỏ các giao dịch nạp nhầm từ luồng đặt lịch lớp học (DATLOP)
+  if (tx.type === "topup" && tx.note?.includes("DATLOP")) return true;
   return false;
 }
 
@@ -98,25 +100,27 @@ export function sanitizeWalletData(raw: any): MemberWalletData {
   const rawTransactions: WalletTransaction[] = Array.isArray(raw.transactions) ? raw.transactions : [];
   const cleanTransactions = rawTransactions.filter(tx => !isMockTransaction(tx));
 
-  // Ưu tiên số dư khả dụng thực tế từ server (raw.balance)
+  let calculatedBalance = 0;
+  for (const tx of cleanTransactions) {
+    const amt = Number(tx.amount) || 0;
+    const isCompleted = tx.status === "completed" || (!tx.status && tx.status !== "pending");
+    if (isCompleted) {
+      if (tx.type === "topup" || tx.type === "refund") {
+        calculatedBalance += amt;
+      } else if (tx.type === "payment") {
+        calculatedBalance -= amt;
+      }
+    }
+  }
+
+  // Nếu có giao dịch rác/nạp nhầm bị lọc bỏ (như DATLOP), đồng bộ lại balance theo transactions hợp lệ
+  const hasRemovedTx = rawTransactions.length !== cleanTransactions.length;
   const rawBal = typeof raw.balance === "number" ? raw.balance : Number(raw.balance);
   let finalBalance: number;
 
-  if (!isNaN(rawBal) && rawBal >= 0 && raw.balance !== undefined && raw.balance !== null) {
+  if (!hasRemovedTx && !isNaN(rawBal) && rawBal >= 0 && raw.balance !== undefined && raw.balance !== null) {
     finalBalance = rawBal;
   } else {
-    let calculatedBalance = 0;
-    for (const tx of cleanTransactions) {
-      const amt = Number(tx.amount) || 0;
-      const isCompleted = tx.status === "completed" || (!tx.status && tx.status !== "pending");
-      if (isCompleted) {
-        if (tx.type === "topup" || tx.type === "refund") {
-          calculatedBalance += amt;
-        } else if (tx.type === "payment") {
-          calculatedBalance -= amt;
-        }
-      }
-    }
     finalBalance = cleanTransactions.length === 0 ? 0 : Math.max(0, calculatedBalance);
   }
 
