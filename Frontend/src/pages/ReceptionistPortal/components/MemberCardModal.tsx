@@ -20,10 +20,6 @@ export function MemberCardModal({ member, isOpen, onClose }: MemberCardModalProp
 
   if (!isOpen || !member) return null;
 
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
-    member.memberCode || member.id || "SPORTCENTER"
-  )}`;
-
   const handlePrint = () => {
     window.print();
   };
@@ -146,7 +142,7 @@ export function MemberCardModal({ member, isOpen, onClose }: MemberCardModalProp
               </div>
             </div>
 
-            {/* Bottom row: Expiry + QR Code */}
+            {/* Bottom row: Expiry + Member Code Badge */}
             <div className="flex items-end justify-between pt-2 border-t border-white/10 relative z-10 text-[11px]">
               <div>
                 <p className="text-[9px] uppercase tracking-wider text-slate-400">
@@ -162,13 +158,13 @@ export function MemberCardModal({ member, isOpen, onClose }: MemberCardModalProp
                 </p>
               </div>
 
-              {/* QR Code */}
-              <div className="bg-white p-1 rounded-lg shadow-md shrink-0">
-                <img
-                  src={qrUrl}
-                  alt="QR Thẻ"
-                  className="size-12 rounded object-contain"
-                />
+              <div className="bg-white/10 border border-white/20 px-3 py-1.5 rounded-lg text-right shrink-0">
+                <p className="text-[8px] uppercase tracking-widest text-slate-300">
+                  Mã Check-in
+                </p>
+                <p className="font-mono font-extrabold text-xs text-amber-300">
+                  {member.memberCode || "SPORTCENTER"}
+                </p>
               </div>
             </div>
           </div>

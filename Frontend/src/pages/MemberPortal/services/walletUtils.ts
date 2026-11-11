@@ -16,20 +16,64 @@ export interface MemberWalletData {
 
 export const MEMBER_WALLET_UPDATED_EVENT = "member-wallet-updated";
 
-export function getStoredUser(): any | null {
-  const raw = localStorage.getItem("user");
-  if (!raw) return null;
+export function getUserIdFromToken(): string | null {
   try {
-    return JSON.parse(raw);
+    const token = typeof window !== "undefined"
+      ? localStorage.getItem("token") || localStorage.getItem("accessToken")
+      : null;
+    if (!token) return null;
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    const payload = JSON.parse(jsonPayload);
+    return (
+      payload.nameid ||
+      payload.sub ||
+      payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] ||
+      payload.id ||
+      payload.userId ||
+      null
+    );
   } catch {
     return null;
   }
 }
 
+export function getStoredUser(): any | null {
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem("user");
+  let user: any = null;
+  if (raw) {
+    try {
+      user = JSON.parse(raw);
+    } catch {
+      user = null;
+    }
+  }
+  const tokenUid = getUserIdFromToken();
+  if (!user && tokenUid) {
+    return { id: tokenUid };
+  }
+  if (user && !user.id && !user.userId && tokenUid) {
+    user.id = tokenUid;
+  }
+  return user;
+}
+
 export function getAuthHeaders(userId?: string): Record<string, string> {
-  const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
+  const token = typeof window !== "undefined"
+    ? localStorage.getItem("token") || localStorage.getItem("accessToken")
+    : null;
   const user = getStoredUser();
-  const uid = userId || user?.id || user?.email;
+  const tokenUid = getUserIdFromToken();
+  const uid = userId || user?.id || user?.userId || user?.memberId || user?.email || tokenUid;
   return {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -67,7 +111,15 @@ export function sanitizeWalletData(raw: any): MemberWalletData {
     }
   }
 
-  const finalBalance = cleanTransactions.length === 0 ? 0 : Math.max(0, calculatedBalance);
+  // Số dư luôn tin tưởng giá trị từ server; chỉ tự tính từ lịch sử khi server không trả số dư hợp lệ
+  const rawBal = typeof raw.balance === "number" ? raw.balance : Number(raw.balance);
+  let finalBalance: number;
+
+  if (!isNaN(rawBal) && rawBal >= 0 && raw.balance !== undefined && raw.balance !== null) {
+    finalBalance = rawBal;
+  } else {
+    finalBalance = cleanTransactions.length === 0 ? 0 : Math.max(0, calculatedBalance);
+  }
 
   return {
     balance: finalBalance,

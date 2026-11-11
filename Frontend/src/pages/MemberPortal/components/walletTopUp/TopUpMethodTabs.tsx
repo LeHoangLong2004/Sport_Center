@@ -9,8 +9,8 @@ interface Props {
 export const TopUpMethodTabs: React.FC<Props> = ({ method, setMethod }) => {
   const options = [
     { id: "qr" as const, label: "Mã Vietcombank", icon: QrCode, color: "text-emerald-600" },
-    { id: "card" as const, label: "Thẻ ATM / Visa", icon: CreditCard, color: "text-blue-600" },
-    { id: "counter" as const, label: "Tại quầy", icon: Building, color: "text-amber-600" },
+    { id: "card" as const, label: "Thẻ ATM / Visa", icon: CreditCard, color: "text-slate-600" },
+    { id: "counter" as const, label: "Tại quầy", icon: Building, color: "text-slate-600" },
   ];
 
   return (

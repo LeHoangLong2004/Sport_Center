@@ -66,10 +66,13 @@ export type MemberAiAction =
   | "schedule"
   | "booking"
   | "packages"
+  | "packages_sport"
+  | "packages_membership"
   | "payments"
   | "workouts"
   | "attendance"
   | "chat"
+  | "shop"
   | "support_ticket";
 
 export interface MemberAiAnswer {

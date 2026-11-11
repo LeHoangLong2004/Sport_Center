@@ -56,7 +56,7 @@ export const BookingSuccessModal: React.FC<BookingSuccessModalProps> = ({
             onClick={onViewMyClasses}
             className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-xs transition-colors shadow-sm text-white cursor-pointer ${
               isCounter
-                ? "bg-amber-600 hover:bg-amber-700"
+                ? "bg-slate-600 hover:bg-slate-700"
                 : "bg-emerald-600 hover:bg-emerald-700"
             }`}
           >

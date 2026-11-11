@@ -37,7 +37,7 @@ export function CoachInvitationCard({
     <div
       className={`p-5 bg-white dark:bg-slate-900 border rounded-xl flex flex-col gap-4 shadow-xs transition-all ${
         isPending
-          ? "border-orange-300 dark:border-orange-900/50 ring-1 ring-orange-200/50 dark:ring-orange-950/50"
+          ? "border-emerald-300 dark:border-emerald-900/50 ring-1 ring-emerald-200/50 dark:ring-emerald-950/50"
           : "border-slate-200 dark:border-slate-800"
       }`}
     >
@@ -48,7 +48,7 @@ export function CoachInvitationCard({
             <span className="font-bold text-slate-900 dark:text-white text-base">
               {inv.className}
             </span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400 uppercase">
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 uppercase">
               {inv.requestType}
             </span>
             <span

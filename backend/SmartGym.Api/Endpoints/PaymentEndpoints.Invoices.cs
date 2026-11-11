@@ -15,13 +15,24 @@ using SmartGym.Infrastructure.Services;
 
 namespace SmartGym.Api.Endpoints;
 
+/// <summary>
+/// Phần mở rộng (partial) của PaymentEndpoints chuyên quản lý Hóa đơn, Hoàn tiền, Cổng VNPay và Gửi Email hóa đơn.
+/// </summary>
 public static partial class PaymentEndpoints
 {
+    /// <summary>
+    /// Đăng ký các route xử lý hóa đơn, xuất file PDF, tích hợp VNPay và hoàn tiền.
+    /// </summary>
+    /// <param name="group">Nhóm route /api/payments</param>
     private static void MapInvoiceEndpoints(RouteGroupBuilder group)
     {
         // FLOW 3: HÓA ĐƠN, HOÀN TIỀN, THANH TOÁN TRỰC TUYẾN, EMAIL
         // --------------------------------------------------------
 
+        /// <summary>
+        /// GET /api/payments/{invoiceId}/export-pdf
+        /// Xuất file PDF hóa đơn điện tử phục vụ in ấn hoặc tải về.
+        /// </summary>
         group
             .MapGet(
                 "/{invoiceId:guid}/export-pdf",
@@ -33,6 +44,11 @@ public static partial class PaymentEndpoints
             )
             .Produces<byte[]>(StatusCodes.Status200OK, "application/pdf");
 
+        /// <summary>
+        /// GET /api/payments
+        /// Lấy toàn bộ danh sách hóa đơn trong hệ thống.
+        /// Quyền hạn yêu cầu: Manager, Admin hoặc Receptionist.
+        /// </summary>
         group
             .MapGet(
                 "/",
@@ -42,6 +58,10 @@ public static partial class PaymentEndpoints
             .Produces<IEnumerable<InvoiceResponse>>(StatusCodes.Status200OK)
             .RequireAuthorization(policy => policy.RequireRole("manager", "admin", "receptionist"));
 
+        /// <summary>
+        /// GET /api/payments/{invoiceId}
+        /// Lấy chi tiết một hóa đơn cụ thể theo ID.
+        /// </summary>
         group
             .MapGet(
                 "/{invoiceId:guid}",
@@ -57,6 +77,11 @@ public static partial class PaymentEndpoints
             .Produces(StatusCodes.Status404NotFound)
             .RequireAuthorization();
 
+        /// <summary>
+        /// GET /api/payments/member/{memberId}
+        /// Lấy danh sách lịch sử hóa đơn của một hội viên cụ thể.
+        /// Quyền hạn yêu cầu: Manager, Admin hoặc Receptionist.
+        /// </summary>
         group
             .MapGet(
                 "/member/{memberId:guid}",
@@ -66,6 +91,10 @@ public static partial class PaymentEndpoints
             .Produces<IEnumerable<InvoiceResponse>>(StatusCodes.Status200OK)
             .RequireAuthorization(policy => policy.RequireRole("manager", "admin", "receptionist"));
 
+        /// <summary>
+        /// GET /api/payments/my
+        /// Lấy danh sách hóa đơn thanh toán của hội viên đang đăng nhập.
+        /// </summary>
         group
             .MapGet(
                 "/my",
@@ -85,6 +114,11 @@ public static partial class PaymentEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .RequireAuthorization();
 
+        /// <summary>
+        /// POST /api/payments/{invoiceId}/refund
+        /// Hoàn tiền giao dịch đã thanh toán. Hỗ trợ tham số lý do hoàn tiền và cờ ép buộc hoàn tiền (Force).
+        /// Quyền hạn yêu cầu: Manager, Admin hoặc Receptionist.
+        /// </summary>
         group
             .MapPost(
                 "/{invoiceId:guid}/refund",
@@ -110,6 +144,10 @@ public static partial class PaymentEndpoints
             .Produces<RefundResponse>(StatusCodes.Status400BadRequest)
             .RequireAuthorization(policy => policy.RequireRole("manager", "admin", "receptionist"));
 
+        /// <summary>
+        /// POST /api/payments/{invoiceId}/pay-online
+        /// Khởi tạo URL cổng thanh toán trực tuyến VNPay cho hóa đơn chỉ định.
+        /// </summary>
         group
             .MapPost(
                 "/{invoiceId:guid}/pay-online",
@@ -130,6 +168,10 @@ public static partial class PaymentEndpoints
             .Produces<OnlinePaymentResponse>(StatusCodes.Status200OK)
             .Produces<PaymentStatusResponse>(StatusCodes.Status400BadRequest);
 
+        /// <summary>
+        /// GET /api/payments/vnpay/return
+        /// Xử lý callback chuyển hướng người dùng trở lại sau khi thanh toán trên VNPay.
+        /// </summary>
         group
             .MapGet(
                 "/vnpay/return",
@@ -141,6 +183,10 @@ public static partial class PaymentEndpoints
             )
             .Produces(StatusCodes.Status302Found);
 
+        /// <summary>
+        /// GET /api/payments/vnpay/ipn
+        /// Webhook xác nhận ngầm (IPN) từ hệ thống VNPay khi giao dịch hoàn tất.
+        /// </summary>
         group.MapGet(
             "/vnpay/ipn",
             async (HttpContext ctx, IPaymentService paymentService) =>
@@ -156,6 +202,10 @@ public static partial class PaymentEndpoints
             }
         );
 
+        /// <summary>
+        /// POST /api/payments/vnpay/ipn
+        /// Webhook xác nhận ngầm (IPN) từ hệ thống VNPay dạng HTTP POST.
+        /// </summary>
         group.MapPost(
             "/vnpay/ipn",
             async (HttpContext ctx, IPaymentService paymentService) =>
@@ -171,6 +221,10 @@ public static partial class PaymentEndpoints
             }
         );
 
+        /// <summary>
+        /// POST /api/payments/{invoiceId}/send-email
+        /// Gửi thông tin biên lai / hóa đơn thanh toán tới email đã đăng ký của khách hàng.
+        /// </summary>
         group
             .MapPost(
                 "/{invoiceId:guid}/send-email",
@@ -185,6 +239,11 @@ public static partial class PaymentEndpoints
             .Produces<PaymentStatusResponse>(StatusCodes.Status200OK)
             .Produces<PaymentStatusResponse>(StatusCodes.Status400BadRequest);
 
+        /// <summary>
+        /// POST /api/payments/{invoiceId}/record-cash
+        /// Ghi nhận nhân viên lễ tân đã thu tiền mặt tại quầy và hoàn tất hóa đơn.
+        /// Quyền hạn yêu cầu: Manager, Admin hoặc Receptionist.
+        /// </summary>
         group
             .MapPost(
                 "/{invoiceId:guid}/record-cash",

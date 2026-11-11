@@ -89,7 +89,7 @@ export default function ScheduleWeekView({
                           onClick={() => onSelectSession(s)}
                           className={`w-full text-left p-2.5 rounded-xl border transition-all flex flex-col justify-between shadow-xs hover:shadow-md cursor-pointer ${
                             isPT
-                              ? "bg-amber-50/70 border-amber-200 hover:border-amber-300 dark:bg-amber-950/30 dark:border-amber-800/60"
+                              ? "bg-slate-50/70 border-slate-200 hover:border-slate-300 dark:bg-slate-950/30 dark:border-slate-800/60"
                               : isCancelled
                               ? "opacity-60 bg-slate-50 border-slate-200 dark:bg-slate-800/40 dark:border-slate-700"
                               : "bg-emerald-50/70 border-emerald-200 hover:border-emerald-300 dark:bg-emerald-950/30 dark:border-emerald-800/60"
@@ -100,13 +100,13 @@ export default function ScheduleWeekView({
                               <span
                                 className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
                                   isPT
-                                    ? "bg-amber-200/80 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200"
+                                    ? "bg-slate-200/80 text-slate-900 dark:bg-slate-900/60 dark:text-slate-200"
                                     : "bg-emerald-200/80 text-emerald-900 dark:bg-emerald-900/60 dark:text-emerald-200"
                                 }`}
                               >
                                 {isPT ? "PT 1–1" : s.sport.toUpperCase()}
                               </span>
-                              <span className="text-[10px] text-slate-500 font-mono font-medium">
+                              <span className="text-[10px] text-slate-500 font-medium">
                                 {s.startTime}{s.endTime ? ` – ${s.endTime}` : ""}
                               </span>
                             </div>
@@ -118,7 +118,7 @@ export default function ScheduleWeekView({
                           <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5 pt-1.5 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between">
                             <span className="truncate max-w-[85px]">{s.room}</span>
                             {isPT ? (
-                              <span className="text-amber-700 dark:text-amber-400 font-semibold truncate max-w-[80px]">
+                              <span className="text-slate-700 dark:text-slate-400 font-semibold truncate max-w-[80px]">
                                 {s.goal || s.coachName}
                               </span>
                             ) : (

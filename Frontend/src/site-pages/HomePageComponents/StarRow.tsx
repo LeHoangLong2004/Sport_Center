@@ -15,7 +15,7 @@ export function StarRow({ rating }: { rating: number }) {
           }}
         />
       ))}
-      <span className="ml-[4px] font-['Inter:Bold'] font-bold text-[#0f172a] text-[13px]">
+      <span className="ml-[4px] font-bold text-[#0f172a] text-[13px]">
         {rating.toFixed(1)}
       </span>
     </div>

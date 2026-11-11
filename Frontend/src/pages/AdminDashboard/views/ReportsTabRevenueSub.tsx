@@ -33,7 +33,7 @@ export function ReportsTabRevenueSub() {
               <span className="text-[#0f172a] text-sm text-right w-28">{r.qty}</span>
               <span className="font-semibold text-[#0f172a] text-sm text-right w-40">{r.rev}</span>
               <div className="flex justify-end w-24">
-                <span className={`font-bold px-2 py-0.5 rounded text-[12px] ${r.green ? "bg-[#dcfce7] text-[#15803d]" : "bg-[#fee2e2] text-[#b91c1c]"}`}>{r.trend}</span>
+                <span className={`font-bold px-2 py-0.5 rounded text-[12px] ${r.green ? "bg-emerald-50 text-emerald-700" : "bg-[#fee2e2] text-[#b91c1c]"}`}>{r.trend}</span>
               </div>
             </div>
           ))}

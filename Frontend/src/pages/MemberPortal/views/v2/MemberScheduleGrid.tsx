@@ -27,16 +27,16 @@ const TIME_ROWS = Array.from({ length: 17 }, (_, index) =>
 
 const TONE_STYLES = {
   teal: {
-    card: "bg-teal-50/70 border-teal-200 hover:border-teal-400",
-    badge: "bg-teal-100 text-teal-800",
+    card: "bg-emerald-50/70 border-emerald-200 hover:border-emerald-400",
+    badge: "bg-emerald-100 text-emerald-800",
   },
   green: {
     card: "bg-emerald-50/70 border-emerald-200 hover:border-emerald-400",
     badge: "bg-emerald-100 text-emerald-800",
   },
   orange: {
-    card: "bg-orange-50/70 border-orange-200 hover:border-orange-400",
-    badge: "bg-orange-100 text-orange-800",
+    card: "bg-slate-50/70 border-slate-200 hover:border-slate-400",
+    badge: "bg-slate-100 text-slate-800",
   },
 };
 
@@ -62,7 +62,7 @@ export function MemberScheduleGrid({ weekDates, events, onSelect }: Props) {
               <div
                 key={day.iso}
                 className={`p-3 text-xs font-semibold text-center border-r border-slate-200 last:border-0 ${
-                  isToday ? "bg-teal-50 text-teal-700 font-bold" : "text-slate-700"
+                  isToday ? "bg-emerald-50 text-emerald-700 font-bold" : "text-slate-700"
                 }`}
               >
                 <div>{day.label}</div>
@@ -118,7 +118,7 @@ export function MemberScheduleGrid({ weekDates, events, onSelect }: Props) {
                                     ? "Tự tập"
                                     : event.sport || "Lớp nhóm"}
                               </span>
-                              <span className="text-[10px] text-slate-400 font-mono">
+                              <span className="text-[10px] text-slate-400 ">
                                 {formatTime(event.rawStart)}
                               </span>
                             </div>

@@ -33,7 +33,7 @@ export const avatarByPage: Record<Page, string> = {
 // ─── Main ReceptionistPortal ──────────────────────────────────────────────────
 
 export const breadcrumbs: Record<Page, { bc: string; title: string; shift?: string }> = {
-  checkin: { bc: "Lễ tân / Quét thẻ & Điểm danh", title: "Check-in / Check-out hội viên" },
+  checkin: { bc: "Lễ tân / Điểm danh & Ra vào cổng", title: "Check-in / Check-out hội viên" },
   "counter-payments": { bc: "Lễ tân / Thu tiền & Kích hoạt gói", title: "Quản lý đơn thanh toán tại quầy", shift: "Ca làm việc" },
   register: { bc: "Lễ tân / Thêm hồ sơ & Mua gói", title: "Đăng ký hội viên mới" },
   classes: { bc: "Lễ tân / Lịch Lớp học", title: "Quản lý Lớp học & Đặt hộ" },

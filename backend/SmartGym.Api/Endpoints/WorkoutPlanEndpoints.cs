@@ -12,13 +12,28 @@ using SmartGym.Infrastructure.Persistence.EF;
 
 namespace SmartGym.Api.Endpoints;
 
+/// <summary>
+/// Endpoint quản lý Giáo án tập luyện (Workout Plans & Exercise Curriculums).
+/// Cho phép Huấn luyện viên tạo giáo án, cấu hình danh sách bài tập (sets, reps, trọng lượng),
+/// cập nhật và theo dõi các giáo án do mình phụ trách.
+/// </summary>
 public static class WorkoutPlanEndpoints
 {
+    /// <summary>
+    /// Đăng ký các route giáo án vào hệ thống.
+    /// Nhóm route gốc: /api/workout-plans
+    /// </summary>
+    /// <param name="app">Đối tượng IEndpointRouteBuilder</param>
     public static void MapWorkoutPlanEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/workout-plans").RequireAuthorization();
 
         // Coach creates a new workout plan
+        /// <summary>
+        /// POST /api/workout-plans
+        /// Huấn luyện viên tạo giáo án mới kèm danh sách các bài tập con.
+        /// Quyền hạn yêu cầu: Coach hoặc Manager.
+        /// </summary>
         group
             .MapPost(
                 "/",
@@ -79,6 +94,10 @@ public static class WorkoutPlanEndpoints
             .WithSummary("Create a new workout plan (Coach/Manager only)");
 
         // Get a specific plan by ID
+        /// <summary>
+        /// PUT /api/workout-plans/{id}
+        /// Chỉnh sửa giáo án đã tạo (chỉ HLV tạo ra giáo án hoặc Manager mới có quyền sửa).
+        /// </summary>
         group
             .MapPut(
                 "/{id:guid}",
@@ -136,6 +155,10 @@ public static class WorkoutPlanEndpoints
             .WithTags("Workout Plans")
             .WithSummary("Update a workout plan owned by the logged-in coach");
 
+        /// <summary>
+        /// GET /api/workout-plans/{id}
+        /// Xem thông tin chi tiết một giáo án theo ID.
+        /// </summary>
         group
             .MapGet(
                 "/{id:guid}",
@@ -170,6 +193,10 @@ public static class WorkoutPlanEndpoints
             .WithSummary("Get a specific workout plan by ID");
 
         // Get all plans created by a specific coach (or the logged-in coach)
+        /// <summary>
+        /// GET /api/workout-plans/coach
+        /// Lấy toàn bộ danh sách giáo án do Huấn luyện viên đang đăng nhập tạo ra.
+        /// </summary>
         group
             .MapGet(
                 "/coach",

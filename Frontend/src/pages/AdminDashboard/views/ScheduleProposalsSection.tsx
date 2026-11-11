@@ -29,15 +29,15 @@ export const ScheduleProposalsSection: React.FC<ScheduleProposalsSectionProps> =
           <h2 className="text-base font-bold text-slate-900">Lớp học chờ duyệt</h2>
           <p className="mt-1 text-xs text-slate-600">Các đề xuất từ Coach chưa được công khai cho hội viên.</p>
         </div>
-        <span className="shrink-0 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 ring-1 ring-amber-200">
+        <span className="shrink-0 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 ring-1 ring-slate-200">
           {pendingProposals.length} đề xuất
         </span>
       </div>
 
       {/* Stats */}
       <div className="mb-6 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-amber-100 bg-amber-50/60 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Chờ duyệt</p>
+        <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-700">Chờ duyệt</p>
           <p className="mt-2 text-2xl font-black text-slate-900">{pendingProposals.length}</p>
           <p className="mt-1 text-xs text-slate-500">Đề xuất cần xử lý</p>
         </div>
@@ -112,7 +112,7 @@ export const ScheduleProposalsSection: React.FC<ScheduleProposalsSectionProps> =
                 <div className="text-sm text-slate-700">{item.coach || "Chưa phân công"}</div>
                 <div className="text-sm text-slate-700">{item.rawStart.toLocaleString("vi-VN")}</div>
                 <div>
-                  <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700 ring-1 ring-amber-200">
+                  <span className="inline-flex rounded-full bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700 ring-1 ring-slate-200">
                     Chờ duyệt
                   </span>
                 </div>

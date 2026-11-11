@@ -47,13 +47,13 @@ export function Sidebar({ page, setPage, onLogout }: { page: AdminPage; setPage:
         title="Quay lại Trang chủ SportCenter"
         aria-label="Quay lại Trang chủ"
       >
-        <div className="bg-[#f43f5e] flex flex-col items-center justify-center rounded-[10px] shrink-0 size-[40px] shadow-lg shadow-rose-500/25 transition-transform duration-200 group-hover:scale-105 group-hover:shadow-rose-500/40 group-active:scale-95">
+        <div className="bg-emerald-600 flex flex-col items-center justify-center rounded-[10px] shrink-0 size-[40px] shadow-lg shadow-emerald-500/25 transition-transform duration-200 group-hover:scale-105 group-hover:shadow-emerald-500/40 group-active:scale-95">
           <span className="font-extrabold text-white text-[18px]">SC</span>
         </div>
         <div className="flex flex-col gap-[2px] items-start shrink-0">
-          <span className="font-extrabold text-[15px] text-white whitespace-nowrap tracking-wide group-hover:text-rose-400 transition-colors">SPORTCENTER</span>
-          <div className="bg-[#1e293b] flex items-start px-[6px] py-px rounded-[4px] shrink-0 border border-rose-500/20">
-            <span className="font-bold text-[#f43f5e] text-[9px] whitespace-nowrap tracking-wider">CENTER MANAGER</span>
+          <span className="font-extrabold text-[15px] text-white whitespace-nowrap tracking-wide group-hover:text-emerald-400 transition-colors">SPORTCENTER</span>
+          <div className="bg-[#1e293b] flex items-start px-[6px] py-px rounded-[4px] shrink-0 border border-emerald-500/20">
+            <span className="font-bold text-emerald-400 text-[9px] whitespace-nowrap tracking-wider">CENTER MANAGER</span>
           </div>
         </div>
       </button>
@@ -66,9 +66,9 @@ export function Sidebar({ page, setPage, onLogout }: { page: AdminPage; setPage:
             <button
               key={item.label}
               onClick={() => setPage(item.page)}
-              className={`sidebar-nav-btn btn-tactile group relative flex gap-[12px] items-center px-[16px] py-[11px] rounded-[10px] shrink-0 w-full text-left cursor-pointer ${
+              className={`sidebar-nav-btn btn-tactile group relative flex gap-[12px] items-center px-[16px] py-[11px] rounded-[10px] shrink-0 w-full text-left cursor-pointer transition-all ${
                 active 
-                  ? "bg-gradient-to-r from-[#f43f5e] to-[#e11d48] text-white shadow-lg shadow-rose-500/25 font-bold" 
+                  ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/25 font-bold" 
                   : "bg-transparent hover:bg-white/5 text-[#cbd5e1] hover:text-white font-medium"
               }`}
             >
@@ -91,7 +91,7 @@ export function Sidebar({ page, setPage, onLogout }: { page: AdminPage; setPage:
       {/* support card */}
       <div className="bg-[#1e293b]/80 border border-[#334155]/60 flex flex-col gap-[8px] items-start p-[16px] rounded-[14px] shrink-0 w-full shadow-sm">
         <span className="font-bold text-[13px] text-white w-full">Cần hỗ trợ vận hành?</span>
-        <span className="font-normal leading-[1.4] text-rose-400 text-[11px] w-full">
+        <span className="font-normal leading-[1.4] text-emerald-400 text-[11px] w-full">
           Hotline kỹ thuật hoạt động từ 06:00 – 22:00 hàng ngày.
         </span>
       </div>
@@ -99,7 +99,7 @@ export function Sidebar({ page, setPage, onLogout }: { page: AdminPage; setPage:
       {/* user */}
       <div className="pt-3 w-full mt-auto border-t border-[#1e293b]">
         <div className="cursor-pointer hover:bg-white/5 p-2.5 -mx-2 rounded-xl transition-all group relative flex items-center gap-3 overflow-hidden" onClick={() => setPage("profile")}>
-          <UserAvatar src={avatarUrl} name={userName} className="rounded-full size-10 shrink-0 object-cover border-2 border-[#1e293b] group-hover:border-[#f43f5e] transition-colors" />
+          <UserAvatar src={avatarUrl} name={userName} className="rounded-full size-10 shrink-0 object-cover border-2 border-[#1e293b] group-hover:border-emerald-500 transition-colors" />
           <div className="flex flex-col flex-1 min-w-0 transition-transform duration-200 group-hover:-translate-x-1 justify-center">
             <strong className="font-bold text-white text-[13px] truncate" title={userName}>{userName}</strong>
             <small className="text-[#94a3b8] text-[11px] truncate" title={role}>{role}</small>

@@ -15,7 +15,7 @@
 | **10/Sep/2026** | **A** | **PhuongPDT** | Khởi tạo tài liệu SRS theo Template 2; hoàn thiện Phần I.1 (Introduction, Scope, Context Diagram). |
 | **18/Sep/2026** | **A** | **LongLH** | Bổ sung khảo sát Existing Systems (GymMaster, Mindbody) và vẽ sơ đồ Swimlane luồng đặt lớp & điểm danh (I.3). |
 | **28/Sep/2026** | **A** | **NamHXA** | Thiết kế sơ đồ Screen Flow tổng thể (I.4.a), bảng Screen Details (I.4.b) và Ma trận Phân quyền User Authorization (I.4.c). |
-| **08/Oct/2026** | **M** | **ThuanBN** | Cập nhật luồng thanh toán VNPay Sandbox, hóa đơn điện tử và cơ chế nạp tiền ví (Flow 3). |
+| **08/Oct/2026** | **M** | **ThuanBN** | Khởi tạo luồng thanh toán số hóa, tích hợp hóa đơn điện tử và cơ chế nạp tiền Ví hội viên (Flow 3). |
 | **18/Oct/2026** | **A** | **PhuongPDT** | Thêm đặc tả Flow 5: Tích hợp Google Gemini 1.5 Flash gợi ý giáo án tập luyện thông minh cho Huấn luyện viên. |
 | **25/Oct/2026** | **M** | **ThuanBN** | Tích hợp cổng thanh toán SePay Webhook và VietQR Napas 247 auto-checkout vào quy trình thanh toán. |
 | **31/Oct/2026** | **M** | **NamHXA, LongLH** | Bổ sung hoàn chỉnh ERD (I.5), State Transition Diagrams (I.6), Functional Requirements chi tiết (II) và Database Table Details (III) theo Template 2. |
@@ -45,9 +45,9 @@
 * [II. Functional Requirements (Chi tiết Chức năng)](#ii-functional-requirements-chi-tiết-chức-năng)
   * [1. Feature 1: Quản lý Gói tập & Mua gói (Package & Subscription)](#1-feature-1-quản-lý-gói-tập--mua-gói-package--subscription)
   * [2. Feature 2: Quản lý Lớp học nhóm & Đặt chỗ Atomic (Class & Booking)](#2-feature-2-quản-lý-lớp-học-nhóm--đặt-chỗ-atomic-class--booking)
-  * [3. Feature 3: Thanh toán VietQR SePay & VNPay Sandbox](#3-feature-3-thanh-toán-vietqr-sepay--vnpay-sandbox)
+  * [3. Feature 3: Thanh toán Tự động VietQR Napas 24/7 & Cổng SePay Webhook](#3-feature-3-thanh-toán-tự-động-vietqr-napas-247--cổng-sepay-webhook)
   * [4. Feature 4: Quản lý Ca dạy & Trợ lý Huấn luyện viên AI Copilot](#4-feature-4-quản-lý-ca-dạy--trợ-lý-huấn-luyện-viên-ai-copilot)
-  * [5. Feature 5: Điểm danh Thẻ QR & Vận hành Quầy Lễ tân (Receptionist Operations)](#5-feature-5-điểm-danh-thẻ-qr--vận-hành-quầy-lễ-tân-receptionist-operations)
+  * [5. Feature 5: Điểm danh Hội viên & Vận hành Quầy Lễ tân (Receptionist Operations)](#5-feature-5-điểm-danh-thẻ-qr--vận-hành-quầy-lễ-tân-receptionist-operations)
 * [III. Database Design (Thiết kế Cơ sở Dữ liệu)](#iii-database-design-thiết-kế-cơ-sở-dữ-liệu)
   * [1. Database Schema & Table Descriptions](#1-database-schema--table-descriptions)
   * [2. Table Details (Đặc tả chi tiết từng cột trong bảng)](#2-table-details-đặc-tả-chi-tiết-từng-cột-trong-bảng)
@@ -66,13 +66,13 @@
   - Frontend xây dựng bằng React 19, TypeScript và Tailwind CSS 4 tối ưu hiệu năng render.
 * **Đối tượng người dùng (Users):**
   1. **Guest (Khách vãng lai):** Xem danh mục bộ môn, bảng giá gói tập, lịch học mẫu và đăng ký tài khoản.
-  2. **Member (Hội viên):** Mua gói tập, đăng ký lớp học nhóm, đặt slot PT 1-1, thanh toán VietQR/VNPay, theo dõi lịch sử điểm danh và nhận giáo án tập luyện.
+  2. **Member (Hội viên):** Mua gói tập, đăng ký lớp học nhóm, đặt slot PT 1-1, thanh toán VietQR Napas 24/7 hoặc Ví hội viên, theo dõi lịch sử điểm danh và nhận giáo án tập luyện.
   3. **Coach (Huấn luyện viên):** Quản lý ca dạy, điểm danh học viên, tạo slot PT, đổi ca/báo vắng và sử dụng trợ lý AI Gemini sinh giáo án.
-  4. **Receptionist (Nhân viên Lễ tân):** Tiếp đón khách, quét mã QR thẻ hội viên check-in ra vào cổng, bán gói tập tại quầy (Counter Sales) và quản lý lịch hẹn tư vấn PT.
+  4. **Receptionist (Nhân viên Lễ tân):** Tiếp đón khách, tra cứu thông tin và điểm danh hội viên vào trung tâm, bán gói tập tại quầy (Counter Sales) và quản lý lịch hẹn tư vấn PT.
   5. **Center Manager (Quản lý Trung tâm / Admin):** Cấu hình danh mục bộ môn, quản trị phòng tập & cơ sở vật chất, quản lý nhân sự, theo dõi doanh thu và duyệt bảng lương.
 * **Ràng buộc và Phụ thuộc (Constraints & Dependencies):**
   - Kết nối Internet liên tục để đồng bộ trạng thái thanh toán và điểm danh thời gian thực.
-  - Phụ thuộc vào các cổng dịch vụ bên thứ ba: Cổng thanh toán **VNPay Sandbox**, Webhook **SePay (Sacombank / MB Bank)**, API tạo ảnh mã chuẩn **VietQR Napas 247**, Cloud lưu trữ media **Cloudinary CDN**, và dịch vụ trí tuệ nhân tạo **Google Gemini 1.5 Flash**.
+  - Phụ thuộc vào các cổng dịch vụ bên thứ ba: Cổng thanh toán tự động **SePay Webhook (Sacombank / Napas 24/7)**, API tạo ảnh mã chuẩn **VietQR Napas 247**, Cloud lưu trữ media **Cloudinary CDN**, và dịch vụ trí tuệ nhân tạo **Google Gemini 1.5 Flash**.
 
 #### 1.2. Product Context Diagram (Sơ đồ Ngữ cảnh Hệ thống)
 
@@ -91,19 +91,19 @@ flowchart TD
     end
 
     subgraph External_Services [Hệ thống & Dịch vụ Bên ngoài]
-        VNPAY[Cổng Thanh toán VNPay]
+        SEPAY_GATE[Cổng Thanh toán VietQR SePay]
         SEPAY[SePay Webhook & VietQR]
         GEMINI[Google Gemini 1.5 Flash AI]
         CLOUDINARY[Cloudinary Media CDN]
     end
 
     GUEST -->|Xem bộ môn, Đăng ký tài khoản| SYSTEM
-    MEMBER -->|Mua gói, Đặt lớp, Quét QR Check-in, Chat| SYSTEM
+    MEMBER -->|Mua gói, Đặt lớp, Điểm danh Check-in, Chat| SYSTEM
     COACH -->|Điểm danh, Mở slot PT, Duyệt bài tập AI| SYSTEM
-    RECEPT -->|Quét QR ra vào cổng, Thu tiền tại quầy, Đặt lịch PT| SYSTEM
+    RECEPT -->|Điểm danh vào trung tâm, Thu tiền tại quầy, Đặt lịch PT| SYSTEM
     MANAGER -->|Quản lý bộ môn, phòng tập, nhân sự, bảng lương| SYSTEM
 
-    SYSTEM -->|Chuyển hướng thanh toán, Nhận IPN xác nhận| VNPAY
+    SYSTEM -->|Tạo mã VietQR, Tiếp nhận biến động số dư tức thì| SEPAY_GATE
     SYSTEM -->|Sinh mã VietQR Napas, Lắng nghe Webhook biến động số dư| SEPAY
     SYSTEM -->|Gửi tiêu chí thể lực, Nhận giáo án JSON cấu trúc| GEMINI
     SYSTEM -->|Tải lên ảnh chi nhánh, phòng tập, chứng chỉ HLV| CLOUDINARY
@@ -126,8 +126,8 @@ flowchart TD
 * **Tác nhân chính:** Business Owner, Instructor, Client, Front-desk Staff.
 * **Tính năng tiêu biểu:** Đặt lịch trực tuyến, quản lý lịch trình giảng dạy đa môn, thanh toán thẻ tín dụng quốc tế (Stripe).
 * **Ưu điểm:** Giao diện tối ưu trải nghiệm người dùng rất tốt, phân hệ đặt chỗ thông minh, biểu đồ báo cáo tài chính trực quan.
-* **Nhược điểm:** Chi phí vận hành rất cao, không hỗ trợ các phương thức thanh toán đặc thù tại Việt Nam (VietQR, VNPay, chuyển khoản ngân hàng nội địa), không hỗ trợ quản lý gói môn độc lập kết hợp hội viên VIP.
-* **Điểm học hỏi & cải tiến của SmartGym OS:** Học hỏi cơ chế đặt lịch và phân quyền RBAC đa cổng; tối ưu hóa chi phí với mô hình Clean Architecture .NET 10 + Supabase, bản địa hóa phương thức thanh toán tự động qua SePay VietQR và VNPay.
+* **Nhược điểm:** Chi phí vận hành rất cao, không hỗ trợ các phương thức thanh toán đặc thù tại Việt Nam (VietQR Napas 24/7, chuyển khoản ngân hàng nội địa), không hỗ trợ quản lý gói môn độc lập kết hợp hội viên VIP.
+* **Điểm học hỏi & cải tiến của SmartGym OS:** Học hỏi cơ chế đặt lịch và phân quyền RBAC đa cổng; tối ưu hóa chi phí với mô hình Clean Architecture .NET 10 + Supabase, bản địa hóa phương thức thanh toán tự động qua SePay VietQR Napas 24/7.
 
 ---
 
@@ -142,14 +142,14 @@ sequenceDiagram
     actor Recept as Lễ tân (Receptionist)
     actor Coach as Huấn luyện viên (Coach)
     participant System as SmartGym OS
-    participant Gateway as Cổng Thanh toán (VietQR/VNPay)
+    participant Gateway as Cổng Thanh toán (VietQR SePay)
     actor Manager as Quản lý (Manager)
 
     %% Giai đoạn 1: Mua gói & Thanh toán
     Member->>System: 1. Chọn gói môn / gói VIP trên Website
     System-->>Member: 2. Hiển thị form thanh toán One-Page Checkout
-    alt Thanh toán Online (VietQR / VNPay)
-        Member->>Gateway: 3a. Quét mã VietQR Napas / VNPay
+    alt Thanh toán Online (VietQR Napas 24/7 / Ví)
+        Member->>Gateway: 3a. Quét mã VietQR Napas 24/7 / Trừ Ví
         Gateway-->>System: 4a. Gửi Webhook xác nhận giao dịch thành công
     else Thanh toán tại quầy (Counter Payment)
         Member->>Recept: 3b. Giữ chỗ và đến quầy đóng tiền mặt
@@ -164,7 +164,7 @@ sequenceDiagram
     System-->>Member: 9. Sinh vé điện tử & Mã QR Check-in động
 
     %% Giai đoạn 3: Điểm danh & Báo cáo
-    Member->>Recept: 10. Quét mã QR tại cổng trung tâm
+    Member->>Recept: 10. Hội viên cung cấp SĐT tại quầy lễ tân để điểm danh
     Recept->>System: 11. Ghi nhận check-in log thành công
     Coach->>System: 12. Điểm danh Có mặt/Vắng mặt sau buổi học
     System->>Manager: 13. Cập nhật biểu đồ doanh thu & báo cáo tài chính thời gian thực
@@ -175,11 +175,11 @@ sequenceDiagram
 | # | Process Step (Bước thực hiện) | Tác nhân chính | Mô tả chi tiết nghiệp vụ | Hệ thống & Bảng CSDL tác động |
 | :-: | :--- | :--- | :--- | :--- |
 | **1** | **Chọn gói & Khởi tạo đơn** | Member | Hội viên lựa chọn gói môn (Bơi, Yoga, Gym...) hoặc gói nâng cấp VIP/Plus theo chu kỳ 1, 6 hoặc 12 tháng. | `packages`, `subscriptions` (trạng thái `pending`). |
-| **2** | **Xử lý giao dịch thanh toán** | Member, Gateway | Hội viên thanh toán qua VietQR Sacombank/MB Bank hoặc cổng VNPay Sandbox. Trường hợp chọn quầy, hệ thống giữ chỗ chờ Lễ tân xác nhận. | `invoices`, SePay Webhook đối soát tự động. |
+| **2** | **Xử lý giao dịch thanh toán** | Member, Gateway | Hội viên thanh toán qua VietQR Sacombank/MB Bank hoặc Ví hội viên SmartGym. Trường hợp chọn quầy, hệ thống giữ chỗ chờ Lễ tân xác nhận. | `invoices`, SePay Webhook đối soát tự động. |
 | **3** | **Kích hoạt quyền hội viên** | System | Xác nhận thanh toán thành công, hệ thống tính toán `start_date` và `end_date`, cấp quyền vào tập tương ứng với bộ môn đã mua. | `subscriptions` (`payment_status = 'completed'`). |
 | **4** | **Đặt lớp học nhóm (Booking)** | Member | Hội viên xem lịch học 7 ngày, chọn ca tập phù hợp và nhấn đăng ký. Hệ thống kiểm tra sức chứa phòng và xung đột lịch. | `classes` (trừ slot), `class_bookings` (`confirmed`). |
 | **5** | **Đồng bộ lớp dạy & Chat HLV** | System | Học viên được thêm vào danh sách ca dạy của Coach. Hệ thống tự động tạo phòng chat kết nối trực tiếp giữa Hội viên và Coach. | `MemberChat`, `coaches`, thông báo `notifications`. |
-| **6** | **Quét QR Check-in tại quầy** | Receptionist | Khi hội viên đến trung tâm, Lễ tân quét mã QR động trên app. Hệ thống xác thực gói còn hạn và ghi nhận thời gian vào cửa. | `check_in_logs` (`method = 'qr'`). |
+| **6** | **Điểm danh Check-in tại quầy** | Receptionist | Khi hội viên đến trung tâm, Lễ tân tra cứu SĐT và điểm danh động trên app. Hệ thống xác thực gói còn hạn và ghi nhận thời gian vào cửa. | `check_in_logs` (`method = 'qr'`). |
 | **7** | **Điểm danh & Đánh giá buổi tập** | Coach, Member | HLV điểm danh Có mặt / Vắng mặt cho học viên. Sau buổi học, hội viên gửi đánh giá 1-5 sao và nhận xét năng lực HLV. | `classes` (attendance), `reviews`. |
 | **8** | **Tổng hợp doanh thu & Bảng lương** | Manager | Quản lý xem báo cáo P&L, doanh thu theo bộ môn, phương thức thanh toán và chốt kỳ tính lương cho nhân viên. | `invoices`, `PayrollPage`, `ReportsPage`. |
 
@@ -212,7 +212,7 @@ graph TD
     end
 
     subgraph Receptionist_Screens [Cổng Lễ Tân - Receptionist]
-        RECEPT_PORTAL --> RC_CHECKIN[Quét QR Check-in Cổng]
+        RECEPT_PORTAL --> RC_CHECKIN[Điểm danh Check-in Cổng]
         RECEPT_PORTAL --> RC_PAYMENTS[Thu tiền tại quầy Counter Payments]
         RECEPT_PORTAL --> RC_SCHEDULE[Lịch hẹn PT & Lớp học]
         RECEPT_PORTAL --> RC_ORDERS[Quản lý Đơn hàng sản phẩm]
@@ -251,7 +251,7 @@ graph TD
 | **6** | Admin - Finance | `PaymentPage.tsx` | Quản lý tập trung toàn bộ hóa đơn thanh toán; xuất file sao kê và modal chi tiết hóa đơn. |
 | **7** | Admin - Payroll | `PayrollPage.tsx` | Bảng lương hàng tháng của HLV và nhân viên; tính hoa hồng dạy lớp và trích nộp bảo hiểm. |
 | **8** | Admin - Reports | `ReportsPage.tsx` | Biểu đồ doanh thu 12 tháng, doanh thu theo phương thức thanh toán và tỷ lệ duy trì. |
-| **9** | Receptionist | `CheckInPage.tsx` | Giao diện camera quét mã QR thẻ hội viên hoặc tìm nhanh SĐT để check-in/out. |
+| **9** | Receptionist | `CheckInPage.tsx` | Giao diện tra cứu hội viên theo Số điện thoại hoặc Họ tên để điểm danh để check-in/out. |
 | **10** | Receptionist | `CounterPaymentsPage.tsx` | Danh sách đơn hàng chờ thanh toán tại quầy; lọc gói tập/lớp học và nút "Thu tiền & Vào lớp". |
 | **11** | Receptionist | `SchedulePage.tsx` | Lịch công tác và lịch hẹn tư vấn PT; modal đặt hẹn nhanh với huấn luyện viên. |
 | **12** | Coach | `CoachDashboard.tsx` | Thống kê số ca dạy trong tháng, tỷ lệ học viên có mặt, điểm đánh giá sao và ca tập hôm nay. |
@@ -261,7 +261,7 @@ graph TD
 | **16** | Coach | `CoachChat.tsx` | Hộp thoại trò chuyện đa kênh với từng học viên và nhóm lớp học phụ trách. |
 | **17** | Member | `MemberDashboard.tsx` | Màn hình chào mừng cá nhân; đếm ngược ca học sắp diễn ra và thẻ gói tập còn hạn. |
 | **18** | Member | `MemberBooking.tsx` | Đặt lớp nhóm 10 môn thể thao và đặt slot PT 1-1; bộ lọc theo ca học và HLV yêu thích. |
-| **19** | Member | `OnePageCheckout.tsx` | Màn hình thanh toán một trang tinh gọn; tạo mã VietQR Napas 247 và tích hợp VNPay. |
+| **19** | Member | `OnePageCheckout.tsx` | Màn hình thanh toán một trang tinh gọn; tạo mã VietQR Napas 247 và thanh toán Ví hội viên. |
 | **20** | Member | `MemberAttendance.tsx` | Hiển thị mã vé QR động để quẹt cửa; nhật ký vào/ra cổng và thống kê chuyên cần. |
 | **21** | Member | `MemberWorkouts.tsx` | Danh sách bài tập do HLV phân công; hướng dẫn số hiệp (sets), số lần (reps) và nghỉ. |
 
@@ -327,7 +327,7 @@ erDiagram
 | **5** | `GroupClass` | Lớp học nhóm theo lịch (Yoga, Boxing, Bơi...), lưu thông tin giờ học, HLV, phòng tập và sĩ số. |
 | **6** | `ClassBooking` | Giao dịch giữ chỗ tham gia lớp học nhóm của hội viên. |
 | **7** | `Invoice` | Chứng từ hóa đơn thanh toán cho gói cước, vé học hoặc sản phẩm bán lẻ. |
-| **8** | `CheckInLog` | Nhật ký ghi nhận thời gian quét mã QR ra/vào cổng của hội viên tại chi nhánh. |
+| **8** | `CheckInLog` | Nhật ký ghi nhận thời gian điểm danh vào tập của hội viên tại chi nhánh. |
 | **9** | `CoachProfile` | Hồ sơ năng lực của huấn luyện viên: chuyên môn, số năm kinh nghiệm, đánh giá sao. |
 | **10** | `WorkoutPlan` | Giáo án kế hoạch bài tập (tự tạo hoặc do trợ lý AI Gemini gợi ý). |
 
@@ -339,7 +339,7 @@ erDiagram
 ```mermaid
 stateDiagram-v2
     [*] --> Pending : Tạo đơn mua gói (Chờ thanh toán)
-    Pending --> Active : Thanh toán VietQR / VNPay thành công (paid)
+    Pending --> Active : Thanh toán VietQR Napas 24/7 / Ví thành công (paid)
     Pending --> Expired : Quá hạn 24h không thanh toán
     Pending --> Cancelled : Người dùng hủy đơn
     Active --> Expired : Hết thời hạn gói (current_date > end_date)
@@ -368,7 +368,7 @@ stateDiagram-v2
 ```mermaid
 stateDiagram-v2
     [*] --> Pending : Khởi tạo hóa đơn đơn hàng
-    Pending --> Completed : SePay Webhook / VNPay xác nhận nhận tiền
+    Pending --> Completed : SePay Webhook xác nhận nhận tiền thành công
     Pending --> Expired : Hết hạn thanh toán (sau 15 phút)
     Completed --> Refunded : Quản lý thực hiện hoàn tiền giao dịch
     Completed --> [*]
@@ -433,7 +433,7 @@ stateDiagram-v2
 
 ---
 
-### 3. Feature 3: Thanh toán VietQR SePay & VNPay Sandbox
+### 3. Feature 3: Thanh toán Tự động VietQR Napas 24/7 & Cổng SePay Webhook
 
 #### a. Function 3.1: Thanh toán Tự động bằng VietQR Napas 247 (SePay Auto-Checkout)
 * **Function trigger:** Tại màn hình thanh toán, hội viên chọn "Chuyển khoản VietQR" và bấm "Thanh toán ngay".
@@ -491,10 +491,10 @@ stateDiagram-v2
 
 ---
 
-### 5. Feature 5: Điểm danh Thẻ QR & Vận hành Quầy Lễ tân (Receptionist Operations)
+### 5. Feature 5: Điểm danh Hội viên & Vận hành Quầy Lễ tân (Receptionist Operations)
 
-#### a. Function 5.1: Quét Mã QR Check-in Ra Vào Cổng
-* **Function trigger:** Lễ tân mở màn hình `CheckInPage.tsx`, camera tự động quét mã QR trên điện thoại của hội viên khi đến cửa.
+#### a. Function 5.1: Tra cứu & Điểm danh Hội viên tại Quầy Lễ tân
+* **Function trigger:** Lễ tân mở màn hình `CheckInPage.tsx`, Lễ tân nhập SĐT hoặc Mã hội viên trên phần mềm của hội viên khi đến cửa.
 * **Function description:**
   - *Actor:* Receptionist.
   - *Mục đích:* Kiểm soát quyền vào tập, ngăn chặn người chưa mua gói hoặc gói hết hạn vào trung tâm.
@@ -521,7 +521,7 @@ stateDiagram-v2
 | **7** | `subscriptions` | Bản ghi hợp đồng hội viên, lưu trữ thời hạn bắt đầu và ngày hết hạn. | Phương |
 | **8** | `classes` | Lịch lớp học nhóm (Group-X), giờ học, phòng tập, HLV và sức chứa. | Long |
 | **9** | `class_bookings` | Bảng đặt chỗ tham gia lớp học nhóm của hội viên. | Long |
-| **10** | `check_in_logs` | Nhật ký quẹt thẻ / quét mã QR ra vào cổng trung tâm. | Long |
+| **10** | `check_in_logs` | Nhật ký điểm danh vào tập của hội viên tại trung tâm. | Long |
 | **11** | `invoices` | Bảng hóa đơn chứng từ toàn bộ các giao dịch thanh toán. | Thuận |
 | **12** | `invoice_items` | Chi tiết từng sản phẩm hoặc dịch vụ trong hóa đơn. | Thuận |
 | **13** | `coaches` | Hồ sơ năng lực huấn luyện viên (kinh nghiệm, chuyên môn, rating). | Nam |

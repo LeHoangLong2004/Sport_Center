@@ -17,7 +17,7 @@ export default function ReportsTabClasses() {
         <div className="flex items-center justify-between">
           <p className="font-extrabold text-[#0f172a] text-base">Tỷ lệ lấp đầy theo lớp (tháng này)</p>
           <div className="flex gap-4">
-            {[{ c: "#94a3b8", l: "Sức chứa" }, { c: "#14b8a6", l: "Lấp đầy ≥85%" }, { c: "#f97316", l: "Lấp đầy <85%" }].map(i => (
+            {[{ c: "#94a3b8", l: "Sức chứa" }, { c: "#059669", l: "Lấp đầy ≥85%" }, { c: "#475569", l: "Lấp đầy <85%" }].map(i => (
               <div key={i.l} className="flex gap-1.5 items-center">
                 <div className="rounded-full size-2 shrink-0" style={{ background: i.c }} />
                 <span className="text-[#64748b] text-[10px]">{i.l}</span>
@@ -44,7 +44,7 @@ export default function ReportsTabClasses() {
                   <div className="flex gap-1 items-end w-full" style={{ height: 120 }}>
                     <div className="bg-[#e2e8f0] rounded-t-sm flex-1" style={{ height: "100%" }} />
                     <div
-                      className={`rounded-t-sm flex-1 ${percent >= 85 ? "bg-[#14b8a6]" : "bg-[#f97316]"}`}
+                      className={`rounded-t-sm flex-1 ${percent >= 85 ? "bg-emerald-600" : "bg-slate-600"}`}
                       style={{ height: `${percent}%` }}
                     />
                   </div>
@@ -85,7 +85,7 @@ export default function ReportsTabClasses() {
               <div className="bg-[#f1f5f9] h-1.5 rounded-full w-full">
                 <div
                   className="h-1.5 rounded-full"
-                  style={{ width: `${Math.min(percent, 100)}%`, background: percent >= 85 ? "#14b8a6" : "#f97316" }}
+                  style={{ width: `${Math.min(percent, 100)}%`, background: percent >= 85 ? "#059669" : "#475569" }}
                 />
               </div>
             </div>

@@ -9,15 +9,28 @@ using SmartGym.Application.Interfaces;
 
 namespace SmartGym.Api.Endpoints;
 
+/// <summary>
+/// Endpoint quản lý Gói tập (Gym & Fitness Packages CRUD).
+/// Hỗ trợ: Xem danh sách gói tập, xem chi tiết gói tập, tạo gói mới (Manager), cập nhật và vô hiệu hóa gói tập.
+/// </summary>
 public static class PackageEndpoints
 {
+    /// <summary>
+    /// Đăng ký các route quản lý gói tập vào hệ thống định tuyến.
+    /// Nhóm route gốc: /api/packages
+    /// </summary>
+    /// <param name="app">Đối tượng IEndpointRouteBuilder</param>
     public static void MapPackageEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/packages");
 
         var managerAuth = new AuthorizeAttribute { Roles = "manager" };
 
-        // Mọi người đều xem được danh sách gói
+        /// <summary>
+        /// GET /api/packages
+        /// Lấy toàn bộ danh sách gói tập trong hệ thống.
+        /// Không yêu cầu đăng nhập.
+        /// </summary>
         group.MapGet(
             "/",
             async (IPackageService packageService) =>
@@ -27,7 +40,11 @@ public static class PackageEndpoints
             }
         );
 
-        // Mọi người đều xem được chi tiết gói
+        /// <summary>
+        /// GET /api/packages/{id}
+        /// Lấy thông tin chi tiết một gói tập theo ID.
+        /// Không yêu cầu đăng nhập.
+        /// </summary>
         group.MapGet(
             "/{id}",
             async (string id, IPackageService packageService) =>
@@ -39,7 +56,11 @@ public static class PackageEndpoints
             }
         );
 
-        // CHỈ MANAGER mới được tạo gói tập mới
+        /// <summary>
+        /// POST /api/packages
+        /// Tạo mới một gói tập (tên gói, giá tháng, số buổi, quyền truy cập).
+        /// Quyền hạn yêu cầu: Manager.
+        /// </summary>
         group
             .MapPost(
                 "/",
@@ -51,7 +72,11 @@ public static class PackageEndpoints
             )
             .RequireAuthorization(managerAuth);
 
-        // CHỈ MANAGER mới được sửa gói tập
+        /// <summary>
+        /// PUT /api/packages/{id}
+        /// Cập nhật thông tin gói tập hiện có.
+        /// Quyền hạn yêu cầu: Manager.
+        /// </summary>
         group
             .MapPut(
                 "/{id}",
@@ -69,7 +94,11 @@ public static class PackageEndpoints
             )
             .RequireAuthorization(managerAuth);
 
-        // CHỈ MANAGER mới được khóa gói tập
+        /// <summary>
+        /// DELETE /api/packages/{id}
+        /// Khóa hoặc xóa mềm gói tập khỏi hệ thống.
+        /// Quyền hạn yêu cầu: Manager.
+        /// </summary>
         group
             .MapDelete(
                 "/{id}",

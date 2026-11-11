@@ -40,7 +40,7 @@ export function HomeworkDetailModal({ homework, onClose }: HomeworkDetailModalPr
               {homework.plan.goal || homework.plan.description || "Thực hiện theo hướng dẫn của huấn luyện viên."}
             </p>
             {homework.notes && (
-              <p className="mt-2 text-amber-600 dark:text-amber-400 font-medium">
+              <p className="mt-2 text-slate-600 dark:text-slate-400 font-medium">
                 Lưu ý của Coach: {homework.notes}
               </p>
             )}
@@ -64,7 +64,7 @@ export function HomeworkDetailModal({ homework, onClose }: HomeworkDetailModalPr
                     {exercise.rest ? ` • Nghỉ ${exercise.rest}` : ""}
                   </p>
                   {exercise.note && (
-                    <p className="text-[10px] text-amber-600 dark:text-amber-400 italic mt-1">
+                    <p className="text-[10px] text-slate-600 dark:text-slate-400 italic mt-1">
                       Lưu ý: {exercise.note}
                     </p>
                   )}

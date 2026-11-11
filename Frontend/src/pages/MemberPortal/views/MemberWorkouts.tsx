@@ -32,6 +32,13 @@ const getExerciseDescription = (exercise: HomeworkExercise) =>
     .filter(Boolean)
     .join(". ");
 
+/**
+ * Màn hình Giáo án & Bài tập được giao của Hội viên (Member Workouts View).
+ * Hiển thị các bài tập về nhà (homework), giáo án chi tiết từ HLV phụ trách (sets, reps, thời gian nghỉ)
+ * và cho phép hội viên đánh dấu hoàn thành bài tập.
+ * 
+ * @param onNavigate Hàm điều hướng màn hình
+ */
 export default function MemberWorkouts({ onNavigate }: Props) {
   const [homeworks, setHomeworks] = useState<MemberHomework[]>([]);
   const [selectedHomework, setSelectedHomework] = useState<MemberHomework | null>(null);
@@ -108,7 +115,7 @@ export default function MemberWorkouts({ onNavigate }: Props) {
       <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between gap-4">
         <div>
           <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-emerald-500" />
+            <Sparkles className="w-4 h-4" />
             <span>Giáo án tập luyện cá nhân</span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -138,7 +145,7 @@ export default function MemberWorkouts({ onNavigate }: Props) {
       {/* Assigned Workout Plans Grid */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <Dumbbell className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <Dumbbell className="w-4 h-4" />
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">
             Giáo án được giao cho bạn ({homeworks.length})
           </h3>
@@ -175,8 +182,8 @@ export default function MemberWorkouts({ onNavigate }: Props) {
                         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
                           {plan?.level || "Bài tập cá nhân"}
                         </span>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 flex items-center gap-1">
-                          <Sparkles className="w-2.5 h-2.5 text-teal-500" />
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                          <Sparkles className="w-2.5 h-2.5" />
                           <span>Gợi ý AI & HLV duyệt</span>
                         </span>
                       </div>
@@ -221,7 +228,7 @@ export default function MemberWorkouts({ onNavigate }: Props) {
                       className="px-3 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                       title="Nhắn tin trao đổi với HLV phụ trách"
                     >
-                      <MessageSquare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <MessageSquare className="w-3.5 h-3.5" />
                       <span className="hidden sm:inline">Nhắn HLV</span>
                     </button>
                   </div>
@@ -236,7 +243,7 @@ export default function MemberWorkouts({ onNavigate }: Props) {
       <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Flame className="w-4 h-4 text-amber-500" />
+            <Flame className="w-4 h-4 text-slate-500" />
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">
               Chi tiết các bài tập rèn luyện ({assignedTasks.length} bài)
             </h3>

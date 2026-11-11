@@ -1,5 +1,9 @@
 namespace SmartGym.Domain.Entities;
 
+/// <summary>
+/// Thực thể Bản ghi điểm danh (Check-in/Check-out Record Entity).
+/// Ghi nhận thời điểm hội viên vào và rời phòng tập, chi nhánh tập luyện và nhân viên lễ tân trực quầy.
+/// </summary>
 public sealed class CheckInRecord
 {
     public CheckInRecord(

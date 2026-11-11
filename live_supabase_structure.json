@@ -1,0 +1,3711 @@
+{
+  "appointments": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "time",
+        "data_type": "character varying",
+        "max_len": 10,
+        "udt": "varchar",
+        "nullable": false,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "title",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": false,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "customer_name",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": false,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "coach_name",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 5
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": "'Đang chờ khách'::character varying",
+        "pos": 6
+      },
+      {
+        "name": "date",
+        "data_type": "character varying",
+        "max_len": 20,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 7
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": []
+  },
+  "body_metrics": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "user_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "weight",
+        "data_type": "numeric",
+        "max_len": null,
+        "udt": "numeric",
+        "nullable": true,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "height",
+        "data_type": "numeric",
+        "max_len": null,
+        "udt": "numeric",
+        "nullable": true,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "body_fat",
+        "data_type": "numeric",
+        "max_len": null,
+        "udt": "numeric",
+        "nullable": true,
+        "default": null,
+        "pos": 5
+      },
+      {
+        "name": "muscle_mass",
+        "data_type": "numeric",
+        "max_len": null,
+        "udt": "numeric",
+        "nullable": true,
+        "default": null,
+        "pos": 6
+      },
+      {
+        "name": "bmi",
+        "data_type": "numeric",
+        "max_len": null,
+        "udt": "numeric",
+        "nullable": true,
+        "default": null,
+        "pos": 7
+      },
+      {
+        "name": "recorded_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": "now()",
+        "pos": 8
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "user_id",
+        "ref_table": "users",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "chat_conversations": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "character varying",
+        "max_len": 100,
+        "udt": "varchar",
+        "nullable": false,
+        "default": null,
+        "pos": 1
+      },
+      {
+        "name": "type",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": false,
+        "default": "'direct'::character varying",
+        "pos": 2
+      },
+      {
+        "name": "coach_title",
+        "data_type": "character varying",
+        "max_len": 255,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "coach_subtitle",
+        "data_type": "character varying",
+        "max_len": 255,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "member_title",
+        "data_type": "character varying",
+        "max_len": 255,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 5
+      },
+      {
+        "name": "member_subtitle",
+        "data_type": "character varying",
+        "max_len": 255,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 6
+      },
+      {
+        "name": "avatar",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 7
+      },
+      {
+        "name": "coach_avatar",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 8
+      },
+      {
+        "name": "last_message",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 9
+      },
+      {
+        "name": "last_time",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 10
+      },
+      {
+        "name": "unread_count",
+        "data_type": "integer",
+        "max_len": null,
+        "udt": "int4",
+        "nullable": true,
+        "default": "0",
+        "pos": 11
+      },
+      {
+        "name": "online",
+        "data_type": "boolean",
+        "max_len": null,
+        "udt": "bool",
+        "nullable": true,
+        "default": "true",
+        "pos": 12
+      },
+      {
+        "name": "coach_id",
+        "data_type": "character varying",
+        "max_len": 100,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 13
+      },
+      {
+        "name": "coach_name",
+        "data_type": "character varying",
+        "max_len": 255,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 14
+      },
+      {
+        "name": "member_id",
+        "data_type": "character varying",
+        "max_len": 100,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 15
+      },
+      {
+        "name": "member_name",
+        "data_type": "character varying",
+        "max_len": 255,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 16
+      },
+      {
+        "name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": "now()",
+        "pos": 17
+      },
+      {
+        "name": "category",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": false,
+        "default": "'coach'::character varying",
+        "pos": 18
+      },
+      {
+        "name": "role_tag",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": false,
+        "default": "'HLV'::character varying",
+        "pos": 19
+      },
+      {
+        "name": "badge_color",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": false,
+        "default": "'orange'::character varying",
+        "pos": 20
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": []
+  },
+  "chat_messages": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "character varying",
+        "max_len": 100,
+        "udt": "varchar",
+        "nullable": false,
+        "default": null,
+        "pos": 1
+      },
+      {
+        "name": "conversation_id",
+        "data_type": "character varying",
+        "max_len": 100,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "sender",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": false,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "sender_name",
+        "data_type": "character varying",
+        "max_len": 255,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "text",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": false,
+        "default": null,
+        "pos": 5
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": false,
+        "default": null,
+        "pos": 6
+      },
+      {
+        "name": "created_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": "now()",
+        "pos": 7
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "conversation_id",
+        "ref_table": "chat_conversations",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "check_in_logs": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "user_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "facility_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "subscription_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "check_in_time",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": "now()",
+        "pos": 5
+      },
+      {
+        "name": "check_out_time",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": null,
+        "pos": 6
+      },
+      {
+        "name": "method",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": "'qr'::character varying",
+        "pos": 7
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "facility_id",
+        "ref_table": "facilities",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      },
+      {
+        "col": "subscription_id",
+        "ref_table": "subscriptions",
+        "ref_col": "id",
+        "on_delete": "SET NULL"
+      },
+      {
+        "col": "user_id",
+        "ref_table": "users",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "class_attendance_records": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "session_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "member_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "note",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 5
+      },
+      {
+        "name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": "now()",
+        "pos": 6
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "member_id",
+        "ref_table": "users",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      },
+      {
+        "col": "session_id",
+        "ref_table": "classes",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "class_attendance_sheets": {
+    "columns": [
+      {
+        "name": "session_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": null,
+        "pos": 1
+      },
+      {
+        "name": "state",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": "'unmarked'::character varying",
+        "pos": 2
+      },
+      {
+        "name": "version",
+        "data_type": "integer",
+        "max_len": null,
+        "udt": "int4",
+        "nullable": true,
+        "default": "1",
+        "pos": 3
+      },
+      {
+        "name": "finalized_by",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "finalized_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": null,
+        "pos": 5
+      },
+      {
+        "name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": "now()",
+        "pos": 6
+      }
+    ],
+    "primary_key": [
+      "session_id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "finalized_by",
+        "ref_table": "users",
+        "ref_col": "id",
+        "on_delete": "SET NULL"
+      },
+      {
+        "col": "session_id",
+        "ref_table": "classes",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "class_bookings": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "user_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "class_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "subscription_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": "'pending'::character varying",
+        "pos": 5
+      },
+      {
+        "name": "created_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": "now()",
+        "pos": 6
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "class_id",
+        "ref_table": "classes",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      },
+      {
+        "col": "subscription_id",
+        "ref_table": "subscriptions",
+        "ref_col": "id",
+        "on_delete": "SET NULL"
+      },
+      {
+        "col": "user_id",
+        "ref_table": "users",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "classes": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "sport_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "coach_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "facility_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "class_name",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": false,
+        "default": null,
+        "pos": 5
+      },
+      {
+        "name": "schedule_time",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": false,
+        "default": null,
+        "pos": 6
+      },
+      {
+        "name": "duration_minutes",
+        "data_type": "integer",
+        "max_len": null,
+        "udt": "int4",
+        "nullable": true,
+        "default": "60",
+        "pos": 7
+      },
+      {
+        "name": "capacity",
+        "data_type": "integer",
+        "max_len": null,
+        "udt": "int4",
+        "nullable": false,
+        "default": null,
+        "pos": 8
+      },
+      {
+        "name": "current_enrolled",
+        "data_type": "integer",
+        "max_len": null,
+        "udt": "int4",
+        "nullable": true,
+        "default": "0",
+        "pos": 9
+      },
+      {
+        "name": "status",
+        "data_type": "boolean",
+        "max_len": null,
+        "udt": "bool",
+        "nullable": true,
+        "default": "true",
+        "pos": 10
+      },
+      {
+        "name": "created_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": "now()",
+        "pos": 11
+      },
+      {
+        "name": "level",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 12
+      },
+      {
+        "name": "room",
+        "data_type": "character varying",
+        "max_len": 100,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 13
+      },
+      {
+        "name": "approval_status",
+        "data_type": "character varying",
+        "max_len": 20,
+        "udt": "varchar",
+        "nullable": false,
+        "default": "'approved'::character varying",
+        "pos": 14
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "coach_id",
+        "ref_table": "coaches",
+        "ref_col": "id",
+        "on_delete": "SET NULL"
+      },
+      {
+        "col": "facility_id",
+        "ref_table": "facilities",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      },
+      {
+        "col": "sport_id",
+        "ref_table": "sports",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "coach_assessments": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "coach_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "session_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "member_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "completion",
+        "data_type": "integer",
+        "max_len": null,
+        "udt": "int4",
+        "nullable": false,
+        "default": "0",
+        "pos": 5
+      },
+      {
+        "name": "metrics_json",
+        "data_type": "jsonb",
+        "max_len": null,
+        "udt": "jsonb",
+        "nullable": false,
+        "default": "'[]'::jsonb",
+        "pos": 6
+      },
+      {
+        "name": "comment",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 7
+      },
+      {
+        "name": "next_step",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 8
+      },
+      {
+        "name": "created_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": false,
+        "default": "now()",
+        "pos": 9
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "coach_id",
+        "ref_table": "coaches",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      },
+      {
+        "col": "member_id",
+        "ref_table": "users",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      },
+      {
+        "col": "session_id",
+        "ref_table": "classes",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "coach_availability_slots": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "coach_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "start_time",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": false,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "end_time",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": false,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "sport",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": false,
+        "default": null,
+        "pos": 5
+      },
+      {
+        "name": "room",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": false,
+        "default": null,
+        "pos": 6
+      },
+      {
+        "name": "note",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 7
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_len": 20,
+        "udt": "varchar",
+        "nullable": false,
+        "default": "'open'::character varying",
+        "pos": 8
+      },
+      {
+        "name": "booked_member_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 9
+      },
+      {
+        "name": "booked_member_name",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 10
+      },
+      {
+        "name": "booked_member_phone",
+        "data_type": "character varying",
+        "max_len": 30,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 11
+      },
+      {
+        "name": "goal",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 12
+      },
+      {
+        "name": "created_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": false,
+        "default": "now()",
+        "pos": 13
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "coach_id",
+        "ref_table": "coaches",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "coach_profiles": {
+    "columns": [
+      {
+        "name": "user_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": null,
+        "pos": 1
+      },
+      {
+        "name": "specialties",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "certifications",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "experience_years",
+        "data_type": "integer",
+        "max_len": null,
+        "udt": "int4",
+        "nullable": true,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "bio",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 5
+      }
+    ],
+    "primary_key": [
+      "user_id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "user_id",
+        "ref_table": "users",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "coach_schedule_requests": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "coach_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "session_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "request_type",
+        "data_type": "character varying",
+        "max_len": 30,
+        "udt": "varchar",
+        "nullable": false,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "substitute_coach_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 5
+      },
+      {
+        "name": "new_date",
+        "data_type": "date",
+        "max_len": null,
+        "udt": "date",
+        "nullable": true,
+        "default": null,
+        "pos": 6
+      },
+      {
+        "name": "new_time",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 7
+      },
+      {
+        "name": "reason",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": false,
+        "default": null,
+        "pos": 8
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_len": 30,
+        "udt": "varchar",
+        "nullable": false,
+        "default": "'pending'::character varying",
+        "pos": 9
+      },
+      {
+        "name": "manager_note",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 10
+      },
+      {
+        "name": "created_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": false,
+        "default": "now()",
+        "pos": 11
+      },
+      {
+        "name": "class_name",
+        "data_type": "character varying",
+        "max_len": 255,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 12
+      },
+      {
+        "name": "session_time",
+        "data_type": "character varying",
+        "max_len": 100,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 13
+      },
+      {
+        "name": "sport_name",
+        "data_type": "character varying",
+        "max_len": 100,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 14
+      },
+      {
+        "name": "room_name",
+        "data_type": "character varying",
+        "max_len": 100,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 15
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "coach_id",
+        "ref_table": "coaches",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      },
+      {
+        "col": "session_id",
+        "ref_table": "classes",
+        "ref_col": "id",
+        "on_delete": "SET NULL"
+      },
+      {
+        "col": "substitute_coach_id",
+        "ref_table": "coaches",
+        "ref_col": "id",
+        "on_delete": "SET NULL"
+      }
+    ]
+  },
+  "coach_sports": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "coach_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "sport_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": null,
+        "pos": 3
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "coach_id",
+        "ref_table": "coaches",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      },
+      {
+        "col": "sport_id",
+        "ref_table": "sports",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "coaches": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "user_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "specialty",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "bio",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "experience_years",
+        "data_type": "integer",
+        "max_len": null,
+        "udt": "int4",
+        "nullable": true,
+        "default": null,
+        "pos": 5
+      },
+      {
+        "name": "rating",
+        "data_type": "numeric",
+        "max_len": null,
+        "udt": "numeric",
+        "nullable": true,
+        "default": "0.00",
+        "pos": 6
+      },
+      {
+        "name": "status",
+        "data_type": "boolean",
+        "max_len": null,
+        "udt": "bool",
+        "nullable": true,
+        "default": "true",
+        "pos": 7
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "user_id",
+        "ref_table": "users",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "communications": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "user_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "title",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": false,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "message",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "is_read",
+        "data_type": "boolean",
+        "max_len": null,
+        "udt": "bool",
+        "nullable": true,
+        "default": "false",
+        "pos": 5
+      },
+      {
+        "name": "created_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": "now()",
+        "pos": 6
+      },
+      {
+        "name": "type",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": "'Thông báo'::character varying",
+        "pos": 7
+      },
+      {
+        "name": "target_type",
+        "data_type": "character varying",
+        "max_len": 20,
+        "udt": "varchar",
+        "nullable": true,
+        "default": "'member'::character varying",
+        "pos": 8
+      },
+      {
+        "name": "target_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 9
+      },
+      {
+        "name": "deadline",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": null,
+        "pos": 10
+      },
+      {
+        "name": "coach_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 11
+      },
+      {
+        "name": "state",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": "'draft'::character varying",
+        "pos": 12
+      },
+      {
+        "name": "published_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": null,
+        "pos": 13
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "coach_id",
+        "ref_table": "coaches",
+        "ref_col": "id",
+        "on_delete": "SET NULL"
+      },
+      {
+        "col": "user_id",
+        "ref_table": "users",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "facilities": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "name",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": false,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "address",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": false,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "hotline",
+        "data_type": "character varying",
+        "max_len": 20,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "status",
+        "data_type": "boolean",
+        "max_len": null,
+        "udt": "bool",
+        "nullable": true,
+        "default": "true",
+        "pos": 5
+      },
+      {
+        "name": "image_url",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 6
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": []
+  },
+  "gate_checkins": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "member_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "branch_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "member_package_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "check_in_time",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": false,
+        "default": "now()",
+        "pos": 5
+      },
+      {
+        "name": "receptionist_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 6
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": []
+  },
+  "homework_progress": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "communication_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "member_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": "'assigned'::character varying",
+        "pos": 4
+      },
+      {
+        "name": "completed_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": null,
+        "pos": 5
+      },
+      {
+        "name": "plan_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 6
+      },
+      {
+        "name": "assigned_by",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 7
+      },
+      {
+        "name": "progress_pct",
+        "data_type": "numeric",
+        "max_len": null,
+        "udt": "numeric",
+        "nullable": true,
+        "default": "0",
+        "pos": 8
+      },
+      {
+        "name": "assigned_date",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": false,
+        "default": "now()",
+        "pos": 9
+      },
+      {
+        "name": "due_date",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": null,
+        "pos": 10
+      },
+      {
+        "name": "notes",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 11
+      },
+      {
+        "name": "created_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": false,
+        "default": "now()",
+        "pos": 12
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "communication_id",
+        "ref_table": "communications",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      },
+      {
+        "col": "member_id",
+        "ref_table": "users",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      },
+      {
+        "col": "plan_id",
+        "ref_table": "workout_plans",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "invoice_items": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "invoice_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "product_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "quantity",
+        "data_type": "integer",
+        "max_len": null,
+        "udt": "int4",
+        "nullable": false,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "unit_price",
+        "data_type": "numeric",
+        "max_len": null,
+        "udt": "numeric",
+        "nullable": false,
+        "default": null,
+        "pos": 5
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "invoice_id",
+        "ref_table": "invoices",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      },
+      {
+        "col": "product_id",
+        "ref_table": "products",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "invoices": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "user_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "created_by",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "total_amount",
+        "data_type": "numeric",
+        "max_len": null,
+        "udt": "numeric",
+        "nullable": false,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "payment_method",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 5
+      },
+      {
+        "name": "created_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": "now()",
+        "pos": 6
+      },
+      {
+        "name": "payment_status",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": "'pending'::character varying",
+        "pos": 7
+      },
+      {
+        "name": "facility_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 8
+      },
+      {
+        "name": "paid_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": null,
+        "pos": 9
+      },
+      {
+        "name": "fulfillment_method",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": false,
+        "default": "'counter_pickup'::character varying",
+        "pos": 10
+      },
+      {
+        "name": "fulfillment_status",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": false,
+        "default": "'pending'::character varying",
+        "pos": 11
+      },
+      {
+        "name": "delivery_location",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 12
+      },
+      {
+        "name": "assigned_to",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 13
+      },
+      {
+        "name": "fulfilled_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": null,
+        "pos": 14
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "assigned_to",
+        "ref_table": "users",
+        "ref_col": "id",
+        "on_delete": "SET NULL"
+      },
+      {
+        "col": "created_by",
+        "ref_table": "users",
+        "ref_col": "id",
+        "on_delete": "SET NULL"
+      },
+      {
+        "col": "facility_id",
+        "ref_table": "facilities",
+        "ref_col": "id",
+        "on_delete": "SET NULL"
+      },
+      {
+        "col": "user_id",
+        "ref_table": "users",
+        "ref_col": "id",
+        "on_delete": "SET NULL"
+      }
+    ]
+  },
+  "member_wallet_balances": {
+    "columns": [
+      {
+        "name": "user_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": null,
+        "pos": 1
+      },
+      {
+        "name": "balance",
+        "data_type": "numeric",
+        "max_len": null,
+        "udt": "numeric",
+        "nullable": false,
+        "default": "0.00",
+        "pos": 2
+      },
+      {
+        "name": "last_updated_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": "now()",
+        "pos": 3
+      }
+    ],
+    "primary_key": [
+      "user_id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "user_id",
+        "ref_table": "users",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "membership_benefits": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "package_id",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "benefit_type",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": false,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "benefit_value",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "description",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": false,
+        "default": null,
+        "pos": 5
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "package_id",
+        "ref_table": "packages",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "notifications": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "sender_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "user_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "target_type",
+        "data_type": "character varying",
+        "max_len": 20,
+        "udt": "varchar",
+        "nullable": true,
+        "default": "'member'::character varying",
+        "pos": 4
+      },
+      {
+        "name": "target_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 5
+      },
+      {
+        "name": "type",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": "'Thông báo'::character varying",
+        "pos": 6
+      },
+      {
+        "name": "state",
+        "data_type": "character varying",
+        "max_len": 20,
+        "udt": "varchar",
+        "nullable": true,
+        "default": "'published'::character varying",
+        "pos": 7
+      },
+      {
+        "name": "title",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": false,
+        "default": null,
+        "pos": 8
+      },
+      {
+        "name": "message",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 9
+      },
+      {
+        "name": "deadline",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": null,
+        "pos": 10
+      },
+      {
+        "name": "is_read",
+        "data_type": "boolean",
+        "max_len": null,
+        "udt": "bool",
+        "nullable": true,
+        "default": "false",
+        "pos": 11
+      },
+      {
+        "name": "created_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": "now()",
+        "pos": 12
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "sender_id",
+        "ref_table": "coaches",
+        "ref_col": "id",
+        "on_delete": "SET NULL"
+      },
+      {
+        "col": "user_id",
+        "ref_table": "users",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "package_features": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "package_id",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "feature_text",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": false,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "is_highlighted",
+        "data_type": "boolean",
+        "max_len": null,
+        "udt": "bool",
+        "nullable": true,
+        "default": "false",
+        "pos": 4
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "package_id",
+        "ref_table": "packages",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "package_sports": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "package_id",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": false,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "sport_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": null,
+        "pos": 3
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "package_id",
+        "ref_table": "packages",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      },
+      {
+        "col": "sport_id",
+        "ref_table": "sports",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "packages": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": false,
+        "default": null,
+        "pos": 1
+      },
+      {
+        "name": "name",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": false,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "tagline",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "package_type",
+        "data_type": "character varying",
+        "max_len": 20,
+        "udt": "varchar",
+        "nullable": false,
+        "default": "'sport'::character varying",
+        "pos": 4
+      },
+      {
+        "name": "monthly_price",
+        "data_type": "numeric",
+        "max_len": null,
+        "udt": "numeric",
+        "nullable": true,
+        "default": null,
+        "pos": 5
+      },
+      {
+        "name": "yearly_price",
+        "data_type": "numeric",
+        "max_len": null,
+        "udt": "numeric",
+        "nullable": true,
+        "default": null,
+        "pos": 6
+      },
+      {
+        "name": "description",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 7
+      },
+      {
+        "name": "status",
+        "data_type": "boolean",
+        "max_len": null,
+        "udt": "bool",
+        "nullable": true,
+        "default": "true",
+        "pos": 8
+      },
+      {
+        "name": "catalog_json",
+        "data_type": "jsonb",
+        "max_len": null,
+        "udt": "jsonb",
+        "nullable": true,
+        "default": null,
+        "pos": 9
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": []
+  },
+  "product_order_messages": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "invoice_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "sender_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "message",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": false,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "created_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": false,
+        "default": "now()",
+        "pos": 5
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "invoice_id",
+        "ref_table": "invoices",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      },
+      {
+        "col": "sender_id",
+        "ref_table": "users",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "products": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "name",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": false,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "category",
+        "data_type": "character varying",
+        "max_len": 100,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "price",
+        "data_type": "numeric",
+        "max_len": null,
+        "udt": "numeric",
+        "nullable": false,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "stock_quantity",
+        "data_type": "integer",
+        "max_len": null,
+        "udt": "int4",
+        "nullable": true,
+        "default": "0",
+        "pos": 5
+      },
+      {
+        "name": "image_url",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 6
+      },
+      {
+        "name": "status",
+        "data_type": "boolean",
+        "max_len": null,
+        "udt": "bool",
+        "nullable": true,
+        "default": "true",
+        "pos": 7
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": []
+  },
+  "reviews": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "user_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "coach_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "rating",
+        "data_type": "integer",
+        "max_len": null,
+        "udt": "int4",
+        "nullable": true,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "comment",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 5
+      },
+      {
+        "name": "created_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": "now()",
+        "pos": 6
+      },
+      {
+        "name": "session_id",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 7
+      },
+      {
+        "name": "session_name",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 8
+      },
+      {
+        "name": "tags_json",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 9
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "coach_id",
+        "ref_table": "coaches",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      },
+      {
+        "col": "user_id",
+        "ref_table": "users",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "roles": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "name",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": false,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "description",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 3
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": []
+  },
+  "sports": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "name",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": false,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "description",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "image_url",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "status",
+        "data_type": "boolean",
+        "max_len": null,
+        "udt": "bool",
+        "nullable": true,
+        "default": "true",
+        "pos": 5
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": []
+  },
+  "subscription_sports": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "subscription_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "sport_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": null,
+        "pos": 3
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "sport_id",
+        "ref_table": "sports",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      },
+      {
+        "col": "subscription_id",
+        "ref_table": "subscriptions",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "subscriptions": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "user_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "package_id",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "sport_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "facility_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 5
+      },
+      {
+        "name": "billing_period",
+        "data_type": "character varying",
+        "max_len": 20,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 7
+      },
+      {
+        "name": "total_amount",
+        "data_type": "numeric",
+        "max_len": null,
+        "udt": "numeric",
+        "nullable": false,
+        "default": null,
+        "pos": 8
+      },
+      {
+        "name": "payment_method",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 9
+      },
+      {
+        "name": "payment_status",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": "'pending'::character varying",
+        "pos": 10
+      },
+      {
+        "name": "start_date",
+        "data_type": "date",
+        "max_len": null,
+        "udt": "date",
+        "nullable": false,
+        "default": null,
+        "pos": 11
+      },
+      {
+        "name": "end_date",
+        "data_type": "date",
+        "max_len": null,
+        "udt": "date",
+        "nullable": false,
+        "default": null,
+        "pos": 12
+      },
+      {
+        "name": "auto_renew",
+        "data_type": "boolean",
+        "max_len": null,
+        "udt": "bool",
+        "nullable": true,
+        "default": "false",
+        "pos": 13
+      },
+      {
+        "name": "created_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": "now()",
+        "pos": 14
+      },
+      {
+        "name": "duration_months",
+        "data_type": "integer",
+        "max_len": null,
+        "udt": "int4",
+        "nullable": true,
+        "default": null,
+        "pos": 15
+      },
+      {
+        "name": "discount_pct",
+        "data_type": "numeric",
+        "max_len": null,
+        "udt": "numeric",
+        "nullable": false,
+        "default": "0",
+        "pos": 16
+      },
+      {
+        "name": "discount_amount",
+        "data_type": "numeric",
+        "max_len": null,
+        "udt": "numeric",
+        "nullable": false,
+        "default": "0",
+        "pos": 17
+      },
+      {
+        "name": "package_snapshot_json",
+        "data_type": "jsonb",
+        "max_len": null,
+        "udt": "jsonb",
+        "nullable": true,
+        "default": null,
+        "pos": 18
+      },
+      {
+        "name": "paid_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": null,
+        "pos": 19
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "facility_id",
+        "ref_table": "facilities",
+        "ref_col": "id",
+        "on_delete": "NO ACTION"
+      },
+      {
+        "col": "package_id",
+        "ref_table": "packages",
+        "ref_col": "id",
+        "on_delete": "NO ACTION"
+      },
+      {
+        "col": "sport_id",
+        "ref_table": "sports",
+        "ref_col": "id",
+        "on_delete": "SET NULL"
+      },
+      {
+        "col": "user_id",
+        "ref_table": "users",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "users": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "role_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "full_name",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": false,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "phone_number",
+        "data_type": "character varying",
+        "max_len": 20,
+        "udt": "varchar",
+        "nullable": false,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "email",
+        "data_type": "character varying",
+        "max_len": 100,
+        "udt": "varchar",
+        "nullable": false,
+        "default": null,
+        "pos": 5
+      },
+      {
+        "name": "password_hash",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": false,
+        "default": null,
+        "pos": 6
+      },
+      {
+        "name": "avatar_url",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 7
+      },
+      {
+        "name": "date_of_birth",
+        "data_type": "date",
+        "max_len": null,
+        "udt": "date",
+        "nullable": true,
+        "default": null,
+        "pos": 8
+      },
+      {
+        "name": "gender",
+        "data_type": "character varying",
+        "max_len": 20,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 9
+      },
+      {
+        "name": "emergency_contact",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 10
+      },
+      {
+        "name": "status",
+        "data_type": "boolean",
+        "max_len": null,
+        "udt": "bool",
+        "nullable": true,
+        "default": "true",
+        "pos": 11
+      },
+      {
+        "name": "created_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": "now()",
+        "pos": 12
+      },
+      {
+        "name": "member_code",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 13
+      },
+      {
+        "name": "training_goal",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 14
+      },
+      {
+        "name": "training_level",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 15
+      },
+      {
+        "name": "address",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 16
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "role_id",
+        "ref_table": "roles",
+        "ref_col": "id",
+        "on_delete": "SET NULL"
+      }
+    ]
+  },
+  "wallet_transactions": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "user_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "type",
+        "data_type": "character varying",
+        "max_len": 20,
+        "udt": "varchar",
+        "nullable": false,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "amount",
+        "data_type": "numeric",
+        "max_len": null,
+        "udt": "numeric",
+        "nullable": false,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "balance_after",
+        "data_type": "numeric",
+        "max_len": null,
+        "udt": "numeric",
+        "nullable": false,
+        "default": "0.00",
+        "pos": 5
+      },
+      {
+        "name": "method",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": "'VietQR'::character varying",
+        "pos": 6
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_len": 20,
+        "udt": "varchar",
+        "nullable": false,
+        "default": "'completed'::character varying",
+        "pos": 7
+      },
+      {
+        "name": "reference_code",
+        "data_type": "character varying",
+        "max_len": 100,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 8
+      },
+      {
+        "name": "note",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 9
+      },
+      {
+        "name": "created_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": "now()",
+        "pos": 10
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "user_id",
+        "ref_table": "users",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "workout_plan_exercises": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "plan_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "name",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": false,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "reps",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "rest",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 5
+      },
+      {
+        "name": "note",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 6
+      },
+      {
+        "name": "sets",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 7
+      },
+      {
+        "name": "duration",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 8
+      },
+      {
+        "name": "exercise_order",
+        "data_type": "integer",
+        "max_len": null,
+        "udt": "int4",
+        "nullable": false,
+        "default": "0",
+        "pos": 9
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "plan_id",
+        "ref_table": "workout_plans",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  },
+  "workout_plans": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()",
+        "pos": 1
+      },
+      {
+        "name": "user_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 2
+      },
+      {
+        "name": "coach_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 3
+      },
+      {
+        "name": "plan_name",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": false,
+        "default": null,
+        "pos": 4
+      },
+      {
+        "name": "description",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 5
+      },
+      {
+        "name": "start_date",
+        "data_type": "date",
+        "max_len": null,
+        "udt": "date",
+        "nullable": true,
+        "default": null,
+        "pos": 6
+      },
+      {
+        "name": "end_date",
+        "data_type": "date",
+        "max_len": null,
+        "udt": "date",
+        "nullable": true,
+        "default": null,
+        "pos": 7
+      },
+      {
+        "name": "sport_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 8
+      },
+      {
+        "name": "goal",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 9
+      },
+      {
+        "name": "level",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": null,
+        "pos": 10
+      },
+      {
+        "name": "duration_minutes",
+        "data_type": "integer",
+        "max_len": null,
+        "udt": "int4",
+        "nullable": true,
+        "default": null,
+        "pos": 11
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_len": 50,
+        "udt": "varchar",
+        "nullable": true,
+        "default": "'draft'::character varying",
+        "pos": 12
+      },
+      {
+        "name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": "now()",
+        "pos": 13
+      },
+      {
+        "name": "version",
+        "data_type": "integer",
+        "max_len": null,
+        "udt": "int4",
+        "nullable": true,
+        "default": "1",
+        "pos": 14
+      },
+      {
+        "name": "created_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": "now()",
+        "pos": 15
+      },
+      {
+        "name": "source",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": false,
+        "default": "'manual'::text",
+        "pos": 16
+      },
+      {
+        "name": "parent_plan_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 17
+      },
+      {
+        "name": "recommendation_target_type",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 18
+      },
+      {
+        "name": "recommendation_target_id",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 19
+      },
+      {
+        "name": "ai_metadata_json",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 20
+      },
+      {
+        "name": "approved_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": null,
+        "pos": 21
+      },
+      {
+        "name": "approved_by",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 22
+      },
+      {
+        "name": "approval_note",
+        "data_type": "text",
+        "max_len": null,
+        "udt": "text",
+        "nullable": true,
+        "default": null,
+        "pos": 23
+      },
+      {
+        "name": "archived_at",
+        "data_type": "timestamp with time zone",
+        "max_len": null,
+        "udt": "timestamptz",
+        "nullable": true,
+        "default": null,
+        "pos": 24
+      },
+      {
+        "name": "archived_by",
+        "data_type": "uuid",
+        "max_len": null,
+        "udt": "uuid",
+        "nullable": true,
+        "default": null,
+        "pos": 25
+      }
+    ],
+    "primary_key": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "col": "coach_id",
+        "ref_table": "coaches",
+        "ref_col": "id",
+        "on_delete": "SET NULL"
+      },
+      {
+        "col": "sport_id",
+        "ref_table": "sports",
+        "ref_col": "id",
+        "on_delete": "SET NULL"
+      },
+      {
+        "col": "user_id",
+        "ref_table": "users",
+        "ref_col": "id",
+        "on_delete": "CASCADE"
+      }
+    ]
+  }
+}

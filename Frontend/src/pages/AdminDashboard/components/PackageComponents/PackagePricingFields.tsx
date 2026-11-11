@@ -184,29 +184,13 @@ export function PackagePricingFields({ draft, onChange, isMembership, fieldClass
                     setField("terms", textToLines(event.target.value))
                   }
                   className={fieldClass}
-                  rows={3}
+                  rows={2}
                   placeholder="Mỗi điều kiện một dòng"
                   required
                 />
               </label>
             </section>
           )}
-          {!isMembership && draft.format === "self" && (
-            <label className={labelClass}>
-              Điều kiện sử dụng
-              <textarea
-                value={linesToText(draft.terms)}
-                onChange={(event) =>
-                  setField("terms", textToLines(event.target.value))
-                }
-                className={fieldClass}
-                rows={3}
-                placeholder="Mỗi điều kiện một dòng"
-                required
-              />
-            </label>
-          )}
-
     </>
   )
 }

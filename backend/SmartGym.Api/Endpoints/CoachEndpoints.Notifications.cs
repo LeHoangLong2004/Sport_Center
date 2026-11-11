@@ -86,9 +86,10 @@ public static partial class CoachEndpoints
                     return Results.Ok(Array.Empty<object>());
 
                 var rows = await db.Database.SqlQueryRaw<CoachAssessmentRow>(
-                    @"SELECT id, coach_id, session_id, member_id, completion,
-                             metrics_json::text AS ""MetricsJson"", comment, next_step,
-                             created_at AS ""CreatedAt""
+                    @"SELECT id AS ""Id"", coach_id AS ""CoachId"", session_id AS ""SessionId"",
+                             member_id AS ""MemberId"", completion AS ""Completion"",
+                             metrics_json::text AS ""MetricsJson"", comment AS ""Comment"",
+                             next_step AS ""NextStep"", created_at AS ""CreatedAt""
                       FROM coach_assessments
                       WHERE coach_id = {0}
                       ORDER BY created_at DESC",
@@ -120,11 +121,19 @@ public static partial class CoachEndpoints
                     : "[]";
                 var comment = AssessmentGetString(request, "comment");
                 var nextStep = AssessmentGetString(request, "nextStep");
-                var assessmentId = Guid.NewGuid();
+                Guid assessmentId = Guid.TryParse(AssessmentGetString(request, "id"), out var parsedAssessmentId)
+                    ? parsedAssessmentId
+                    : Guid.NewGuid();
 
                 await db.Database.ExecuteSqlInterpolatedAsync($@"
                     INSERT INTO coach_assessments (id, coach_id, session_id, member_id, completion, metrics_json, comment, next_step)
-                    VALUES ({assessmentId}, {coachId.Value}, {sessionId}, {memberId}, {completion}, CAST({metricsJson} AS jsonb), {comment}, {nextStep})");
+                    VALUES ({assessmentId}, {coachId.Value}, {sessionId}, {memberId}, {completion}, CAST({metricsJson} AS jsonb), {comment}, {nextStep})
+                    ON CONFLICT (id) DO UPDATE SET
+                        session_id = EXCLUDED.session_id,
+                        completion = EXCLUDED.completion,
+                        metrics_json = EXCLUDED.metrics_json,
+                        comment = EXCLUDED.comment,
+                        next_step = EXCLUDED.next_step");
 
                 return Results.Ok(new
                 {
@@ -149,9 +158,13 @@ public static partial class CoachEndpoints
     {
         var rawUserId = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? context.User.FindFirstValue("sub");
-        return Guid.TryParse(rawUserId, out var userId)
-            ? await CoachProfileResolver.FindByUserIdAsync(db, userId)
-            : null;
+        if (!Guid.TryParse(rawUserId, out var userId))
+            return null;
+
+        var coachId = await CoachProfileResolver.FindByUserIdAsync(db, userId);
+        if (coachId != null) return coachId;
+
+        return await CoachProfileResolver.FindByIdOrUserIdAsync(db, userId);
     }
 
     private static string? AssessmentGetString(JsonElement request, string property)

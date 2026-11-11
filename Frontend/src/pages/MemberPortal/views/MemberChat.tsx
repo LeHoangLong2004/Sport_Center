@@ -251,7 +251,7 @@ export default function MemberChat({ onNavigate }: Props) {
             <span className="text-xs text-slate-400">Đồng bộ dữ liệu thời gian thực</span>
           </div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
-            <MessageSquare className="w-6 h-6 text-emerald-500" />
+            <MessageSquare className="w-6 h-6" />
             Tin nhắn & Trò chuyện
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">

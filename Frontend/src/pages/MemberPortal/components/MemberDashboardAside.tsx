@@ -58,7 +58,7 @@ export function MemberDashboardAside({ activePackages, onNavigate }: MemberDashb
           </section>
 
           {/* Quick shortcut */}
-          <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-slate-950 shadow-md">
+          <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-slate-950 shadow-md">
             <h3 className="font-extrabold text-sm text-slate-950">Bạn muốn tập luyện hôm nay?</h3>
             <p className="text-xs text-slate-900/80 mt-1">Khám phá hơn 10 bộ môn thể thao và đặt lịch lớp yêu thích ngay.</p>
             <button

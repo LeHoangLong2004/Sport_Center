@@ -113,7 +113,7 @@ export function PackagesPage({
         </div>
         {category && (
           <button type="button" onClick={() => setCategory(null)}
-            className="mt-3 inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-teal-300 hover:text-teal-700">
+            className="mt-3 inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">
             <ArrowLeft size={16} /> Quay lại chọn loại gói
           </button>
         )}
@@ -124,18 +124,18 @@ export function PackagesPage({
         <>
           <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
             <button type="button" onClick={() => setCategory("membership")}
-              className="group rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition hover:border-teal-300 hover:shadow-lg">
-              <span className="inline-flex rounded-xl bg-teal-50 p-3 text-teal-700"><Sparkles size={22} /></span>
+              className="group rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition hover:border-emerald-300 hover:shadow-lg">
+              <span className="inline-flex rounded-xl bg-emerald-50 p-3 text-emerald-700"><Sparkles size={22} /></span>
               <h2 className="mt-4 text-xl font-bold text-slate-900">Gói thành viên</h2>
               <p className="mt-1 text-sm leading-6 text-slate-500">Xem hạng Cơ bản, Plus, Premium và các ưu đãi đang áp dụng.</p>
-              <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-teal-700">Khám phá hạng thành viên <span aria-hidden="true">→</span></span>
+              <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-emerald-700">Khám phá hạng thành viên <span aria-hidden="true">→</span></span>
             </button>
             <button type="button" onClick={() => setCategory("sport")}
-              className="group rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition hover:border-blue-300 hover:shadow-lg">
-              <span className="inline-flex rounded-xl bg-blue-50 p-3 text-blue-700"><Dumbbell size={22} /></span>
+              className="group rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition hover:border-slate-300 hover:shadow-lg">
+              <span className="inline-flex rounded-xl bg-slate-50 p-3 text-slate-700"><Dumbbell size={22} /></span>
               <h2 className="mt-4 text-xl font-bold text-slate-900">Gói môn tập</h2>
               <p className="mt-1 text-sm leading-6 text-slate-500">Chọn môn, khu tập, hình thức hướng dẫn và thời hạn phù hợp.</p>
-              <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-700">Tìm gói môn tập <span aria-hidden="true">→</span></span>
+              <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-slate-700">Tìm gói môn tập <span aria-hidden="true">→</span></span>
             </button>
           </div>
           {membership && <MembershipSummary membership={membership} />}
@@ -165,17 +165,17 @@ export function PackagesPage({
         </>
       ) : (
         <>
-          <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-teal-100 bg-teal-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <strong className="text-sm text-teal-950">Hạng hiện tại: {membership?.name || "Chưa có dữ liệu hạng"}</strong>
-              <p className="mt-1 text-sm text-teal-800">
+              <strong className="text-sm text-emerald-950">Hạng hiện tại: {membership?.name || "Chưa có dữ liệu hạng"}</strong>
+              <p className="mt-1 text-sm text-emerald-800">
                 Ưu đãi gói môn: {membership?.groupDiscountPct ?? 0}% tự tập/lớp nhóm · {membership?.coachDiscountPct ?? 0}% Coach 1–1.
               </p>
             </div>
-            <label className="text-sm font-semibold text-teal-950">
+            <label className="text-sm font-semibold text-emerald-950">
               Môn tập
               <select value={sportFilter} onChange={(e) => setSportFilter(e.target.value)}
-                className="ml-2 rounded-lg border border-teal-200 bg-white px-3 py-2 font-normal text-slate-700">
+                className="ml-2 rounded-lg border border-emerald-200 bg-white px-3 py-2 font-normal text-slate-700">
                 <option>Tất cả môn</option>
                 {sportNames.map((sport) => <option key={sport}>{sport}</option>)}
               </select>
@@ -203,7 +203,7 @@ export function PackagesPage({
               <h2 className="mt-3 font-bold text-slate-800">Không có gói phù hợp</h2>
               <p className="mt-1 text-sm text-slate-500">Thử chọn môn hoặc hình thức khác để xem thêm gói đang mở bán.</p>
               <button type="button" onClick={() => { setSportFilter("Tất cả môn"); setFormatFilter("all") }}
-                className="mt-4 text-sm font-semibold text-teal-700">Xóa bộ lọc</button>
+                className="mt-4 text-sm font-semibold text-emerald-700">Xóa bộ lọc</button>
             </div>
           )}
           <OrderList orders={orders.filter((o) => o.packageSnapshot.category === "sport")} title="Gói môn đã đăng ký" />
@@ -211,7 +211,7 @@ export function PackagesPage({
       )}
 
       {pendingCount > 0 && (
-        <p className="mt-5 flex items-center gap-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
+        <p className="mt-5 flex items-center gap-2 rounded-xl bg-slate-50 p-3 text-sm text-slate-900">
           <Clock3 size={17} /> Bạn có {pendingCount} đơn chờ trung tâm xác nhận thanh toán. Quyền lợi chưa được kích hoạt.
         </p>
       )}

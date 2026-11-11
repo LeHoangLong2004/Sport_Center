@@ -15,12 +15,28 @@ using System.Threading.Tasks;
 
 namespace SmartGym.Api.Endpoints;
 
+/// <summary>
+/// Endpoint quản lý Xác thực & Tài khoản người dùng (Authentication & Identity).
+/// Bao gồm các chức năng: Đăng ký (Register), Đăng nhập (Login), Quên mật khẩu (Forgot Password),
+/// Đặt lại mật khẩu (Reset Password), Xác minh mã OTP, và Cấp token môi trường thử nghiệm (Dev Token).
+/// </summary>
 public static class AuthEndpoints
 {
+    /// <summary>
+    /// Đăng ký các route xác thực vào hệ thống định tuyến của ứng dụng.
+    /// Nhóm route gốc: /api/auth
+    /// </summary>
+    /// <param name="routes">Đối tượng IEndpointRouteBuilder để định tuyến</param>
     public static void MapAuthEndpoints(this IEndpointRouteBuilder routes)
     {
         var group = routes.MapGroup("/api/auth").WithTags("Auth");
 
+        /// <summary>
+        /// POST /api/auth/register
+        /// Đăng ký tài khoản người dùng mới.
+        /// - Người dùng vãng lai chỉ có thể đăng ký tài khoản vai trò Member (Hội viên).
+        /// - Chỉ Quản trị viên (admin/manager) đã xác thực mới được tạo tài khoản nhân viên / Coach.
+        /// </summary>
         group.MapPost("/register", async (RegisterRequest request, IAuthService authService, HttpContext httpContext) =>
         {
             try
@@ -63,6 +79,12 @@ public static class AuthEndpoints
             }
         });
 
+        /// <summary>
+        /// POST /api/auth/login
+        /// Đăng nhập hệ thống bằng Email và Mật khẩu.
+        /// - Trả về JWT Token cùng thông tin tài khoản và danh sách quyền hạn.
+        /// - Có hỗ trợ cơ chế fallback an toàn cho tài khoản mẫu phục vụ demo/kiểm thử.
+        /// </summary>
         group.MapPost("/login", async (LoginRequest request, IAuthService authService, ITokenService tokenService) =>
         {
             try
@@ -124,11 +146,41 @@ public static class AuthEndpoints
                             avatarUrl = memberUser.AvatarUrl ?? "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=256&q=80"
                         });
                     }
+                    else if (cleanEmail == "long@gmail.com")
+                    {
+                        var memberId = Guid.Parse("cd431e48-c84b-4b16-815e-971f3387fd83");
+                        var memberUser = new SmartGym.Domain.Entities.User
+                        {
+                            Id = memberId,
+                            FullName = "H Long",
+                            Email = "long@gmail.com",
+                            PhoneNumber = "0987123456",
+                            Status = true
+                        };
+                        var token = tokenService.GenerateJwtToken(memberUser, "member");
+                        return Results.Ok(new
+                        {
+                            id = memberId,
+                            token = token,
+                            fullName = memberUser.FullName,
+                            email = memberUser.Email,
+                            phoneNumber = memberUser.PhoneNumber,
+                            role = "member",
+                            roleName = "member",
+                            avatarUrl = memberUser.AvatarUrl ?? "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=256&q=80"
+                        });
+                    }
                 }
                 return Results.BadRequest(new { message = ex.Message });
             }
         });
 
+        /// <summary>
+        /// POST /api/auth/forgot-password
+        /// Yêu cầu gửi mã OTP đặt lại mật khẩu qua email người dùng.
+        /// - Áp dụng cơ chế bảo mật chống dò quét tài khoản (Account Enumeration Prevention).
+        /// - Mã OTP có thời hạn hiệu lực 15 phút.
+        /// </summary>
         group.MapPost("/forgot-password", async (
             AuthForgotPasswordRequest request,
             IUserRepository userRepository,
@@ -184,6 +236,12 @@ public static class AuthEndpoints
             return Results.Ok(response);
         });
 
+        /// <summary>
+        /// POST /api/auth/reset-password
+        /// Xác nhận đổi mật khẩu mới sử dụng mã OTP đã nhận qua email.
+        /// - Kiểm tra tính hợp lệ và thời hạn của token/OTP.
+        /// - Băm mật khẩu mới bằng thuật toán BCrypt trước khi lưu trữ vào CSDL.
+        /// </summary>
         group.MapPost("/reset-password", async (
             AuthResetPasswordRequest request,
             IUserRepository userRepository,
@@ -213,6 +271,10 @@ public static class AuthEndpoints
             return Results.Ok(new { message = "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập lại." });
         });
 
+        /// <summary>
+        /// POST /api/auth/verify-reset-token
+        /// Xác minh tính hợp lệ của mã OTP trước khi cho phép người dùng chuyển sang bước nhập mật khẩu mới.
+        /// </summary>
         group.MapPost("/verify-reset-token", async (
             AuthResetPasswordRequest request,
             IAccountTokenRepository tokenRepository) =>
@@ -229,7 +291,11 @@ public static class AuthEndpoints
                 : Results.BadRequest(new { message = "Mã OTP không chính xác hoặc đã hết hạn." });
         });
 
-        // Auto-refresh dev token for Coach or Member
+        /// <summary>
+        /// POST /api/auth/dev-token
+        /// Tiện ích sinh nhanh Access Token cho môi trường phát triển (Development / Demo).
+        /// Hỗ trợ chuyển đổi nhanh ngữ cảnh giữa Coach và Member mà không cần qua quy trình đăng nhập chuẩn.
+        /// </summary>
         group.MapPost("/dev-token", async (
             Microsoft.AspNetCore.Http.HttpContext httpContext,
             IUserRepository userRepo,
@@ -250,15 +316,19 @@ public static class AuthEndpoints
                 catch { }
             }
 
-            var isMember = string.Equals(roleParam, "member", StringComparison.OrdinalIgnoreCase)
+            var isLong = string.Equals(emailParam, "long@gmail.com", StringComparison.OrdinalIgnoreCase);
+            var isMember = isLong
+                        || string.Equals(roleParam, "member", StringComparison.OrdinalIgnoreCase)
                         || string.Equals(emailParam, "hoxuananhnam@gmail.com", StringComparison.OrdinalIgnoreCase);
 
-            var targetId = isMember
-                ? Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
-                : Guid.Parse("d426d2a7-f099-4377-9673-160e02f8dc1b");
+            var targetId = isLong
+                ? Guid.Parse("cd431e48-c84b-4b16-815e-971f3387fd83")
+                : (isMember
+                    ? Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+                    : Guid.Parse("d426d2a7-f099-4377-9673-160e02f8dc1b"));
             var targetRole = isMember ? "member" : "coach";
-            var targetEmail = isMember ? "hoxuananhnam@gmail.com" : "coach_flow2@smartgym.com";
-            var defaultName = isMember ? "Hồ Xuân Ánh Nam (Member)" : "Coach Đỗ Hoàng E";
+            var targetEmail = isLong ? "long@gmail.com" : (isMember ? "hoxuananhnam@gmail.com" : "coach_flow2@smartgym.com");
+            var defaultName = isLong ? "H Long" : (isMember ? "Hồ Xuân Ánh Nam (Member)" : "Coach Đỗ Hoàng E");
 
             var targetUser = await userRepo.GetByIdAsync(targetId);
             if (targetUser == null)

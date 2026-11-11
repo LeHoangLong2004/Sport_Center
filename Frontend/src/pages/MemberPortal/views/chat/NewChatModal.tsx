@@ -30,7 +30,7 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
         {/* Modal Header */}
         <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-emerald-500" />
+            <MessageSquare className="w-5 h-5" />
             <div>
               <h3 className="font-bold text-slate-900 dark:text-white text-base">
                 Bắt đầu cuộc trò chuyện mới
@@ -117,7 +117,7 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
                   <div>
                     <div className="flex items-center gap-1.5">
                       <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100">{c.name}</h4>
-                      <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300">HLV</span>
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">HLV</span>
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400">{c.subtitle}</p>
                   </div>
@@ -140,7 +140,7 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
                   <div>
                     <div className="flex items-center gap-1.5">
                       <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100">{m.name}</h4>
-                      <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-blue-100 text-blue-700">{m.roleTag}</span>
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-100 text-slate-700">{m.roleTag}</span>
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400">{m.subtitle}</p>
                   </div>
@@ -186,7 +186,7 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
                   <div>
                     <div className="flex items-center gap-1.5">
                       <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100">{cl.name}</h4>
-                      <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-100 text-purple-700">NHÓM LỚP</span>
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-100 text-emerald-700">NHÓM LỚP</span>
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400">{cl.subtitle}</p>
                   </div>

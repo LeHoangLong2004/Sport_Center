@@ -54,7 +54,7 @@ const faqGroups: FaqGroup[] = [
   },
   {
     title: "Về lớp học & lịch tập",
-    accentColor: "bg-[#2563eb]",
+    accentColor: "bg-emerald-600",
     items: [
       {
         question: "Tôi cần đặt trước lịch học bao lâu để chắc chắn có chỗ?",
@@ -102,7 +102,7 @@ const faqGroups: FaqGroup[] = [
   },
   {
     title: "Về chính sách bảo mật & hoàn trả",
-    accentColor: "bg-[#2563eb]",
+    accentColor: "bg-emerald-600",
     items: [
       {
         question: "Chính sách bảo lưu thẻ tập tại SportCenter được quy định như thế nào?",
@@ -132,13 +132,13 @@ function AccordionItem({ question, answer }: FaqItem) {
         className="flex items-center justify-between w-full text-left"
         onClick={() => setOpen((v) => !v)}
       >
-        <p className="flex-1 font-['Inter:Bold'] font-bold text-[#0f172a] text-[16px] leading-snug pr-[16px]">{question}</p>
+        <p className="flex-1 font-bold text-[#0f172a] text-[16px] leading-snug pr-[16px]">{question}</p>
         <div className="flex items-center justify-center size-[24px] shrink-0">
           <span className="text-[#64748b] text-[18px] transition-transform" style={{ display: "inline-block", transform: open ? "rotate(180deg)" : "rotate(0deg)" }}>▾</span>
         </div>
       </button>
       {open && (
-        <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px] leading-[1.6] w-full">{answer}</p>
+        <p className="font-normal text-[#64748b] text-[14px] leading-[1.6] w-full">{answer}</p>
       )}
     </div>
   );
@@ -153,8 +153,8 @@ export default function FaqHoTroRedesign() {
 
       {/* Hero */}
       <div className="bg-[#0f172a] flex flex-col gap-[24px] items-center justify-center px-[80px] py-[80px] w-full">
-        <p className="font-['Inter:Extra_Bold'] font-extrabold text-[40px] text-white text-center">Câu hỏi thường gặp</p>
-        <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[18px] text-center w-[640px]">
+        <p className="font-extrabold text-[40px] text-white text-center">Câu hỏi thường gặp</p>
+        <p className="font-normal text-[#94a3b8] text-[18px] text-center w-[640px]">
           Tìm câu trả lời nhanh nhất cho thắc mắc của bạn về gói tập, lịch học, huấn luyện viên và các chính sách dịch vụ tại SportCenter.
         </p>
         <div className="bg-white flex gap-[16px] items-center px-[24px] py-[14px] rounded-[99px] w-[640px]">
@@ -164,7 +164,7 @@ export default function FaqHoTroRedesign() {
             placeholder="Nhập từ khóa tìm kiếm câu hỏi..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 font-['Inter:Regular'] font-normal text-[#64748b] text-[16px] outline-none bg-transparent"
+            className="flex-1 font-normal text-[#64748b] text-[16px] outline-none bg-transparent"
           />
         </div>
       </div>
@@ -185,7 +185,7 @@ export default function FaqHoTroRedesign() {
           return (
             <div key={group.title} className="flex flex-col gap-[24px] items-start w-full">
               <div className="flex flex-col gap-[8px] items-start w-full">
-                <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[24px]">{group.title}</p>
+                <p className="font-extrabold text-[#0f172a] text-[24px]">{group.title}</p>
                 <div className={`${group.accentColor} h-[4px] rounded-[2px] w-[60px]`} />
               </div>
               <div className="flex flex-col gap-[16px] items-start w-full">
@@ -204,8 +204,8 @@ export default function FaqHoTroRedesign() {
           ).length === 0
         ) && (
           <div className="flex flex-col gap-[16px] items-center w-full py-[40px]">
-            <p className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[18px]">Không tìm thấy kết quả phù hợp</p>
-            <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[15px]">Thử từ khóa khác hoặc liên hệ trực tiếp với chúng tôi bên dưới.</p>
+            <p className="font-bold text-[#0f172a] text-[18px]">Không tìm thấy kết quả phù hợp</p>
+            <p className="font-normal text-[#64748b] text-[15px]">Thử từ khóa khác hoặc liên hệ trực tiếp với chúng tôi bên dưới.</p>
           </div>
         )}
       </div>
@@ -213,8 +213,8 @@ export default function FaqHoTroRedesign() {
       {/* Contact Support Section */}
       <div className="bg-white border-t border-[#e2e8f0] flex flex-col gap-[40px] items-center pb-[100px] pt-[80px] px-[80px] w-full">
         <div className="flex flex-col gap-[12px] items-center text-center w-full">
-          <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[32px]">Vẫn chưa tìm được câu trả lời?</p>
-          <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[16px]">
+          <p className="font-extrabold text-[#0f172a] text-[32px]">Vẫn chưa tìm được câu trả lời?</p>
+          <p className="font-normal text-[#64748b] text-[16px]">
             Đội ngũ hỗ trợ khách hàng của SportCenter luôn sẵn sàng trợ giúp bạn 24/7.
           </p>
         </div>
@@ -225,24 +225,24 @@ export default function FaqHoTroRedesign() {
               <span className="text-[24px]">💬</span>
             </div>
             <div className="flex flex-col gap-[8px] items-center w-full">
-              <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[18px]">Chat trực tuyến</p>
-              <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px] text-center">Trò chuyện trực tiếp cùng tư vấn viên</p>
+              <p className="font-extrabold text-[#0f172a] text-[18px]">Chat trực tuyến</p>
+              <p className="font-normal text-[#64748b] text-[14px] text-center">Trò chuyện trực tiếp cùng tư vấn viên</p>
             </div>
             <div className="bg-[#10b981] flex items-center px-[20px] py-[10px] rounded-[8px] cursor-pointer">
-              <p className="font-['Inter:Bold'] font-bold text-[14px] text-white">Bắt đầu chat</p>
+              <p className="font-bold text-[14px] text-white">Bắt đầu chat</p>
             </div>
           </div>
           {/* Phone */}
           <div className="bg-[#f8fafc] border border-[#e2e8f0] flex flex-1 flex-col gap-[20px] items-center p-[32px] rounded-[16px]">
-            <div className="bg-[#eff6ff] flex items-center justify-center rounded-[12px] size-[48px]">
+            <div className="bg-emerald-50 flex items-center justify-center rounded-[12px] size-[48px]">
               <span className="text-[24px]">📞</span>
             </div>
             <div className="flex flex-col gap-[8px] items-center w-full">
-              <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[18px]">Gọi hotline 1900 6868</p>
-              <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px] text-center">Tư vấn nhanh chóng qua tổng đài hỗ trợ</p>
+              <p className="font-extrabold text-[#0f172a] text-[18px]">Gọi hotline 1900 6868</p>
+              <p className="font-normal text-[#64748b] text-[14px] text-center">Tư vấn nhanh chóng qua tổng đài hỗ trợ</p>
             </div>
-            <div className="bg-[#2563eb] flex items-center px-[20px] py-[10px] rounded-[8px] cursor-pointer">
-              <p className="font-['Inter:Bold'] font-bold text-[14px] text-white">Gọi điện ngay</p>
+            <div className="bg-emerald-600 flex items-center px-[20px] py-[10px] rounded-[8px] cursor-pointer">
+              <p className="font-bold text-[14px] text-white">Gọi điện ngay</p>
             </div>
           </div>
           {/* Email */}
@@ -251,11 +251,11 @@ export default function FaqHoTroRedesign() {
               <span className="text-[24px]">📧</span>
             </div>
             <div className="flex flex-col gap-[8px] items-center w-full">
-              <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[18px]">Email hỗ trợ</p>
-              <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px] text-center">Gửi phản hồi qua mail support@sportcenter.vn</p>
+              <p className="font-extrabold text-[#0f172a] text-[18px]">Email hỗ trợ</p>
+              <p className="font-normal text-[#64748b] text-[14px] text-center">Gửi phản hồi qua mail support@sportcenter.vn</p>
             </div>
             <div className="border border-[#10b981] flex items-center px-[20px] py-[10px] rounded-[8px] cursor-pointer">
-              <p className="font-['Inter:Bold'] font-bold text-[#10b981] text-[14px]">Gửi Email</p>
+              <p className="font-bold text-[#10b981] text-[14px]">Gửi Email</p>
             </div>
           </div>
         </div>

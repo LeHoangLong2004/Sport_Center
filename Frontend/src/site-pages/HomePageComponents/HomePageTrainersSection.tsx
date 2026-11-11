@@ -34,15 +34,15 @@ export default function HomePageTrainersSection() {
   return (
     <section className="bg-white w-full px-[80px] py-[80px] shrink-0">
       <FadeUp className="flex flex-col gap-[12px] items-center text-center mb-[48px]">
-        <div className="bg-[rgba(37,99,235,0.08)] border border-[#2563eb] flex items-center px-[12px] py-[6px] rounded-[100px] shrink-0">
-          <p className="font-['Inter:Bold'] font-bold text-[#2563eb] text-[11px] uppercase tracking-wider">
+        <div className="bg-slate-100 border border-[#2563eb] flex items-center px-[12px] py-[6px] rounded-[100px] shrink-0">
+          <p className="font-bold text-slate-800 text-[11px] uppercase tracking-wider">
             ĐỘI NGŨ CHUYÊN GIA
           </p>
         </div>
-        <h2 className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[36px] m-0 leading-[1.2]">
+        <h2 className="font-extrabold text-[#0f172a] text-[36px] m-0 leading-[1.2]">
           Chứng nhận huấn luyện viên
         </h2>
-        <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[16px] max-w-[520px] m-0">
+        <p className="font-normal text-[#64748b] text-[16px] max-w-[520px] m-0">
           Đội ngũ hơn 48 HLV được chứng nhận quốc tế — ACE, ISSA, ACSM — với
           kinh nghiệm từ 5 đến 15 năm.
         </p>
@@ -67,10 +67,10 @@ export default function HomePageTrainersSection() {
               />
             </div>
             <div className="flex flex-col gap-[4px] items-center">
-              <p className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[16px] m-0">
+              <p className="font-bold text-[#0f172a] text-[16px] m-0">
                 {name}
               </p>
-              <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[13px] m-0">
+              <p className="font-normal text-[#64748b] text-[13px] m-0">
                 {specialty}
               </p>
             </div>
@@ -81,7 +81,7 @@ export default function HomePageTrainersSection() {
             )}
             <div className="flex gap-[8px] items-center">
               <img alt="" src={imgFlame} style={{ width: 14, height: 14 }} />
-              <p className="font-['Inter:Semi_Bold'] font-semibold text-[#1e293b] text-[13px] m-0">
+              <p className="font-bold font-semibold text-[#1e293b] text-[13px] m-0">
                 {exp}
               </p>
             </div>

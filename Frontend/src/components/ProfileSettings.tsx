@@ -76,7 +76,7 @@ export function ProfileSettings({
     <>
       {showToast && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-4 fade-in duration-300">
-          <div className="bg-teal-600 text-white px-6 py-3 rounded-full shadow-lg font-medium flex items-center gap-3">
+          <div className="bg-emerald-600 text-white px-6 py-3 rounded-full shadow-lg font-medium flex items-center gap-3">
             <svg
               width="20"
               height="20"
@@ -129,7 +129,7 @@ export function ProfileSettings({
                     name="fullName"
                     value={data.fullName}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium"
                     required
                   />
                 </div>
@@ -142,7 +142,7 @@ export function ProfileSettings({
                     name="phone"
                     value={data.phone}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium"
                     required
                   />
                 </div>
@@ -155,7 +155,7 @@ export function ProfileSettings({
                     name="email"
                     value={data.email}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium"
                     required
                   />
                 </div>
@@ -167,7 +167,7 @@ export function ProfileSettings({
                     name="dob"
                     value={data.dob}
                     onChange={(value) => setData((prev) => ({ ...prev, dob: value }))}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium [&::-webkit-calendar-picker-indicator]:dark:invert"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium [&::-webkit-calendar-picker-indicator]:dark:invert"
                   />
                 </div>
                 <div className="space-y-2">
@@ -179,7 +179,7 @@ export function ProfileSettings({
                       name="gender"
                       value={data.gender || ""}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium appearance-none cursor-pointer"
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium appearance-none cursor-pointer"
                     >
                       <option value="">Chọn giới tính</option>
                       <option value="Nam">Nam</option>
@@ -212,7 +212,7 @@ export function ProfileSettings({
                     name="address"
                     value={data.address}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium"
                   />
                 </div>
               </div>
@@ -240,7 +240,7 @@ export function ProfileSettings({
                         placeholder="VD: Gym, Yoga, Pilates..."
                         value={data.specialties || ""}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium"
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium"
                       />
                     </div>
                     <div className="space-y-2">
@@ -253,7 +253,7 @@ export function ProfileSettings({
                         min="0"
                         value={data.experienceYears || 0}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium"
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium"
                       />
                     </div>
                     <div className="space-y-2 md:col-span-2">
@@ -266,7 +266,7 @@ export function ProfileSettings({
                         placeholder="VD: NASM CPT, ACE Personal Trainer..."
                         value={data.certifications || ""}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium"
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium"
                       />
                     </div>
                     <div className="space-y-2 md:col-span-2">
@@ -279,7 +279,7 @@ export function ProfileSettings({
                         placeholder="Viết một đoạn ngắn giới thiệu về phương pháp huấn luyện của bạn..."
                         value={data.bio || ""}
                         onChange={(e: any) => handleChange(e)}
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium resize-none"
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 transition-all outline-none text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 font-medium resize-none"
                       ></textarea>
                     </div>
                   </div>
@@ -302,7 +302,7 @@ export function ProfileSettings({
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-3 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 shadow-md shadow-blue-500/20 transition-all hover:-translate-y-0.5 active:translate-y-0 text-sm flex items-center gap-2"
+                    className="px-6 py-3 rounded-xl font-bold text-white bg-slate-600 hover:bg-slate-700 dark:bg-slate-500 dark:hover:bg-slate-600 shadow-md shadow-slate-500/20 transition-all hover:-translate-y-0.5 active:translate-y-0 text-sm flex items-center gap-2"
                   >
                     <svg
                       width="16"

@@ -36,7 +36,7 @@ export function SettingsPage() {
               onClick={() => setActiveTab(t)}
               className={`text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
                 activeTab === t 
-                  ? "bg-blue-50 text-blue-700 font-bold" 
+                  ? "bg-slate-50 text-slate-700 font-bold" 
                   : "text-[#475569] hover:bg-slate-50 hover:text-[#0f172a]"
               }`}
             >
@@ -84,12 +84,12 @@ export function SettingsPage() {
                         <div className="w-[140px] text-[#0f172a] text-sm font-medium">{log.user}</div>
                         <div className="flex-1">
                           <p className="text-[#0f172a] text-sm font-semibold">{log.action}</p>
-                          <p className="text-[#64748b] text-[11px] mt-0.5 font-mono">
+                          <p className="text-[#64748b] text-[11px] mt-0.5 ">
                             <span className="line-through opacity-70 text-red-500 mr-2">{log.oldVal}</span> 
                             <span className="text-green-600">{log.newVal}</span>
                           </p>
                         </div>
-                        <div className="w-[120px] text-[#64748b] text-[12px] font-mono">{log.ip}</div>
+                        <div className="w-[120px] text-[#64748b] text-[12px] ">{log.ip}</div>
                       </div>
                     ))
                   )}
@@ -110,7 +110,7 @@ export function SettingsPage() {
                     type="text"
                     value={centerConfig.name}
                     onChange={(e) => setCenterConfig({ ...centerConfig, name: e.target.value })}
-                    className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-blue-500"
+                    className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-slate-500"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -120,7 +120,7 @@ export function SettingsPage() {
                       type="text"
                       value={centerConfig.hotline}
                       onChange={(e) => setCenterConfig({ ...centerConfig, hotline: e.target.value })}
-                      className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-blue-500"
+                      className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-slate-500"
                     />
                   </div>
                   <div>
@@ -129,7 +129,7 @@ export function SettingsPage() {
                       type="email"
                       value={centerConfig.email}
                       onChange={(e) => setCenterConfig({ ...centerConfig, email: e.target.value })}
-                      className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-blue-500"
+                      className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-slate-500"
                     />
                   </div>
                 </div>
@@ -139,7 +139,7 @@ export function SettingsPage() {
                     type="text"
                     value={centerConfig.address}
                     onChange={(e) => setCenterConfig({ ...centerConfig, address: e.target.value })}
-                    className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-blue-500"
+                    className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-slate-500"
                   />
                 </div>
                 <div>
@@ -148,13 +148,13 @@ export function SettingsPage() {
                     type="text"
                     value={centerConfig.openHours}
                     onChange={(e) => setCenterConfig({ ...centerConfig, openHours: e.target.value })}
-                    className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-blue-500"
+                    className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-slate-500"
                   />
                 </div>
                 <div className="pt-4">
                   <button
                     onClick={() => toast.success("Đã lưu thông tin cấu hình trung tâm thành công!")}
-                    className="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-sm px-5 py-2.5 rounded-lg shadow-sm transition-all cursor-pointer"
+                    className="bg-slate-600 hover:bg-slate-700 active:scale-95 text-white font-bold text-sm px-5 py-2.5 rounded-lg shadow-sm transition-all cursor-pointer"
                   >
                     Lưu thay đổi
                   </button>
@@ -172,7 +172,7 @@ export function SettingsPage() {
                 </div>
                 <button
                   onClick={() => toast.info("Đang mở form tạo cơ sở / chi nhánh mới...")}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2 rounded-lg cursor-pointer transition-all"
+                  className="bg-slate-600 hover:bg-slate-700 text-white font-bold text-xs px-4 py-2 rounded-lg cursor-pointer transition-all"
                 >
                   + Thêm chi nhánh
                 </button>
@@ -205,7 +205,7 @@ export function SettingsPage() {
                 </div>
                 <button
                   onClick={() => toast.success("Đã đồng bộ chính sách phân quyền vai trò!")}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2 rounded-lg cursor-pointer transition-all"
+                  className="bg-slate-600 hover:bg-slate-700 text-white font-bold text-xs px-4 py-2 rounded-lg cursor-pointer transition-all"
                 >
                   Đồng bộ quyền
                 </button>
@@ -226,20 +226,20 @@ export function SettingsPage() {
                   </div>
                   <div className="grid grid-cols-4 p-3.5 items-center">
                     <span className="font-bold text-slate-900">Lễ tân (Receptionist)</span>
-                    <span className="text-blue-600 font-medium">Thu ngân / POS</span>
-                    <span className="text-blue-600 font-medium">Xem lịch & Check-in</span>
-                    <span className="text-blue-600 font-medium">Tra cứu & Check-in</span>
+                    <span className="text-slate-600 font-medium">Thu ngân / POS</span>
+                    <span className="text-slate-600 font-medium">Xem lịch & Check-in</span>
+                    <span className="text-slate-600 font-medium">Tra cứu & Check-in</span>
                   </div>
                   <div className="grid grid-cols-4 p-3.5 items-center">
                     <span className="font-bold text-slate-900">HLV (Coach)</span>
                     <span className="text-slate-400 font-medium">Không có quyền</span>
-                    <span className="text-blue-600 font-medium">Lớp phân công & Đánh giá</span>
-                    <span className="text-blue-600 font-medium">Xem học viên lớp mình</span>
+                    <span className="text-slate-600 font-medium">Lớp phân công & Đánh giá</span>
+                    <span className="text-slate-600 font-medium">Xem học viên lớp mình</span>
                   </div>
                   <div className="grid grid-cols-4 p-3.5 items-center">
                     <span className="font-bold text-slate-900">Hội viên (Member)</span>
                     <span className="text-slate-400 font-medium">Chỉ xem lịch sử cá nhân</span>
-                    <span className="text-blue-600 font-medium">Đặt lớp & Đánh giá HLV</span>
+                    <span className="text-slate-600 font-medium">Đặt lớp & Đánh giá HLV</span>
                     <span className="text-slate-400 font-medium">Chỉ hồ sơ cá nhân</span>
                   </div>
                 </div>

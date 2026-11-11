@@ -117,6 +117,8 @@ export function useMemberBookingData() {
           price: booking.price ?? 0,
           capacity: 0,
           registeredCount: 0,
+          scheduleTime: booking.scheduleTime,
+          durationMinutes: Number(booking.durationMinutes || 60),
           status: effectiveStatus,
           bookingStatus: effectiveStatus,
         };
@@ -151,6 +153,8 @@ export function useMemberBookingData() {
           coachRating: session.coachRating ?? null,
           capacity: 1,
           registeredCount: 1,
+          scheduleTime: session.scheduleTime,
+          durationMinutes: Number(session.durationMinutes || 60),
           status: session.status || "confirmed",
         };
       });
@@ -207,6 +211,35 @@ export function useMemberBookingData() {
 
   const isBooked = useCallback((classId: string, date: string) => Boolean(findActiveBooking(classId, date)), [findActiveBooking]);
 
+  const myUpcomingClasses = useMemo(() => {
+    const nowTime = Date.now();
+    return mySessions.filter((s) => {
+      const rawStatus = String(getBookingStatus(s) || "").toLowerCase();
+      const isCancelled =
+        rawStatus.includes("cancel") ||
+        rawStatus.includes("huy") ||
+        rawStatus === "rejected";
+      if (isCancelled) return false;
+      try {
+        if ((s as any).scheduleTime) {
+          const start = new Date((s as any).scheduleTime);
+          const duration = Number((s as any).durationMinutes || 60);
+          return start.getTime() + duration * 60000 >= nowTime;
+        }
+        let dateStr = s.date || "";
+        if (dateStr.includes("/")) {
+          const [d, m, y] = dateStr.split("/");
+          dateStr = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+        }
+        const timeStr = s.endTime || s.startTime || "23:59";
+        const end = new Date(`${dateStr}T${timeStr}:00`);
+        return isNaN(end.getTime()) || end.getTime() >= nowTime;
+      } catch {
+        return true;
+      }
+    });
+  }, [mySessions, getBookingStatus]);
+
   const myActiveClasses = useMemo(
     () => mySessions.filter((s) => !isInactiveBookingStatus(getBookingStatus(s))),
     [mySessions, isInactiveBookingStatus, getBookingStatus]
@@ -230,5 +263,6 @@ export function useMemberBookingData() {
     findActiveBooking,
     isBooked,
     myActiveClasses,
+    myUpcomingClasses,
   };
 }

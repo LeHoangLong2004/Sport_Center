@@ -65,10 +65,10 @@ export const DashboardSessionsTasks: React.FC<DashboardSessionsTasksProps> = ({
                 <div className="flex items-start gap-3.5">
                   <div className={`px-3 py-2 rounded-lg border text-center shrink-0 min-w-[76px] ${
                     isAppt
-                      ? "bg-amber-50 dark:bg-amber-950/50 border-amber-200 dark:border-amber-800"
+                      ? "bg-slate-50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800"
                       : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
                   }`}>
-                    <span className={`block text-xs font-bold ${isAppt ? "text-amber-700 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                    <span className={`block text-xs font-bold ${isAppt ? "text-slate-700 dark:text-slate-400" : "text-emerald-600 dark:text-emerald-400"}`}>
                       {session.startTime}
                     </span>
                     <span className="block text-[10px] text-slate-500 dark:text-slate-400">{session.date}</span>
@@ -77,9 +77,9 @@ export const DashboardSessionsTasks: React.FC<DashboardSessionsTasksProps> = ({
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
                         isAppt
-                          ? "bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
+                          ? "bg-slate-100 text-slate-800 border border-slate-200 dark:bg-slate-950/60 dark:text-slate-300 dark:border-slate-800"
                           : session.type === "pt"
-                          ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                          ? "bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-300"
                           : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
                       }`}>
                         {isAppt ? "Lễ tân đặt hẹn" : session.type === "pt" ? "Kèm 1-1 PT" : session.sport}
@@ -91,7 +91,7 @@ export const DashboardSessionsTasks: React.FC<DashboardSessionsTasksProps> = ({
                       <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" />HLV: {session.coachName}</span>
                     </div>
                     {session.coachNote && (
-                      <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-1 italic">
+                      <p className="text-[11px] text-slate-700 dark:text-slate-400 mt-1 italic">
                         {session.coachNote}
                       </p>
                     )}
@@ -146,7 +146,7 @@ export const DashboardSessionsTasks: React.FC<DashboardSessionsTasksProps> = ({
               }`}
             >
               <div className="mt-0.5">
-                {task.completed ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <Circle className="w-5 h-5 text-slate-400" />}
+                {task.completed ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5 text-slate-400" />}
               </div>
               <div className="flex-1 min-w-0">
                 <p className={`text-xs font-semibold ${task.completed ? "line-through text-slate-400" : "text-slate-800 dark:text-slate-100"}`}>

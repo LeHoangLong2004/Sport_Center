@@ -17,13 +17,13 @@ function getBookingStatusBadge(status?: string) {
     case 'confirmed':
       return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-green-100 text-green-700 border border-green-200">🟢 Đã đăng ký</span>;
     case 'pending':
-      return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200">⏳ Chờ duyệt</span>;
+      return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">⏳ Chờ duyệt</span>;
     case 'rejected':
       return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-100 text-red-700 border border-red-200">❌ Bị từ chối</span>;
     case 'attended':
-      return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-700 border border-blue-200">🔵 Đã tham gia</span>;
+      return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">🔵 Đã tham gia</span>;
     case 'no_show':
-      return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">🟡 Vắng mặt</span>;
+      return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">🟡 Vắng mặt</span>;
     case 'cancelled':
       return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-700 border border-gray-200">⚪ Đã hủy</span>;
     default:

@@ -37,7 +37,7 @@ export function ScheduleBookings({
       <div className="flex flex-col w-full h-full overflow-hidden">
         <div className="overflow-x-auto w-full">
           <div className="min-w-[880px] w-full">
-            <div className="bg-[#f8fafc] flex font-['Manrope:ExtraBold'] font-extrabold items-center px-[24px] py-[14px] text-[#64748b] text-[13px] w-full border-b border-[#e2e8f0] shrink-0 whitespace-nowrap select-none">
+            <div className="bg-[#f8fafc] flex font-extrabold items-center px-[24px] py-[14px] text-[#64748b] text-[13px] w-full border-b border-[#e2e8f0] shrink-0 whitespace-nowrap select-none">
               <span className="flex-1 min-w-0">HỘI VIÊN</span>
               <span className="w-[180px] shrink-0">LỚP HỌC</span>
               <span className="w-[160px] shrink-0">THỜI GIAN</span>
@@ -83,7 +83,7 @@ export function ScheduleBookings({
                 type="button"
                 onClick={() => typeof p === 'number' && setCurrentPage(p)}
                 disabled={p === '...'}
-                className={`flex items-center px-3 py-1.5 rounded-md text-[13px] transition-colors ${p === currentPage ? "bg-rose-600 font-semibold text-white shadow-xs shadow-rose-600/20" : p === '...' ? "bg-transparent text-slate-400 cursor-default" : "bg-white border border-[#e2e8f0] text-[#0f172a] hover:bg-slate-50 cursor-pointer"}`}
+                className={`flex items-center px-3 py-1.5 rounded-md text-[13px] transition-colors ${p === currentPage ? "bg-emerald-600 font-semibold text-white shadow-xs shadow-emerald-600/20" : p === '...' ? "bg-transparent text-slate-400 cursor-default" : "bg-white border border-[#e2e8f0] text-[#0f172a] hover:bg-slate-50 cursor-pointer"}`}
               >
                 {p}
               </button>

@@ -55,7 +55,7 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
           }}
           className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             targetType === "member"
-              ? "bg-white dark:bg-orange-500 text-orange-600 dark:text-white shadow-sm font-bold"
+              ? "bg-white dark:bg-emerald-600 text-emerald-600 dark:text-white shadow-sm font-bold"
               : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           }`}
         >
@@ -71,7 +71,7 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
           }}
           className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             targetType === "class"
-              ? "bg-white dark:bg-orange-500 text-orange-600 dark:text-white shadow-sm font-bold"
+              ? "bg-white dark:bg-emerald-600 text-emerald-600 dark:text-white shadow-sm font-bold"
               : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           }`}
         >
@@ -86,7 +86,7 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
           <select
             value={targetId}
             onChange={(e) => handlePickTarget("member", e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-orange-500 focus:outline-none"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
           >
             {members.length === 0 ? (
                <option value="">Chưa có học viên phụ trách</option>
@@ -100,7 +100,7 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
           </select>
 
           {selectedMember && (
-            <div className="p-3.5 rounded-xl bg-orange-50/70 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900/50 flex flex-col gap-2.5 animate-in fade-in duration-200">
+            <div className="p-3.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 flex flex-col gap-2.5 animate-in fade-in duration-200">
               {/* Member Basic Row */}
               {/* Member Basic Row */}
               <div className="flex items-center justify-between">
@@ -108,12 +108,12 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
                   <UserAvatar
                     src={selectedMember.avatar}
                     name={selectedMember.name}
-                    className="w-9 h-9 rounded-full object-cover shrink-0 text-xs font-bold border border-orange-200 dark:border-orange-800 shadow-xs"
+                    className="w-9 h-9 rounded-full object-cover shrink-0 text-xs font-bold border border-emerald-200 dark:border-emerald-800 shadow-xs"
                   />
                   <div className="min-w-0">
                     <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate flex items-center gap-1.5">
                       <span>{selectedMember.name}</span>
-                      <span className="text-[10px] font-normal px-1.5 py-0.5 rounded bg-orange-100 dark:bg-orange-900/60 text-orange-700 dark:text-orange-300">
+                      <span className="text-[10px] font-normal px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
                         {selectedMember.code || "HV"}
                       </span>
                     </div>
@@ -125,7 +125,7 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
 
                 {/* Attendance rate */}
                 <div className="text-right shrink-0">
-                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800 block">
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 block">
                     Chuyên cần: {memberProfile?.stats?.attendanceRate != null ? `${memberProfile.stats.attendanceRate}%` : (selectedMember.attendanceRate != null ? `${Math.round(selectedMember.attendanceRate * 100)}%` : "0%")}
                   </span>
                   {memberProfile?.stats?.totalSessions ? (
@@ -137,9 +137,9 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
               </div>
 
               {/* Real Workout History Context Card (from DB) */}
-              <div className="p-2.5 rounded-lg bg-white/90 dark:bg-slate-900/90 border border-orange-200/60 dark:border-orange-900/40 text-[11px] flex flex-col gap-1.5 shadow-2xs">
+              <div className="p-2.5 rounded-lg bg-white/90 dark:bg-slate-900/90 border border-emerald-200/60 dark:border-emerald-900/40 text-[11px] flex flex-col gap-1.5 shadow-2xs">
                 <div className="flex items-center justify-between text-slate-700 dark:text-slate-300 font-bold border-b border-slate-100 dark:border-slate-800 pb-1">
-                  <div className="flex items-center gap-1.5 text-xs text-orange-600 dark:text-orange-400">
+                  <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
                     <History className="w-3.5 h-3.5" />
                     <span>Lịch sử tập luyện thực tế (từ Hồ sơ)</span>
                   </div>
@@ -181,7 +181,7 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
 
                   {memberProfile?.stats?.goalProgress != null && (
                     <div className="flex items-center gap-1.5 pt-0.5">
-                      <TrendingUp className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      <TrendingUp className="w-3.5 h-3.5 shrink-0" />
                       <span>
                         <strong>Tiến độ mục tiêu:</strong> {memberProfile.stats.goalProgress}% theo giáo án đã giao
                       </span>
@@ -192,48 +192,67 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
 
               {/* Health Metrics & Vitals Row */}
               {(memberProfile?.stats?.weight || selectedMember.healthMetrics) && (
-                <div className="grid grid-cols-3 gap-1.5 pt-0.5 text-[11px]">
-                  <div className="px-2 py-1 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-orange-100 dark:border-orange-900/40 text-center">
-                    <span className="text-[10px] text-slate-400 block">Chiều cao</span>
-                    <span className="font-bold text-slate-700 dark:text-slate-300">
-                      {memberProfile?.stats?.height || selectedMember.healthMetrics?.heightCm || 170} cm
-                    </span>
+                <div className="flex flex-col gap-1.5 pt-0.5">
+                  <div className="grid grid-cols-3 gap-1.5 text-[11px]">
+                    <div className="px-2 py-1 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-emerald-100 dark:border-emerald-900/40 text-center">
+                      <span className="text-[10px] text-slate-400 block">Chiều cao</span>
+                      <span className="font-bold text-slate-700 dark:text-slate-300">
+                        {memberProfile?.stats?.height || selectedMember.healthMetrics?.heightCm || 170} cm
+                      </span>
+                    </div>
+                    <div className="px-2 py-1 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-emerald-100 dark:border-emerald-900/40 text-center">
+                      <span className="text-[10px] text-slate-400 block">Cân nặng</span>
+                      <span className="font-bold text-slate-700 dark:text-slate-300">
+                        {memberProfile?.stats?.weight || selectedMember.healthMetrics?.weightKg || 65} kg
+                      </span>
+                    </div>
+                    <div className="px-2 py-1 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-emerald-100 dark:border-emerald-900/40 text-center">
+                      <span className="text-[10px] text-slate-400 block">Chỉ số BMI</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                        {memberProfile?.stats?.bmi || selectedMember.healthMetrics?.bmi || "22.5"} (Chuẩn)
+                      </span>
+                    </div>
                   </div>
-                  <div className="px-2 py-1 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-orange-100 dark:border-orange-900/40 text-center">
-                    <span className="text-[10px] text-slate-400 block">Cân nặng</span>
-                    <span className="font-bold text-slate-700 dark:text-slate-300">
-                      {memberProfile?.stats?.weight || selectedMember.healthMetrics?.weightKg || 65} kg
-                    </span>
-                  </div>
-                  <div className="px-2 py-1 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-orange-100 dark:border-orange-900/40 text-center">
-                    <span className="text-[10px] text-slate-400 block">Chỉ số BMI</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                      {memberProfile?.stats?.bmi || selectedMember.healthMetrics?.bmi || "22.5"} (Chuẩn)
-                    </span>
-                  </div>
+
+                  {(memberProfile?.stats?.bodyFat != null || memberProfile?.stats?.muscleMass != null) && (
+                    <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                      <div className="px-2 py-1 rounded-lg bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200/50 dark:border-amber-800/40 text-center">
+                        <span className="text-[10px] text-amber-700 dark:text-amber-400 block font-semibold">Tỷ lệ mỡ (Body Fat)</span>
+                        <span className="font-extrabold text-amber-900 dark:text-amber-200">
+                          {memberProfile.stats.bodyFat}%
+                        </span>
+                      </div>
+                      <div className="px-2 py-1 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/50 dark:border-emerald-800/40 text-center">
+                        <span className="text-[10px] text-emerald-700 dark:text-emerald-400 block font-semibold">Khối lượng cơ (Muscle)</span>
+                        <span className="font-extrabold text-emerald-900 dark:text-emerald-200">
+                          {memberProfile.stats.muscleMass} kg
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Medical / Injury Note & AI Safety Filter */}
               {selectedMember.healthMetrics?.injuryNote && selectedMember.healthMetrics.injuryNote !== "Không có tiền sử chấn thương" ? (
-                <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-900 dark:text-amber-200 flex flex-col gap-1">
+                <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 text-[11px] text-slate-800 dark:text-slate-200 flex flex-col gap-1 shadow-2xs">
                   <div className="flex items-center gap-1.5 font-bold">
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <AlertTriangle className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 shrink-0" />
                     <span>Lưu ý y tế: {selectedMember.healthMetrics.injuryNote}</span>
                   </div>
                   {selectedMember.healthMetrics.caution && (
-                    <div className="text-[10px] opacity-90 pl-5 text-slate-600 dark:text-slate-300 leading-tight">
+                    <div className="text-[10px] opacity-90 pl-5 text-slate-500 dark:text-slate-400 leading-tight">
                       {selectedMember.healthMetrics.caution}
                     </div>
                   )}
-                  <div className="mt-0.5 flex items-center gap-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-white/80 dark:bg-slate-900/80 px-2 py-0.5 rounded border border-emerald-400/30">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                  <div className="mt-0.5 flex items-center gap-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                    <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
                     <span>Gemini AI Safety Filter: Tự động né chấn thương & kiểm soát tải</span>
                   </div>
                 </div>
               ) : (
                 <div className="text-[10px] text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 font-medium border border-emerald-500/20">
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
                   <span>
                     Đã nạp <strong>Mục tiêu</strong>, <strong>Trình độ</strong> & <strong>Lịch sử tập</strong> vào Gemini AI
                   </span>
@@ -247,7 +266,7 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
           <select
             value={targetId}
             onChange={(e) => handlePickTarget("class", e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-orange-500 focus:outline-none"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
           >
             {classes.length === 0 ? (
               <option value="">Chưa có lớp học phụ trách</option>
@@ -261,7 +280,7 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
           </select>
 
           {selectedClass && (
-            <div className="p-3 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/50 flex items-center justify-between">
+            <div className="p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 flex items-center justify-between">
               <div>
                 <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
                   Lớp: {selectedClass.className} ({selectedClass.sport})
@@ -270,7 +289,7 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
                   Sĩ số: {selectedClass.enrolledCount}/{selectedClass.capacity} học viên
                 </div>
               </div>
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
                 {selectedClass.scheduleTime || "Lịch chuẩn"}
               </span>
             </div>

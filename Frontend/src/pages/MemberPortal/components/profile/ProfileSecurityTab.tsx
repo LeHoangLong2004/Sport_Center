@@ -96,7 +96,7 @@ export const ProfileSecurityTab: React.FC<ProfileSecurityTabProps> = ({
         {/* Box 2: Phiên đăng nhập & Thiết bị */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
+            <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-500/10 flex items-center justify-center text-slate-600 dark:text-slate-400">
               <Shield className="w-5 h-5" />
             </div>
             <div>
@@ -129,13 +129,13 @@ export const ProfileSecurityTab: React.FC<ProfileSecurityTabProps> = ({
       </div>
 
       {/* Box 3: Quyền riêng tư & Khóa thẻ khẩn cấp */}
-      <div className="p-5 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-800/40 flex items-start gap-4">
-        <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+      <div className="p-5 rounded-2xl bg-slate-50/60 dark:bg-slate-950/20 border border-slate-200/70 dark:border-slate-800/40 flex items-start gap-4">
+        <AlertCircle className="w-5 h-5 text-slate-600 shrink-0 mt-0.5" />
         <div className="flex-1 space-y-1">
-          <h4 className="font-bold text-xs text-amber-900 dark:text-amber-200">
+          <h4 className="font-bold text-xs text-slate-900 dark:text-slate-200">
             Khóa mã QR hoặc Báo mất thiết bị khẩn cấp
           </h4>
-          <p className="text-xs text-amber-700/90 dark:text-amber-300/80 leading-relaxed">
+          <p className="text-xs text-slate-700/90 dark:text-slate-300/80 leading-relaxed">
             Nếu bạn đánh mất điện thoại hoặc nghi ngờ có người sử dụng trái phép mã Check-in của bạn, vui lòng liên hệ ngay bộ phận Lễ tân tại quầy hoặc gọi Hotline 1900 6868 để nhân viên tạm khóa mã QR và cấp lại mã bảo mật mới ngay lập tức.
           </p>
         </div>

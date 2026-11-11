@@ -48,10 +48,10 @@ export function PaymentOrderSummary({
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-          <h2 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-sm md:text-base">
+          <h2 className="font-bold text-[#0f172a] text-sm md:text-base">
             Tóm tắt đơn hàng
           </h2>
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
             {periodLabel}
           </span>
         </div>
@@ -60,7 +60,7 @@ export function PaymentOrderSummary({
         <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-2.5 flex flex-col gap-1.5">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <h3 className="font-['Inter:Bold'] font-bold text-[#0f172a] text-sm">
+              <h3 className="font-bold text-[#0f172a] text-sm">
                 {pkg.name}
               </h3>
               <p className="text-[11px] text-slate-500">{pkg.tagline}</p>
@@ -78,7 +78,7 @@ export function PaymentOrderSummary({
             <div className="flex flex-col gap-1 pt-1.5 border-t border-slate-200/60">
               {pkg.features.slice(0, 3).map((f: string, idx: number) => (
                 <div key={idx} className="flex items-start gap-1.5 text-[11px] text-slate-700">
-                  <span className="text-teal-600 font-bold shrink-0">✓</span>
+                  <span className="text-emerald-600 font-bold shrink-0">✓</span>
                   <span className="line-clamp-1">{f}</span>
                 </div>
               ))}
@@ -112,7 +112,7 @@ export function PaymentOrderSummary({
               value={promoCode}
               onChange={(e) => onPromoCodeChange(e.target.value)}
               placeholder="Mã ưu đãi (VD: SPORT10)"
-              className="flex-1 px-2.5 py-1 rounded-lg border border-slate-300 focus:border-teal-500 outline-none text-xs text-slate-800 uppercase"
+              className="flex-1 px-2.5 py-1 rounded-lg border border-slate-300 focus:border-emerald-500 outline-none text-xs text-slate-800 uppercase"
             />
             <button
               type="button"
@@ -166,7 +166,7 @@ export function PaymentOrderSummary({
             <span className="block text-[11px] font-semibold text-slate-700">Tổng thanh toán</span>
             <span className="block text-[9px] text-slate-400">Đã bao gồm thuế phí</span>
           </div>
-          <span className="font-['Inter:Extra_Bold'] font-extrabold text-teal-600 text-xl tracking-tight">
+          <span className="font-extrabold text-emerald-600 text-xl tracking-tight">
             {fmt(finalTotal)}
           </span>
         </div>
@@ -177,11 +177,11 @@ export function PaymentOrderSummary({
             type="checkbox"
             checked={agreedTerms}
             onChange={(e) => onAgreedTermsChange(e.target.checked)}
-            className="mt-0.5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer"
+            className="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
           />
           <span className="text-[10px] text-slate-500 leading-3.5">
             Tôi đồng ý với{" "}
-            <a href="#rules" className="text-teal-600 underline font-medium" target="_blank" rel="noreferrer">
+            <a href="#rules" className="text-emerald-600 underline font-medium" target="_blank" rel="noreferrer">
               Điều khoản dịch vụ
             </a>{" "}
             và Quy chế hội viên SportCenter.
@@ -193,11 +193,11 @@ export function PaymentOrderSummary({
           type="button"
           disabled={!agreedTerms || autoPaid}
           onClick={onNext}
-          className={`w-full py-2.5 rounded-xl font-['Inter:Bold'] font-bold text-white text-xs md:text-sm shadow-sm transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+          className={`w-full py-2.5 rounded-xl font-bold text-white text-xs md:text-sm shadow-sm transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
             autoPaid
               ? "bg-emerald-600 shadow-emerald-500/30 animate-pulse cursor-wait"
               : agreedTerms
-              ? "bg-teal-600 hover:bg-teal-700 active:scale-[0.99] shadow-teal-600/20"
+              ? "bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] shadow-emerald-600/20"
               : "bg-slate-300 cursor-not-allowed shadow-none"
           }`}
         >

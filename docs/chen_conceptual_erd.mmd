@@ -1,0 +1,212 @@
+flowchart LR
+    %% ==============================================================
+    %% SMARTGYM OS - CONCEPTUAL ERD (PETER CHEN NOTATION - DEFAULT STYLE)
+    %% - Entity: [Hình chữ nhật]
+    %% - Relationship: {Hình thoi}
+    %% - Attribute: ([Hình Oval])
+    %% - Cardinality: 1, N, M trên đường nối
+    %% ==============================================================
+
+    %% --------------------------------------------------------------
+    %% 1. CÁC THỰC THỂ (HÌNH CHỮ NHẬT)
+    %% --------------------------------------------------------------
+    User["User"]
+    Role["Role"]
+    Coach["Coach"]
+    Sport["Sport"]
+    Facility["Facility"]
+    Package["Package"]
+    Subscription["Subscription"]
+    Class["Class"]
+    Booking["Booking"]
+    WorkoutPlan["WorkoutPlan"]
+    BodyMetrics["BodyMetrics"]
+    Invoice["Invoice"]
+
+    %% --------------------------------------------------------------
+    %% 2. CÁC MỐI QUAN HỆ (HÌNH THOI)
+    %% --------------------------------------------------------------
+    rel_user_role{"has_role"}
+    rel_user_coach{"acts_as"}
+    rel_user_sub{"registers"}
+    rel_pack_sub{"defines"}
+    rel_pack_sport{"covers"}
+    rel_coach_sport{"specializes_in"}
+    rel_coach_class{"instructs"}
+    rel_sport_class{"categorizes"}
+    rel_facility_class{"hosts"}
+    rel_user_booking{"makes"}
+    rel_class_booking{"contains"}
+    rel_user_metrics{"tracks"}
+    rel_user_plan{"follows"}
+    rel_coach_plan{"designs"}
+    rel_user_invoice{"pays"}
+
+    %% --------------------------------------------------------------
+    %% 3. THUỘC TÍNH (HÌNH OVAL)
+    %% --------------------------------------------------------------
+    %% User
+    u_id(["id (PK)"])
+    u_code(["member_code"])
+    u_name(["full_name"])
+    u_email(["email"])
+    u_phone(["phone"])
+    u_goal(["training_goal"])
+    u_status(["status"])
+    User --- u_id
+    User --- u_code
+    User --- u_name
+    User --- u_email
+    User --- u_phone
+    User --- u_goal
+    User --- u_status
+
+    %% Role
+    r_id(["id (PK)"])
+    r_name(["role_name"])
+    Role --- r_id
+    Role --- r_name
+
+    %% Coach
+    c_id(["id (PK)"])
+    c_spec(["specialties"])
+    c_exp(["experience_years"])
+    c_rate(["rating_avg"])
+    Coach --- c_id
+    Coach --- c_spec
+    Coach --- c_exp
+    Coach --- c_rate
+
+    %% Sport
+    s_id(["id (PK)"])
+    s_name(["sport_name"])
+    Sport --- s_id
+    Sport --- s_name
+
+    %% Facility
+    f_id(["id (PK)"])
+    f_name(["branch_name"])
+    f_addr(["address"])
+    Facility --- f_id
+    Facility --- f_name
+    Facility --- f_addr
+
+    %% Package
+    p_id(["id (PK)"])
+    p_name(["package_name"])
+    p_type(["package_type"])
+    p_price(["monthly_price"])
+    Package --- p_id
+    Package --- p_name
+    Package --- p_type
+    Package --- p_price
+
+    %% Subscription
+    sub_id(["id (PK)"])
+    sub_start(["start_date"])
+    sub_end(["end_date"])
+    sub_amount(["total_amount"])
+    sub_status(["status"])
+    Subscription --- sub_id
+    Subscription --- sub_start
+    Subscription --- sub_end
+    Subscription --- sub_amount
+    Subscription --- sub_status
+
+    %% Class
+    cl_id(["id (PK)"])
+    cl_name(["class_name"])
+    cl_time(["schedule_time"])
+    cl_cap(["capacity"])
+    cl_enrolled(["current_enrolled"])
+    Class --- cl_id
+    Class --- cl_name
+    Class --- cl_time
+    Class --- cl_cap
+    Class --- cl_enrolled
+
+    %% Booking
+    b_id(["id (PK)"])
+    b_date(["booking_date"])
+    b_status(["status"])
+    Booking --- b_id
+    Booking --- b_date
+    Booking --- b_status
+
+    %% WorkoutPlan
+    w_id(["id (PK)"])
+    w_name(["plan_name"])
+    w_goal(["goal"])
+    w_level(["level"])
+    WorkoutPlan --- w_id
+    WorkoutPlan --- w_name
+    WorkoutPlan --- w_goal
+    WorkoutPlan --- w_level
+
+    %% BodyMetrics
+    m_id(["id (PK)"])
+    m_height(["height_cm"])
+    m_weight(["weight_kg"])
+    m_bmi(["bmi"])
+    BodyMetrics --- m_id
+    BodyMetrics --- m_height
+    BodyMetrics --- m_weight
+    BodyMetrics --- m_bmi
+
+    %% Invoice
+    i_id(["id (PK)"])
+    i_amount(["total_amount"])
+    i_method(["payment_method"])
+    i_status(["payment_status"])
+    Invoice --- i_id
+    Invoice --- i_amount
+    Invoice --- i_method
+    Invoice --- i_status
+
+    %% --------------------------------------------------------------
+    %% 4. KẾT NỐI MỐI QUAN HỆ & BẢN SỐ (1, N, M)
+    %% --------------------------------------------------------------
+    Role ---|1| rel_user_role
+    rel_user_role ---|N| User
+
+    User ---|1| rel_user_coach
+    rel_user_coach ---|1| Coach
+
+    User ---|1| rel_user_sub
+    rel_user_sub ---|N| Subscription
+
+    Package ---|1| rel_pack_sub
+    rel_pack_sub ---|N| Subscription
+
+    Package ---|M| rel_pack_sport
+    rel_pack_sport ---|N| Sport
+
+    Coach ---|M| rel_coach_sport
+    rel_coach_sport ---|N| Sport
+
+    Coach ---|1| rel_coach_class
+    rel_coach_class ---|N| Class
+
+    Sport ---|1| rel_sport_class
+    rel_sport_class ---|N| Class
+
+    Facility ---|1| rel_facility_class
+    rel_facility_class ---|N| Class
+
+    User ---|1| rel_user_booking
+    rel_user_booking ---|N| Booking
+
+    Class ---|1| rel_class_booking
+    rel_class_booking ---|N| Booking
+
+    User ---|1| rel_user_metrics
+    rel_user_metrics ---|N| BodyMetrics
+
+    User ---|1| rel_user_plan
+    rel_user_plan ---|N| WorkoutPlan
+
+    Coach ---|1| rel_coach_plan
+    rel_coach_plan ---|N| WorkoutPlan
+
+    User ---|1| rel_user_invoice
+    rel_user_invoice ---|N| Invoice

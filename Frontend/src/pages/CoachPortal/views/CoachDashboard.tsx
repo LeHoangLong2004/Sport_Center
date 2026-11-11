@@ -170,16 +170,16 @@ export default function CoachDashboard({ navigateTo }: Props) {
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 md:p-8 text-white shadow-lg border border-slate-700/50">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/20 text-orange-300 text-xs font-semibold border border-orange-500/30">
-              <Sparkles className="w-3.5 h-3.5 text-orange-400" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold border border-emerald-500/30">
+              <Sparkles className="w-3.5 h-3.5" />
               <span>Huấn luyện viên SportCenter</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
               Xin chào, {coachName} 👋
             </h1>
             <p className="text-sm text-slate-300 max-w-xl leading-relaxed">
-              Chào mừng bạn trở lại! Hôm nay bạn có <strong className="text-orange-400">{todaySessions.length} ca dạy</strong> ({totalRegistrations} học viên){appointments.length > 0 ? (
-                <> và <strong className="text-amber-400">{appointments.length} lịch hẹn tiếp đón khách từ Lễ tân</strong></>
+              Chào mừng bạn trở lại! Hôm nay bạn có <strong className="text-emerald-400">{todaySessions.length} ca dạy</strong> ({totalRegistrations} học viên){appointments.length > 0 ? (
+                <> và <strong className="text-emerald-300">{appointments.length} lịch hẹn tiếp đón khách từ Lễ tân</strong></>
               ) : ""}. Hãy duy trì năng lượng và đồng hành cùng học viên nhé!
             </p>
           </div>
@@ -188,7 +188,7 @@ export default function CoachDashboard({ navigateTo }: Props) {
             <button
               type="button"
               onClick={() => navigateTo("schedule")}
-              className="px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md shadow-orange-500/25 transition-all cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/25 transition-all cursor-pointer"
             >
               Lịch dạy hôm nay
             </button>
@@ -203,8 +203,8 @@ export default function CoachDashboard({ navigateTo }: Props) {
         </div>
 
         {/* Ambient subtle background blur lights */}
-        <div className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-orange-500/10 blur-3xl pointer-events-none"></div>
-        <div className="absolute right-48 -bottom-16 w-56 h-56 rounded-full bg-amber-500/10 blur-3xl pointer-events-none"></div>
+        <div className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"></div>
+        <div className="absolute right-48 -bottom-16 w-56 h-56 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"></div>
       </div>
 
       {/* Modern SaaS Stat Cards */}
@@ -274,13 +274,13 @@ function StatCard({
       onClick={onClick}
       className={`p-5 rounded-2xl border bg-white dark:bg-slate-900 transition-all ${
         highlight
-          ? "border-orange-300 dark:border-orange-700/60 shadow-sm"
+          ? "border-emerald-300 dark:border-emerald-700/60 shadow-sm"
           : "border-slate-200/90 dark:border-slate-800 shadow-xs"
-      } ${onClick ? "cursor-pointer hover:border-orange-400 dark:hover:border-orange-500/60" : "hover:border-slate-300 dark:hover:border-slate-700"}`}
+      } ${onClick ? "cursor-pointer hover:border-emerald-400 dark:hover:border-emerald-500/60" : "hover:border-slate-300 dark:hover:border-slate-700"}`}
     >
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{label}</span>
-        <span className={`size-2 rounded-full ${highlight ? "bg-orange-500 animate-pulse" : "bg-orange-400"}`} />
+        <span className={`size-2 rounded-full ${highlight ? "bg-emerald-500 animate-pulse" : "bg-emerald-400"}`} />
       </div>
       <div className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
         {value}

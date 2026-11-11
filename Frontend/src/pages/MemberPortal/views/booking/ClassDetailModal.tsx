@@ -32,7 +32,7 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
         {/* Header */}
         <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
           <div>
-            <span className="text-[10px] font-black uppercase tracking-wider text-teal-600 dark:text-teal-400">
+            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
               Chi tiết lớp học • {classDetail.sport}
             </span>
             <h3 className="text-lg font-black text-slate-900 dark:text-white">
@@ -71,19 +71,19 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
             </div>
             <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-700">
               <span className="text-slate-500 font-semibold">Mức phí áp dụng:</span>
-              <strong className="text-teal-700 dark:text-teal-300 font-black text-sm">
+              <strong className="text-emerald-700 dark:text-emerald-300 font-black text-sm">
                 Giá gốc: {classDetail.price ? `${classDetail.price.toLocaleString("vi-VN")} đ` : "150.000 đ"}
               </strong>
             </div>
           </div>
 
           {/* Coach Profile */}
-          <div className="p-5 rounded-2xl bg-gradient-to-br from-teal-50 to-emerald-50/50 dark:from-slate-800 dark:to-slate-850 border border-teal-200 dark:border-teal-800/80">
+          <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-50/50 dark:from-slate-800 dark:to-slate-850 border border-emerald-200 dark:border-emerald-800/80">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-black uppercase tracking-wider text-teal-700 dark:text-teal-300 flex items-center gap-1">
-                <Award className="w-4 h-4 text-teal-600" /> Huấn luyện viên phụ trách
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
+                <Award className="w-4 h-4" /> Huấn luyện viên phụ trách
               </span>
-              <span className="flex items-center gap-1 text-xs font-black text-amber-500 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-lg border border-teal-100">
+              <span className="flex items-center gap-1 text-xs font-black text-slate-500 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-lg border border-emerald-100">
                 <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                 {classDetail.coachRating ?? "—"}
               </span>
@@ -93,13 +93,13 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
               <CoachAvatar
                 src={classDetail.coachAvatar}
                 name={classDetail.coachName}
-                className="w-14 h-14 rounded-full border-2 border-teal-500 shadow-sm shrink-0"
+                className="w-14 h-14 rounded-full border-2 border-emerald-500 shadow-sm shrink-0"
               />
               <div>
                 <h4 className="font-extrabold text-base text-slate-900 dark:text-white">
                   {classDetail.coachName}
                 </h4>
-                <p className="text-xs font-bold text-teal-700 dark:text-teal-400">
+                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
                   {classDetail.coachSpecialty}
                 </p>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
@@ -108,7 +108,7 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
               </div>
             </div>
 
-            <p className="mt-3 text-xs leading-relaxed text-slate-600 dark:text-slate-300 italic pt-2.5 border-t border-teal-200/60 dark:border-slate-700">
+            <p className="mt-3 text-xs leading-relaxed text-slate-600 dark:text-slate-300 italic pt-2.5 border-t border-emerald-200/60 dark:border-slate-700">
               "{classDetail.coachBio}"
             </p>
 
@@ -121,18 +121,18 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                   classDetail.coachAvatar
                 )
               }
-              className="mt-3 w-full py-2 px-3 rounded-xl bg-white dark:bg-slate-900 border border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 font-bold text-xs hover:bg-teal-50 transition-colors flex items-center justify-center gap-1.5"
+              className="mt-3 w-full py-2 px-3 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-bold text-xs hover:bg-emerald-50 transition-colors flex items-center justify-center gap-1.5"
             >
               <MessageCircle className="w-3.5 h-3.5" />
               <span>Nhắn tin hỏi đáp với HLV</span>
             </button>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-blue-50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/30 text-slate-900 dark:text-slate-300 border border-slate-200 dark:border-slate-800">
             <p className="font-bold flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-blue-600" /> Chính sách linh hoạt:
+              <ShieldCheck className="w-4 h-4 text-slate-600" /> Chính sách linh hoạt:
             </p>
-            <p className="text-[11px] mt-1 leading-relaxed text-blue-800 dark:text-blue-300">
+            <p className="text-[11px] mt-1 leading-relaxed text-slate-800 dark:text-slate-300">
               Hội viên ở mọi gói (kể cả Hạng Cơ bản) đều được đặt lịch. Nếu là thành viên Cơ bản, bạn chỉ cần thanh toán đúng giá gốc của lớp học mà không phải trả thêm phí thường niên.
             </p>
           </div>

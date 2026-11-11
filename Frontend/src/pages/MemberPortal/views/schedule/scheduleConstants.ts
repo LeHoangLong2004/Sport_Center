@@ -16,8 +16,8 @@ export const SPORT_OPTIONS = ["all", "Gym", "Yoga", "Boxing", "Pilates", "Zumba"
 export const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> = {
   "sắp diễn ra": {
     label: "Sắp diễn ra",
-    bg: "bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800",
-    text: "text-blue-700 dark:text-blue-400",
+    bg: "bg-slate-50 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800",
+    text: "text-slate-700 dark:text-slate-400",
   },
   "đang diễn ra": {
     label: "Đang diễn ra",
@@ -42,7 +42,7 @@ export const SPORT_THEME: Record<string, { badge: string; border: string }> = {
     border: "border-l-emerald-500",
   },
   Gym: {
-    badge: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800",
+    badge: "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950/60 dark:text-slate-300 dark:border-slate-800",
     border: "border-l-amber-500",
   },
   Boxing: {
@@ -50,19 +50,19 @@ export const SPORT_THEME: Record<string, { badge: string; border: string }> = {
     border: "border-l-rose-500",
   },
   Pilates: {
-    badge: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800",
+    badge: "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950/60 dark:text-slate-300 dark:border-slate-800",
     border: "border-l-purple-500",
   },
   Bơi: {
-    badge: "bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/60 dark:text-cyan-300 dark:border-cyan-800",
+    badge: "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950/60 dark:text-slate-300 dark:border-slate-800",
     border: "border-l-cyan-500",
   },
   Zumba: {
-    badge: "bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-950/60 dark:text-pink-300 dark:border-pink-800",
+    badge: "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950/60 dark:text-slate-300 dark:border-slate-800",
     border: "border-l-pink-500",
   },
   Cardio: {
-    badge: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800",
+    badge: "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950/60 dark:text-slate-300 dark:border-slate-800",
     border: "border-l-amber-500",
   },
 };

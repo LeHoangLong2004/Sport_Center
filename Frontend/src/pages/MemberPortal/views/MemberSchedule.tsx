@@ -327,7 +327,7 @@ export default function MemberSchedule({ onNavigate }: Props) {
             onClick={() => onNavigate("chat")}
             className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-sm cursor-pointer"
           >
-            <Send className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <Send className="w-3.5 h-3.5" />
             Trò chuyện HLV
           </button>
         </div>
@@ -337,7 +337,7 @@ export default function MemberSchedule({ onNavigate }: Props) {
       {feedback && (
         <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 rounded-xl text-emerald-800 dark:text-emerald-300 text-sm flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-3">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-5 h-5 shrink-0" />
             <span>{feedback}</span>
           </div>
           <button

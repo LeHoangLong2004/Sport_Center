@@ -44,6 +44,96 @@ export default function SportTab({
   onStartPurchase,
   onNavigate,
 }: Props) {
+  const getSportTheme = (sport?: string, format?: SportFormat) => {
+    const s = (sport || "").toLowerCase();
+    if (s.includes("bơi") || s.includes("swim")) {
+      return {
+        badge: "bg-sky-100 dark:bg-sky-950/80 text-sky-700 dark:text-sky-300 border border-sky-200/60 dark:border-sky-800/60",
+        cardBorder: "border-sky-200/80 dark:border-sky-900/50 hover:border-sky-500/60 dark:hover:border-sky-500/60",
+        cardBg: "from-sky-50/40 via-white to-white dark:from-sky-950/20 dark:via-slate-900 dark:to-slate-850",
+        titleHover: "group-hover:text-sky-600 dark:group-hover:text-sky-400",
+        priceText: "text-sky-600 dark:text-sky-400",
+        checkIcon: "text-sky-500",
+        btn: "bg-sky-600 hover:bg-sky-500 text-white shadow-sky-600/20",
+      };
+    }
+    if (s.includes("yoga") || s.includes("pilates")) {
+      return {
+        badge: "bg-violet-100 dark:bg-violet-950/80 text-violet-700 dark:text-violet-300 border border-violet-200/60 dark:border-violet-800/60",
+        cardBorder: "border-violet-200/80 dark:border-violet-900/50 hover:border-violet-500/60 dark:hover:border-violet-500/60",
+        cardBg: "from-violet-50/40 via-white to-white dark:from-violet-950/20 dark:via-slate-900 dark:to-slate-850",
+        titleHover: "group-hover:text-violet-600 dark:group-hover:text-violet-400",
+        priceText: "text-violet-600 dark:text-violet-400",
+        checkIcon: "text-violet-500",
+        btn: "bg-violet-600 hover:bg-violet-500 text-white shadow-violet-600/20",
+      };
+    }
+    if (s.includes("box") || s.includes("kick") || s.includes("võ")) {
+      return {
+        badge: "bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/60",
+        cardBorder: "border-rose-200/80 dark:border-rose-900/50 hover:border-rose-500/60 dark:hover:border-rose-500/60",
+        cardBg: "from-rose-50/40 via-white to-white dark:from-rose-950/20 dark:via-slate-900 dark:to-slate-850",
+        titleHover: "group-hover:text-rose-600 dark:group-hover:text-rose-400",
+        priceText: "text-rose-600 dark:text-rose-400",
+        checkIcon: "text-rose-500",
+        btn: "bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/20",
+      };
+    }
+    if (s.includes("cầu lông") || s.includes("tennis") || s.includes("pickle")) {
+      return {
+        badge: "bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60",
+        cardBorder: "border-amber-200/80 dark:border-amber-900/50 hover:border-amber-500/60 dark:hover:border-amber-500/60",
+        cardBg: "from-amber-50/40 via-white to-white dark:from-amber-950/20 dark:via-slate-900 dark:to-slate-850",
+        titleHover: "group-hover:text-amber-600 dark:group-hover:text-amber-400",
+        priceText: "text-amber-600 dark:text-amber-400",
+        checkIcon: "text-amber-500",
+        btn: "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20",
+      };
+    }
+    if (s.includes("zumba") || s.includes("dance") || s.includes("nhảy")) {
+      return {
+        badge: "bg-pink-100 dark:bg-pink-950/80 text-pink-700 dark:text-pink-300 border border-pink-200/60 dark:border-pink-800/60",
+        cardBorder: "border-pink-200/80 dark:border-pink-900/50 hover:border-pink-500/60 dark:hover:border-pink-500/60",
+        cardBg: "from-pink-50/40 via-white to-white dark:from-pink-950/20 dark:via-slate-900 dark:to-slate-850",
+        titleHover: "group-hover:text-pink-600 dark:group-hover:text-pink-400",
+        priceText: "text-pink-600 dark:text-pink-400",
+        checkIcon: "text-pink-500",
+        btn: "bg-pink-600 hover:bg-pink-500 text-white shadow-pink-600/20",
+      };
+    }
+    if (format === "coach") {
+      return {
+        badge: "bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60",
+        cardBorder: "border-amber-200/80 dark:border-amber-900/50 hover:border-amber-500/60 dark:hover:border-amber-500/60",
+        cardBg: "from-amber-50/35 via-white to-white dark:from-amber-950/20 dark:via-slate-900 dark:to-slate-850",
+        titleHover: "group-hover:text-amber-600 dark:group-hover:text-amber-400",
+        priceText: "text-amber-600 dark:text-amber-400",
+        checkIcon: "text-amber-500",
+        btn: "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20",
+      };
+    }
+    if (format === "group") {
+      return {
+        badge: "bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60",
+        cardBorder: "border-blue-200/80 dark:border-blue-900/50 hover:border-blue-500/60 dark:hover:border-blue-500/60",
+        cardBg: "from-blue-50/35 via-white to-white dark:from-blue-950/20 dark:via-slate-900 dark:to-slate-850",
+        titleHover: "group-hover:text-blue-600 dark:group-hover:text-blue-400",
+        priceText: "text-blue-600 dark:text-blue-400",
+        checkIcon: "text-blue-500",
+        btn: "bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/20",
+      };
+    }
+    return {
+      badge: "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60",
+      cardBorder: "border-emerald-200/80 dark:border-emerald-900/50 hover:border-emerald-500/60 dark:hover:border-emerald-500/60",
+      cardBg: "from-emerald-50/35 via-white to-white dark:from-emerald-950/20 dark:via-slate-900 dark:to-slate-850",
+      titleHover: "group-hover:text-emerald-600 dark:group-hover:text-emerald-400",
+      priceText: "text-emerald-600 dark:text-emerald-400",
+      checkIcon: "text-emerald-500",
+      btn: "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20",
+    };
+  };
+
   return (
     <div className="space-y-6">
       {/* SECTION 2A: MY ACTIVE SPORT PACKAGES */}
@@ -84,6 +174,7 @@ export default function SportTab({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
             {activeSportOrders.map((order) => {
               const pkg = order.packageSnapshot;
+              const theme = getSportTheme(pkg.sport, pkg.format);
               const daysLeft = order.endDate
                 ? Math.max(
                     0,
@@ -97,11 +188,11 @@ export default function SportTab({
               return (
                 <div
                   key={order.id}
-                  className="p-5 rounded-2xl bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-850 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between"
+                  className={`p-5 rounded-2xl bg-gradient-to-br ${theme.cardBg} border ${theme.cardBorder} shadow-xs flex flex-col justify-between transition-all`}
                 >
                   <div>
                     <div className="flex items-center justify-between">
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${theme.badge}`}>
                         {pkg.sport || "Thể thao"} •{" "}
                         {pkg.format === "coach"
                           ? "Coach 1–1"
@@ -109,7 +200,7 @@ export default function SportTab({
                           ? "Lớp nhóm"
                           : "Tự tập"}
                       </span>
-                      <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">
+                      <span className={`text-xs font-extrabold ${theme.priceText}`}>
                         Còn {daysLeft} ngày
                       </span>
                     </div>
@@ -144,7 +235,7 @@ export default function SportTab({
                       <button
                         type="button"
                         onClick={() => onNavigate("booking")}
-                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+                        className={`px-4 py-2 rounded-xl ${theme.btn} text-xs font-bold transition-all shadow-xs cursor-pointer`}
                       >
                         Đặt lịch tập
                       </button>
@@ -229,15 +320,16 @@ export default function SportTab({
             const { discountPct, originalPrice, finalPrice } = calculateDiscount(pkg);
             const isCoach = pkg.format === "coach";
             const isGroup = pkg.format === "group";
+            const theme = getSportTheme(pkg.sport, pkg.format);
 
             return (
               <div
                 key={pkg.id}
-                className="p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-gradient-to-b from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-850 shadow-xs flex flex-col justify-between hover:border-emerald-500/50 dark:hover:border-emerald-500/50 transition-all group"
+                className={`p-6 rounded-3xl border ${theme.cardBorder} bg-gradient-to-b ${theme.cardBg} shadow-xs flex flex-col justify-between transition-all group`}
               >
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${theme.badge}`}>
                       {pkg.sport} • {isCoach ? "Coach 1–1" : isGroup ? "Lớp nhóm" : "Tự tập"}
                     </span>
                     <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
@@ -245,26 +337,26 @@ export default function SportTab({
                     </span>
                   </div>
 
-                  <h4 className="text-base font-bold text-slate-900 dark:text-white mt-3 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                  <h4 className={`text-base font-bold text-slate-900 dark:text-white mt-3 ${theme.titleHover} transition-colors`}>
                     {pkg.name}
                   </h4>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
                     {pkg.description}
                   </p>
 
-                  <div className="mt-4 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60">
+                  <div className="mt-4 p-3.5 rounded-2xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60">
                     {discountPct > 0 ? (
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-slate-400 line-through">
                             {originalPrice.toLocaleString("vi-VN")} đ
                           </span>
-                          <span className="px-2 py-0.2 rounded-full text-[10px] font-extrabold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300">
                             Giảm {discountPct}% (Hạng {membershipStatus.name})
                           </span>
                         </div>
                         <div className="mt-1">
-                          <span className="text-xl font-black text-emerald-600 dark:text-emerald-400">
+                          <span className={`text-xl font-black ${theme.priceText}`}>
                             {finalPrice.toLocaleString("vi-VN")} đ
                           </span>
                           <span className="text-xs text-slate-500 ml-1">
@@ -274,7 +366,7 @@ export default function SportTab({
                       </div>
                     ) : (
                       <div>
-                        <span className="text-xl font-black text-slate-900 dark:text-white">
+                        <span className={`text-xl font-black ${theme.priceText}`}>
                           {finalPrice.toLocaleString("vi-VN")} đ
                         </span>
                         <span className="text-xs text-slate-500 ml-1">
@@ -293,7 +385,7 @@ export default function SportTab({
                   <ul className="mt-4 space-y-2 text-xs text-slate-600 dark:text-slate-300">
                     {pkg.benefits.map((b, idx) => (
                       <li key={idx} className="flex items-start gap-2">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                        <CheckCircle2 className={`w-3.5 h-3.5 ${theme.checkIcon} shrink-0 mt-0.5`} />
                         <span>{b}</span>
                       </li>
                     ))}
@@ -304,7 +396,7 @@ export default function SportTab({
                   <button
                     type="button"
                     onClick={() => onStartPurchase(pkg)}
-                    className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                    className={`w-full py-2.5 rounded-xl ${theme.btn} text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer`}
                   >
                     <span>Đăng ký gói môn</span>
                     <ArrowRight className="w-4 h-4" />

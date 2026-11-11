@@ -62,7 +62,7 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
         {pendingSessions.length === 0 ? (
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 text-xs text-slate-500 text-center font-medium">
-            🎉 Tuyệt vời! Không có buổi học nào bị tồn đọng điểm danh.
+            Tuyệt vời! Không có buổi học nào bị tồn đọng điểm danh.
           </div>
         ) : (
           <div className="flex flex-col gap-2">

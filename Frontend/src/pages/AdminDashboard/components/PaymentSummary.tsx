@@ -36,28 +36,28 @@ export function PaymentSummary({
         badge={error ? "--" : `${successRate}%`}
         badgeColor="green"
         icon={iWallet}
-        iconBg="bg-[rgba(37,99,235,0.08)]"
+        iconBg="bg-slate-100"
       />
       <KpiCard
         label="Giao dịch thành công"
         value={error ? "-- giao dịch" : `${completedCount} giao dịch`}
         sub={`${monthCount} hóa đơn trong tháng`}
         icon={iCheckCircle}
-        iconBg="bg-[rgba(21,128,61,0.08)]"
+        iconBg="bg-slate-100"
       />
       <KpiCard
         label="Chờ đối soát / Xử lý"
         value={error ? "-- đ" : formatVnd(pendingAmount)}
         sub={`${pendingCount} hóa đơn chưa thanh toán`}
         icon={iClock}
-        iconBg="bg-[rgba(217,119,6,0.08)]"
+        iconBg="bg-slate-100"
       />
       <KpiCard
         label="Hoàn tiền (Tháng này)"
         value={error ? "-- đ" : formatVnd(refundedAmount)}
         sub={`${refundedCount} yêu cầu hoàn tiền`}
         icon={iRotateCcw}
-        iconBg="bg-[rgba(220,38,38,0.08)]"
+        iconBg="bg-slate-100"
       />
     </div>
   );

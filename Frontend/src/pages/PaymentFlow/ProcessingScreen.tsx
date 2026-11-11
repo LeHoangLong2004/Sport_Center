@@ -15,8 +15,8 @@ export function ProcessingScreen() {
             </div>
           </div>
           <div className="flex flex-col gap-2 items-center text-center">
-            <p className="font-['Inter'] font-extrabold text-[#0f172a] text-[28px]">Đang xử lý thanh toán...</p>
-            <p className="font-['Inter'] font-normal text-[#64748b] text-sm">
+            <p className=" font-extrabold text-[#0f172a] text-[28px]">Đang xử lý thanh toán...</p>
+            <p className=" font-normal text-[#64748b] text-sm">
               Vui lòng không đóng trang này. Giao dịch của bạn đang được xử lý an toàn.
             </p>
           </div>
@@ -28,12 +28,12 @@ export function ProcessingScreen() {
             ].map(({ label, done, active }) => (
               <div key={label} className="flex gap-3 items-center">
                 <div className={`size-4 rounded-full flex items-center justify-center shrink-0 ${
-                  done ? "bg-teal-500" : active ? "border-2 border-teal-500 animate-pulse" : "border-2 border-[#e2e8f0]"
+                  done ? "bg-emerald-500" : active ? "border-2 border-emerald-500 animate-pulse" : "border-2 border-[#e2e8f0]"
                 }`}>
                   {done && <span className="text-white text-[8px]">✓</span>}
                 </div>
-                <span className={`font-['Inter'] text-sm ${
-                  done ? "font-semibold text-teal-600" : active ? "font-semibold text-teal-500" : "font-normal text-[#94a3b8]"
+                <span className={` text-sm ${
+                  done ? "font-semibold text-emerald-600" : active ? "font-semibold text-emerald-500" : "font-normal text-[#94a3b8]"
                 }`}>{label}</span>
               </div>
             ))}

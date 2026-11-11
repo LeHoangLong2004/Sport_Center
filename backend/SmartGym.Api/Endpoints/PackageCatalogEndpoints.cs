@@ -5,16 +5,31 @@ using SmartGym.Application.DTOs;
 
 namespace SmartGym.Api.Endpoints;
 
+/// <summary>
+/// Endpoint quản lý Danh mục gói tập mở rộng và Đơn đặt mua gói tập (Package Catalog & Order System).
+/// Bao gồm: Cấu hình bảng giá theo kỳ hạn, đơn mua gói của hội viên, quy trình Checkout & thanh toán,
+/// xác nhận thanh toán tại quầy và kiểm tra quyền vào tập (Access Control) theo môn thể thao.
+/// </summary>
 public static class PackageCatalogEndpoints
 {
     private static readonly string[] ManagerRoles = ["manager", "CenterManager", "center_manager"];
     private static readonly string[] OrderManagementRoles = ["manager", "CenterManager", "center_manager", "receptionist", "Receptionist", "admin", "Admin"];
     private static readonly string[] MemberRoles = ["member", "Member", "admin", "Admin", "manager", "Manager"];
 
+    /// <summary>
+    /// Đăng ký các route Package Catalog và Package Orders vào hệ thống.
+    /// Nhóm route: /api/package-catalog và /api/package-orders
+    /// </summary>
+    /// <param name="app">Đối tượng IEndpointRouteBuilder</param>
     public static void MapPackageCatalogEndpoints(this IEndpointRouteBuilder app)
     {
         var catalog = app.MapGroup("/api/package-catalog").WithTags("Package catalog");
 
+        /// <summary>
+        /// GET /api/package-catalog
+        /// Lấy danh mục các gói tập (kèm theo kỳ hạn tháng, giảm giá, môn thể thao áp dụng).
+        /// Nếu là Manager/Admin sẽ thấy cả gói đang tạm ngưng hoạt động.
+        /// </summary>
         catalog.MapGet(
             "/",
             async (
@@ -32,6 +47,11 @@ public static class PackageCatalogEndpoints
             }
         );
 
+        /// <summary>
+        /// POST /api/package-catalog
+        /// Thêm mới một gói tập hoàn chỉnh vào Catalog (bao gồm cấu hình quyền thể thao, kỳ hạn).
+        /// Quyền hạn yêu cầu: Manager.
+        /// </summary>
         catalog
             .MapPost(
                 "/",
@@ -62,6 +82,11 @@ public static class PackageCatalogEndpoints
             )
             .RequireAuthorization(policy => policy.RequireRole(ManagerRoles));
 
+        /// <summary>
+        /// PUT /api/package-catalog/{id}
+        /// Chỉnh sửa thông tin chi tiết gói tập trong Catalog.
+        /// Quyền hạn yêu cầu: Manager.
+        /// </summary>
         catalog
             .MapPut(
                 "/{id}",
@@ -93,6 +118,11 @@ public static class PackageCatalogEndpoints
             )
             .RequireAuthorization(policy => policy.RequireRole(ManagerRoles));
 
+        /// <summary>
+        /// PATCH /api/package-catalog/{id}/status
+        /// Bật/tắt trạng thái mở bán (IsActive) của gói tập.
+        /// Quyền hạn yêu cầu: Manager.
+        /// </summary>
         catalog
             .MapPatch(
                 "/{id}/status",
@@ -125,6 +155,10 @@ public static class PackageCatalogEndpoints
 
         var orders = app.MapGroup("/api/package-orders").WithTags("Package orders");
 
+        /// <summary>
+        /// GET /api/package-orders/me
+        /// Lấy danh sách các đơn mua gói tập của hội viên hiện tại.
+        /// </summary>
         orders
             .MapGet(
                 "/me",
@@ -142,6 +176,10 @@ public static class PackageCatalogEndpoints
             )
             .RequireAuthorization(policy => policy.RequireRole(MemberRoles));
 
+        /// <summary>
+        /// POST /api/package-orders
+        /// Tạo đơn mua gói tập mới.
+        /// </summary>
         orders
             .MapPost(
                 "/",
@@ -175,6 +213,10 @@ public static class PackageCatalogEndpoints
             .RequireAuthorization();
 
 
+        /// <summary>
+        /// POST /api/package-orders/checkout
+        /// Bắt đầu quy trình thanh toán cho gói tập (khởi tạo liên kết thanh toán, QR SePay).
+        /// </summary>
         orders
             .MapPost(
                 "/checkout",
@@ -207,6 +249,11 @@ public static class PackageCatalogEndpoints
             )
             .RequireAuthorization(policy => policy.RequireRole(MemberRoles));
 
+        /// <summary>
+        /// GET /api/package-orders
+        /// Lấy toàn bộ đơn mua gói tập trong hệ thống để quản lý.
+        /// Quyền hạn yêu cầu: Manager, Receptionist hoặc Admin.
+        /// </summary>
         orders
             .MapGet(
                 "/",
@@ -218,6 +265,12 @@ public static class PackageCatalogEndpoints
             )
             .RequireAuthorization(policy => policy.RequireRole(OrderManagementRoles));
 
+        /// <summary>
+        /// PUT /api/package-orders/{id}/confirm-payment
+        /// Xác nhận đơn hàng đã thanh toán (thường dùng khi khách trả tiền mặt tại quầy).
+        /// Kích hoạt gói tập tương ứng cho hội viên.
+        /// Quyền hạn yêu cầu: Manager, Receptionist hoặc Admin.
+        /// </summary>
         orders
             .MapPut(
                 "/{id:guid}/confirm-payment",
@@ -244,6 +297,11 @@ public static class PackageCatalogEndpoints
             )
             .RequireAuthorization(policy => policy.RequireRole(OrderManagementRoles));
 
+        /// <summary>
+        /// PUT /api/package-orders/{id}/cancel
+        /// Hủy đơn mua gói tập.
+        /// Quyền hạn yêu cầu: Manager, Receptionist hoặc Admin.
+        /// </summary>
         orders
             .MapPut(
                 "/{id:guid}/cancel",
@@ -277,6 +335,10 @@ public static class PackageCatalogEndpoints
             )
             .RequireAuthorization(policy => policy.RequireRole(OrderManagementRoles));
 
+        /// <summary>
+        /// GET /api/package-orders/access/{sport}
+        /// Kiểm tra xem hội viên hiện tại có gói tập còn hiệu lực cho môn thể thao cụ thể hay không (Access Check).
+        /// </summary>
         orders
             .MapGet(
                 "/access/{sport}",

@@ -7,13 +7,26 @@ using SmartGym.Infrastructure.Persistence.Supabase.Models;
 
 namespace SmartGym.Api.Endpoints;
 
+/// <summary>
+/// Endpoint quản lý Sản phẩm & Cửa hàng phụ kiện thể thao (Product & Merchandise Management).
+/// Hỗ trợ CRUD: Tra cứu sản phẩm trong shop, xem chi tiết, thêm mới, sửa đổi tồn kho/giá bán và xóa sản phẩm.
+/// </summary>
 public static class ProductEndpoints
 {
+    /// <summary>
+    /// Đăng ký các route sản phẩm vào hệ thống.
+    /// Nhóm route gốc: /api/products
+    /// </summary>
+    /// <param name="app">Đối tượng WebApplication</param>
     public static void MapProductEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/products").WithTags("Products");
 
-        // GET /api/products — lấy danh sách sản phẩm (nếu includeInactive=true thì lấy cả sản phẩm tạm ngưng)
+        /// <summary>
+        /// GET /api/products
+        /// Lấy danh sách sản phẩm (nước uống, thực phẩm bổ sung, găng tay, phụ kiện gym...).
+        /// Tham số `includeInactive=true` để lấy cả sản phẩm tạm ẩn (dành cho quản lý).
+        /// </summary>
         group.MapGet("", async (bool? includeInactive, global::Supabase.Client supabase) =>
         {
             var response = await supabase.From<ProductModel>().Get();
@@ -37,7 +50,10 @@ public static class ProductEndpoints
             return Results.Ok(products);
         });
 
-        // GET /api/products/{id:guid}
+        /// <summary>
+        /// GET /api/products/{id}
+        /// Lấy chi tiết thông tin một sản phẩm theo ID.
+        /// </summary>
         group.MapGet("{id:guid}", async (Guid id, global::Supabase.Client supabase) =>
         {
             var response = await supabase
@@ -59,7 +75,11 @@ public static class ProductEndpoints
             });
         });
 
-        // POST /api/products — Thêm sản phẩm mới (dành cho Manager & Admin)
+        /// <summary>
+        /// POST /api/products
+        /// Thêm sản phẩm mới vào kho hàng trung tâm.
+        /// Quyền hạn yêu cầu: Manager hoặc Admin.
+        /// </summary>
         group.MapPost("", async (ProductSaveRequest request, global::Supabase.Client supabase) =>
         {
             if (string.IsNullOrWhiteSpace(request.Name))
@@ -96,7 +116,11 @@ public static class ProductEndpoints
             });
         }).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
 
-        // PUT /api/products/{id:guid} — Cập nhật sản phẩm
+        /// <summary>
+        /// PUT /api/products/{id}
+        /// Cập nhật thông tin sản phẩm (giá bán, số lượng tồn kho, danh mục, hình ảnh).
+        /// Quyền hạn yêu cầu: Manager hoặc Admin.
+        /// </summary>
         group.MapPut("{id:guid}", async (Guid id, ProductSaveRequest request, global::Supabase.Client supabase) =>
         {
             var response = await supabase.From<ProductModel>().Where(p => p.Id == id).Get();
@@ -135,7 +159,11 @@ public static class ProductEndpoints
             });
         }).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
 
-        // DELETE /api/products/{id:guid} — Xóa sản phẩm
+        /// <summary>
+        /// DELETE /api/products/{id}
+        /// Xóa sản phẩm khỏi danh mục bán hàng.
+        /// Quyền hạn yêu cầu: Manager hoặc Admin.
+        /// </summary>
         group.MapDelete("{id:guid}", async (Guid id, global::Supabase.Client supabase) =>
         {
             var response = await supabase.From<ProductModel>().Where(p => p.Id == id).Get();

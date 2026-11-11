@@ -2,7 +2,7 @@ import { Calendar, CalendarDays, Clock, Users, ChevronRight, CheckCircle2, Alert
 import { StatCard } from "./StatCard";
 
 const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> = {
-  "sắp diễn ra": { label: "Sắp diễn ra", bg: "bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800", text: "text-blue-700 dark:text-blue-400" },
+  "sắp diễn ra": { label: "Sắp diễn ra", bg: "bg-slate-50 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800", text: "text-slate-700 dark:text-slate-400" },
   "đang diễn ra": { label: "Đang diễn ra", bg: "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800", text: "text-emerald-700 dark:text-emerald-400" },
   "hoàn thành": { label: "Hoàn thành", bg: "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700", text: "text-slate-600 dark:text-slate-400" },
   "đã hủy": { label: "Đã hủy", bg: "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800", text: "text-rose-700 dark:text-rose-400" },
@@ -150,7 +150,7 @@ export default function CoachDashboardView(props: Props) {
                         <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5 text-slate-400" />{(s.registeredMemberIds?.length ?? 0)}/{s.capacity ?? 0} học viên</span>
                       </div>
                       {pending > 0 && !isCancelled && (
-                        <div className="mt-2 text-xs text-amber-700 dark:text-amber-400 font-medium flex items-center gap-1.5">
+                        <div className="mt-2 text-xs text-slate-700 dark:text-slate-400 font-medium flex items-center gap-1.5">
                           <AlertCircle className="w-3.5 h-3.5" />
                           Còn {pending} học viên chưa được điểm danh
                         </div>
@@ -215,7 +215,7 @@ export default function CoachDashboardView(props: Props) {
             </h3>
             {pendingSessions.length === 0 ? (
               <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 text-xs text-slate-500 text-center font-medium">
-                🎉 Tuyệt vời! Không có buổi học nào bị tồn đọng điểm danh.
+                Tuyệt vời! Không có buổi học nào bị tồn đọng điểm danh.
               </div>
             ) : (
               <div className="flex flex-col gap-2">

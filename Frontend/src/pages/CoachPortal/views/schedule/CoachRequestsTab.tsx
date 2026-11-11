@@ -69,7 +69,7 @@ export default function CoachRequestsTab({
             onClick={() => setActiveSubTab("invitations")}
             className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5 ${
               activeSubTab === "invitations"
-                ? "bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-400 shadow-xs"
+                ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs"
                 : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
             }`}
           >
@@ -87,7 +87,7 @@ export default function CoachRequestsTab({
             onClick={() => setActiveSubTab("my_requests")}
             className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5 ${
               activeSubTab === "my_requests"
-                ? "bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-400 shadow-xs"
+                ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs"
                 : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
             }`}
           >
@@ -100,7 +100,7 @@ export default function CoachRequestsTab({
           <button
             type="button"
             onClick={onOpenCreateRequest}
-            className="px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors flex items-center gap-1.5 self-start sm:self-auto shadow-sm"
+            className="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors flex items-center gap-1.5 self-start sm:self-auto shadow-sm"
           >
             <Plus className="w-4 h-4" /> Tạo yêu cầu mới
           </button>
@@ -109,7 +109,7 @@ export default function CoachRequestsTab({
 
       {feedback && (
         <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 rounded-xl text-emerald-800 dark:text-emerald-300 text-sm flex items-center gap-2">
-          <Check className="w-4 h-4 text-emerald-600" />
+          <Check className="w-4 h-4" />
           <span>{feedback}</span>
         </div>
       )}

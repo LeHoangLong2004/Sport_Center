@@ -13,14 +13,27 @@ using SmartGym.Domain.Enums;
 
 namespace SmartGym.Api.Endpoints;
 
+/// <summary>
+/// Phần mở rộng (partial) của PaymentEndpoints chuyên cung cấp API Báo cáo & Thống kê tài chính, vận hành (BI & Analytics).
+/// Toàn bộ route yêu cầu quyền: Manager hoặc Admin.
+/// </summary>
 public static partial class PaymentEndpoints
 {
+    /// <summary>
+    /// Đăng ký các route báo cáo doanh thu, thành viên, tỷ lệ lấp đầy lớp học và xuất Excel.
+    /// Nhóm route gốc: /api/reports
+    /// </summary>
+    /// <param name="app">Đối tượng IEndpointRouteBuilder</param>
     private static void MapReportEndpoints(IEndpointRouteBuilder app)
     {
         var reportGroup = app.MapGroup("/api/reports")
             .WithTags("Reports")
             .RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
 
+        /// <summary>
+        /// GET /api/reports/revenue
+        /// Báo cáo tổng doanh thu trong một khoảng thời gian (startDate đến endDate).
+        /// </summary>
         reportGroup
             .MapGet(
                 "/revenue",
@@ -36,6 +49,10 @@ public static partial class PaymentEndpoints
             )
             .Produces<RevenueReportResponse>(StatusCodes.Status200OK);
 
+        /// <summary>
+        /// GET /api/reports/members
+        /// Báo cáo số lượng hội viên mới đăng ký trong tháng chỉ định.
+        /// </summary>
         reportGroup
             .MapGet(
                 "/members",
@@ -50,6 +67,10 @@ public static partial class PaymentEndpoints
             )
             .Produces<MemberReportResponse>(StatusCodes.Status200OK);
 
+        /// <summary>
+        /// GET /api/reports/classes-occupancy
+        /// Báo cáo tỷ lệ lấp đầy trung bình (%) của các lớp học trong tháng.
+        /// </summary>
         reportGroup
             .MapGet(
                 "/classes-occupancy",
@@ -67,6 +88,10 @@ public static partial class PaymentEndpoints
             )
             .Produces<ClassOccupancyReportResponse>(StatusCodes.Status200OK);
 
+        /// <summary>
+        /// GET /api/reports/revenue/monthly
+        /// Báo cáo biểu đồ doanh thu theo từng tháng trong N tháng gần nhất (mặc định 12 tháng).
+        /// </summary>
         reportGroup
             .MapGet(
                 "/revenue/monthly",
@@ -75,6 +100,10 @@ public static partial class PaymentEndpoints
             )
             .Produces<IEnumerable<MonthlyRevenueResponse>>(StatusCodes.Status200OK);
 
+        /// <summary>
+        /// GET /api/reports/classes/occupancy
+        /// Chi tiết tỷ lệ lấp đầy theo từng lớp học trong tháng.
+        /// </summary>
         reportGroup
             .MapGet(
                 "/classes/occupancy",
@@ -85,6 +114,10 @@ public static partial class PaymentEndpoints
             )
             .Produces<IEnumerable<ClassOccupancyResponse>>(StatusCodes.Status200OK);
 
+        /// <summary>
+        /// GET /api/reports/classes/popular
+        /// Top các lớp học được hội viên đặt chỗ nhiều nhất (Top popular classes).
+        /// </summary>
         reportGroup
             .MapGet(
                 "/classes/popular",
@@ -98,6 +131,10 @@ public static partial class PaymentEndpoints
             )
             .Produces<IEnumerable<PopularClassResponse>>(StatusCodes.Status200OK);
 
+        /// <summary>
+        /// GET /api/reports/dashboard
+        /// Tổng hợp toàn bộ chỉ số KPI quan trọng nhất cho trang Tổng quan Admin Dashboard.
+        /// </summary>
         reportGroup
             .MapGet(
                 "/dashboard",
@@ -106,6 +143,10 @@ public static partial class PaymentEndpoints
             )
             .Produces<DashboardMetricsResponse>(StatusCodes.Status200OK);
 
+        /// <summary>
+        /// GET /api/reports/revenue/by-package
+        /// Cơ cấu doanh thu phân bổ theo từng loại gói tập.
+        /// </summary>
         reportGroup
             .MapGet(
                 "/revenue/by-package",
@@ -114,6 +155,10 @@ public static partial class PaymentEndpoints
             )
             .Produces<IEnumerable<RevenueByPackageResponse>>(StatusCodes.Status200OK);
 
+        /// <summary>
+        /// GET /api/reports/revenue/by-payment-method
+        /// Thống kê doanh thu theo phương thức thanh toán (Tiền mặt, QR, Thẻ, VNPay...).
+        /// </summary>
         reportGroup
             .MapGet(
                 "/revenue/by-payment-method",
@@ -122,6 +167,10 @@ public static partial class PaymentEndpoints
             )
             .Produces<IEnumerable<RevenueByPaymentMethodResponse>>(StatusCodes.Status200OK);
 
+        /// <summary>
+        /// GET /api/reports/members/expiring
+        /// Danh sách hội viên sắp hết hạn gói tập trong vòng 7 - 30 ngày tới cần nhắc nhở gia hạn.
+        /// </summary>
         reportGroup
             .MapGet(
                 "/members/expiring",
@@ -130,6 +179,10 @@ public static partial class PaymentEndpoints
             )
             .Produces<IEnumerable<ExpiringMemberResponse>>(StatusCodes.Status200OK);
 
+        /// <summary>
+        /// GET /api/reports/members/retention
+        /// Tỷ lệ giữ chân khách hàng (Retention Rate) và tỷ lệ rời bỏ (Churn Rate).
+        /// </summary>
         reportGroup
             .MapGet(
                 "/members/retention",
@@ -138,6 +191,10 @@ public static partial class PaymentEndpoints
             )
             .Produces<MemberRetentionResponse>(StatusCodes.Status200OK);
 
+        /// <summary>
+        /// GET /api/reports/attendance
+        /// Thống kê lượt điểm danh theo khung giờ trong ngày (giờ cao điểm / thấp điểm).
+        /// </summary>
         reportGroup
             .MapGet(
                 "/attendance",
@@ -146,6 +203,10 @@ public static partial class PaymentEndpoints
             )
             .Produces<IEnumerable<AttendanceStatResponse>>(StatusCodes.Status200OK);
 
+        /// <summary>
+        /// GET /api/reports/trainers/performance
+        /// Đánh giá hiệu suất làm việc của HLV (số giờ dạy, số học viên, đánh giá trung bình).
+        /// </summary>
         reportGroup
             .MapGet(
                 "/trainers/performance",
@@ -154,6 +215,10 @@ public static partial class PaymentEndpoints
             )
             .Produces<IEnumerable<TrainerPerformanceResponse>>(StatusCodes.Status200OK);
 
+        /// <summary>
+        /// GET /api/reports/outstanding-invoices
+        /// Danh sách các hóa đơn chưa hoàn tất thanh toán / công nợ chưa thu.
+        /// </summary>
         reportGroup
             .MapGet(
                 "/outstanding-invoices",
@@ -162,6 +227,10 @@ public static partial class PaymentEndpoints
             )
             .Produces<IEnumerable<OutstandingInvoiceResponse>>(StatusCodes.Status200OK);
 
+        /// <summary>
+        /// GET /api/reports/revenue/export
+        /// Xuất file Excel (.xlsx) báo cáo doanh thu chi tiết theo khoảng thời gian.
+        /// </summary>
         reportGroup
             .MapGet(
                 "/revenue/export",

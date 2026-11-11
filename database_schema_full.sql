@@ -133,30 +133,16 @@ CREATE TABLE IF NOT EXISTS membership_benefits (
 
 
 -- ==============================================================
--- PHẦN 5: VOUCHER, ĐĂNG KÝ GÓI & LIÊN KẾT BỘ MÔN
+-- PHẦN 5: ĐĂNG KÝ GÓI & LIÊN KẾT BỘ MÔN
 -- ==============================================================
 
--- 11. Bảng mã giảm giá / Voucher khuyến mãi
-CREATE TABLE IF NOT EXISTS vouchers (
-    id               UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
-    code             VARCHAR(50)   UNIQUE NOT NULL,
-    discount_percent DECIMAL(5,2),
-    max_discount     DECIMAL(18,2),
-    valid_from       TIMESTAMPTZ,
-    valid_to         TIMESTAMPTZ,
-    usage_limit      INT,
-    used_count       INT           DEFAULT 0,
-    status           BOOLEAN       DEFAULT true
-);
-
--- 12. Bảng hợp đồng đăng ký gói tập (Subscriptions)
+-- 11. Bảng hợp đồng đăng ký gói tập (Subscriptions)
 CREATE TABLE IF NOT EXISTS subscriptions (
     id                   UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id              UUID          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     package_id           VARCHAR(50)   REFERENCES packages(id) ON DELETE SET NULL,
     sport_id             UUID          REFERENCES sports(id) ON DELETE SET NULL,
     facility_id          UUID          REFERENCES facilities(id) ON DELETE SET NULL,
-    voucher_id           UUID          REFERENCES vouchers(id) ON DELETE SET NULL,
     billing_period       VARCHAR(20),  -- 'monthly' | 'yearly'
     duration_months      INT,
     total_amount         DECIMAL(18,2) NOT NULL,
@@ -279,48 +265,7 @@ CREATE TABLE IF NOT EXISTS coach_schedule_requests (
 -- PHẦN 8: PERSONAL TRAINING (PT) & ĐẶT LỊCH HẸN
 -- ==============================================================
 
--- 21. Bảng danh mục gói PT bán sẵn (theo số buổi)
-CREATE TABLE IF NOT EXISTS pt_packages (
-    id            UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
-    name          TEXT          NOT NULL,
-    session_count INT           NOT NULL,
-    price         DECIMAL(18,2) NOT NULL,
-    validity_days INT           NOT NULL,
-    status        BOOLEAN       DEFAULT true
-);
-
--- 22. Bảng hợp đồng đăng ký tập PT (PT Enrollments)
-CREATE TABLE IF NOT EXISTS pt_enrollments (
-    id              UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id         UUID          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    coach_id        UUID          REFERENCES coaches(id) ON DELETE SET NULL,
-    pt_package_id   UUID          REFERENCES pt_packages(id) ON DELETE SET NULL,
-    voucher_id      UUID          REFERENCES vouchers(id) ON DELETE SET NULL,
-    total_sessions  INT           NOT NULL,
-    used_sessions   INT           DEFAULT 0,
-    payment_method  VARCHAR(50),
-    payment_status  VARCHAR(50)   DEFAULT 'pending',
-    total_amount    DECIMAL(18,2) NOT NULL,
-    discount_amount DECIMAL(18,2) DEFAULT 0,
-    start_date      DATE          NOT NULL,
-    end_date        DATE          NOT NULL,
-    created_at      TIMESTAMPTZ   DEFAULT now()
-);
-
--- 23. Bảng từng buổi tập PT chi tiết (PT Sessions)
-CREATE TABLE IF NOT EXISTS pt_sessions (
-    id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    enrollment_id    UUID        REFERENCES pt_enrollments(id) ON DELETE CASCADE,
-    user_id          UUID        REFERENCES users(id) ON DELETE CASCADE,
-    coach_id         UUID        REFERENCES coaches(id) ON DELETE CASCADE,
-    schedule_time    TIMESTAMPTZ NOT NULL,
-    duration_minutes INT         DEFAULT 60,
-    status           VARCHAR(50) DEFAULT 'scheduled', -- 'scheduled', 'completed', 'cancelled', 'no_show'
-    notes            TEXT,
-    created_at       TIMESTAMPTZ DEFAULT now()
-);
-
--- 24. Bảng lịch hẹn tư vấn / kiểm tra thể lực (Appointments)
+-- 21. Bảng lịch hẹn tư vấn / kiểm tra thể lực / tập 1-1 (Appointments)
 CREATE TABLE IF NOT EXISTS appointments (
     id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id       UUID        REFERENCES users(id) ON DELETE CASCADE,
@@ -429,18 +374,7 @@ CREATE TABLE IF NOT EXISTS class_attendance_records (
     PRIMARY KEY (session_id, member_id)
 );
 
--- 32. Bảng lưu vết thay đổi sau khi chốt điểm danh (Class Attendance Audits)
-CREATE TABLE IF NOT EXISTS class_attendance_audits (
-    id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    session_id  UUID        REFERENCES classes(id) ON DELETE CASCADE,
-    actor_id    UUID        REFERENCES users(id) ON DELETE SET NULL,
-    action      VARCHAR(50) NOT NULL, -- 'UPDATE_AFTER_FINALIZED'
-    reason      TEXT        NOT NULL,
-    changes     JSONB       NOT NULL,
-    occurred_at TIMESTAMPTZ DEFAULT now()
-);
-
--- 33. Bảng kết quả đánh giá chuyên môn của HLV cho học viên (Coach Assessments)
+-- 32. Bảng kết quả đánh giá chuyên môn của HLV cho học viên (Coach Assessments)
 CREATE TABLE IF NOT EXISTS coach_assessments (
     id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     coach_id     UUID        NOT NULL REFERENCES coaches(id) ON DELETE CASCADE,
@@ -549,16 +483,6 @@ CREATE TABLE IF NOT EXISTS homework_progress (
     created_at      TIMESTAMPTZ   DEFAULT now()
 );
 
--- 40. Bảng kế hoạch dinh dưỡng (Diet Plans)
-CREATE TABLE IF NOT EXISTS diet_plans (
-    id                UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id           UUID        REFERENCES users(id) ON DELETE CASCADE,
-    coach_id          UUID        REFERENCES coaches(id) ON DELETE SET NULL,
-    calories_target   INT,
-    meals_description TEXT,
-    created_at        TIMESTAMPTZ DEFAULT now()
-);
-
 
 -- ==============================================================
 -- PHẦN 12: BÁN LẺ & POS (RECEPTIONIST & PRODUCT ORDERS)
@@ -611,31 +535,26 @@ CREATE TABLE IF NOT EXISTS product_order_messages (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- 44.1. Bảng số dư và lịch sử biến động số dư ví hội viên (Member Wallet Transactions)
+CREATE TABLE IF NOT EXISTS wallet_transactions (
+    id              UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id         UUID            NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    type            VARCHAR(20)     NOT NULL, -- 'topup', 'payment', 'refund'
+    amount          DECIMAL(18, 2)  NOT NULL CHECK (amount > 0),
+    balance_after   DECIMAL(18, 2)  NOT NULL DEFAULT 0.00,
+    method          VARCHAR(50)     DEFAULT 'VietQR',
+    status          VARCHAR(20)     NOT NULL DEFAULT 'completed',
+    reference_code  VARCHAR(100)    UNIQUE,
+    note            TEXT,
+    created_at      TIMESTAMPTZ     DEFAULT now()
+);
+
 
 -- ==============================================================
 -- PHẦN 13: WEBSITE, TIN TỨC & HỆ THỐNG THÔNG BÁO
 -- ==============================================================
 
--- 45. Bảng danh mục bài viết / tin tức thể thao
-CREATE TABLE IF NOT EXISTS article_categories (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name        TEXT NOT NULL,
-    description TEXT
-);
-
--- 46. Bảng bài viết blog, cẩm nang sức khỏe & khuyến mãi
-CREATE TABLE IF NOT EXISTS articles (
-    id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    category_id   UUID        REFERENCES article_categories(id) ON DELETE SET NULL,
-    author_id     UUID        REFERENCES users(id) ON DELETE SET NULL,
-    title         TEXT        NOT NULL,
-    thumbnail_url TEXT,
-    content       TEXT        NOT NULL,
-    status        VARCHAR(50) DEFAULT 'published',
-    published_at  TIMESTAMPTZ DEFAULT now()
-);
-
--- 47. Bảng hộp thư liên hệ góp ý từ khách vãng lai
+-- 45. Bảng hộp thư liên hệ góp ý từ khách vãng lai
 CREATE TABLE IF NOT EXISTS contact_messages (
     id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     sender_name  TEXT        NOT NULL,
@@ -744,12 +663,6 @@ CREATE INDEX IF NOT EXISTS idx_class_bookings_user
 
 CREATE INDEX IF NOT EXISTS idx_class_bookings_class
     ON class_bookings(class_id);
-
-CREATE INDEX IF NOT EXISTS idx_pt_enrollments_user
-    ON pt_enrollments(user_id);
-
-CREATE INDEX IF NOT EXISTS idx_pt_sessions_enrollment
-    ON pt_sessions(enrollment_id);
 
 CREATE INDEX IF NOT EXISTS idx_check_in_user
     ON check_in_logs(user_id, check_in_time DESC);

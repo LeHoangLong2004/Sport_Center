@@ -157,7 +157,6 @@ public partial class SmartGymDbContext : DbContext
             entity.Property(e => e.PackageId).HasColumnName("package_id");
             entity.Property(e => e.SportId).HasColumnName("sport_id");
             entity.Property(e => e.FacilityId).HasColumnName("facility_id");
-            entity.Property(e => e.VoucherId).HasColumnName("voucher_id");
             entity.Property(e => e.BillingPeriod).HasColumnName("billing_period");
             entity.Property(e => e.DurationMonths).HasColumnName("duration_months");
             entity.Property(e => e.TotalAmount).HasColumnName("total_amount").IsRequired();

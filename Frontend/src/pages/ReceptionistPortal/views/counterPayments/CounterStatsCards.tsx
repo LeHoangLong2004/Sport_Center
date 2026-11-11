@@ -22,35 +22,35 @@ export default function CounterStatsCards({
 }: Props) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:border-amber-400 dark:hover:border-amber-600 transition-all flex flex-col justify-between">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:border-slate-400 dark:hover:border-slate-600 transition-all flex flex-col justify-between">
         <div className="flex items-center justify-between">
           <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Đơn chờ thu tại quầy
           </p>
-          <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
+          <span className="size-2 rounded-full bg-slate-500 animate-pulse" />
         </div>
         <div className="mt-3">
           <p className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             {pendingCount} đơn
           </p>
-          <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 mt-0.5">
+          <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-0.5">
             Tổng: {formatMoney(pendingAmount)}
           </p>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:border-purple-400 dark:hover:border-purple-600 transition-all flex flex-col justify-between">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:border-emerald-400 dark:hover:border-emerald-600 transition-all flex flex-col justify-between">
         <div className="flex items-center justify-between">
           <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Đã thu ca trực hôm nay
           </p>
-          <span className="size-2 rounded-full bg-purple-600" />
+          <span className="size-2 rounded-full bg-emerald-600" />
         </div>
         <div className="mt-3">
           <p className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             {todayPaidCount} đơn
           </p>
-          <p className="text-xs font-semibold text-purple-600 dark:text-purple-400 mt-0.5">
+          <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
             Tổng thu: {formatMoney(todayPaidAmount)}
           </p>
         </div>
@@ -68,13 +68,13 @@ export default function CounterStatsCards({
           <button
             type="button"
             onClick={onRefresh}
-            className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
+            className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             Làm mới dữ liệu ngay
           </button>
         </div>
-        <div className="size-12 rounded-xl bg-purple-100 dark:bg-purple-900/60 flex items-center justify-center text-purple-600 text-xl font-bold">
+        <div className="size-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 flex items-center justify-center text-emerald-600 text-xl font-bold">
           ⚡
         </div>
       </div>

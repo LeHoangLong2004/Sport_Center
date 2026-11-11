@@ -237,27 +237,27 @@ export default function ClassDetailPage() {
             onClick={() => {
               window.location.hash = "#home";
             }}
-            className="font-['Inter:Medium'] font-medium text-[#64748b] cursor-pointer hover:text-[#1e293b] transition-colors"
+            className="font-medium text-[#64748b] cursor-pointer hover:text-[#1e293b] transition-colors"
             data-name="breadcrumb-home"
           >
             Trang chủ
           </span>
-          <span className="font-['Inter:Medium'] font-medium text-[#64748b]">
+          <span className="font-medium text-[#64748b]">
             &gt;
           </span>
           <span
             onClick={() => {
               window.location.hash = "#lophoc";
             }}
-            className="font-['Inter:Medium'] font-medium text-[#64748b] cursor-pointer hover:text-[#1e293b] transition-colors"
+            className="font-medium text-[#64748b] cursor-pointer hover:text-[#1e293b] transition-colors"
             data-name="breadcrumb-lophoc"
           >
             Lớp học
           </span>
-          <span className="font-['Inter:Medium'] font-medium text-[#64748b]">
+          <span className="font-medium text-[#64748b]">
             &gt;
           </span>
-          <span className="font-['Inter:Semi_Bold'] font-semibold text-[#1e293b]">
+          <span className="font-semibold text-[#1e293b]">
             {classData.className}
           </span>
         </div>
@@ -292,10 +292,10 @@ export default function ClassDetailPage() {
               className="flex flex-col gap-4 w-full"
               data-node-id="2263:3836"
             >
-              <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[36px] leading-normal">
+              <p className="font-extrabold text-[#1e293b] text-[36px] leading-normal">
                 {classData.className}
               </p>
-              <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[16px] leading-[1.6]">
+              <p className="font-normal text-[#64748b] text-[16px] leading-[1.6]">
                 Lớp học{" "}
                 <strong className="text-slate-800 font-semibold">
                   {classData.className}
@@ -323,7 +323,7 @@ export default function ClassDetailPage() {
               className="bg-white border border-[#e2e8f0] rounded-2xl p-8 flex flex-col gap-5 w-full shadow-sm"
               data-node-id="2263:3839"
             >
-              <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[18px] leading-normal">
+              <p className="font-extrabold text-[#1e293b] text-[18px] leading-normal">
                 Lưu ý &amp; Chuẩn bị trước buổi tập
               </p>
               <div className="flex flex-col gap-3 w-full">
@@ -334,7 +334,7 @@ export default function ClassDetailPage() {
                       alt=""
                       className="w-[13px] h-[13px] shrink-0"
                     />
-                    <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px] leading-normal">
+                    <p className="font-normal text-[#64748b] text-[14px] leading-normal">
                       {note}
                     </p>
                   </div>
@@ -346,7 +346,7 @@ export default function ClassDetailPage() {
           {/* Right sidebar */}
           <div className="shrink-0 w-[400px]" data-node-id="2263:3857">
             <div className="bg-white border border-[#e2e8f0] rounded-2xl p-8 flex flex-col gap-6 shadow-[0_4px_6px_rgba(0,0,0,0.02)] sticky top-6">
-              <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[20px] leading-normal">
+              <p className="font-extrabold text-[#1e293b] text-[20px] leading-normal">
                 Thông tin lớp học
               </p>
               <div className="w-full h-px bg-[#e2e8f0]" />
@@ -357,11 +357,11 @@ export default function ClassDetailPage() {
                       <img src={info.icon} alt="" className="w-4 h-4" />
                     </div>
                     <div className="flex flex-col gap-0.5">
-                      <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[12px] leading-normal">
+                      <p className="font-normal text-[#64748b] text-[12px] leading-normal">
                         {info.label}
                       </p>
                       <p
-                        className={`font-['Inter:Bold'] font-bold text-[15px] leading-normal ${
+                        className={`font-bold text-[15px] leading-normal ${
                           info.green ? "text-[#059669]" : "text-[#1e293b]"
                         }`}
                       >
@@ -379,7 +379,7 @@ export default function ClassDetailPage() {
                   type="button"
                   data-name="btn-register-class"
                 >
-                  <span className="font-['Inter:Bold'] font-bold text-white text-[15px] whitespace-nowrap">
+                  <span className="font-bold text-white text-[15px] whitespace-nowrap">
                     Đăng ký lớp này ngay
                   </span>
                 </button>
@@ -389,7 +389,7 @@ export default function ClassDetailPage() {
                   className="bg-[#94a3b8] flex items-center justify-center px-6 py-3.5 rounded-lg w-full cursor-not-allowed"
                   type="button"
                 >
-                  <span className="font-['Inter:Bold'] font-bold text-white text-[15px] whitespace-nowrap">
+                  <span className="font-bold text-white text-[15px] whitespace-nowrap">
                     Lớp đã kín chỗ
                   </span>
                 </button>
@@ -404,7 +404,7 @@ export default function ClassDetailPage() {
           data-node-id="2263:3899"
           data-name="coach-profile"
         >
-          <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[20px] leading-normal">
+          <p className="font-extrabold text-[#1e293b] text-[20px] leading-normal">
             Thông tin Huấn luyện viên của bạn
           </p>
           <div className="w-full h-px bg-[#e2e8f0]" />
@@ -422,13 +422,13 @@ export default function ClassDetailPage() {
               />
             </div>
             <div className="flex-1 min-w-0 flex flex-col gap-2">
-              <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[20px] leading-normal whitespace-nowrap">
+              <p className="font-extrabold text-[#1e293b] text-[20px] leading-normal whitespace-nowrap">
                 {coachName}
               </p>
-              <p className="font-['Inter:Semi_Bold'] font-semibold text-[#2563eb] text-[14px] leading-normal whitespace-nowrap">
+              <p className="font-semibold text-emerald-600 text-[14px] leading-normal whitespace-nowrap">
                 {coachSpecialty}
               </p>
-              <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[14px] leading-[1.6]">
+              <p className="font-normal text-[#64748b] text-[14px] leading-[1.6]">
                 {coachBio}
               </p>
             </div>
@@ -442,7 +442,7 @@ export default function ClassDetailPage() {
             data-node-id="2263:3908"
             data-name="similar-classes"
           >
-            <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[24px] leading-normal">
+            <p className="font-extrabold text-[#1e293b] text-[24px] leading-normal">
               Các lớp học tương tự gợi ý
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
@@ -476,18 +476,18 @@ export default function ClassDetailPage() {
                       </div>
                     </div>
                     <div className="flex flex-col gap-2.5 p-5">
-                      <p className="font-['Inter:Extra_Bold'] font-extrabold text-[#1e293b] text-[16px] leading-normal truncate group-hover:text-[#10b981] transition-colors">
+                      <p className="font-extrabold text-[#1e293b] text-[16px] leading-normal truncate group-hover:text-[#10b981] transition-colors">
                         {sc.className}
                       </p>
-                      <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[13px] leading-normal truncate">
+                      <p className="font-normal text-[#64748b] text-[13px] leading-normal truncate">
                         {formatSchedule(sc.scheduleTime, sc.durationMinutes)} •{" "}
                         {sc.facilityName}
                       </p>
                       <div className="flex gap-1 items-center pt-1">
-                        <span className="font-['Inter:Bold'] font-bold text-[#2563eb] text-[13px] group-hover:translate-x-0.5 transition-transform">
+                        <span className="font-bold text-emerald-600 text-[13px] group-hover:translate-x-0.5 transition-transform">
                           Xem chi tiết
                         </span>
-                        <span className="font-['Inter:Bold'] font-bold text-[#2563eb] text-[13px] group-hover:translate-x-1 transition-transform">
+                        <span className="font-bold text-emerald-600 text-[13px] group-hover:translate-x-1 transition-transform">
                           →
                         </span>
                       </div>

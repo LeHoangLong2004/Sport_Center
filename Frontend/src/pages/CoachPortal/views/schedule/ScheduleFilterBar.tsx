@@ -44,7 +44,7 @@ export default function ScheduleFilterBar({
           <select
             value={sportFilter}
             onChange={(e) => setSportFilter(e.target.value)}
-            className="text-xs font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-orange-500 min-w-[150px] shadow-xs cursor-pointer"
+            className="text-xs font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-emerald-500 min-w-[150px] shadow-xs cursor-pointer"
           >
             {sportOptions.map((o) => (
               <option key={o} value={o}>
@@ -61,7 +61,7 @@ export default function ScheduleFilterBar({
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
-            className="text-xs font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-orange-500 min-w-[185px] shadow-xs cursor-pointer"
+            className="text-xs font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-emerald-500 min-w-[185px] shadow-xs cursor-pointer"
           >
             <option value="all">Tất cả lịch dạy</option>
             <option value="group">Lớp học nhóm</option>
@@ -77,7 +77,7 @@ export default function ScheduleFilterBar({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            className="text-xs font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-orange-500 min-w-[150px] shadow-xs cursor-pointer"
+            className="text-xs font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-emerald-500 min-w-[150px] shadow-xs cursor-pointer"
           >
             {STATUS_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -129,7 +129,7 @@ export default function ScheduleFilterBar({
               onClick={() => setWeekOffset(0)}
               className={`text-xs font-semibold px-3.5 py-2 border rounded-xl transition-colors ${
                 weekOffset === 0
-                  ? "bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-950/40 dark:border-orange-800 font-bold"
+                  ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-800 font-bold"
                   : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
               }`}
             >

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { CheckoutHeader, CheckoutFooter } from "./CheckoutHeader";
 import { PaymentMethodScreen } from "./PaymentMethodScreen";
 import { FlowPackage, PaymentMethodId, Stepper } from "./shared";
+import { WalletService } from "../MemberPortal/services/walletService";
 
 type ProductPaymentOrder = {
   id: string;
@@ -32,6 +33,17 @@ async function readError(response: Response): Promise<string> {
   }
 }
 
+/**
+ * Component Luồng thanh toán đơn mua sản phẩm / phụ kiện phòng tập (Product Checkout Flow).
+ * Xử lý thanh toán nhanh cho các đơn hàng từ Product Shop:
+ * - Hiển thị chi tiết giỏ hàng và tổng tiền.
+ * - Chọn phương thức (QR SePay hoặc Thanh toán tại quầy).
+ * - Cập nhật trạng thái nhận hàng (tại quầy hoặc giao tại vị trí trong trung tâm).
+ * 
+ * @param order Dữ liệu đơn hàng sản phẩm cần thanh toán
+ * @param onBack Callback quay lại màn hình trước
+ * @param onCompleted Callback khi thanh toán thành công
+ */
 export function ProductPaymentFlow({ order, onBack, onCompleted }: Props) {
   const [method, setMethod] = useState<PaymentMethodId>("qr");
   const [processing, setProcessing] = useState(false);
@@ -77,6 +89,13 @@ export function ProductPaymentFlow({ order, onBack, onCompleted }: Props) {
     setProcessing(true);
     setError("");
     try {
+      if (method === "wallet") {
+        await WalletService.pay(
+          order.totalAmount,
+          `Thanh toán đơn hàng sản phẩm #${order.id.slice(0, 8).toUpperCase()}`,
+          "Ví hội viên"
+        );
+      }
       const response = await fetch(`/api/payments/${order.id}/process`, {
         method: "POST",
         headers: authHeaders(),
@@ -104,9 +123,9 @@ export function ProductPaymentFlow({ order, onBack, onCompleted }: Props) {
               <p className="mt-2 text-sm text-[#64748b]">Đơn hàng sản phẩm đã được ghi nhận và gửi tới lễ tân.</p>
               <div className="mx-auto mt-6 max-w-md rounded-xl bg-slate-50 p-4 text-left text-sm">
                 <div className="flex justify-between gap-4"><span className="text-slate-500">Mã đơn hàng</span><strong className="text-slate-800">{order.id.slice(0, 8).toUpperCase()}</strong></div>
-                <div className="mt-3 flex justify-between gap-4"><span className="text-slate-500">Tổng thanh toán</span><strong className="text-teal-600">{order.totalAmount.toLocaleString("vi-VN")} đ</strong></div>
+                <div className="mt-3 flex justify-between gap-4"><span className="text-slate-500">Tổng thanh toán</span><strong className="text-emerald-600">{order.totalAmount.toLocaleString("vi-VN")} đ</strong></div>
               </div>
-              <button type="button" onClick={onCompleted} className="mt-7 rounded-xl bg-teal-500 px-6 py-3 text-sm font-bold text-white hover:bg-teal-600">Quay lại cửa hàng</button>
+              <button type="button" onClick={onCompleted} className="mt-7 rounded-xl bg-emerald-500 px-6 py-3 text-sm font-bold text-white hover:bg-emerald-600">Quay lại cửa hàng</button>
             </div>
           </div>
         </div>

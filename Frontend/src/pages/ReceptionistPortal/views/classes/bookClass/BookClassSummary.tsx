@@ -25,17 +25,17 @@ export function BookClassSummary({ selectedClass }: Props) {
       </div>
 
       {/* Class Info Pill */}
-      <div className="bg-purple-50/80 border border-purple-100/90 p-3 rounded-xl grid grid-cols-3 gap-2 text-xs text-purple-900">
+      <div className="bg-emerald-50/80 border border-emerald-200/90 p-3 rounded-xl grid grid-cols-3 gap-2 text-xs text-emerald-900">
         <div className="truncate">
-          <span className="text-purple-500 font-medium block text-[10px] uppercase">HLV</span>
+          <span className="text-emerald-500 font-medium block text-[10px] uppercase">HLV</span>
           <strong className="font-semibold text-slate-800 truncate block">{selectedClass.coach}</strong>
         </div>
         <div className="truncate">
-          <span className="text-purple-500 font-medium block text-[10px] uppercase">Phòng</span>
+          <span className="text-emerald-500 font-medium block text-[10px] uppercase">Phòng</span>
           <strong className="font-semibold text-slate-800 truncate block">{selectedClass.room?.replace?.("Phòng: ", "") || selectedClass.room}</strong>
         </div>
         <div className="truncate">
-          <span className="text-purple-500 font-medium block text-[10px] uppercase">Chỗ trống</span>
+          <span className="text-emerald-500 font-medium block text-[10px] uppercase">Chỗ trống</span>
           <strong className="font-semibold text-emerald-600 truncate block">{selectedClass.spacesText}</strong>
         </div>
       </div>

@@ -36,9 +36,9 @@ export function SportsTableCard({
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Dumbbell className="size-5 text-rose-500" />
+          <Dumbbell className="size-5" />
           <h2 className="font-bold text-base lg:text-lg text-[#0f172a] dark:text-white">Bộ môn (Sports)</h2>
-          <span className="text-xs bg-rose-50 text-rose-600 font-semibold px-2 py-0.5 rounded-full border border-rose-200">
+          <span className="text-xs bg-emerald-50 text-emerald-600 font-semibold px-2 py-0.5 rounded-full border border-emerald-200">
             {sports.length}
           </span>
         </div>
@@ -104,7 +104,7 @@ export function SportsTableCard({
                 </button>
                 <button
                   onClick={() => onOpenEdit(s)}
-                  className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors cursor-pointer"
+                  className="p-1.5 text-slate-500 hover:text-slate-600 hover:bg-slate-50 rounded-md transition-colors cursor-pointer"
                   title="Chỉnh sửa bộ môn"
                 >
                   <Pencil className="size-3.5" />
@@ -144,9 +144,9 @@ export function FacilitiesTableCard({
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Building2 className="size-5 text-blue-500" />
+          <Building2 className="size-5 text-slate-500" />
           <h2 className="font-bold text-base lg:text-lg text-[#0f172a] dark:text-white">Phòng tập (Facilities)</h2>
-          <span className="text-xs bg-blue-50 text-blue-600 font-semibold px-2 py-0.5 rounded-full border border-blue-200">
+          <span className="text-xs bg-slate-50 text-slate-600 font-semibold px-2 py-0.5 rounded-full border border-slate-200">
             {facilities.length}
           </span>
         </div>
@@ -208,7 +208,7 @@ export function FacilitiesTableCard({
               <div className="w-24 flex items-center justify-end gap-1">
                 <button
                   onClick={() => onOpenEdit(f)}
-                  className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors cursor-pointer"
+                  className="p-1.5 text-slate-500 hover:text-slate-600 hover:bg-slate-50 rounded-md transition-colors cursor-pointer"
                   title="Chỉnh sửa phòng tập"
                 >
                   <Pencil className="size-3.5" />

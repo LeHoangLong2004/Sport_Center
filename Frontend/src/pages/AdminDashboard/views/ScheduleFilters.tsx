@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, List, Calendar } from "lucide-react";
 
 interface ScheduleFiltersProps {
   searchQuery: string;
@@ -10,6 +10,8 @@ interface ScheduleFiltersProps {
   onPrevWeek: () => void;
   onNextWeek: () => void;
   onToday: () => void;
+  viewMode?: "week" | "list";
+  onViewModeChange?: (mode: "week" | "list") => void;
 }
 
 export function ScheduleFilters({
@@ -22,13 +24,15 @@ export function ScheduleFilters({
   onPrevWeek,
   onNextWeek,
   onToday,
+  viewMode = "week",
+  onViewModeChange,
 }: ScheduleFiltersProps) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-4 p-4 bg-white border border-slate-200 rounded-2xl shadow-xs">
       <div className="flex flex-wrap items-end gap-4">
         <label className="flex flex-col gap-1.5">
           <span className="text-xs font-semibold text-slate-700">Tìm lớp, HLV...</span>
-          <span className="flex items-center gap-2 min-w-[220px] px-3.5 py-2 bg-white border border-slate-300 rounded-xl shadow-xs focus-within:ring-2 focus-within:ring-orange-500">
+          <span className="flex items-center gap-2 min-w-[220px] px-3.5 py-2 bg-white border border-slate-300 rounded-xl shadow-xs focus-within:ring-2 focus-within:ring-slate-500">
             <Search className="w-4 h-4 text-slate-400 shrink-0" />
             <input
               value={searchQuery}
@@ -45,7 +49,7 @@ export function ScheduleFilters({
             value={selectedRooms[0] ?? ""}
             onChange={(event) => onRoomChange(event.target.value)}
             aria-label="Lọc theo phòng tập"
-            className="min-w-[240px] max-w-[360px] px-3.5 py-2 bg-white border border-slate-300 rounded-xl shadow-xs text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-orange-500"
+            className="min-w-[240px] max-w-[360px] px-3.5 py-2 bg-white border border-slate-300 rounded-xl shadow-xs text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-slate-500"
           >
             <option value="">Tất cả phòng tập</option>
             {facilities.length === 0 && (
@@ -62,33 +66,62 @@ export function ScheduleFilters({
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <span className="px-3 py-1.5 rounded-lg bg-white text-slate-900 shadow-sm text-xs font-semibold border border-slate-200">
-          Theo tuần
-        </span>
-        <button
-          type="button"
-          onClick={onPrevWeek}
-          className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors"
-          title="Tuần trước"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          onClick={onToday}
-          className="px-3.5 py-2 border border-orange-200 bg-orange-50 text-orange-600 rounded-xl text-xs font-semibold whitespace-nowrap"
-        >
-          {currentWeekString}
-        </button>
-        <button
-          type="button"
-          onClick={onNextWeek}
-          className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors"
-          title="Tuần sau"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
+      <div className="flex flex-wrap items-center gap-3">
+        {/* View Mode Toggle: Danh sách vs Theo tuần */}
+        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/80">
+          <button
+            type="button"
+            onClick={() => onViewModeChange?.("list")}
+            className={`p-1.5 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+              viewMode === "list"
+                ? "bg-white text-slate-900 shadow-xs font-bold"
+                : "text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            <List className="w-3.5 h-3.5" />
+            <span>Danh sách</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onViewModeChange?.("week")}
+            className={`p-1.5 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+              viewMode === "week"
+                ? "bg-white text-slate-900 shadow-xs font-bold"
+                : "text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>Theo tuần</span>
+          </button>
+        </div>
+
+        {/* Week navigation buttons */}
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={onPrevWeek}
+            className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors cursor-pointer"
+            title="Tuần trước"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={onToday}
+            className="px-3.5 py-2 border border-orange-200 bg-orange-50 hover:bg-orange-100 text-orange-600 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors"
+            title="Về tuần hiện tại"
+          >
+            {currentWeekString}
+          </button>
+          <button
+            type="button"
+            onClick={onNextWeek}
+            className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors cursor-pointer"
+            title="Tuần sau"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   );

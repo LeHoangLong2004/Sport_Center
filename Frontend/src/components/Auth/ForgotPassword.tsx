@@ -45,15 +45,15 @@ export function ForgotPassword({
   }
 
   return (
-    <main className="flex min-h-screen bg-slate-50 dark:bg-[#0f172a] font-sans selection:bg-[#14b8a6] selection:text-white transition-colors duration-300">
+    <main className="flex min-h-screen bg-slate-50 dark:bg-[#0f172a] font-sans selection:bg-emerald-600 selection:text-white transition-colors duration-300">
       <AuthVisual emphasized />
 
       <section className="flex-1 flex flex-col justify-center items-center p-8 lg:p-12 relative overflow-y-auto">
         <ThemeToggle />
         
         {/* Glow effect in background */}
-        <div className="absolute top-1/4 -right-20 w-72 h-72 bg-[#14b8a6]/10 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-1/4 -left-20 w-72 h-72 bg-[#3b82f6]/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute top-1/4 -right-20 w-72 h-72 bg-emerald-600/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-1/4 -left-20 w-72 h-72 bg-emerald-600/10 rounded-full blur-[100px] pointer-events-none" />
 
         <form className="w-full max-w-md relative z-10" onSubmit={submit}>
           <button
@@ -66,7 +66,7 @@ export function ForgotPassword({
           </button>
           
           <div className="mb-10">
-            <span className="inline-block text-[#3b82f6] font-bold text-xs tracking-widest uppercase mb-2">KHÔI PHỤC MẬT KHẨU</span>
+            <span className="inline-block text-slate-800 font-bold text-xs tracking-widest uppercase mb-2">KHÔI PHỤC MẬT KHẨU</span>
             <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-2 tracking-tight">Quên mật khẩu?</h2>
             <p className="text-slate-500 dark:text-[#94a3b8] text-sm">
               Nhập email đã đăng ký. Chúng tôi sẽ gửi mã xác minh để đặt lại mật khẩu.
@@ -95,7 +95,7 @@ export function ForgotPassword({
           <button
             disabled={loading}
             type="submit"
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#14b8a6] to-[#0d9488] hover:from-[#0d9488] hover:to-[#0f766e] text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-teal-500/20 dark:shadow-teal-500/10 transition-all active:scale-[0.98] disabled:opacity-70 disabled:pointer-events-none"
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#14b8a6] to-[#0d9488] hover:from-[#0d9488] hover:to-[#0f766e] text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-500/20 dark:shadow-emerald-500/10 transition-all active:scale-[0.98] disabled:opacity-70 disabled:pointer-events-none"
           >
             {loading ? (
               <>
@@ -115,7 +115,7 @@ export function ForgotPassword({
             <button 
               type="button" 
               onClick={onLogin}
-              className="font-bold text-slate-900 hover:text-[#14b8a6] dark:text-white dark:hover:text-[#14b8a6] transition-colors"
+              className="font-bold text-slate-900 hover:text-emerald-600 dark:text-white dark:hover:text-emerald-600 transition-colors"
             >
               Đăng nhập
             </button>

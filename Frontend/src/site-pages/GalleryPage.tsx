@@ -99,14 +99,14 @@ export default function ThuVienHinhAnhRedesign() {
       {/* Hero */}
       <div className="bg-[#0f172a] flex flex-col gap-[16px] items-start px-[80px] py-[64px] w-full">
         <div className="bg-[rgba(16,185,129,0.1)] border border-[#10b981] flex items-center px-[12px] py-[6px] rounded-[100px]">
-          <p className="font-['Inter:Bold'] font-bold text-[#10b981] text-[12px] uppercase">
+          <p className="font-bold text-[#10b981] text-[12px] uppercase">
             TIỆN ÍCH TIÊU CHUẨN QUỐC TẾ
           </p>
         </div>
-        <p className="font-['Inter:Extra_Bold'] font-extrabold text-[44px] text-white leading-[1.2]">
+        <p className="font-extrabold text-[44px] text-white leading-[1.2]">
           Khám phá không gian SportCenter
         </p>
-        <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[16px] leading-[1.6] w-[640px]">
+        <p className="font-normal text-[#94a3b8] text-[16px] leading-[1.6] w-[640px]">
           Môi trường luyện tập tràn đầy năng lượng cùng hệ thống thiết bị chuẩn
           quốc tế giúp bạn luôn sẵn sàng bứt phá.
         </p>
@@ -119,10 +119,10 @@ export default function ThuVienHinhAnhRedesign() {
             <button
               key={cat}
               onClick={() => setActiveFilter(cat)}
-              className={`flex items-center px-[24px] py-[12px] rounded-[100px] text-[14px] font-['Inter:Semi_Bold'] font-semibold cursor-pointer transition-colors border ${
+              className={`flex items-center px-[24px] py-[12px] rounded-[100px] text-[14px] font-bold font-semibold cursor-pointer transition-colors border ${
                 activeFilter === cat
-                  ? "bg-[#2563eb] text-white border-transparent"
-                  : "bg-white text-[#0f172a] border-[#e2e8f0] hover:border-[#2563eb] hover:text-[#2563eb]"
+                  ? "bg-emerald-600 text-white border-transparent"
+                  : "bg-white text-[#0f172a] border-[#e2e8f0] hover:border-[#2563eb] hover:text-slate-800"
               }`}
             >
               {cat}
@@ -144,7 +144,7 @@ export default function ThuVienHinhAnhRedesign() {
                   src={galleryItems[0].img}
                 />
                 <div className="absolute bg-[rgba(0,0,0,0.7)] bottom-[24px] left-[24px] flex items-center p-[12px] rounded-[8px]">
-                  <p className="font-['Inter:Semi_Bold'] font-semibold text-[14px] text-white whitespace-nowrap">
+                  <p className="font-bold font-semibold text-[14px] text-white whitespace-nowrap">
                     {galleryItems[0].caption}
                   </p>
                 </div>
@@ -156,7 +156,7 @@ export default function ThuVienHinhAnhRedesign() {
                   src={galleryItems[1].img}
                 />
                 <div className="absolute bg-[rgba(0,0,0,0.7)] bottom-[24px] left-[24px] flex items-center p-[12px] rounded-[8px]">
-                  <p className="font-['Inter:Semi_Bold'] font-semibold text-[14px] text-white whitespace-nowrap">
+                  <p className="font-bold font-semibold text-[14px] text-white whitespace-nowrap">
                     {galleryItems[1].caption}
                   </p>
                 </div>
@@ -176,7 +176,7 @@ export default function ThuVienHinhAnhRedesign() {
                     src={item.img}
                   />
                   <div className="absolute bg-[rgba(0,0,0,0.7)] bottom-[24px] left-[24px] flex items-center p-[12px] rounded-[8px]">
-                    <p className="font-['Inter:Semi_Bold'] font-semibold text-[14px] text-white whitespace-nowrap">
+                    <p className="font-bold font-semibold text-[14px] text-white whitespace-nowrap">
                       {item.caption}
                     </p>
                   </div>
@@ -193,7 +193,7 @@ export default function ThuVienHinhAnhRedesign() {
                   src={galleryItems[5].img}
                 />
                 <div className="absolute bg-[rgba(0,0,0,0.7)] bottom-[24px] left-[24px] flex items-center p-[12px] rounded-[8px]">
-                  <p className="font-['Inter:Semi_Bold'] font-semibold text-[14px] text-white whitespace-nowrap">
+                  <p className="font-bold font-semibold text-[14px] text-white whitespace-nowrap">
                     {galleryItems[5].caption}
                   </p>
                 </div>
@@ -205,7 +205,7 @@ export default function ThuVienHinhAnhRedesign() {
                   src={galleryItems[6].img}
                 />
                 <div className="absolute bg-[rgba(0,0,0,0.7)] bottom-[24px] left-[24px] flex items-center p-[12px] rounded-[8px]">
-                  <p className="font-['Inter:Semi_Bold'] font-semibold text-[14px] text-white whitespace-nowrap">
+                  <p className="font-bold font-semibold text-[14px] text-white whitespace-nowrap">
                     {galleryItems[6].caption}
                   </p>
                 </div>
@@ -225,7 +225,7 @@ export default function ThuVienHinhAnhRedesign() {
                     src={item.img}
                   />
                   <div className="absolute bg-[rgba(0,0,0,0.7)] bottom-[16px] left-[16px] flex items-center p-[8px] rounded-[6px]">
-                    <p className="font-['Inter:Semi_Bold'] font-semibold text-[12px] text-white whitespace-nowrap">
+                    <p className="font-bold font-semibold text-[12px] text-white whitespace-nowrap">
                       {item.caption}
                     </p>
                   </div>
@@ -249,7 +249,7 @@ export default function ThuVienHinhAnhRedesign() {
                   src={item.img}
                 />
                 <div className="absolute bg-[rgba(0,0,0,0.7)] bottom-[16px] left-[16px] flex items-center p-[10px] rounded-[8px]">
-                  <p className="font-['Inter:Semi_Bold'] font-semibold text-[13px] text-white">
+                  <p className="font-bold font-semibold text-[13px] text-white">
                     {item.caption}
                   </p>
                 </div>
@@ -257,7 +257,7 @@ export default function ThuVienHinhAnhRedesign() {
             ))}
             {filtered.length === 0 && (
               <div className="col-span-3 flex items-center justify-center py-[80px]">
-                <p className="font-['Inter:Regular'] font-normal text-[#94a3b8] text-[16px]">
+                <p className="font-normal text-[#94a3b8] text-[16px]">
                   Không có hình ảnh trong danh mục này.
                 </p>
               </div>
@@ -268,8 +268,8 @@ export default function ThuVienHinhAnhRedesign() {
 
       {/* Load More */}
       <div className="flex items-center justify-center pb-[64px] w-full">
-        <button className="border border-[#2563eb] flex items-center px-[32px] py-[14px] rounded-[8px] cursor-pointer hover:bg-[#2563eb] hover:text-white transition-colors group">
-          <p className="font-['Inter:Bold'] font-bold text-[#2563eb] text-[14px] group-hover:text-white transition-colors">
+        <button className="border border-[#2563eb] flex items-center px-[32px] py-[14px] rounded-[8px] cursor-pointer hover:bg-emerald-600 hover:text-white transition-colors group">
+          <p className="font-bold text-slate-800 text-[14px] group-hover:text-white transition-colors">
             Tải thêm hình ảnh
           </p>
         </button>

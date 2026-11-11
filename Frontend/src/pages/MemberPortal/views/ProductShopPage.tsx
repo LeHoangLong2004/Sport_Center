@@ -280,11 +280,11 @@ export function ProductShopPage({ onNavigate, onOnlinePayment, embedded = false 
                       />
                     </div>
                     <div className="p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">{product.category || "Sản phẩm"}</p>
-                      <h2 className="mt-1 line-clamp-2 min-h-10 text-sm font-bold text-slate-900 dark:text-white">{product.name}</h2>
-                      <div className="mt-3 flex items-center justify-between gap-2">
-                        <span className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">{money(product.price)}</span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400">{product.stockQuantity > 0 ? `Còn ${product.stockQuantity}` : "Hết hàng"}</span>
+                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 capitalize">{product.category || "Sản phẩm"}</p>
+                      <h2 className="mt-1 text-sm font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug">{product.name}</h2>
+                      <div className="mt-2.5 flex items-baseline justify-between gap-2">
+                        <span className="text-sm font-normal text-slate-800 dark:text-slate-200 tracking-tight">{money(product.price)}</span>
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{product.stockQuantity > 0 ? `Còn ${product.stockQuantity}` : "Hết hàng"}</span>
                       </div>
                     </div>
                   </button>
@@ -392,7 +392,7 @@ export function ProductShopPage({ onNavigate, onOnlinePayment, embedded = false 
                     <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
                       order.status === "completed"
                         ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                        : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                        : "bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-300"
                     }`}>
                       {order.status === "completed" ? "Đã thanh toán" : "Chờ thanh toán"}
                     </span>

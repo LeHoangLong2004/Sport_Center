@@ -29,7 +29,7 @@ export const BookingHeader: React.FC<BookingHeaderProps> = ({
       <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="p-1 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400">
+            <span className="p-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
               <Sparkles className="w-3.5 h-3.5" />
             </span>
             <span className="text-xs font-bold text-slate-500">Mọi hạng thành viên đều được đặt lịch</span>
@@ -53,7 +53,7 @@ export const BookingHeader: React.FC<BookingHeaderProps> = ({
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <Users className="w-4 h-4 text-emerald-500" />
+            <Users className="w-4 h-4" />
             <span>Lớp nhóm ({groupClassesCount})</span>
           </button>
 
@@ -66,7 +66,7 @@ export const BookingHeader: React.FC<BookingHeaderProps> = ({
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <Dumbbell className="w-4 h-4 text-teal-500" />
+            <Dumbbell className="w-4 h-4" />
             <span>Kèm riêng 1–1 ({ptSlotsCount})</span>
           </button>
 
@@ -79,7 +79,7 @@ export const BookingHeader: React.FC<BookingHeaderProps> = ({
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <Receipt className="w-4 h-4 text-emerald-500" />
+            <Receipt className="w-4 h-4" />
             <span>Lớp đã đăng ký</span>
             {myActiveClassesCount > 0 && (
               <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-full font-black animate-pulse">
@@ -95,7 +95,7 @@ export const BookingHeader: React.FC<BookingHeaderProps> = ({
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
           <div className="flex items-center justify-between mb-3 px-1">
             <div className="flex items-center gap-2">
-              <Award className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+              <Award className="w-4 h-4 text-slate-700 dark:text-slate-300" />
               <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                 Đội ngũ Huấn luyện viên ({coaches.length} HLV)
               </h3>
@@ -104,7 +104,7 @@ export const BookingHeader: React.FC<BookingHeaderProps> = ({
               <button
                 type="button"
                 onClick={() => setSelectedCoachId("all")}
-                className="text-xs font-bold text-teal-600 hover:text-teal-700 underline"
+                className="text-xs font-bold text-emerald-600 hover:text-emerald-700 underline"
               >
                 Xem tất cả HLV
               </button>
@@ -117,8 +117,8 @@ export const BookingHeader: React.FC<BookingHeaderProps> = ({
               onClick={() => setSelectedCoachId("all")}
               className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition-all border ${
                 selectedCoachId === "all"
-                  ? "bg-teal-600 border-teal-600 text-white shadow-md shadow-teal-600/20"
-                  : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-teal-500"
+                  ? "bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-600/20"
+                  : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-500"
               }`}
             >
               <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center font-black">
@@ -137,8 +137,8 @@ export const BookingHeader: React.FC<BookingHeaderProps> = ({
                   onClick={() => setSelectedCoachId(isSelected ? "all" : c.id)}
                   className={`flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium shrink-0 transition-all border ${
                     isSelected
-                      ? "bg-teal-600 border-teal-600 text-white shadow-md shadow-teal-600/20"
-                      : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-teal-500"
+                      ? "bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-600/20"
+                      : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-500"
                   }`}
                 >
                   <CoachAvatar
@@ -150,7 +150,7 @@ export const BookingHeader: React.FC<BookingHeaderProps> = ({
                     <p className="font-bold text-xs leading-tight">{c.fullName}</p>
                     <p
                       className={`text-[10px] leading-tight ${
-                        isSelected ? "text-teal-100" : "text-slate-400"
+                        isSelected ? "text-emerald-100" : "text-slate-400"
                       }`}
                     >
                       {c.specialty || "Huấn luyện viên"}

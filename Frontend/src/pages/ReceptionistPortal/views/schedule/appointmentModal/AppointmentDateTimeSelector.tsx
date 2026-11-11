@@ -40,7 +40,7 @@ export const AppointmentDateTimeSelector: React.FC<AppointmentDateTimeSelectorPr
           <span className="font-bold text-slate-700 text-[11px] uppercase tracking-wider">
             4. Ngày hẹn *
           </span>
-          <span className="text-[11px] text-purple-600 font-medium">
+          <span className="text-[11px] text-emerald-600 font-medium">
             {selectedDate
               ? (() => {
                   const parts = selectedDate.split("-");
@@ -102,7 +102,7 @@ export const AppointmentDateTimeSelector: React.FC<AppointmentDateTimeSelectorPr
               value={selectedDate}
               onChange={(iso) => setSelectedDate(iso)}
               placeholder="dd/mm/yyyy"
-              className="w-full mt-0.5 pl-3 pr-9 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-blue-500 bg-white font-mono"
+              className="w-full mt-0.5 pl-3 pr-9 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-slate-500 bg-white "
             />
             <button
               type="button"
@@ -115,7 +115,7 @@ export const AppointmentDateTimeSelector: React.FC<AppointmentDateTimeSelectorPr
                   }
                 }
               }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-purple-600 cursor-pointer transition"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-emerald-600 cursor-pointer transition"
               title="Mở lịch chọn ngày"
             >
               <Calendar className="w-4 h-4" />
@@ -147,7 +147,7 @@ export const AppointmentDateTimeSelector: React.FC<AppointmentDateTimeSelectorPr
           <button
             type="button"
             onClick={() => setIsCustomTime(!isCustomTime)}
-            className="text-[11px] text-purple-600 hover:underline cursor-pointer"
+            className="text-[11px] text-emerald-600 hover:underline cursor-pointer"
           >
             {isCustomTime ? "Khung giờ sẵn" : "Giờ khác"}
           </button>
@@ -159,7 +159,7 @@ export const AppointmentDateTimeSelector: React.FC<AppointmentDateTimeSelectorPr
             required
             value={selectedTime}
             onChange={(e) => setSelectedTime(e.target.value)}
-            className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-purple-500"
+            className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-emerald-500"
           />
         ) : (
           <div className="grid grid-cols-5 gap-1.5">
@@ -172,7 +172,7 @@ export const AppointmentDateTimeSelector: React.FC<AppointmentDateTimeSelectorPr
                   type="button"
                   disabled={inPast}
                   onClick={() => !inPast && setSelectedTime(slot)}
-                  className={`py-1 rounded text-[11px] font-mono font-bold border transition ${
+                  className={`py-1 rounded text-[11px] font-bold border transition ${
                     inPast
                       ? "bg-slate-100 text-slate-300 border-slate-200 cursor-not-allowed line-through"
                       : isSelected

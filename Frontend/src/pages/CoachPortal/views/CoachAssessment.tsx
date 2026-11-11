@@ -134,24 +134,47 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
   const handleSave = async () => {
     if (!draft.comment && !draft.completion) return;
     setIsSaving(true);
+    const sanitizedMetrics = (draft.metrics || [])
+      .filter((m) => (m.label || (m as any).metricName || "").trim() !== "")
+      .map((m) => {
+        const name = (m.label || (m as any).metricName || "").trim();
+        return {
+          label: name,
+          metricName: name,
+          value: m.value,
+          unit: m.unit || "",
+        };
+      });
+
     const full: AssessmentRecord = {
-      id: draft.id!,
-      sessionId: draft.sessionId!,
-      memberId: draft.memberId!,
+      id: draft.id || `as_${Date.now()}`,
+      sessionId: draft.sessionId || selectedSessionId,
+      memberId: draft.memberId || selectedMemberId,
       completion: draft.completion || 0,
-      metrics: draft.metrics || [],
+      metrics: sanitizedMetrics,
       comment: draft.comment || "",
       nextStep: draft.nextStep || "",
       createdAt: draft.createdAt || new Date().toISOString(),
     };
     try {
-      await CoachAPI.saveAssessment(full);
+      const res = await CoachAPI.saveAssessment(full);
+      const savedRecord: AssessmentRecord = res?.data ? {
+        id: String(res.data.id || full.id),
+        sessionId: String(res.data.sessionId || full.sessionId),
+        memberId: String(res.data.memberId || full.memberId),
+        completion: res.data.completion ?? full.completion,
+        metrics: res.data.metrics ?? full.metrics,
+        comment: res.data.comment ?? full.comment,
+        nextStep: res.data.nextStep ?? full.nextStep,
+        createdAt: res.data.createdAt ?? full.createdAt,
+      } : full;
+
       const ass = await CoachAPI.getAssessments();
       if (Array.isArray(ass) && ass.length > 0) {
         setAssessments(ass);
       } else {
         setAssessments((prev) => [
-          full,
+          savedRecord,
           ...prev.filter((p) => p.sessionId !== full.sessionId || p.memberId !== full.memberId),
         ]);
       }
@@ -217,7 +240,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
           className={`px-4 py-2 text-white rounded-xl text-sm font-semibold transition-all ${
             !selectedSessionId
               ? "bg-slate-300 dark:bg-slate-700 cursor-not-allowed"
-              : "bg-orange-500 hover:bg-orange-600 shadow-md shadow-orange-500/20 cursor-pointer"
+              : "bg-emerald-500 hover:bg-emerald-600 shadow-md shadow-emerald-500/20 cursor-pointer"
           }`}
         >
           + Ghi kết quả
@@ -247,26 +270,29 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
                     <div className="flex items-center gap-2">
                       <div className="text-right">
                         <div className="text-xs text-slate-400">Hoàn thành</div>
-                        <div className={`text-lg font-black ${a.completion >= 80 ? "text-emerald-600" : a.completion >= 60 ? "text-amber-500" : "text-rose-600"}`}>
+                        <div className={`text-lg font-black ${a.completion >= 80 ? "text-emerald-600" : a.completion >= 60 ? "text-slate-500" : "text-rose-600"}`}>
                           {a.completion}%
                         </div>
                       </div>
                       {/* Simple bar chart */}
                       <div className="w-20 h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full ${a.completion >= 80 ? "bg-emerald-500" : a.completion >= 60 ? "bg-amber-400" : "bg-rose-500"}`}
+                        <div className={`h-full rounded-full ${a.completion >= 80 ? "bg-emerald-500" : a.completion >= 60 ? "bg-slate-400" : "bg-rose-500"}`}
                           style={{ width: `${a.completion}%` }} />
                       </div>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {a.metrics.filter((m) => m.value).map((m) => (
-                      <span key={m.label} className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full font-medium">
-                        {m.label}: {m.value}{m.unit}
-                      </span>
-                    ))}
+                    {a.metrics?.filter((m) => m && (m.value !== undefined && m.value !== "")).map((m, idx) => {
+                      const metricLabel = m.label || (m as any).metricName || `Chỉ số ${idx + 1}`;
+                      return (
+                        <span key={idx} className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full font-medium">
+                          {metricLabel}: {m.value}{m.unit ? ` ${m.unit}` : ""}
+                        </span>
+                      );
+                    })}
                   </div>
                   {a.comment && <div className="text-sm text-slate-600 dark:text-slate-300 mt-2 italic">"{a.comment}"</div>}
-                  {a.nextStep && <div className="text-xs text-orange-600 dark:text-orange-400 font-medium mt-1">→ Hướng tiếp: {a.nextStep}</div>}
+                  {a.nextStep && <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">→ Hướng tiếp: {a.nextStep}</div>}
                 </div>
               );
             })}
@@ -283,7 +309,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
             <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between shrink-0 bg-slate-50/70 dark:bg-slate-850">
               <div>
                 <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300 border border-orange-200 dark:border-orange-800">
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                     Học viên: {currentMember?.name || "Học viên"}
                   </span>
                   {currentSession && (
@@ -317,7 +343,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
                     (draft.completion || 0) >= 80
                       ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
                       : (draft.completion || 0) >= 60
-                      ? "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
+                      ? "bg-slate-100 text-slate-700 dark:bg-slate-950/60 dark:text-slate-300"
                       : "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300"
                   }`}>
                     {draft.completion || 0}%
@@ -330,7 +356,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
                   step={5}
                   value={draft.completion || 0}
                   onChange={(e) => setDraft({ ...draft, completion: +e.target.value })}
-                  className="w-full accent-orange-500 cursor-pointer"
+                  className="w-full accent-emerald-500 cursor-pointer"
                 />
                 <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
                   <span className="text-[11px] text-slate-400 mr-1">Mốc nhanh:</span>
@@ -341,7 +367,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
                       onClick={() => setDraft({ ...draft, completion: val })}
                       className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
                         draft.completion === val
-                          ? "bg-orange-500 text-white border-orange-500 shadow-xs"
+                          ? "bg-emerald-500 text-white border-emerald-500 shadow-xs"
                           : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
                       }`}
                     >
@@ -365,7 +391,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
                   <button
                     type="button"
                     onClick={() => addMetric("", "")}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/50 hover:bg-orange-100 dark:hover:bg-orange-900/40 border border-orange-200 dark:border-orange-800 rounded-xl transition-all cursor-pointer"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800 rounded-xl transition-all cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Thêm chỉ số
@@ -387,7 +413,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
                       key={chip.label}
                       type="button"
                       onClick={() => addMetric(chip.label, chip.unit)}
-                      className="px-2 py-0.5 text-[11px] font-medium rounded-lg bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-300 dark:hover:bg-slate-650 border border-slate-200 dark:border-slate-600 transition-colors cursor-pointer shadow-2xs"
+                      className="px-2 py-0.5 text-[11px] font-medium rounded-lg bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-300 dark:hover:bg-slate-650 border border-slate-200 dark:border-slate-600 transition-colors cursor-pointer shadow-2xs"
                     >
                       + {chip.label} ({chip.unit})
                     </button>
@@ -423,7 +449,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
                             ms[i] = { ...m, label: e.target.value };
                             setDraft({ ...draft, metrics: ms });
                           }}
-                          className="flex-1 min-w-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none"
+                          className="flex-1 min-w-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                         />
                         <input
                           type="text"
@@ -434,7 +460,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
                             ms[i] = { ...m, value: e.target.value };
                             setDraft({ ...draft, metrics: ms });
                           }}
-                          className="w-24 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-2 text-xs text-center font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none"
+                          className="w-24 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-2 text-xs text-center font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                         />
                         <input
                           type="text"
@@ -445,7 +471,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
                             ms[i] = { ...m, unit: e.target.value };
                             setDraft({ ...draft, metrics: ms });
                           }}
-                          className="w-24 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-2 text-xs text-center text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none"
+                          className="w-24 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-2 text-xs text-center text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                         />
                         <button
                           type="button"
@@ -473,7 +499,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
                   value={draft.comment || ""}
                   onChange={(e) => setDraft({ ...draft, comment: e.target.value })}
                   rows={3}
-                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none resize-none leading-relaxed"
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none resize-none leading-relaxed"
                   placeholder="Nhận xét kỹ thuật, sự tập trung và mức độ nỗ lực của học viên trong buổi học này..."
                 />
               </div>
@@ -487,7 +513,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
                   type="text"
                   value={draft.nextStep || ""}
                   onChange={(e) => setDraft({ ...draft, nextStep: e.target.value })}
-                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none"
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                   placeholder="VD: Nâng mức tạ Bench Press lên 65kg, cải thiện nhịp thở khi Squat..."
                 />
               </div>
@@ -506,7 +532,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
                 type="button"
                 onClick={handleSave}
                 disabled={isSaving}
-                className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:bg-slate-400 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-orange-500/20 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-400 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-500/20 cursor-pointer"
               >
                 <Check className="w-4 h-4" />
                 <span>{isSaving ? "Đang lưu..." : "Lưu kết quả"}</span>
@@ -521,5 +547,5 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
   );
 }
 
-const selectCls = "border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none";
-const inputCls = "border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none w-full";
+const selectCls = "border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none";
+const inputCls = "border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none w-full";

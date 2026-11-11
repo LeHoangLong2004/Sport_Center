@@ -265,7 +265,7 @@ export function StaffPage() {
   };
 
   const statusStyle: Record<string, string> = {
-    "Đang hoạt động": "bg-[#dcfce7] text-[#15803d]",
+    "Đang hoạt động": "bg-emerald-50 text-emerald-700",
     "Tạm khóa":       "bg-[#fee2e2] text-[#b91c1c]",
   }
 
@@ -280,7 +280,7 @@ export function StaffPage() {
           <button onClick={handleExportCSV} className="bg-white dark:bg-slate-800 border border-[#cbd5e1] dark:border-slate-700 flex gap-2 items-center px-4 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-2xs cursor-pointer">
             <span className="font-semibold text-[#0f172a] dark:text-white text-sm">Xuất dữ liệu</span>
           </button>
-          <button onClick={() => setShowAddModal(true)} className="bg-rose-600 hover:bg-rose-700 text-white flex gap-2 items-center px-4 py-2.5 rounded-xl transition-all shadow-md shadow-rose-600/20 active:scale-95 cursor-pointer">
+          <button onClick={() => setShowAddModal(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white flex gap-2 items-center px-4 py-2.5 rounded-xl transition-all shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer">
             <span className="font-semibold text-white text-sm">+ Thêm nhân sự mới</span>
           </button>
         </div>
@@ -302,23 +302,23 @@ export function StaffPage() {
               <form onSubmit={handleAddStaff} className="flex flex-col gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-[#475569] mb-1">Họ và tên</label>
-                  <input required type="text" className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-blue-500" value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} placeholder="Nguyễn Văn A" />
+                  <input required type="text" className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-slate-500" value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} placeholder="Nguyễn Văn A" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-[#475569] mb-1">Email</label>
-                  <input required type="email" className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-blue-500" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="example@smartgym.com" />
+                  <input required type="email" className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-slate-500" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="example@smartgym.com" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-[#475569] mb-1">Số điện thoại</label>
-                  <input required type="text" className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-blue-500" value={formData.phoneNumber} onChange={e => setFormData({...formData, phoneNumber: e.target.value})} placeholder="0987654321" />
+                  <input required type="text" className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-slate-500" value={formData.phoneNumber} onChange={e => setFormData({...formData, phoneNumber: e.target.value})} placeholder="0987654321" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-[#475569] mb-1">Mật khẩu</label>
-                  <input required type="password" minLength={6} className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-blue-500" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder="Ít nhất 6 ký tự" />
+                  <input required type="password" minLength={6} className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-slate-500" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder="Ít nhất 6 ký tự" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-[#475569] mb-1">Vai trò (Role)</label>
-                  <select className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-blue-500" value={formData.roleName} onChange={e => setFormData({...formData, roleName: e.target.value, sportIds: []})}>
+                  <select className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-slate-500" value={formData.roleName} onChange={e => setFormData({...formData, roleName: e.target.value, sportIds: []})}>
                     <option value="receptionist">Lễ tân (receptionist)</option>
                     <option value="coach">Huấn luyện viên (coach)</option>
                     <option value="manager">Quản lý trung tâm (manager)</option>
@@ -328,17 +328,17 @@ export function StaffPage() {
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-col gap-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Bộ môn phụ trách (Bắt buộc)</label>
-                      <span className="text-[11px] text-rose-600 font-medium">Đã chọn: {formData.sportIds.length}</span>
+                      <span className="text-[11px] text-emerald-600 font-medium">Đã chọn: {formData.sportIds.length}</span>
                     </div>
                     <p className="text-xs text-slate-500">Tick chọn các bộ môn mà HLV này có chứng chỉ và được phép đứng lớp:</p>
                     <div className="grid grid-cols-2 gap-2 mt-1">
                       {availableSports.map(s => {
                         const checked = formData.sportIds.includes(s.id);
                         return (
-                          <label key={s.id} className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-colors ${checked ? 'border-rose-300 bg-rose-50/70 text-rose-700 font-semibold' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>
+                          <label key={s.id} className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-colors ${checked ? 'border-emerald-300 bg-emerald-50/70 text-emerald-700 font-semibold' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>
                             <input
                               type="checkbox"
-                              className="accent-rose-600 rounded"
+                              className="accent-emerald-600 rounded"
                               checked={checked}
                               onChange={e => {
                                 if (e.target.checked) {
@@ -357,7 +357,7 @@ export function StaffPage() {
                 )}
                 <div className="flex gap-3 mt-4">
                   <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 bg-white border border-[#cbd5e1] font-semibold text-[#475569] py-2.5 rounded-xl hover:bg-slate-50 transition-colors">Hủy</button>
-                  <button type="submit" className="flex-1 bg-rose-600 font-semibold text-white py-2.5 rounded-xl hover:bg-rose-700 transition-colors shadow-md shadow-rose-600/20">Lưu nhân sự</button>
+                  <button type="submit" className="flex-1 bg-emerald-600 font-semibold text-white py-2.5 rounded-xl hover:bg-emerald-700 transition-colors shadow-md shadow-emerald-600/20">Lưu nhân sự</button>
                 </div>
               </form>
             </div>
@@ -379,7 +379,7 @@ export function StaffPage() {
             />
             <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150">
               <div className="flex items-start gap-4">
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600">
                   <span className="text-xl font-bold">!</span>
                 </div>
                 <div>
@@ -391,7 +391,7 @@ export function StaffPage() {
               </div>
               <div className="mt-6 flex justify-end gap-3">
                 <button type="button" onClick={() => setStatusConfirmation(null)} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">Hủy</button>
-                <button type="button" onClick={confirmToggleStatus} className="rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 shadow-md shadow-rose-600/20">Xác nhận</button>
+                <button type="button" onClick={confirmToggleStatus} className="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 shadow-md shadow-emerald-600/20">Xác nhận</button>
               </div>
             </div>
           </div>,
@@ -413,7 +413,7 @@ export function StaffPage() {
               {/* Header */}
               <div className="flex items-start justify-between pb-4 border-b border-slate-100">
                 <div className="flex items-center gap-3">
-                  <div className="size-11 rounded-xl bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center text-white shadow-sm shadow-rose-500/20">
+                  <div className="size-11 rounded-xl bg-gradient-to-tr from-emerald-500 to-emerald-500 flex items-center justify-center text-white shadow-sm shadow-emerald-500/20">
                     <Dumbbell className="size-5" />
                   </div>
                   <div>
@@ -436,13 +436,13 @@ export function StaffPage() {
               {/* Subtitle / Instructions */}
               <div className="py-4">
                 <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 mb-4 text-xs text-slate-600 leading-relaxed flex items-start gap-2.5">
-                  <span className="font-bold text-rose-600 shrink-0">Lưu ý:</span>
+                  <span className="font-bold text-emerald-600 shrink-0">Lưu ý:</span>
                   <span>Chỉ các bộ môn được <strong>bật trạng thái phụ trách</strong> dưới đây thì HLV mới có quyền mở lớp và được Quản lý xếp lịch dạy.</span>
                 </div>
 
                 {loadingCoachSports ? (
                   <div className="flex flex-col items-center justify-center py-16 gap-3">
-                    <Loader2 className="size-7 text-rose-600 animate-spin" />
+                    <Loader2 className="size-7 animate-spin" />
                     <span className="text-xs text-slate-500 font-medium">Đang đồng bộ danh mục bộ môn...</span>
                   </div>
                 ) : availableSports.length === 0 ? (
@@ -526,7 +526,7 @@ export function StaffPage() {
                     type="button"
                     disabled={savingCoachSports || loadingCoachSports}
                     onClick={handleSaveCoachSports}
-                    className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-rose-600 text-xs font-semibold text-white hover:bg-rose-700 shadow-md shadow-rose-600/20 disabled:opacity-50 transition-all cursor-pointer active:scale-95"
+                    className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-emerald-600 text-xs font-semibold text-white hover:bg-emerald-700 shadow-md shadow-emerald-600/20 disabled:opacity-50 transition-all cursor-pointer active:scale-95"
                   >
                     {savingCoachSports && <Loader2 size={13} className="animate-spin" />}
                     <span>Lưu phân công</span>
@@ -567,7 +567,7 @@ export function StaffPage() {
             </div>
             {loading ? (
               <div className="flex flex-col items-center justify-center py-16 gap-3">
-                <div className="size-8 border-2 border-rose-600 border-t-transparent rounded-full animate-spin" />
+                <div className="size-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
                 <p className="text-[#64748b] text-sm font-medium">Đang tải danh sách nhân sự...</p>
               </div>
             ) : filtered.length === 0 ? (
@@ -581,7 +581,7 @@ export function StaffPage() {
                     <UserAvatar src={m.avatar} name={m.name} className="rounded-full size-9.5 object-cover shrink-0 ring-1 ring-slate-200" />
                     <div className="min-w-0">
                       <p className="font-semibold text-[#0f172a] text-sm truncate" title={m.name}>{m.name}</p>
-                      <p className="text-[#64748b] text-[12px] font-mono">{m.id}</p>
+                      <p className="text-[#64748b] text-[12px] ">{m.id}</p>
                     </div>
                   </div>
                   <div className="w-[200px] shrink-0 flex flex-col justify-center gap-1 pr-2">
@@ -591,7 +591,7 @@ export function StaffPage() {
                         {m.assignedSports.map((sportName: string, idx: number) => (
                           <span
                             key={idx}
-                            className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 font-medium text-[10px] ring-1 ring-rose-200"
+                            className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-medium text-[10px] ring-1 ring-emerald-200"
                           >
                             {sportName}
                           </span>
@@ -616,7 +616,7 @@ export function StaffPage() {
                       <button
                         onClick={() => handleOpenAssignSports(m)}
                         title="Phân công bộ môn cho HLV"
-                        className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-xs font-semibold text-sky-700 hover:border-sky-300 hover:bg-sky-100 transition-all cursor-pointer active:scale-95"
+                        className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-100 transition-all cursor-pointer active:scale-95"
                       >
                         <Dumbbell size={13} strokeWidth={2.2} />
                         <span>Bộ môn</span>
@@ -658,7 +658,7 @@ export function StaffPage() {
                 key={i} 
                 onClick={() => typeof p === 'number' && setCurrentPage(p)}
                 disabled={p === '...'}
-                className={`flex items-center px-3 py-1.5 rounded-md text-[13px] transition-colors ${p === currentPage ? "bg-rose-600 font-semibold text-white shadow-xs shadow-rose-600/20" : p === '...' ? "bg-transparent text-slate-400 cursor-default" : "bg-white border border-[#e2e8f0] text-[#0f172a] hover:bg-slate-50 cursor-pointer"}`}
+                className={`flex items-center px-3 py-1.5 rounded-md text-[13px] transition-colors ${p === currentPage ? "bg-emerald-600 font-semibold text-white shadow-xs shadow-emerald-600/20" : p === '...' ? "bg-transparent text-slate-400 cursor-default" : "bg-white border border-[#e2e8f0] text-[#0f172a] hover:bg-slate-50 cursor-pointer"}`}
               >
                 {p}
               </button>

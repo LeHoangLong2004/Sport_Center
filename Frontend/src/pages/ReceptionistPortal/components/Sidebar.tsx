@@ -28,13 +28,13 @@ export function Sidebar({ page, onNavigate, onLogout }: { page: Page; onNavigate
         title="Quay lại Trang chủ SportCenter"
         aria-label="Quay lại Trang chủ"
       >
-        <div className="bg-[#a855f7] flex flex-col items-center justify-center rounded-[10px] shrink-0 size-[40px] shadow-lg shadow-purple-500/20 transition-all duration-200 group-hover:scale-105 group-hover:shadow-purple-500/40 group-active:scale-95">
-          <span className="font-['Manrope:ExtraBold'] font-extrabold text-white text-[18px]">SC</span>
+        <div className="bg-emerald-600 flex flex-col items-center justify-center rounded-[10px] shrink-0 size-[40px] shadow-lg shadow-emerald-500/20 transition-all duration-200 group-hover:scale-105 group-hover:shadow-emerald-500/40 group-active:scale-95">
+          <span className="font-extrabold text-white text-[18px]">SC</span>
         </div>
         <div className="flex flex-col gap-[2px] items-start shrink-0">
-          <span className="font-['Manrope:ExtraBold'] font-extrabold text-[15px] text-white whitespace-nowrap tracking-wide group-hover:text-purple-300 transition-colors">SPORTCENTER</span>
-          <div className="bg-[#1e293b] flex items-start px-[6px] py-px rounded-[4px] shrink-0">
-            <span className="font-['Manrope:Bold'] font-bold text-[#a855f7] text-[9px] whitespace-nowrap tracking-wider">RECEPTIONIST</span>
+          <span className="font-extrabold text-[15px] text-white whitespace-nowrap tracking-wide group-hover:text-emerald-400 transition-colors">SPORTCENTER</span>
+          <div className="bg-emerald-500/10 border border-emerald-500/20 flex items-start px-[6px] py-px rounded-[4px] shrink-0">
+            <span className="font-bold text-emerald-400 text-[9px] whitespace-nowrap tracking-wider">RECEPTIONIST</span>
           </div>
         </div>
       </button>
@@ -48,9 +48,9 @@ export function Sidebar({ page, onNavigate, onLogout }: { page: Page; onNavigate
               key={item.id}
               type="button"
               onClick={() => onNavigate(item.id)}
-              className={`sidebar-nav-btn btn-tactile group relative flex gap-[12px] items-center px-[16px] py-[11px] rounded-[10px] shrink-0 w-full text-left cursor-pointer ${
+              className={`sidebar-nav-btn btn-tactile group relative flex gap-[12px] items-center px-[16px] py-[11px] rounded-[10px] shrink-0 w-full text-left cursor-pointer transition-all ${
                 active 
-                  ? "bg-gradient-to-r from-[#a855f7] to-[#9333ea] text-white shadow-lg shadow-purple-500/25 font-bold" 
+                  ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/25 font-bold" 
                   : "bg-transparent hover:bg-white/5 text-[#cbd5e1] hover:text-white font-medium"
               }`}
             >
@@ -58,7 +58,7 @@ export function Sidebar({ page, onNavigate, onLogout }: { page: Page; onNavigate
                 <span className="absolute left-1 top-2 bottom-2 w-1 bg-white rounded-full shadow-sm" />
               )}
               <img src={item.icon} alt="" className={`shrink-0 size-[18px] transition-transform duration-200 group-hover:scale-110 ${active ? "brightness-200" : "opacity-70 group-hover:opacity-100"}`} />
-              <span className={`flex-1 font-['Manrope:${active ? "Bold" : "Medium"}'] ${active ? "font-bold text-white" : "font-medium text-[#cbd5e1]"} text-[13.5px] leading-normal`}>
+              <span className={`flex-1 font-bold ${active ? "font-bold text-white" : "font-medium text-[#cbd5e1]"} text-[13.5px] leading-normal`}>
                 {item.label}
               </span>
             </button>
@@ -68,16 +68,16 @@ export function Sidebar({ page, onNavigate, onLogout }: { page: Page; onNavigate
 
       {/* Support card */}
       <div className="bg-[#1e293b] border border-[#334155] border-solid flex flex-col gap-[8px] items-start p-[16px] rounded-[12px] shrink-0 w-full">
-        <span className="font-['Manrope:Bold'] font-bold text-[13px] text-white w-full">Hỗ trợ Lễ Tân</span>
-        <span className="font-['Manrope:Regular'] font-normal leading-[1.4] text-purple-400 text-[11px] w-full">
-          Ấn nút F2 để mở nhanh ô quét mã check-in tức thì.
+        <span className="font-bold text-[13px] text-white w-full">Hỗ trợ Lễ Tân</span>
+        <span className="font-normal leading-[1.4] text-emerald-400 text-[11px] w-full">
+          Tra cứu theo SĐT hoặc Mã hội viên để xác nhận Check-in / Check-out thủ công.
         </span>
       </div>
 
       {/* User profile */}
       <div className="pt-4 w-full mt-auto">
         <div className="cursor-pointer hover:bg-white/5 p-3 -mx-3 -mb-3 rounded-xl transition-all group relative flex items-center gap-3 overflow-hidden" onClick={() => onNavigate("profile")}>
-          <UserAvatar src={avatarUrl} name={userName} className="rounded-full size-10 shrink-0 object-cover border-2 border-[#1e293b] group-hover:border-[#a855f7] transition-colors" />
+          <UserAvatar src={avatarUrl} name={userName} className="rounded-full size-10 shrink-0 object-cover border-2 border-[#1e293b] group-hover:border-emerald-500 transition-colors" />
           <div className="flex flex-col flex-1 min-w-0 transition-transform duration-200 group-hover:-translate-x-1 justify-center">
             <p className="font-bold text-white text-[13px] truncate">{userName}</p>
             <p className="text-[#94a3b8] text-[11px] truncate">Bộ phận Lễ tân</p>

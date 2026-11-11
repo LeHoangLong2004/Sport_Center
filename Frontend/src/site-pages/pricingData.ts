@@ -70,31 +70,31 @@ export const comparisonRows = [
   {
     label: "Giờ mở cửa",
     starter: { text: "05:00-22:00", color: "text-[#64748b]" },
-    fitness: { text: "24/7 Không giới hạn", color: "text-[#2563eb]" },
+    fitness: { text: "24/7 Không giới hạn", color: "text-slate-800" },
     premium: { text: "24/7 Không giới hạn", color: "text-[#10b981]" },
   },
   {
     label: "Lớp Group Fitness",
     starter: { text: "2 lớp/tuần", color: "text-[#64748b]" },
-    fitness: { text: "Không giới hạn", color: "text-[#2563eb]" },
+    fitness: { text: "Không giới hạn", color: "text-slate-800" },
     premium: { text: "Không giới hạn & Ưu tiên", color: "text-[#10b981]" },
   },
   {
     label: "Huấn luyện viên cá nhân",
     starter: { text: "Không hỗ trợ", color: "text-[#64748b]" },
-    fitness: { text: "Tập thử 1 buổi", color: "text-[#2563eb]" },
+    fitness: { text: "Tập thử 1 buổi", color: "text-slate-800" },
     premium: { text: "4 buổi chuyên sâu/tháng", color: "text-[#10b981]" },
   },
   {
     label: "Hồ bơi Aqua & Sauna",
     starter: { text: "Phụ thu phí", color: "text-[#64748b]" },
-    fitness: { text: "Miễn phí sử dụng", color: "text-[#2563eb]" },
+    fitness: { text: "Miễn phí sử dụng", color: "text-slate-800" },
     premium: { text: "Miễn phí + Phòng VIP", color: "text-[#10b981]" },
   },
   {
     label: "Khăn tắm & Tủ khóa VIP",
     starter: { text: "Tủ đồ tiêu chuẩn", color: "text-[#64748b]" },
-    fitness: { text: "Khăn & Tủ khóa miễn phí", color: "text-[#2563eb]" },
+    fitness: { text: "Khăn & Tủ khóa miễn phí", color: "text-slate-800" },
     premium: { text: "Tủ khóa VIP cố định riêng", color: "text-[#10b981]" },
   },
 ];

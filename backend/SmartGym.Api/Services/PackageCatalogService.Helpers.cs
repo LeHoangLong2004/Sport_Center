@@ -194,13 +194,12 @@ public sealed partial class PackageCatalogService
         {
             if (
                 string.IsNullOrWhiteSpace(package.Sport)
-                || string.IsNullOrWhiteSpace(package.Area)
                 || package.Format is not ("self" or "group" or "coach")
                 || package.Prices.Values.Any(price => price <= 0)
             )
                 throw new PackageCatalogException(
                     StatusCodes.Status400BadRequest,
-                    "Gói môn tập cần bộ môn, khu, hình thức và giá dương cho đủ kỳ hạn."
+                    "Gói môn tập cần bộ môn, hình thức và giá dương cho đủ kỳ hạn."
                 );
             if (
                 package.Format != "self"

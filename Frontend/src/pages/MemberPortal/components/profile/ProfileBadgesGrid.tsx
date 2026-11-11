@@ -87,30 +87,30 @@ export const ProfileBadgesGrid: React.FC<ProfileBadgesGridProps> = ({
   const badges: BadgeItemProps[] = [
     {
       unlocked: badgesStatus.streak10,
-      gradientFrom: "from-amber-500/10",
-      gradientTo: "to-orange-500/10",
-      borderColor: "border-amber-500/20",
-      iconBg: "bg-amber-500",
+      gradientFrom: "from-slate-500/10",
+      gradientTo: "to-slate-500/10",
+      borderColor: "border-slate-500/20",
+      iconBg: "bg-slate-500",
       icon: <Flame className="w-5 h-5" />,
       name: "Kỷ Luật Thép",
       description: badgesStatus.streak10 ? "Đã đạt chuỗi 10 ngày" : `Tiến độ: ${Math.min(10, completedCount)}/10 ca tập`,
-      checkColor: "text-amber-500",
+      checkColor: "text-slate-500",
     },
     {
       unlocked: badgesStatus.breakthrough20,
-      gradientFrom: "from-blue-500/10",
-      gradientTo: "to-indigo-500/10",
-      borderColor: "border-blue-500/20",
-      iconBg: "bg-blue-600",
+      gradientFrom: "from-slate-500/10",
+      gradientTo: "to-slate-500/10",
+      borderColor: "border-slate-500/20",
+      iconBg: "bg-slate-600",
       icon: <Zap className="w-5 h-5" />,
       name: "Bứt Phá 20+",
       description: badgesStatus.breakthrough20 ? "Hoàn thành 20+ ca" : `Tiến độ: ${Math.min(20, completedCount)}/20 ca`,
-      checkColor: "text-blue-500",
+      checkColor: "text-slate-500",
     },
     {
       unlocked: badgesStatus.multiSport,
       gradientFrom: "from-emerald-500/10",
-      gradientTo: "to-teal-500/10",
+      gradientTo: "to-emerald-500/10",
       borderColor: "border-emerald-500/20",
       iconBg: "bg-emerald-600",
       icon: <Activity className="w-5 h-5" />,
@@ -120,36 +120,36 @@ export const ProfileBadgesGrid: React.FC<ProfileBadgesGridProps> = ({
     },
     {
       unlocked: badgesStatus.coachBuddy,
-      gradientFrom: "from-purple-500/10",
-      gradientTo: "to-pink-500/10",
-      borderColor: "border-purple-500/20",
-      iconBg: "bg-purple-600",
+      gradientFrom: "from-slate-500/10",
+      gradientTo: "to-slate-500/10",
+      borderColor: "border-slate-500/20",
+      iconBg: "bg-slate-600",
       icon: <Award className="w-5 h-5" />,
       name: "Đồng Đội HLV",
       description: "Tập luyện cùng PT 1:1",
-      checkColor: "text-purple-500",
+      checkColor: "text-slate-500",
     },
     {
       unlocked: badgesStatus.warrior50,
-      gradientFrom: "from-amber-500/10",
-      gradientTo: "to-yellow-500/10",
-      borderColor: "border-amber-500/20",
-      iconBg: "bg-amber-600",
+      gradientFrom: "from-slate-500/10",
+      gradientTo: "to-slate-500/10",
+      borderColor: "border-slate-500/20",
+      iconBg: "bg-slate-600",
       icon: <Trophy className="w-5 h-5" />,
       name: "Chiến Binh 50+",
       description: badgesStatus.warrior50 ? "Đã đạt 50+ buổi" : `Tiến độ: ${Math.min(50, completedCount)}/50 buổi`,
-      checkColor: "text-amber-500",
+      checkColor: "text-slate-500",
     },
     {
       unlocked: badgesStatus.goldMember,
-      gradientFrom: "from-amber-500/10",
-      gradientTo: "to-orange-500/10",
-      borderColor: "border-amber-500/20",
-      iconBg: "bg-amber-500",
+      gradientFrom: "from-slate-500/10",
+      gradientTo: "to-slate-500/10",
+      borderColor: "border-slate-500/20",
+      iconBg: "bg-slate-500",
       icon: <Crown className="w-5 h-5" />,
       name: "Hội Viên Hoạt Động",
       description: badgesStatus.goldMember ? "Gói tập đang hoạt động" : "Chưa kích hoạt gói",
-      checkColor: "text-amber-500",
+      checkColor: "text-slate-500",
     },
   ];
 
@@ -157,7 +157,7 @@ export const ProfileBadgesGrid: React.FC<ProfileBadgesGridProps> = ({
     <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-xs space-y-5">
       <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
         <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
-          <Medal className="w-4 h-4 text-amber-500" />
+          <Medal className="w-4 h-4 text-slate-500" />
           Huy hiệu thành tích rèn luyện
         </h3>
         <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">

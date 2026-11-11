@@ -72,16 +72,8 @@ public sealed partial class SupabaseGroupClassRepository
                     return (false, "Bạn đã có một lớp học khác trùng thời gian.");
                 }
 
-                var memberPtTimes = await _dbContext.Database
-                    .SqlQueryRaw<ClassTimeConflictRawModel>(
-                        @"SELECT ps.schedule_time, ps.duration_minutes
-                          FROM pt_sessions ps
-                          INNER JOIN pt_enrollments pe ON pe.id = ps.enrollment_id
-                          WHERE pe.user_id = {0}
-                            AND ps.status IN ('scheduled', 'pending', 'confirmed')",
-                        userId
-                    )
-                    .ToListAsync();
+                // Hệ thống không dùng bảng pt_sessions; lịch PT được quản lý riêng qua appointments/slots
+                var memberPtTimes = new List<ClassTimeConflictRawModel>();
 
                 if (memberPtTimes.Any(x => Overlaps(targetTime.ScheduleTime, targetEnd, x.ScheduleTime, x.DurationMinutes)))
                 {

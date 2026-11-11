@@ -5,10 +5,10 @@ import { UserAvatar } from "../../../components/UserAvatar";
 import type { InvoiceResponse } from "../../../hooks/flow3Api";
 
 const STATUS_STYLE: Record<string, string> = {
-  completed: "bg-[#dcfce7] text-[#15803d]",
-  pending: "bg-[#fef3c7] text-[#b45309]",
+  completed: "bg-emerald-50 text-emerald-700",
+  pending: "bg-slate-100 text-slate-700",
   failed: "bg-[#fee2e2] text-[#b91c1c]",
-  refunded: "bg-[#e0e7ff] text-[#4338ca]",
+  refunded: "bg-slate-100 text-slate-700",
   expired: "bg-[#f1f5f9] text-[#475569]",
 };
 
@@ -72,7 +72,7 @@ export function InvoiceTable({
             className="border-b border-[#f1f5f9] flex h-16 items-center px-6 hover:bg-slate-50/60 transition-colors"
           >
             <div className="w-[160px] cursor-pointer" onClick={() => onViewDetail(tx)}>
-              <p className="font-bold text-[#0f172a] text-sm hover:text-blue-600 transition-colors">
+              <p className="font-bold text-[#0f172a] text-sm hover:text-slate-600 transition-colors">
                 {tx.invoiceNumber}
               </p>
               <p className="text-[#64748b] text-[12px]">
@@ -89,7 +89,7 @@ export function InvoiceTable({
                 className="rounded-full size-8 object-cover text-xs"
               />
               <div className="min-w-0">
-                <p className="font-semibold text-[#0f172a] text-sm truncate hover:text-blue-600 transition-colors">
+                <p className="font-semibold text-[#0f172a] text-sm truncate hover:text-slate-600 transition-colors">
                   {tx.memberName ?? "Khách vãng lai"}
                 </p>
                 <p className="text-[#64748b] text-[12px] truncate">
@@ -142,7 +142,7 @@ export function InvoiceTable({
               <button
                 onClick={() => onViewDetail(tx)}
                 title="Xem chi tiết hóa đơn"
-                className="bg-white border border-[#e2e8f0] hover:bg-blue-50 hover:border-blue-200 flex items-center justify-center rounded-md size-8 text-slate-600 transition-colors"
+                className="bg-white border border-[#e2e8f0] hover:bg-slate-50 hover:border-slate-200 flex items-center justify-center rounded-md size-8 text-slate-600 transition-colors"
               >
                 <img src={iEye} alt="Xem" className="size-4" />
               </button>

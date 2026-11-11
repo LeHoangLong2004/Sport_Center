@@ -43,11 +43,11 @@ export default function HomePageClassesSection() {
       <FadeUp className="flex items-end justify-between mb-[40px]">
         <div className="flex flex-col gap-[12px]">
           <div className="bg-[rgba(16,185,129,0.1)] border border-[#10b981] flex items-center px-[12px] py-[6px] rounded-[100px] shrink-0 w-fit">
-            <p className="font-['Inter:Bold'] font-bold text-[#10b981] text-[11px] uppercase tracking-wider">
+            <p className="font-bold text-[#10b981] text-[11px] uppercase tracking-wider">
               LỊCH HÔM NAY
             </p>
           </div>
-          <h2 className="font-['Inter:Extra_Bold'] font-extrabold text-[#0f172a] text-[36px] m-0 leading-[1.2]">
+          <h2 className="font-extrabold text-[#0f172a] text-[36px] m-0 leading-[1.2]">
             Lớp nổi bật
           </h2>
         </div>
@@ -59,7 +59,7 @@ export default function HomePageClassesSection() {
             window.location.hash = "#lophoc";
           }}
         >
-          <p className="font-['Inter:Semi_Bold'] font-semibold text-[#1e293b] text-[14px]">
+          <p className="font-bold font-semibold text-[#1e293b] text-[14px]">
             Xem tất cả lớp học →
           </p>
         </div>
@@ -86,30 +86,30 @@ export default function HomePageClassesSection() {
                 <div
                   className={`absolute top-[12px] left-[12px] px-[8px] py-[4px] rounded-[6px] ${
                     tag === "HOT"
-                      ? "bg-[#f97316]"
+                      ? "bg-slate-600"
                       : tag === "SẮP ĐẦY"
                         ? "bg-[#dc2626]"
                         : "bg-[#10b981]"
                   }`}
                 >
-                  <p className="font-['Inter:Bold'] font-bold text-white text-[11px]">
+                  <p className="font-bold text-white text-[11px]">
                     {tag}
                   </p>
                 </div>
               )}
             </div>
             <div className="flex flex-col gap-[10px] p-[18px]">
-              <p className="font-['Inter:Bold'] font-bold text-[#0f172a] text-[15px] leading-[1.3] m-0">
+              <p className="font-bold text-[#0f172a] text-[15px] leading-[1.3] m-0">
                 {name}
               </p>
-              <p className="font-['Inter:Regular'] font-normal text-[#64748b] text-[13px] m-0">
+              <p className="font-normal text-[#64748b] text-[13px] m-0">
                 {coach}
               </p>
               <div className="flex items-center justify-between pt-[4px] border-t border-[#f1f5f9]">
-                <p className="font-['Inter:Semi_Bold'] font-semibold text-[#0f172a] text-[13px] m-0">
+                <p className="font-bold font-semibold text-[#0f172a] text-[13px] m-0">
                   {time}
                 </p>
-                <p className="font-['Inter:Regular'] font-normal text-[#10b981] text-[12px] m-0">
+                <p className="font-normal text-[#10b981] text-[12px] m-0">
                   {slots}
                 </p>
               </div>

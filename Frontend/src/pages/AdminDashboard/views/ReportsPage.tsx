@@ -39,7 +39,7 @@ export function ReportsPage() {
       {/* header */}
       <div className="flex items-end justify-between">
         <div>
-          <p className="font-extrabold text-rose-600 text-[11px] tracking-[1.5px] uppercase">Thứ hai, 21 tháng 9</p>
+          <p className="font-extrabold text-emerald-600 text-[11px] tracking-[1.5px] uppercase">Thứ hai, 21 tháng 9</p>
           <p className="font-extrabold text-[#0f172a] text-[28px] mt-1">Báo cáo & Thống kê</p>
           <p className="text-[#64748b] text-sm mt-1">Phân tích hiệu suất vận hành, doanh thu và xu hướng tăng trưởng hội viên toàn trung tâm.</p>
         </div>
@@ -54,7 +54,7 @@ export function ReportsPage() {
           </button>
           <button
             onClick={() => { dashboard.reload(); retention.reload(); }}
-            className="bg-rose-600 hover:bg-rose-700 transition-colors shadow-sm shadow-rose-600/20 flex items-center px-[18px] py-3 rounded-lg cursor-pointer"
+            className="bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-sm shadow-emerald-600/20 flex items-center px-[18px] py-3 rounded-lg cursor-pointer"
           >
             <span className="font-bold text-white text-sm">Làm mới số liệu</span>
           </button>
@@ -74,7 +74,7 @@ export function ReportsPage() {
             </InlineValue>
           </p>
           <div className="flex gap-2 items-center">
-            <span className="bg-[#dcfce7] font-bold px-2 py-0.5 rounded-full text-[#15803d] text-[11px]">
+            <span className="bg-emerald-50 font-bold px-2 py-0.5 rounded-full text-emerald-700 text-[11px]">
               {dashboard.data ? formatVnd(dashboard.data.todayRevenue) : "--"}
             </span>
             <span className="text-[#64748b] text-[13px]">doanh thu hôm nay</span>
@@ -91,7 +91,7 @@ export function ReportsPage() {
             </InlineValue>
           </p>
           <div className="flex gap-2 items-center">
-            <span className="bg-[#dcfce7] font-bold px-2 py-0.5 rounded-full text-[#15803d] text-[11px]">
+            <span className="bg-emerald-50 font-bold px-2 py-0.5 rounded-full text-emerald-700 text-[11px]">
               {dashboard.data ? `+${dashboard.data.newMembersThisMonth}` : "--"}
             </span>
             <span className="text-[#64748b] text-[13px]">hội viên mới trong tháng</span>
@@ -108,7 +108,7 @@ export function ReportsPage() {
             </InlineValue>
           </p>
           <div className="flex gap-2 items-center">
-            <span className="bg-[#dcfce7] font-bold px-2 py-0.5 rounded-full text-[#15803d] text-[11px]">
+            <span className="bg-emerald-50 font-bold px-2 py-0.5 rounded-full text-emerald-700 text-[11px]">
               {dashboard.data?.classOccupancyRate ?? "--%"}
             </span>
             <span className="text-[#64748b] text-[13px]">Tỷ lệ lấp đầy</span>
@@ -125,7 +125,7 @@ export function ReportsPage() {
             </InlineValue>
           </p>
           <div className="flex gap-2 items-center">
-            <span className="bg-[#fef3c7] font-bold px-2 py-0.5 rounded-full text-[#b45309] text-[11px]">
+            <span className="bg-slate-100 font-bold px-2 py-0.5 rounded-full text-slate-700 text-[11px]">
               {retention.data ? `${retention.data.renewedMembers}/${retention.data.expiringMembers}` : "--"}
             </span>
             <span className="text-[#64748b] text-[13px]">gia hạn / hết hạn (90 ngày)</span>
@@ -138,7 +138,7 @@ export function ReportsPage() {
         {tabs.map((t, i) => (
           <button key={i} onClick={() => setTab(i)} className={`pb-3 text-sm transition-colors cursor-pointer ${
             tab === i
-              ? "border-b-2 border-rose-600 font-bold text-rose-600"
+              ? "border-b-2 border-emerald-600 font-bold text-emerald-600"
               : "font-medium text-[#64748b] hover:text-slate-800"
           }`}>{t}</button>
         ))}

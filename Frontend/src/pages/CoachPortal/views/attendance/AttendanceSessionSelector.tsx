@@ -42,11 +42,11 @@ export default function AttendanceSessionSelector({
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
       {/* Top Banner / Selector Bar */}
-      <div className="p-5 md:p-6 bg-gradient-to-r from-slate-50 via-white to-orange-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-orange-950/20 border-b border-slate-200/70 dark:border-slate-800">
+      <div className="p-5 md:p-6 bg-gradient-to-r from-slate-50 via-white to-emerald-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-emerald-950/20 border-b border-slate-200/70 dark:border-slate-800">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="space-y-1.5 flex-1">
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
                 <Dumbbell className="w-3.5 h-3.5" />
                 {session.sport || "Lớp nhóm"}
               </span>
@@ -97,7 +97,7 @@ export default function AttendanceSessionSelector({
               <select
                 value={selectedSessionId || ""}
                 onChange={(e) => onSessionChange(e.target.value)}
-                className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl pl-3.5 pr-10 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500/20 shadow-xs"
+                className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl pl-3.5 pr-10 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-xs"
               >
                 {activeSessions.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -115,7 +115,7 @@ export default function AttendanceSessionSelector({
       <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-slate-100 dark:divide-slate-800 text-xs sm:text-sm">
         {/* Time */}
         <div className="p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-900/30 text-slate-600 dark:text-slate-400 flex items-center justify-center shrink-0">
             <Clock className="w-4 h-4" />
           </div>
           <div>
@@ -128,7 +128,7 @@ export default function AttendanceSessionSelector({
 
         {/* Date */}
         <div className="p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
             <Calendar className="w-4 h-4" />
           </div>
           <div>
@@ -154,7 +154,7 @@ export default function AttendanceSessionSelector({
 
         {/* Capacity */}
         <div className="p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
             <Users className="w-4 h-4" />
           </div>
           <div>

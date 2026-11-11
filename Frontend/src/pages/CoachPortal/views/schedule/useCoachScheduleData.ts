@@ -82,7 +82,9 @@ export function useCoachScheduleData(weekDates: string[]) {
   }, [currentCoachName]);
 
   const allUnifiedSessions: UnifiedScheduleItem[] = useMemo(() => {
-    const groupItems: UnifiedScheduleItem[] = rawSessions.map((s) => ({
+    const groupItems: UnifiedScheduleItem[] = rawSessions
+      .filter((s) => s.approvalStatus === "approved" || !s.approvalStatus)
+      .map((s) => ({
       id: s.id,
       type: "group" as const,
       classId: s.classId,

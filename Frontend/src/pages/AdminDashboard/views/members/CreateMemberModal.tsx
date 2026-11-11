@@ -75,7 +75,7 @@ export function CreateMemberModal({
             <input
               name="fullName"
               required
-              className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500"
+              className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-slate-500"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">
@@ -84,7 +84,7 @@ export function CreateMemberModal({
               name="email"
               type="email"
               required
-              className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500"
+              className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-slate-500"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">
@@ -92,7 +92,7 @@ export function CreateMemberModal({
             <input
               name="phoneNumber"
               required
-              className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500"
+              className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-slate-500"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">
@@ -102,21 +102,21 @@ export function CreateMemberModal({
               type="password"
               minLength={6}
               required
-              className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500"
+              className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-slate-500"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">
             Ngày sinh
             <DateInput
               name="dateOfBirth"
-              className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500"
+              className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-slate-500"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm font-semibold text-[#0f172a]">
             Giới tính
             <select
               name="gender"
-              className="rounded-lg border border-[#cbd5e1] bg-white px-3 py-2.5 font-normal outline-none focus:border-blue-500"
+              className="rounded-lg border border-[#cbd5e1] bg-white px-3 py-2.5 font-normal outline-none focus:border-slate-500"
             >
               <option value="">Chưa cập nhật</option>
               <option value="Nam">Nam</option>
@@ -128,7 +128,7 @@ export function CreateMemberModal({
             Liên hệ khẩn cấp
             <input
               name="emergencyContact"
-              className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-blue-500"
+              className="rounded-lg border border-[#cbd5e1] px-3 py-2.5 font-normal outline-none focus:border-slate-500"
             />
           </label>
         </div>
@@ -144,7 +144,7 @@ export function CreateMemberModal({
           <button
             type="submit"
             disabled={isCreating}
-            className="rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60 cursor-pointer hover:bg-rose-700 transition-all shadow-md shadow-rose-600/20"
+            className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60 cursor-pointer hover:bg-emerald-700 transition-all shadow-md shadow-emerald-600/20"
           >
             {isCreating ? "Đang tạo..." : "Tạo hội viên"}
           </button>

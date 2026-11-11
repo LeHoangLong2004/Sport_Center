@@ -56,7 +56,7 @@ public sealed partial class ClassService
             request.ScheduleTime
         );
 
-        foreach (var c in existingClasses.Where(c => c.Status && c.ApprovalStatus != "rejected"))
+        foreach (var c in existingClasses.Where(c => c.Status && string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase)))
         {
             if (Overlaps(newStart, newEnd, c.ScheduleTime, c.DurationMinutes))
             {
@@ -84,7 +84,7 @@ public sealed partial class ClassService
             request.FacilityId,
             request.ScheduleTime
         );
-        foreach (var c in existingFacilityClasses.Where(c => c.Status && c.ApprovalStatus != "rejected"))
+        foreach (var c in existingFacilityClasses.Where(c => c.Status && string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase)))
         {
             if (Overlaps(newStart, newEnd, c.ScheduleTime, c.DurationMinutes))
             {

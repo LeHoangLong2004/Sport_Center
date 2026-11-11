@@ -134,16 +134,16 @@ export default function AttendanceMemberList({
                       <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
                         {m.name}
                       </h4>
-                      <span className="font-mono text-[11px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium">
+                      <span className="text-[11px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium">
                         {m.code || `#MEM-${m.id.slice(0, 4)}`}
                       </span>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                      {m.phone && <span className="font-mono">{m.phone}</span>}
+                      {m.phone && <span className="">{m.phone}</span>}
                       {m.phone && m.goal && <span>•</span>}
                       {m.goal && (
-                        <span className="text-orange-600 dark:text-orange-400 font-medium truncate max-w-[160px]">
+                        <span className="text-emerald-600 dark:text-emerald-400 font-medium truncate max-w-[160px]">
                           Mục tiêu: {m.goal}
                         </span>
                       )}
@@ -199,7 +199,7 @@ export default function AttendanceMemberList({
                       </span>
                     )}
                     {isPending && (
-                      <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                      <span className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-400">
                         <Clock className="w-3 h-3" /> Chưa điểm danh
                       </span>
                     )}
@@ -216,7 +216,7 @@ export default function AttendanceMemberList({
                       placeholder="Ghi chú buổi tập (thể lực, lý do...)"
                       value={note}
                       onChange={(e) => onNoteChange(m.id, e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 disabled:cursor-not-allowed shadow-2xs"
+                      className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:cursor-not-allowed shadow-2xs"
                     />
                   </div>
 
@@ -233,7 +233,7 @@ export default function AttendanceMemberList({
                               onStatusChange(m.id, qn.setStatus);
                             }
                           }}
-                          className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 hover:bg-orange-50 hover:text-orange-600 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
+                          className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
                         >
                           {qn.label}
                         </button>

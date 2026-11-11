@@ -16,7 +16,7 @@ export const BookingClassSummary: React.FC<BookingClassSummaryProps> = ({ info }
           <span
             className={
               isCounter
-                ? "text-amber-600 dark:text-amber-400 font-black"
+                ? "text-slate-600 dark:text-slate-400 font-black"
                 : "text-emerald-600 dark:text-emerald-400 font-black"
             }
           >
@@ -25,7 +25,7 @@ export const BookingClassSummary: React.FC<BookingClassSummaryProps> = ({ info }
         </div>
         <div className="flex justify-between text-slate-500">
           <span>{isCounter ? "Mã phiếu hẹn:" : "Mã hóa đơn:"}</span>
-          <span className="font-mono font-bold text-slate-700 dark:text-slate-300">
+          <span className="font-bold text-slate-700 dark:text-slate-300">
             {info.invoiceId}
           </span>
         </div>
@@ -33,10 +33,14 @@ export const BookingClassSummary: React.FC<BookingClassSummaryProps> = ({ info }
           <span>Hình thức thanh toán:</span>
           <span
             className={`font-bold ${
-              isCounter ? "text-amber-600 dark:text-amber-400" : "text-slate-700 dark:text-slate-300"
+              isCounter ? "text-slate-600 dark:text-slate-400" : "text-slate-700 dark:text-slate-300"
             }`}
           >
-            {isCounter ? "Thanh toán tại quầy lễ tân" : "Thanh toán trực tuyến"}
+            {isCounter
+              ? "Thanh toán tại quầy lễ tân"
+              : info.paymentMethod === "wallet"
+              ? "Ví thành viên SmartGym"
+              : "Thanh toán trực tuyến"}
           </span>
         </div>
         <div className="flex justify-between text-slate-500 items-center">
@@ -44,7 +48,7 @@ export const BookingClassSummary: React.FC<BookingClassSummaryProps> = ({ info }
           <span
             className={`font-bold uppercase text-[10px] px-2 py-0.5 rounded-md ${
               isCounter
-                ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300"
+                ? "bg-slate-100 text-slate-800 dark:bg-slate-950/60 dark:text-slate-300 border border-slate-300"
                 : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
             }`}
           >
@@ -66,7 +70,7 @@ export const BookingClassSummary: React.FC<BookingClassSummaryProps> = ({ info }
       </div>
 
       {isCounter && (
-        <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-900 dark:text-amber-200 leading-relaxed space-y-1">
+        <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-900 dark:text-slate-200 leading-relaxed space-y-1">
           <p className="font-bold flex items-center gap-1.5 text-xs">
             <span>📍</span> Hướng dẫn nhận vé vào lớp tại quầy:
           </p>
@@ -75,7 +79,7 @@ export const BookingClassSummary: React.FC<BookingClassSummaryProps> = ({ info }
           </p>
           <p>
             • Đọc <strong>Số điện thoại</strong> hoặc xuất trình mã phiếu{" "}
-            <strong className="font-mono text-amber-950 dark:text-amber-100 font-bold">
+            <strong className="text-slate-950 dark:text-slate-100 font-bold">
               {info.invoiceId}
             </strong>{" "}
             để Lễ tân thu tiền ({info.paidAmount?.toLocaleString("vi-VN")} đ) bằng tiền mặt / thẻ POS và kích hoạt thẻ vào phòng.
