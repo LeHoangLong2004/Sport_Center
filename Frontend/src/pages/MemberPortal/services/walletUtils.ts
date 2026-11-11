@@ -87,8 +87,6 @@ export function isMockTransaction(tx: WalletTransaction): boolean {
   if (/^WTX-\d{8}-001$/.test(tx.id) && tx.amount === 500000) return true;
   if (tx.note?.includes("khả dụng ban đầu")) return true;
   if (tx.amount === 500000 && tx.note === "Nạp tiền ví hội viên SportCenter") return true;
-  // Loại bỏ các giao dịch nạp nhầm từ luồng đặt lịch lớp học (DATLOP)
-  if (tx.type === "topup" && tx.note?.includes("DATLOP")) return true;
   return false;
 }
 
@@ -113,12 +111,11 @@ export function sanitizeWalletData(raw: any): MemberWalletData {
     }
   }
 
-  // Nếu có giao dịch rác/nạp nhầm bị lọc bỏ (như DATLOP), đồng bộ lại balance theo transactions hợp lệ
-  const hasRemovedTx = rawTransactions.length !== cleanTransactions.length;
+  // Số dư luôn tin tưởng giá trị từ server; chỉ tự tính từ lịch sử khi server không trả số dư hợp lệ
   const rawBal = typeof raw.balance === "number" ? raw.balance : Number(raw.balance);
   let finalBalance: number;
 
-  if (!hasRemovedTx && !isNaN(rawBal) && rawBal >= 0 && raw.balance !== undefined && raw.balance !== null) {
+  if (!isNaN(rawBal) && rawBal >= 0 && raw.balance !== undefined && raw.balance !== null) {
     finalBalance = rawBal;
   } else {
     finalBalance = cleanTransactions.length === 0 ? 0 : Math.max(0, calculatedBalance);

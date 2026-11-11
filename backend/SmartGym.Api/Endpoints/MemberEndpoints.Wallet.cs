@@ -226,14 +226,23 @@ namespace SmartGym.Api.Endpoints
             try
             {
                 var txGuid = Guid.TryParse(txId, out var g) ? g : Guid.NewGuid();
-                await db.Database.ExecuteSqlInterpolatedAsync($@"
+                // Không dùng ON CONFLICT (reference_code) vì DB thực tế có thể KHÔNG có unique constraint
+                // trên cột này -> câu lệnh lỗi, giao dịch & số dư không được lưu, refresh trang sẽ mất tiền.
+                var inserted = await db.Database.ExecuteSqlInterpolatedAsync($@"
                     INSERT INTO wallet_transactions (
                         id, user_id, type, amount, balance_after, method, status, reference_code, note, created_at
-                    ) VALUES (
-                        {txGuid}, {userGuid}, {type}, {amount}, {balanceAfter}, {method}, {status}, {txId}, {note}, {createdAt}
                     )
-                    ON CONFLICT (reference_code) DO NOTHING;
+                    SELECT {txGuid}, {userGuid}, {type}, {amount}, {balanceAfter}, {method}, {status}, {txId}, {note}, {createdAt}
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM wallet_transactions WHERE reference_code = {txId} OR id = {txGuid}
+                    );
                 ");
+
+                if (inserted == 0)
+                {
+                    // Giao dịch đã tồn tại -> không cập nhật lại số dư để tránh cộng/trừ trùng
+                    return true;
+                }
 
                 try
                 {
@@ -244,7 +253,10 @@ namespace SmartGym.Api.Endpoints
                         DO UPDATE SET balance = {balanceAfter}, last_updated_at = now();
                     ");
                 }
-                catch { }
+                catch (Exception balEx)
+                {
+                    Console.WriteLine($"[Wallet DB Error] Failed to update balance: {balEx.Message}");
+                }
 
                 return true;
             }
