@@ -98,25 +98,26 @@ export function sanitizeWalletData(raw: any): MemberWalletData {
   const rawTransactions: WalletTransaction[] = Array.isArray(raw.transactions) ? raw.transactions : [];
   const cleanTransactions = rawTransactions.filter(tx => !isMockTransaction(tx));
 
-  // Ưu tiên số dư khả dụng thực tế từ server (raw.balance)
+  let calculatedBalance = 0;
+  for (const tx of cleanTransactions) {
+    const amt = Number(tx.amount) || 0;
+    const isCompleted = tx.status === "completed" || (!tx.status && tx.status !== "pending");
+    if (isCompleted) {
+      if (tx.type === "topup" || tx.type === "refund") {
+        calculatedBalance += amt;
+      } else if (tx.type === "payment") {
+        calculatedBalance -= amt;
+      }
+    }
+  }
+
+  // Số dư luôn tin tưởng giá trị từ server; chỉ tự tính từ lịch sử khi server không trả số dư hợp lệ
   const rawBal = typeof raw.balance === "number" ? raw.balance : Number(raw.balance);
   let finalBalance: number;
 
   if (!isNaN(rawBal) && rawBal >= 0 && raw.balance !== undefined && raw.balance !== null) {
     finalBalance = rawBal;
   } else {
-    let calculatedBalance = 0;
-    for (const tx of cleanTransactions) {
-      const amt = Number(tx.amount) || 0;
-      const isCompleted = tx.status === "completed" || (!tx.status && tx.status !== "pending");
-      if (isCompleted) {
-        if (tx.type === "topup" || tx.type === "refund") {
-          calculatedBalance += amt;
-        } else if (tx.type === "payment") {
-          calculatedBalance -= amt;
-        }
-      }
-    }
     finalBalance = cleanTransactions.length === 0 ? 0 : Math.max(0, calculatedBalance);
   }
 
