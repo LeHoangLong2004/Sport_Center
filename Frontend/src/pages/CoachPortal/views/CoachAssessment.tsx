@@ -67,32 +67,30 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
       // 2. Kiểm tra học viên có đăng ký buổi học này hay không
       const registeredInSession =
         Array.isArray(s.registeredMemberIds) &&
-        s.registeredMemberIds.some((id) => String(id) === String(selectedMemberId));
+        s.registeredMemberIds.some((id) => String(id).toLowerCase() === String(selectedMemberId).toLowerCase());
 
       const memberHasClass =
         Array.isArray(selectedMember?.classIds) &&
         selectedMember.classIds.some(
-          (cid) => String(cid) === String(s.id) || String(cid) === String(s.classId)
+          (cid) => String(cid).toLowerCase() === String(s.id).toLowerCase() || String(cid).toLowerCase() === String(s.classId).toLowerCase()
         );
 
-      const isRegistered = registeredInSession || memberHasClass;
-      if (!isRegistered) return false;
-
-      // 3. Buổi học phải đã hoặc đang diễn ra (không đánh giá buổi sắp diễn ra trong tương lai)
-      const todayIso = new Date().toISOString().split("T")[0];
-      const isPastOrToday = s.date ? s.date <= todayIso : true;
-      const isEligibleTime = s.status === "hoàn thành" || s.status === "đang diễn ra" || isPastOrToday;
-
-      return isEligibleTime;
+      return registeredInSession || memberHasClass;
     });
   }, [selectedMemberId, sessions, members]);
 
-  // Reset selectedSessionId if it's no longer eligible
+  // Tự động chọn buổi học hợp lệ đầu tiên hoặc chế độ đánh giá chung
   useEffect(() => {
-    if (selectedSessionId && !eligibleSessions.some((s) => s.id === selectedSessionId)) {
-      setSelectedSessionId("");
+    if (!selectedSessionId) {
+      if (eligibleSessions.length > 0) {
+        setSelectedSessionId(eligibleSessions[0].id);
+      } else if (selectedMemberId) {
+        setSelectedSessionId("general");
+      }
+    } else if (selectedSessionId !== "general" && !eligibleSessions.some((s) => s.id === selectedSessionId)) {
+      setSelectedSessionId(eligibleSessions.length > 0 ? eligibleSessions[0].id : "general");
     }
-  }, [eligibleSessions, selectedSessionId]);
+  }, [eligibleSessions, selectedSessionId, selectedMemberId]);
 
   const memberAssessments = useMemo(
     () =>
@@ -119,7 +117,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
     const id = `as_${Date.now()}`;
     setDraft({
       id,
-      sessionId: selectedSessionId,
+      sessionId: selectedSessionId === "general" ? undefined : selectedSessionId,
       memberId: selectedMemberId,
       completion: 80,
       metrics: [{ label: "", value: "", unit: "" }],
@@ -146,9 +144,13 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
         };
       });
 
+    const targetSessionId = draft.sessionId && draft.sessionId !== "general"
+      ? draft.sessionId
+      : (selectedSessionId && selectedSessionId !== "general" ? selectedSessionId : "");
+
     const full: AssessmentRecord = {
       id: draft.id || `as_${Date.now()}`,
-      sessionId: draft.sessionId || selectedSessionId,
+      sessionId: targetSessionId,
       memberId: draft.memberId || selectedMemberId,
       completion: draft.completion || 0,
       metrics: sanitizedMetrics,
@@ -220,17 +222,20 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
           <select
             value={selectedSessionId}
             onChange={(e) => setSelectedSessionId(e.target.value)}
-            disabled={eligibleSessions.length === 0}
-            className={`${selectCls} ${eligibleSessions.length === 0 ? "opacity-60 cursor-not-allowed" : ""}`}
+            className={selectCls}
           >
-            <option value="">
-              {eligibleSessions.length === 0
-                ? "-- Học viên chưa có buổi học đủ điều kiện --"
-                : "-- Chọn buổi --"}
-            </option>
-            {eligibleSessions.map((s) => (
-              <option key={s.id} value={s.id}>{s.className} — {s.date}</option>
-            ))}
+            {eligibleSessions.length === 0 ? (
+              <option value="general">-- Đánh giá chung / Định kỳ --</option>
+            ) : (
+              <>
+                {eligibleSessions.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.className} — {s.date} {s.startTime ? `(${s.startTime})` : ""}
+                  </option>
+                ))}
+                <option value="general">-- Đánh giá chung / Định kỳ --</option>
+              </>
+            )}
           </select>
         </div>
         <button
@@ -259,13 +264,17 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
         ) : (
           <div className="divide-y divide-slate-100 dark:divide-slate-700">
             {memberAssessments.map((a) => {
-              const s = sessions.find((x) => x.id === a.sessionId);
+              const s = a.sessionId ? sessions.find((x) => x.id === a.sessionId) : null;
               return (
                 <div key={a.id} className="px-4 py-4 hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div>
-                      <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{s?.className || a.sessionId}</div>
-                      <div className="text-xs text-slate-400 mt-0.5">{s?.date} · {new Date(a.createdAt).toLocaleDateString("vi-VN")}</div>
+                      <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm">
+                        {s?.className || (a.sessionId ? a.sessionId : "Đánh giá chung / Định kỳ")}
+                      </div>
+                      <div className="text-xs text-slate-400 mt-0.5">
+                        {s?.date ? `${s.date} · ` : ""}{new Date(a.createdAt).toLocaleDateString("vi-VN")}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="text-right">
@@ -312,9 +321,13 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
                   <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                     Học viên: {currentMember?.name || "Học viên"}
                   </span>
-                  {currentSession && (
+                  {currentSession ? (
                     <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-200/70 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                       Buổi: {currentSession.className} ({currentSession.date})
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-200/70 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                      Đánh giá chung / Định kỳ
                     </span>
                   )}
                 </div>
