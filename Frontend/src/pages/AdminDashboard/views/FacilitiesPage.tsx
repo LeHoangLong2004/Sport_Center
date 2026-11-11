@@ -1,212 +1,43 @@
-import React, { useState, useEffect } from 'react';
-import { toast } from 'sonner';
+import React from 'react';
 import { Building2, Dumbbell } from 'lucide-react';
-import { SportsTableCard, FacilitiesTableCard, SportItem, FacilityItem } from './FacilitiesCards';
+import { SportsTableCard, FacilitiesTableCard } from './FacilitiesCards';
 import { FacilityFormModal, FacilityDeleteModal } from './FacilitiesModals';
 import { CoachSportAssignmentModal } from './CoachSportAssignmentModal';
+import { useFacilities } from './facilities/useFacilities';
 
-function getAuthToken() {
-  return localStorage.getItem('token') || localStorage.getItem('accessToken') || '';
-}
-
-async function persistImageUrl(imageUrl: string, folder: 'sports' | 'facilities', token: string) {
-  if (!imageUrl.startsWith('data:image/')) return imageUrl;
-
-  const response = await fetch(imageUrl);
-  const blob = await response.blob();
-  const formData = new FormData();
-  formData.append('file', blob, `uploaded-${Date.now()}.jpg`);
-  formData.append('folder', folder);
-
-  const uploadResponse = await fetch('/api/upload/image', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
-    body: formData,
-  });
-  const uploadData = await uploadResponse.json().catch(() => null);
-  if (!uploadResponse.ok || !uploadData?.url) {
-    throw new Error(uploadData?.message || 'Không thể lưu ảnh lên server.');
-  }
-
-  return uploadData.url as string;
-}
-
+/**
+ * Trang quản lý Bộ môn thể thao (Sports) & Cơ sở vật chất / Phòng tập (Facilities).
+ * Đã tách hook quản lý nghiệp vụ và API client vào thư mục `facilities/`.
+ */
 export function FacilitiesPage() {
-  const [sports, setSports] = useState<SportItem[]>([]);
-  const [facilities, setFacilities] = useState<FacilityItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'sport' | 'facility'>('sport');
-
-  // Form modal state
-  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
-  const [activeType, setActiveType] = useState<'sport' | 'facility' | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [name, setName] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [address, setAddress] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-
-  // Delete modal state
-  const [deleteTarget, setDeleteTarget] = useState<{ type: 'sport' | 'facility'; id: string; name: string } | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  // Coach assignment modal state
-  const [assignmentSport, setAssignmentSport] = useState<SportItem | null>(null);
-
-  useEffect(() => {
-    Promise.all([fetch('/api/sports'), fetch('/api/facilities')])
-      .then(async ([sRes, fRes]) => {
-        if (sRes.ok) setSports(await sRes.json());
-        if (fRes.ok) setFacilities(await fRes.json());
-      })
-      .catch((err) => {
-        console.error('Lỗi tải danh sách:', err);
-        toast.error('Không thể tải dữ liệu bộ môn & phòng tập.');
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-  const openCreateModal = (type: 'sport' | 'facility') => {
-    setActiveType(type);
-    setModalMode('create');
-    setEditingId(null);
-    setName('');
-    setImageUrl('');
-    setAddress('');
-  };
-
-  const openEditModal = (type: 'sport' | 'facility', item: SportItem | FacilityItem) => {
-    setActiveType(type);
-    setModalMode('edit');
-    setEditingId(item.id);
-    setName(item.name);
-    setImageUrl((item as SportItem).imageUrl || '');
-    setAddress((item as FacilityItem).address || '');
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast.error('Vui lòng chọn file hình ảnh hợp lệ (PNG, JPG, WEBP,...).');
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('Kích thước ảnh không được vượt quá 10MB.');
-      return;
-    }
-
-    setIsUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('folder', activeType === 'sport' ? 'sports' : 'facilities');
-      const token = getAuthToken();
-      const res = await fetch('/api/upload/image', {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-      });
-      const data = await res.json().catch(() => null);
-      if (res.ok && data?.url) {
-        setImageUrl(data.url);
-        toast.success('Đã tải ảnh thành công! Bấm "Lưu thay đổi" (hoặc "Xác nhận thêm") để lưu.');
-      } else {
-        toast.error(data?.message || 'Tải ảnh thất bại.');
-      }
-    } catch {
-      toast.error('Lỗi khi tải ảnh lên server.');
-    } finally {
-      setIsUploading(false);
-      e.target.value = '';
-    }
-  };
-
-  const handleSave = async () => {
-    if (!name.trim() || !activeType) return;
-    setIsSubmitting(true);
-    try {
-      const token = getAuthToken();
-      if (!token) {
-        toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-        return;
-      }
-      const isSport = activeType === 'sport';
-      const isEdit = modalMode === 'edit';
-      const endpoint = isSport ? `/api/sports${isEdit ? `/${editingId}` : ''}` : `/api/facilities${isEdit ? `/${editingId}` : ''}`;
-      const method = isEdit ? 'PUT' : 'POST';
-
-      const savedImageUrl = await persistImageUrl(imageUrl.trim(), isSport ? 'sports' : 'facilities', token);
-      const body = isSport
-        ? { name: name.trim(), imageUrl: savedImageUrl }
-        : { name: name.trim(), imageUrl: savedImageUrl, address: address.trim() };
-
-      const res = await fetch(endpoint, {
-        method,
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(body),
-      });
-
-      if (res.ok) {
-        const savedItem = await res.json();
-        if (isSport) {
-          setSports((prev) =>
-            isEdit
-              ? prev.map((s) => (s.id.toLowerCase() === editingId?.toLowerCase() ? { ...s, ...savedItem } : s))
-              : [...prev, savedItem]
-          );
-        } else {
-          setFacilities((prev) =>
-            isEdit
-              ? prev.map((f) => (f.id.toLowerCase() === editingId?.toLowerCase() ? { ...f, ...savedItem } : f))
-              : [...prev, savedItem]
-          );
-        }
-        toast.success(isEdit ? 'Cập nhật thành công!' : 'Thêm mới thành công!');
-        setActiveType(null);
-      } else {
-        const errData = await res.json().catch(() => null);
-        toast.error(errData?.message || 'Thao tác thất bại.');
-      }
-    } catch {
-      toast.error('Lỗi kết nối máy chủ.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    setIsDeleting(true);
-    try {
-      const token = getAuthToken();
-      const endpoint = deleteTarget.type === 'sport' ? `/api/sports/${deleteTarget.id}` : `/api/facilities/${deleteTarget.id}`;
-      const res = await fetch(endpoint, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.ok) {
-        if (deleteTarget.type === 'sport') {
-          setSports((prev) => prev.filter((s) => s.id !== deleteTarget.id));
-        } else {
-          setFacilities((prev) => prev.filter((f) => f.id !== deleteTarget.id));
-        }
-        toast.success(`Đã xóa ${deleteTarget.type === 'sport' ? 'bộ môn' : 'phòng tập'} thành công!`);
-        setDeleteTarget(null);
-      } else {
-        const errData = await res.json().catch(() => null);
-        toast.error(errData?.message || 'Không thể xóa mục này.');
-      }
-    } catch {
-      toast.error('Lỗi kết nối khi xóa.');
-    } finally {
-      setIsDeleting(false);
-    }
-  };
+  const {
+    sports,
+    facilities,
+    loading,
+    activeTab,
+    setActiveTab,
+    modalMode,
+    activeType,
+    name,
+    setName,
+    imageUrl,
+    setImageUrl,
+    address,
+    setAddress,
+    isSubmitting,
+    isUploading,
+    deleteTarget,
+    setDeleteTarget,
+    isDeleting,
+    assignmentSport,
+    setAssignmentSport,
+    openCreateModal,
+    openEditModal,
+    closeModal,
+    handleFileUpload,
+    handleSave,
+    handleDelete,
+  } = useFacilities();
 
   return (
     <div className="flex flex-col gap-6 p-6 lg:p-8 flex-1 min-h-0 overflow-y-auto">
@@ -280,7 +111,7 @@ export function FacilitiesPage() {
           isSubmitting={isSubmitting}
           isUploading={isUploading}
           onFileUpload={handleFileUpload}
-          onClose={() => setActiveType(null)}
+          onClose={closeModal}
           onSave={handleSave}
         />
       )}
