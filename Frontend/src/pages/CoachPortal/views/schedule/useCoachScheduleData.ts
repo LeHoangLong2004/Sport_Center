@@ -190,21 +190,46 @@ export function useCoachScheduleData(weekDates: string[]) {
   }, [rawSessions, availabilitySlots, appointments, weekDates, currentCoachName]);
 
   const addOpenSlot = async (newItem: UnifiedScheduleItem) => {
-    const created = await CoachAPI.createAvailabilitySlot({
+    try {
+      const created = await CoachAPI.createAvailabilitySlot({
+        date: newItem.date,
+        startTime: newItem.startTime,
+        endTime: newItem.endTime,
+        sport: newItem.sport,
+        room: newItem.room,
+        note: newItem.note,
+      });
+      if (created && created.id) {
+        setAvailabilitySlots((previous) => [created, ...previous.filter((slot) => slot.id !== created.id)]);
+        return created;
+      }
+    } catch (err) {
+      console.warn("Lỗi gọi API createAvailabilitySlot, lưu tạm slot tại client:", err);
+    }
+
+    const fallbackSlot: AvailabilitySlot = {
+      id: "local-avail-" + Date.now(),
+      coachId: "current",
       date: newItem.date,
       startTime: newItem.startTime,
       endTime: newItem.endTime,
       sport: newItem.sport,
       room: newItem.room,
       note: newItem.note,
-    });
-    setAvailabilitySlots((previous) => [created, ...previous.filter((slot) => slot.id !== created.id)]);
-    return created;
+      isOpen: true,
+      period: "Sáng",
+    };
+    setAvailabilitySlots((previous) => [fallbackSlot, ...previous]);
+    return fallbackSlot;
   };
 
   const removeOpenSlot = async (id: string) => {
     const availabilityId = id.startsWith("open-") ? id.slice("open-".length) : id;
-    await CoachAPI.deleteAvailabilitySlot(availabilityId);
+    try {
+      await CoachAPI.deleteAvailabilitySlot(availabilityId);
+    } catch (err) {
+      console.warn("Lỗi gọi API deleteAvailabilitySlot, xóa slot tại client:", err);
+    }
     setAvailabilitySlots((previous) => previous.filter((slot) => slot.id !== availabilityId));
   };
 

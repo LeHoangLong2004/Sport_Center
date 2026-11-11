@@ -1,5 +1,4 @@
-import { FormEvent, useMemo, useState } from "react"
-import MemberPortalV2, { NewMemberPage } from "../../MemberPortalV2"
+import { FormEvent, useMemo, useState } from "react";
 
 export type MemberPage =
   | "overview"
@@ -10,7 +9,10 @@ export type MemberPage =
   | "shop"
   | "reports"
   | "profile"
-  | NewMemberPage
+  | "schedule"
+  | "workout"
+  | "ai"
+  | "success";
 
 export const assetRoots = {
   overview: "/assets/member-dashboard",
@@ -57,58 +59,18 @@ export const iconNames = {
   },
 }
 
-export const classItems = [
-  {
-    title: "Yoga Flow",
-    coach: "Mai Phương",
-    schedule: "Thứ Tư, 23/09 • 08:00 (60 phút)",
-    room: "Phòng: Studio 1 (Tầng 2)",
-    spaces: "Còn 8 chỗ",
-    image: "60eeb.png",
-  },
-  {
-    title: "Functional HIIT",
-    coach: "Trần Khoa",
-    schedule: "Thứ Ba, 22/09 • 18:30 (45 phút)",
-    room: "Phòng: Arena 2 (Tầng 1)",
-    spaces: "Còn 5 chỗ",
-    image: "340d3.png",
-  },
-  {
-    title: "Zumba Dance",
-    coach: "Hoàng Anh",
-    schedule: "Thứ Năm, 24/09 • 19:30 (60 phút)",
-    room: "Phòng: Studio 3 (Tầng 3)",
-    spaces: "Còn 12 chỗ",
-    image: "b0a09.png",
-  },
-  {
-    title: "Kickboxing Basic",
-    coach: "Nguyễn Hùng",
-    schedule: "Thứ Sáu, 25/09 • 06:30 (60 phút)",
-    room: "Phòng: Combat Zone",
-    spaces: "Còn 4 chỗ",
-    image: "25c0c.png",
-  },
-  {
-    title: "Pilates Core",
-    coach: "Minh Thư",
-    schedule: "Thứ Bảy, 26/09 • 09:00 (60 phút)",
-    room: "Phòng: Studio 2 (Tầng 2)",
-    spaces: "Còn 2 chỗ",
-    image: "5709f.png",
-  },
-  {
-    title: "Swimming Adv",
-    coach: "Quốc Bảo",
-    schedule: "Chủ Nhật, 27/09 • 17:00 (90 phút)",
-    room: "Phòng: Pool Area (Tầng hầm)",
-    spaces: "Còn 10 chỗ",
-    image: "8b5dc.png",
-  },
-]
+export type ClassItem = {
+  title: string;
+  coach: string;
+  schedule: string;
+  room: string;
+  spaces: string;
+  image: string;
+  id?: string;
+  sportName?: string;
+};
 
-export type ClassItem = (typeof classItems)[number] & { id?: string; sportName?: string; }
+export const classItems: ClassItem[] = [];
 
 type PortalVisualPage = keyof typeof assetRoots
 

@@ -12,6 +12,7 @@ import MemberReviews from "./views/MemberReviews";
 import MemberChat from "./views/MemberChat";
 import MemberSupport from "./views/MemberSupport";
 import MemberProfileModern from "./views/MemberProfileModern";
+import MemberProgress from "./views/MemberProgress";
 import { ProductShopPage, type ProductOrder } from "./views/ProductShopPage";
 import { ProductPaymentFlow } from "../PaymentFlow/ProductPaymentFlow";
 import { CatalogPackage, PackagePeriod } from "../../services/packageApi";
@@ -72,8 +73,9 @@ export default function MemberPortal({
       attendance: "attendance",
       diemdanh: "attendance",
       "diem-danh": "attendance",
-      reports: "dashboard",
-      progress: "dashboard",
+      reports: "progress",
+      progress: "progress",
+      inbody: "progress",
       reviews: "reviews",
       chat: "chat",
       messages: "chat",
@@ -229,6 +231,8 @@ export default function MemberPortal({
         );
       case "profile":
         return <MemberProfileModern onNavigate={navigateTo} />;
+      case "progress":
+        return <MemberProgress />;
       default:
         return <MemberDashboard onNavigate={navigateTo} />;
     }

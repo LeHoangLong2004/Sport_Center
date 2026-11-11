@@ -9,6 +9,7 @@ export function useMemberBookingData() {
   const [groupClasses, setGroupClasses] = useState<any[]>([]);
   const [ptSlots, setPtSlots] = useState<any[]>([]);
   const [coaches, setCoaches] = useState<any[]>([]);
+  const [sports, setSports] = useState<Array<{ id: string; name: string }>>([]);
   const [loadingGroupClasses, setLoadingGroupClasses] = useState(true);
   const [refreshingGroupClasses, setRefreshingGroupClasses] = useState(false);
   const [groupClassesError, setGroupClassesError] = useState<string | null>(null);
@@ -19,14 +20,16 @@ export function useMemberBookingData() {
     setGroupClassesError(null);
 
     try {
-      const [availableClasses, memberSchedule, availablePtSlots, coachesList] = await Promise.all([
+      const [availableClasses, memberSchedule, availablePtSlots, coachesList, sportsList] = await Promise.all([
         MemberAPI.getAvailableClasses(),
         MemberAPI.getMemberSchedule().catch(() => ({ classBookings: [], ptSessions: [] })),
         MemberAPI.getAvailablePtSlots().catch(() => []),
         MemberAPI.getCoaches().catch(() => []),
+        MemberAPI.getSports().catch(() => []),
       ]);
 
       if (Array.isArray(coachesList)) setCoaches(coachesList);
+      if (Array.isArray(sportsList)) setSports(sportsList);
 
       const coachById = new Map(
         (Array.isArray(coachesList) ? coachesList : []).map((coach: any) => [String(coach.id), coach])
@@ -245,6 +248,29 @@ export function useMemberBookingData() {
     [mySessions, isInactiveBookingStatus, getBookingStatus]
   );
 
+  const sportOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    // 1. Nạp các môn thể thao từ Backend API /api/sports
+    sports.forEach((s) => {
+      if (s?.name) {
+        map.set(s.name, s.name);
+      }
+    });
+    // 2. Nạp thêm các bộ môn thực tế từ danh sách lớp học nhóm
+    groupClasses.forEach((c) => {
+      if (c?.sport && !map.has(c.sport)) {
+        map.set(c.sport, c.sport);
+      }
+    });
+    // 3. Nạp thêm từ lịch PT kèm 1-1
+    ptSlots.forEach((slot) => {
+      if (slot?.sport && !map.has(slot.sport)) {
+        map.set(slot.sport, slot.sport);
+      }
+    });
+    return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
+  }, [sports, groupClasses, ptSlots]);
+
   return {
     groupClasses,
     setGroupClasses,
@@ -253,6 +279,8 @@ export function useMemberBookingData() {
     ptSlots,
     setPtSlots,
     coaches,
+    sports,
+    sportOptions,
     loadingGroupClasses,
     refreshingGroupClasses,
     groupClassesError,

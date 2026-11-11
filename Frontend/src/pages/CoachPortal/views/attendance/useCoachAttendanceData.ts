@@ -27,7 +27,7 @@ export function useCoachAttendanceData(initialSessionId: string | null) {
           if (currentId && active.some((s) => s.id === currentId)) {
             return currentId;
           }
-          return active[0]?.id || "";
+          return "";
         });
       } catch {
         setActiveSessions([]);

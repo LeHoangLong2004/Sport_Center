@@ -12,13 +12,10 @@ import {
 } from "../../services/api";
 import type { MemberProfileData } from "../member-profile/types";
 import {
-  DEFAULT_DEMO_MEMBERS,
-  DEFAULT_DEMO_CLASSES,
-  DEFAULT_DEMO_SPORTS,
   ROUTINE_PRESETS,
   type RoutinePreset,
 } from "./types";
-import { cleanEquipmentList, createClientDraft, getDefaultEquipmentForSport } from "./coachAiFallbacks";
+import { cleanEquipmentList, getDefaultEquipmentForSport } from "./coachAiFallbacks";
 
 export function useCoachAi(initialMemberId?: string | null) {
   // 1. Context Data
@@ -88,24 +85,19 @@ export function useCoachAi(initialMemberId?: string | null) {
 
         if (cancelled) return;
 
-        let loadedMembers = Array.isArray(overviewRes?.members) && overviewRes.members.length > 0
+        let loadedMembers = Array.isArray(overviewRes?.members)
           ? overviewRes.members
-          : DEFAULT_DEMO_MEMBERS;
+          : [];
 
-        let loadedClasses = Array.isArray(overviewRes?.classes) && overviewRes.classes.length > 0
+        let loadedClasses = Array.isArray(overviewRes?.classes)
           ? overviewRes.classes
-          : DEFAULT_DEMO_CLASSES;
+          : [];
 
-        let loadedSports = Array.isArray(sportsRes) && sportsRes.length > 0
+        let loadedSports = Array.isArray(sportsRes)
           ? sportsRes
-          : DEFAULT_DEMO_SPORTS;
+          : [];
 
         const loadedPlans = Array.isArray(plansRes) ? plansRes : [];
-
-        // Check if fallback was used
-        if ((!overviewRes?.members || overviewRes.members.length === 0) && (!overviewRes?.classes || overviewRes.classes.length === 0)) {
-          setIsDemoMode(true);
-        }
 
         setMembers(loadedMembers);
         setClasses(loadedClasses);
@@ -142,19 +134,11 @@ export function useCoachAi(initialMemberId?: string | null) {
           setSportId(loadedSports[0].id);
         }
       } catch (err) {
-        console.error("Failed to load Coach AI context, activating fallbacks:", err);
+        console.error("Failed to load Coach AI context:", err);
         if (!cancelled) {
-          setMembers(DEFAULT_DEMO_MEMBERS);
-          setClasses(DEFAULT_DEMO_CLASSES);
-          setSports(DEFAULT_DEMO_SPORTS);
-          const firstDemo = initialMemberId
-            ? (DEFAULT_DEMO_MEMBERS.find((m) => m.id === initialMemberId) || DEFAULT_DEMO_MEMBERS[0])
-            : DEFAULT_DEMO_MEMBERS[0];
-          setTargetId(firstDemo.id);
-          if (firstDemo.goal) setGoal(firstDemo.goal);
-          if (firstDemo.level) setLevel(firstDemo.level);
-          setSportId(DEFAULT_DEMO_SPORTS[0].id);
-          setIsDemoMode(true);
+          setMembers([]);
+          setClasses([]);
+          setSports([]);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -301,29 +285,12 @@ export function useCoachAi(initialMemberId?: string | null) {
       });
       refreshHistory();
     } catch (err: any) {
-      console.warn("AI recommendation fallback activated:", err);
-
-      const selectedSport = sports.find((s) => s.id === sportId)?.name || "Gym";
-      const dynamicEquipment = getDefaultEquipmentForSport(selectedSport);
-
-      const clientDraft = createClientDraft({
-        sportId,
-        selectedSport,
-        goal,
-        level,
-        durationMinutes,
-        equipment: dynamicEquipment,
-        exerciseCount,
-        target,
-        memberProfile: selectedMemberProfile,
-      });
-
-      setCurrentPlan(clientDraft);
-      toast.success("✨ Trợ lý AI đã đề xuất giáo án bài tập phù hợp! Hãy kiểm tra và tinh chỉnh bên dưới.");
+      console.warn("AI recommendation generation failed:", err);
+      toast.error(err?.message || "Không thể kết nối đến AI Service để sinh bài tập. Vui lòng kiểm tra lại dịch vụ Gemini AI.");
       setFeedback({
-        type: "success",
-        title: "✨ Giáo án đề xuất bởi Trợ lý AI",
-        msg: "Giáo án đã được tối ưu hóa dựa trên Mục tiêu, Trình độ và Lịch sử tập luyện của học viên. HLV có thể điều chỉnh liều lượng hoặc bấm duyệt để giao bài.",
+        type: "error",
+        title: "⚠️ Lỗi kết nối AI Service",
+        msg: err?.message || "Hệ thống AI không phản hồi hoặc đã quá thời gian chờ (Timeout). Vui lòng thử lại sau.",
       });
     } finally {
       setIsGenerating(false);

@@ -40,11 +40,34 @@ export default function CoachProfile({ navigateTo }: { navigateTo?: (screen: any
   const [passwordMsg, setPasswordMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
-    CoachAPI.getDashboardStats()
-      .then((data) => {
-        if (data) setStats(data);
-      })
-      .catch(() => {});
+    async function loadStats() {
+      try {
+        const [dashStats, sessions, membersList] = await Promise.all([
+          CoachAPI.getDashboardStats().catch(() => null),
+          CoachAPI.getSchedule().catch(() => []),
+          CoachAPI.getMembers().catch(() => []),
+        ]);
+
+        const totalSessions = dashStats?.totalSessions ?? (Array.isArray(sessions) ? sessions.length : 0);
+        const completedSessions = dashStats?.completedSessions ?? (Array.isArray(sessions) ? sessions.filter((s) => s.status === "hoàn thành").length : 0);
+        const upcomingClasses = dashStats?.upcomingClasses ?? (Array.isArray(sessions) ? sessions.filter((s) => s.status === "sắp diễn ra" || s.status === "đang diễn ra").length : 0);
+        const totalMembers = dashStats?.totalMembers ?? (Array.isArray(membersList) ? membersList.length : 0);
+        const averageRating = typeof dashStats?.averageRating === "number" ? dashStats.averageRating : 5.0;
+        const reviewCount = dashStats?.reviewCount ?? 0;
+
+        setStats({
+          totalSessions,
+          completedSessions,
+          totalMembers,
+          upcomingClasses,
+          averageRating,
+          reviewCount,
+        });
+      } catch (e) {
+        console.error("Lỗi nạp thống kê HLV:", e);
+      }
+    }
+    void loadStats();
   }, []);
 
   useEffect(() => {
@@ -141,17 +164,24 @@ export default function CoachProfile({ navigateTo }: { navigateTo?: (screen: any
     }
   };
 
-  const handleSavePassword = async (_curr: string, _next: string) => {
+  const handleSavePassword = async (curr: string, next: string) => {
     setSavingPassword(true);
     setPasswordMsg(null);
-    setTimeout(() => {
-      setSavingPassword(false);
+    try {
+      await CoachAPI.changePassword({ currentPassword: curr, newPassword: next });
       setPasswordMsg({ type: "success", text: "Đổi mật khẩu thành công!" });
       setTimeout(() => {
         setIsPasswordModalOpen(false);
         setPasswordMsg(null);
-      }, 1000);
-    }, 600);
+      }, 1200);
+    } catch (err: any) {
+      setPasswordMsg({
+        type: "error",
+        text: err?.message || "Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại!",
+      });
+    } finally {
+      setSavingPassword(false);
+    }
   };
 
   if (loading) {

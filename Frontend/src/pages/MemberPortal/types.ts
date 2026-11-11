@@ -10,7 +10,8 @@ export type MemberScreen =
   | "chat"        // 9. Tin nhắn trao đổi với HLV
   | "support"     // 10. Trợ lý AI & Hỗ trợ
   | "shop"        // 11. Cửa hàng sản phẩm
-  | "profile";    // 12. Hồ sơ cá nhân & Đổi mật khẩu
+  | "profile"     // 12. Hồ sơ cá nhân & Đổi mật khẩu
+  | "progress";   // 13. Tiến độ & InBody BMI
 
 export interface MemberSessionItem {
   id: string;

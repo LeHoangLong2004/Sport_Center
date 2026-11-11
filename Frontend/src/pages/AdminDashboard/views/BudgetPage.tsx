@@ -82,26 +82,12 @@ export function BudgetPage() {
         <div className="bg-white border border-[#e2e8f0] flex flex-col gap-4 p-6 rounded-xl shrink-0 w-[320px]">
           <div>
             <p className="font-extrabold text-[#0f172a] text-base">Ngân sách vs Thực chi</p>
-            <p className="text-[#64748b] text-[12px] mt-1">Biểu đồ so sánh lũy kế T7 – T9 (Triệu VNĐ)</p>
+            <p className="text-[#64748b] text-[12px] mt-1">Biểu đồ so sánh lũy kế theo kỳ kế toán</p>
           </div>
-          <div className="flex gap-4 items-end justify-around" style={{height:160}}>
-            {[
-              {planned:220,actual:195,month:"Tháng 7"},
-              {planned:240,actual:220,month:"Tháng 8"},
-              {planned:260,actual:280,month:"Tháng 9"},
-            ].map(bar=>(
-              <div key={bar.month} className="flex flex-col items-center gap-2 flex-1">
-                <div className="flex gap-1 items-end" style={{height:120}}>
-                  <div className="bg-[#e2e8f0] rounded-t-sm w-7" style={{height:`${(bar.planned/280)*100}%`}}/>
-                  <div className={`rounded-t-sm w-7 ${bar.actual>bar.planned?"bg-[#ef4444]":"bg-emerald-600"}`} style={{height:`${(bar.actual/280)*100}%`}}/>
-                </div>
-                <span className="text-[#64748b] text-[11px] whitespace-nowrap">{bar.month}</span>
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-4">
-            <div className="flex gap-1.5 items-center"><div className="bg-[#e2e8f0] rounded-full size-2.5"/><span className="text-[#64748b] text-[12px]">Ngân sách kế hoạch</span></div>
-            <div className="flex gap-1.5 items-center"><div className="bg-emerald-600 rounded-full size-2.5"/><span className="text-[#64748b] text-[12px]">Thực chi thực tế</span></div>
+          <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+            <BarChart3 className="size-8 text-slate-300 mb-2" />
+            <p className="font-semibold text-slate-700 text-xs">Chưa có số liệu thực chi</p>
+            <p className="text-slate-400 text-[11px] mt-1">Số liệu so sánh sẽ tự động cập nhật khi có báo cáo tài chính được duyệt.</p>
           </div>
         </div>
       </div>
