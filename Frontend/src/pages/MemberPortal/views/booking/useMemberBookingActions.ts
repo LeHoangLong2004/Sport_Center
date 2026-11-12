@@ -24,7 +24,7 @@ export function useMemberBookingActions({
 }: UseMemberBookingActionsProps) {
   const [selectedClassDetail, setSelectedClassDetail] = useState<any | null>(null);
   const [classToBook, setClassToBook] = useState<any | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"qr" | "card" | "counter" | "wallet">("wallet");
+  const [paymentMethod, setPaymentMethod] = useState<"qr" | "counter" | "wallet">("wallet");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [bookingSuccessInfo, setBookingSuccessInfo] = useState<any | null>(null);

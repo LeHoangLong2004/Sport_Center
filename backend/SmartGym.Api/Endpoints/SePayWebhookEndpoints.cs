@@ -479,6 +479,26 @@ public static class SePayWebhookEndpoints
             invoice.PaymentMethod = PaymentMethod.BankTransfer;
         }
 
+        // Nếu là gói hội viên (membership) và là đơn nâng cấp có hiệu lực ngay hôm nay, đóng gói cũ
+        if (!string.IsNullOrEmpty(subscription.PackageSnapshotJson) && subscription.PackageSnapshotJson.Contains("\"membership\"") && subscription.StartDate.Date <= now.Date)
+        {
+            var oldMemberships = await db.Subscriptions
+                .Where(s => s.UserId == subscription.UserId
+                         && s.Id != subscription.Id
+                         && s.PaymentStatus == PaymentStatus.Completed
+                         && s.EndDate >= subscription.StartDate
+                         && s.PackageSnapshotJson != null)
+                .ToListAsync(ct);
+
+            foreach (var oldSub in oldMemberships)
+            {
+                if (oldSub.PackageSnapshotJson != null && oldSub.PackageSnapshotJson.Contains("\"membership\""))
+                {
+                    oldSub.EndDate = subscription.StartDate.AddSeconds(-1);
+                }
+            }
+        }
+
         await db.SaveChangesAsync(ct);
 
         LogTransaction(webhook, orderId.ToString(), "confirmed");
