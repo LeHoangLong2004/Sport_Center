@@ -17,8 +17,10 @@ import {
   AlertTriangle,
   Info,
   FileText,
+  ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
+import AttendanceClassSessionsList from "./attendance/AttendanceClassSessionsList";
 import AttendanceSessionSelector from "./attendance/AttendanceSessionSelector";
 import AttendanceMemberList from "./attendance/AttendanceMemberList";
 import AttendanceAuditReasonModal from "./attendance/AttendanceAuditReasonModal";
@@ -53,9 +55,9 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
   const [finalizedMap, setFinalizedMap] = useState<Record<string, boolean>>(() => {
     try {
       const saved = localStorage.getItem("coach_attendance_finalized_sessions");
-      return saved ? JSON.parse(saved) : { s1: true };
+      return saved ? JSON.parse(saved) : {};
     } catch {
-      return { s1: true };
+      return {};
     }
   });
 
@@ -231,45 +233,42 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
     });
   }, [members, search, filterStatus, records]);
 
-  if (!session) {
-    if (isLoadingSessions) {
-      return (
-        <div className="flex flex-col items-center justify-center py-24 text-slate-400 gap-3">
-          <Clock className="w-10 h-10 text-orange-500 animate-spin" />
-          <p className="text-base font-medium">Đang tải lịch dạy và ca học...</p>
-        </div>
-      );
-    }
+  if (!selectedSessionId || !session) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-slate-400 gap-3">
-        <Clock className="w-10 h-10 text-slate-300 dark:text-slate-600" />
-        <p className="text-base font-medium">Không có buổi học nào cần điểm danh.</p>
-        <button
-          type="button"
-          className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 cursor-pointer"
-          onClick={() => navigateTo("schedule")}
-        >
-          Xem lịch dạy →
-        </button>
+      <div className="max-w-6xl mx-auto space-y-6 pb-24 animate-in fade-in duration-300">
+        <AttendanceClassSessionsList
+          activeSessions={activeSessions}
+          isLoading={isLoadingSessions}
+          onSelectSession={handleSessionChange}
+          finalizedMap={finalizedMap}
+        />
       </div>
     );
   }
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-24 animate-in fade-in duration-300">
+      {/* Back to class list button */}
+      <div>
+        <button
+          type="button"
+          onClick={() => {
+            if (hasChanges && !window.confirm("Bạn có thay đổi chưa lưu. Tiếp tục quay lại danh sách lớp?")) {
+              return;
+            }
+            setSelectedSessionId("");
+          }}
+          className="inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-xs cursor-pointer group"
+        >
+          <ArrowLeft className="w-4 h-4 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
+          <span>← Quay lại danh sách lớp học</span>
+        </button>
+      </div>
+
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">
-              HLV / ĐIỂM DANH LỚP
-            </span>
-            <span className="text-xs text-slate-400">·</span>
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-              Quản lý ca dạy
-            </span>
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white mt-1.5">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
             Điểm danh buổi học
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">

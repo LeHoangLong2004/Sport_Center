@@ -38,6 +38,7 @@ export default function MemberBooking({ onNavigate }: Props) {
     ptSlots,
     setPtSlots,
     coaches,
+    sportOptions,
     loadingGroupClasses,
     refreshingGroupClasses,
     groupClassesError,
@@ -191,6 +192,7 @@ export default function MemberBooking({ onNavigate }: Props) {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         coaches={coaches}
+        sports={sportOptions}
       />
 
       {/* TAB 1: GROUP CLASSES */}

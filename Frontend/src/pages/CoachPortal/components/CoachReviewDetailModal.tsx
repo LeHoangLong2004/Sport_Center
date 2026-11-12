@@ -1,7 +1,22 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Star, ShieldCheck, Calendar, Clock, X, MessageSquare, Award, ExternalLink } from "lucide-react";
+import {
+  Star,
+  ShieldCheck,
+  Calendar,
+  Clock,
+  X,
+  MessageSquare,
+  Award,
+  ExternalLink,
+  CornerDownRight,
+  Send,
+  Loader2,
+  CheckCircle2,
+  Edit2,
+} from "lucide-react";
 import type { SyncedCoachReview } from "../../../services/sync/reviewSync";
+import { CoachAPI } from "../services/api";
 
 interface CoachReviewDetailModalProps {
   isOpen: boolean;
@@ -9,6 +24,7 @@ interface CoachReviewDetailModalProps {
   review: Partial<SyncedCoachReview> | null;
   loading?: boolean;
   onNavigateToAllReviews?: () => void;
+  onReplySuccess?: (reviewId: string, reply: string, repliedAt: string) => void;
 }
 
 export default function CoachReviewDetailModal({
@@ -17,7 +33,26 @@ export default function CoachReviewDetailModal({
   review,
   loading = false,
   onNavigateToAllReviews,
+  onReplySuccess,
 }: CoachReviewDetailModalProps) {
+  const [replyText, setReplyText] = useState("");
+  const [submittingReply, setSubmittingReply] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [replySuccessMsg, setReplySuccessMsg] = useState<string | null>(null);
+  const [replyError, setReplyError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (review?.coachReply) {
+      setReplyText(review.coachReply);
+      setIsEditing(false);
+    } else {
+      setReplyText("");
+      setIsEditing(true);
+    }
+    setReplySuccessMsg(null);
+    setReplyError(null);
+  }, [review?.id, review?.coachReply]);
+
   if (!isOpen || typeof document === "undefined") return null;
 
   const formatDate = (isoString?: string) => {
@@ -42,6 +77,29 @@ export default function CoachReviewDetailModal({
     if (rating >= 3) return "Bình thường (3/5 sao)";
     if (rating >= 2) return "Cần cải thiện (2/5 sao)";
     return "Không hài lòng (1/5 sao)";
+  };
+
+  const handleSendReply = async () => {
+    if (!review?.id || !replyText.trim()) return;
+
+    setSubmittingReply(true);
+    setReplyError(null);
+    setReplySuccessMsg(null);
+
+    try {
+      await CoachAPI.replyToReview(review.id, replyText.trim());
+      const nowIso = new Date().toISOString();
+      review.coachReply = replyText.trim();
+      review.repliedAt = nowIso;
+      setIsEditing(false);
+      setReplySuccessMsg("Đã gửi phản hồi đến học viên thành công!");
+      onReplySuccess?.(review.id, replyText.trim(), nowIso);
+      setTimeout(() => setReplySuccessMsg(null), 4000);
+    } catch (err: any) {
+      setReplyError(err?.message || "Có lỗi xảy ra khi gửi phản hồi. Vui lòng thử lại!");
+    } finally {
+      setSubmittingReply(false);
+    }
   };
 
   return createPortal(
@@ -184,6 +242,99 @@ export default function CoachReviewDetailModal({
                   </div>
                 </div>
               )}
+
+              {/* Coach Reply Section */}
+              <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <CornerDownRight className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    Phản hồi của Huấn luyện viên
+                  </label>
+                  {review.coachReply && !isEditing && (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditing(true)}
+                      className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1 hover:underline cursor-pointer"
+                    >
+                      <Edit2 className="w-3 h-3" />
+                      <span>Chỉnh sửa</span>
+                    </button>
+                  )}
+                </div>
+
+                {replySuccessMsg && (
+                  <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs font-medium text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <span>{replySuccessMsg}</span>
+                  </div>
+                )}
+
+                {replyError && (
+                  <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs font-medium text-rose-800 dark:text-rose-300">
+                    {replyError}
+                  </div>
+                )}
+
+                {review.coachReply && !isEditing ? (
+                  <div className="p-4 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/60">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300">
+                        {review.coachName || "Bạn"}
+                      </span>
+                      {review.repliedAt && (
+                        <span className="text-[10px] text-slate-400">
+                          {formatDate(review.repliedAt)}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
+                      {review.coachReply}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <textarea
+                      rows={3}
+                      placeholder="Cảm ơn học viên hoặc chia sẻ thêm về lộ trình tập luyện tiếp theo..."
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    />
+                    <div className="flex justify-end gap-2">
+                      {review.coachReply && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setReplyText(review.coachReply || "");
+                            setIsEditing(false);
+                          }}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                        >
+                          Hủy
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleSendReply}
+                        disabled={submittingReply || !replyText.trim()}
+                        className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors flex items-center gap-1.5 shadow-sm disabled:opacity-50 cursor-pointer"
+                      >
+                        {submittingReply ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>Đang lưu...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-3.5 h-3.5" />
+                            <span>{review.coachReply ? "Cập nhật phản hồi" : "Gửi phản hồi"}</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>
@@ -219,4 +370,3 @@ export default function CoachReviewDetailModal({
     document.body
   );
 }
-

@@ -40,7 +40,12 @@ public class UserService : IUserService
             Specialties = u.CoachProfile?.Specialties,
             Certifications = u.CoachProfile?.Certifications,
             ExperienceYears = u.CoachProfile?.ExperienceYears,
-            Bio = u.CoachProfile?.Bio
+            Bio = u.CoachProfile?.Bio,
+            FitnessGoal = u.TrainingGoal,
+            FavoriteSports = u.FavoriteSports,
+            PreferredTime = u.PreferredTime,
+            HealthNotes = u.HealthNotes,
+            WorkoutGoals = u.WorkoutGoals
         });
     }
 
@@ -66,7 +71,11 @@ public class UserService : IUserService
             Certifications = user.CoachProfile?.Certifications,
             ExperienceYears = user.CoachProfile?.ExperienceYears,
             Bio = user.CoachProfile?.Bio,
-            FitnessGoal = user.TrainingGoal
+            FitnessGoal = user.TrainingGoal,
+            FavoriteSports = user.FavoriteSports,
+            PreferredTime = user.PreferredTime,
+            HealthNotes = user.HealthNotes,
+            WorkoutGoals = user.WorkoutGoals
         };
     }
 
@@ -148,6 +157,10 @@ public class UserService : IUserService
         if (request.Gender != null) user.Gender = request.Gender;
         if (request.EmergencyContact != null) user.EmergencyContact = request.EmergencyContact;
         if (request.FitnessGoal != null) user.TrainingGoal = request.FitnessGoal;
+        if (request.FavoriteSports != null) user.FavoriteSports = request.FavoriteSports;
+        if (request.PreferredTime != null) user.PreferredTime = request.PreferredTime;
+        if (request.HealthNotes != null) user.HealthNotes = request.HealthNotes;
+        if (request.WorkoutGoals != null) user.WorkoutGoals = request.WorkoutGoals;
 
         if (isCoach)
         {

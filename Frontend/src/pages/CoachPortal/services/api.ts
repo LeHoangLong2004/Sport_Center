@@ -22,6 +22,7 @@ import type {
   UpdateFlow5DraftRequest,
   AssignFlow5PlanRequest,
   AssignFlow5PlanResponse,
+  CoachClassProposal,
 } from "./types";
 import type { MemberProfileData } from "../views/member-profile/types";
 import { fetchApi } from "./fetchApi";
@@ -50,6 +51,7 @@ export type {
   UpdateFlow5DraftRequest,
   AssignFlow5PlanRequest,
   AssignFlow5PlanResponse,
+  CoachClassProposal,
 };
 
 export const CoachAPI = {
@@ -448,6 +450,35 @@ export const CoachAPI = {
   getCoachReviews: async (coachId: string) => {
     return fetchApi(`/reviews/coach/${coachId}`);
   },
+  replyToReview: async (reviewId: string, reply: string) => {
+    return fetchApi(`/reviews/${encodeURIComponent(reviewId)}/reply`, {
+      method: 'POST',
+      body: JSON.stringify({ reply })
+    });
+  },
+
+  // 11b. Đề xuất mở lớp
+  getMyClassProposals: async (): Promise<CoachClassProposal[]> => {
+    try {
+      const res = await fetchApi('/classes/proposals/my');
+      return Array.isArray(res) ? res : [];
+    } catch {
+      return [];
+    }
+  },
+  withdrawClassProposal: async (id: string) => {
+    return fetchApi(`/classes/proposals/${encodeURIComponent(id)}`, {
+      method: 'DELETE'
+    });
+  },
+
+  // 11c. Tài khoản & Bảo mật
+  changePassword: async (data: { currentPassword: string; newPassword: string }) => {
+    return fetchApi('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
 
   // 12. Tin nhắn trao đổi (Chat)
   getCoachConversations: async (coachId: string = '') => {
@@ -462,7 +493,13 @@ export const CoachAPI = {
   getConversationMessages: async (conversationId: string) => {
     return fetchApi(`/coach/chat/messages/${conversationId}`);
   },
-  sendCoachMessage: async (data: { conversationId: string; text: string; coachId?: string }) => {
+  sendCoachMessage: async (data: {
+    conversationId: string;
+    text: string;
+    coachId?: string;
+    attachmentUrl?: string;
+    attachmentType?: string;
+  }) => {
     return fetchApi('/coach/chat/messages', {
       method: 'POST',
       body: JSON.stringify(data)

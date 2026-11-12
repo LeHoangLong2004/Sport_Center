@@ -1,14 +1,24 @@
 import { useState, useEffect, useMemo } from "react";
 import { CoachAPI } from "../services/api";
 import type { MockCurriculum, MockSession, MockMember, SportOption } from "../services/api";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Sparkles, BookOpen } from "lucide-react";
 import { makeDraft } from "./curriculum/types";
 import { CurriculumHeader } from "./curriculum/CurriculumHeader";
 import { CurriculumGrid } from "./curriculum/CurriculumGrid";
 import { CurriculumEditorModal } from "./curriculum/CurriculumEditorModal";
 import { CurriculumAssignModal } from "./curriculum/CurriculumAssignModal";
+import CoachAI from "./CoachAI";
 
-export default function CoachCurriculum() {
+interface CoachCurriculumProps {
+  initialTab?: "library" | "ai";
+  initialMemberId?: string | null;
+}
+
+export default function CoachCurriculum({
+  initialTab = "library",
+  initialMemberId,
+}: CoachCurriculumProps = {}) {
+  const [activeTab, setActiveTab] = useState<"library" | "ai">(initialTab);
   const [curricula, setCurricula] = useState<MockCurriculum[]>([]);
   const [sessions, setSessions] = useState<MockSession[]>([]);
   const [members, setMembers] = useState<MockMember[]>([]);
@@ -232,68 +242,111 @@ export default function CoachCurriculum() {
 
   return (
     <div className="flex flex-col gap-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-300">
-      <CurriculumHeader
-        curricula={curricula}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        sportFilter={sportFilter}
-        setSportFilter={setSportFilter}
-        sportsList={sportsList}
-        onOpenNew={openNew}
-      />
-
-      {feedback && (
-        <div
-          className={`p-4 rounded-xl text-sm flex items-center gap-3 border ${
-            feedback.type === "success"
-              ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50"
-              : "bg-rose-50 dark:rose-950/30 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800/50"
-          }`}
-        >
-          <CheckCircle2 className="w-5 h-5 shrink-0" />
-          <span>{feedback.msg}</span>
+      {/* Top Tab Bar: Library vs AI Copilot */}
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab("library")}
+            className={`px-4 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 ${
+              activeTab === "library"
+                ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>Thư viện giáo án ({curricula.length})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("ai")}
+            className={`px-4 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 ${
+              activeTab === "ai"
+                ? "bg-gradient-to-r from-emerald-600 to-emerald-600 text-white shadow-sm"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+            <span>Trợ lý AI gợi ý</span>
+          </button>
         </div>
+      </div>
+
+      {activeTab === "ai" ? (
+        <CoachAI
+          initialMemberId={initialMemberId}
+          onBackToLibrary={() => {
+            setActiveTab("library");
+            void reloadCurricula();
+          }}
+        />
+      ) : (
+        <>
+          <CurriculumHeader
+            curricula={curricula}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            sportFilter={sportFilter}
+            setSportFilter={setSportFilter}
+            sportsList={sportsList}
+            onOpenNew={openNew}
+            onOpenAiTab={() => setActiveTab("ai")}
+          />
+
+          {feedback && (
+            <div
+              className={`p-4 rounded-xl text-sm flex items-center gap-3 border ${
+                feedback.type === "success"
+                  ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50"
+                  : "bg-rose-50 dark:rose-950/30 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800/50"
+              }`}
+            >
+              <CheckCircle2 className="w-5 h-5 shrink-0" />
+              <span>{feedback.msg}</span>
+            </div>
+          )}
+
+          <CurriculumGrid
+            loading={loading}
+            curricula={filteredCurricula}
+            onEdit={openEdit}
+            onApprove={handleApprove}
+            approvingId={approvingId}
+            onAssign={(curriculum) =>
+              setAssignTarget({
+                curricId: curriculum.id,
+                curricName: curriculum.name,
+                sport: curriculum.sport,
+                level: curriculum.level,
+              })
+            }
+          />
+
+          <CurriculumEditorModal
+            editingId={editingId}
+            draft={draft}
+            setDraft={setDraft}
+            isSaving={isSaving}
+            error={modalError}
+            sports={sports}
+            onClose={closeEdit}
+            onSave={handleSave}
+          />
+
+          <CurriculumAssignModal
+            assignTarget={assignTarget}
+            assignDeadline={assignDeadline}
+            setAssignDeadline={setAssignDeadline}
+            assignNote={assignNote}
+            setAssignNote={setAssignNote}
+            uniqueClasses={uniqueClasses}
+            members={members}
+            onClose={() => setAssignTarget(null)}
+            onAssign={handleAssign}
+            isSubmitting={isAssigning}
+          />
+        </>
       )}
-
-      <CurriculumGrid
-        loading={loading}
-        curricula={filteredCurricula}
-        onEdit={openEdit}
-        onApprove={handleApprove}
-        approvingId={approvingId}
-        onAssign={(curriculum) =>
-          setAssignTarget({
-            curricId: curriculum.id,
-            curricName: curriculum.name,
-            sport: curriculum.sport,
-            level: curriculum.level,
-          })
-        }
-      />
-
-      <CurriculumEditorModal
-        editingId={editingId}
-        draft={draft}
-        setDraft={setDraft}
-        isSaving={isSaving}
-        error={modalError}
-        sports={sports}
-        onClose={closeEdit}
-        onSave={handleSave}
-      />
-
-      <CurriculumAssignModal
-        assignTarget={assignTarget}
-        assignDeadline={assignDeadline}
-        setAssignDeadline={setAssignDeadline}
-        assignNote={assignNote}
-        setAssignNote={setAssignNote}
-        uniqueClasses={uniqueClasses}
-        members={members}
-        onClose={() => setAssignTarget(null)}
-        onAssign={handleAssign}
-        isSubmitting={isAssigning}
-      />
     </div>
   );
 }

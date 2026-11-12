@@ -137,33 +137,11 @@ export const WalletService = {
           transaction: result.transaction,
         };
       }
-    } catch (e) {
-      console.warn("Backend topup failed, using offline store:", e);
+    } catch (e: any) {
+      console.error("Backend topup failed:", e);
+      throw new Error(e?.message || "Không thể nạp tiền vào ví. Vui lòng thử lại sau.");
     }
-
-    const current = this.getLocalWallet(targetUserId);
-    const newBalance = current.balance + amount;
-    const tx: WalletTransaction = {
-      id: `WTX-${Date.now()}`,
-      type: "topup",
-      amount,
-      method,
-      note,
-      createdAt: new Date().toISOString(),
-      status: "completed",
-    };
-    const updated: MemberWalletData = {
-      balance: newBalance,
-      currency: "VND",
-      transactions: [tx, ...(current.transactions || [])],
-    };
-    this.saveLocalWallet(updated, targetUserId);
-
-    return {
-      success: true,
-      newBalance,
-      transaction: tx,
-    };
+    throw new Error("Nạp tiền thất bại từ máy chủ.");
   },
 
   /**
@@ -431,35 +409,11 @@ export const WalletService = {
           transaction: result.transaction,
         };
       }
-    } catch (e) {
-      console.warn("Backend confirmPendingTopUp failed, updating local:", e);
+    } catch (e: any) {
+      console.error("Backend confirmPendingTopUp failed:", e);
+      throw new Error(e?.message || "Không thể xác nhận giao dịch nạp tiền.");
     }
-
-    const current = this.getLocalWallet(targetUserId);
-    let targetAmount = 0;
-    let foundTx: WalletTransaction | undefined;
-
-    const updatedTransactions = (current.transactions || []).map((t) => {
-      if (t.id === txId && t.status === "pending") {
-        targetAmount = t.amount;
-        foundTx = { ...t, status: "completed" as const };
-        return foundTx;
-      }
-      return t;
-    });
-
-    const newBalance = current.balance + targetAmount;
-    const updated: MemberWalletData = {
-      balance: newBalance,
-      currency: "VND",
-      transactions: updatedTransactions,
-    };
-    this.saveLocalWallet(updated, targetUserId);
-    return {
-      success: true,
-      newBalance,
-      transaction: foundTx,
-    };
+    throw new Error("Không thể xác nhận giao dịch nạp tiền.");
   },
 
   async pay(
@@ -492,32 +446,11 @@ export const WalletService = {
         const err = await res.json().catch(() => ({}));
         return { success: false, newBalance: 0, message: err.message || "Thanh toán thất bại" };
       }
-    } catch (e) {
-      console.warn("Backend pay failed, falling back to local:", e);
+    } catch (e: any) {
+      console.error("Backend pay failed:", e);
+      return { success: false, newBalance: 0, message: e?.message || "Không thể kết nối đến máy chủ thanh toán ví." };
     }
-
-    const current = this.getLocalWallet(targetUserId);
-    if (current.balance < amount) {
-      return { success: false, newBalance: current.balance, message: "Số dư ví không đủ" };
-    }
-
-    const newBalance = current.balance - amount;
-    const tx: WalletTransaction = {
-      id: `WTX-${Date.now()}`,
-      type: "payment",
-      amount,
-      method,
-      note,
-      createdAt: new Date().toISOString(),
-      status: "completed",
-    };
-    const updated: MemberWalletData = {
-      balance: newBalance,
-      currency: "VND",
-      transactions: [tx, ...(current.transactions || [])],
-    };
-    this.saveLocalWallet(updated, targetUserId);
-    return { success: true, newBalance };
+    return { success: false, newBalance: 0, message: "Thanh toán ví không thành công." };
   },
 
   /**
@@ -546,16 +479,10 @@ export const WalletService = {
         this.saveLocalWallet(updated, targetUserId);
         return { success: true, balance: updated.balance };
       }
-    } catch (e) {
-      console.warn("Backend reset failed, updating local wallet:", e);
+    } catch (e: any) {
+      console.error("Backend reset failed:", e);
+      throw new Error(e?.message || "Không thể cập nhật số dư ví.");
     }
-    const current = this.getLocalWallet(targetUserId);
-    const updated: MemberWalletData = {
-      balance: newBalance,
-      currency: "VND",
-      transactions: current.transactions,
-    };
-    this.saveLocalWallet(updated, targetUserId);
-    return { success: true, balance: newBalance };
+    throw new Error("Không thể cập nhật số dư ví từ máy chủ.");
   },
 };

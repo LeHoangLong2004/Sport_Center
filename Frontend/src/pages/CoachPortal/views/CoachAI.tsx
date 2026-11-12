@@ -7,7 +7,7 @@
  * 4. Coach reviews, edits exercise dosages & approves draft (Coach-in-the-Loop).
  * 5. Approved plan can be officially assigned to member / class roster.
  */
-import { AlertCircle, CheckCircle2, Info, BookOpen, ArrowRight, Sparkles, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, Info, BookOpen, ArrowRight, Sparkles, X, ArrowLeft } from "lucide-react";
 import { CoachAiHeader } from "./coach-ai/CoachAiHeader";
 import { CoachAiInputPanel } from "./coach-ai/CoachAiInputPanel";
 import { CoachAiPlanWorkspace } from "./coach-ai/CoachAiPlanWorkspace";
@@ -16,7 +16,12 @@ import { CoachAiAssignModal } from "./coach-ai/CoachAiAssignModal";
 import { CoachAiHistoryDrawer } from "./coach-ai/CoachAiHistoryDrawer";
 import { useCoachAi } from "./coach-ai/useCoachAi";
 
-export default function CoachAI({ initialMemberId }: { initialMemberId?: string | null }) {
+interface CoachAIProps {
+  initialMemberId?: string | null;
+  onBackToLibrary?: () => void;
+}
+
+export default function CoachAI({ initialMemberId, onBackToLibrary }: CoachAIProps) {
   const {
     loading,
     members,
@@ -78,6 +83,19 @@ export default function CoachAI({ initialMemberId }: { initialMemberId?: string 
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-3 duration-300 max-w-7xl mx-auto pb-12">
+      {onBackToLibrary && (
+        <div>
+          <button
+            type="button"
+            onClick={onBackToLibrary}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl transition-colors shadow-2xs cursor-pointer group"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 text-slate-400 group-hover:-translate-x-0.5 transition-transform" />
+            <span>← Quay lại Thư viện giáo án</span>
+          </button>
+        </div>
+      )}
+
       {/* 1. Header Banner */}
       <CoachAiHeader
         onOpenHistory={() => setShowHistoryDrawer(true)}
@@ -128,7 +146,8 @@ export default function CoachAI({ initialMemberId }: { initialMemberId?: string 
               <button
                 type="button"
                 onClick={() => {
-                  window.location.hash = "#coach-curriculum";
+                  if (onBackToLibrary) onBackToLibrary();
+                  else window.location.hash = "#coach-curriculum";
                 }}
                 className="px-3.5 py-1.5 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
               >

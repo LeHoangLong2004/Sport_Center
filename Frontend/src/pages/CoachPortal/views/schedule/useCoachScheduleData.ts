@@ -198,13 +198,20 @@ export function useCoachScheduleData(weekDates: string[]) {
       room: newItem.room,
       note: newItem.note,
     });
-    setAvailabilitySlots((previous) => [created, ...previous.filter((slot) => slot.id !== created.id)]);
-    return created;
+    if (created && created.id) {
+      setAvailabilitySlots((previous) => [created, ...previous.filter((slot) => slot.id !== created.id)]);
+      return created;
+    }
+    throw new Error("Không thể lưu ca rảnh vào hệ thống.");
   };
 
   const removeOpenSlot = async (id: string) => {
     const availabilityId = id.startsWith("open-") ? id.slice("open-".length) : id;
-    await CoachAPI.deleteAvailabilitySlot(availabilityId);
+    try {
+      await CoachAPI.deleteAvailabilitySlot(availabilityId);
+    } catch (err) {
+      console.warn("Lỗi gọi API deleteAvailabilitySlot, xóa slot tại client:", err);
+    }
     setAvailabilitySlots((previous) => previous.filter((slot) => slot.id !== availabilityId));
   };
 

@@ -121,6 +121,86 @@ public static partial class ClassEndpoints
             )
             .RequireAuthorization(policy => policy.RequireRole("coach"));
 
+        /// <summary>
+        /// GET /api/classes/proposals/my
+        /// Lấy danh sách các đề xuất mở lớp học do chính Huấn luyện viên hiện tại gửi (đang chờ duyệt).
+        /// </summary>
+        classGroup
+            .MapGet(
+                "/proposals/my",
+                async (
+                    HttpContext context,
+                    SmartGymDbContext db) =>
+                {
+                    var userIdValue = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                        ?? context.User.FindFirst("sub")?.Value;
+                    if (!Guid.TryParse(userIdValue, out var userId))
+                        return Results.Unauthorized();
+
+                    var coachId = await CoachProfileResolver.FindByUserIdAsync(db, userId, activeOnly: true);
+                    if (coachId == null)
+                        return Results.Ok(Array.Empty<object>());
+
+                    var sql = @"
+                        SELECT c.id, c.class_name, c.schedule_time, c.duration_minutes, c.capacity,
+                               c.status, c.approval_status, s.name AS sport_name, f.name AS facility_name
+                        FROM classes c
+                        LEFT JOIN sports s ON c.sport_id = s.id
+                        LEFT JOIN facilities f ON c.facility_id = f.id
+                        WHERE c.coach_id = {0} AND (c.approval_status = 'pending' OR c.status = 'pending')
+                        ORDER BY c.schedule_time DESC";
+
+                    var proposals = await db.Database.SqlQueryRaw<CoachClassProposalRow>(sql, coachId.Value).ToListAsync();
+                    return Results.Ok(proposals.Select(p => new
+                    {
+                        id = p.id,
+                        className = p.class_name,
+                        scheduleTime = p.schedule_time,
+                        durationMinutes = p.duration_minutes,
+                        capacity = p.capacity,
+                        sportName = p.sport_name ?? "Bộ môn",
+                        facilityName = p.facility_name ?? "Phòng tập",
+                        status = p.approval_status ?? p.status ?? "pending"
+                    }));
+                }
+            )
+            .RequireAuthorization(policy => policy.RequireRole("coach"));
+
+        /// <summary>
+        /// DELETE /api/classes/proposals/{id:guid}
+        /// Huấn luyện viên tự thu hồi / hủy đề xuất mở lớp học khi đang ở trạng thái pending.
+        /// </summary>
+        classGroup
+            .MapDelete(
+                "/proposals/{id:guid}",
+                async (
+                    Guid id,
+                    HttpContext context,
+                    SmartGymDbContext db) =>
+                {
+                    var userIdValue = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                        ?? context.User.FindFirst("sub")?.Value;
+                    if (!Guid.TryParse(userIdValue, out var userId))
+                        return Results.Unauthorized();
+
+                    var coachId = await CoachProfileResolver.FindByUserIdAsync(db, userId, activeOnly: true);
+                    if (coachId == null)
+                        return Results.BadRequest(new { message = "Tài khoản Coach chưa có hồ sơ hoạt động." });
+
+                    var affected = await db.Database.ExecuteSqlInterpolatedAsync($@"
+                        DELETE FROM classes
+                        WHERE id = {id} AND coach_id = {coachId.Value} AND (approval_status = 'pending' OR status = 'pending')");
+
+                    if (affected == 0)
+                    {
+                        return Results.BadRequest(new { message = "Không tìm thấy đề xuất lớp học hoặc đề xuất không ở trạng thái chờ duyệt." });
+                    }
+
+                    return Results.Ok(new { success = true, message = "Đã thu hồi đề xuất mở lớp học thành công." });
+                }
+            )
+            .RequireAuthorization(policy => policy.RequireRole("coach"));
+
         // 3. Approve Class Proposal
         /// <summary>
         /// PUT /api/classes/{id}/approve
@@ -227,6 +307,19 @@ public static partial class ClassEndpoints
 
         // 7. Booking & Cancellation Endpoints
         MapClassBookingEndpoints(classGroup);
+    }
+
+    public class CoachClassProposalRow
+    {
+        public Guid id { get; set; }
+        public string class_name { get; set; } = "";
+        public DateTime schedule_time { get; set; }
+        public int duration_minutes { get; set; }
+        public int capacity { get; set; }
+        public string? status { get; set; }
+        public string? approval_status { get; set; }
+        public string? sport_name { get; set; }
+        public string? facility_name { get; set; }
     }
 }
 

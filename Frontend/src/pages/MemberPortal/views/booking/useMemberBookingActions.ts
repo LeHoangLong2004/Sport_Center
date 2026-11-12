@@ -30,7 +30,16 @@ export function useMemberBookingActions({
   const [bookingSuccessInfo, setBookingSuccessInfo] = useState<any | null>(null);
   const [cancelTarget, setCancelTarget] = useState<{ classId: string; className: string } | null>(null);
   const [bookingPtSlot, setBookingPtSlot] = useState<any | null>(null);
-  const [ptGoal, setPtGoal] = useState("Tăng cơ & Siết nét");
+  const [ptGoal, setPtGoal] = useState(() => {
+    try {
+      const userStr = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        return u.fitnessGoal || u.goal || "Rèn luyện thể lực";
+      }
+    } catch {}
+    return "Rèn luyện thể lực";
+  });
   const [ptNote, setPtNote] = useState("");
   const [feedback, setFeedback] = useState<BookingFeedback | null>(null);
 

@@ -93,7 +93,7 @@ export default function CoachPortal({ onExit }: { onExit?: () => void } = {}) {
       case "member-profile":
         return <CoachMemberProfile memberId={selectedMemberId} navigateTo={navigateTo} />;
       case "curriculum":
-        return <CoachCurriculum />;
+        return <CoachCurriculum initialTab="library" />;
       case "chat":
         return <CoachChat initialMemberId={selectedMemberId} />;
       case "reviews":
@@ -103,7 +103,7 @@ export default function CoachPortal({ onExit }: { onExit?: () => void } = {}) {
       case "notifications":
         return <CoachNotifications />;
       case "ai":
-        return <CoachAI initialMemberId={selectedMemberId} />;
+        return <CoachCurriculum initialTab="ai" initialMemberId={selectedMemberId} />;
       case "profile":
         return <CoachProfile navigateTo={navigateTo} />;
       case "settings":
