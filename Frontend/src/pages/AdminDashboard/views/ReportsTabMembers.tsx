@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import SimpleLineChart from '../components/SimpleLineChart';
 import { DataState } from '../components/DataState';
 import { useApiResource } from '../../../hooks/useApiResource';
@@ -6,11 +7,21 @@ import { formatDate } from '../../../hooks/apiClient';
 
 const DONUT_COLORS = ['#059669', '#10b981', '#334155', '#64748b', '#94a3b8'];
 const CIRCUMFERENCE = 2 * Math.PI * 50;
+const ITEMS_PER_PAGE = 7;
 
 export default function ReportsTabMembers() {
+  const [currentPage, setCurrentPage] = useState(1);
   const retention = useApiResource<MemberRetentionResponse>("/api/reports/members/retention");
   const expiring = useApiResource<ExpiringMemberResponse[]>("/api/reports/members/expiring");
   const byPackage = useApiResource<RevenueByPackageResponse[]>("/api/reports/revenue/by-package");
+
+  const expiringList = expiring.data ?? [];
+  const totalItems = expiringList.length;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+  const paginatedExpiring = expiringList.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const packages = (byPackage.data ?? []).slice(0, 5);
   const packageTotal = packages.reduce((sum, p) => sum + p.subscriptions, 0);
@@ -73,18 +84,67 @@ export default function ReportsTabMembers() {
             loading={expiring.loading}
             error={expiring.error}
             forbidden={expiring.forbidden}
-            count={(expiring.data ?? []).length}
+            count={expiringList.length}
             emptyText="Không có hội viên nào sắp hết hạn."
             onRetry={expiring.reload}
           />
-          {(expiring.data ?? []).map(m => (
-            <div key={m.subscriptionId} className="border-b border-[#e2e8f0] flex items-center px-4 py-3">
+          {paginatedExpiring.map(m => (
+            <div key={m.subscriptionId} className="border-b border-[#e2e8f0] flex items-center px-4 py-3 hover:bg-slate-50 transition-colors">
               <span className="font-semibold text-[#0f172a] text-sm flex-1 truncate">{m.memberName ?? "Chưa xác định"}</span>
               <span className="text-[#0f172a] text-sm w-[150px] truncate">{m.packageName ?? "--"}</span>
               <span className="text-[#64748b] text-[13px] w-[120px]">{formatDate(m.expireDate)}</span>
               <span className="text-slate-700 text-[13px] w-[90px]">{m.daysLeft} ngày</span>
             </div>
           ))}
+
+          {/* Phân trang */}
+          {totalItems > ITEMS_PER_PAGE && (
+            <div className="flex items-center justify-between pt-4 px-2 select-none">
+              <span className="text-[#64748b] text-xs">
+                Hiển thị {(currentPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)} trên tổng số {totalItems} hội viên
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className={`px-2.5 py-1 text-xs rounded-md border font-medium transition-colors ${
+                    currentPage === 1
+                      ? "border-slate-200 text-slate-300 bg-slate-50 cursor-not-allowed"
+                      : "border-slate-300 text-slate-700 hover:bg-slate-100 cursor-pointer"
+                  }`}
+                >
+                  Trước
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNumber => (
+                  <button
+                    key={pageNumber}
+                    type="button"
+                    onClick={() => setCurrentPage(pageNumber)}
+                    className={`w-7 h-7 flex items-center justify-center text-xs rounded-md font-medium transition-colors cursor-pointer ${
+                      currentPage === pageNumber
+                        ? "bg-emerald-600 text-white font-bold shadow-xs shadow-emerald-600/20"
+                        : "border border-slate-200 text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    {pageNumber}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className={`px-2.5 py-1 text-xs rounded-md border font-medium transition-colors ${
+                    currentPage === totalPages
+                      ? "border-slate-200 text-slate-300 bg-slate-50 cursor-not-allowed"
+                      : "border-slate-300 text-slate-700 hover:bg-slate-100 cursor-pointer"
+                  }`}
+                >
+                  Sau
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

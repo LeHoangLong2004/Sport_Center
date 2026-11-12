@@ -47,12 +47,6 @@ export default function App() {
   const [selectedProductOrder, setSelectedProductOrder] = useState<ProductOrder | undefined>();
 
   useEffect(() => {
-    if (paymentOpen && !selectedPlanId && !selectedPackage && !selectedProductOrder) {
-      window.location.hash = "pricing";
-    }
-  }, [paymentOpen, selectedPlanId, selectedPackage, selectedProductOrder]);
-
-  useEffect(() => {
     if (paymentOpen) {
       window.scrollTo({ top: 0, left: 0, behavior: "instant" });
       document.documentElement.scrollTop = 0;
@@ -98,10 +92,6 @@ export default function App() {
   }
 
   if (paymentOpen) {
-    if (!selectedPlanId && !selectedPackage && !selectedProductOrder) {
-      return null;
-    }
-
     if (selectedProductOrder) {
       const exitProductPayment = () => {
         setSelectedProductOrder(undefined);

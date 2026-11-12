@@ -12,7 +12,7 @@ import {
 import { Crown, Dumbbell, CheckCircle2, AlertCircle, X } from "lucide-react";
 import MembershipTab from "./packages/MembershipTab";
 import SportTab from "./packages/SportTab";
-import PackageCheckoutModal from "./packages/PackageCheckoutModal";
+import UniversalPaymentModal, { UniversalPaymentItem } from "../components/UniversalPaymentModal";
 
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
@@ -45,8 +45,6 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
   // Quick checkout modal state
   const [selectedPackage, setSelectedPackage] = useState<CatalogPackage | null>(null);
   const [checkoutDuration, setCheckoutDuration] = useState<PackagePeriod>(1);
-  const [checkoutMethod, setCheckoutMethod] = useState<"qr" | "counter">("qr");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Load data
@@ -159,30 +157,51 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
 
   // Handle start purchase
   const handleStartPurchase = (pkg: CatalogPackage) => {
-    const { discountPct } = calculateDiscount(pkg);
-    if (onCheckout) {
-      onCheckout(pkg, selectedDuration, discountPct);
-      return;
-    }
     setSelectedPackage(pkg);
     setCheckoutDuration(selectedDuration);
   };
 
-  // Submit quick checkout
-  const handleQuickCheckout = async () => {
+  const universalPaymentItem = useMemo<UniversalPaymentItem | null>(() => {
+    if (!selectedPackage) return null;
+    const { discountPct, originalPrice, finalPrice } = calculateDiscount(selectedPackage);
+    return {
+      id: selectedPackage.id,
+      categoryTitle:
+        selectedPackage.category === "membership"
+          ? "ĐĂNG KÝ GÓI THÀNH VIÊN"
+          : "ĐĂNG KÝ GÓI MÔN TẬP",
+      title: selectedPackage.name,
+      subtitle: `${checkoutDuration} tháng • ${
+        selectedPackage.category === "membership"
+          ? (selectedPackage.tier ? `Hạng ${selectedPackage.tier.toUpperCase()}` : "Thẻ thành viên")
+          : (selectedPackage.sport || "Môn tập")
+      }`,
+      description: selectedPackage.description,
+      originalPrice,
+      discountPct,
+      discountAmount: originalPrice - finalPrice,
+      finalPrice,
+      memoPrefix: selectedPackage.category === "membership" ? "MEMBER" : "SPORT",
+    };
+  }, [selectedPackage, checkoutDuration, calculateDiscount]);
+
+  const handleUniversalCheckoutSuccess = async (method: "qr" | "wallet" | "card" | "counter") => {
     if (!selectedPackage) return;
+    const pkgName = selectedPackage.name;
     try {
-      setIsSubmitting(true);
       await PackageAPI.checkout(
         selectedPackage.id,
         checkoutDuration,
-        checkoutMethod
+        method
       );
+      setSelectedPackage(null);
       setFeedback({
         type: "success",
-        text: `Đã tạo đơn đăng ký gói "${selectedPackage.name}". Vui lòng kiểm tra mục Thanh toán & Hóa đơn để đối soát!`,
+        text:
+          method === "counter"
+            ? `Đã tạo đơn đăng ký gói "${pkgName}". Vui lòng thanh toán tại quầy lễ tân để kích hoạt!`
+            : `Thanh toán thành công gói "${pkgName}"! Quyền lợi đã được kích hoạt ngay lập tức.`,
       });
-      setSelectedPackage(null);
       await loadData();
       try {
         const channel = new BroadcastChannel("smartgym_orders_sync");
@@ -193,10 +212,8 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
     } catch (err: any) {
       setFeedback({
         type: "error",
-        text: err?.message || "Không thể khởi tạo đơn thanh toán. Vui lòng thử lại.",
+        text: err?.message || "Không thể hoàn tất đơn đăng ký gói tập. Vui lòng thử lại.",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -321,16 +338,12 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
         />
       )}
 
-      {/* QUICK CHECKOUT MODAL */}
-      <PackageCheckoutModal
-        selectedPackage={selectedPackage}
+      {/* UNIVERSAL PAYMENT MODAL */}
+      <UniversalPaymentModal
+        isOpen={!!selectedPackage}
+        item={universalPaymentItem}
         onClose={() => setSelectedPackage(null)}
-        checkoutDuration={checkoutDuration}
-        checkoutMethod={checkoutMethod}
-        onSelectCheckoutMethod={setCheckoutMethod}
-        calculateDiscount={calculateDiscount}
-        isSubmitting={isSubmitting}
-        onSubmit={handleQuickCheckout}
+        onSuccess={handleUniversalCheckoutSuccess}
       />
     </div>
   );

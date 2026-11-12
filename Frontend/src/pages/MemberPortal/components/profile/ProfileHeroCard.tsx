@@ -7,8 +7,6 @@ import {
   KeyRound,
   Flame,
   Target,
-  Zap,
-  QrCode,
 } from "lucide-react";
 
 interface ProfileHeroCardProps {
@@ -47,28 +45,12 @@ export const ProfileHeroCard: React.FC<ProfileHeroCardProps> = ({
     ? String(storedUser.id).substring(0, 8).toUpperCase()
     : "HV-MEMBER";
 
-  const cardNumber = profile?.id
-    ? profile.id.substring(0, 4).toUpperCase()
-    : storedUser?.id
-    ? String(storedUser.id).substring(0, 4).toUpperCase()
-    : "8888";
-
-  const ownerName = (
-    profile?.fullName ||
-    fullName ||
-    storedUser?.fullName ||
-    storedUser?.name ||
-    "HỘI VIÊN"
-  ).toUpperCase();
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-      {/* Left Column (7 cols): Member Identity, Level & Disciplined Streak */}
-      <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 md:p-7 shadow-xs flex flex-col justify-between relative overflow-hidden">
-        {/* Subtle decorative glow */}
-        <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/5 dark:bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+    <div className="w-full bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 md:p-7 shadow-xs flex flex-col justify-between relative overflow-hidden">
+      {/* Subtle decorative glow */}
+      <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/5 dark:bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
 
-        <div>
+      <div>
           {/* Header: Avatar, Name, Tier, Actions */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -197,83 +179,6 @@ export const ProfileHeroCard: React.FC<ProfileHeroCardProps> = ({
             {profile?.fitnessGoal || fitnessGoal || "Duy trì lối sống năng động và cải thiện sức bền"}
           </div>
         </div>
-      </div>
-
-      {/* Right Column (5 cols): Luxury Digital Member Pass (Thẻ Hội Viên Điện Tử Cao Cấp) */}
-      <div className="lg:col-span-5 flex flex-col">
-        <div className="h-full rounded-3xl p-6 bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 text-white border border-emerald-500/30 shadow-xl relative overflow-hidden flex flex-col justify-between group">
-          {/* Holographic metallic background effect */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-400/20 via-transparent to-transparent pointer-events-none" />
-          <div className="absolute -bottom-16 -right-16 w-48 h-48 bg-emerald-500/15 rounded-full blur-2xl pointer-events-none" />
-
-          {/* Card Top: Gym Branding & Smart Chip */}
-          <div className="relative z-10 flex items-start justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-emerald-500 to-emerald-400 flex items-center justify-center font-black text-white text-xs shadow-xs shadow-emerald-500/30">
-                  SG
-                </div>
-                <span className="font-extrabold text-xs tracking-wider text-emerald-300 uppercase">
-                  SmartGym Sports Pass
-                </span>
-              </div>
-              <span className="text-[10px] text-slate-300/80 block mt-0.5">
-                ALL-ACCESS VIP MEMBERSHIP
-              </span>
-            </div>
-
-            {/* Metallic Chip & Contactless */}
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-6 rounded-md bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 border border-amber-200/60 shadow-xs flex items-center justify-center">
-                <div className="w-5 h-4 border border-amber-700/30 rounded-xs flex flex-col justify-between py-0.5">
-                  <div className="h-px bg-amber-800/40 w-full" />
-                  <div className="h-px bg-amber-800/40 w-full" />
-                </div>
-              </div>
-              <Zap className="w-4 h-4 text-amber-300" />
-            </div>
-          </div>
-
-          {/* Card Middle: Embossed Number & Member Name */}
-          <div className="relative z-10 my-4 space-y-1.5">
-            <div className="tracking-[0.25em] text-base md:text-lg font-bold text-white drop-shadow-sm">
-              •••• •••• •••• {cardNumber}
-            </div>
-            <div className="flex items-end justify-between">
-              <div>
-                <span className="text-[9px] uppercase tracking-wider text-slate-400 block">
-                  Chủ sở hữu thẻ
-                </span>
-                <span className="text-sm font-bold tracking-wide text-white uppercase">
-                  {ownerName}
-                </span>
-              </div>
-              <div className="text-right">
-                <span className="text-[9px] uppercase tracking-wider text-slate-400 block">
-                  Hiệu lực
-                </span>
-                <span className="text-xs font-bold text-emerald-300">
-                  {hasPaidInvoice ? "Đang hiệu lực" : "Chưa kích hoạt"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card Bottom: Member Code badge */}
-          <div className="relative z-10 pt-3 border-t border-white/10 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[11px] font-semibold text-emerald-400">
-                Thẻ Đang Hoạt Động
-              </span>
-            </div>
-
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/10 border border-white/15 text-emerald-300 text-xs font-bold">
-              <span>Mã Check-in: {memberCode}</span>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
