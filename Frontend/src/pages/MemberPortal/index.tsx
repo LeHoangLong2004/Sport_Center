@@ -189,19 +189,7 @@ export default function MemberPortal({
       case "attendance":
         return <MemberAttendance onNavigate={navigateTo} />;
       case "packages":
-        return (
-          <MemberPackages
-            onNavigate={navigateTo}
-            onCheckout={(item, duration, discountPct) => {
-              const selection = { item, duration, discountPct };
-              if (onExternalCheckout) {
-                onExternalCheckout(selection);
-                return;
-              }
-              setCheckout(selection);
-            }}
-          />
-        );
+        return <MemberPackages onNavigate={navigateTo} />;
       case "payments":
         return <MemberPayments onNavigate={navigateTo} />;
       case "workouts":

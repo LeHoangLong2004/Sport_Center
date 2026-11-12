@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { MemberPage } from "../shared"
 import MemberShell from "../components/MemberShell"
+import UniversalPaymentModal, { UniversalPaymentItem } from "../components/UniversalPaymentModal"
 
 type Product = {
   id: string
@@ -90,6 +91,7 @@ export function ProductShopPage({ onNavigate, onOnlinePayment, embedded = false 
   const [drafts, setDrafts] = useState<Record<string, string>>({})
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
+  const [payingOrder, setPayingOrder] = useState<ProductOrder | null>(null)
 
   async function loadData() {
     setLoading(true)
@@ -177,7 +179,7 @@ export function ProductShopPage({ onNavigate, onOnlinePayment, embedded = false 
       }))
       if (paymentMethod === "online") {
         setCart([])
-        onOnlinePayment?.(order)
+        setPayingOrder(order)
         return
       }
       setCart([])
@@ -458,5 +460,54 @@ export function ProductShopPage({ onNavigate, onOnlinePayment, embedded = false 
       </div>
   )
 
-  return embedded ? content : <MemberShell page="shop" onNavigate={onNavigate}>{content}</MemberShell>
+  const shopPaymentItem = useMemo<UniversalPaymentItem | null>(() => {
+    if (!payingOrder) return null
+    return {
+      id: payingOrder.id,
+      categoryTitle: "THANH TOÁN ĐƠN HÀNG CỬA HÀNG",
+      title: `Đơn hàng #${payingOrder.id.slice(0, 8).toUpperCase()}`,
+      subtitle: payingOrder.fulfillmentMethod === "in_center_delivery" ? "Giao tại trung tâm" : "Nhận tại quầy lễ tân",
+      description: payingOrder.items?.map((i) => `${i.name} (x${i.quantity})`).join(", "),
+      originalPrice: payingOrder.totalAmount,
+      finalPrice: payingOrder.totalAmount,
+      memoPrefix: "SHOP",
+    }
+  }, [payingOrder])
+
+  const handleShopPaymentSuccess = async (method: "qr" | "wallet" | "card" | "counter") => {
+    if (!payingOrder) return
+    try {
+      const headers = authHeaders()
+      await fetch(`/api/payments/${payingOrder.id}/process`, {
+        method: "POST",
+        headers,
+      })
+      setPayingOrder(null)
+      setMessage(
+        method === "counter"
+          ? "Đã đặt hàng thành công! Vui lòng thanh toán tiền mặt tại quầy lễ tân."
+          : "Thanh toán đơn hàng thành công! Nhân viên sẽ chuẩn bị đơn hàng của bạn ngay."
+      )
+      await loadData()
+    } catch {
+      setPayingOrder(null)
+      setMessage("Đã ghi nhận thanh toán đơn hàng.")
+      await loadData()
+    }
+  }
+
+  return (
+    <>
+      {embedded ? content : <MemberShell page="shop" onNavigate={onNavigate}>{content}</MemberShell>}
+      <UniversalPaymentModal
+        isOpen={!!payingOrder}
+        item={shopPaymentItem}
+        onClose={() => {
+          setPayingOrder(null)
+          void loadData()
+        }}
+        onSuccess={handleShopPaymentSuccess}
+      />
+    </>
+  )
 }

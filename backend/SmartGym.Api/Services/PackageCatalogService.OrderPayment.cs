@@ -30,18 +30,35 @@ public sealed partial class PackageCatalogService
                     );
 
                 var snapshot = DeserializeSnapshot(subscription);
-                var (start, end) = await GetProjectedPeriodAsync(
-                    subscription.UserId,
-                    snapshot,
-                    subscription.DurationMonths ?? ParseDuration(subscription.BillingPeriod),
-                    DateTime.UtcNow,
-                    cancellationToken
-                );
                 var now = DateTime.UtcNow;
-                subscription.StartDate = start;
-                subscription.EndDate = end;
+                if (snapshot.Category == "membership")
+                {
+                    // Nếu đơn hàng này là Gia hạn nối tiếp (StartDate đã được ấn định trong tương lai) thì giữ nguyên
+                    if (subscription.StartDate <= now.Date)
+                    {
+                        subscription.StartDate = DateTime.SpecifyKind(now.Date, DateTimeKind.Utc);
+                        var duration = subscription.DurationMonths ?? ParseDuration(subscription.BillingPeriod);
+                        subscription.EndDate = DateTime.SpecifyKind(subscription.StartDate.AddMonths(duration).AddDays(-1), DateTimeKind.Utc).AddHours(23).AddMinutes(59).AddSeconds(59);
+                    }
+                }
+                else
+                {
+                    var (start, end) = await GetProjectedPeriodAsync(
+                        subscription.UserId,
+                        snapshot,
+                        subscription.DurationMonths ?? ParseDuration(subscription.BillingPeriod),
+                        now,
+                        cancellationToken
+                    );
+                    subscription.StartDate = start;
+                    subscription.EndDate = end;
+                }
                 subscription.PaymentStatus = PaymentStatus.Completed;
                 subscription.PaidAt = now;
+                if (snapshot.Category == "membership" && subscription.StartDate.Date <= now.Date)
+                {
+                    await ClosePreviousMembershipSubscriptionsAsync(subscription.UserId, subscription.Id, subscription.StartDate, cancellationToken);
+                }
                 if (!string.IsNullOrWhiteSpace(paymentMethod))
                 {
                     try

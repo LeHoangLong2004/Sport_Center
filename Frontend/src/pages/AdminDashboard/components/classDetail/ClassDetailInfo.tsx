@@ -51,38 +51,56 @@ export function ClassDetailInfo({ classDetail, isPendingProposal }: ClassDetailI
 
       {/* Info Grid (4 compact stat cards) */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Thời gian</span>
-          <p className="text-xs font-bold text-slate-800 mt-1">
-            {scheduleDate.toLocaleDateString('vi-VN')}
-          </p>
-          <p className="text-[11px] text-slate-500 mt-0.5">
+        <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-xs flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Thời gian</span>
+            <p className="text-xs font-bold text-slate-800 mt-1 leading-snug">
+              {scheduleDate.toLocaleDateString('vi-VN')}
+            </p>
+          </div>
+          <p className="text-[11px] text-slate-500 mt-1">
             {scheduleDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} ({classDetail.durationMinutes}p)
           </p>
         </div>
 
-        <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Huấn luyện viên</span>
-          <p className="text-xs font-bold text-slate-800 mt-1 truncate" title={classDetail.coachName || 'Chưa phân công'}>
-            {classDetail.coachName || 'Chưa phân công'}
-          </p>
-          <p className="text-[11px] text-emerald-600 font-medium mt-0.5">HLV phụ trách</p>
+        <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-xs flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Huấn luyện viên</span>
+            <p className="text-xs font-bold text-slate-800 mt-1 leading-snug break-words">
+              {classDetail.coachName || 'Chưa phân công'}
+            </p>
+          </div>
+          <p className="text-[11px] text-emerald-600 font-medium mt-1">HLV phụ trách</p>
         </div>
 
-        <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Phòng tập</span>
-          <p className="text-xs font-bold text-slate-800 mt-1 truncate" title={classDetail.facilityName}>
-            {classDetail.facilityName}
-          </p>
-          <p className="text-[11px] text-slate-500 mt-0.5">Địa điểm</p>
+        <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-xs flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Phòng tập</span>
+            <p className="text-xs font-bold text-slate-800 mt-1 leading-snug break-words">
+              {classDetail.facilityName}
+            </p>
+          </div>
+          <p className="text-[11px] text-slate-500 mt-1">Địa điểm</p>
         </div>
 
-        <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Sĩ số</span>
-          <p className="text-xs font-bold text-slate-800 mt-1">
-            <span className="text-emerald-600">{classDetail.currentEnrolled}</span> / {classDetail.capacity}
+        <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-xs flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              {isPendingProposal ? 'Sức chứa' : 'Sĩ số'}
+            </span>
+            <p className="text-xs font-bold text-slate-800 mt-1 leading-snug">
+              {isPendingProposal ? (
+                <span>{classDetail.capacity} <span className="text-[11px] font-medium text-slate-500">học viên</span></span>
+              ) : (
+                <>
+                  <span className="text-emerald-600">{classDetail.currentEnrolled}</span> / {classDetail.capacity}
+                </>
+              )}
+            </p>
+          </div>
+          <p className="text-[11px] text-slate-500 mt-1">
+            {isPendingProposal ? 'Đề xuất tối đa' : 'Học viên tối đa'}
           </p>
-          <p className="text-[11px] text-slate-500 mt-0.5">Học viên tối đa</p>
         </div>
       </div>
     </>
