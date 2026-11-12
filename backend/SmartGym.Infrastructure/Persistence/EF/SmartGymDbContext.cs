@@ -188,11 +188,19 @@ public partial class SmartGymDbContext : DbContext
                 .Property(e => e.StartDate)
                 .HasColumnName("start_date")
                 .HasColumnType("date")
+                .HasConversion(
+                    v => DateTime.SpecifyKind(v.Date, DateTimeKind.Unspecified),
+                    v => DateTime.SpecifyKind(v.Date, DateTimeKind.Utc)
+                )
                 .IsRequired();
             entity
                 .Property(e => e.EndDate)
                 .HasColumnName("end_date")
                 .HasColumnType("date")
+                .HasConversion(
+                    v => DateTime.SpecifyKind(v.Date, DateTimeKind.Unspecified),
+                    v => DateTime.SpecifyKind(v.Date, DateTimeKind.Utc)
+                )
                 .IsRequired();
             entity.Property(e => e.AutoRenew).HasColumnName("auto_renew").HasDefaultValue(false);
             entity

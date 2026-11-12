@@ -77,16 +77,13 @@ export default function App() {
     const role = user?.role?.toLowerCase();
     if (!user || (role !== "receptionist" && role !== "admin" && role !== "manager")) {
       const demoRec = {
-        id: "rec-01",
-        fullName: "Lễ tân Mai Anh",
+        id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
+        fullName: "Nguyễn Văn Lễ Tân",
         role: "Receptionist",
         email: "receptionist01@smartgym.com",
-        avatarUrl: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=256&q=80",
+        avatarUrl: null,
       };
       localStorage.setItem("user", JSON.stringify(demoRec));
-      if (!localStorage.getItem("token")) {
-        localStorage.setItem("token", "mock-valid-token-demo");
-      }
     }
 
     return (

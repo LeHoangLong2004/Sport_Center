@@ -29,11 +29,11 @@ public static partial class ProductOrderEndpoints
 
         /// <summary>
         /// POST /api/product-orders
-        /// Hội viên tạo đơn mua sản phẩm (hỗ trợ nhiều mặt hàng, trừ tồn kho, tính tổng tiền).
-        /// Quyền hạn yêu cầu: Member.
+        /// Tạo đơn mua sản phẩm (hỗ trợ nhiều mặt hàng, trừ tồn kho, tính tổng tiền).
+        /// Quyền hạn yêu cầu: Member, Receptionist hoặc CenterManager.
         /// </summary>
         group.MapPost("", CreateOrderAsync)
-            .AddEndpointFilter(Authorize.Roles(UserRole.Member));
+            .AddEndpointFilter(Authorize.Roles(UserRole.Member, UserRole.Receptionist, UserRole.CenterManager));
 
         /// <summary>
         /// GET /api/product-orders/my
@@ -67,6 +67,14 @@ public static partial class ProductOrderEndpoints
         /// Quyền hạn yêu cầu: CenterManager hoặc Receptionist.
         /// </summary>
         group.MapPut("/{invoiceId:guid}/fulfillment", UpdateFulfillmentAsync)
+            .AddEndpointFilter(Authorize.Roles(UserRole.CenterManager, UserRole.Receptionist));
+
+        /// <summary>
+        /// PUT /api/product-orders/{invoiceId}/refund
+        /// Xác nhận đã hoàn tiền cho đơn hàng đã hủy.
+        /// Quyền hạn yêu cầu: CenterManager hoặc Receptionist.
+        /// </summary>
+        group.MapPut("/{invoiceId:guid}/refund", ConfirmRefundAsync)
             .AddEndpointFilter(Authorize.Roles(UserRole.CenterManager, UserRole.Receptionist));
 
         /// <summary>
@@ -136,9 +144,11 @@ public static partial class ProductOrderEndpoints
 
     private static bool IsStaff(HttpContext context)
     {
-        var role = context.User.FindFirstValue(ClaimTypes.Role);
-        return Enum.TryParse<UserRole>(role, true, out var userRole)
-            && userRole is UserRole.CenterManager or UserRole.Receptionist;
+        var role = context.User.FindFirstValue(ClaimTypes.Role)
+            ?? context.User.FindFirst("role")?.Value;
+        if (string.IsNullOrWhiteSpace(role)) return false;
+        var normalized = role.Trim().ToLowerInvariant().Replace("_", "").Replace(" ", "").Replace("-", "");
+        return normalized is "admin" or "administrator" or "manager" or "centermanager" or "receptionist" or "reception" or "staff";
     }
 
     private sealed record ProductOrderLine(Guid ProductId, string Name, int Quantity, decimal UnitPrice);

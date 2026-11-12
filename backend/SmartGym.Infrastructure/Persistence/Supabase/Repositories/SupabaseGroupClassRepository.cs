@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using SmartGym.Application.Common;
 using SmartGym.Application.DTOs.Classes;
 using SmartGym.Application.Interfaces.Repositories;
 using SmartGym.Domain.Entities;
@@ -85,7 +86,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             CoachId: c.CoachId,
             CoachName: coachUser?.FullName ?? "N/A",
             ClassName: c.ClassName,
-            ScheduleTime: c.ScheduleTime,
+            ScheduleTime: CenterTime.ToLocal(c.ScheduleTime),
             DurationMinutes: c.DurationMinutes,
             Capacity: c.Capacity,
             CurrentEnrolled: c.CurrentEnrolled,
@@ -207,7 +208,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                     CoachId: c.CoachId,
                     CoachName: user?.FullName ?? "N/A",
                     ClassName: c.ClassName,
-                    ScheduleTime: c.ScheduleTime,
+                    ScheduleTime: CenterTime.ToLocal(c.ScheduleTime),
                     DurationMinutes: c.DurationMinutes,
                     Capacity: c.Capacity,
                     CurrentEnrolled: c.CurrentEnrolled,
@@ -270,7 +271,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                     CoachId: c.CoachId,
                     CoachName: user?.FullName ?? "N/A",
                     ClassName: c.ClassName,
-                    ScheduleTime: c.ScheduleTime,
+                    ScheduleTime: CenterTime.ToLocal(c.ScheduleTime),
                     DurationMinutes: c.DurationMinutes,
                     Capacity: c.Capacity,
                     CurrentEnrolled: c.CurrentEnrolled,

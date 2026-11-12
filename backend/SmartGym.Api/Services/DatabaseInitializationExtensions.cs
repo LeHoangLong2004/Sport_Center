@@ -60,9 +60,17 @@ public static partial class DatabaseInitializationExtensions
                     WHERE approval_status IS NULL OR approval_status = '';
                 CREATE INDEX IF NOT EXISTS idx_classes_approval_status
                     ON classes(approval_status);
+
+                -- Đồng bộ trạng thái các đơn hàng đã bị hủy
+                UPDATE invoices
+                    SET payment_status = 'refund_pending'
+                    WHERE fulfillment_status = 'cancelled' AND payment_status = 'completed';
+                UPDATE invoices
+                    SET payment_status = 'cancelled'
+                    WHERE fulfillment_status = 'cancelled' AND payment_status = 'pending';
                 "
             );
-            app.Logger.LogInformation("classes approval workflow schema is ready.");
+            app.Logger.LogInformation("classes approval workflow schema and cancelled invoices sync is ready.");
         }
         catch (Exception ex)
         {

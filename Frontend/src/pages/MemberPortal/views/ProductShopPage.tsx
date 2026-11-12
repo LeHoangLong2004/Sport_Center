@@ -389,13 +389,27 @@ export function ProductShopPage({ onNavigate, onOnlinePayment, embedded = false 
                 <div key={order.id} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-4 space-y-2">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-xs font-bold text-slate-900 dark:text-white">#{order.id.slice(0, 8).toUpperCase()}</p>
-                    <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                      order.status === "completed"
-                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                        : "bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-300"
-                    }`}>
-                      {order.status === "completed" ? "Đã thanh toán" : "Chờ thanh toán"}
-                    </span>
+                    {order.fulfillmentStatus === "cancelled" || order.status === "cancelled" ? (
+                      <span className="rounded-full px-2.5 py-0.5 text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300">
+                        {order.status === "refunded"
+                          ? "Đã hủy · Đã hoàn tiền"
+                          : order.status === "refund_pending"
+                          ? "Đã hủy · Chờ hoàn tiền"
+                          : "Đã hủy · Chưa thanh toán"}
+                      </span>
+                    ) : order.fulfillmentStatus === "delivered" ? (
+                      <span className="rounded-full px-2.5 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-300">
+                        Đã thanh toán · Đã giao
+                      </span>
+                    ) : order.status === "completed" ? (
+                      <span className="rounded-full px-2.5 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                        Đã thanh toán · Chờ bàn giao
+                      </span>
+                    ) : (
+                      <span className="rounded-full px-2.5 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                        Chờ thanh toán · Chờ nhận hàng
+                      </span>
+                    )}
                   </div>
 
                   <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">

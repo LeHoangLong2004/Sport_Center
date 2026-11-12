@@ -12,8 +12,9 @@ public sealed partial class PackageCatalogService
 {
     private async Task EnsureDefaultsAsync(CancellationToken cancellationToken)
     {
+        var defaultIds = Defaults.Select(item => item.Id).ToList();
         var existingIds = await db
-            .Packages.Where(package => Defaults.Select(item => item.Id).Contains(package.Id))
+            .Packages.Where(package => defaultIds.Contains(package.Id))
             .Select(package => package.Id)
             .ToListAsync(cancellationToken);
         var missing = Defaults.Where(item => !existingIds.Contains(item.Id)).ToArray();

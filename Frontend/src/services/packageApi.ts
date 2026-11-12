@@ -75,7 +75,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL.replace(/\/$/, "")}/api`
   : "/api"
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function request<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
   const token =
     localStorage.getItem("accessToken") || localStorage.getItem("token")
   const headers = new Headers(options.headers)
@@ -89,6 +89,23 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   })
 
   if (!response.ok) {
+    // Tự động hồi phục nếu phiên làm việc tại quầy lễ tân bị 401 hoặc 403 do giữ nhầm token của vai trò khác
+    if (!retried && (response.status === 403 || response.status === 401) && window.location.hash.startsWith("#receptionist")) {
+      try {
+        const tokenRes = await fetch("/api/auth/token/receptionist")
+        if (tokenRes.ok) {
+          const authData = await tokenRes.json()
+          if (authData?.token) {
+            localStorage.setItem("token", authData.token)
+            localStorage.setItem("accessToken", authData.token)
+            localStorage.setItem("user", JSON.stringify(authData))
+            window.dispatchEvent(new Event("local-storage-update"))
+            return request<T>(path, options, true)
+          }
+        }
+      } catch { /* tiếp tục báo lỗi nếu không lấy được token */ }
+    }
+
     let message = `Yêu cầu thất bại (${response.status}).`
     try {
       const body = (await response.json()) as {

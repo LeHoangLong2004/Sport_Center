@@ -119,7 +119,7 @@ public sealed partial class SupabaseGroupClassRepository
                         CoachRating = coach?.Rating,
                         CoachExperienceYears = coach?.ExperienceYears,
                         Price = 150000m,
-                        ScheduleTime = targetClass?.ScheduleTime ?? DateTime.MinValue,
+                        ScheduleTime = targetClass != null ? CenterTime.ToLocal(targetClass.ScheduleTime) : DateTime.MinValue,
                         DurationMinutes = targetClass?.DurationMinutes ?? 60,
                         Status = (targetClass != null 
                                   && targetClass.ScheduleTime.AddMinutes(targetClass.DurationMinutes) <= DateTime.UtcNow 
@@ -313,7 +313,7 @@ public sealed partial class SupabaseGroupClassRepository
                     CoachId: c.CoachId,
                     CoachName: user?.FullName ?? "N/A",
                     ClassName: c.ClassName,
-                    ScheduleTime: c.ScheduleTime,
+                    ScheduleTime: CenterTime.ToLocal(c.ScheduleTime),
                     DurationMinutes: c.DurationMinutes,
                     Capacity: c.Capacity,
                     CurrentEnrolled: c.CurrentEnrolled,
