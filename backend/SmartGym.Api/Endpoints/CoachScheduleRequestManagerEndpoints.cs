@@ -381,12 +381,16 @@ public static class CoachScheduleRequestManagerEndpoints
         row.CoachName, coachId = row.CoachId.ToString(), substituteCoachName = row.SubstituteCoachName ?? "",
         substituteCoachId = row.SubstituteCoachId?.ToString() ?? "", requestType = row.RequestType,
         newDate = row.NewDate?.ToString("yyyy-MM-dd") ?? "", newTime = row.NewTime ?? "",
-        sessionTime = row.SessionTime ?? (row.ScheduleTime?.ToString("yyyy-MM-dd HH:mm") ?? ""),
+        sessionTime = row.ScheduleTime.HasValue
+            ? CenterTime.ToLocal(row.ScheduleTime.Value).ToString("yyyy-MM-dd HH:mm")
+            : (row.SessionTime ?? ""),
         sportName = row.SportName ?? "",
         roomName = row.RoomName ?? "",
         row.Reason, row.Status, managerNote = row.ManagerNote ?? "",
-        createdAt = row.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
-        scheduleTime = row.ScheduleTime?.ToString("yyyy-MM-dd HH:mm") ?? "",
+        createdAt = CenterTime.ToLocal(row.CreatedAt).ToString("yyyy-MM-dd HH:mm"),
+        scheduleTime = row.ScheduleTime.HasValue
+            ? CenterTime.ToLocal(row.ScheduleTime.Value).ToString("yyyy-MM-dd HH:mm")
+            : "",
         durationMinutes = row.DurationMinutes
     };
 

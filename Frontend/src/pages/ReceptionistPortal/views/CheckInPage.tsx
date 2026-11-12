@@ -306,25 +306,32 @@ export function CheckInPage() {
           <span className="w-[150px] shrink-0">TRẠNG THÁI</span>
           <span className="w-[100px] shrink-0 text-right">ĐIỂM DANH</span>
         </div>
-        {historyRows.map((row) => (
-          <div key={row.id} className="border border-[#f1f5f9] border-solid flex h-[54px] items-center px-[24px] shrink-0 w-full">
-            <span className="font-normal text-[#0f172a] text-[13px] w-[120px] shrink-0">
-              {new Date(row.checkInTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-            </span>
-            <div className="flex flex-1 gap-[10px] items-center min-w-0">
-              <UserAvatar name={row.memberName || "HV"} className="shrink-0 size-[28px] rounded-full object-cover text-xs" />
-              <span className="font-bold text-[#0f172a] text-[13px] whitespace-nowrap">{row.memberName}</span>
+        {historyRows.map((row) => {
+          const memberInfo = members.find((m) => m.id === row.memberId);
+          return (
+            <div key={row.id} className="border border-[#f1f5f9] border-solid flex h-[54px] items-center px-[24px] shrink-0 w-full">
+              <span className="font-normal text-[#0f172a] text-[13px] w-[120px] shrink-0">
+                {new Date(row.checkInTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+              </span>
+              <div className="flex flex-1 gap-[10px] items-center min-w-0">
+                <UserAvatar name={row.memberName || "HV"} className="shrink-0 size-[28px] rounded-full object-cover text-xs" />
+                <span className="font-bold text-[#0f172a] text-[13px] whitespace-nowrap">{row.memberName}</span>
+              </div>
+              <span className="font-normal text-[#64748b] text-[13px] w-[150px] shrink-0">
+                {memberInfo?.memberCode || (row.memberId ? row.memberId.slice(0, 8).toUpperCase() : "—")}
+              </span>
+              <span className="font-normal text-[#0f172a] text-[13px] w-[180px] shrink-0">
+                {memberInfo?.packageName || "Cơ bản"}
+              </span>
+              <div className="flex items-start w-[150px] shrink-0">
+                <StatusBadge text={row.result === "APPROVED" || row.result === "CHECKED_OUT" ? "Hợp lệ" : "Từ chối"} color={row.result === "APPROVED" || row.result === "CHECKED_OUT" ? "green" : "red"} />
+              </div>
+              <span className="font-normal text-right w-[100px] shrink-0 text-[13px]" style={{ color: row.checkOutTime ? "#64748b" : "#22c55e" }}>
+                {row.checkOutTime ? `${row.durationMinutes ?? 0} phút` : "Đang tập"}
+              </span>
             </div>
-            <span className="font-normal text-[#64748b] text-[13px] w-[150px] shrink-0">{"..."}</span>
-            <span className="font-normal text-[#0f172a] text-[13px] w-[180px] shrink-0">{"..."}</span>
-            <div className="flex items-start w-[150px] shrink-0">
-              <StatusBadge text={row.result === "APPROVED" || row.result === "CHECKED_OUT" ? "Hợp lệ" : "Từ chối"} color={row.result === "APPROVED" || row.result === "CHECKED_OUT" ? "green" : "red"} />
-            </div>
-             <span className="font-normal text-right w-[100px] shrink-0 text-[13px]" style={{ color: row.checkOutTime ? "#64748b" : "#22c55e" }}>
-               {row.checkOutTime ? `${row.durationMinutes ?? 0} phút` : "Đang tập"}
-             </span>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   )

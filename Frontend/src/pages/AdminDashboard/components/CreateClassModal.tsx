@@ -142,7 +142,7 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager
 
   const leadTimeValidation = (() => {
     if (!formData.scheduleDate || !formData.scheduleTime) return null;
-    const start = new Date(`${formData.scheduleDate}T${formData.scheduleTime}:00`);
+    const start = new Date(`${formData.scheduleDate}T${formData.scheduleTime}:00+07:00`);
     if (Number.isNaN(start.getTime())) return null;
     const diffHours = (start.getTime() - Date.now()) / (1000 * 60 * 60);
     if (isCoachMode) {
@@ -192,7 +192,7 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager
         throw new Error('Vui lòng chọn đầy đủ ngày và giờ học.');
       }
 
-      const startDateTime = new Date(`${scheduleDate}T${scheduleTime}:00`);
+      const startDateTime = new Date(`${scheduleDate}T${scheduleTime}:00+07:00`);
       if (Number.isNaN(startDateTime.getTime())) {
         throw new Error('Ngày hoặc giờ học không hợp lệ.');
       }

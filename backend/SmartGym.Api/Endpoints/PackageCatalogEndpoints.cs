@@ -39,12 +39,19 @@ public static class PackageCatalogEndpoints
                 CancellationToken cancellationToken
             ) =>
             {
-                var role = context.User.FindFirstValue(ClaimTypes.Role);
-                var includeInactive =
-                    role is not null
-                    && ManagerRoles.Contains(role, StringComparer.OrdinalIgnoreCase);
-                var packages = await service.GetCatalogAsync(includeInactive, cancellationToken);
-                return Results.Ok(packages);
+                try
+                {
+                    var role = context.User.FindFirstValue(ClaimTypes.Role);
+                    var includeInactive =
+                        role is not null
+                        && ManagerRoles.Contains(role, StringComparer.OrdinalIgnoreCase);
+                    var packages = await service.GetCatalogAsync(includeInactive, cancellationToken);
+                    return Results.Ok(packages);
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(detail: ex.Message, statusCode: StatusCodes.Status500InternalServerError);
+                }
             }
         );
 
