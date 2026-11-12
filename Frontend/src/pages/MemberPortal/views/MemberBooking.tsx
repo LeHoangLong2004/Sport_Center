@@ -112,7 +112,12 @@ export default function MemberBooking({ onNavigate }: Props) {
   };
 
   const filteredGroupClasses = useMemo(() => {
+    const nowTime = Date.now();
     return groupClasses.filter((c) => {
+      // Đảm bảo chỉ hiển thị lớp học diễn ra trong tương lai so với thời gian thực tế
+      const classStart = c.scheduleTime ? new Date(c.scheduleTime).getTime() : 0;
+      if (classStart && classStart <= nowTime) return false;
+
       const matchDate = !selectedDate || c.dateStr === selectedDate;
       const matchSport = selectedSport === "all" || c.sport.toLowerCase() === selectedSport.toLowerCase();
       const matchCoach =
@@ -129,7 +134,20 @@ export default function MemberBooking({ onNavigate }: Props) {
   }, [groupClasses, selectedDate, selectedSport, selectedCoachId, searchQuery]);
 
   const filteredPtSlots = useMemo(() => {
+    const nowTime = Date.now();
     return ptSlots.filter((slot) => {
+      // Đảm bảo ca PT diễn ra trong tương lai so với thời gian thực tế
+      if (slot?.date) {
+        let slotDateStr = String(slot.date).trim();
+        if (slotDateStr.includes("/")) {
+          const [d, m, y] = slotDateStr.split("/");
+          slotDateStr = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+        }
+        const timeStr = slot.startTime || "00:00";
+        const slotStart = new Date(`${slotDateStr}T${timeStr}:00`).getTime();
+        if (!isNaN(slotStart) && slotStart <= nowTime) return false;
+      }
+
       const matchDate = !selectedDate || slot.date === selectedDate;
       const matchSport = selectedSport === "all" || String(slot.sport || "").toLowerCase() === selectedSport.toLowerCase();
       const matchCoach =
@@ -172,8 +190,8 @@ export default function MemberBooking({ onNavigate }: Props) {
       <BookingHeader
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        groupClassesCount={groupClasses.length}
-        ptSlotsCount={ptSlots.length}
+        groupClassesCount={filteredGroupClasses.length}
+        ptSlotsCount={filteredPtSlots.length}
         myActiveClassesCount={myUpcomingClasses.length}
         coaches={coaches}
         selectedCoachId={selectedCoachId}

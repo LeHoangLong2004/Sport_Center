@@ -229,14 +229,17 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
 
     public async Task<IEnumerable<ClassResponse>> GetAvailableClassesAsync()
     {
+        var nowUtc = DateTime.UtcNow;
         var classResponse = await _client
             .From<GroupClassModel>()
             .Where(x => x.Status == true)
-            .Where(x => x.ScheduleTime > DateTime.UtcNow)
+            .Where(x => x.ScheduleTime > nowUtc)
             .Get();
 
         var classModels = classResponse.Models
-            .Where(c => c.Status && string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase))
+            .Where(c => c.Status && 
+                        string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase) &&
+                        c.ScheduleTime > nowUtc)
             .ToList();
         if (!classModels.Any())
             return Enumerable.Empty<ClassResponse>();
