@@ -190,37 +190,19 @@ export function useCoachScheduleData(weekDates: string[]) {
   }, [rawSessions, availabilitySlots, appointments, weekDates, currentCoachName]);
 
   const addOpenSlot = async (newItem: UnifiedScheduleItem) => {
-    try {
-      const created = await CoachAPI.createAvailabilitySlot({
-        date: newItem.date,
-        startTime: newItem.startTime,
-        endTime: newItem.endTime,
-        sport: newItem.sport,
-        room: newItem.room,
-        note: newItem.note,
-      });
-      if (created && created.id) {
-        setAvailabilitySlots((previous) => [created, ...previous.filter((slot) => slot.id !== created.id)]);
-        return created;
-      }
-    } catch (err) {
-      console.warn("Lỗi gọi API createAvailabilitySlot, lưu tạm slot tại client:", err);
-    }
-
-    const fallbackSlot: AvailabilitySlot = {
-      id: "local-avail-" + Date.now(),
-      coachId: "current",
+    const created = await CoachAPI.createAvailabilitySlot({
       date: newItem.date,
       startTime: newItem.startTime,
       endTime: newItem.endTime,
       sport: newItem.sport,
       room: newItem.room,
       note: newItem.note,
-      isOpen: true,
-      period: "Sáng",
-    };
-    setAvailabilitySlots((previous) => [fallbackSlot, ...previous]);
-    return fallbackSlot;
+    });
+    if (created && created.id) {
+      setAvailabilitySlots((previous) => [created, ...previous.filter((slot) => slot.id !== created.id)]);
+      return created;
+    }
+    throw new Error("Không thể lưu ca rảnh vào hệ thống.");
   };
 
   const removeOpenSlot = async (id: string) => {

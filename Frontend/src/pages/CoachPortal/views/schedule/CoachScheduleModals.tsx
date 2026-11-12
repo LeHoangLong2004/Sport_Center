@@ -79,6 +79,7 @@ export function CoachScheduleModals({
         sportOptions={sportOptions}
         roomOptions={roomOptions}
         initialDate={initialOpenSlotDate}
+        existingSessions={allUnifiedSessions}
       />
 
       <OpenPtDetailModal

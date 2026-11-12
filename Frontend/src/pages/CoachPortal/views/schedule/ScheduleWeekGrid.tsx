@@ -40,6 +40,9 @@ export default function ScheduleWeekGrid({
   onJumpToWeek,
 }: Props) {
   const hasSessionsInWeek = filteredSessions.some((s) => weekDates.includes(s.date));
+  const weekSessionsCount = React.useMemo(() => {
+    return filteredSessions.filter((s) => weekDates.includes(s.date)).length;
+  }, [filteredSessions, weekDates]);
 
   const weekRangeLabel = React.useMemo(() => {
     if (!weekDates || weekDates.length < 7) return "";
@@ -58,64 +61,50 @@ export default function ScheduleWeekGrid({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Thông báo tuần trống (hiển thị riêng biệt phía trên lịch, không cắt ngang bảng) */}
-      {!hasSessionsInWeek && (
-        <div className="p-4 md:p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-gradient-to-r from-slate-50 via-white to-emerald-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-emerald-950/20 shadow-2xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="size-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <Calendar className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                  Tuần này chưa có ca dạy ({weekRangeLabel})
-                </h4>
+      {/* Thanh trạng thái tuần & Đăng ca rảnh (Đồng bộ hiển thị trên tất cả các tuần) */}
+      <div className="p-4 md:p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-gradient-to-r from-slate-50 via-white to-emerald-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-emerald-950/20 shadow-2xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="size-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <Calendar className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                {hasSessionsInWeek
+                  ? `Lịch dạy tuần này (${weekRangeLabel})`
+                  : `Tuần này chưa có ca dạy (${weekRangeLabel})`}
+              </h4>
+              {hasSessionsInWeek ? (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                  {weekSessionsCount} ca dạy
+                </span>
+              ) : (
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                   Trống lịch
                 </span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Bạn có thể bấm trực tiếp vào các khung giờ trên lịch để mở ca nhận học viên 1–1.
-              </p>
+              )}
             </div>
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap self-stretch md:self-auto justify-end">
-            {nearestSessionInfo && onJumpToWeek && (
-              <button
-                type="button"
-                onClick={() => onJumpToWeek(nearestSessionInfo.offset)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition-all shadow-2xs cursor-pointer"
-              >
-                <span>Tuần có ca dạy ({nearestSessionInfo.date.split("-").slice(1).reverse().join("/")})</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            )}
-
-            {onSwitchToList && (
-              <button
-                type="button"
-                onClick={onSwitchToList}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-2xs cursor-pointer"
-              >
-                <List className="w-3.5 h-3.5" />
-                <span>Xem danh sách</span>
-              </button>
-            )}
-
-            {onOpenSlotModal && (
-              <button
-                type="button"
-                onClick={() => onOpenSlotModal()}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-white dark:bg-slate-800 border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors shadow-2xs cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Đăng ca rảnh</span>
-              </button>
-            )}
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              {hasSessionsInWeek
+                ? "Bấm vào các khung giờ trống trên bảng lịch hoặc bấm Đăng ca rảnh để mở nhận thêm học viên 1–1."
+                : "Bạn có thể bấm trực tiếp vào các khung giờ trên lịch để mở ca nhận học viên 1–1."}
+            </p>
           </div>
         </div>
-      )}
+
+        <div className="flex items-center gap-2 self-stretch md:self-auto justify-end">
+          {onOpenSlotModal && (
+            <button
+              type="button"
+              onClick={() => onOpenSlotModal()}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-xs hover:shadow-md cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Đăng ca rảnh</span>
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* Bảng Lịch Tuần Chuẩn Google Calendar (Timetable Grid) */}
       <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 shadow-xs">
