@@ -12,8 +12,10 @@ import {
   ArrowRight,
   Filter,
   Sparkles,
+  Lock,
 } from "lucide-react";
 import type { MockSession } from "../../services/api";
+import { isAttendanceLocked24h, getAttendanceLockDeadlineInfo } from "../../utils/attendanceLock";
 
 interface Props {
   activeSessions: MockSession[];
@@ -23,7 +25,7 @@ interface Props {
 }
 
 type DateTab = "all" | "today" | "tomorrow" | "this_week";
-type StatusFilter = "all" | "pending" | "finalized";
+type StatusFilter = "all" | "pending" | "finalized" | "locked";
 
 export default function AttendanceClassSessionsList({
   activeSessions,
@@ -104,8 +106,11 @@ export default function AttendanceClassSessionsList({
 
       // 2. Status filter
       const state = getSessionAttendanceState(s);
+      const isLocked24h = isAttendanceLocked24h(s.date, s.startTime);
+
       if (statusFilter === "finalized" && state !== "finalized") return false;
-      if (statusFilter === "pending" && state === "finalized") return false;
+      if (statusFilter === "pending" && (state === "finalized" || isLocked24h)) return false;
+      if (statusFilter === "locked" && !isLocked24h) return false;
 
       // 3. Search query
       if (search.trim()) {
@@ -127,8 +132,13 @@ export default function AttendanceClassSessionsList({
   );
 
   const pendingAttendanceCount = useMemo(
-    () => activeSessions.filter((s) => !finalizedMap[s.id]).length,
+    () => activeSessions.filter((s) => !finalizedMap[s.id] && !isAttendanceLocked24h(s.date, s.startTime)).length,
     [activeSessions, finalizedMap]
+  );
+
+  const lockedCount = useMemo(
+    () => activeSessions.filter((s) => isAttendanceLocked24h(s.date, s.startTime)).length,
+    [activeSessions]
   );
 
   const finalizedCount = useMemo(
@@ -244,8 +254,9 @@ export default function AttendanceClassSessionsList({
             className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none"
           >
             <option value="all">Mọi trạng thái điểm danh</option>
-            <option value="pending">Chưa chốt điểm danh</option>
-            <option value="finalized">Đã chốt sổ điểm danh</option>
+            <option value="pending">Chưa chốt ({pendingAttendanceCount})</option>
+            <option value="finalized">Đã chốt sổ ({finalizedCount})</option>
+            <option value="locked">Đã đóng (Quá 24 giờ) ({lockedCount})</option>
           </select>
 
           <div className="relative flex-1 sm:w-64">
@@ -300,6 +311,8 @@ export default function AttendanceClassSessionsList({
             const state = getSessionAttendanceState(session);
             const isFinalized = state === "finalized";
             const isDraft = state === "draft";
+            const isLocked24h = isAttendanceLocked24h(session.date, session.startTime);
+            const deadlineInfo = getAttendanceLockDeadlineInfo(session.date, session.startTime);
             const enrolled = Array.isArray(session.registeredMemberIds)
               ? session.registeredMemberIds.length
               : (session as any).registeredCount || 0;
@@ -319,7 +332,9 @@ export default function AttendanceClassSessionsList({
                 {/* Accent top stripe */}
                 <div
                   className={`absolute top-0 left-0 right-0 h-1.5 ${
-                    isFinalized
+                    isLocked24h
+                      ? "bg-slate-400 dark:bg-slate-700"
+                      : isFinalized
                       ? "bg-slate-400 dark:bg-slate-600"
                       : isDraft
                       ? "bg-amber-500"
@@ -343,32 +358,39 @@ export default function AttendanceClassSessionsList({
                     </div>
 
                     {/* Attendance State Badge */}
-                    <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                        isFinalized
-                          ? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                          : isDraft
-                          ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 animate-pulse"
-                          : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
-                      }`}
-                    >
-                      {isFinalized ? (
-                        <>
-                          <ShieldCheck className="w-3 h-3 text-slate-500" />
-                          Đã chốt sổ
-                        </>
-                      ) : isDraft ? (
-                        <>
-                          <span className="size-1.5 rounded-full bg-amber-500" />
-                          Đang lưu nháp
-                        </>
-                      ) : (
-                        <>
-                          <span className="size-1.5 rounded-full bg-emerald-500" />
-                          Chưa điểm danh
-                        </>
-                      )}
-                    </span>
+                    {isLocked24h ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                        <Lock className="w-3 h-3 text-slate-500" />
+                        Đã đóng (Quá 24 giờ)
+                      </span>
+                    ) : (
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                          isFinalized
+                            ? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                            : isDraft
+                            ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 animate-pulse"
+                            : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                        }`}
+                      >
+                        {isFinalized ? (
+                          <>
+                            <ShieldCheck className="w-3 h-3 text-slate-500" />
+                            Đã chốt sổ
+                          </>
+                        ) : isDraft ? (
+                          <>
+                            <span className="size-1.5 rounded-full bg-amber-500" />
+                            Đang lưu nháp
+                          </>
+                        ) : (
+                          <>
+                            <span className="size-1.5 rounded-full bg-emerald-500" />
+                            Chưa điểm danh
+                          </>
+                        )}
+                      </span>
+                    )}
                   </div>
 
                   {/* Class Title */}
@@ -425,13 +447,29 @@ export default function AttendanceClassSessionsList({
                       onSelectSession(session.id);
                     }}
                     className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                      isFinalized
+                      isLocked24h
+                        ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-750"
+                        : isFinalized
                         ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 group-hover:bg-slate-200"
                         : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 group-hover:scale-[1.02]"
                     }`}
                   >
-                    <span>{isFinalized ? "Xem sổ điểm danh / Điều chỉnh" : "Điểm danh ngay"}</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    {isLocked24h ? (
+                      <>
+                        <Lock className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Xem sổ điểm danh (Đã đóng)</span>
+                      </>
+                    ) : isFinalized ? (
+                      <>
+                        <span>Xem sổ điểm danh / Điều chỉnh</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </>
+                    ) : (
+                      <>
+                        <span>Điểm danh ngay</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

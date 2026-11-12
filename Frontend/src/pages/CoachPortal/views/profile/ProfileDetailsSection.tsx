@@ -6,7 +6,6 @@ import {
   Award,
   User,
   CheckCircle2,
-  Edit3,
 } from "lucide-react";
 
 interface Props {
@@ -15,7 +14,7 @@ interface Props {
   dob?: string;
   gender: string;
   displayCerts: string[];
-  onOpenEdit: () => void;
+  onOpenEdit?: () => void;
 }
 
 export default function ProfileDetailsSection({
@@ -102,19 +101,6 @@ export default function ProfileDetailsSection({
             <Award className="w-4 h-4" />
             Bằng cấp & Chứng chỉ chuyên môn
           </h2>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400">
-              {displayCerts.length} chứng chỉ đã xác thực
-            </span>
-            <button
-              type="button"
-              onClick={onOpenEdit}
-              className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 flex items-center gap-1"
-            >
-              <Edit3 className="w-3 h-3" />
-              Chỉnh sửa
-            </button>
-          </div>
         </div>
 
         {displayCerts.length === 0 ? (
@@ -124,7 +110,7 @@ export default function ProfileDetailsSection({
               Chưa có bằng cấp hoặc chứng chỉ nào trong hồ sơ
             </p>
             <p className="text-xs text-slate-400 mt-1">
-              Bấm "Chỉnh sửa" hoặc "Cập nhật hồ sơ" để thêm chứng chỉ chuyên môn của bạn.
+              Bấm "Cập nhật hồ sơ" ở phía trên để thêm chứng chỉ chuyên môn của bạn.
             </p>
           </div>
         ) : (

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { CoachScreen } from "../../types";
 import { DAYS_NAMES, TIME_ROWS, type UnifiedScheduleItem } from "./types";
+import { isAttendanceLocked24h } from "../../utils/attendanceLock";
 
 interface Props {
   weekDates: string[];
@@ -302,14 +303,25 @@ export default function ScheduleWeekGrid({
                                 </button>
                               ) : (
                                 <>
-                                  <button
-                                    type="button"
-                                    onClick={() => navigateTo("attendance", { sessionId: s.id })}
-                                    className="flex-1 py-1 px-1.5 text-[10px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md transition-colors shadow-2xs cursor-pointer text-center flex items-center justify-center gap-1"
-                                  >
-                                    <CheckCircle2 className="w-2.5 h-2.5" />
-                                    <span>Điểm danh</span>
-                                  </button>
+                                  {isAttendanceLocked24h(s.date, s.startTime) ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => navigateTo("attendance", { sessionId: s.id })}
+                                      className="flex-1 py-1 px-1.5 text-[10px] font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-md transition-colors shadow-2xs cursor-pointer text-center flex items-center justify-center gap-1"
+                                    >
+                                      <Eye className="w-2.5 h-2.5" />
+                                      <span>Xem điểm danh</span>
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => navigateTo("attendance", { sessionId: s.id })}
+                                      className="flex-1 py-1 px-1.5 text-[10px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md transition-colors shadow-2xs cursor-pointer text-center flex items-center justify-center gap-1"
+                                    >
+                                      <CheckCircle2 className="w-2.5 h-2.5" />
+                                      <span>Điểm danh</span>
+                                    </button>
+                                  )}
                                   <button
                                     type="button"
                                     onClick={() => navigateTo("class-detail", { sessionId: s.id })}
