@@ -10,10 +10,6 @@ import { SchedulePage } from './views/SchedulePage';
 import type { ScheduleTab } from './views/ScheduleHeader';
 import { PaymentPage } from './views/PaymentPage';
 import { ReportsPage } from './views/ReportsPage';
-import { BudgetPage } from './views/BudgetPage';
-import { ExpensesPage } from './views/ExpensesPage';
-import { PayrollPage } from './views/PayrollPage';
-import { PLReportPage } from './views/PLReportPage';
 import { MemberEditPage } from './views/MemberEditPage';
 import { MembersPage } from './views/MembersPage';
 import { StaffPage } from './views/StaffPage';
@@ -26,8 +22,7 @@ import { PageTransition } from '../../components/PageTransition';
 
 const VALID_ADMIN_PAGES: AdminPage[] = [
   "overview", "packages", "products", "schedule", "members", "staff",
-  "facilities", "payment", "reports", "budget", "expenses", "payroll",
-  "pl-report", "settings", "member-edit", "profile", "classes",
+  "facilities", "payment", "reports", "settings", "member-edit", "profile", "classes",
   "permissions", "audit-log", "check-ins", "support"
 ];
 
@@ -209,10 +204,6 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             {page === "facilities" && <FacilitiesPage />}
             {page === "payment"    && <PaymentPage />}
             {page === "reports"    && <ReportsPage />}
-            {page === "budget"     && <BudgetPage />}
-            {page === "expenses"   && <ExpensesPage />}
-            {page === "payroll"    && <PayrollPage />}
-            {page === "pl-report"  && <PLReportPage />}
             {page === "settings"   && <SettingsPage />}
             {page === "member-edit"&& <MemberEditPage memberData={selectedMember} onBack={() => setPage("members")} />}
             {page === "profile"    && (

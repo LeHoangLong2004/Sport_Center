@@ -125,12 +125,12 @@ export const ProfileInvoicesTab: React.FC<ProfileInvoicesTabProps> = ({
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50/75 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-100 dark:border-slate-800">
               <tr>
-                <th className="py-3 px-4">Mã hóa đơn</th>
-                <th className="py-3 px-4">Gói dịch vụ</th>
-                <th className="py-3 px-4">Số tiền</th>
-                <th className="py-3 px-4">Hình thức thanh toán</th>
-                <th className="py-3 px-4">Trạng thái</th>
-                <th className="py-3 px-4 text-right">Thao tác</th>
+                <th className="py-3 px-4 w-[160px]">Mã hóa đơn</th>
+                <th className="py-3 px-4 min-w-[200px]">Gói dịch vụ</th>
+                <th className="py-3 px-4 w-[130px]">Số tiền</th>
+                <th className="py-3 px-4 w-[170px]">Hình thức thanh toán</th>
+                <th className="py-3 px-4 w-[150px] text-center">Trạng thái</th>
+                <th className="py-3 px-4 w-[100px] text-center">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -179,7 +179,7 @@ export const ProfileInvoicesTab: React.FC<ProfileInvoicesTabProps> = ({
                         <div className="text-[11px] text-slate-400 italic">Chưa đối soát</div>
                       )}
                     </td>
-                    <td className="py-3.5 px-4">
+                    <td className="py-3.5 px-4 text-center">
                       {inv.status === "paid" ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
                           <CheckCircle2 className="w-3.5 h-3.5" />
@@ -192,15 +192,15 @@ export const ProfileInvoicesTab: React.FC<ProfileInvoicesTabProps> = ({
                         </span>
                       )}
                     </td>
-                    <td className="py-3.5 px-4 text-right">
+                    <td className="py-3.5 px-4 text-center">
                       {inv.status === "paid" ? (
                         <button
                           type="button"
                           onClick={() => setReceiptModal(inv)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20 rounded-lg transition-colors border border-emerald-200/60 dark:border-emerald-500/30 cursor-pointer"
+                          className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20 rounded-lg transition-colors border border-emerald-200/60 dark:border-emerald-500/30 cursor-pointer"
                         >
                           <Printer className="w-3.5 h-3.5" />
-                          Xem phiếu thu
+                          Xem
                         </button>
                       ) : (
                         <button
@@ -209,7 +209,7 @@ export const ProfileInvoicesTab: React.FC<ProfileInvoicesTabProps> = ({
                             setActivePaymentReportModal(inv);
                             setReportBankMethod("Chuyển khoản QR");
                           }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg shadow-xs transition-colors cursor-pointer"
+                          className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg shadow-xs transition-colors cursor-pointer"
                         >
                           <Building className="w-3.5 h-3.5" />
                           Báo thanh toán

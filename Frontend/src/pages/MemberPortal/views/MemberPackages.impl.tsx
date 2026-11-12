@@ -1,14 +1,17 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react"; import { createPortal } from "react-dom"; import type { MemberScreen } from "../types"; import {
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import type { MemberScreen } from "../types";
+import {
     PackageAPI, CatalogPackage,
     PackageOrder, PackagePeriod, MembershipTier, SportFormat, getMembershipStatus, MembershipStatus,
-} from "../../../services/packageApi"; import {
+} from "../../../services/packageApi";
+import {
     Crown, Sparkles, ShieldCheck, CheckCircle2,
     Clock, ArrowRight, CreditCard, Dumbbell, Zap, Calendar,
     Ticket, Droplets, Layers, Lock, RefreshCw, AlertCircle,
     X, ChevronRight, Activity, Flame, Info, QrCode,
     Building,
 } from "lucide-react";
-import SePayQrModal from "../components/SePayQrModal";
+import UniversalPaymentModal, { UniversalPaymentItem } from "../components/UniversalPaymentModal";
 interface Props {
     onNavigate: (screen: MemberScreen) => void; onCheckout?: (item: CatalogPackage,
         duration: PackagePeriod, discountPct: number) => void;
@@ -18,8 +21,9 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
     const [activeTab, setActiveTab] = useState<"membership" | "sport">("membership"); const [catalog, setCatalog] = useState<CatalogPackage[]>([]); const [orders, setOrders] = useState<PackageOrder[]>([]); const [loading, setLoading] = useState(true); const [selectedDuration, setSelectedDuration] = useState<PackagePeriod>(1); const [sportFilter, setSportFilter] = useState("all");
     const [formatFilter, setFormatFilter] = useState<"all" | SportFormat>("all");
     // Quick checkout modal state
-    const [selectedPackage, setSelectedPackage] = useState<CatalogPackage | null>(null); const [checkoutDuration, setCheckoutDuration] = useState<PackagePeriod>(1); const [checkoutMethod, setCheckoutMethod] = useState<"qr" | "counter">("qr"); const [isSubmitting, setIsSubmitting] = useState(false); const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
-    const [qrOrder, setQrOrder] = useState<{ id: string; name: string; total: number } | null>(null);
+    const [selectedPackage, setSelectedPackage] = useState<CatalogPackage | null>(null);
+    const [checkoutDuration, setCheckoutDuration] = useState<PackagePeriod>(1);
+    const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
     // Load data
     const loadData = useCallback(async () => {
         try {
@@ -72,20 +76,46 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
     }, [membershipStatus, selectedDuration]);
     // Handle start purchase
     const handleStartPurchase = (pkg: CatalogPackage) => {
-        const { discountPct } = calculateDiscount(pkg); if (onCheckout) { onCheckout(pkg, selectedDuration, discountPct); return; }
-        setSelectedPackage(pkg); setCheckoutDuration(selectedDuration);
+        setSelectedPackage(pkg);
+        setCheckoutDuration(selectedDuration);
     };
-    // Submit quick checkout
-    const handleQuickCheckout = async () => {
-        if (!selectedPackage) return; try {
-            setIsSubmitting(true); const res = await PackageAPI.checkout(selectedPackage.id,
-                checkoutDuration, checkoutMethod); const orderData = res?.order; const pkgName = selectedPackage.name; setSelectedPackage(null); if (checkoutMethod === "qr" && orderData) { setQrOrder({ id: orderData.id, name: pkgName, total: orderData.total || 0 }); } else { setFeedback({ type: "success", text: `Đã tạo đơn đăng ký gói "${pkgName}". Vui lòng thanh toán tại quầy lễ tân để kích hoạt!`, }); await loadData(); }
+
+    const universalPaymentItem = useMemo<UniversalPaymentItem | null>(() => {
+        if (!selectedPackage) return null;
+        const { discountPct, originalPrice, finalPrice } = calculateDiscount(selectedPackage);
+        return {
+            id: selectedPackage.id,
+            categoryTitle: selectedPackage.category === "membership" ? "ĐĂNG KÝ GÓI THÀNH VIÊN" : "ĐĂNG KÝ GÓI MÔN TẬP",
+            title: selectedPackage.name,
+            subtitle: `${checkoutDuration} tháng • ${selectedPackage.sport || "Hội viên"}`,
+            description: selectedPackage.description,
+            originalPrice,
+            discountPct,
+            discountAmount: originalPrice - finalPrice,
+            finalPrice,
+            memoPrefix: selectedPackage.category === "membership" ? "MEMBER" : "SPORT",
+        };
+    }, [selectedPackage, checkoutDuration, calculateDiscount]);
+
+    const handleUniversalCheckoutSuccess = async (method: "qr" | "wallet" | "card" | "counter") => {
+        if (!selectedPackage) return;
+        const pkgName = selectedPackage.name;
+        try {
+            await PackageAPI.checkout(selectedPackage.id, checkoutDuration, method);
+            setSelectedPackage(null);
+            setFeedback({
+                type: "success",
+                text: method === "counter"
+                    ? `Đã tạo đơn đăng ký gói "${pkgName}". Vui lòng thanh toán tại quầy lễ tân để kích hoạt!`
+                    : `Thanh toán thành công gói "${pkgName}"! Quyền lợi đã được kích hoạt ngay lập tức.`,
+            });
+            await loadData();
         } catch (err: any) {
             setFeedback({
                 type: "error",
-                text: err?.message || "Không thể khởi tạo đơn thanh toán. Vui lòng thử lại.",
+                text: err?.message || "Không thể hoàn tất đơn đăng ký gói tập. Vui lòng thử lại.",
             });
-        } finally { setIsSubmitting(false); }
+        }
     };
     return (<div className="space-y-6"> {/* Toast feedback */} {feedback && (<div className={`p-4 rounded-2xl border text-xs font-semibold flex items-center justify-between shadow-lg transition-all animate-fadeIn ${feedback.type === "success" ? "bg-emerald-50 dark:bg-emerald-950/70 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200" : "bg-red-50 dark:bg-red-950/70 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200"}`} > <div className="flex items-center gap-2.5">
             {feedback.type === "success" ? (<CheckCircle2 className="w-5 h-5 shrink-0" />) : (<AlertCircle className="w-5 h-5 shrink-0" />)} <span>{feedback.text}</span>
@@ -205,80 +235,15 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
                                 onClick={() => handleStartPurchase(pkg)} className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer" > <span>Đăng ký gói môn</span> <ArrowRight className="w-4 h-4" /> </button>
                         </div> </div>);
                 })} </div> </div>
-        </div>)} {/* QUICK CHECKOUT MODAL (PORTAL) */} {selectedPackage && createPortal(<div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col animate-scaleUp"> {/* Modal Header */} <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between"> <div> <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-600 dark:text-emerald-400"> {selectedPackage.category === "membership"
-                ? "Đăng Ký Gói Thành Viên" : "Đăng Ký Gói Môn Tập"} </span> <h3 className="text-base font-bold text-slate-900 dark:text-white mt-0.5"> Xác nhận đơn thanh toán </h3>
-            </div> <button type="button" onClick={() => setSelectedPackage(null)} className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" >
-                    <X className="w-5 h-5" /> </button> </div> {/* Modal Body */} <div className="p-6 space-y-5 text-xs max-h-[70vh] overflow-y-auto"> {/* Summary Card */}
-                    {(() => {
-                        const { discountPct, originalPrice, finalPrice } = calculateDiscount(selectedPackage); return (<div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50/50 to-emerald-50/20 dark:from-emerald-950/30 dark:to-slate-850 border border-emerald-200/80 dark:border-emerald-800/80"> <div className="flex items-center justify-between"> <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                            {selectedPackage.sport || "Hội viên"} </span> <span className="font-bold text-slate-500 dark:text-slate-400"> Kỳ hạn: {checkoutDuration} tháng </span> </div>
-                            <h4 className="text-lg font-black text-slate-900 dark:text-white mt-2"> {selectedPackage.name} </h4> <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5"> {selectedPackage.description} </p>
-                            <div className="mt-4 pt-3 border-t border-emerald-200/50 dark:border-emerald-800/50 flex items-baseline justify-between"> <div> {discountPct > 0 && (<span className="text-xs text-slate-400 line-through mr-2"> {originalPrice.toLocaleString("vi-VN")} đ </span>
-                            )} <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400"> {finalPrice.toLocaleString("vi-VN")} đ </span> </div> {discountPct > 0 && (
-                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300"> Đã giảm {discountPct}% </span>)} </div> </div>
-                        );
-                    })()} {/* Payment method selector */} <div> <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2"> Chọn phương thức thanh toán:
-                    </label> <div className="grid grid-cols-2 gap-3"> <button type="button" onClick={() => setCheckoutMethod("qr")} className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between transition-all ${checkoutMethod === "qr" ? "bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-500 text-emerald-900 dark:text-emerald-200 ring-1 ring-emerald-500" : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"}`} > <div className="flex items-center gap-2">
-                            <QrCode className="w-5 h-5" /> <span className="font-bold text-xs">Chuyển khoản QR</span> </div> <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-2"> Quét mã VietQR nhanh 24/7 </span>
-                    </button> <button type="button" onClick={() => setCheckoutMethod("counter")} className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between transition-all ${checkoutMethod === "counter"
-                        ? "bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-500 text-emerald-900 dark:text-emerald-200 ring-1 ring-emerald-500" : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"}`} > <div className="flex items-center gap-2"> <Building className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                                    <span className="font-bold text-xs">Tiền mặt tại quầy</span> </div> <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-2"> Thanh toán với Lễ tân trung tâm </span> </button>
-                        </div> </div> {/* Important notice */} <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-[11px] space-y-1"> <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200"> <Info className="w-4 h-4" />
-                            <span>Lưu ý kích hoạt quyền lợi:</span> </div> <p>• Quyền lợi gói sẽ được kích hoạt ngay sau khi đối soát thanh toán thành công.</p> <p>• Nếu bạn đã có gói cùng môn đang hoạt động, hạn sử dụng sẽ được cộng dồn nối tiếp.</p> </div> </div>
-                {/* Modal Footer */}
-                <div className="p-5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3 bg-slate-50/50 dark:bg-slate-850">
-                  <button
-                    type="button"
-                    disabled={isSubmitting}
-                    onClick={() => setSelectedPackage(null)}
-                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isSubmitting}
-                    onClick={handleQuickCheckout}
-                    className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-emerald-500 dark:text-slate-950 dark:hover:bg-emerald-400 font-extrabold shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Đang xử lý...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Tạo đơn thanh toán</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>,
-            document.body
-          )}
+        </div>)}
 
-        {qrOrder && (
-          <SePayQrModal
-            isOpen={!!qrOrder}
-            onClose={() => {
-              setQrOrder(null);
-              void loadData();
-            }}
-            orderId={qrOrder.id}
-            orderTitle={qrOrder.name}
-            amount={qrOrder.total}
-            onPaymentSuccess={async () => {
-              setFeedback({
-                type: "success",
-                text: `Thanh toán thành công gói "${qrOrder.name}"! Quyền lợi đã được kích hoạt.`,
-              });
-              await loadData();
-            }}
-          />
-        )}
+        {/* UNIVERSAL PAYMENT MODAL */}
+        <UniversalPaymentModal
+            isOpen={!!selectedPackage}
+            item={universalPaymentItem}
+            onClose={() => setSelectedPackage(null)}
+            onSuccess={handleUniversalCheckoutSuccess}
+        />
       </div>
     );
 }
