@@ -51,12 +51,6 @@ export default function OpenPtSlotModal({
 
   useEffect(() => {
     if (isOpen) {
-      setOpenSlotDate(initialDate || "");
-      setOpenSlotStartTime(initialStartTime || "");
-      setOpenSlotEndTime("");
-      setOpenSlotSport("");
-      setOpenSlotRoom("");
-      setOpenSlotNote("");
       const todayStr = getTodayString();
       const targetDate = initialDate || todayStr;
       setOpenSlotDate(targetDate);
@@ -116,7 +110,7 @@ export default function OpenPtSlotModal({
     }
   };
 
-  // Kiểm tra khung giờ trong quá khứ (chỉ kiểm tra khi HLV đã chọn ngày và giờ)
+  // Kiểm tra khung giờ trong quá khứ
   const isPastTime = useMemo(() => {
     if (!openSlotDate || !openSlotStartTime) return false;
     const todayStr = getTodayString();
@@ -153,31 +147,13 @@ export default function OpenPtSlotModal({
 
   const defaultRooms = ["Khu tập PT 1-1 / Sàn chính", "Phòng tập chức năng", "Khu vực Boxing", "Bể bơi 4 mùa"];
   const availableRooms = roomOptions.length > 0 ? roomOptions : defaultRooms;
+  const selectedSport = openSlotSport || sportOptions[0] || "Gym & Thể lực";
+  const selectedRoom = openSlotRoom || availableRooms[0] || "Khu tập PT 1-1";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!openSlotDate) {
-      setError("Vui lòng chọn hoặc nhập ngày mở ca rảnh.");
-      return;
-    }
-
-    if (!openSlotStartTime) {
-      setError("Vui lòng chọn giờ bắt đầu ca rảnh.");
-      return;
-    }
-
-    if (!openSlotEndTime) {
-      setError("Vui lòng chọn giờ kết thúc ca rảnh.");
-      return;
-    }
-
-    if (!openSlotSport) {
-      setError("Vui lòng chọn bộ môn nhận dạy.");
-      return;
-    }
-
-    if (!openSlotRoom) {
-      setError("Vui lòng chọn phòng / khu vực tập.");
+      setError("Vui lòng chọn ngày mở ca trống.");
       return;
     }
     if (!openSlotStartTime || !openSlotEndTime) {
@@ -190,7 +166,7 @@ export default function OpenPtSlotModal({
     }
 
     if (isPastTime) {
-      setError("Không thể đăng lịch rảnh trong quá khứ. Vui lòng chọn ngày hoặc khung giờ sau thời điểm hiện tại.");
+      setError("Không thể đăng lịch trống trong quá khứ. Vui lòng chọn ngày hoặc khung giờ sau thời điểm hiện tại.");
       return;
     }
 
@@ -206,13 +182,13 @@ export default function OpenPtSlotModal({
     const newItem: UnifiedScheduleItem = {
       id: "custom-open-" + Date.now(),
       type: "open_pt",
-      className: `Lịch trống 1–1: ${openSlotSport}`,
-      sport: openSlotSport,
+      className: `Lịch trống 1–1: ${selectedSport}`,
+      sport: selectedSport,
       level: "1-1 PT",
       date: openSlotDate,
       startTime: openSlotStartTime,
       endTime: openSlotEndTime,
-      room: openSlotRoom,
+      room: selectedRoom,
       coachName: "HLV",
       registeredCount: 0,
       capacity: 1,
@@ -226,7 +202,7 @@ export default function OpenPtSlotModal({
       setOpenSlotNote("");
       onClose();
     } catch (submitError: any) {
-      setError(submitError?.message || "Không thể đăng lịch rảnh. Vui lòng thử lại.");
+      setError(submitError?.message || "Không thể đăng lịch trống. Vui lòng thử lại.");
     } finally {
       setSubmitting(false);
     }
@@ -336,50 +312,46 @@ export default function OpenPtSlotModal({
                   </p>
                 </div>
               </div>
-            ) : openSlotDate && openSlotStartTime && openSlotEndTime ? (
+            ) : (
               <div className="rounded-xl border border-emerald-200/90 bg-emerald-50/60 dark:border-emerald-800/60 dark:bg-emerald-950/20 p-2.5 text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span className="text-[11px] font-semibold">
                   Khung giờ rảnh hợp lệ (Không trùng ca dạy nào).
                 </span>
               </div>
-            ) : null}
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="font-bold text-slate-700 dark:text-slate-300 mb-1 block">
-                  Bộ môn nhận dạy: <span className="text-rose-500">*</span>
+                  Bộ môn nhận dạy:
                 </label>
                 <select
-                  value={openSlotSport}
-                  onChange={(e) => {
-                    setOpenSlotSport(e.target.value);
-                    setError("");
-                  }}
+                  value={selectedSport}
+                  onChange={(e) => setOpenSlotSport(e.target.value)}
                   className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer font-medium"
                 >
-                  <option value="">-- Chọn bộ môn --</option>
-                  {sportOptions.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
+                  {sportOptions.length === 0 ? (
+                    <option value="Gym & Thể lực">Gym & Thể lực (Mặc định)</option>
+                  ) : (
+                    sportOptions.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 
               <div>
                 <label className="font-bold text-slate-700 dark:text-slate-300 mb-1 block">
-                  Phòng / Khu vực tập: <span className="text-rose-500">*</span>
+                  Phòng / Khu vực tập:
                 </label>
                 <select
-                  value={openSlotRoom}
-                  onChange={(e) => {
-                    setOpenSlotRoom(e.target.value);
-                    setError("");
-                  }}
+                  value={selectedRoom}
+                  onChange={(e) => setOpenSlotRoom(e.target.value)}
                   className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer font-medium"
                 >
-                  <option value="">-- Chọn phòng tập --</option>
                   {availableRooms.map((r) => (
                     <option key={r} value={r}>
                       {r}

@@ -28,32 +28,36 @@ export default function ScheduleWeekGrid({
   const activeTimeRows = TIME_ROWS;
 
   return (
-    <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 shadow-sm">
-      <div className="min-w-[960px]">
-        {/* Header Row: Giờ | Thứ 2 | Thứ 3 | Thứ 4 | Thứ 5 | Thứ 6 | Thứ 7 | Chủ nhật */}
-        <div className="grid grid-cols-8 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-850">
-          <div className="p-3 text-xs font-semibold text-slate-400 text-center border-r border-slate-200 dark:border-slate-800">
-            Giờ
+    <div className="flex flex-col gap-4">
+      {/* Thanh trạng thái tuần & Đăng ca rảnh (Đồng bộ hiển thị trên tất cả các tuần) */}
+      <div className="p-4 md:p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-gradient-to-r from-slate-50 via-white to-emerald-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-emerald-950/20 shadow-2xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="size-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <Calendar className="w-5 h-5" />
           </div>
-          {DAYS_NAMES.map((d, di) => {
-            const dateStr = weekDates[di];
-            const isToday = dateStr === todayStr;
-            return (
-              <div
-                key={d}
-                className={`p-3 text-xs font-semibold text-center border-r border-slate-200 dark:border-slate-800 last:border-0 ${
-                  isToday
-                    ? "bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 font-bold"
-                    : "text-slate-700 dark:text-slate-300"
-                }`}
-              >
-                <div>{d}</div>
-                <div className="text-[10px] font-normal text-slate-400 mt-0.5">
-                  {dateStr?.split("-").slice(1).reverse().join("/")}
-                </div>
-              </div>
-            );
-          })}
+          <div>
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                {hasSessionsInWeek
+                  ? `Lịch dạy tuần này (${weekRangeLabel})`
+                  : `Tuần này chưa có ca dạy (${weekRangeLabel})`}
+              </h4>
+              {hasSessionsInWeek ? (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                  {weekSessionsCount} ca dạy
+                </span>
+              ) : (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                  Trống lịch
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              {hasSessionsInWeek
+                ? "Bấm vào các khung giờ trống trên bảng lịch hoặc bấm Đăng ca rảnh để mở nhận thêm học viên 1–1."
+                : "Bạn có thể bấm trực tiếp vào các khung giờ trên lịch để mở ca nhận học viên 1–1."}
+            </p>
+          </div>
         </div>
 
         {/* Body Rows theo từng khung giờ */}

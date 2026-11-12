@@ -44,19 +44,18 @@ export default function AttendanceSessionSelector({
     }
   };
 
+  const occupancyRate = session.capacity > 0 ? Math.round((enrolledCount / session.capacity) * 100) : 0;
+
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
-      {/* Top Row: Class Info & Dropdown Switcher */}
-      <div className="p-4 sm:px-6 bg-gradient-to-r from-slate-50 via-white to-emerald-50/20 dark:from-slate-900 dark:via-slate-900 dark:to-emerald-950/20 border-b border-slate-200/70 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3.5">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-              <Dumbbell className="w-3.5 h-3.5" />
-              {session.sport || "Lớp nhóm"}
-            </span>
-            {session.level && (
-              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                {session.level}
+      {/* Top Banner / Selector Bar */}
+      <div className="p-5 md:p-6 bg-gradient-to-r from-slate-50 via-white to-emerald-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-emerald-950/20 border-b border-slate-200/70 dark:border-slate-800">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="space-y-1.5 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                <Dumbbell className="w-3.5 h-3.5" />
+                {session.sport || "Lớp nhóm"}
               </span>
             )}
             {isExpired24h ? (
@@ -128,69 +127,56 @@ export default function AttendanceSessionSelector({
         </div>
       </div>
 
-      {/* Row 2: 5 KPI / Metadata ngang gọn gàng 1 hàng */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 divide-x divide-y sm:divide-y-0 divide-slate-100 dark:divide-slate-800 text-xs">
-        {/* Khung giờ */}
-        <div className="p-3.5 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center shrink-0">
+      {/* Session Metadata Info Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-slate-100 dark:divide-slate-800 text-xs sm:text-sm">
+        {/* Time */}
+        <div className="p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-900/30 text-slate-600 dark:text-slate-400 flex items-center justify-center shrink-0">
             <Clock className="w-4 h-4" />
           </div>
-          <div className="min-w-0">
-            <span className="text-slate-400 text-[11px] block">Khung giờ</span>
-            <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">
+          <div>
+            <span className="text-slate-400 dark:text-slate-500 text-[11px] block font-medium">Khung giờ</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-200">
               {session.startTime} – {session.endTime}
             </span>
           </div>
         </div>
 
-        {/* Ngày diễn ra */}
-        <div className="p-3.5 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+        {/* Date */}
+        <div className="p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
             <Calendar className="w-4 h-4" />
           </div>
-          <div className="min-w-0">
-            <span className="text-slate-400 text-[11px] block">Ngày diễn ra</span>
-            <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">
+          <div>
+            <span className="text-slate-400 dark:text-slate-500 text-[11px] block font-medium">Ngày diễn ra</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-200">
               {formatSessionDate(session.date)}
             </span>
           </div>
         </div>
 
-        {/* Phòng / Khu vực */}
-        <div className="p-3.5 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+        {/* Location / Room */}
+        <div className="p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
             <MapPin className="w-4 h-4" />
           </div>
-          <div className="min-w-0">
-            <span className="text-slate-400 text-[11px] block">Phòng / Khu vực</span>
-            <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">
+          <div>
+            <span className="text-slate-400 dark:text-slate-500 text-[11px] block font-medium">Phòng / Khu vực</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-200 truncate block max-w-[140px]">
               {session.room || "Chưa xếp phòng"}
             </span>
           </div>
         </div>
 
-        {/* Sĩ số & Có mặt */}
-        <div className="p-3.5 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+        {/* Capacity */}
+        <div className="p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
             <Users className="w-4 h-4" />
           </div>
-          <div className="min-w-0">
-            <span className="text-slate-400 text-[11px] block">Đã có mặt / Sĩ số</span>
-            <span className="font-bold text-emerald-600 dark:text-emerald-400 truncate block">
-              {stats.attended}/{stats.total} <span className="text-[11px] font-normal text-slate-500">({stats.attendanceRate}%)</span>
-            </span>
-          </div>
-        </div>
-
-        {/* Vắng & Trễ */}
-        <div className="p-3.5 flex items-center gap-2.5 col-span-2 sm:col-span-1">
-          <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="w-4 h-4" />
-          </div>
-          <div className="min-w-0">
-            <span className="text-slate-400 text-[11px] block">Vắng / Đi trễ</span>
-            <span className="font-bold text-rose-600 dark:text-rose-400 truncate block">
-              {stats.absent} vắng <span className="text-slate-400 font-normal">|</span> <span className="text-amber-600 font-bold">{stats.late} trễ</span>
+          <div>
+            <span className="text-slate-400 dark:text-slate-500 text-[11px] block font-medium">Sĩ số lớp</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-200">
+              {enrolledCount}/{session.capacity} HV ({occupancyRate}%)
             </span>
           </div>
         </div>

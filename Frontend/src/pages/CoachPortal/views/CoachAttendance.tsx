@@ -16,15 +16,13 @@ import {
 import { toast } from "sonner";
 import AttendanceSessionSelector from "./attendance/AttendanceSessionSelector";
 import AttendanceClassSessionsList from "./attendance/AttendanceClassSessionsList";
-import AttendanceHistoryTableView from "./attendance/AttendanceHistoryTableView";
-import AttendanceSessionSidebarCard from "./attendance/AttendanceSessionSidebarCard";
+import AttendanceSessionSelector from "./attendance/AttendanceSessionSelector";
 import AttendanceMemberList from "./attendance/AttendanceMemberList";
 import AttendanceAuditReasonModal from "./attendance/AttendanceAuditReasonModal";
 import AttendanceStatsGrid from "./attendance/AttendanceStatsGrid";
 import AttendanceLockAlertBanner from "./attendance/AttendanceLockAlertBanner";
 import { useCoachAttendanceData } from "./attendance/useCoachAttendanceData";
 import { isAttendanceLocked24h, getAttendanceLockDeadlineInfo } from "../utils/attendanceLock";
-import { isSessionPast24Hours } from "../utils/attendanceTimeUtils";
 
 interface Props {
   initialSessionId: string | null;
@@ -35,7 +33,6 @@ type FilterStatus = "all" | "attended" | "late" | "no_show" | "pending";
 type TopTab = "active" | "history";
 
 export default function CoachAttendance({ initialSessionId, navigateTo }: Props) {
-  const [topTab, setTopTab] = useState<TopTab>("active");
   const {
     activeSessions,
     isLoadingSessions,
@@ -76,10 +73,6 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
     () => activeSessions.find((s) => s.id === selectedSessionId),
     [activeSessions, selectedSessionId]
   );
-
-  const isPast24h = useMemo(() => {
-    return isSessionPast24Hours(session?.date, session?.startTime);
-  }, [session?.date, session?.startTime]);
 
   const isFinalized = sheetState === "finalized" || !!finalizedMap[selectedSessionId];
   const isDraft = sheetState === "draft" || (!isFinalized && records.some((r) => r.status !== "chưa điểm danh"));

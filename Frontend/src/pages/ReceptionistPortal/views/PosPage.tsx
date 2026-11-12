@@ -71,18 +71,73 @@ export function PosPage() {
     setPaid(false);
   };
 
-  const handleConfirmPayment = () => {
-    if (cart.length === 0) return;
+  const [processing, setProcessing] = useState(false);
+
+  const handleConfirmPayment = async () => {
+    if (cart.length === 0 || processing) return;
     const subtotal = cart.reduce((s, i) => s + i.unitPrice * i.qty, 0);
     const discount = subtotal > 0 ? Math.min(10000, subtotal) : 0;
     const total = Math.max(0, subtotal - discount);
 
-    setPaid(true);
-    toast.success(`Thanh toán đơn hàng ${total.toLocaleString("vi-VN")}₫ thành công!`);
-    setTimeout(() => {
-      setCart([]);
-      setPaid(false);
-    }, 1800);
+    setProcessing(true);
+    try {
+      const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
+      // 1. Tạo đơn hàng POS tại quầy
+      const res = await fetch("/api/product-orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          items: cart.map((i) => ({ productId: i.id, quantity: i.qty })),
+          paymentMethod: "counter",
+          fulfillmentMethod: "counter_pickup",
+        }),
+      });
+
+      if (res.ok) {
+        const orderData = await res.json();
+        // 2. Xác nhận đã thu tiền & hoàn tất giao hàng tại quầy
+        if (orderData?.id) {
+          await fetch(`/api/product-orders/${orderData.id}/confirm`, {
+            method: "PUT",
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          await fetch(`/api/product-orders/${orderData.id}/fulfillment`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({ status: "delivered" }),
+          });
+        }
+
+        setPaid(true);
+        toast.success(`Đã thanh toán & xuất kho đơn hàng ${total.toLocaleString("vi-VN")}₫ thành công!`);
+
+        // Tải lại danh sách sản phẩm để cập nhật số lượng tồn kho mới nhất
+        fetch("/api/products")
+          .then((r) => r.json())
+          .then((data) => {
+            if (Array.isArray(data)) setAllProducts(data);
+          })
+          .catch(console.error);
+
+        setTimeout(() => {
+          setCart([]);
+          setPaid(false);
+        }, 1500);
+      } else {
+        const errData = await res.json().catch(() => null);
+        toast.error(errData?.message || "Không thể tạo đơn hàng POS.");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Lỗi kết nối khi thanh toán đơn POS.");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   return (

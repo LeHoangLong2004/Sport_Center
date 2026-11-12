@@ -82,10 +82,31 @@ export function ProductOrdersPage() {
       setError("")
     } catch (loadError) {
       const status = loadError instanceof Error ? (loadError as Error & { status?: number }).status : undefined
-      if (status === 403) {
-        setError("Tài khoản hiện tại không có quyền xem đơn hàng Member. Hãy đăng nhập bằng tài khoản Receptionist hoặc Center Manager.")
-      } else if (status === 401) {
-        setError("Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại bằng tài khoản Receptionist hoặc Center Manager.")
+      if (status === 403 || status === 401) {
+        // Tự động làm mới phiên làm việc Lễ tân nếu đang giữ token cũ của vai trò khác (Member)
+        try {
+          const authRes = await fetch("/api/auth/token/receptionist")
+          const authData = await authRes.json().catch(() => null)
+          if (authData?.token) {
+            localStorage.setItem("token", authData.token)
+            localStorage.setItem("accessToken", authData.token)
+            localStorage.setItem("user", JSON.stringify(authData))
+            window.dispatchEvent(new Event("local-storage-update"))
+            const retryRes = await fetch("/api/product-orders", { headers: { Authorization: `Bearer ${authData.token}` } })
+            if (retryRes.ok) {
+              const retryBody = await retryRes.json().catch(() => [])
+              setOrders(Array.isArray(retryBody) ? retryBody : [])
+              setError("")
+              return
+            }
+          }
+        } catch { /* tiếp tục hiển thị thông báo lỗi chuẩn bên dưới */ }
+
+        if (status === 403) {
+          setError("Tài khoản hiện tại không có quyền xem đơn hàng Member. Hãy đăng nhập bằng tài khoản Receptionist hoặc Center Manager.")
+        } else {
+          setError("Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại bằng tài khoản Receptionist hoặc Center Manager.")
+        }
       } else {
         setError(loadError instanceof Error ? loadError.message : "Không thể tải danh sách đơn hàng.")
       }
@@ -136,9 +157,9 @@ export function ProductOrdersPage() {
 
   const counts = useMemo(() => ({
     all: orders.length,
-    pending: orders.filter((order) => order.status === "pending" || order.fulfillmentStatus === "pending").length,
-    preparing: orders.filter((order) => order.fulfillmentStatus === "preparing" || order.fulfillmentStatus === "ready").length,
-    delivering: orders.filter((order) => order.fulfillmentStatus === "delivering").length,
+    pending: orders.filter((order) => order.fulfillmentStatus !== "cancelled" && (order.status === "pending" || order.fulfillmentStatus === "pending")).length,
+    preparing: orders.filter((order) => order.fulfillmentStatus !== "cancelled" && (order.status === "completed" && order.fulfillmentStatus !== "delivered")).length,
+    refund: orders.filter((order) => order.status === "refund_pending").length,
   }), [orders])
 
   useEffect(() => {
@@ -148,8 +169,9 @@ export function ProductOrdersPage() {
   const visibleOrders = useMemo(() => {
     return orders.filter((order) => {
       if (filter === "all") return true
-      if (filter === "pending") return order.status === "pending" || order.fulfillmentStatus === "pending"
-      if (filter === "preparing") return order.fulfillmentStatus === "preparing" || order.fulfillmentStatus === "ready"
+      if (filter === "pending") return order.fulfillmentStatus !== "cancelled" && (order.status === "pending" || order.fulfillmentStatus === "pending")
+      if (filter === "preparing") return order.fulfillmentStatus !== "cancelled" && (order.status === "completed" && order.fulfillmentStatus !== "delivered")
+      if (filter === "refund") return order.status === "refund_pending"
       return order.fulfillmentStatus === filter
     })
   }, [orders, filter])
@@ -197,6 +219,23 @@ export function ProductOrdersPage() {
     }
   }
 
+  async function confirmRefund(orderId: string) {
+    if (processingId) return
+    setProcessingId(orderId)
+    setError("")
+    try {
+      await readResponse(await fetch(`/api/product-orders/${orderId}/refund`, {
+        method: "PUT",
+        headers: authHeaders(),
+      }))
+      await loadOrders()
+    } catch (refundError) {
+      setError(refundError instanceof Error ? refundError.message : "Không thể xác nhận hoàn tiền.")
+    } finally {
+      setProcessingId(null)
+    }
+  }
+
   async function toggleChat(orderId: string) {
     if (openChatId === orderId) {
       setOpenChatId(null)
@@ -237,11 +276,11 @@ export function ProductOrdersPage() {
       <div className="grid gap-4 sm:grid-cols-4">
         {([
           ["all", "Tổng đơn", counts.all],
-          ["pending", "Chờ tiếp nhận", counts.pending],
-          ["preparing", "Đang chuẩn bị", counts.preparing],
-          ["delivering", "Đang giao", counts.delivering],
+          ["pending", "Chờ thanh toán", counts.pending],
+          ["preparing", "Chờ bàn giao", counts.preparing],
+          ["refund", "Chờ hoàn tiền", counts.refund],
         ] as const).map(([status, label, count]) => (
-          <button key={status} type="button" onClick={() => setFilter(status)} className={`rounded-xl border bg-white p-4 text-left shadow-sm transition ${filter === status ? "border-emerald-500 ring-2 ring-emerald-100" : "border-slate-200"}`}>
+          <button key={status} type="button" onClick={() => setFilter(status)} className={`rounded-xl border bg-white p-4 text-left shadow-sm transition cursor-pointer ${filter === status ? "border-emerald-500 ring-2 ring-emerald-100" : "border-slate-200"}`}>
             <span className="text-sm text-slate-500">{label}</span>
             <strong className="mt-2 block text-2xl text-slate-900">{count}</strong>
           </button>
@@ -262,44 +301,129 @@ export function ProductOrdersPage() {
         ) : (
           <div className="divide-y divide-slate-100">
             {paginatedOrders.map((order) => {
-              const action = nextAction(order)
+              const isCancelled = order.fulfillmentStatus === "cancelled" || order.status === "cancelled"
+              const isRefundPending = order.status === "refund_pending"
+              const isRefunded = order.status === "refunded"
               const isPaid = order.status === "completed"
-              const isClosed = order.fulfillmentStatus === "delivered" || order.fulfillmentStatus === "cancelled"
+              const isDelivered = order.fulfillmentStatus === "delivered"
+
+              // Xác định cặp trạng thái chuẩn theo sơ đồ:
+              let badge1: { text: string; className: string }
+              let badge2: { text: string; className: string }
+
+              if (isCancelled) {
+                if (isRefundPending) {
+                  // Tình huống 5: Hủy sau thanh toán, chờ hoàn tiền
+                  badge1 = { text: "Đã hủy", className: "bg-rose-50 text-rose-700 border border-rose-200" }
+                  badge2 = { text: "Chờ hoàn tiền", className: "bg-amber-50 text-amber-700 border border-amber-200" }
+                } else if (isRefunded) {
+                  // Tình huống 6: Đã hoàn tiền trả khách
+                  badge1 = { text: "Đã hủy", className: "bg-rose-50 text-rose-700 border border-rose-200" }
+                  badge2 = { text: "Đã hoàn tiền", className: "bg-purple-50 text-purple-700 border border-purple-200" }
+                } else {
+                  // Tình huống 4: Hủy trước khi thanh toán
+                  badge1 = { text: "Đã hủy", className: "bg-rose-50 text-rose-700 border border-rose-200" }
+                  badge2 = { text: "Chưa thanh toán", className: "bg-slate-100 text-slate-600 border border-slate-200" }
+                }
+              } else if (isDelivered) {
+                // Tình huống 3: Khách nhận hàng xong
+                badge1 = { text: "Đã thanh toán", className: "bg-emerald-50 text-emerald-700 border border-emerald-200" }
+                badge2 = { text: "Đã giao", className: "bg-slate-100 text-slate-700 border border-slate-200" }
+              } else if (isPaid) {
+                // Tình huống 2: Khách trả tiền tại quầy / VietQR thành công
+                badge1 = { text: "Đã thanh toán", className: "bg-emerald-50 text-emerald-700 border border-emerald-200" }
+                badge2 = { text: "Chờ bàn giao", className: "bg-blue-50 text-blue-700 border border-blue-200" }
+              } else {
+                // Tình huống 1: Khách đặt hàng, chưa trả tiền
+                badge1 = { text: "Chờ thanh toán", className: "bg-amber-50 text-amber-700 border border-amber-200" }
+                badge2 = { text: "Chờ bàn giao", className: "bg-slate-100 text-slate-700 border border-slate-200" }
+              }
+
               return (
                 <article key={order.id} className="p-5">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="font-bold text-slate-900">#{order.id.slice(0, 8).toUpperCase()}</h3>
-                        <span className={`rounded-full px-2 py-1 text-xs font-bold ${isPaid ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
-                          {isPaid ? "Đã thanh toán" : "Chờ thanh toán"}
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${badge1.className}`}>
+                          {badge1.text}
                         </span>
-                        <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">
-                          {fulfillmentLabels[order.fulfillmentStatus]}
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${badge2.className}`}>
+                          {badge2.text}
                         </span>
                       </div>
                       <p className="mt-1 text-sm text-slate-600">{order.customerName} · {new Date(order.createdAt).toLocaleString("vi-VN")}</p>
                       <p className="mt-2 text-xs text-slate-500">{order.items.map((item) => `${item.name} × ${item.quantity}`).join(", ")}</p>
-                      <p className="mt-2 text-xs font-semibold text-slate-600">{order.fulfillmentMethod === "in_center_delivery" ? `Giao tại: ${order.deliveryLocation || "Chưa nhập vị trí"}` : "Nhận tại quầy lễ tân"}{order.assignedToName ? ` · Phụ trách: ${order.assignedToName}` : ""}</p>
+                      <p className="mt-2 text-xs font-semibold text-slate-600">
+                        {order.fulfillmentMethod === "in_center_delivery" ? `Giao tại: ${order.deliveryLocation || "Chưa nhập vị trí"}` : "Nhận tại quầy lễ tân"}
+                        {order.assignedToName ? ` · Phụ trách: ${order.assignedToName}` : ""}
+                      </p>
                     </div>
+
                     <div className="flex flex-wrap items-center justify-end gap-2">
                       <strong className="mr-2 text-lg text-emerald-600">{money(order.totalAmount)}</strong>
-                      {order.status === "pending" && (
-                        <button type="button" disabled={processingId === order.id} onClick={() => void confirmPayment(order.id)} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
-                          {processingId === order.id ? "Đang xử lý..." : "Xác nhận đã thu tiền"}
+
+                      {/* Tình huống 1: Khách đặt, chưa trả tiền -> Nút [Xác nhận đã thu tiền] & [Hủy] */}
+                      {!isCancelled && !isPaid && (
+                        <>
+                          <button
+                            type="button"
+                            disabled={processingId === order.id}
+                            onClick={() => void confirmPayment(order.id)}
+                            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50 transition cursor-pointer"
+                          >
+                            {processingId === order.id ? "Đang xử lý..." : "Xác nhận đã thu tiền"}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={processingId === order.id}
+                            onClick={() => void updateFulfillment(order.id, "cancelled")}
+                            className="rounded-lg border border-red-200 px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50 disabled:opacity-50 transition cursor-pointer"
+                          >
+                            Hủy
+                          </button>
+                        </>
+                      )}
+
+                      {/* Tình huống 2: Đã thanh toán, chờ bàn giao -> Nút [Bàn giao hàng] & [Hủy] */}
+                      {!isCancelled && isPaid && !isDelivered && (
+                        <>
+                          <button
+                            type="button"
+                            disabled={processingId === order.id}
+                            onClick={() => void updateFulfillment(order.id, "delivered")}
+                            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-700 disabled:opacity-50 transition cursor-pointer"
+                          >
+                            {processingId === order.id ? "Đang xử lý..." : "Bàn giao hàng"}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={processingId === order.id}
+                            onClick={() => void updateFulfillment(order.id, "cancelled")}
+                            className="rounded-lg border border-red-200 px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50 disabled:opacity-50 transition cursor-pointer"
+                          >
+                            Hủy
+                          </button>
+                        </>
+                      )}
+
+                      {/* Tình huống 5: Khách hủy sau khi thanh toán, chờ hoàn tiền -> Nút [Xác nhận đã hoàn tiền] */}
+                      {isCancelled && isRefundPending && (
+                        <button
+                          type="button"
+                          disabled={processingId === order.id}
+                          onClick={() => void confirmRefund(order.id)}
+                          className="rounded-lg bg-purple-600 hover:bg-purple-700 px-4 py-2 text-sm font-bold text-white shadow-sm disabled:opacity-50 transition cursor-pointer"
+                        >
+                          {processingId === order.id ? "Đang xử lý..." : "Xác nhận đã hoàn tiền"}
                         </button>
                       )}
-                      {isPaid && action && (
-                        <button type="button" disabled={processingId === order.id} onClick={() => void updateFulfillment(order.id, action[0])} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-700 disabled:opacity-50">
-                          {action[1]}
-                        </button>
-                      )}
-                      {!isClosed && (
-                        <button type="button" onClick={() => void updateFulfillment(order.id, "cancelled")} className="rounded-lg border border-red-200 px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50">
-                          Hủy
-                        </button>
-                      )}
-                      <button type="button" onClick={() => void toggleChat(order.id)} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-600 hover:border-emerald-300 hover:text-emerald-600">
+
+                      <button
+                        type="button"
+                        onClick={() => void toggleChat(order.id)}
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-600 hover:border-emerald-300 hover:text-emerald-600 transition cursor-pointer"
+                      >
                         {openChatId === order.id ? "Đóng chat" : order.messageCount > 0 ? `Xem chat (${order.messageCount})` : "Nhắn Member"}
                       </button>
                     </div>

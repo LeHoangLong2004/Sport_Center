@@ -54,9 +54,16 @@ public class AuthService : IAuthService
             Email = request.Email,
             PhoneNumber = request.PhoneNumber,
             PasswordHash = passwordHash,
+            MemberCode = string.Equals(role.Name, "member", StringComparison.OrdinalIgnoreCase)
+                ? $"MB-{Guid.NewGuid().ToString().Substring(0, 4).ToUpper()}"
+                : null,
             Status = true,
             CreatedAt = DateTime.UtcNow
         };
+        if (user.MemberCode != null)
+        {
+            user.MemberCode = $"MB-{user.Id.ToString().Substring(0, 4).ToUpper()}";
+        }
 
         await _userRepository.AddAsync(user);
 

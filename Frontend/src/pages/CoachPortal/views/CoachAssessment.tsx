@@ -66,8 +66,8 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
         const sess = sch.find((s) => s.id === initialSessionId);
         if (sess) {
           const matchingMember = mem.find((m) =>
-            (Array.isArray(sess.registeredMemberIds) && sess.registeredMemberIds.some((id) => String(id).toLowerCase() === String(m.id).toLowerCase())) ||
-            (Array.isArray(m.classIds) && m.classIds.some((cid) => String(cid).toLowerCase() === String(sess.id).toLowerCase() || String(cid).toLowerCase() === String(sess.classId).toLowerCase()))
+            (Array.isArray(sess.registeredMemberIds) && sess.registeredMemberIds.some((id) => String(id) === String(m.id))) ||
+            (Array.isArray(m.classIds) && m.classIds.some((cid) => String(cid) === String(sess.id) || String(cid) === String(sess.classId)))
           );
           if (matchingMember) {
             setSelectedMemberId(matchingMember.id);
@@ -90,11 +90,11 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
     return members.filter((m) => {
       const inRegistered =
         Array.isArray(sess.registeredMemberIds) &&
-        sess.registeredMemberIds.some((id) => String(id).toLowerCase() === String(m.id).toLowerCase());
+        sess.registeredMemberIds.some((id) => String(id) === String(m.id));
       const inClassIds =
         Array.isArray(m.classIds) &&
         m.classIds.some(
-          (cid) => String(cid).toLowerCase() === String(sess.id).toLowerCase() || String(cid).toLowerCase() === String(sess.classId).toLowerCase()
+          (cid) => String(cid) === String(sess.id) || String(cid) === String(sess.classId)
         );
       return inRegistered || inClassIds;
     });
@@ -109,27 +109,15 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
       if (s.status === "đã hủy") return false;
       const registeredInSession =
         Array.isArray(s.registeredMemberIds) &&
-        s.registeredMemberIds.some((id) => String(id).toLowerCase() === String(selectedMemberId).toLowerCase());
+        s.registeredMemberIds.some((id) => String(id) === String(selectedMemberId));
       const memberHasClass =
         Array.isArray(selectedMember?.classIds) &&
         selectedMember.classIds.some(
-          (cid) => String(cid).toLowerCase() === String(s.id).toLowerCase() || String(cid).toLowerCase() === String(s.classId).toLowerCase()
+          (cid) => String(cid) === String(s.id) || String(cid) === String(s.classId)
         );
       return registeredInSession || memberHasClass;
     });
   }, [selectedMemberId, sessions, members]);
-
-  // Tự động chọn buổi học hợp lệ đầu tiên khi ở chế độ theo học viên
-  useEffect(() => {
-    if (viewMode !== "by_member") return;
-    if (!selectedSessionId) {
-      if (eligibleSessionsForMember.length > 0) {
-        setSelectedSessionId(eligibleSessionsForMember[0].id);
-      }
-    } else if (!eligibleSessionsForMember.some((s) => s.id === selectedSessionId)) {
-      setSelectedSessionId(eligibleSessionsForMember.length > 0 ? eligibleSessionsForMember[0].id : "");
-    }
-  }, [eligibleSessionsForMember, selectedSessionId, viewMode]);
 
   const memberAssessments = useMemo(
     () =>
@@ -155,7 +143,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
     setSelectedMemberId(mId);
     setSelectedSessionId(sId);
     const existing = assessments.find(
-      (a) => String(a.sessionId) === String(sId) && String(a.memberId).toLowerCase() === String(mId).toLowerCase()
+      (a) => String(a.sessionId) === String(sId) && String(a.memberId) === String(mId)
     );
     if (existing) {
       setDraft({ ...existing });
@@ -164,7 +152,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
       const id = `as_${Date.now()}`;
       setDraft({
         id,
-        sessionId: sId === "general" ? undefined : sId,
+        sessionId: sId,
         memberId: mId,
         completion: 80,
         metrics: [{ label: "", value: "", unit: "" }],
@@ -203,13 +191,9 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
         };
       });
 
-    const targetSessionId = draft.sessionId && draft.sessionId !== "general"
-      ? draft.sessionId
-      : (selectedSessionId && selectedSessionId !== "general" ? selectedSessionId : "");
-
     const full: AssessmentRecord = {
       id: draft.id || `as_${Date.now()}`,
-      sessionId: targetSessionId,
+      sessionId: draft.sessionId || selectedSessionId,
       memberId: draft.memberId || selectedMemberId,
       completion: draft.completion || 0,
       metrics: sanitizedMetrics,
@@ -256,6 +240,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
 
   const currentMember = members.find((m) => m.id === (draft.memberId || selectedMemberId));
   const currentSession = sessions.find((s) => s.id === (draft.sessionId || selectedSessionId));
+
   const selectedSession = sessions.find((s) => s.id === selectedSessionId);
 
   const isExpired24h = useMemo(
@@ -398,7 +383,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {sessionMembers.map((m) => {
                   const ass = assessments.find(
-                    (a) => String(a.sessionId) === String(selectedSessionId) && String(a.memberId).toLowerCase() === String(m.id).toLowerCase()
+                    (a) => String(a.sessionId) === String(selectedSessionId) && String(a.memberId) === String(m.id)
                   );
                   return (
                     <div
