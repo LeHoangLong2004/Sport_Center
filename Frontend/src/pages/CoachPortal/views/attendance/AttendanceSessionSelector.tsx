@@ -1,5 +1,7 @@
+import { Calendar, Clock, MapPin, Users, Award, ShieldCheck, ChevronDown, Dumbbell, Lock } from "lucide-react";
 import { Calendar, Clock, MapPin, Users, ShieldCheck, ChevronDown, Dumbbell, Award, CheckCircle2, RotateCcw } from "lucide-react";
 import type { MockSession } from "../../services/api";
+import type { AttendanceDeadlineInfo } from "../../utils/attendanceLock";
 
 interface Props {
   selectedSessionId: string;
@@ -8,6 +10,8 @@ interface Props {
   session: MockSession;
   isFinalized: boolean;
   isDraft?: boolean;
+  isExpired24h?: boolean;
+  deadlineInfo?: AttendanceDeadlineInfo;
   enrolledCount: number;
   stats: {
     total: number;
@@ -26,6 +30,8 @@ export default function AttendanceSessionSelector({
   session,
   isFinalized,
   isDraft,
+  isExpired24h,
+  deadlineInfo,
   enrolledCount,
   stats,
 }: Props) {
@@ -86,6 +92,54 @@ export default function AttendanceSessionSelector({
                   Chưa điểm danh
                 </>
               )}
+              {isExpired24h ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                  <Lock className="w-3.5 h-3.5 text-slate-500" />
+                  Đã đóng (Quá 24 giờ)
+                </span>
+              ) : (
+                <span
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                    isFinalized
+                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400"
+                      : isDraft
+                      ? "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400"
+                      : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                  }`}
+                >
+                  {isFinalized ? (
+                    <>
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      Đã chốt sổ điểm danh
+                    </>
+                  ) : isDraft ? (
+                    <>
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      Bản nháp (Đang lưu nháp)
+                    </>
+                  ) : (
+                    <>
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                      Chưa điểm danh
+                    </>
+                  )}
+                </span>
+              )}
+            </div>
+
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              {session.className}
+            </h2>
+            {deadlineInfo && deadlineInfo.formattedDeadline && (
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-slate-400" />
+                <span>
+                  Thời hạn điểm danh: {isExpired24h ? "Đã hết hạn lúc " : "Hết hạn lúc "}
+                  <strong>{deadlineInfo.formattedDeadline}</strong> (
+                  {isExpired24h ? "Không thể sửa điểm vì đã quá 24 giờ" : deadlineInfo.remainingText})
+                </span>
+              </p>
+            )}
             </span>
           </div>
 
