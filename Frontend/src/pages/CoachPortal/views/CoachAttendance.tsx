@@ -27,6 +27,7 @@ import AttendanceSessionSidebarCard from "./attendance/AttendanceSessionSidebarC
 import AttendanceMemberList from "./attendance/AttendanceMemberList";
 import AttendanceAuditReasonModal from "./attendance/AttendanceAuditReasonModal";
 import { useCoachAttendanceData } from "./attendance/useCoachAttendanceData";
+import { isAttendanceLocked24h, getAttendanceLockDeadlineInfo } from "../utils/attendanceLock";
 import { isSessionPast24Hours } from "../utils/attendanceTimeUtils";
 
 interface Props {
@@ -87,6 +88,21 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
 
   const isFinalized = sheetState === "finalized" || !!finalizedMap[selectedSessionId];
   const isDraft = sheetState === "draft" || (!isFinalized && records.some((r) => r.status !== "chưa điểm danh"));
+
+  // QUY ĐỊNH 24 GIỜ: Kiểm tra xem ca học đã quá 24h kể từ khi bắt đầu hay chưa
+  const isExpired24h = useMemo(
+    () => isAttendanceLocked24h(session?.date, session?.startTime),
+    [session?.date, session?.startTime]
+  );
+
+  const deadlineInfo = useMemo(
+    () => getAttendanceLockDeadlineInfo(session?.date, session?.startTime),
+    [session?.date, session?.startTime]
+  );
+
+  // Nếu đã quá 24h từ lúc học thì KHÓA VĨNH VIỄN, không cho phép mở sửa dưới bất kỳ hình thức nào
+  const isEditingThisSession = !isExpired24h && editingSessionId === selectedSessionId;
+  const isLocked = isExpired24h || (isFinalized && !isEditingThisSession);
   // Nếu đã quá 24h tính từ lúc bắt đầu thì KHÔNG cho phép chỉnh sửa dưới bất kỳ hình thức nào
   const isEditingThisSession = !isPast24h && editingSessionId === selectedSessionId;
   const isLocked = isPast24h || (isFinalized && !isEditingThisSession);
@@ -169,6 +185,8 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
 
   const handleSaveDraft = async () => {
     if (!selectedSessionId || isSaving) return;
+    if (isExpired24h) {
+      toast.error("Buổi học đã đóng ( Không thể sửa điểm vì đã quá 24 giờ )");
     if (isPast24h) {
       toast.error("Ca dạy này đã bắt đầu quá 24 giờ. Theo quy định, không thể lưu nháp điểm danh.");
       return;
@@ -189,6 +207,8 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
 
   const handleSave = async () => {
     if (!selectedSessionId || isSaving) return;
+    if (isExpired24h) {
+      toast.error("Buổi học đã đóng ( Không thể sửa điểm vì đã quá 24 giờ )");
     if (isPast24h) {
       toast.error("Buổi học này đã bắt đầu quá 24 giờ. Sổ điểm danh đã bị khóa vĩnh viễn và không thể điều chỉnh.");
       return;
@@ -302,18 +322,26 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
             className="inline-flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-xl hover:bg-emerald-100/70 transition-colors shadow-xs"
           >
             <Award className="w-4 h-4" />
-            Đánh giá buổi tập
+            {isExpired24h ? "Xem đánh giá buổi tập" : "Đánh giá buổi tập"}
           </button>
 
-          {isFinalized && !isEditingThisSession && (
+          {isExpired24h ? (
+            <div
+              title="Buổi học đã bắt đầu quá 24 giờ. Buổi học đã đóng và không thể sửa đổi."
+              className="inline-flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xs cursor-not-allowed"
+            >
+              <Lock className="w-4 h-4 text-slate-400" />
+              <span>Đã đóng (Quá 24 giờ)</span>
+            </div>
+          ) : isFinalized && !isEditingThisSession ? (
             <button
               onClick={() => setEditingSessionId(selectedSessionId)}
               className="inline-flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-50 transition-colors shadow-xs"
             >
               <Edit3 className="w-4 h-4 text-slate-500" />
-              Điều chỉnh điểm danh
+              <span>Điều chỉnh điểm danh</span>
             </button>
-          )}
+          ) : null}
 
           {isEditingThisSession && (
             <button
@@ -331,6 +359,75 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
         </div>
       </div>
 
+      {/* Audit / Locking Alerts */}
+      {isExpired24h ? (
+        <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-50/90 dark:bg-amber-950/30 border border-amber-300/80 dark:border-amber-800/50 text-amber-950 dark:text-amber-200 text-xs sm:text-sm animate-in fade-in">
+          <Lock className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <div className="flex-1 space-y-1">
+            <p className="font-bold text-sm text-amber-900 dark:text-amber-200">
+              Buổi học đã đóng ( Không thể sửa điểm vì đã quá 24 giờ )
+            </p>
+            <p className="text-xs text-amber-800 dark:text-amber-300">
+              Ca học bắt đầu lúc <strong>{session.startTime} ngày {session.date}</strong>. Quy định trung tâm chỉ cho phép HLV điểm danh hoặc chỉnh sửa trong vòng <strong>24 giờ</strong> kể từ lúc bắt đầu ca học (đã hết hạn lúc <strong>{deadlineInfo.formattedDeadline}</strong>).
+            </p>
+            <p className="text-[11px] text-amber-700 dark:text-amber-400 font-semibold">
+              🔒 Danh sách học viên và trạng thái điểm danh hiện tại ở chế độ chỉ xem (Read-only). HLV không thể điểm danh bổ sung hay sửa lại.
+            </p>
+          </div>
+        </div>
+      ) : isLocked ? (
+        <div className="flex items-start gap-3 p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-950/30 border border-slate-200/80 dark:border-slate-900/50 text-slate-900 dark:text-slate-300 text-xs sm:text-sm">
+          <Info className="w-5 h-5 text-slate-500 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-semibold">Sổ điểm danh buổi học này đã được chốt.</p>
+            <p className="text-xs text-slate-700 dark:text-slate-400 mt-0.5">
+              Danh sách học viên hiện đang ở chế độ xem. Nếu phát hiện sai sót cần chỉnh sửa, hãy nhấn <strong>&ldquo;Điều chỉnh điểm danh&rdquo;</strong> ở phía trên ({deadlineInfo.remainingText}).
+            </p>
+          </div>
+        </div>
+      ) : null}
+
+      {isEditingThisSession && (
+        <div className="flex items-start gap-3 p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-900/50 text-slate-900 dark:text-slate-300 text-xs sm:text-sm">
+          <AlertTriangle className="w-5 h-5 text-slate-500 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-semibold">Đang ở chế độ điều chỉnh điểm danh ({deadlineInfo.remainingText}).</p>
+            <p className="text-xs text-slate-700 dark:text-slate-400 mt-0.5">
+              Bạn có thể cập nhật lại trạng thái học viên hoặc thêm ghi chú. Khi hoàn tất, hãy nhấn nút <strong>&ldquo;Lưu điều chỉnh cho buổi này&rdquo;</strong> ở thanh dưới cùng và nhập lý do điều chỉnh.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Selected Session Hero Banner */}
+      <AttendanceSessionSelector
+        selectedSessionId={selectedSessionId}
+        onSessionChange={handleSessionChange}
+        activeSessions={activeSessions}
+        session={session}
+        isFinalized={isFinalized}
+        isDraft={isDraft}
+        isExpired24h={isExpired24h}
+        deadlineInfo={deadlineInfo}
+        enrolledCount={members.length}
+      />
+
+      {/* Live Attendance Statistics & Visual Progress */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+          {/* Total */}
+          <div className="p-4 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1.5">
+              <span className="text-xs font-semibold">Tổng sĩ số</span>
+              <Users className="w-4 h-4 text-slate-400" />
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-slate-900 dark:text-white">
+                {stats.total}
+              </span>
+              <span className="text-xs text-slate-400">học viên</span>
+            </div>
+          </div>
       {/* TOP-LEVEL TABS: ĐIỂM DANH BUỔI HỌC & LỊCH SỬ ĐIỂM DANH */}
       <div className="flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
         <button
@@ -533,6 +630,34 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
             </div>
           </div>
         </>
+      )}
+
+      {/* Read-only notification bar when locked by 24h */}
+      {isExpired24h && (
+        <div className="sticky bottom-6 z-30 bg-slate-900/95 dark:bg-slate-900/95 text-white backdrop-blur-md rounded-2xl border border-slate-700/80 p-4 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in">
+          <div className="flex items-center gap-3 text-xs sm:text-sm">
+            <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
+              <Lock className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-bold text-white block sm:inline">
+                Buổi học đã đóng ( Không thể sửa điểm vì đã quá 24 giờ ).
+              </span>
+              <span className="text-slate-300 text-xs sm:ml-2">
+                Có mặt: {stats.attended}/{stats.total} · Vắng: {stats.absent} · Chưa điểm danh: {stats.pending}
+              </span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => navigateTo("assessment", { sessionId: selectedSessionId })}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 text-xs sm:text-sm font-semibold text-emerald-300 bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-500/40 rounded-xl transition-colors shadow-xs cursor-pointer"
+          >
+            <Award className="w-4 h-4" />
+            <span>Xem đánh giá buổi học</span>
+          </button>
+        </div>
       )}
 
       {/* Audit Reason Modal for post-finalized modifications */}
