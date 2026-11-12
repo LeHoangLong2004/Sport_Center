@@ -178,6 +178,7 @@ export default function CoachMembers({ navigateTo }: Props) {
               key={m.id}
               member={m}
               onSelect={(id) => navigateTo("member-profile", { memberId: id })}
+              onChat={(id) => navigateTo("chat", { memberId: id })}
             />
           ))}
         </div>

@@ -25,5 +25,12 @@ public class ReviewResponse
     public string? SessionId { get; set; }
     public string? SessionName { get; set; }
     public List<string> Tags { get; set; } = new();
+    public string? CoachReply { get; set; }
+    public DateTime? RepliedAt { get; set; }
     public DateTime CreatedAt { get; set; }
+}
+
+public class ReplyReviewRequest
+{
+    public string Reply { get; set; } = string.Empty;
 }

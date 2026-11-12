@@ -42,6 +42,7 @@ export const BREADCRUMBS: Record<MemberScreen, string> = {
   support: "HỘI VIÊN / TRỢ LÝ AI & HỖ TRỢ",
   shop: "HỘI VIÊN / CỬA HÀNG SẢN PHẨM",
   profile: "HỘI VIÊN / HỒ SƠ CÁ NHÂN",
+  progress: "HỘI VIÊN / TIẾN ĐỘ & INBODY",
 };
 
 export const PAGE_TITLES: Record<MemberScreen, string> = {
@@ -57,4 +58,5 @@ export const PAGE_TITLES: Record<MemberScreen, string> = {
   support: "Trợ lý AI & Hỗ trợ",
   shop: "Cửa hàng sản phẩm & Đồ tập",
   profile: "Hồ sơ cá nhân",
+  progress: "Chỉ số InBody & Tiến độ thể chất",
 };

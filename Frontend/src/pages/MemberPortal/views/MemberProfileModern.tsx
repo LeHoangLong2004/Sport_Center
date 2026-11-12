@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useUserProfile } from "../../../hooks/useUserProfile";
 import { PackageAPI } from "../../../services/packageApi";
+import { MemberAPI } from "../services/api";
 import { getSavedMemberData } from "../services/memberData";
-import { User, Receipt, KeyRound } from "lucide-react";
+import { User, Receipt, KeyRound, Activity } from "lucide-react";
 import type { MemberScreen } from "../types";
 
 import { ProfileHeroCard } from "../components/profile/ProfileHeroCard";
@@ -10,6 +11,7 @@ import { ProfileStatsBadges } from "../components/profile/ProfileStatsBadges";
 import { ProfileInfoTab } from "../components/profile/ProfileInfoTab";
 import { ProfileInvoicesTab } from "../components/profile/ProfileInvoicesTab";
 import { ProfileSecurityTab } from "../components/profile/ProfileSecurityTab";
+import MemberProgress from "./MemberProgress";
 
 interface Props {
   onNavigate?: (screen: MemberScreen) => void;
@@ -18,8 +20,8 @@ interface Props {
 export default function MemberProfileModern({ onNavigate }: Props) {
   const { profile, loading, updateProfile, uploadAvatar } = useUserProfile();
 
-  // Tab state: "info" | "payments" | "security"
-  const [activeProfileTab, setActiveProfileTab] = useState<"info" | "payments" | "security">(() => {
+  // Tab state: "info" | "progress" | "payments" | "security"
+  const [activeProfileTab, setActiveProfileTab] = useState<"info" | "progress" | "payments" | "security">(() => {
     if (
       typeof window !== "undefined" &&
       (window.location.hash.includes("payments") || window.location.hash.includes("tab=payments"))
@@ -32,6 +34,7 @@ export default function MemberProfileModern({ onNavigate }: Props) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [invoices, setInvoices] = useState<any[]>([]);
+  const [gamificationData, setGamificationData] = useState<any>(null);
 
   // Profile Form state
   const [fullName, setFullName] = useState("");
@@ -174,16 +177,30 @@ export default function MemberProfileModern({ onNavigate }: Props) {
     }
   };
 
+  useEffect(() => {
+    let cancelled = false;
+    MemberAPI.getGamification()
+      .then((data) => {
+        if (!cancelled && data) setGamificationData(data);
+      })
+      .catch((err) => console.error("Lỗi tải gamification:", err));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handleSavePassword = async (
     currentPass: string,
     newPass: string,
-    confirmPass: string
+    _confirmPass: string
   ): Promise<boolean> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(true);
-      }, 600);
-    });
+    try {
+      await MemberAPI.changePassword({ currentPassword: currentPass, newPassword: newPass });
+      return true;
+    } catch (err: any) {
+      console.error("Lỗi đổi mật khẩu:", err);
+      return false;
+    }
   };
 
   // User session stats computation
@@ -195,8 +212,8 @@ export default function MemberProfileModern({ onNavigate }: Props) {
   const completedSessions = userSessions.filter(
     (s: any) => s.status === "completed" || s.status === "hoàn thành" || s.attended
   );
-  const completedCount = completedSessions.length;
-  const totalSessionsCount = userSessions.length;
+  const completedCount = gamificationData?.completedCount ?? completedSessions.length;
+  const totalSessionsCount = gamificationData?.totalSessionsCount ?? userSessions.length;
 
   const hasGym = userSessions.some((s: any) => s.sport === "gym");
   const hasYoga = userSessions.some((s: any) => s.sport === "yoga");
@@ -204,8 +221,8 @@ export default function MemberProfileModern({ onNavigate }: Props) {
   const hasPT = userSessions.some((s: any) => s.isPT || s.format === "coach");
   const hasPaidInvoice = invoices.some((i: any) => i.status === "paid");
 
-  // Dynamic Badges status
-  const badgesStatus = {
+  // Dynamic Badges status from BE (with fallback)
+  const badgesStatus = gamificationData?.badgesStatus ?? {
     streak10: completedCount >= 10,
     breakthrough20: completedCount >= 20,
     multiSport: (hasGym ? 1 : 0) + (hasYoga ? 1 : 0) + (hasSwim ? 1 : 0) >= 2,
@@ -214,7 +231,8 @@ export default function MemberProfileModern({ onNavigate }: Props) {
     goldMember: hasPaidInvoice,
   };
 
-  const unlockedBadgesCount = Object.values(badgesStatus).filter(Boolean).length;
+  const unlockedBadgesCount =
+    gamificationData?.unlockedBadgesCount ?? Object.values(badgesStatus).filter(Boolean).length;
 
   if (loading) {
     return (
@@ -247,7 +265,7 @@ export default function MemberProfileModern({ onNavigate }: Props) {
         <button
           type="button"
           onClick={() => setActiveProfileTab("info")}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
             activeProfileTab === "info"
               ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm"
               : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -259,28 +277,41 @@ export default function MemberProfileModern({ onNavigate }: Props) {
 
         <button
           type="button"
+          onClick={() => setActiveProfileTab("progress")}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            activeProfileTab === "progress"
+              ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+          }`}
+        >
+          <Activity className="w-4 h-4" />
+          <span>2. Chỉ số InBody & Tiến độ</span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveProfileTab("payments")}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
             activeProfileTab === "payments"
               ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm"
               : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           }`}
         >
           <Receipt className="w-4 h-4" />
-          <span>2. Hóa đơn & Giao dịch ({invoices.length})</span>
+          <span>3. Hóa đơn & Giao dịch ({invoices.length})</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveProfileTab("security")}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
             activeProfileTab === "security"
               ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm"
               : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           }`}
         >
           <KeyRound className="w-4 h-4" />
-          <span>3. Bảo mật & Tài khoản</span>
+          <span>4. Bảo mật & Tài khoản</span>
         </button>
       </div>
 
@@ -316,6 +347,12 @@ export default function MemberProfileModern({ onNavigate }: Props) {
             onCloseEdit={() => setIsEditModalOpen(false)}
             onSaveProfile={handleSaveProfile}
           />
+        </div>
+      )}
+
+      {activeProfileTab === "progress" && (
+        <div className="animate-in fade-in duration-200">
+          <MemberProgress />
         </div>
       )}
 

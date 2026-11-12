@@ -29,6 +29,7 @@ public class UserResponse
     public string? FavoriteSports { get; set; }
     public string? PreferredTime { get; set; }
     public string? HealthNotes { get; set; }
+    public string? WorkoutGoals { get; set; }
 }
 
 public class UpdateUserRoleRequest
@@ -63,6 +64,7 @@ public class UpdateUserProfileRequest
     public string? FavoriteSports { get; set; }
     public string? PreferredTime { get; set; }
     public string? HealthNotes { get; set; }
+    public string? WorkoutGoals { get; set; }
 }
 
 public class CreateMemberRequest

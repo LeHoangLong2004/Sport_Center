@@ -75,18 +75,12 @@ export default function App() {
     const userStr = localStorage.getItem("user");
     const user = userStr ? JSON.parse(userStr) : null;
     const role = user?.role?.toLowerCase();
-    if (!user || (role !== "receptionist" && role !== "admin" && role !== "manager")) {
-      const demoRec = {
-        id: "rec-01",
-        fullName: "Lễ tân Mai Anh",
-        role: "Receptionist",
-        email: "receptionist01@smartgym.com",
-        avatarUrl: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=256&q=80",
-      };
-      localStorage.setItem("user", JSON.stringify(demoRec));
-      if (!localStorage.getItem("token")) {
-        localStorage.setItem("token", "mock-valid-token-demo");
-      }
+    const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
+    if (!token || !user || (role !== "receptionist" && role !== "admin" && role !== "manager")) {
+      window.location.hash = "login";
+      setReceptionistOpen(false);
+      setAdminOpen(true);
+      return null;
     }
 
     return (
@@ -149,18 +143,12 @@ export default function App() {
     const userStr = localStorage.getItem("user");
     const user = userStr ? JSON.parse(userStr) : null;
     const role = user?.role?.toLowerCase();
-    if (!user || (role !== "coach" && role !== "admin" && role !== "manager")) {
-      const demoCoach = {
-        id: "coach-01",
-        fullName: "HLV Nam Hồ",
-        role: "Coach",
-        email: "hoxuananhnam1@gmail.com",
-        avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80",
-      };
-      localStorage.setItem("user", JSON.stringify(demoCoach));
-      if (!localStorage.getItem("token")) {
-        localStorage.setItem("token", "mock-valid-token-demo");
-      }
+    const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
+    if (!token || !user || (role !== "coach" && role !== "admin" && role !== "manager")) {
+      window.location.hash = "login";
+      setCoachOpen(false);
+      setAdminOpen(true);
+      return null;
     }
     return (
       <CoachPortal

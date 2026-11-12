@@ -11,6 +11,8 @@ export interface SyncedCoachReview {
   sessionId?: string;
   sessionName?: string;
   createdAt: string;
+  coachReply?: string;
+  repliedAt?: string;
 }
 
 const BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000") + "/api";
@@ -40,6 +42,8 @@ function mapReview(data: any): SyncedCoachReview {
     sessionId: data.sessionId || undefined,
     sessionName: data.sessionName || undefined,
     createdAt: data.createdAt || new Date().toISOString(),
+    coachReply: data.coachReply || undefined,
+    repliedAt: data.repliedAt || undefined,
   };
 }
 
@@ -66,6 +70,26 @@ async function requestReviews(endpoint: string): Promise<SyncedCoachReview[]> {
 export async function fetchCoachReviews(coachId: string): Promise<SyncedCoachReview[]> {
   if (!coachId) return [];
   return requestReviews(`/reviews/coach/${encodeURIComponent(coachId)}`);
+}
+
+export async function replyToReview(
+  reviewId: string,
+  reply: string
+): Promise<{ success: boolean; message: string; reply: string; repliedAt: string }> {
+  const response = await fetch(`${BASE_URL}/reviews/${encodeURIComponent(reviewId)}/reply`, {
+    method: "POST",
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ reply }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.message || "Phản hồi đánh giá thất bại.");
+  }
+  return response.json();
 }
 
 export async function fetchReviewById(reviewId: string): Promise<SyncedCoachReview | null> {

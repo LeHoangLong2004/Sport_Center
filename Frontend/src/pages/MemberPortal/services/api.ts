@@ -81,6 +81,16 @@ export const MemberAPI = {
         });
     },
 
+    // 3b. Sports
+    getSports: async (): Promise<Array<{ id: string; name: string; imageUrl?: string; description?: string }>> => {
+        try {
+            const res = await fetchApi('/sports');
+            return Array.isArray(res) ? res : [];
+        } catch {
+            return [];
+        }
+    },
+
     // 4. Classes
     getAvailableClasses: async () => {
         return fetchApi('/classes/available');
@@ -176,6 +186,38 @@ export const MemberAPI = {
     },
     startConversation: async (data: { targetId: string; targetName: string; role: string; memberId?: string; memberName?: string; avatar?: string; subtitle?: string; initialMessage?: string }) => {
         return fetchApi('/member/chat/start', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
+    // 7. Bảo mật & Đổi mật khẩu
+    changePassword: async (data: { currentPassword: string; newPassword: string }) => {
+        return fetchApi('/auth/change-password', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
+    // 8. Báo cáo đối soát thanh toán
+    reportPaymentProof: async (orderId: string, data: { paymentMethod: string; referenceCode: string; note?: string; amount?: number }) => {
+        return fetchApi(`/package-orders/${encodeURIComponent(orderId)}/report-proof`, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
+    // 9. Huy hiệu, Thành tích & Gamification
+    getGamification: async () => {
+        return fetchApi('/member/gamification');
+    },
+
+    // 10. Chỉ số cơ thể InBody & Tiến độ
+    getBodyMetrics: async () => {
+        return fetchApi('/body-metrics/me');
+    },
+    createBodyMetric: async (data: { weight: number; height: number; bodyFat?: number; muscleMass?: number; recordedAt?: string }) => {
+        return fetchApi('/body-metrics', {
             method: 'POST',
             body: JSON.stringify(data)
         });

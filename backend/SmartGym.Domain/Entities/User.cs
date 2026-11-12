@@ -35,6 +35,14 @@ public class User
     public string? TrainingGoal { get; set; }
     /// <summary>Trình độ thể lực hiện tại (Mới bắt đầu, Trung cấp, Nâng cao)</summary>
     public string? TrainingLevel { get; set; }
+    /// <summary>Bộ môn thể thao yêu thích</summary>
+    public string? FavoriteSports { get; set; }
+    /// <summary>Khung giờ ưu tiên tập luyện</summary>
+    public string? PreferredTime { get; set; }
+    /// <summary>Lưu ý sức khỏe và thể trạng cá nhân</summary>
+    public string? HealthNotes { get; set; }
+    /// <summary>Danh sách mục tiêu rèn luyện cá nhân</summary>
+    public string? WorkoutGoals { get; set; }
     /// <summary>Trạng thái tài khoản (True: Đang hoạt động, False: Bị khóa)</summary>
     public bool Status { get; set; } = true;
     /// <summary>Thời điểm tạo tài khoản</summary>
