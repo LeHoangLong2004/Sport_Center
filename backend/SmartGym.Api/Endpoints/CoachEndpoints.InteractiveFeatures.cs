@@ -155,21 +155,6 @@ public static partial class CoachEndpoints
                 if (classConflicts.Count > 0)
                     return Results.Conflict(new { message = "Bạn đã có lớp học khác trùng hoặc chồng lấn khung giờ này." });
 
-                var ptConflicts = await db.Database.SqlQueryRaw<CoachScheduleWindowSqlModel>(
-                    @"SELECT ps.schedule_time AS ""StartTime"", COALESCE(ps.duration_minutes, 60) AS ""DurationMinutes""
-                      FROM pt_sessions ps
-                      INNER JOIN pt_enrollments pe ON pe.id = ps.enrollment_id
-                      WHERE pe.coach_id = {0}
-                        AND ps.status IN ('scheduled', 'pending', 'confirmed', 'sắp diễn ra')
-                        AND ps.schedule_time < {1}
-                        AND ps.schedule_time + (COALESCE(ps.duration_minutes, 60) * INTERVAL '1 minute') > {2}",
-                    coachProfileId.Value,
-                    endUtc,
-                    startUtc
-                ).ToListAsync();
-                if (ptConflicts.Count > 0)
-                    return Results.Conflict(new { message = "Bạn đã có buổi PT khác trùng hoặc chồng lấn khung giờ này." });
-
                 var openSlotConflicts = await db.Database.SqlQueryRaw<AvailabilityWindowSqlModel>(
                     @"SELECT start_time AS ""StartTime"", end_time AS ""EndTime""
                       FROM coach_availability_slots

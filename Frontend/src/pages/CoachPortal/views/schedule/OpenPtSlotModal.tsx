@@ -1,7 +1,7 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
-import { TIME_ROWS, type UnifiedScheduleItem } from "./types";
+import { X, Clock } from "lucide-react";
+import type { UnifiedScheduleItem } from "./types";
 import { DateInput } from "../../../../components/DateInput";
 
 interface Props {
@@ -15,7 +15,8 @@ interface Props {
 export default function OpenPtSlotModal({ isOpen, onClose, onSuccess, sportOptions, roomOptions }: Props) {
   const [openSlotDate, setOpenSlotDate] = useState("");
   const [openSlotStartTime, setOpenSlotStartTime] = useState("08:00");
-  const [openSlotEndTime, setOpenSlotEndTime] = useState("09:30");
+  const [openSlotEndTime, setOpenSlotEndTime] = useState("09:00");
+  const [timeError, setTimeError] = useState("");
   const [openSlotSport, setOpenSlotSport] = useState("");
   const [openSlotRoom, setOpenSlotRoom] = useState("");
   const [openSlotNote, setOpenSlotNote] = useState("");
@@ -27,9 +28,51 @@ export default function OpenPtSlotModal({ isOpen, onClose, onSuccess, sportOptio
   const selectedSport = openSlotSport || sportOptions[0] || "";
   const selectedRoom = openSlotRoom || roomOptions[0] || "";
 
+  const handleStartTimeChange = (newStart: string) => {
+    setOpenSlotStartTime(newStart);
+    if (!newStart) return;
+
+    let targetEnd = openSlotEndTime;
+    // Tự động gợi ý giờ kết thúc là +1 tiếng nếu chưa có hoặc giờ kết thúc đang trước giờ bắt đầu
+    if (!targetEnd || targetEnd <= newStart) {
+      const [h, m] = newStart.split(":").map(Number);
+      if (!isNaN(h) && !isNaN(m)) {
+        const endH = (h + 1) % 24;
+        targetEnd = `${String(endH).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+        setOpenSlotEndTime(targetEnd);
+      }
+    }
+
+    if (targetEnd && newStart >= targetEnd) {
+      setTimeError("Giờ kết thúc phải sau giờ bắt đầu.");
+    } else {
+      setTimeError("");
+    }
+  };
+
+  const handleEndTimeChange = (newEnd: string) => {
+    setOpenSlotEndTime(newEnd);
+    if (openSlotStartTime && newEnd && openSlotStartTime >= newEnd) {
+      setTimeError("Giờ kết thúc phải sau giờ bắt đầu.");
+    } else {
+      setTimeError("");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!openSlotDate) return;
+    if (!openSlotDate) {
+      setError("Vui lòng chọn ngày mở ca trống.");
+      return;
+    }
+    if (!openSlotStartTime || !openSlotEndTime) {
+      setError("Vui lòng nhập đầy đủ giờ bắt đầu và giờ kết thúc.");
+      return;
+    }
+    if (openSlotStartTime >= openSlotEndTime) {
+      setError("Giờ kết thúc phải sau giờ bắt đầu.");
+      return;
+    }
     setError("");
 
     const newItem: UnifiedScheduleItem = {
@@ -71,7 +114,7 @@ export default function OpenPtSlotModal({ isOpen, onClose, onSuccess, sportOptio
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -96,39 +139,40 @@ export default function OpenPtSlotModal({ isOpen, onClose, onSuccess, sportOptio
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                  Giờ bắt đầu:
-                </label>
-                <select
-                  value={openSlotStartTime}
-                  onChange={(e) => setOpenSlotStartTime(e.target.value)}
-                  className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                >
-                  {TIME_ROWS.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
+            <div>
+              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-slate-500" />
+                Khung giờ mở nhận học viên: <span className="text-rose-500">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1">
+                    Giờ bắt đầu:
+                  </span>
+                  <input
+                    type="time"
+                    required
+                    value={openSlotStartTime}
+                    onChange={(e) => handleStartTimeChange(e.target.value)}
+                    className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer text-xs font-medium focus:outline-none focus:ring-1 focus:ring-slate-400"
+                  />
+                </div>
+                <div>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1">
+                    Giờ kết thúc:
+                  </span>
+                  <input
+                    type="time"
+                    required
+                    value={openSlotEndTime}
+                    onChange={(e) => handleEndTimeChange(e.target.value)}
+                    className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer text-xs font-medium focus:outline-none focus:ring-1 focus:ring-slate-400"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                  Giờ kết thúc:
-                </label>
-                <select
-                  value={openSlotEndTime}
-                  onChange={(e) => setOpenSlotEndTime(e.target.value)}
-                  className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                >
-                  {["07:30", "08:30", "09:30", "10:30", "15:30", "16:30", "18:30", "19:30", "20:30"].map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {timeError && (
+                <p className="text-[11px] text-rose-500 mt-1 font-medium">{timeError}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -139,7 +183,7 @@ export default function OpenPtSlotModal({ isOpen, onClose, onSuccess, sportOptio
                 <select
                   value={selectedSport}
                   onChange={(e) => setOpenSlotSport(e.target.value)}
-                  className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                  className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer"
                 >
                   {sportOptions.length === 0 ? (
                     <option value="">Chưa được phân công môn</option>
@@ -162,7 +206,7 @@ export default function OpenPtSlotModal({ isOpen, onClose, onSuccess, sportOptio
                 <select
                   value={selectedRoom}
                   onChange={(e) => setOpenSlotRoom(e.target.value)}
-                  className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                  className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer"
                 >
                   {roomOptions.map((r) => (
                     <option key={r} value={r}>
@@ -182,7 +226,7 @@ export default function OpenPtSlotModal({ isOpen, onClose, onSuccess, sportOptio
                 placeholder="VD: Nhận kèm cá nhân tập trung siết cơ, giảm mỡ nhanh hoặc cải thiện thể lực..."
                 value={openSlotNote}
                 onChange={(e) => setOpenSlotNote(e.target.value)}
-                className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400"
               />
             </div>
           </div>
@@ -192,14 +236,14 @@ export default function OpenPtSlotModal({ isOpen, onClose, onSuccess, sportOptio
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
             >
               Hủy
             </button>
             <button
               type="submit"
-              disabled={submitting}
-              className="px-5 py-2 font-semibold text-white bg-slate-900 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-slate-900 rounded-lg shadow-sm transition-colors"
+              disabled={submitting || !!timeError}
+              className="px-5 py-2 font-semibold text-white bg-slate-900 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-slate-900 rounded-lg shadow-sm transition-colors cursor-pointer"
             >
               {submitting ? "Đang kiểm tra..." : "Đăng lịch trống"}
             </button>
