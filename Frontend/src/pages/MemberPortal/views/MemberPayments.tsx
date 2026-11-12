@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import type { MemberScreen, MemberPaymentItem } from "../types";
 import { PackageAPI } from "../../../services/packageApi";
+import { MemberAPI } from "../services/api";
 import { Receipt, CheckCircle2, X, Wallet } from "lucide-react";
 import {
   WalletService,
@@ -92,6 +93,7 @@ export default function MemberPayments({ onNavigate }: Props) {
         if (Array.isArray(orders) && orders.length > 0) {
           const mapped: MemberPaymentItem[] = orders.map((o) => ({
             id: `INV-${o.id.substring(0, 8).toUpperCase()}`,
+            subscriptionId: o.id,
             packageName: o.packageSnapshot?.name || "Gói tập hội viên",
             amount: o.total || 0,
             date: o.createdAt ? new Date(o.createdAt).toLocaleDateString("vi-VN") : "Hôm nay",
@@ -116,9 +118,22 @@ export default function MemberPayments({ onNavigate }: Props) {
     };
   }, []);
 
-  const handleReportPayment = (e: React.FormEvent) => {
+  const handleReportPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activePaymentModal) return;
+
+    const targetOrderId = activePaymentModal.subscriptionId || activePaymentModal.id.replace("INV-", "");
+    const generatedRefCode = refCode.trim() || `MB-${Date.now().toString().slice(-6)}`;
+
+    try {
+      await MemberAPI.reportPaymentProof(targetOrderId, {
+        paymentMethod: bankMethod,
+        referenceCode: generatedRefCode,
+        amount: activePaymentModal.amount,
+      });
+    } catch (err) {
+      console.warn("Không thể lưu proof lên server:", err);
+    }
 
     const updated = payments.map((p) =>
       p.id === activePaymentModal.id
@@ -126,7 +141,7 @@ export default function MemberPayments({ onNavigate }: Props) {
             ...p,
             method: bankMethod,
             status: "paid" as const,
-            referenceCode: refCode.trim() || `MB-${Date.now().toString().slice(-6)}`,
+            referenceCode: generatedRefCode,
           }
         : p
     );

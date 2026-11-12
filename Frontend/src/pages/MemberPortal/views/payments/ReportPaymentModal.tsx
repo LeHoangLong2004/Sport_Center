@@ -84,8 +84,9 @@ export default function ReportPaymentModal({
               onChange={(e) => onBankMethodChange(e.target.value as any)}
               className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
             >
-              <option value="Chuyển khoản">Chuyển khoản Ngân hàng (QR / App)</option>
+              <option value="Chuyển khoản">Chuyển khoản Ngân hàng (VietQR / SePay)</option>
               <option value="Tiền mặt tại quầy">Tiền mặt tại quầy Lễ tân</option>
+              <option value="Quẹt thẻ POS">Quẹt thẻ POS tại quầy</option>
             </select>
           </div>
 

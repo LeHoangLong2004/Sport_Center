@@ -172,6 +172,11 @@ export function useUserProfile(portalRoleHint?: 'coach' | 'member') {
         certifications: updates.certifications,
         experienceYears: updates.experienceYears,
         bio: updates.bio,
+        fitnessGoal: updates.fitnessGoal,
+        favoriteSports: updates.favoriteSports,
+        preferredTime: updates.preferredTime,
+        healthNotes: updates.healthNotes,
+        workoutGoals: updates.workoutGoals,
       }),
     });
 

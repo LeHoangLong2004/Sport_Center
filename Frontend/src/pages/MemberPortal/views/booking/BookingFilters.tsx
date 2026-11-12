@@ -13,6 +13,7 @@ interface BookingFiltersProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   coaches: any[];
+  sports?: Array<{ value: string; label: string }> | string[];
 }
 
 export const BookingFilters: React.FC<BookingFiltersProps> = ({
@@ -26,6 +27,7 @@ export const BookingFilters: React.FC<BookingFiltersProps> = ({
   searchQuery,
   setSearchQuery,
   coaches,
+  sports = [],
 }) => {
   if (activeTab === "my_classes") return null;
 
@@ -60,11 +62,16 @@ export const BookingFilters: React.FC<BookingFiltersProps> = ({
           className="bg-transparent border-none text-xs font-bold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
         >
           <option value="all" className="bg-white dark:bg-slate-800">Tất cả bộ môn</option>
-          <option value="Gym" className="bg-white dark:bg-slate-800">Gym & Thể lực</option>
-          <option value="Yoga" className="bg-white dark:bg-slate-800">Yoga & Pilates</option>
-          <option value="Boxing" className="bg-white dark:bg-slate-800">Boxing & Kickfit</option>
-          <option value="Bơi lội" className="bg-white dark:bg-slate-800">Bơi lội 4 mùa</option>
-          <option value="Zumba" className="bg-white dark:bg-slate-800">Zumba Dance</option>
+          {Array.isArray(sports) &&
+            sports.map((s) => {
+              const val = typeof s === "string" ? s : s.value;
+              const lbl = typeof s === "string" ? s : s.label;
+              return (
+                <option key={val} value={val} className="bg-white dark:bg-slate-800">
+                  {lbl}
+                </option>
+              );
+            })}
         </select>
       </div>
 

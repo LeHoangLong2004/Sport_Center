@@ -4,7 +4,8 @@ import {
   Target,
   Phone,
   Mail,
-  ArrowRight
+  ArrowRight,
+  MessageSquare
 } from "lucide-react";
 import type { MockMember } from "../../services/api";
 import { UserAvatar } from "../../../../components/UserAvatar";
@@ -12,11 +13,13 @@ import { UserAvatar } from "../../../../components/UserAvatar";
 interface CoachMemberCardProps {
   member: MockMember;
   onSelect: (id: string) => void;
+  onChat?: (id: string) => void;
 }
 
 export const CoachMemberCard: React.FC<CoachMemberCardProps> = ({
   member: m,
-  onSelect
+  onSelect,
+  onChat
 }) => {
   const displayClassName = m.className || (m.classNames && m.classNames.length > 0 ? m.classNames[0] : null);
 
@@ -99,9 +102,24 @@ export const CoachMemberCard: React.FC<CoachMemberCardProps> = ({
         <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-[11px]">
           {m.sport || "Thể thao"}
         </span>
-        <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform text-xs">
-          Hồ sơ học viên <ArrowRight className="w-3.5 h-3.5" />
-        </span>
+        <div className="flex items-center gap-2">
+          {onChat && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onChat(m.id);
+              }}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
+              title="Nhắn tin với học viên"
+            >
+              <MessageSquare className="w-4 h-4" />
+            </button>
+          )}
+          <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform text-xs">
+            Hồ sơ <ArrowRight className="w-3.5 h-3.5" />
+          </span>
+        </div>
       </div>
     </div>
   );

@@ -15,10 +15,15 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  let response = await fetch(`${BASE_URL}${endpoint}`, {
-    ...options,
-    headers
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${BASE_URL}${endpoint}`, {
+      ...options,
+      headers
+    });
+  } catch {
+    throw new Error('Không thể kết nối đến máy chủ. Vui lòng kiểm tra backend đang chạy.');
+  }
   
   if (response.status === 401) {
     try {

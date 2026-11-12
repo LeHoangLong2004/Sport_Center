@@ -368,6 +368,21 @@ export const MemberBackendAPI = {
     return null;
   },
 
+  async getSupportTickets(): Promise<MemberSupportTicketItem[]> {
+    try {
+      const res = await fetch("/api/member/support-tickets", {
+        headers: this.getAuthHeaders(),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) return data;
+      }
+    } catch (e) {
+      console.warn("Backend getSupportTickets failed", e);
+    }
+    return [];
+  },
+
   async createSupportTicket(ticket: { category: string; subject: string; content: string }) {
     try {
       const res = await fetch("/api/member/support-tickets", {

@@ -51,16 +51,22 @@ export function SupportTicketModal({
                   <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
                     Danh mục vấn đề:
                   </label>
-                  <select
+                  <input
+                    type="text"
                     value={ticketCategory}
                     onChange={(e) => onCategoryChange(e.target.value)}
-                    className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                  >
-                    <option value="Tư vấn dịch vụ">Tư vấn dịch vụ & Gia hạn gói</option>
-                    <option value="Lịch tập & HLV">Thắc mắc Lịch tập & Đổi Huấn luyện viên</option>
-                    <option value="Thanh toán & Hóa đơn">Thanh toán, Hóa đơn & Đối soát</option>
-                    <option value="Cơ sở vật chất">Góp ý Cơ sở vật chất & Thiết bị</option>
-                  </select>
+                    placeholder="Chọn hoặc nhập danh mục vấn đề..."
+                    list="modal-ticket-categories"
+                    required
+                    className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none focus:border-emerald-500 transition-colors"
+                  />
+                  <datalist id="modal-ticket-categories">
+                    <option value="Tư vấn dịch vụ & Gia hạn gói" />
+                    <option value="Thắc mắc Lịch tập & Đổi Huấn luyện viên" />
+                    <option value="Thanh toán, Hóa đơn & Đối soát" />
+                    <option value="Góp ý Cơ sở vật chất & Thiết bị" />
+                    <option value="Hỗ trợ kỹ thuật ứng dụng" />
+                  </datalist>
                 </div>
 
                 <div>

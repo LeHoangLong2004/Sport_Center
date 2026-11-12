@@ -25,19 +25,11 @@ export const CoachMembersStats: React.FC<CoachMembersStatsProps> = ({
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
-              Thời gian thực
-            </span>
-            <span className="text-xs text-slate-400">Đồng bộ học viên và lớp học</span>
-          </div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
-            <div className="w-2 h-6 rounded-full bg-emerald-600 shrink-0" />
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
             Học viên phụ trách & Lớp học
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Danh sách học viên theo từng lớp và học viên kèm 1–1 được cập nhật theo thời gian thực
+            Quản lý danh sách học viên theo lớp và học viên kèm PT 1–1.
           </p>
         </div>
 

@@ -9,6 +9,7 @@ interface CurriculumHeaderProps {
   setSportFilter: (s: string) => void;
   sportsList: string[];
   onOpenNew: () => void;
+  onOpenAiTab?: () => void;
 }
 
 export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
@@ -19,6 +20,7 @@ export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
   setSportFilter,
   sportsList,
   onOpenNew,
+  onOpenAiTab,
 }) => {
   return (
     <>
@@ -26,29 +28,29 @@ export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
-            <BookOpen className="w-6 h-6 text-slate-700 dark:text-slate-300" />
+            <BookOpen className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
             Giáo án & Bài tập
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Thiết kế giáo án tập luyện theo bộ môn và giao bài cho học viên / lớp phụ trách
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Thiết kế giáo án tập luyện theo bộ môn và giao bài cho học viên / lớp phụ trách.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start md:self-auto">
-          <button
-            type="button"
-            onClick={() => {
-              window.location.hash = "#coach-ai";
-            }}
-            className="flex items-center gap-2 px-3.5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-emerald-600 to-emerald-600 hover:from-emerald-700 hover:to-emerald-700 rounded-xl transition-all shadow-md shadow-emerald-600/20 active:scale-95"
-            title="Sử dụng AI gợi ý và tạo nhanh giáo án bài tập"
-          >
-            <Sparkles className="w-4 h-4" /> Soạn với Coach AI
-          </button>
+        <div className="flex items-center gap-2.5 self-start md:self-auto">
+          {onOpenAiTab && (
+            <button
+              type="button"
+              onClick={onOpenAiTab}
+              className="flex items-center gap-2 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-emerald-600 to-emerald-600 hover:from-emerald-700 hover:to-emerald-700 rounded-xl transition-all shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer"
+              title="Sử dụng AI gợi ý và tạo nhanh giáo án bài tập"
+            >
+              <Sparkles className="w-4 h-4" /> Soạn với Coach AI
+            </button>
+          )}
           <button
             type="button"
             onClick={onOpenNew}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 rounded-xl transition-colors shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 rounded-xl transition-colors shadow-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" /> Tạo giáo án mới
           </button>

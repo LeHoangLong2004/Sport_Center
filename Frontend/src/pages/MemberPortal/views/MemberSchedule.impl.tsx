@@ -25,6 +25,11 @@ const user = userStr ? JSON.parse(userStr) : null; const userId = user?.id || ""
 const [sessions, setSessions] = useState<MemberSessionItem[]>(() => getSavedMemberData(storageKey, []) ); const [loading, setLoading] = useState(false);
 // 2. View Mode & Filters
 const [viewMode, setViewMode] = useState<ViewMode>("week"); const [sportFilter, setSportFilter] = useState<SportFilter>("all"); const [typeFilter, setTypeFilter] = useState<TypeFilter>("all"); const [statusFilter, setStatusFilter] = useState<StatusFilter>("all"); const [searchQuery, setSearchQuery] = useState("");
+const dynamicSportOptions = useMemo(() => {
+  const set = new Set<string>();
+  sessions.forEach((s) => { if (s.sport) set.add(s.sport); });
+  return ["all", ...Array.from(set)];
+}, [sessions]);
 // 3. Week Navigation (Monday reference)
 const [currentMonday, setCurrentMonday] = useState<Date>(() => getMonday(new Date()));
 // 4. Modals & Interactions
@@ -118,7 +123,7 @@ type="button" onClick={() => onNavigate("chat")} className="flex items-center ga
 onClick={() => setFeedback(null)} className="text-emerald-600 hover:text-emerald-800 dark:hover:text-white p-1" > <X className="w-4 h-4" /> </button> </div>
 )} {/* 2. Unified Filters Bar (Styled Exactly Like Image 1 & Image 2) */} <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs"> <div className="flex flex-wrap items-center gap-5"> {/* Dropdown 1: Bộ môn */} <div className="flex flex-col gap-1.5">
 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300"> Bộ môn </label> <div className="relative"> <select value={sportFilter}
-onChange={(e) => setSportFilter(e.target.value)} className="text-xs font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 min-w-[150px] shadow-xs cursor-pointer" > {SPORT_OPTIONS.map((o) => ( <option key={o} value={o}> {o === "all" ? "Tất cả bộ môn" : o}
+onChange={(e) => setSportFilter(e.target.value)} className="text-xs font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 min-w-[150px] shadow-xs cursor-pointer" > {(dynamicSportOptions.length > 1 ? dynamicSportOptions : SPORT_OPTIONS).map((o) => ( <option key={o} value={o}> {o === "all" ? "Tất cả bộ môn" : o}
 </option> ))} </select> </div> </div> {/* Dropdown 2: Hình thức */}
 <div className="flex flex-col gap-1.5"> <label className="text-xs font-semibold text-slate-700 dark:text-slate-300"> Hình thức </label> <div className="relative"> <select
 value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as TypeFilter)} className="text-xs font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 min-w-[185px] shadow-xs cursor-pointer" > <option value="all">Tất cả lịch tập</option> <option value="group">Lớp học nhóm</option>

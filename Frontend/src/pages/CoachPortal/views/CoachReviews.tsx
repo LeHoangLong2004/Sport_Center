@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Star, MessageSquare, Calendar, ShieldCheck, User, Eye, ChevronRight } from "lucide-react";
+import { Star, MessageSquare, Calendar, ShieldCheck, User, Eye, ChevronRight, CornerDownRight } from "lucide-react";
 import { useUserProfile } from "../../../hooks/useUserProfile";
 import {
   fetchCoachReviews,
@@ -16,6 +16,8 @@ interface ReviewItem {
   tags?: string[];
   createdAt: string;
   sessionName?: string;
+  coachReply?: string;
+  repliedAt?: string;
 }
 
 export default function CoachReviews() {
@@ -194,6 +196,8 @@ export default function CoachReviews() {
                   createdAt: item.createdAt,
                   sessionName: item.sessionName,
                   coachName: profile?.fullName || "Huấn luyện viên",
+                  coachReply: item.coachReply,
+                  repliedAt: item.repliedAt,
                 });
                 setModalOpen(true);
               }}
@@ -265,6 +269,13 @@ export default function CoachReviews() {
                   ))}
                 </div>
               )}
+
+              {item.coachReply && (
+                <div className="mt-3 flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50/60 dark:bg-emerald-950/30 px-3 py-1.5 rounded-lg border border-emerald-200/50 dark:border-emerald-800/40 w-fit">
+                  <CornerDownRight className="w-3.5 h-3.5" />
+                  <span>Đã phản hồi: “{item.coachReply.slice(0, 45)}{item.coachReply.length > 45 ? '...' : ''}”</span>
+                </div>
+              )}
             </div>
           ))
         )}
@@ -275,6 +286,18 @@ export default function CoachReviews() {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         review={selectedDetailReview}
+        onReplySuccess={(reviewId, reply, repliedAt) => {
+          setReviews((prev) =>
+            prev.map((r) =>
+              r.id === reviewId ? { ...r, coachReply: reply, repliedAt } : r
+            )
+          );
+          setSelectedDetailReview((prev) =>
+            prev && prev.id === reviewId
+              ? { ...prev, coachReply: reply, repliedAt }
+              : prev
+          );
+        }}
       />
     </div>
   );

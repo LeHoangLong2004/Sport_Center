@@ -69,17 +69,22 @@ export const PtBookingModal: React.FC<PtBookingModalProps> = ({
               <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
                 Mục tiêu trọng tâm buổi tập: *
               </label>
-              <select
+              <input
+                type="text"
                 value={ptGoal}
                 onChange={(e) => setPtGoal(e.target.value)}
-                className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none font-medium"
-              >
-                <option>Tăng cơ & Siết nét (Hypertrophy)</option>
-                <option>Giảm mỡ & Đốt calo cường độ cao</option>
-                <option>Cải thiện kỹ thuật động tác chuẩn</option>
-                <option>Giãn cơ sâu & Phục hồi thể lực</option>
-                <option>Tập sức mạnh tối đa (Strength)</option>
-              </select>
+                placeholder="Nhập mục tiêu tập luyện (VD: Tăng cơ, Giảm mỡ, Phục hồi thể lực...)"
+                list="pt-goal-suggestions"
+                required
+                className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none font-medium focus:border-emerald-500 transition-colors"
+              />
+              <datalist id="pt-goal-suggestions">
+                <option value="Tăng cơ & Siết nét (Hypertrophy)" />
+                <option value="Giảm mỡ & Đốt calo cường độ cao" />
+                <option value="Cải thiện kỹ thuật động tác chuẩn" />
+                <option value="Giãn cơ sâu & Phục hồi thể lực" />
+                <option value="Tập sức mạnh tối đa (Strength)" />
+              </datalist>
             </div>
 
             <div>

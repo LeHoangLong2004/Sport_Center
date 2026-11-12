@@ -13,6 +13,8 @@ public class Review
     public string? SessionId { get; set; }
     public string? SessionName { get; set; }
     public string? TagsJson { get; set; }
+    public string? CoachReply { get; set; }
+    public DateTime? RepliedAt { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public User? Member { get; set; }

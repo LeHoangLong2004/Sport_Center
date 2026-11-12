@@ -98,10 +98,11 @@ import { WalletService, MEMBER_WALLET_UPDATED_EVENT } from "../services/walletSe
     const breadcrumbs: Record<MemberScreen, string> = {
         dashboard: "HỘI VIÊN / TỔNG QUAN", booking: "HỘI VIÊN / KHÁM PHÁ & ĐẶT LỊCH", schedule: "HỘI VIÊN / LỊCH CỦA TÔI", attendance: "HỘI VIÊN / ĐIỂM DANH", packages: "HỘI VIÊN / GÓI TẬP & DỊCH VỤ", payments: "HỘI VIÊN / HỒ SƠ & HÓA ĐƠN",
         workouts: "HỘI VIÊN / GIÁO ÁN & BÀI TẬP", reviews: "HỘI VIÊN / ĐÁNH GIÁ HLV", chat: "HỘI VIÊN / TIN NHẮN TRAO ĐỔI", support: "HỘI VIÊN / TRỢ LÝ AI & HỖ TRỢ", shop: "HỘI VIÊN / CỬA HÀNG SẢN PHẨM", profile: "HỘI VIÊN / HỒ SƠ CÁ NHÂN",
+        progress: "HỘI VIÊN / TIẾN ĐỘ & INBODY",
     }; const pageTitles: Record<MemberScreen, string> = {
         dashboard: "Tổng quan hôm nay", booking: "Khám phá & Đặt lịch tập", schedule: "Lịch tập của tôi", attendance: "Lịch sử điểm danh", packages: "Gói tập & Dịch vụ",
         payments: "Hồ sơ & Lịch sử giao dịch", workouts: "Giáo án & Bài tập", reviews: "Đánh giá Huấn luyện viên", chat: "Tin nhắn & Trao đổi", support: "Trợ lý AI & Hỗ trợ", shop: "Cửa hàng sản phẩm & Đồ tập",
-        profile: "Hồ sơ cá nhân",
+        profile: "Hồ sơ cá nhân", progress: "Chỉ số InBody & Tiến độ thể chất",
     }; return (<div className="flex w-full min-h-screen bg-slate-50 dark:bg-[#0f172a] transition-colors duration-300 font-sans text-slate-900 dark:text-white selection:bg-emerald-500 selection:text-white"> {/* Toast popup */} {toastMessage && (
         <div className="fixed bottom-6 right-6 z-[100] px-4 py-3 rounded-2xl bg-slate-900 text-white dark:bg-emerald-500 dark:text-slate-950 font-bold text-xs shadow-2xl flex items-center gap-2.5 animate-fadeIn"> <Sparkles className="w-4 h-4 shrink-0 text-slate-400 dark:text-slate-950" /> <span>{toastMessage}</span> </div>)} {/* SIDEBAR */}
         <aside className="bg-[#0f172a] flex flex-col gap-[28px] items-start pb-[24px] pt-[28px] px-[18px] shrink-0 w-[250px] sticky top-0 h-screen overflow-y-auto hidden-scrollbar z-30 select-none"> {/* Brand */} <div className="flex gap-[12px] items-center shrink-0 w-full cursor-pointer" onClick={() => { window.location.hash = "home"; window.dispatchEvent(new HashChangeEvent("hashchange")); window.scrollTo({ top: 0, behavior: "smooth" }); }} title="Quay lại Trang chủ SportCenter" >

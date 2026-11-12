@@ -143,6 +143,8 @@ public static class ReviewEndpoints
                         rating = review.Rating,
                         comment = review.Comment,
                         tags = review.Tags,
+                        coachReply = review.CoachReply,
+                        repliedAt = review.RepliedAt?.ToString("o"),
                         createdAt = review.CreatedAt.ToString("o"),
                         sessionId = review.SessionId,
                         sessionName = review.SessionName
@@ -153,6 +155,60 @@ public static class ReviewEndpoints
             )
             .WithTags("Reviews")
             .WithSummary("Get anonymous reviews from the database for a coach");
+
+        /// <summary>
+        /// POST /api/reviews/{id}/reply
+        /// Huấn luyện viên phản hồi lại bài đánh giá của học viên.
+        /// </summary>
+        group
+            .MapPost(
+                "/{id:guid}/reply",
+                async (
+                    Guid id,
+                    HttpContext context,
+                    [FromBody] ReplyReviewRequest request,
+                    SmartGymDbContext db
+                ) =>
+                {
+                    var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                        ?? context.User.FindFirst("sub")?.Value;
+                    if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                    {
+                        return Results.Unauthorized();
+                    }
+
+                    if (string.IsNullOrWhiteSpace(request.Reply))
+                    {
+                        return Results.BadRequest(new { message = "Nội dung phản hồi không được để trống." });
+                    }
+
+                    var review = await db.Reviews.FirstOrDefaultAsync(r => r.Id == id);
+                    if (review == null)
+                    {
+                        return Results.NotFound(new { message = "Không tìm thấy đánh giá." });
+                    }
+
+                    var coachId = await CoachProfileResolver.FindByUserIdAsync(db, userId) ?? userId;
+                    var role = context.User.FindFirst(ClaimTypes.Role)?.Value ?? "coach";
+                    if (role == "coach" && review.CoachId != coachId && review.CoachId != userId)
+                    {
+                        return Results.Forbid();
+                    }
+
+                    review.CoachReply = request.Reply.Trim();
+                    review.RepliedAt = DateTime.UtcNow;
+                    await db.SaveChangesAsync();
+
+                    return Results.Ok(new
+                    {
+                        success = true,
+                        message = "Đã gửi phản hồi đánh giá thành công!",
+                        coachReply = review.CoachReply,
+                        repliedAt = review.RepliedAt?.ToString("o")
+                    });
+                }
+            )
+            .RequireAuthorization();
 
         /// <summary>
         /// GET /api/reviews/{id}

@@ -135,9 +135,10 @@ public sealed class ChatStoreService
         return GetMessagesInternal(conversationId);
     }
 
-    public ChatMessageItem? AddMessage(string conversationId, string text, string sender, string? senderName, string? participantId)
+    public ChatMessageItem? AddMessage(string conversationId, string text, string sender, string? senderName, string? participantId, string? attachmentUrl = null, string? attachmentType = null)
     {
-        if (string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(participantId)) return null;
+        if (string.IsNullOrWhiteSpace(text) && string.IsNullOrWhiteSpace(attachmentUrl)) return null;
+        if (string.IsNullOrWhiteSpace(participantId)) return null;
 
         var conversation = GetConversation(conversationId);
         if (conversation == null) return null;
@@ -152,22 +153,40 @@ public sealed class ChatStoreService
             ? (senderName ?? (sender == "coach" ? conversation.CoachName : conversation.MemberName))
             : user.FullName;
         var now = DateTime.UtcNow;
+        var effectiveText = string.IsNullOrWhiteSpace(text)
+            ? (attachmentType == "image" ? "📷 [Hình ảnh]" : "📎 [Tệp đính kèm]")
+            : text.Trim();
+
         var message = new ChatMessageItem
         {
             Id = Guid.NewGuid().ToString("N"),
             Sender = sender,
             SenderName = effectiveSenderName,
-            Text = text.Trim(),
+            Text = effectiveText,
+            AttachmentUrl = attachmentUrl,
+            AttachmentType = attachmentType,
             Timestamp = ToLocalTime(now).ToString("HH:mm"),
             CreatedAt = now
         };
 
-        _db.Database.ExecuteSqlInterpolated($@"
-            INSERT INTO chat_messages (id, conversation_id, sender, sender_name, text, timestamp, created_at)
-            VALUES ({message.Id}, {conversationId}, {message.Sender}, {message.SenderName}, {message.Text}, {message.Timestamp}, {message.CreatedAt});
-            UPDATE chat_conversations
-            SET last_message = {message.Text}, last_time = {message.Timestamp}, updated_at = {message.CreatedAt}
-            WHERE id::text = {conversationId};");
+        try
+        {
+            _db.Database.ExecuteSqlInterpolated($@"
+                INSERT INTO chat_messages (id, conversation_id, sender, sender_name, text, attachment_url, attachment_type, timestamp, created_at)
+                VALUES ({message.Id}, {conversationId}, {message.Sender}, {message.SenderName}, {message.Text}, {message.AttachmentUrl}, {message.AttachmentType}, {message.Timestamp}, {message.CreatedAt});
+                UPDATE chat_conversations
+                SET last_message = {message.Text}, last_time = {message.Timestamp}, updated_at = {message.CreatedAt}
+                WHERE id::text = {conversationId};");
+        }
+        catch
+        {
+            _db.Database.ExecuteSqlInterpolated($@"
+                INSERT INTO chat_messages (id, conversation_id, sender, sender_name, text, timestamp, created_at)
+                VALUES ({message.Id}, {conversationId}, {message.Sender}, {message.SenderName}, {message.Text}, {message.Timestamp}, {message.CreatedAt});
+                UPDATE chat_conversations
+                SET last_message = {message.Text}, last_time = {message.Timestamp}, updated_at = {message.CreatedAt}
+                WHERE id::text = {conversationId};");
+        }
 
         return message;
     }
@@ -316,21 +335,48 @@ public sealed class ChatStoreService
                      member_name, updated_at
               FROM chat_conversations WHERE id::text = {0}", conversationId).FirstOrDefault();
 
-    private List<ChatMessageItem> GetMessagesInternal(string conversationId) =>
-        _db.Database.SqlQueryRaw<ChatMessageRow>(
-            @"SELECT id::text AS id, sender, sender_name, text, timestamp, created_at
-              FROM chat_messages WHERE conversation_id::text = {0}
-              ORDER BY created_at ASC, id ASC", conversationId)
-        .ToList()
-        .Select(row => new ChatMessageItem
+    private List<ChatMessageItem> GetMessagesInternal(string conversationId)
+    {
+        try
         {
-            Id = row.Id,
-            Sender = row.Sender,
-            SenderName = row.SenderName ?? "",
-            Text = row.Text,
-            Timestamp = row.Timestamp,
-            CreatedAt = row.CreatedAt
-        }).ToList();
+            return _db.Database.SqlQueryRaw<ChatMessageRow>(
+                @"SELECT id::text AS id, sender, sender_name, text,
+                         COALESCE(attachment_url, '') AS attachment_url,
+                         COALESCE(attachment_type, '') AS attachment_type,
+                         timestamp, created_at
+                  FROM chat_messages WHERE conversation_id::text = {0}
+                  ORDER BY created_at ASC, id ASC", conversationId)
+            .ToList()
+            .Select(row => new ChatMessageItem
+            {
+                Id = row.Id,
+                Sender = row.Sender,
+                SenderName = row.SenderName ?? "",
+                Text = row.Text,
+                AttachmentUrl = string.IsNullOrWhiteSpace(row.AttachmentUrl) ? null : row.AttachmentUrl,
+                AttachmentType = string.IsNullOrWhiteSpace(row.AttachmentType) ? null : row.AttachmentType,
+                Timestamp = row.Timestamp,
+                CreatedAt = row.CreatedAt
+            }).ToList();
+        }
+        catch
+        {
+            return _db.Database.SqlQueryRaw<ChatMessageRow>(
+                @"SELECT id::text AS id, sender, sender_name, text, timestamp, created_at
+                  FROM chat_messages WHERE conversation_id::text = {0}
+                  ORDER BY created_at ASC, id ASC", conversationId)
+            .ToList()
+            .Select(row => new ChatMessageItem
+            {
+                Id = row.Id,
+                Sender = row.Sender,
+                SenderName = row.SenderName ?? "",
+                Text = row.Text,
+                Timestamp = row.Timestamp,
+                CreatedAt = row.CreatedAt
+            }).ToList();
+        }
+    }
 
     private bool ConversationBelongsToMember(string conversationId, string? memberId)
     {
