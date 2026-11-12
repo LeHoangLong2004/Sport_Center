@@ -6,10 +6,6 @@ import CoachPage from "./site-pages/CoachListPage"
 import PricingPage from "./site-pages/PricingPage"
 import AboutPage from "./site-pages/AboutPage"
 import ContactPage from "./site-pages/ContactPage"
-import NewsPage from "./site-pages/NewsPage"
-import ArticlePage from "./site-pages/NewsDetailPage"
-import OffersPage from "./site-pages/PromotionsPage"
-import GalleryPage from "./site-pages/GalleryPage"
 import FaqPage from "./site-pages/FaqPage"
 import PolicyPage from "./site-pages/TermsPage"
 import ClassListPage from "./site-pages/ClassListPage"
@@ -17,7 +13,7 @@ import ClassDetailPage from "./site-pages/ClassDetailPage"
 import { SiteHeader } from "./components/SiteHeader"
 import { SiteFooter } from "./components/SiteFooter"
 
-export type SiteRoute = "home" | "bomon" | "chitietbomon" | "coach" | "pricing" | "about" | "contact" | "news" | "article" | "offers" | "gallery" | "faq" | "policy" | "lophoc" | "chitietlophoc"
+export type SiteRoute = "home" | "bomon" | "chitietbomon" | "coach" | "pricing" | "about" | "contact" | "faq" | "policy" | "lophoc" | "chitietlophoc"
 
 const pages: Record<SiteRoute, () => React.JSX.Element> = {
   home: HomePage,
@@ -27,10 +23,6 @@ const pages: Record<SiteRoute, () => React.JSX.Element> = {
   pricing: PricingPage,
   about: AboutPage,
   contact: ContactPage,
-  news: NewsPage,
-  article: ArticlePage,
-  offers: OffersPage,
-  gallery: GalleryPage,
   faq: FaqPage,
   policy: PolicyPage,
   lophoc: ClassListPage,
@@ -48,9 +40,6 @@ const labelRoutes: Record<string, SiteRoute | "admin" | "register"> = {
   "Liên hệ": "contact",
   "Hỗ trợ": "faq",
   "Chính sách": "policy",
-  "Ưu đãi": "offers",
-  "Thư viện": "gallery",
-  "Tin tức": "news",
   "Đăng nhập": "admin",
   "Đăng ký thành viên": "register",
 }

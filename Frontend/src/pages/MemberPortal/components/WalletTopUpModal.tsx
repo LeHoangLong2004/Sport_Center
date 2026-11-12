@@ -39,7 +39,7 @@ export default function WalletTopUpModal({
 }: Props) {
   const [selectedAmount, setSelectedAmount] = useState(100000);
   const [customAmount, setCustomAmount] = useState("");
-  const [method, setMethod] = useState<"qr" | "card" | "counter">("qr");
+  const [method, setMethod] = useState<"qr" | "counter">("qr");
   const [loading, setLoading] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -162,24 +162,6 @@ export default function WalletTopUpModal({
     }
   };
 
-  const handleConfirmCard = async () => {
-    if (actualAmount <= 0) return;
-    if (!card.number || card.number.length < 10) {
-      alert("Vui lòng nhập số thẻ hợp lệ.");
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await WalletService.topUp(actualAmount, "Thẻ ATM / Visa", `Nạp ví qua thẻ (${card.number.slice(-4)})`);
-      if (res.success) {
-        setSuccessResult({ amount: actualAmount, newBalance: res.newBalance });
-        onSuccess?.(res.newBalance);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleClose = () => {
     setSuccessResult(null);
     onClose();
@@ -227,10 +209,9 @@ export default function WalletTopUpModal({
               {/* PAYMENT METHOD TABS */}
               <div className="space-y-2">
                 <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Hình thức thanh toán</label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {[
                     { id: "qr" as const, label: "Mã VietQR", icon: QrCode, color: "text-emerald-600" },
-                    { id: "card" as const, label: "Thẻ ATM / Visa", icon: CreditCard, color: "text-slate-600" },
                     { id: "counter" as const, label: "Tại quầy", icon: Building, color: "text-slate-600" },
                   ].map((m) => (
                     <button key={m.id} type="button" onClick={() => setMethod(m.id)}
@@ -332,16 +313,6 @@ export default function WalletTopUpModal({
                     </div>
                   )}
                 </div>
-              )}
-
-              {method === "card" && (
-                <TopUpCardSection
-                  card={card}
-                  setCard={setCard}
-                  loading={loading}
-                  actualAmount={actualAmount}
-                  onConfirmCard={handleConfirmCard}
-                />
               )}
 
               {method === "counter" && (

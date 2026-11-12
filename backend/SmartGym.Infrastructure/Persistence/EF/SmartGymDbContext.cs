@@ -61,6 +61,10 @@ public partial class SmartGymDbContext : DbContext
             entity.Property(e => e.MemberCode).HasColumnName("member_code").HasMaxLength(50);
             entity.Property(e => e.TrainingGoal).HasColumnName("training_goal");
             entity.Property(e => e.TrainingLevel).HasColumnName("training_level").HasMaxLength(50);
+            entity.Property(e => e.FavoriteSports).HasColumnName("favorite_sports");
+            entity.Property(e => e.PreferredTime).HasColumnName("preferred_time").HasMaxLength(100);
+            entity.Property(e => e.HealthNotes).HasColumnName("health_notes");
+            entity.Property(e => e.WorkoutGoals).HasColumnName("workout_goals");
             entity.Property(e => e.Status).HasColumnName("status").HasDefaultValue(true);
             entity
                 .Property(e => e.CreatedAt)

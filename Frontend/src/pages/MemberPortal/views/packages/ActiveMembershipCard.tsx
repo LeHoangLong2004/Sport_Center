@@ -22,6 +22,9 @@ export function ActiveMembershipCard({
   catalog,
   onStartPurchase,
 }: ActiveMembershipCardProps) {
+  const daysLeft = membershipStatus.endDate
+    ? Math.max(0, Math.ceil((new Date(membershipStatus.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
+    : null;
   return (
     <div className="relative overflow-hidden rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 text-white p-7 shadow-xl">
       <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 rounded-full bg-gradient-to-br from-emerald-500/15 via-emerald-500/10 to-transparent blur-3xl pointer-events-none" />
@@ -64,11 +67,19 @@ export function ActiveMembershipCard({
                 ? "Hạng Plus Member"
                 : "Hạng Cơ Bản (Basic)"}
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              {membershipStatus.tier === "basic"
-                ? "Hạng miễn phí trọn đời • Quyền lợi mặc định mua lẻ từng môn tập"
-                : `Thời hạn: ${membershipStatus.startDate ? new Date(membershipStatus.startDate).toLocaleDateString("vi-VN") : "Hôm nay"} đến ${membershipStatus.endDate ? new Date(membershipStatus.endDate).toLocaleDateString("vi-VN") : "Đang hoạt động"}`}
-            </p>
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              <p className="text-xs text-slate-300">
+                {membershipStatus.tier === "basic"
+                  ? "Hạng miễn phí trọn đời • Quyền lợi mặc định mua lẻ từng môn tập"
+                  : `Thời hạn: ${membershipStatus.startDate ? new Date(membershipStatus.startDate).toLocaleDateString("vi-VN") : "Hôm nay"} đến ${membershipStatus.endDate ? new Date(membershipStatus.endDate).toLocaleDateString("vi-VN") : "Đang hoạt động"}`}
+              </p>
+              {membershipStatus.tier !== "basic" && daysLeft !== null && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/25 text-emerald-300 border border-emerald-400/30">
+                  <Clock className="w-3 h-3" />
+                  Còn {daysLeft} ngày
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

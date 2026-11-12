@@ -64,6 +64,12 @@ public static class SePayWebhookEndpoints
     private static readonly List<SePayTransactionLog> _transactionLogs = new();
     private static readonly object _logLock = new();
 
+    /// <summary>Các từ tiền tố chung (không định danh giao dịch) - không dùng để so khớp mờ giữa các lần chuyển khoản.</summary>
+    private static readonly HashSet<string> GenericMemoWords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "NAPVI", "DATLOP", "GYM",
+    };
+
     public record SePayTransactionLog(
         long SePayId,
         decimal Amount,
@@ -311,7 +317,7 @@ public static class SePayWebhookEndpoints
                     (
                         t.Content.Contains(cleanMemo, StringComparison.OrdinalIgnoreCase) ||
                         cleanMemo.Replace(" ", "").Length >= 6 && t.Content.Replace(" ", "").Contains(cleanMemo.Replace(" ", ""), StringComparison.OrdinalIgnoreCase) ||
-                        (amount.HasValue && amount.Value > 0 && Math.Abs(t.Amount - amount.Value) < 1m && cleanMemo.Split(' ').Any(part => part.Length >= 4 && t.Content.Contains(part, StringComparison.OrdinalIgnoreCase)))
+                        (amount.HasValue && amount.Value > 0 && Math.Abs(t.Amount - amount.Value) < 1m && cleanMemo.Split(' ').Any(part => part.Length >= 4 && !GenericMemoWords.Contains(part.ToUpperInvariant()) && t.Content.Contains(part, StringComparison.OrdinalIgnoreCase)))
                     )
                 );
 
@@ -377,7 +383,7 @@ public static class SePayWebhookEndpoints
 
                                 bool memoMatches = content.Contains(cleanMemo, StringComparison.OrdinalIgnoreCase) ||
                                                    cleanMemo.Replace(" ", "").Length >= 6 && content.Replace(" ", "").Contains(cleanMemo.Replace(" ", ""), StringComparison.OrdinalIgnoreCase) ||
-                                                   (amount.HasValue && amount.Value > 0 && Math.Abs(txAmount - amount.Value) < 1m && cleanMemo.Split(' ').Any(part => part.Length >= 4 && content.Contains(part, StringComparison.OrdinalIgnoreCase)));
+                                                   (amount.HasValue && amount.Value > 0 && Math.Abs(txAmount - amount.Value) < 1m && cleanMemo.Split(' ').Any(part => part.Length >= 4 && !GenericMemoWords.Contains(part.ToUpperInvariant()) && content.Contains(part, StringComparison.OrdinalIgnoreCase)));
 
                                 if (memoMatches)
                                 {
@@ -471,6 +477,26 @@ public static class SePayWebhookEndpoints
             invoice.Status = PaymentStatus.Completed;
             invoice.PaidAt = now;
             invoice.PaymentMethod = PaymentMethod.BankTransfer;
+        }
+
+        // Nếu là gói hội viên (membership) và là đơn nâng cấp có hiệu lực ngay hôm nay, đóng gói cũ
+        if (!string.IsNullOrEmpty(subscription.PackageSnapshotJson) && subscription.PackageSnapshotJson.Contains("\"membership\"") && subscription.StartDate.Date <= now.Date)
+        {
+            var oldMemberships = await db.Subscriptions
+                .Where(s => s.UserId == subscription.UserId
+                         && s.Id != subscription.Id
+                         && s.PaymentStatus == PaymentStatus.Completed
+                         && s.EndDate >= subscription.StartDate
+                         && s.PackageSnapshotJson != null)
+                .ToListAsync(ct);
+
+            foreach (var oldSub in oldMemberships)
+            {
+                if (oldSub.PackageSnapshotJson != null && oldSub.PackageSnapshotJson.Contains("\"membership\""))
+                {
+                    oldSub.EndDate = subscription.StartDate.AddSeconds(-1);
+                }
+            }
         }
 
         await db.SaveChangesAsync(ct);

@@ -25,8 +25,8 @@ import { WalletPaymentPanel } from "./payAndBook/WalletPaymentPanel";
 interface PayAndBookModalProps {
   classToBook: any | null;
   onClose: () => void;
-  paymentMethod: "qr" | "card" | "counter" | "wallet";
-  setPaymentMethod: (method: "qr" | "card" | "counter" | "wallet") => void;
+  paymentMethod: "qr" | "counter" | "wallet";
+  setPaymentMethod: (method: "qr" | "counter" | "wallet") => void;
   isProcessingPayment: boolean;
   paymentError: string | null;
   onConfirmPayment: (finalAmount?: number) => void;
@@ -122,7 +122,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
 
     const interval = setInterval(async () => {
       try {
-        const res = await WalletService.checkTransfer(bookingMemo, classPrice);
+        const res = await WalletService.checkServicePayment(bookingMemo, classPrice);
         if (!isCancelled && res.received) {
           clearInterval(interval);
           setIsPaid(true);
@@ -155,7 +155,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
     setIsCheckingPayment(true);
     setCheckStatusText("Đang kiểm tra biến động số dư từ ngân hàng qua SePay...");
     try {
-      const res = await WalletService.checkTransfer(bookingMemo, classPrice, undefined, false);
+      const res = await WalletService.checkServicePayment(bookingMemo, classPrice);
       if (res.received) {
         setIsPaid(true);
         setCheckStatusText(null);
@@ -235,7 +235,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
               <label className="font-extrabold text-xs text-slate-800 dark:text-slate-200 mb-2 block">
                 Chọn phương thức thanh toán:
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {/* 1. VÍ HỘI VIÊN */}
                 <button
                   type="button"
@@ -268,22 +268,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                   <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold">Tự động ⚡</span>
                 </button>
 
-                {/* 3. THẺ ATM / VISA */}
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("card")}
-                  className={`p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center gap-1 cursor-pointer ${
-                    paymentMethod === "card"
-                      ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 shadow-sm ring-2 ring-emerald-500/20"
-                      : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600 dark:text-slate-300"
-                  }`}
-                >
-                  <CreditCard className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span className="text-[11px] font-bold">Thẻ ATM/Visa</span>
-                  <span className="text-[9px] text-slate-400">3D Secure</span>
-                </button>
-
-                {/* 4. TẠI QUẦY LỄ TÂN */}
+                {/* 3. TẠI QUẦY LỄ TÂN */}
                 <button
                   type="button"
                   onClick={() => setPaymentMethod("counter")}
@@ -451,8 +436,6 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                 )}
               </div>
             )}
-
-            {paymentMethod === "card" && <CardPaymentPanel />}
 
             {paymentMethod === "counter" && <CounterPaymentPanel />}
           </div>

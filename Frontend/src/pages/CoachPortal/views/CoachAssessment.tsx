@@ -7,7 +7,18 @@ import { useState, useEffect, useMemo } from "react";
 import { CoachAPI } from "../services/api";
 import { createPortal } from "react-dom";
 import type { AssessmentRecord, MockSession } from "../services/api";
-import { X, Plus, Trash2, Check, CheckCircle2 } from "lucide-react";
+import {
+  X,
+  Plus,
+  Trash2,
+  Check,
+  CheckCircle2,
+  Clock,
+  MapPin,
+  Users,
+  Edit3,
+} from "lucide-react";
+import { UserAvatar } from "../../../components/UserAvatar";
 
 interface CoachAssessmentProps {
   initialSessionId?: string | null;
@@ -18,9 +29,13 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
   const [assessments, setAssessments] = useState<AssessmentRecord[]>([]);
   const [sessions, setSessions] = useState<MockSession[]>([]);
   const [members, setMembers] = useState<{ id: string; name: string; code: string; classIds?: string[] }[]>([]);
+  const [viewMode, setViewMode] = useState<"by_session" | "by_member">(
+    initialMemberId ? "by_member" : "by_session"
+  );
   const [selectedMemberId, setSelectedMemberId] = useState(initialMemberId || "");
   const [selectedSessionId, setSelectedSessionId] = useState(initialSessionId || "");
   const [editingId, setEditingId] = useState<string | null>(null);
+
   useEffect(() => {
     if (editingId) {
       const prevBodyOverflow = document.body.style.overflow;
@@ -30,10 +45,11 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
       };
     }
   }, [editingId]);
+
   const [draft, setDraft] = useState<Partial<AssessmentRecord>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
@@ -44,55 +60,80 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
       setAssessments(ass);
       setSessions(sch);
       setMembers(mem);
-      if (initialMemberId && mem.some(m => m.id === initialMemberId)) {
+
+      if (initialSessionId) {
+        setSelectedSessionId(initialSessionId);
+        const sess = sch.find((s) => s.id === initialSessionId);
+        if (sess) {
+          const matchingMember = mem.find((m) =>
+            (Array.isArray(sess.registeredMemberIds) && sess.registeredMemberIds.some((id) => String(id).toLowerCase() === String(m.id).toLowerCase())) ||
+            (Array.isArray(m.classIds) && m.classIds.some((cid) => String(cid).toLowerCase() === String(sess.id).toLowerCase() || String(cid).toLowerCase() === String(sess.classId).toLowerCase()))
+          );
+          if (matchingMember) {
+            setSelectedMemberId(matchingMember.id);
+          }
+        }
+      } else if (initialMemberId && mem.some((m) => m.id === initialMemberId)) {
         setSelectedMemberId(initialMemberId);
       } else if (mem.length > 0 && !selectedMemberId) {
         setSelectedMemberId(mem[0].id);
       }
-      if (initialSessionId) {
-        setSelectedSessionId(initialSessionId);
+
+      if (!initialSessionId && sch.length > 0 && !selectedSessionId) {
+        setSelectedSessionId(sch[0].id);
       }
     }).catch(console.error)
       .finally(() => setLoading(false));
   }, [initialMemberId, initialSessionId]);
 
-  const eligibleSessions = useMemo(() => {
+  // Học viên thuộc ca dạy đang chọn
+  const sessionMembers = useMemo(() => {
+    if (!selectedSessionId) return [];
+    const sess = sessions.find((s) => s.id === selectedSessionId);
+    if (!sess) return [];
+    return members.filter((m) => {
+      const inRegistered =
+        Array.isArray(sess.registeredMemberIds) &&
+        sess.registeredMemberIds.some((id) => String(id).toLowerCase() === String(m.id).toLowerCase());
+      const inClassIds =
+        Array.isArray(m.classIds) &&
+        m.classIds.some(
+          (cid) => String(cid).toLowerCase() === String(sess.id).toLowerCase() || String(cid).toLowerCase() === String(sess.classId).toLowerCase()
+        );
+      return inRegistered || inClassIds;
+    });
+  }, [selectedSessionId, sessions, members]);
+
+  // Ca dạy hợp lệ cho học viên (khi ở chế độ theo dõi học viên)
+  const eligibleSessionsForMember = useMemo(() => {
     if (!selectedMemberId) return [];
     const selectedMember = members.find((m) => m.id === selectedMemberId);
 
     return sessions.filter((s) => {
-      // 1. Không hiển thị các buổi học đã bị hủy
       if (s.status === "đã hủy") return false;
-
-      // 2. Kiểm tra học viên có đăng ký buổi học này hay không
       const registeredInSession =
         Array.isArray(s.registeredMemberIds) &&
-        s.registeredMemberIds.some((id) => String(id) === String(selectedMemberId));
-
+        s.registeredMemberIds.some((id) => String(id).toLowerCase() === String(selectedMemberId).toLowerCase());
       const memberHasClass =
         Array.isArray(selectedMember?.classIds) &&
         selectedMember.classIds.some(
-          (cid) => String(cid) === String(s.id) || String(cid) === String(s.classId)
+          (cid) => String(cid).toLowerCase() === String(s.id).toLowerCase() || String(cid).toLowerCase() === String(s.classId).toLowerCase()
         );
-
-      const isRegistered = registeredInSession || memberHasClass;
-      if (!isRegistered) return false;
-
-      // 3. Buổi học phải đã hoặc đang diễn ra (không đánh giá buổi sắp diễn ra trong tương lai)
-      const todayIso = new Date().toISOString().split("T")[0];
-      const isPastOrToday = s.date ? s.date <= todayIso : true;
-      const isEligibleTime = s.status === "hoàn thành" || s.status === "đang diễn ra" || isPastOrToday;
-
-      return isEligibleTime;
+      return registeredInSession || memberHasClass;
     });
   }, [selectedMemberId, sessions, members]);
 
-  // Reset selectedSessionId if it's no longer eligible
+  // Tự động chọn buổi học hợp lệ đầu tiên khi ở chế độ theo học viên
   useEffect(() => {
-    if (selectedSessionId && !eligibleSessions.some((s) => s.id === selectedSessionId)) {
-      setSelectedSessionId("");
+    if (viewMode !== "by_member") return;
+    if (!selectedSessionId) {
+      if (eligibleSessionsForMember.length > 0) {
+        setSelectedSessionId(eligibleSessionsForMember[0].id);
+      }
+    } else if (!eligibleSessionsForMember.some((s) => s.id === selectedSessionId)) {
+      setSelectedSessionId(eligibleSessionsForMember.length > 0 ? eligibleSessionsForMember[0].id : "");
     }
-  }, [eligibleSessions, selectedSessionId]);
+  }, [eligibleSessionsForMember, selectedSessionId, viewMode]);
 
   const memberAssessments = useMemo(
     () =>
@@ -114,21 +155,36 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
     }));
   };
 
+  const openForMemberSession = (mId: string, sId: string) => {
+    setSelectedMemberId(mId);
+    setSelectedSessionId(sId);
+    const existing = assessments.find(
+      (a) => String(a.sessionId) === String(sId) && String(a.memberId).toLowerCase() === String(mId).toLowerCase()
+    );
+    if (existing) {
+      setDraft({ ...existing });
+      setEditingId(existing.id);
+    } else {
+      const id = `as_${Date.now()}`;
+      setDraft({
+        id,
+        sessionId: sId === "general" ? undefined : sId,
+        memberId: mId,
+        completion: 80,
+        metrics: [{ label: "", value: "", unit: "" }],
+        comment: "",
+        nextStep: "",
+        createdAt: new Date().toISOString(),
+      });
+      setEditingId(id);
+    }
+    setFeedback(null);
+  };
+
   const openNew = () => {
     if (!selectedSessionId) { setFeedback("Vui lòng chọn buổi học trước."); return; }
-    const id = `as_${Date.now()}`;
-    setDraft({
-      id,
-      sessionId: selectedSessionId,
-      memberId: selectedMemberId,
-      completion: 80,
-      metrics: [{ label: "", value: "", unit: "" }],
-      comment: "",
-      nextStep: "",
-      createdAt: new Date().toISOString(),
-    });
-    setEditingId(id);
-    setFeedback(null);
+    if (!selectedMemberId) { setFeedback("Vui lòng chọn học viên trước."); return; }
+    openForMemberSession(selectedMemberId, selectedSessionId);
   };
 
   const handleSave = async () => {
@@ -146,9 +202,13 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
         };
       });
 
+    const targetSessionId = draft.sessionId && draft.sessionId !== "general"
+      ? draft.sessionId
+      : (selectedSessionId && selectedSessionId !== "general" ? selectedSessionId : "");
+
     const full: AssessmentRecord = {
       id: draft.id || `as_${Date.now()}`,
-      sessionId: draft.sessionId || selectedSessionId,
+      sessionId: targetSessionId,
       memberId: draft.memberId || selectedMemberId,
       completion: draft.completion || 0,
       metrics: sanitizedMetrics,
@@ -195,110 +255,299 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
 
   const currentMember = members.find((m) => m.id === (draft.memberId || selectedMemberId));
   const currentSession = sessions.find((s) => s.id === (draft.sessionId || selectedSessionId));
+  const selectedSession = sessions.find((s) => s.id === selectedSessionId);
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-400 max-w-4xl">
-      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Tiến độ & Đánh giá</h1>
+    <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-400 max-w-5xl mx-auto pb-16">
+      {/* Page Title & View Mode Tabs */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Đánh giá học viên</h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Ghi nhận mức độ hoàn thành bài tập, thành tích và chỉ số luyện tập cho học viên.
+          </p>
+        </div>
+
+        {/* View Mode Tabs */}
+        <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl self-start sm:self-auto shrink-0">
+          <button
+            type="button"
+            onClick={() => setViewMode("by_session")}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              viewMode === "by_session"
+                ? "bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+            }`}
+          >
+            Theo ca dạy
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("by_member")}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              viewMode === "by_member"
+                ? "bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+            }`}
+          >
+            Theo học viên
+          </button>
+        </div>
+      </div>
 
       {feedback && (
-        <div className="rounded-xl px-4 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-700 text-sm">
-          ✓ {feedback}
+        <div className="rounded-xl px-4 py-2.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-700 text-xs sm:text-sm flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
+          <span>{feedback}</span>
         </div>
       )}
 
-      {/* Chọn học viên */}
-      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex flex-wrap gap-4 items-end">
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Học viên</label>
-          <select value={selectedMemberId} onChange={(e) => { setSelectedMemberId(e.target.value); setSelectedSessionId(""); }}
-            className={selectCls}>
-            {members.map((m) => <option key={m.id} value={m.id}>{m.name} ({m.code})</option>)}
-          </select>
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Buổi học (đủ điều kiện)</label>
-          <select
-            value={selectedSessionId}
-            onChange={(e) => setSelectedSessionId(e.target.value)}
-            disabled={eligibleSessions.length === 0}
-            className={`${selectCls} ${eligibleSessions.length === 0 ? "opacity-60 cursor-not-allowed" : ""}`}
-          >
-            <option value="">
-              {eligibleSessions.length === 0
-                ? "-- Học viên chưa có buổi học đủ điều kiện --"
-                : "-- Chọn buổi --"}
-            </option>
-            {eligibleSessions.map((s) => (
-              <option key={s.id} value={s.id}>{s.className} — {s.date}</option>
-            ))}
-          </select>
-        </div>
-        <button
-          type="button"
-          onClick={openNew}
-          disabled={!selectedSessionId}
-          className={`px-4 py-2 text-white rounded-xl text-sm font-semibold transition-all ${
-            !selectedSessionId
-              ? "bg-slate-300 dark:bg-slate-700 cursor-not-allowed"
-              : "bg-emerald-500 hover:bg-emerald-600 shadow-md shadow-emerald-500/20 cursor-pointer"
-          }`}
-        >
-          + Ghi kết quả
-        </button>
-      </div>
+      {/* MODE 1: THEO CA DẠY */}
+      {viewMode === "by_session" && (
+        <div className="space-y-6">
+          {/* Chọn ca dạy */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
+            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-2">
+              Chọn ca dạy cần đánh giá
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+              <select
+                value={selectedSessionId}
+                onChange={(e) => setSelectedSessionId(e.target.value)}
+                className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 outline-none"
+              >
+                {sessions.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.className} — {s.date} ({s.startTime} - {s.endTime})
+                  </option>
+                ))}
+              </select>
 
-      {/* Tiến độ theo thời gian */}
-      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-xs">
-        <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
-          <h2 className="font-semibold text-slate-800 dark:text-slate-100 text-sm">Lịch sử kết quả</h2>
-        </div>
-        {memberAssessments.length === 0 ? (
-          <div className="px-4 py-8 text-center text-slate-400 text-sm">
-            Chưa có kết quả nào. Bắt đầu ghi nhận sau mỗi buổi học.
+              {selectedSession && (
+                <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <Clock className="w-3.5 h-3.5 text-emerald-500" />
+                    {selectedSession.startTime} - {selectedSession.endTime}
+                  </span>
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                    {selectedSession.room || "Studio trung tâm"}
+                  </span>
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <Users className="w-3.5 h-3.5 text-slate-400" />
+                    {sessionMembers.length} học viên trong lớp
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
-        ) : (
-          <div className="divide-y divide-slate-100 dark:divide-slate-700">
-            {memberAssessments.map((a) => {
-              const s = sessions.find((x) => x.id === a.sessionId);
-              return (
-                <div key={a.id} className="px-4 py-4 hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div>
-                      <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{s?.className || a.sessionId}</div>
-                      <div className="text-xs text-slate-400 mt-0.5">{s?.date} · {new Date(a.createdAt).toLocaleDateString("vi-VN")}</div>
+
+          {/* Danh sách học viên trong ca dạy */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                Học viên trong ca dạy ({sessionMembers.length})
+              </h2>
+            </div>
+
+            {sessionMembers.length === 0 ? (
+              <div className="p-12 text-center text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-sm">
+                Không tìm thấy danh sách học viên cho ca dạy này.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {sessionMembers.map((m) => {
+                  const ass = assessments.find(
+                    (a) => String(a.sessionId) === String(selectedSessionId) && String(a.memberId).toLowerCase() === String(m.id).toLowerCase()
+                  );
+                  return (
+                    <div
+                      key={m.id}
+                      className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-xs hover:border-emerald-500/40 transition-all"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <UserAvatar name={m.name} className="w-11 h-11 rounded-full text-sm font-bold" />
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">{m.name}</h3>
+                            <span className="text-[11px] font-semibold text-slate-400">{m.code}</span>
+                          </div>
+                        </div>
+
+                        {ass ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            {ass.completion}% hoàn thành
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                            Chưa đánh giá
+                          </span>
+                        )}
+                      </div>
+
+                      {ass?.comment && (
+                        <p className="text-xs text-slate-600 dark:text-slate-300 italic bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 line-clamp-2">
+                          &ldquo;{ass.comment}&rdquo;
+                        </p>
+                      )}
+
+                      {ass?.metrics && ass.metrics.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {ass.metrics.filter((x) => x && (x.value !== undefined && x.value !== "")).slice(0, 3).map((item, idx) => (
+                            <span key={idx} className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                              {item.label || (item as any).metricName}: {item.value} {item.unit}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end">
+                        <button
+                          type="button"
+                          onClick={() => openForMemberSession(m.id, selectedSessionId)}
+                          className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                            ass
+                              ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
+                              : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-xs"
+                          }`}
+                        >
+                          {ass ? (
+                            <>
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>Xem / Sửa đánh giá</span>
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>Chấm điểm ngay</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="text-right">
-                        <div className="text-xs text-slate-400">Hoàn thành</div>
-                        <div className={`text-lg font-black ${a.completion >= 80 ? "text-emerald-600" : a.completion >= 60 ? "text-slate-500" : "text-rose-600"}`}>
-                          {a.completion}%
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* MODE 2: THEO HỌC VIÊN */}
+      {viewMode === "by_member" && (
+        <div className="space-y-6">
+          {/* Chọn học viên */}
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex flex-wrap gap-4 items-end">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Học viên</label>
+              <select
+                value={selectedMemberId}
+                onChange={(e) => {
+                  setSelectedMemberId(e.target.value);
+                  setSelectedSessionId("");
+                }}
+                className={selectCls}
+              >
+                {members.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} ({m.code})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Buổi học (đủ điều kiện)</label>
+              <select
+                value={selectedSessionId}
+                onChange={(e) => setSelectedSessionId(e.target.value)}
+                disabled={eligibleSessionsForMember.length === 0}
+                className={`${selectCls} ${eligibleSessionsForMember.length === 0 ? "opacity-60 cursor-not-allowed" : ""}`}
+              >
+                <option value="">
+                  {eligibleSessionsForMember.length === 0
+                    ? "-- Học viên chưa có buổi học đủ điều kiện --"
+                    : "-- Chọn buổi --"}
+                </option>
+                {eligibleSessionsForMember.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.className} — {s.date}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              type="button"
+              onClick={openNew}
+              disabled={!selectedSessionId}
+              className={`px-4 py-2 text-white rounded-xl text-sm font-semibold transition-all ${
+                !selectedSessionId
+                  ? "bg-slate-300 dark:bg-slate-700 cursor-not-allowed"
+                  : "bg-emerald-500 hover:bg-emerald-600 shadow-md shadow-emerald-500/20 cursor-pointer"
+              }`}
+            >
+              + Ghi kết quả
+            </button>
+          </div>
+
+          {/* Tiến độ theo thời gian */}
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-xs">
+            <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+              <h2 className="font-semibold text-slate-800 dark:text-slate-100 text-sm">Lịch sử kết quả</h2>
+            </div>
+            {memberAssessments.length === 0 ? (
+              <div className="px-4 py-8 text-center text-slate-400 text-sm">
+                Chưa có kết quả nào. Bắt đầu ghi nhận sau mỗi buổi học.
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100 dark:divide-slate-700">
+                {memberAssessments.map((a) => {
+                  const s = a.sessionId ? sessions.find((x) => x.id === a.sessionId) : null;
+                  return (
+                    <div key={a.id} className="px-4 py-4 hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div>
+                          <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm">
+                            {s?.className || (a.sessionId ? a.sessionId : "Đánh giá chung / Định kỳ")}
+                          </div>
+                          <div className="text-xs text-slate-400 mt-0.5">
+                            {s?.date ? `${s.date} · ` : ""}{new Date(a.createdAt).toLocaleDateString("vi-VN")}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-right">
+                            <div className="text-xs text-slate-400">Hoàn thành</div>
+                            <div className={`text-lg font-black ${a.completion >= 80 ? "text-emerald-600" : a.completion >= 60 ? "text-slate-500" : "text-rose-600"}`}>
+                              {a.completion}%
+                            </div>
+                          </div>
+                          {/* Simple bar chart */}
+                          <div className="w-20 h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full ${a.completion >= 80 ? "bg-emerald-500" : a.completion >= 60 ? "bg-slate-400" : "bg-rose-500"}`}
+                              style={{ width: `${a.completion}%` }} />
+                          </div>
                         </div>
                       </div>
-                      {/* Simple bar chart */}
-                      <div className="w-20 h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full ${a.completion >= 80 ? "bg-emerald-500" : a.completion >= 60 ? "bg-slate-400" : "bg-rose-500"}`}
-                          style={{ width: `${a.completion}%` }} />
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {a.metrics?.filter((m) => m && (m.value !== undefined && m.value !== "")).map((m, idx) => {
+                          const metricLabel = m.label || (m as any).metricName || `Chỉ số ${idx + 1}`;
+                          return (
+                            <span key={idx} className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full font-medium">
+                              {metricLabel}: {m.value}{m.unit ? ` ${m.unit}` : ""}
+                            </span>
+                          );
+                        })}
                       </div>
+                      {a.comment && <div className="text-sm text-slate-600 dark:text-slate-300 mt-2 italic">"{a.comment}"</div>}
+                      {a.nextStep && <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">→ Hướng tiếp: {a.nextStep}</div>}
                     </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {a.metrics?.filter((m) => m && (m.value !== undefined && m.value !== "")).map((m, idx) => {
-                      const metricLabel = m.label || (m as any).metricName || `Chỉ số ${idx + 1}`;
-                      return (
-                        <span key={idx} className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full font-medium">
-                          {metricLabel}: {m.value}{m.unit ? ` ${m.unit}` : ""}
-                        </span>
-                      );
-                    })}
-                  </div>
-                  {a.comment && <div className="text-sm text-slate-600 dark:text-slate-300 mt-2 italic">"{a.comment}"</div>}
-                  {a.nextStep && <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">→ Hướng tiếp: {a.nextStep}</div>}
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Edit form */}
       {editingId && createPortal(
@@ -312,9 +561,13 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
                   <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                     Học viên: {currentMember?.name || "Học viên"}
                   </span>
-                  {currentSession && (
+                  {currentSession ? (
                     <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-200/70 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                       Buổi: {currentSession.className} ({currentSession.date})
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-200/70 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                      Đánh giá chung / Định kỳ
                     </span>
                   )}
                 </div>
@@ -548,4 +801,3 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
 }
 
 const selectCls = "border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none";
-const inputCls = "border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none w-full";

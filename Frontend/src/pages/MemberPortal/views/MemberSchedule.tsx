@@ -56,6 +56,14 @@ export default function MemberSchedule({ onNavigate }: Props) {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
+  const dynamicSportOptions = useMemo(() => {
+    const set = new Set<string>();
+    sessions.forEach((s) => {
+      if (s.sport) set.add(s.sport);
+    });
+    return ["all", ...Array.from(set)];
+  }, [sessions]);
+
   // Week Navigation
   const [currentMonday, setCurrentMonday] = useState<Date>(() => getMonday(new Date()));
 
@@ -354,6 +362,7 @@ export default function MemberSchedule({ onNavigate }: Props) {
       <ScheduleFilterBar
         sportFilter={sportFilter}
         onSportFilterChange={setSportFilter}
+        sportOptions={dynamicSportOptions}
         typeFilter={typeFilter}
         onTypeFilterChange={setTypeFilter}
         statusFilter={statusFilter}

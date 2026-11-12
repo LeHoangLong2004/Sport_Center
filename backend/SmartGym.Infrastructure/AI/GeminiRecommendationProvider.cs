@@ -80,7 +80,7 @@ public sealed class GeminiRecommendationProvider : IAiRecommendationProvider
             },
             generationConfig = new
             {
-                temperature = 0.2,
+                temperature = Math.Clamp(_options.Temperature, 0.0, 2.0),
                 responseMimeType = "application/json"
             }
         });

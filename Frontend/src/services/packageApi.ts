@@ -69,6 +69,8 @@ export interface MembershipStatus {
   coachDiscountPct: number
   bookingAdvanceHours: number
   lockerTerms: string
+  pricePaid?: number
+  packageId?: string
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL
@@ -137,6 +139,8 @@ export function getMembershipStatus(
       coachDiscountPct: membership.coachDiscountPct,
       bookingAdvanceHours: membership.bookingAdvanceHours,
       lockerTerms: membership.lockerTerms,
+      pricePaid: active.total,
+      packageId: active.packageSnapshot.id,
     }
   }
 
@@ -150,6 +154,92 @@ export function getMembershipStatus(
     coachDiscountPct: 0,
     bookingAdvanceHours: basic.bookingAdvanceHours,
     lockerTerms: basic.lockerTerms,
+  }
+}
+
+/**
+ * Tính toán chi phí nâng cấp hạng gói thành viên theo cơ chế Prorated Billing:
+ * Khấu trừ giá trị những ngày chưa sử dụng của gói cũ vào giá gói mới.
+ */
+export function calculateMembershipUpgrade(
+  membershipStatus: MembershipStatus | null,
+  targetPackage: CatalogPackage,
+  selectedDuration: PackagePeriod = 1
+): {
+  isUpgrade: boolean
+  originalPrice: number
+  remainingDays: number
+  totalDays: number
+  dailyRate: number
+  remainingCredit: number
+  finalPrice: number
+  currentTierName?: string
+} {
+  const targetPrice = targetPackage.prices[selectedDuration] || targetPackage.prices[1] || 0
+
+  if (
+    !membershipStatus ||
+    membershipStatus.tier === "basic" ||
+    targetPackage.category !== "membership" ||
+    !membershipStatus.startDate ||
+    !membershipStatus.endDate
+  ) {
+    return {
+      isUpgrade: false,
+      originalPrice: targetPrice,
+      remainingDays: 0,
+      totalDays: 0,
+      dailyRate: 0,
+      remainingCredit: 0,
+      finalPrice: targetPrice,
+    }
+  }
+
+  const tierRank: Record<string, number> = { basic: 0, plus: 1, premium: 2 }
+  const currentRank = tierRank[membershipStatus.tier] ?? 0
+  const targetRank = tierRank[targetPackage.tier || ""] ?? (targetPrice > (membershipStatus.pricePaid || 0) ? 99 : 0)
+
+  // Chỉ áp dụng tính năng nâng cấp nếu gói mục tiêu có thứ hạng cao hơn hoặc giá cao hơn
+  if (targetRank <= currentRank) {
+    return {
+      isUpgrade: false,
+      originalPrice: targetPrice,
+      remainingDays: 0,
+      totalDays: 0,
+      dailyRate: 0,
+      remainingCredit: 0,
+      finalPrice: targetPrice,
+    }
+  }
+
+  const startMs = new Date(membershipStatus.startDate).getTime()
+  const endMs = new Date(membershipStatus.endDate).getTime()
+  const nowMs = Date.now()
+
+  // Tổng số ngày của gói thành viên hiện tại
+  const totalDays = Math.max(1, Math.round((endMs - startMs) / (24 * 3600 * 1000)))
+  // Số ngày còn lại chưa sử dụng
+  const remainingDays = Math.max(0, Math.ceil((endMs - nowMs) / (24 * 3600 * 1000)))
+
+  const paidAmount = membershipStatus.pricePaid && membershipStatus.pricePaid > 0
+    ? membershipStatus.pricePaid
+    : (membershipStatus.tier === "plus" ? 149000 : 0)
+
+  const dailyRate = paidAmount / totalDays
+  const rawRemainingCredit = dailyRate * remainingDays
+  // Làm tròn giá trị khấu trừ đến hàng nghìn đồng
+  const remainingCredit = Math.min(targetPrice, Math.round(rawRemainingCredit / 1000) * 1000)
+  const finalPrice = Math.max(0, targetPrice - remainingCredit)
+
+  return {
+    isUpgrade: true,
+    originalPrice: targetPrice,
+    remainingDays,
+    totalDays,
+    dailyRate,
+    remainingCredit,
+    finalPrice,
+    currentTierName: membershipStatus.name || (membershipStatus.tier === "plus" ? "Plus" : "Cơ bản"),
   }
 }
 

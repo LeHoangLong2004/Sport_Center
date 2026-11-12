@@ -226,14 +226,23 @@ namespace SmartGym.Api.Endpoints
             try
             {
                 var txGuid = Guid.TryParse(txId, out var g) ? g : Guid.NewGuid();
-                await db.Database.ExecuteSqlInterpolatedAsync($@"
+                // Không dùng ON CONFLICT (reference_code) vì DB thực tế có thể KHÔNG có unique constraint
+                // trên cột này -> câu lệnh lỗi, giao dịch & số dư không được lưu, refresh trang sẽ mất tiền.
+                var inserted = await db.Database.ExecuteSqlInterpolatedAsync($@"
                     INSERT INTO wallet_transactions (
                         id, user_id, type, amount, balance_after, method, status, reference_code, note, created_at
-                    ) VALUES (
-                        {txGuid}, {userGuid}, {type}, {amount}, {balanceAfter}, {method}, {status}, {txId}, {note}, {createdAt}
                     )
-                    ON CONFLICT (reference_code) DO NOTHING;
+                    SELECT {txGuid}, {userGuid}, {type}, {amount}, {balanceAfter}, {method}, {status}, {txId}, {note}, {createdAt}
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM wallet_transactions WHERE reference_code = {txId} OR id = {txGuid}
+                    );
                 ");
+
+                if (inserted == 0)
+                {
+                    // Giao dịch đã tồn tại -> không cập nhật lại số dư để tránh cộng/trừ trùng
+                    return true;
+                }
 
                 try
                 {
@@ -244,7 +253,10 @@ namespace SmartGym.Api.Endpoints
                         DO UPDATE SET balance = {balanceAfter}, last_updated_at = now();
                     ");
                 }
-                catch { }
+                catch (Exception balEx)
+                {
+                    Console.WriteLine($"[Wallet DB Error] Failed to update balance: {balEx.Message}");
+                }
 
                 return true;
             }
@@ -392,6 +404,49 @@ namespace SmartGym.Api.Endpoints
                 decimal currentBalance = memberGuid.HasValue
                     ? await GetMemberBalanceFromDbAsync(memberGuid.Value, db)
                     : _memberWallets.GetOrAdd(rawUserId, _ => 0m);
+
+                // Idempotency: cùng một mã giao dịch (vd SEPAY-{id}) chỉ được cộng ví đúng 1 lần
+                if (!isPending && !string.IsNullOrWhiteSpace(request.Id))
+                {
+                    var alreadyRecorded = false;
+                    if (memberGuid.HasValue)
+                    {
+                        try
+                        {
+                            var cnt = await db.Database.SqlQueryRaw<int>(
+                                "SELECT COUNT(*)::int AS \"Value\" FROM wallet_transactions WHERE reference_code = {0}",
+                                request.Id
+                            ).ToListAsync();
+                            alreadyRecorded = cnt.FirstOrDefault() > 0;
+                        }
+                        catch { }
+                    }
+                    else
+                    {
+                        var memList = _memberWalletTransactions.GetOrAdd(rawUserId, _ => new List<WalletTransactionDto>());
+                        lock (memList) { alreadyRecorded = memList.Any(t => t.Id == request.Id); }
+                    }
+
+                    if (alreadyRecorded)
+                    {
+                        return Results.Ok(new
+                        {
+                            success = true,
+                            duplicate = true,
+                            message = "Giao dịch này đã được ghi nhận trước đó, không cộng tiền lần nữa.",
+                            balance = currentBalance,
+                            transaction = new WalletTransactionDto(
+                                request.Id,
+                                "topup",
+                                request.Amount,
+                                method,
+                                note,
+                                DateTime.UtcNow,
+                                "completed"
+                            )
+                        });
+                    }
+                }
 
                 decimal newBalance = isPending ? currentBalance : currentBalance + request.Amount;
 
@@ -708,23 +763,54 @@ namespace SmartGym.Api.Endpoints
                                         : (txObj.TryGetProperty("referenceNumber", out var rVal2) ? (rVal2.GetString() ?? "") : "");
                                     var txId = txObj.TryGetProperty("id", out var idVal) ? idVal.GetRawText() : "";
 
-                                    bool amountMatches = !amount.HasValue || amount.Value <= 0 || Math.Abs(txAmount - amount.Value) < 1m || txAmount >= amount.Value;
-                                    bool memoMatches = string.IsNullOrWhiteSpace(cleanMemo) 
-                                        || content.Contains(cleanMemo, StringComparison.OrdinalIgnoreCase)
-                                        || (amount.HasValue && amount.Value > 0 && Math.Abs(txAmount - amount.Value) < 1m);
+                                    // So khớp NGHIÊM NGẶT: bắt buộc nội dung CK phải chứa đúng mã phiên (vd "NAPVI 1234").
+                                    // Tuyệt đối không khớp chỉ theo số tiền, tránh nạp nhầm giao dịch cũ/giao dịch của người khác.
+                                    var memoNoSpace = cleanMemo.Replace(" ", "");
+                                    bool amountMatches = !amount.HasValue || amount.Value <= 0 || Math.Abs(txAmount - amount.Value) < 1m;
+                                    bool memoMatches = !string.IsNullOrWhiteSpace(memoNoSpace)
+                                        && (content.Contains(cleanMemo, StringComparison.OrdinalIgnoreCase)
+                                            || content.Replace(" ", "").Contains(memoNoSpace, StringComparison.OrdinalIgnoreCase));
 
                                     if (amountMatches && memoMatches)
                                     {
-                                        // Kiểm tra xem giao dịch này đã được ghi nhận chưa
+                                        // Kiểm tra xem giao dịch này đã được ghi nhận chưa (RAM + Database)
                                         bool alreadyProcessed = false;
                                         lock (txList)
                                         {
                                             alreadyProcessed = txList.Any(t => t.Id == $"SEPAY-{txId}" || (!string.IsNullOrEmpty(refNo) && t.Note.Contains(refNo)));
                                         }
+                                        if (!alreadyProcessed)
+                                        {
+                                            try
+                                            {
+                                                var dbCnt = await db.Database.SqlQueryRaw<int>(
+                                                    "SELECT COUNT(*)::int AS \"Value\" FROM wallet_transactions WHERE reference_code = {0}",
+                                                    $"SEPAY-{txId}"
+                                                ).ToListAsync();
+                                                alreadyProcessed = dbCnt.FirstOrDefault() > 0;
+                                            }
+                                            catch { }
+                                        }
 
                                         if (!alreadyProcessed)
                                         {
-                                            var topupAmount = txAmount > 0 ? txAmount : (amount ?? 100000m);
+                                            // An toàn: Không cộng tiền vào ví nếu đây là đơn thanh toán đặt lớp học (DATLOP)
+                                            bool isClassBooking = cleanMemo.Contains("DATLOP", StringComparison.OrdinalIgnoreCase) || content.Contains("DATLOP", StringComparison.OrdinalIgnoreCase);
+                                            if (isClassBooking)
+                                            {
+                                                return Results.Ok(new
+                                                {
+                                                    received = true,
+                                                    message = "Đã nhận được tiền chuyển khoản đặt lớp học từ ngân hàng!",
+                                                    isLiveBank = true
+                                                });
+                                            }
+
+                                            var topupAmount = txAmount > 0 ? txAmount : (amount ?? 0m);
+                                            if (topupAmount <= 0)
+                                            {
+                                                return Results.Ok(new { received = false, message = "Không xác định được số tiền giao dịch." });
+                                            }
                                             decimal newBalance;
 
                                             if (memberGuid.HasValue)
@@ -848,7 +934,15 @@ namespace SmartGym.Api.Endpoints
                 }
 
                 var memberGuid = await ResolveMemberGuidAsync(context, db, rawUserId);
-                var amount = request.Amount > 0 ? request.Amount : 100000m;
+                if (request.Amount <= 0)
+                {
+                    return Results.BadRequest(new { message = "Số tiền mô phỏng phải lớn hơn 0." });
+                }
+                if (request.Amount > 100000000m)
+                {
+                    return Results.BadRequest(new { message = "Số tiền mô phỏng không được vượt quá 100.000.000 đ." });
+                }
+                var amount = request.Amount;
                 var note = string.IsNullOrWhiteSpace(request.Note) ? "NAPVI 5667" : request.Note;
                 var txId = $"SEPAY-SIM-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
 
@@ -916,6 +1010,50 @@ namespace SmartGym.Api.Endpoints
             })
             .WithTags("Member Portal")
             .WithSummary("Mô phỏng Webhook báo có tiền dành cho demo");
+
+            // 7. POST /api/member/wallet/reset - Đặt lại hoặc cân chỉnh số dư ví (Dành cho kiểm thử/đối soát)
+            wallet.MapPost("/reset", async (HttpContext context, [FromQuery] decimal? newBalance, SmartGymDbContext db) =>
+            {
+                var rawUserId = GetUserId(context);
+                if (string.IsNullOrWhiteSpace(rawUserId))
+                {
+                    rawUserId = context.Request.Query["userId"].FirstOrDefault()
+                          ?? context.Request.Headers["X-User-Id"].FirstOrDefault()
+                          ?? "m-default";
+                }
+
+                var memberGuid = await ResolveMemberGuidAsync(context, db, rawUserId);
+                var targetBal = Math.Max(0m, newBalance ?? 0m);
+
+                if (memberGuid.HasValue)
+                {
+                    try
+                    {
+                        await db.Database.ExecuteSqlInterpolatedAsync($@"
+                            INSERT INTO member_wallet_balances (user_id, balance, last_updated_at)
+                            VALUES ({memberGuid.Value}, {targetBal}, now())
+                            ON CONFLICT (user_id) 
+                            DO UPDATE SET balance = {targetBal}, last_updated_at = now();
+                        ");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[Wallet DB Reset Warning] {ex.Message}");
+                    }
+                }
+
+                _memberWallets[rawUserId] = targetBal;
+                if (memberGuid.HasValue) _memberWallets[memberGuid.Value.ToString()] = targetBal;
+
+                return Results.Ok(new
+                {
+                    success = true,
+                    balance = targetBal,
+                    message = $"Đã cập nhật lại số dư ví về {targetBal:N0} đ."
+                });
+            })
+            .WithTags("Member Portal")
+            .WithSummary("Đặt lại hoặc cân chỉnh số dư ví hội viên");
         }
 
         /// <summary>

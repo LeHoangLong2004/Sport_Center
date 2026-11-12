@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { MemberScreen, MemberSupportTicketItem } from "../types";
-import { getSavedMemberData, saveMemberData } from "../services/memberData";
+import { MemberBackendAPI } from "../services/memberData";
 import { Bot, HelpCircle, CheckCircle2, X } from "lucide-react";
 import { SupportAiChat } from "./support/SupportAiChat";
 import { SupportTickets } from "./support/SupportTickets";
@@ -14,19 +14,37 @@ export default function MemberSupport({ onNavigate }: Props) {
   const user = userStr ? JSON.parse(userStr) : null;
   const userId = user?.id || "";
   const userName = user?.fullName || user?.name || "Hội viên";
-  const storageKey = userId ? `member_support_tickets_${userId}` : "member_support_tickets";
 
   const [activeTab, setActiveTab] = useState<"ai" | "tickets">("ai");
-  const [tickets, setTickets] = useState<MemberSupportTicketItem[]>(() =>
-    getSavedMemberData(storageKey, [])
-  );
+  const [tickets, setTickets] = useState<MemberSupportTicketItem[]>([]);
   const [feedback, setFeedback] = useState<string | null>(null);
 
-  const handleCreateTicket = (ticket: MemberSupportTicketItem) => {
-    const updated = [ticket, ...tickets];
-    setTickets(updated);
-    saveMemberData(storageKey, updated);
-    setFeedback("Đã gửi yêu cầu hỗ trợ thành công! Nhân viên CSKH sẽ phản hồi trong 2-4 giờ làm việc.");
+  useEffect(() => {
+    let cancelled = false;
+    MemberBackendAPI.getSupportTickets().then((loaded) => {
+      if (!cancelled && Array.isArray(loaded)) {
+        setTickets(loaded);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleCreateTicket = async (ticket: MemberSupportTicketItem) => {
+    try {
+      const created = await MemberBackendAPI.createSupportTicket({
+        category: ticket.category,
+        subject: ticket.subject,
+        content: ticket.content,
+      });
+      const newTicket = created || ticket;
+      setTickets((prev) => [newTicket, ...prev]);
+      setFeedback("Đã gửi yêu cầu hỗ trợ thành công! Nhân viên CSKH sẽ phản hồi trong 2-4 giờ làm việc.");
+    } catch {
+      setTickets((prev) => [ticket, ...prev]);
+      setFeedback("Đã tiếp nhận yêu cầu hỗ trợ! Nhân viên CSKH sẽ liên hệ sớm.");
+    }
     setTimeout(() => setFeedback(null), 4000);
   };
 

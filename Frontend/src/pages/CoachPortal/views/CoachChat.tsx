@@ -140,16 +140,21 @@ export default function CoachChat({ initialMemberId }: CoachChatProps) {
     scrollToBottom();
   }, [activeConv?.messages?.length]);
 
-  const handleSendMessage = async (e?: React.FormEvent) => {
+  const handleSendMessage = async (
+    e?: React.FormEvent,
+    attachment?: { url: string; type: string }
+  ) => {
     if (e) e.preventDefault();
     const textToSend = inputText.trim();
-    if (!textToSend || !activeConv) return;
+    if ((!textToSend && !attachment?.url) || !activeConv) return;
 
     const newMsg: Message = {
       id: `msg-${Date.now()}`,
       sender: "coach",
-      text: textToSend,
+      text: textToSend || (attachment?.type === "image" ? "[Hình ảnh]" : "[Tệp đính kèm]"),
       timestamp: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
+      attachmentUrl: attachment?.url,
+      attachmentType: attachment?.type,
     };
 
     setConversations((prev) =>
@@ -171,8 +176,10 @@ export default function CoachChat({ initialMemberId }: CoachChatProps) {
     try {
       const res = await coachApi.sendCoachMessage({
         conversationId: activeConv.id,
-        text: textToSend,
+        text: textToSend || (attachment?.type === "image" ? "[Hình ảnh]" : "[Tệp đính kèm]"),
         coachId: profile?.id,
+        attachmentUrl: attachment?.url,
+        attachmentType: attachment?.type,
       });
       if (res && res.data) {
         // Refresh to ensure exact sync

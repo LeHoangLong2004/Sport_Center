@@ -8,11 +8,12 @@ import {
   SportFormat,
   getMembershipStatus,
   MembershipStatus,
+  calculateMembershipUpgrade,
 } from "../../../services/packageApi";
 import { Crown, Dumbbell, CheckCircle2, AlertCircle, X } from "lucide-react";
 import MembershipTab from "./packages/MembershipTab";
 import SportTab from "./packages/SportTab";
-import PackageCheckoutModal from "./packages/PackageCheckoutModal";
+import UniversalPaymentModal, { UniversalPaymentItem } from "../components/UniversalPaymentModal";
 
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
@@ -45,8 +46,6 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
   // Quick checkout modal state
   const [selectedPackage, setSelectedPackage] = useState<CatalogPackage | null>(null);
   const [checkoutDuration, setCheckoutDuration] = useState<PackagePeriod>(1);
-  const [checkoutMethod, setCheckoutMethod] = useState<"qr" | "counter">("qr");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Load data
@@ -143,6 +142,13 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
     (pkg: CatalogPackage): { discountPct: number; originalPrice: number; finalPrice: number } => {
       const orig = pkg.prices[selectedDuration] || pkg.prices[1] || 0;
       if (pkg.category === "membership") {
+        const upgrade = calculateMembershipUpgrade(membershipStatus, pkg, selectedDuration);
+        if (upgrade.isUpgrade) {
+          const discountPct = upgrade.originalPrice > 0 
+            ? Math.round((upgrade.remainingCredit / upgrade.originalPrice) * 100)
+            : 0;
+          return { discountPct, originalPrice: upgrade.originalPrice, finalPrice: upgrade.finalPrice };
+        }
         return { discountPct: 0, originalPrice: orig, finalPrice: orig };
       }
       let discountPct = 0;
@@ -159,30 +165,89 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
 
   // Handle start purchase
   const handleStartPurchase = (pkg: CatalogPackage) => {
-    const { discountPct } = calculateDiscount(pkg);
-    if (onCheckout) {
-      onCheckout(pkg, selectedDuration, discountPct);
-      return;
-    }
     setSelectedPackage(pkg);
     setCheckoutDuration(selectedDuration);
   };
 
-  // Submit quick checkout
-  const handleQuickCheckout = async () => {
+  const universalPaymentItem = useMemo<UniversalPaymentItem | null>(() => {
+    if (!selectedPackage) return null;
+    const { discountPct, originalPrice, finalPrice } = calculateDiscount(selectedPackage);
+    const upgrade = selectedPackage.category === "membership"
+      ? calculateMembershipUpgrade(membershipStatus, selectedPackage, checkoutDuration)
+      : null;
+
+    const isMembership = selectedPackage.category === "membership";
+    const isCurrentTier = isMembership && membershipStatus.tier !== "basic" && membershipStatus.tier === selectedPackage.tier;
+    const isRenewal = isCurrentTier;
+
+    let renewalPreview: { currentEndDate: string; newEndDate: string; addedMonths: number } | undefined;
+    if (isRenewal && membershipStatus.endDate) {
+      const curEnd = new Date(membershipStatus.endDate);
+      const curEndStr = curEnd.toLocaleDateString("vi-VN");
+      const newEnd = new Date(curEnd);
+      newEnd.setMonth(newEnd.getMonth() + checkoutDuration);
+      newEnd.setDate(newEnd.getDate() - 1);
+      const newEndStr = newEnd.toLocaleDateString("vi-VN");
+      renewalPreview = {
+        currentEndDate: curEndStr,
+        newEndDate: newEndStr,
+        addedMonths: checkoutDuration,
+      };
+    }
+
+    return {
+      id: selectedPackage.id,
+      categoryTitle: isRenewal
+        ? `GIA HẠN GÓI THÀNH VIÊN - ${selectedPackage.name.toUpperCase()}`
+        : upgrade?.isUpgrade
+        ? "NÂNG CẤP HẠNG THÀNH VIÊN"
+        : selectedPackage.category === "membership"
+        ? "ĐĂNG KÝ GÓI THÀNH VIÊN"
+        : "ĐĂNG KÝ GÓI MÔN TẬP",
+      title: isRenewal
+        ? `Gia hạn thẻ ${selectedPackage.name}`
+        : selectedPackage.name,
+      subtitle: isRenewal
+        ? `Gia hạn ${checkoutDuration} tháng • Hạng ${selectedPackage.name}`
+        : upgrade?.isUpgrade
+        ? `${checkoutDuration} tháng • Bù chênh lệch từ gói ${upgrade.currentTierName} (${upgrade.remainingDays} ngày chưa dùng)`
+        : `${checkoutDuration} tháng • ${
+            selectedPackage.category === "membership"
+              ? (selectedPackage.tier ? `Hạng ${selectedPackage.tier.toUpperCase()}` : "Thẻ thành viên")
+              : (selectedPackage.sport || "Môn tập")
+          }`,
+      description: isRenewal && renewalPreview
+        ? `Thời hạn gói sẽ được cộng dồn nối tiếp từ ngày ${renewalPreview.currentEndDate} đến ngày ${renewalPreview.newEndDate}.`
+        : upgrade?.isUpgrade
+        ? `Giá gốc ${originalPrice.toLocaleString("vi-VN")} đ. Khấu trừ ${upgrade.remainingCredit.toLocaleString("vi-VN")} đ từ gói ${upgrade.currentTierName} đang dùng.`
+        : selectedPackage.description,
+      originalPrice,
+      discountPct,
+      discountAmount: originalPrice - finalPrice,
+      finalPrice,
+      memoPrefix: selectedPackage.category === "membership" ? "MEMBER" : "SPORT",
+      isRenewal,
+      renewalPreview,
+    };
+  }, [selectedPackage, checkoutDuration, calculateDiscount, membershipStatus]);
+
+  const handleUniversalCheckoutSuccess = async (method: "qr" | "wallet" | "card" | "counter") => {
     if (!selectedPackage) return;
+    const pkgName = selectedPackage.name;
     try {
-      setIsSubmitting(true);
       await PackageAPI.checkout(
         selectedPackage.id,
         checkoutDuration,
-        checkoutMethod
+        method
       );
+      setSelectedPackage(null);
       setFeedback({
         type: "success",
-        text: `Đã tạo đơn đăng ký gói "${selectedPackage.name}". Vui lòng kiểm tra mục Thanh toán & Hóa đơn để đối soát!`,
+        text:
+          method === "counter"
+            ? `Đã tạo đơn đăng ký gói "${pkgName}". Vui lòng thanh toán tại quầy lễ tân để kích hoạt!`
+            : `Thanh toán thành công gói "${pkgName}"! Quyền lợi đã được kích hoạt ngay lập tức.`,
       });
-      setSelectedPackage(null);
       await loadData();
       try {
         const channel = new BroadcastChannel("smartgym_orders_sync");
@@ -193,10 +258,8 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
     } catch (err: any) {
       setFeedback({
         type: "error",
-        text: err?.message || "Không thể khởi tạo đơn thanh toán. Vui lòng thử lại.",
+        text: err?.message || "Không thể hoàn tất đơn đăng ký gói tập. Vui lòng thử lại.",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -321,16 +384,12 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
         />
       )}
 
-      {/* QUICK CHECKOUT MODAL */}
-      <PackageCheckoutModal
-        selectedPackage={selectedPackage}
+      {/* UNIVERSAL PAYMENT MODAL */}
+      <UniversalPaymentModal
+        isOpen={!!selectedPackage}
+        item={universalPaymentItem}
         onClose={() => setSelectedPackage(null)}
-        checkoutDuration={checkoutDuration}
-        checkoutMethod={checkoutMethod}
-        onSelectCheckoutMethod={setCheckoutMethod}
-        calculateDiscount={calculateDiscount}
-        isSubmitting={isSubmitting}
-        onSubmit={handleQuickCheckout}
+        onSuccess={handleUniversalCheckoutSuccess}
       />
     </div>
   );

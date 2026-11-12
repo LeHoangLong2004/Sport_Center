@@ -11,6 +11,7 @@ import {
 interface Props {
   sportFilter: SportFilter;
   onSportFilterChange: (sport: SportFilter) => void;
+  sportOptions?: string[];
   typeFilter: TypeFilter;
   onTypeFilterChange: (type: TypeFilter) => void;
   statusFilter: StatusFilter;
@@ -26,6 +27,7 @@ interface Props {
 export default function ScheduleFilterBar({
   sportFilter,
   onSportFilterChange,
+  sportOptions,
   typeFilter,
   onTypeFilterChange,
   statusFilter,
@@ -51,7 +53,7 @@ export default function ScheduleFilterBar({
               onChange={(e) => onSportFilterChange(e.target.value)}
               className="text-xs font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 min-w-[150px] shadow-xs cursor-pointer"
             >
-              {SPORT_OPTIONS.map((o) => (
+              {(sportOptions && sportOptions.length > 0 ? sportOptions : SPORT_OPTIONS).map((o) => (
                 <option key={o} value={o}>
                   {o === "all" ? "Tất cả bộ môn" : o}
                 </option>

@@ -9,6 +9,10 @@ interface Props {
   onSelectOpenSlot: (item: UnifiedScheduleItem) => void;
   onSelectPtSession: (item: UnifiedScheduleItem) => void;
   navigateTo: (s: CoachScreen, extra?: { sessionId?: string; memberId?: string }) => void;
+  onSwitchToList?: () => void;
+  onOpenSlotModal?: (defaultDate?: string) => void;
+  nearestSessionInfo?: any;
+  onJumpToWeek?: (offset: number) => void;
 }
 
 export default function ScheduleWeekGrid({
@@ -88,7 +92,7 @@ export default function ScheduleWeekGrid({
                             navigateTo("class-detail", { sessionId: sessionItem.id });
                           }
                         }}
-                        className={`w-full text-left p-2.5 rounded-xl border transition-all flex flex-col justify-between shadow-xs hover:shadow-md ${
+                        className={`w-full text-left p-2.5 rounded-xl border transition-all flex flex-col justify-between shadow-xs hover:shadow-md cursor-pointer ${
                           isPendingApproval
                             ? "bg-slate-50/70 dark:bg-slate-950/30 border-slate-300 dark:border-slate-700"
                             : isOpenPT

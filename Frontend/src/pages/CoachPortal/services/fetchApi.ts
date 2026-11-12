@@ -1,4 +1,7 @@
-const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api';
+const configuredApiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+const BASE_URL = configuredApiUrl
+  ? `${configuredApiUrl}${configuredApiUrl.endsWith('/api') ? '' : '/api'}`
+  : '/api';
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   // Keep Coach APIs on the same authenticated account as the rest of the
@@ -12,14 +15,27 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  let response = await fetch(`${BASE_URL}${endpoint}`, {
-    ...options,
-    headers
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${BASE_URL}${endpoint}`, {
+      ...options,
+      headers
+    });
+  } catch {
+    throw new Error('Không thể kết nối đến máy chủ. Vui lòng kiểm tra backend đang chạy.');
+  }
   
   if (response.status === 401) {
     try {
-      const refRes = await fetch(`${BASE_URL}/auth/dev-token`, { method: 'POST' });
+      let emailParam = '';
+      try {
+        const u = JSON.parse(localStorage.getItem('user') || '{}');
+        if (u.email) {
+          emailParam = `?email=${encodeURIComponent(u.email)}`;
+        }
+      } catch {}
+
+      const refRes = await fetch(`${BASE_URL}/auth/dev-token${emailParam}`, { method: 'POST' });
       if (refRes.ok) {
         const refData = await refRes.json();
         if (refData.token) {

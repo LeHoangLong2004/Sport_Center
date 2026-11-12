@@ -7,6 +7,11 @@ import { CoachAPI } from "../../services/api";
 import { RequestSessionPicker } from "./scheduleRequestModal/RequestSessionPicker";
 import { RequestTypePicker, type ScheduleRequestType } from "./scheduleRequestModal/RequestTypePicker";
 import { RequestAdjustmentFields } from "./scheduleRequestModal/RequestAdjustmentFields";
+import {
+  parseSessionStartDateTime,
+  isSessionInFuture,
+  checkScheduleConflict,
+} from "./scheduleRequestModal/scheduleConflictHelper";
 
 interface Props {
   isOpen: boolean;
@@ -32,32 +37,6 @@ interface CoachOption {
   id: string;
   fullName: string;
   specialty?: string;
-}
-
-function parseSessionStartDateTime(dateStr?: string, startTimeStr?: string): Date | null {
-  if (!dateStr) return null;
-  const cleanDate = dateStr.slice(0, 10);
-  const parts = cleanDate.split("-").map(Number);
-  if (parts.length !== 3 || parts.some(isNaN)) return null;
-  const [y, m, d] = parts;
-
-  let hour = 0;
-  let minute = 0;
-  if (startTimeStr) {
-    const timeParts = startTimeStr.split(":");
-    if (timeParts.length >= 2) {
-      hour = Number(timeParts[0]) || 0;
-      minute = Number(timeParts[1]) || 0;
-    }
-  }
-
-  return new Date(y, m - 1, d, hour, minute, 0, 0);
-}
-
-function isSessionInFuture(dateStr?: string, startTimeStr?: string): boolean {
-  const dt = parseSessionStartDateTime(dateStr, startTimeStr);
-  if (!dt) return false;
-  return dt.getTime() > Date.now();
 }
 
 export default function ScheduleRequestModal({
@@ -107,21 +86,23 @@ export default function ScheduleRequestModal({
     if (!isOpen) return;
     setLoadingCoaches(true);
     CoachAPI.getCoaches()
-      .then((data) => {
-        setAvailableCoaches(data);
-      })
-      .catch((err) => {
-        console.error("Lỗi nạp danh sách huấn luyện viên:", err);
-      })
-      .finally(() => {
-        setLoadingCoaches(false);
-      });
+      .then((data) => setAvailableCoaches(data))
+      .catch((err) => console.error("Lỗi nạp danh sách huấn luyện viên:", err))
+      .finally(() => setLoadingCoaches(false));
   }, [isOpen]);
 
   const currentSession = useMemo(
     () => upcomingSessions.find((s) => s.id === selectedSessionId) || sessions.find((s) => s.id === selectedSessionId),
     [upcomingSessions, sessions, selectedSessionId],
   );
+
+  // Kiểm tra xung đột lịch thời gian thực khi HLV chọn ngày và giờ mới
+  const conflictResult = useMemo(() => {
+    if (requestType !== "dời lịch") {
+      return { hasConflict: false, conflictingSession: null, warningMessage: null };
+    }
+    return checkScheduleConflict(sessions, selectedSessionId, newDate, newTime);
+  }, [requestType, sessions, selectedSessionId, newDate, newTime]);
 
   // Filter out the current coach
   const filteredCoaches = useMemo(() => {
@@ -151,6 +132,27 @@ export default function ScheduleRequestModal({
       toast.error("Không có ca dạy nào trong tương lai để thực hiện yêu cầu.");
       return;
     }
+
+    if (requestType === "dời lịch") {
+      if (!newDate) {
+        toast.error("Vui lòng chọn ngày mới đề xuất.");
+        return;
+      }
+      const parts = newTime.split("-").map((s) => s.trim());
+      if (parts.length < 2 || !parts[0] || !parts[1]) {
+        toast.error("Vui lòng chọn đầy đủ giờ bắt đầu và giờ kết thúc mới.");
+        return;
+      }
+      if (parts[0] >= parts[1]) {
+        toast.error("Giờ kết thúc phải sau giờ bắt đầu.");
+        return;
+      }
+      if (conflictResult.hasConflict) {
+        toast.error(conflictResult.warningMessage || "Khung giờ mới bị trùng với lịch dạy khác của bạn.");
+        return;
+      }
+    }
+
     setSubmitting(true);
     const timeStr = currentSession
       ? `${currentSession.date} (${currentSession.startTime} - ${currentSession.endTime})`
@@ -211,13 +213,14 @@ export default function ScheduleRequestModal({
               onRequestTypeChange={setRequestType}
             />
 
-            {/* 3. Adjustment Fields (Date/Time, Substitute Coach, Reason) */}
+            {/* 3. Adjustment Fields (Date/Time, Conflict Warning, Substitute Coach, Reason) */}
             <RequestAdjustmentFields
               requestType={requestType}
               newDate={newDate}
               onNewDateChange={setNewDate}
               newTime={newTime}
               onNewTimeChange={setNewTime}
+              conflictWarning={conflictResult.warningMessage}
               substituteCoachId={substituteCoachId}
               onSubstituteCoachChange={(id, name) => {
                 setSubstituteCoachId(id);
@@ -240,8 +243,9 @@ export default function ScheduleRequestModal({
             </button>
             <button
               type="submit"
-              disabled={submitting || upcomingSessions.length === 0}
-              className="px-5 py-2 font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 rounded-lg shadow-sm transition-colors disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+              disabled={submitting || upcomingSessions.length === 0 || conflictResult.hasConflict}
+              title={conflictResult.hasConflict ? "Vui lòng chọn khung giờ không bị trùng lịch trước khi gửi" : undefined}
+              className="px-5 py-2 font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 rounded-lg shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer"
             >
               {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               {submitting ? "Đang gửi..." : "Gửi yêu cầu"}

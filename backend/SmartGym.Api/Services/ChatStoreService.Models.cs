@@ -12,6 +12,8 @@ public class ChatMessageItem
     public string Sender { get; set; } = "coach";
     public string SenderName { get; set; } = "";
     public string Text { get; set; } = "";
+    public string? AttachmentUrl { get; set; }
+    public string? AttachmentType { get; set; }
     public string Timestamp { get; set; } = "";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
@@ -69,6 +71,8 @@ internal sealed class ChatMessageRow
     [Column("sender")] public string Sender { get; set; } = "";
     [Column("sender_name")] public string? SenderName { get; set; }
     [Column("text")] public string Text { get; set; } = "";
+    [Column("attachment_url")] public string? AttachmentUrl { get; set; }
+    [Column("attachment_type")] public string? AttachmentType { get; set; }
     [Column("timestamp")] public string Timestamp { get; set; } = "";
     [Column("created_at")] public DateTime CreatedAt { get; set; }
 }

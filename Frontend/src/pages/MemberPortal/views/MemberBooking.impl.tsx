@@ -10,16 +10,16 @@ const [activeTab, setActiveTab] = useState<"group" | "pt" | "my_classes">("group
 // Filters
 const [selectedDate, setSelectedDate] = useState(""); const [selectedSport, setSelectedSport] = useState("all"); const [selectedCoachId, setSelectedCoachId] = useState("all"); const [searchQuery, setSearchQuery] = useState("");
 // Data states
-const [mySessions, setMySessions] = useState<MemberSessionItem[]>([]); const [groupClasses, setGroupClasses] = useState<any[]>([]); const [ptSlots, setPtSlots] = useState<any[]>([]); const [coaches, setCoaches] = useState<any[]>([]); const [loadingGroupClasses, setLoadingGroupClasses] = useState(true); const [refreshingGroupClasses, setRefreshingGroupClasses] = useState(false);
+const [mySessions, setMySessions] = useState<MemberSessionItem[]>([]); const [groupClasses, setGroupClasses] = useState<any[]>([]); const [ptSlots, setPtSlots] = useState<any[]>([]); const [coaches, setCoaches] = useState<any[]>([]); const [sports, setSports] = useState<any[]>([]); const [loadingGroupClasses, setLoadingGroupClasses] = useState(true); const [refreshingGroupClasses, setRefreshingGroupClasses] = useState(false);
 const [groupClassesError, setGroupClassesError] = useState<string | null>(null);
 // Modals & Action States
 const [selectedClassDetail, setSelectedClassDetail] = useState<any | null>(null); const [classToBook, setClassToBook] = useState<any | null>(null); const [paymentMethod, setPaymentMethod] = useState<"qr" | "card" | "counter">("qr"); const [isProcessingPayment, setIsProcessingPayment] = useState(false); const [paymentError, setPaymentError] = useState<string | null>(null); const [bookingSuccessInfo, setBookingSuccessInfo] = useState<any | null>(null);
-const [cancelTarget, setCancelTarget] = useState<{ classId: string; className: string } | null>(null); const [bookingPtSlot, setBookingPtSlot] = useState<any | null>(null); const [ptGoal, setPtGoal] = useState("Tăng cơ & Siết nét"); const [ptNote, setPtNote] = useState(""); const [feedback, setFeedback] = useState<Feedback | null>(null); const showFeedback = (message: string, type: Feedback["type"] = "success") => {
+const [cancelTarget, setCancelTarget] = useState<{ classId: string; className: string } | null>(null); const [bookingPtSlot, setBookingPtSlot] = useState<any | null>(null); const [ptGoal, setPtGoal] = useState(() => { try { const userStr = typeof window !== "undefined" ? localStorage.getItem("user") : null; if (userStr) { const u = JSON.parse(userStr); return u.fitnessGoal || u.goal || "Rèn luyện thể lực"; } } catch {} return "Rèn luyện thể lực"; }); const [ptNote, setPtNote] = useState(""); const [feedback, setFeedback] = useState<Feedback | null>(null); const showFeedback = (message: string, type: Feedback["type"] = "success") => {
 setFeedback({ message, type }); window.setTimeout(() => setFeedback(null), 4000); };
 // Load classes, my bookings, pt slots, and all coaches
 const loadGroupClasses = async (silent = false) => { if (silent) { setRefreshingGroupClasses(true); } else { setLoadingGroupClasses(true); }
-setGroupClassesError(null); try { const [availableClasses, memberSchedule, availablePtSlots, coachesList] = await Promise.all([ MemberAPI.getAvailableClasses(), MemberAPI.getMemberSchedule().catch(() => ({ classBookings: [], ptSessions: [] })), MemberAPI.getAvailablePtSlots().catch(() => []),
-MemberAPI.getCoaches().catch(() => []), ]); if (Array.isArray(coachesList)) { setCoaches(coachesList); }
+setGroupClassesError(null); try { const [availableClasses, memberSchedule, availablePtSlots, coachesList, sportsList] = await Promise.all([ MemberAPI.getAvailableClasses(), MemberAPI.getMemberSchedule().catch(() => ({ classBookings: [], ptSessions: [] })), MemberAPI.getAvailablePtSlots().catch(() => []),
+MemberAPI.getCoaches().catch(() => []), MemberAPI.getSports().catch(() => []), ]); if (Array.isArray(coachesList)) { setCoaches(coachesList); } if (Array.isArray(sportsList)) { setSports(sportsList); }
 // Lớp học và danh sách Coach có thể lấy dữ liệu từ hai truy vấn khác nhau.
 // Dùng hồ sơ Coach làm nguồn bổ sung để avatar account luôn được đồng bộ.
 const coachById = new Map( (Array.isArray(coachesList) ? coachesList : []).map((coach: any) => [ String(coach.id), coach, ]), );
@@ -103,6 +103,13 @@ setPtNote(""); showFeedback("Đã đặt lịch kèm riêng 1–1 thành công."
 const handleStartChatWithCoach = (coachName: string, coachId?: string, coachAvatar?: string) => { try { localStorage.setItem( "chat_target_coach", JSON.stringify({ coachId: coachId || "",
 coachName: coachName, coachAvatar: coachAvatar || "", }) ); } catch {} if (bookingSuccessInfo) setBookingSuccessInfo(null);
 if (selectedClassDetail) setSelectedClassDetail(null); onNavigate("chat"); };
+const sportOptions = useMemo(() => {
+  const map = new Map<string, string>();
+  sports.forEach((s) => { if (s?.name) map.set(s.name, s.name); });
+  groupClasses.forEach((c) => { if (c?.sport && !map.has(c.sport)) map.set(c.sport, c.sport); });
+  ptSlots.forEach((slot) => { if (slot?.sport && !map.has(slot.sport)) map.set(slot.sport, slot.sport); });
+  return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
+}, [sports, groupClasses, ptSlots]);
 // Filter Group Classes (hỗ trợ lọc All Coach, Bộ môn, Ngày, Tìm kiếm)
 const filteredGroupClasses = useMemo(() => { return groupClasses.filter((c) => { const matchDate = !selectedDate || c.dateStr === selectedDate; const matchSport = selectedSport === "all" || c.sport.toLowerCase() === selectedSport.toLowerCase(); const matchCoach = selectedCoachId === "all" ||
 String(c.coachId || "").toLowerCase() === selectedCoachId.toLowerCase() || String(c.coachName || "").toLowerCase().includes(selectedCoachId.toLowerCase()); const matchQuery = !searchQuery || c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.coachName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -142,7 +149,12 @@ type="button" onClick={() => setSelectedCoachId(isSelected ? "all" : c.id)} clas
 <button type="button" onClick={() => setSelectedDate("")} className="text-slate-400 hover:text-slate-600" > <X className="w-3.5 h-3.5" />
 </button> )} </div> {/* Sport Filter */} <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs"> <Filter className="w-4 h-4 text-slate-400 shrink-0" />
 <span className="text-slate-500 font-medium">Bộ môn:</span> <select value={selectedSport} onChange={(e) => setSelectedSport(e.target.value)} className="bg-transparent border-none text-xs font-bold text-slate-800 dark:text-slate-200 outline-none cursor-pointer" >
-<option value="all" className="bg-white dark:bg-slate-800">Tất cả bộ môn</option> <option value="Gym" className="bg-white dark:bg-slate-800">Gym & Thể lực</option> <option value="Yoga" className="bg-white dark:bg-slate-800">Yoga & Pilates</option> <option value="Boxing" className="bg-white dark:bg-slate-800">Boxing & Kickfit</option> <option value="Bơi lội" className="bg-white dark:bg-slate-800">Bơi lội 4 mùa</option> <option value="Zumba" className="bg-white dark:bg-slate-800">Zumba Dance</option>
+<option value="all" className="bg-white dark:bg-slate-800">Tất cả bộ môn</option>
+{sportOptions.map((s) => (
+  <option key={s.value} value={s.value} className="bg-white dark:bg-slate-800">
+    {s.label}
+  </option>
+))}
 </select> </div> {/* Coach Filter Dropdown */} <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs"> <User className="w-4 h-4 text-slate-400 shrink-0" /> <span className="text-slate-500 font-medium">Huấn luyện viên:</span>
 <select value={selectedCoachId} onChange={(e) => setSelectedCoachId(e.target.value)} className="bg-transparent border-none text-xs font-bold text-slate-800 dark:text-slate-200 outline-none cursor-pointer max-w-[160px] truncate" > <option value="all" className="bg-white dark:bg-slate-800">Tất cả HLV ({coaches.length})</option>
 {coaches.map((c) => ( <option key={c.id} value={c.id} className="bg-white dark:bg-slate-800"> {c.fullName || c.name} </option> ))} </select>
@@ -259,11 +271,9 @@ className="flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-5
 {(classToBook.price || 150000).toLocaleString("vi-VN")} đ </span> </div> <div className="flex justify-between items-center text-slate-600 dark:text-slate-400"> <span>Ưu đãi thành viên:</span> <span className="font-bold text-slate-500">0 đ (Áp dụng 100% giá gốc)</span>
 </div> <div className="flex justify-between items-center pt-2.5 border-t border-emerald-200 dark:border-slate-700 text-sm"> <span className="font-extrabold text-slate-900 dark:text-white">Tổng tiền thanh toán:</span> <strong className="text-xl font-black text-emerald-600 dark:text-emerald-400"> {(classToBook.price || 150000).toLocaleString("vi-VN")} đ </strong>
 </div> </div> {/* CHỌN PHƯƠNG THỨC THANH TOÁN */} <div> <label className="font-extrabold text-xs text-slate-800 dark:text-slate-200 mb-2 block"> Chọn phương thức thanh toán:
-</label> <div className="grid grid-cols-3 gap-2.5"> <button type="button" onClick={() => setPaymentMethod("qr")} className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5 ${
+</label> <div className="grid grid-cols-2 gap-2.5"> <button type="button" onClick={() => setPaymentMethod("qr")} className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5 ${
 paymentMethod === "qr" ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 shadow-sm" : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600 dark:text-slate-300" }`} > <QrCode className="w-5 h-5 shrink-0" />
-<span className="text-[11px] font-bold">Mã VietQR</span> </button> <button type="button" onClick={() => setPaymentMethod("card")} className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5 ${
-paymentMethod === "card" ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 shadow-sm" : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600 dark:text-slate-300" }`} > <CreditCard className="w-5 h-5 text-emerald-600 shrink-0" />
-<span className="text-[11px] font-bold">Thẻ ATM / Visa</span> </button> <button type="button" onClick={() => setPaymentMethod("counter")} className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5 ${
+<span className="text-[11px] font-bold">Mã VietQR</span> </button> <button type="button" onClick={() => setPaymentMethod("counter")} className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5 ${
 paymentMethod === "counter" ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 shadow-sm" : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600 dark:text-slate-300" }`} > <Building className="w-5 h-5 shrink-0" />
 <span className="text-[11px] font-bold">Tại quầy lễ tân</span> </button> </div> </div> {/* NỘI DUNG THANH TOÁN TƯƠNG ỨNG */} {paymentMethod === "qr" && (() => {
 const bCfg = BankConfigService.getConfig();
@@ -343,8 +353,7 @@ onClick={() => setBookingPtSlot(null)} className="p-1.5 rounded-lg text-slate-40
 <form onSubmit={handleConfirmPtBooking} className="flex-1 flex flex-col overflow-hidden"> <div className="p-5 overflow-y-auto space-y-4 text-xs"> <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 space-y-1"> <div className="flex justify-between font-semibold"> <span>Thời gian:</span> <span className="text-slate-700 dark:text-slate-300">
 {bookingPtSlot.startTime} - {bookingPtSlot.endTime} • Ngày {bookingPtSlot.date} </span> </div> <div className="flex justify-between"> <span className="text-slate-500">Bộ môn & Phòng:</span> <span>{bookingPtSlot.sport} • {bookingPtSlot.room}</span>
 </div> </div> <div> <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block"> Mục tiêu trọng tâm buổi tập: * </label>
-<select value={ptGoal} onChange={(e) => setPtGoal(e.target.value)} className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none font-medium" > <option>Tăng cơ & Siết nét (Hypertrophy)</option>
-<option>Giảm mỡ & Đốt calo cường độ cao</option> <option>Cải thiện kỹ thuật động tác chuẩn</option> <option>Giãn cơ sâu & Phục hồi thể lực</option> <option>Tập sức mạnh tối đa (Strength)</option> </select> </div>
+<input type="text" value={ptGoal} onChange={(e) => setPtGoal(e.target.value)} placeholder="Nhập mục tiêu tập luyện (VD: Tăng cơ, Giảm mỡ, Phục hồi thể lực...)" list="pt-goal-suggestions-impl" required className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none font-medium focus:border-emerald-500 transition-colors" /> <datalist id="pt-goal-suggestions-impl"> <option value="Tăng cơ & Siết nét (Hypertrophy)" /> <option value="Giảm mỡ & Đốt calo cường độ cao" /> <option value="Cải thiện kỹ thuật động tác chuẩn" /> <option value="Giãn cơ sâu & Phục hồi thể lực" /> <option value="Tập sức mạnh tối đa (Strength)" /> </datalist> </div>
 <div> <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block"> Ghi chú / Nhắn gửi Huấn luyện viên: </label> <textarea rows={3}
 value={ptNote} onChange={(e) => setPtNote(e.target.value)} placeholder="VD: Em cần tập trung cải thiện kỹ thuật Squat và Bench Press..." className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none" /> </div>
 </div> <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2.5 shrink-0 bg-slate-50/50 dark:bg-slate-850"> <button type="button" onClick={() => setBookingPtSlot(null)} className="px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 font-semibold"

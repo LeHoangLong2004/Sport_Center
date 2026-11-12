@@ -187,12 +187,6 @@ export function PaymentMethodScreen({
       badge: "Chính thức ⚡",
     },
     {
-      id: "card",
-      icon: `${A}/b41b0.svg`,
-      label: "Thẻ tín dụng / Ghi nợ / ATM",
-      badge: "3D Secure",
-    },
-    {
       id: "wallet",
       icon: `${A}/d8a69.svg`,
       label: "Ví hội viên & Ví điện tử",

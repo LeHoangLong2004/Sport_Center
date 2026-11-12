@@ -46,7 +46,7 @@ Danh sách Hóa đơn & Lịch sử Giao dịch </h3> <p className="text-xs text
 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"> <CheckCircle2 className="w-3.5 h-3.5" /> Đã thanh toán </span> ) : ( <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-50 text-slate-700 dark:bg-slate-500/10 dark:text-slate-400">
 <Clock className="w-3.5 h-3.5 text-slate-500" /> Chờ thanh toán </span> )} </td> <td className="py-3.5 px-4 text-right">
 {inv.status === "paid" ? ( <button type="button" onClick={() => setReceiptModal(inv)} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20 rounded-lg transition-colors border border-emerald-200/60 dark:border-emerald-500/30" >
-<Printer className="w-3.5 h-3.5" /> Xem phiếu thu </button> ) : ( <button type="button"
+<Printer className="w-3.5 h-3.5" /> Xem </button> ) : ( <button type="button"
 onClick={() => { setActivePaymentReportModal(inv); setReportBankMethod("Chuyển khoản QR"); }} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg shadow-xs transition-colors" >
 <Building className="w-3.5 h-3.5" /> Báo thanh toán </button> )} </td> </tr>
 )) )} </tbody> </table> </div> {/* Note & Policy Footer */}
