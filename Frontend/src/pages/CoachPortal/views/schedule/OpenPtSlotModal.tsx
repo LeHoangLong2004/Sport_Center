@@ -40,8 +40,6 @@ export default function OpenPtSlotModal({
   existingSessions = [],
 }: Props) {
   const [openSlotDate, setOpenSlotDate] = useState("");
-  const [openSlotStartTime, setOpenSlotStartTime] = useState("");
-  const [openSlotEndTime, setOpenSlotEndTime] = useState("");
   const [openSlotStartTime, setOpenSlotStartTime] = useState("08:00");
   const [openSlotEndTime, setOpenSlotEndTime] = useState("09:00");
   const [timeError, setTimeError] = useState("");
@@ -87,18 +85,6 @@ export default function OpenPtSlotModal({
     }
   }, [isOpen, initialDate, initialStartTime]);
 
-  // Sinh danh sách giờ kết thúc động dựa trên giờ bắt đầu đã chọn
-  const endTimeOptions = useMemo(() => {
-    if (!openSlotStartTime) return [];
-    return getEndTimeOptions(openSlotStartTime);
-  }, [openSlotStartTime]);
-
-  // Tự động xóa giờ kết thúc nếu không còn nằm trong danh sách lựa chọn
-  useEffect(() => {
-    if (openSlotEndTime && endTimeOptions.length > 0) {
-      const exists = endTimeOptions.some((o) => o.time === openSlotEndTime);
-      if (!exists) {
-        setOpenSlotEndTime("");
   const handleStartTimeChange = (newStart: string) => {
     setOpenSlotStartTime(newStart);
     if (!newStart) return;
@@ -287,51 +273,6 @@ export default function OpenPtSlotModal({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="font-bold text-slate-700 dark:text-slate-300 mb-1 block">
-                  Giờ bắt đầu: <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  value={openSlotStartTime}
-                  onChange={(e) => {
-                    setOpenSlotStartTime(e.target.value);
-                    setOpenSlotEndTime("");
-                    setError("");
-                  }}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium cursor-pointer"
-                >
-                  <option value="">-- Chọn giờ bắt đầu --</option>
-                  {TIME_ROWS.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 dark:text-slate-300 mb-1 block">
-                  Giờ kết thúc: <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  disabled={!openSlotStartTime}
-                  value={openSlotEndTime}
-                  onChange={(e) => {
-                    setOpenSlotEndTime(e.target.value);
-                    setError("");
-                  }}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <option value="">
-                    {openSlotStartTime ? "-- Chọn giờ kết thúc --" : "-- Chọn giờ bắt đầu trước --"}
-                  </option>
-                  {endTimeOptions.map((opt) => (
-                    <option key={opt.time} value={opt.time}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
             <div>
               <label className="font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-slate-500" />
@@ -481,9 +422,9 @@ export default function OpenPtSlotModal({
                 !openSlotSport ||
                 !openSlotRoom ||
                 Boolean(conflictSession) ||
-                isPastTime
+                isPastTime ||
+                Boolean(timeError)
               }
-              disabled={submitting || Boolean(conflictSession) || isPastTime || !!timeError}
               className="px-5 py-2 font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700 dark:disabled:text-slate-500 rounded-xl shadow-xs transition-colors cursor-pointer"
             >
               {submitting

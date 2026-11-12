@@ -103,7 +103,7 @@ public static partial class ClassEndpoints
                             FacilityId = request.FacilityId,
                             CoachId = coachId.Value,
                             ClassName = request.ClassName,
-                            ScheduleTime = request.ScheduleTime,
+                            ScheduleTime = scheduleTimeUtc,
                             DurationMinutes = request.DurationMinutes,
                             Capacity = request.Capacity,
                         };
@@ -123,7 +123,7 @@ public static partial class ClassEndpoints
 
         /// <summary>
         /// GET /api/classes/proposals/my
-        /// Lấy danh sách các đề xuất mở lớp học do chính Huấn luyện viên hiện tại gửi (đang chờ duyệt).
+        /// Lấy danh sách các đề xuất mở lớp học do chính Huấn luyện viên hiện tại gửi (bao gồm pending, approved, rejected).
         /// </summary>
         classGroup
             .MapGet(
@@ -147,20 +147,23 @@ public static partial class ClassEndpoints
                         FROM classes c
                         LEFT JOIN sports s ON c.sport_id = s.id
                         LEFT JOIN facilities f ON c.facility_id = f.id
-                        WHERE c.coach_id = {0} AND (c.approval_status = 'pending' OR c.status = 'pending')
+                        WHERE (c.coach_id = {0} OR c.coach_id = {1})
+                          AND c.approval_status IN ('pending', 'approved', 'rejected')
                         ORDER BY c.schedule_time DESC";
 
-                    var proposals = await db.Database.SqlQueryRaw<CoachClassProposalRow>(sql, coachId.Value).ToListAsync();
+                    var proposals = await db.Database.SqlQueryRaw<CoachClassProposalRow>(sql, coachId.Value, userId).ToListAsync();
                     return Results.Ok(proposals.Select(p => new
                     {
                         id = p.id,
                         className = p.class_name,
-                        scheduleTime = p.schedule_time,
+                        scheduleTime = (p.schedule_time.Kind == DateTimeKind.Local
+                            ? p.schedule_time.ToUniversalTime()
+                            : DateTime.SpecifyKind(p.schedule_time, DateTimeKind.Utc)).ToString("o"),
                         durationMinutes = p.duration_minutes,
                         capacity = p.capacity,
                         sportName = p.sport_name ?? "Bộ môn",
                         facilityName = p.facility_name ?? "Phòng tập",
-                        status = p.approval_status ?? p.status ?? "pending"
+                        status = p.approval_status ?? (p.status ? "approved" : "cancelled")
                     }));
                 }
             )
@@ -262,6 +265,93 @@ public static partial class ClassEndpoints
             )
             .RequireAuthorization(policy => policy.RequireRole("manager", "admin", "center_manager", "centermanager"));
 
+        // 4b. Cancel Class (Manager/Admin)
+        /// <summary>
+        /// POST /api/classes/{id}/cancel
+        /// Quản lý hủy lớp học.
+        /// Đánh dấu status = false và cập nhật trạng thái đơn đặt của học viên.
+        /// </summary>
+        classGroup
+            .MapPost(
+                "/{id:guid}/cancel",
+                async (Guid id, SmartGymDbContext db, ILoggerFactory loggerFactory) =>
+                {
+                    try
+                    {
+                        var affected = await db.Database.ExecuteSqlInterpolatedAsync(
+                            $"UPDATE classes SET status = FALSE WHERE id = {id}");
+
+                        if (affected == 0)
+                            return Results.BadRequest(new { message = "Không tìm thấy lớp học để hủy." });
+
+                        try
+                        {
+                            await db.Database.ExecuteSqlInterpolatedAsync(
+                                $"UPDATE class_bookings SET status = 'class_cancelled' WHERE class_id = {id} AND status NOT IN ('cancelled', 'rejected', 'class_cancelled')");
+                        }
+                        catch { }
+
+                        return Results.Ok(new { success = true, message = "Đã hủy lớp học thành công." });
+                    }
+                    catch (Exception exception)
+                    {
+                        loggerFactory.CreateLogger("ClassEndpoints").LogError(exception, "Không thể hủy lớp học {ClassId}.", id);
+                        return Results.Problem(
+                            title: "Không thể hủy lớp học",
+                            detail: "Máy chủ gặp lỗi khi cập nhật trạng thái hủy lớp học.",
+                            statusCode: StatusCodes.Status500InternalServerError);
+                    }
+                }
+            )
+            .RequireAuthorization(policy => policy.RequireRole("manager", "admin", "center_manager", "centermanager"));
+
+        // 4c. Restore Class (Manager/Admin)
+        /// <summary>
+        /// POST /api/classes/{id}/restore
+        /// Quản lý khôi phục lớp học đã bị hủy.
+        /// </summary>
+        classGroup
+            .MapPost(
+                "/{id:guid}/restore",
+                async (Guid id, SmartGymDbContext db, ILoggerFactory loggerFactory) =>
+                {
+                    try
+                    {
+                        var affected = await db.Database.ExecuteSqlInterpolatedAsync(
+                            $"UPDATE classes SET status = TRUE WHERE id = {id}");
+
+                        if (affected == 0)
+                            return Results.BadRequest(new { message = "Không tìm thấy lớp học để khôi phục." });
+
+                        return Results.Ok(new { success = true, message = "Đã khôi phục lớp học thành công." });
+                    }
+                    catch (Exception exception)
+                    {
+                        loggerFactory.CreateLogger("ClassEndpoints").LogError(exception, "Không thể khôi phục lớp học {ClassId}.", id);
+                        return Results.Problem(
+                            title: "Không thể khôi phục lớp học",
+                            detail: "Máy chủ gặp lỗi khi khôi phục lớp học.",
+                            statusCode: StatusCodes.Status500InternalServerError);
+                    }
+                }
+            )
+            .RequireAuthorization(policy => policy.RequireRole("manager", "admin", "center_manager", "centermanager"));
+
+        // 4d. All Classes (Manager/Admin/Coach schedule view)
+        /// <summary>
+        /// GET /api/classes/all & GET /api/classes
+        /// Lấy toàn bộ danh sách lớp học thể thao (Manager/Admin quản lý lịch trình và phân công).
+        /// </summary>
+        classGroup.MapGet(
+            "/all",
+            async (ClassService service) => Results.Ok(await service.GetAllClassesAsync())
+        );
+
+        classGroup.MapGet(
+            "/",
+            async (ClassService service) => Results.Ok(await service.GetAllClassesAsync())
+        );
+
         // 5. Available Classes
         /// <summary>
         /// GET /api/classes/available
@@ -316,7 +406,7 @@ public static partial class ClassEndpoints
         public DateTime schedule_time { get; set; }
         public int duration_minutes { get; set; }
         public int capacity { get; set; }
-        public string? status { get; set; }
+        public bool status { get; set; }
         public string? approval_status { get; set; }
         public string? sport_name { get; set; }
         public string? facility_name { get; set; }

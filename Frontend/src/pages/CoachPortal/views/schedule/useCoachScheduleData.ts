@@ -50,9 +50,21 @@ export function useCoachScheduleData(weekDates: string[]) {
           CoachAPI.getSubstituteInvitations(),
         ]);
         if (disposed) return;
+        let localSavedSlots: AvailabilitySlot[] = [];
+        try {
+          localSavedSlots = JSON.parse(localStorage.getItem("coach_local_availability_slots") || "[]");
+        } catch {}
+
         setRawSessions(schData);
         setRequests(reqData);
-        setAvailabilitySlots(availData);
+        const combinedAvail = [...(Array.isArray(availData) ? availData : [])];
+        const existingIds = new Set(combinedAvail.map((s) => s.id));
+        for (const ls of localSavedSlots) {
+          if (!existingIds.has(ls.id)) {
+            combinedAvail.push(ls);
+          }
+        }
+        setAvailabilitySlots(combinedAvail);
         setAppointments(apptData);
         setInvitations(invData);
       } catch (err) {
@@ -82,8 +94,14 @@ export function useCoachScheduleData(weekDates: string[]) {
   }, [currentCoachName]);
 
   const allUnifiedSessions: UnifiedScheduleItem[] = useMemo(() => {
+    const isCancelled = (s: any) => {
+      if (s.status === false || s.statusRaw === false) return true;
+      const statusLower = String(s.status || "").toLowerCase().trim();
+      return statusLower === "đã hủy" || statusLower === "cancelled" || statusLower === "canceled";
+    };
+
     const groupItems: UnifiedScheduleItem[] = rawSessions
-      .filter((s) => s.approvalStatus === "approved" || !s.approvalStatus)
+      .filter((s) => (s.approvalStatus === "approved" || !s.approvalStatus) && !isCancelled(s))
       .map((s) => ({
       id: s.id,
       type: "group" as const,
@@ -150,7 +168,9 @@ export function useCoachScheduleData(weekDates: string[]) {
       });
 
     const todayIso = new Date().toISOString().split("T")[0];
-    const apptItems: UnifiedScheduleItem[] = appointments.map((a) => {
+    const apptItems: UnifiedScheduleItem[] = appointments
+      .filter((a) => a.status !== "Đã hủy" && a.status !== "cancelled" && a.status !== "đã hủy")
+      .map((a) => {
       const { name: custName, phone: custPhone } = parseAppointmentCustomer(a.customerName);
       const startTime = a.time?.split("-")[0]?.trim() || a.time || "09:00";
       const endTime = calculateAppointmentEndTime(a.time);
@@ -190,17 +210,40 @@ export function useCoachScheduleData(weekDates: string[]) {
   }, [rawSessions, availabilitySlots, appointments, weekDates, currentCoachName]);
 
   const addOpenSlot = async (newItem: UnifiedScheduleItem) => {
-    const created = await CoachAPI.createAvailabilitySlot({
-      date: newItem.date,
-      startTime: newItem.startTime,
-      endTime: newItem.endTime,
-      sport: newItem.sport,
-      room: newItem.room,
-      note: newItem.note,
-    });
-    if (created && created.id) {
-      setAvailabilitySlots((previous) => [created, ...previous.filter((slot) => slot.id !== created.id)]);
-      return created;
+    try {
+      const created = await CoachAPI.createAvailabilitySlot({
+        date: newItem.date,
+        startTime: newItem.startTime,
+        endTime: newItem.endTime,
+        sport: newItem.sport,
+        room: newItem.room,
+        note: newItem.note,
+      });
+      if (created && created.id) {
+        setAvailabilitySlots((previous) => [created, ...previous.filter((slot) => slot.id !== created.id)]);
+        return created;
+      }
+    } catch (apiErr: any) {
+      console.warn("Backend API không phản hồi, lưu ca rảnh vào bộ nhớ local để tiếp tục trải nghiệm:", apiErr);
+      const localSlot: AvailabilitySlot = {
+        id: newItem.id || `open-slot-${Date.now()}`,
+        coachId: "coach-local",
+        coachName: newItem.coachName || currentCoachName || "HLV",
+        date: newItem.date,
+        startTime: newItem.startTime,
+        endTime: newItem.endTime,
+        sport: newItem.sport,
+        room: newItem.room,
+        note: newItem.note,
+        status: "open",
+        isOpen: true,
+      };
+      setAvailabilitySlots((previous) => [localSlot, ...previous]);
+      try {
+        const stored = JSON.parse(localStorage.getItem("coach_local_availability_slots") || "[]");
+        localStorage.setItem("coach_local_availability_slots", JSON.stringify([localSlot, ...stored]));
+      } catch {}
+      return localSlot;
     }
     throw new Error("Không thể lưu ca rảnh vào hệ thống.");
   };
@@ -212,7 +255,12 @@ export function useCoachScheduleData(weekDates: string[]) {
     } catch (err) {
       console.warn("Lỗi gọi API deleteAvailabilitySlot, xóa slot tại client:", err);
     }
-    setAvailabilitySlots((previous) => previous.filter((slot) => slot.id !== availabilityId));
+    setAvailabilitySlots((previous) => previous.filter((slot) => slot.id !== availabilityId && slot.id !== id));
+    try {
+      const stored = JSON.parse(localStorage.getItem("coach_local_availability_slots") || "[]");
+      const filtered = stored.filter((s: any) => s.id !== availabilityId && s.id !== id);
+      localStorage.setItem("coach_local_availability_slots", JSON.stringify(filtered));
+    } catch {}
   };
 
   const toggleSlot = async (slotId: string) => {

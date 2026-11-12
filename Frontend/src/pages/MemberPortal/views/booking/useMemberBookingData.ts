@@ -36,7 +36,15 @@ export function useMemberBookingData() {
       );
 
       const mappedClasses = (Array.isArray(availableClasses) ? availableClasses : []).map((item: any) => {
-        const start = new Date(item.scheduleTime);
+        const rawTime = item.scheduleTime;
+        const normalizedTime =
+          typeof rawTime === "string" &&
+          rawTime.includes("T") &&
+          !rawTime.endsWith("Z") &&
+          !/[+-]\d{2}:\d{2}$/.test(rawTime)
+            ? rawTime + "Z"
+            : rawTime;
+        const start = new Date(normalizedTime);
         const end = new Date(start.getTime() + Number(item.durationMinutes || 60) * 60000);
         const dateStr = [
           start.getFullYear(),
@@ -83,7 +91,15 @@ export function useMemberBookingData() {
 
       const counterPendingIds = getCounterPendingIds();
       const dbBookings = (memberSchedule?.classBookings || []).map((booking: any) => {
-        const start = new Date(booking.scheduleTime);
+        const rawTime = booking.scheduleTime;
+        const normalizedTime =
+          typeof rawTime === "string" &&
+          rawTime.includes("T") &&
+          !rawTime.endsWith("Z") &&
+          !/[+-]\d{2}:\d{2}$/.test(rawTime)
+            ? rawTime + "Z"
+            : rawTime;
+        const start = new Date(normalizedTime);
         const end = new Date(start.getTime() + Number(booking.durationMinutes || 60) * 60000);
         const date = [
           start.getFullYear(),

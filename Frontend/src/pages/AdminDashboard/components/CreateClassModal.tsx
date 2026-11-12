@@ -1,23 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { DateInput } from '../../../components/DateInput';
+import { parseScheduleTime } from '../../../utils/scheduleTimeHelper';
 
 export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager" }: { onClose: () => void, onSuccess?: () => void, editData?: any, mode?: "manager" | "coach" }) {
   const modalRootRef = useRef<HTMLDivElement>(null);
   const isCoachMode = mode === "coach";
   const [formData, setFormData] = useState(() => {
     if (editData) {
-      const d = new Date(editData.scheduleTime);
-      const tzOffset = d.getTimezoneOffset() * 60000;
-      const localISOTime = (new Date(d.getTime() - tzOffset)).toISOString().slice(0, 16);
-      const [datePart, timePart] = localISOTime.split('T');
+      const d = parseScheduleTime(editData.scheduleTime);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      const hours = String(d.getHours()).padStart(2, "0");
+      const minutes = String(d.getMinutes()).padStart(2, "0");
       return {
         sportId: editData.sportId || '',
         facilityId: editData.facilityId || '',
         coachId: editData.coachId || '',
         className: editData.className || '',
-        scheduleDate: datePart,
-        scheduleTime: timePart,
+        scheduleDate: `${year}-${month}-${day}`,
+        scheduleTime: `${hours}:${minutes}`,
         durationMinutes: editData.durationMinutes || 60,
         capacity: editData.capacity || 20
       };
@@ -213,7 +216,7 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager
         sportId: formData.sportId,
         facilityId: formData.facilityId,
         className: formData.className,
-        scheduleTime: startDateTime.toISOString(),
+        scheduleTime: `${scheduleDate}T${scheduleTime}:00+07:00`,
         durationMinutes: Number(formData.durationMinutes),
         capacity: Number(formData.capacity)
       };
@@ -260,6 +263,11 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager
       }
 
       setSuccess(data.message || (isCoachMode ? "Đề xuất đã được gửi để Manager duyệt!" : editData ? "Cập nhật thành công!" : "Tạo lớp học thành công!"));
+      window.dispatchEvent(new CustomEvent("class-proposal-updated"));
+      window.dispatchEvent(new CustomEvent("coach-schedule-updated"));
+      try {
+        localStorage.setItem("coach-proposal-timestamp", Date.now().toString());
+      } catch {}
       onSuccess?.();
       setTimeout(() => {
         onClose();
@@ -352,6 +360,40 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = "manager
                 {isCoachMode && (
                   <p className="mt-1 text-[11px] text-slate-500">Cách hiện tại ≥ 24h</p>
                 )}
+              </div>
+            </div>
+
+            {/* Khung ca học chuẩn đồng bộ giữa Coach & Manager */}
+            <div className="rounded-xl border border-slate-200/90 bg-slate-50/70 p-3 space-y-1.5">
+              <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wide block">
+                Khung ca học chuẩn (Bấm để chọn nhanh):
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { label: "Sáng 06:00", val: "06:00" },
+                  { label: "Sáng 07:30", val: "07:30" },
+                  { label: "Sáng 08:30", val: "08:30" },
+                  { label: "Sáng 09:00", val: "09:00" },
+                  { label: "Sáng 10:30", val: "10:30" },
+                  { label: "Chiều 14:00", val: "14:00" },
+                  { label: "Chiều 15:30", val: "15:30" },
+                  { label: "Chiều 17:00", val: "17:00" },
+                  { label: "Tối 18:30", val: "18:30" },
+                  { label: "Tối 19:30", val: "19:30" },
+                ].map((shift) => (
+                  <button
+                    key={shift.val}
+                    type="button"
+                    onClick={() => setFormData((prev) => ({ ...prev, scheduleTime: shift.val }))}
+                    className={`text-xs px-2.5 py-1 rounded-lg font-semibold border transition-all cursor-pointer ${
+                      formData.scheduleTime === shift.val
+                        ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                        : "bg-white text-slate-700 border-slate-200 hover:border-emerald-400 hover:text-emerald-700 hover:bg-emerald-50/50"
+                    }`}
+                  >
+                    {shift.label}
+                  </button>
+                ))}
               </div>
             </div>
 

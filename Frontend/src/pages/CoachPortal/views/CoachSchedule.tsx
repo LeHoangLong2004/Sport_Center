@@ -40,6 +40,7 @@ export default function CoachSchedule({ navigateTo }: Props) {
 
   const [isOpenSlotModalOpen, setIsOpenSlotModalOpen] = useState(false);
   const [initialOpenSlotDate, setInitialOpenSlotDate] = useState<string | undefined>(undefined);
+  const [initialOpenSlotStartTime, setInitialOpenSlotStartTime] = useState<string | undefined>(undefined);
   const [isClassProposalModalOpen, setIsClassProposalModalOpen] = useState(false);
   const [selectedOpenSlot, setSelectedOpenSlot] = useState<UnifiedScheduleItem | null>(null);
   const [selectedPtSession, setSelectedPtSession] = useState<UnifiedScheduleItem | null>(null);
@@ -164,8 +165,9 @@ export default function CoachSchedule({ navigateTo }: Props) {
     };
   }, [filteredSessions, weekDates]);
 
-  const handleOpenSlotModal = (defaultDate?: string) => {
+  const handleOpenSlotModal = (defaultDate?: string, defaultHour?: string) => {
     setInitialOpenSlotDate(defaultDate);
+    setInitialOpenSlotStartTime(defaultHour);
     setIsOpenSlotModalOpen(true);
   };
 
@@ -290,6 +292,7 @@ export default function CoachSchedule({ navigateTo }: Props) {
         isOpenSlotModalOpen={isOpenSlotModalOpen}
         setIsOpenSlotModalOpen={setIsOpenSlotModalOpen}
         initialOpenSlotDate={initialOpenSlotDate}
+        initialOpenSlotStartTime={initialOpenSlotStartTime}
         isClassProposalModalOpen={isClassProposalModalOpen}
         setIsClassProposalModalOpen={setIsClassProposalModalOpen}
         selectedSessionForRequest={selectedSessionForRequest}

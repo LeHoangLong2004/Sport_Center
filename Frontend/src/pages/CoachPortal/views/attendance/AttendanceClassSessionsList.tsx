@@ -10,13 +10,11 @@ import {
   ArrowRight,
   Sparkles,
   Lock,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import type { MockSession } from "../../services/api";
 import { isAttendanceLocked24h, getAttendanceLockDeadlineInfo } from "../../utils/attendanceLock";
-  ChevronLeft,
-  ChevronRight
-} from "lucide-react";
-import type { MockSession } from "../../services/api";
 import { isSessionPast24Hours } from "../../utils/attendanceTimeUtils";
 
 interface Props {
@@ -156,8 +154,7 @@ export default function AttendanceClassSessionsList({
   );
 
   const pendingAttendanceCount = useMemo(
-    () => activeSessions.filter((s) => !finalizedMap[s.id] && !isAttendanceLocked24h(s.date, s.startTime)).length,
-    () => activeSessions.filter((s) => !finalizedMap[s.id] && !isSessionPast24Hours(s.date, s.startTime)).length,
+    () => activeSessions.filter((s) => !finalizedMap[s.id] && !isAttendanceLocked24h(s.date, s.startTime) && !isSessionPast24Hours(s.date, s.startTime)).length,
     [activeSessions, finalizedMap]
   );
 
@@ -334,39 +331,6 @@ export default function AttendanceClassSessionsList({
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredSessions.map((session) => {
-            const state = getSessionAttendanceState(session);
-            const isFinalized = state === "finalized";
-            const isDraft = state === "draft";
-            const isLocked24h = isAttendanceLocked24h(session.date, session.startTime);
-            const deadlineInfo = getAttendanceLockDeadlineInfo(session.date, session.startTime);
-            const enrolled = Array.isArray(session.registeredMemberIds)
-              ? session.registeredMemberIds.length
-              : (session as any).registeredCount || 0;
-            const occupancy = session.capacity > 0 ? Math.round((enrolled / session.capacity) * 100) : 0;
-            const isToday = session.date === todayIso;
-
-            return (
-              <div
-                key={session.id}
-                onClick={() => onSelectSession(session.id)}
-                className={`group bg-white dark:bg-slate-900 rounded-2xl border p-5 shadow-xs hover:shadow-lg transition-all cursor-pointer flex flex-col justify-between relative overflow-hidden ${
-                  isToday
-                    ? "border-emerald-300 dark:border-emerald-800/80 ring-2 ring-emerald-500/10"
-                    : "border-slate-200/90 dark:border-slate-800 hover:border-emerald-500/50"
-                }`}
-              >
-                {/* Accent top stripe */}
-                <div
-                  className={`absolute top-0 left-0 right-0 h-1.5 ${
-                    isLocked24h
-                      ? "bg-slate-400 dark:bg-slate-700"
-                      : isFinalized
-                      ? "bg-slate-400 dark:bg-slate-600"
-                      : isDraft
-                      ? "bg-amber-500"
-                      : "bg-emerald-500"
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {paginatedSessions.map((session) => {
@@ -418,64 +382,6 @@ export default function AttendanceClassSessionsList({
                         )}
                       </div>
 
-                    {/* Attendance State Badge */}
-                    {isLocked24h ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                        <Lock className="w-3 h-3 text-slate-500" />
-                        Đã đóng (Quá 24 giờ)
-                      </span>
-                    ) : (
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                          isFinalized
-                            ? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                            : isDraft
-                            ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 animate-pulse"
-                            : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
-                        }`}
-                      >
-                        {isFinalized ? (
-                          <>
-                            <ShieldCheck className="w-3 h-3 text-slate-500" />
-                            Đã chốt sổ
-                          </>
-                        ) : isDraft ? (
-                          <>
-                            <span className="size-1.5 rounded-full bg-amber-500" />
-                            Đang lưu nháp
-                          </>
-                        ) : (
-                          <>
-                            <span className="size-1.5 rounded-full bg-emerald-500" />
-                            Chưa điểm danh
-                          </>
-                        )}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Class Title */}
-                  <div>
-                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                      {session.className}
-                    </h3>
-                  </div>
-
-                  {/* Meta Details */}
-                  <div className="space-y-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-50/70 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/60">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        {session.startTime} – {session.endTime}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span>{formatSessionDate(session.date)}</span>
-                      {isToday && (
-                        <span className="px-1.5 py-0.2 rounded bg-emerald-500 text-white font-extrabold text-[10px]">
-                          HÔM NAY
                       {/* Attendance State Badge */}
                       {isPast24h ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
@@ -576,39 +482,6 @@ export default function AttendanceClassSessionsList({
             })}
           </div>
 
-                {/* Card Action Footer */}
-                <div className="pt-4 mt-2">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectSession(session.id);
-                    }}
-                    className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                      isLocked24h
-                        ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-750"
-                        : isFinalized
-                        ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 group-hover:bg-slate-200"
-                        : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 group-hover:scale-[1.02]"
-                    }`}
-                  >
-                    {isLocked24h ? (
-                      <>
-                        <Lock className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Xem sổ điểm danh (Đã đóng)</span>
-                      </>
-                    ) : isFinalized ? (
-                      <>
-                        <span>Xem sổ điểm danh / Điều chỉnh</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </>
-                    ) : (
-                      <>
-                        <span>Điểm danh ngay</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </>
-                    )}
-                  </button>
           {/* Phân trang danh sách ca dạy */}
           {filteredSessions.length > 0 && (
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 text-xs bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">

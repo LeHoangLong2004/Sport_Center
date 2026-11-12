@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -22,291 +20,6 @@ namespace SmartGym.Api.Endpoints
     /// </summary>
     public static partial class MemberEndpoints
     {
-        // Bộ nhớ đệm thread-safe (RAM cache) hỗ trợ xử lý tức thời và fallback khi CSDL gặp sự cố
-        private static readonly ConcurrentDictionary<string, decimal> _memberWallets = new();
-        private static readonly ConcurrentDictionary<string, List<WalletTransactionDto>> _memberWalletTransactions = new();
-
-        /// <summary>
-        /// DTO trả về thông tin giao dịch ví hội viên cho giao diện Frontend.
-        /// </summary>
-        public record WalletTransactionDto(
-            string Id,
-            string Type,
-            decimal Amount,
-            string Method,
-            string Note,
-            DateTime CreatedAt,
-            string Status
-        );
-
-        /// <summary>
-        /// DTO yêu cầu nạp tiền hoặc thanh toán từ ví.
-        /// </summary>
-        public record TopUpRequest(
-            decimal Amount,
-            string? Method,
-            string? Note,
-            string? Status = "completed",
-            string? Id = null
-        );
-
-        /// <summary>
-        /// Model ánh xạ trực tiếp từ câu truy vấn SQL thô tới bảng wallet_transactions.
-        /// </summary>
-        private sealed class WalletTxDbRow
-        {
-            public Guid Id { get; set; }
-            public Guid UserId { get; set; }
-            public string Type { get; set; } = string.Empty;
-            public decimal Amount { get; set; }
-            public decimal BalanceAfter { get; set; }
-            public string Method { get; set; } = "VietQR";
-            public string Status { get; set; } = "completed";
-            public string? ReferenceCode { get; set; }
-            public string? Note { get; set; }
-            public DateTime CreatedAt { get; set; }
-        }
-
-        /// <summary>
-        /// Tra cứu và giải quyết GUID hợp lệ của người dùng trong CSDL từ JWT Claim, Query String hoặc Header.
-        /// </summary>
-        private static async Task<Guid?> ResolveMemberGuidAsync(HttpContext context, SmartGymDbContext db, string? fallbackUserId = null)
-        {
-            var raw = GetUserId(context);
-            if (string.IsNullOrWhiteSpace(raw))
-            {
-                raw = context.Request.Query["userId"].FirstOrDefault()
-                   ?? context.Request.Headers["X-User-Id"].FirstOrDefault()
-                   ?? fallbackUserId;
-            }
-
-            if (string.IsNullOrWhiteSpace(raw)) return null;
-
-            if (Guid.TryParse(raw, out var parsedGuid))
-            {
-                return parsedGuid;
-            }
-
-            try
-            {
-                if (raw.Contains('@'))
-                {
-                    var u = await db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Email == raw);
-                    if (u != null) return u.Id;
-                }
-                else
-                {
-                    var u = await db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.PhoneNumber == raw || x.MemberCode == raw);
-                    if (u != null) return u.Id;
-                }
-
-                // Fallback nếu là tài khoản demo như m-default, lấy hội viên hợp lệ đầu tiên trong CSDL
-                var defaultUser = await db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Status);
-                return defaultUser?.Id;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Truy vấn số dư ví thực tế từ CSDL PostgreSQL (ưu tiên đọc trực tiếp từ bảng member_wallet_balances, fallback tính SUM từ wallet_transactions).
-        /// </summary>
-        private static async Task<decimal> GetMemberBalanceFromDbAsync(Guid userGuid, SmartGymDbContext db)
-        {
-            try
-            {
-                var balFromTable = await db.Database.SqlQueryRaw<decimal>(
-                    @"SELECT COALESCE(balance, 0.00) AS ""Value"" 
-                      FROM member_wallet_balances 
-                      WHERE user_id = {0}",
-                    userGuid
-                ).ToListAsync();
-
-                if (balFromTable.Count > 0)
-                {
-                    return balFromTable.First();
-                }
-
-                // Nếu user chưa có trong bảng member_wallet_balances, tính số dư ban đầu và khởi tạo
-                var balanceList = await db.Database.SqlQueryRaw<decimal>(
-                    @"SELECT COALESCE(
-                        SUM(
-                            CASE 
-                                WHEN status = 'completed' AND type IN ('topup', 'refund') THEN amount
-                                WHEN status = 'completed' AND type = 'payment' THEN -amount
-                                ELSE 0.00
-                            END
-                        ), 0.00
-                    ) AS ""Value""
-                    FROM wallet_transactions
-                    WHERE user_id = {0}",
-                    userGuid
-                ).ToListAsync();
-
-                var initialBal = balanceList.FirstOrDefault();
-
-                try
-                {
-                    await db.Database.ExecuteSqlInterpolatedAsync($@"
-                        INSERT INTO member_wallet_balances (user_id, balance, last_updated_at)
-                        VALUES ({userGuid}, {initialBal}, now())
-                        ON CONFLICT (user_id) DO NOTHING;
-                    ");
-                }
-                catch { }
-
-                return initialBal;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Wallet DB Error] Failed to query balance: {ex.Message}");
-                return _memberWallets.GetOrAdd(userGuid.ToString(), _ => 0m);
-            }
-        }
-
-        /// <summary>
-        /// Truy vấn danh sách lịch sử giao dịch ví của hội viên từ bảng wallet_transactions.
-        /// </summary>
-        private static async Task<List<WalletTransactionDto>> GetMemberTransactionsFromDbAsync(Guid userGuid, SmartGymDbContext db)
-        {
-            try
-            {
-                var rows = await db.Database.SqlQueryRaw<WalletTxDbRow>(
-                    @"SELECT id AS ""Id"",
-                             user_id AS ""UserId"",
-                             type AS ""Type"",
-                             amount AS ""Amount"",
-                             balance_after AS ""BalanceAfter"",
-                             COALESCE(method, 'VietQR') AS ""Method"",
-                             COALESCE(status, 'completed') AS ""Status"",
-                             COALESCE(reference_code, '') AS ""ReferenceCode"",
-                             COALESCE(note, '') AS ""Note"",
-                             created_at AS ""CreatedAt""
-                      FROM wallet_transactions
-                      WHERE user_id = {0}
-                      ORDER BY created_at DESC
-                      LIMIT 50",
-                    userGuid
-                ).ToListAsync();
-
-                return rows.Select(r => new WalletTransactionDto(
-                    string.IsNullOrWhiteSpace(r.ReferenceCode) ? r.Id.ToString() : r.ReferenceCode,
-                    r.Type,
-                    r.Amount,
-                    r.Method,
-                    r.Note ?? "",
-                    r.CreatedAt,
-                    r.Status
-                )).ToList();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Wallet DB Error] Failed to query transactions: {ex.Message}");
-                return _memberWalletTransactions.GetOrAdd(userGuid.ToString(), _ => new List<WalletTransactionDto>());
-            }
-        }
-
-        /// <summary>
-        /// Lưu giao dịch ví mới vào bảng wallet_transactions trong CSDL PostgreSQL.
-        /// </summary>
-        private static async Task<bool> RecordWalletTransactionInDbAsync(
-            SmartGymDbContext db,
-            Guid userGuid,
-            string txId,
-            string type,
-            decimal amount,
-            decimal balanceAfter,
-            string method,
-            string note,
-            string status,
-            DateTime createdAt)
-        {
-            try
-            {
-                var txGuid = Guid.TryParse(txId, out var g) ? g : Guid.NewGuid();
-                // Không dùng ON CONFLICT (reference_code) vì DB thực tế có thể KHÔNG có unique constraint
-                // trên cột này -> câu lệnh lỗi, giao dịch & số dư không được lưu, refresh trang sẽ mất tiền.
-                var inserted = await db.Database.ExecuteSqlInterpolatedAsync($@"
-                    INSERT INTO wallet_transactions (
-                        id, user_id, type, amount, balance_after, method, status, reference_code, note, created_at
-                    )
-                    SELECT {txGuid}, {userGuid}, {type}, {amount}, {balanceAfter}, {method}, {status}, {txId}, {note}, {createdAt}
-                    WHERE NOT EXISTS (
-                        SELECT 1 FROM wallet_transactions WHERE reference_code = {txId} OR id = {txGuid}
-                    );
-                ");
-
-                if (inserted == 0)
-                {
-                    // Giao dịch đã tồn tại -> không cập nhật lại số dư để tránh cộng/trừ trùng
-                    return true;
-                }
-
-                try
-                {
-                    await db.Database.ExecuteSqlInterpolatedAsync($@"
-                        INSERT INTO member_wallet_balances (user_id, balance, last_updated_at)
-                        VALUES ({userGuid}, {balanceAfter}, now())
-                        ON CONFLICT (user_id) 
-                        DO UPDATE SET balance = {balanceAfter}, last_updated_at = now();
-                    ");
-                }
-                catch (Exception balEx)
-                {
-                    Console.WriteLine($"[Wallet DB Error] Failed to update balance: {balEx.Message}");
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Wallet DB Error] Failed to record transaction: {ex.Message}");
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Xác nhận hoàn thành phiếu nạp tiền tại quầy trong CSDL.
-        /// </summary>
-        private static async Task<bool> ConfirmPendingTransactionInDbAsync(
-            SmartGymDbContext db,
-            Guid userGuid,
-            string txId,
-            decimal amount)
-        {
-            try
-            {
-                await db.Database.ExecuteSqlInterpolatedAsync($@"
-                    UPDATE wallet_transactions
-                    SET status = 'completed',
-                        balance_after = balance_after + {amount}
-                    WHERE user_id = {userGuid} 
-                      AND (reference_code = {txId} OR id::text = {txId}) 
-                      AND status = 'pending';
-                ");
-
-                try
-                {
-                    await db.Database.ExecuteSqlInterpolatedAsync($@"
-                        INSERT INTO member_wallet_balances (user_id, balance, last_updated_at)
-                        VALUES ({userGuid}, {amount}, now())
-                        ON CONFLICT (user_id) 
-                        DO UPDATE SET balance = member_wallet_balances.balance + {amount}, last_updated_at = now();
-                    ");
-                }
-                catch { }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Wallet DB Error] Failed to confirm pending: {ex.Message}");
-                return false;
-            }
-        }
-
         private static void MapMemberWalletEndpoints(RouteGroupBuilder group)
         {
             var wallet = group.MapGroup("/wallet");
@@ -339,7 +52,6 @@ namespace SmartGym.Api.Endpoints
                 }
                 else
                 {
-                    // Fallback RAM nếu không có kết nối CSDL
                     transactions = _memberWalletTransactions.GetOrAdd(rawUserId, _ => new List<WalletTransactionDto>());
                     lock (transactions)
                     {
@@ -460,7 +172,6 @@ namespace SmartGym.Api.Endpoints
                     isPending ? "pending" : "completed"
                 );
 
-                // Ghi vào bảng wallet_transactions trong Database
                 if (memberGuid.HasValue)
                 {
                     await RecordWalletTransactionInDbAsync(
@@ -477,7 +188,6 @@ namespace SmartGym.Api.Endpoints
                     );
                 }
 
-                // Cập nhật bộ nhớ đệm
                 if (!isPending)
                 {
                     _memberWallets[rawUserId] = newBalance;
@@ -677,7 +387,6 @@ namespace SmartGym.Api.Endpoints
                 var cleanMemo = (memo ?? "").Trim();
                 var txList = _memberWalletTransactions.GetOrAdd(rawUserId, _ => new List<WalletTransactionDto>());
 
-                // 4.1. Kiểm tra trong bộ nhớ (nếu đã nhận được qua Webhook hoặc mô phỏng)
                 lock (txList)
                 {
                     var recentCutoff = DateTime.UtcNow.AddMinutes(-2);
@@ -706,7 +415,6 @@ namespace SmartGym.Api.Endpoints
                     }
                 }
 
-                // 4.2. GỌI TRỰC TIẾP SEPAY API ĐỂ TRUY VẤN BIẾN ĐỘNG SỐ DƯ VIETCOMBANK THỰC TẾ
                 var token = !string.IsNullOrWhiteSpace(sepayToken)
                     ? sepayToken
                     : (context.Request.Headers["X-SePay-Token"].FirstOrDefault()
@@ -722,7 +430,6 @@ namespace SmartGym.Api.Endpoints
                         var response = await httpClient.GetAsync("https://userapi.sepay.vn/v2/transactions?transfer_type=in&limit=20");
                         if (!response.IsSuccessStatusCode)
                         {
-                            // Fallback thử endpoint v1 với Apikey
                             using var clientV1 = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
                             clientV1.DefaultRequestHeaders.Add("Authorization", $"Apikey {token}");
                             response = await clientV1.GetAsync("https://my.sepay.vn/userapi/transactions/list?limit=20");
@@ -763,8 +470,6 @@ namespace SmartGym.Api.Endpoints
                                         : (txObj.TryGetProperty("referenceNumber", out var rVal2) ? (rVal2.GetString() ?? "") : "");
                                     var txId = txObj.TryGetProperty("id", out var idVal) ? idVal.GetRawText() : "";
 
-                                    // So khớp NGHIÊM NGẶT: bắt buộc nội dung CK phải chứa đúng mã phiên (vd "NAPVI 1234").
-                                    // Tuyệt đối không khớp chỉ theo số tiền, tránh nạp nhầm giao dịch cũ/giao dịch của người khác.
                                     var memoNoSpace = cleanMemo.Replace(" ", "");
                                     bool amountMatches = !amount.HasValue || amount.Value <= 0 || Math.Abs(txAmount - amount.Value) < 1m;
                                     bool memoMatches = !string.IsNullOrWhiteSpace(memoNoSpace)
@@ -773,7 +478,6 @@ namespace SmartGym.Api.Endpoints
 
                                     if (amountMatches && memoMatches)
                                     {
-                                        // Kiểm tra xem giao dịch này đã được ghi nhận chưa (RAM + Database)
                                         bool alreadyProcessed = false;
                                         lock (txList)
                                         {
@@ -794,7 +498,6 @@ namespace SmartGym.Api.Endpoints
 
                                         if (!alreadyProcessed)
                                         {
-                                            // An toàn: Không cộng tiền vào ví nếu đây là đơn thanh toán đặt lớp học (DATLOP)
                                             bool isClassBooking = cleanMemo.Contains("DATLOP", StringComparison.OrdinalIgnoreCase) || content.Contains("DATLOP", StringComparison.OrdinalIgnoreCase);
                                             if (isClassBooking)
                                             {
@@ -858,7 +561,7 @@ namespace SmartGym.Api.Endpoints
                                             }
 
                                             return Results.Ok(new
-                                            {
+                                             {
                                                 received = true,
                                                 message = $"Đã phát hiện giao dịch thật {topupAmount:N0} đ! Số dư ví đã được cộng thành công.",
                                                 balance = newBalance,
@@ -1055,263 +758,5 @@ namespace SmartGym.Api.Endpoints
             .WithTags("Member Portal")
             .WithSummary("Đặt lại hoặc cân chỉnh số dư ví hội viên");
         }
-
-        /// <summary>
-        /// Hoàn tiền hủy đặt lớp học hoặc dịch vụ vào Ví hội viên (ghi vào CSDL PostgreSQL & cập nhật RAM cache).
-        /// </summary>
-        public static async Task<(bool Success, decimal NewBalance, WalletTransactionDto? Tx)> RefundToWalletAsync(
-            SmartGymDbContext db,
-            Guid userGuid,
-            decimal amount,
-            string note)
-        {
-            if (amount <= 0) return (false, 0m, null);
-
-            var cur = await GetMemberBalanceFromDbAsync(userGuid, db);
-            var newBal = cur + amount;
-            var txId = $"REFUND-{DateTime.UtcNow:yyyyMMddHHmmss}-{Random.Shared.Next(100, 999)}";
-            var cleanNote = string.IsNullOrWhiteSpace(note) ? "Hoàn tiền dịch vụ vào ví hội viên" : note;
-
-            await RecordWalletTransactionInDbAsync(
-                db,
-                userGuid,
-                txId,
-                "refund",
-                amount,
-                newBal,
-                "Ví hoàn tiền",
-                cleanNote,
-                "completed",
-                DateTime.UtcNow
-            );
-
-            _memberWallets[userGuid.ToString()] = newBal;
-
-            var tx = new WalletTransactionDto(
-                txId,
-                "refund",
-                amount,
-                "Ví hoàn tiền",
-                cleanNote,
-                DateTime.UtcNow,
-                "completed"
-            );
-
-            var txList = _memberWalletTransactions.GetOrAdd(userGuid.ToString(), _ => new List<WalletTransactionDto>());
-            lock (txList)
-            {
-                txList.Insert(0, tx);
-            }
-
-            return (true, newBal, tx);
-        }
-
-        /// <summary>
-        /// Lấy số dư ví hiện tại của hội viên từ CSDL.
-        /// </summary>
-        public static async Task<decimal> GetMemberBalanceAsync(SmartGymDbContext db, Guid userGuid)
-        {
-            return await GetMemberBalanceFromDbAsync(userGuid, db);
-        }
-
-        /// <summary>
-        /// Trừ tiền ví hội viên khi đặt lớp học hoặc thanh toán dịch vụ.
-        /// </summary>
-        public static async Task<(bool Success, decimal NewBalance, string? ErrorMessage)> DeductFromWalletAsync(
-            SmartGymDbContext db,
-            Guid userGuid,
-            decimal amount,
-            string note)
-        {
-            if (amount <= 0) return (false, 0m, "Số tiền trừ phải lớn hơn 0.");
-
-            var cur = await GetMemberBalanceFromDbAsync(userGuid, db);
-            if (cur < amount)
-            {
-                return (false, cur, $"Số dư ví không đủ (hiện có {cur:N0} đ). Vui lòng nạp thêm tiền vào ví!");
-            }
-
-            var newBal = cur - amount;
-            var txId = $"PAY-{DateTime.UtcNow:yyyyMMddHHmmss}-{Random.Shared.Next(100, 999)}";
-            var cleanNote = string.IsNullOrWhiteSpace(note) ? "Thanh toán dịch vụ từ ví hội viên" : note;
-
-            await RecordWalletTransactionInDbAsync(
-                db,
-                userGuid,
-                txId,
-                "payment",
-                amount,
-                newBal,
-                "Ví hội viên",
-                cleanNote,
-                "completed",
-                DateTime.UtcNow
-            );
-
-            _memberWallets[userGuid.ToString()] = newBal;
-
-            var tx = new WalletTransactionDto(
-                txId,
-                "payment",
-                amount,
-                "Ví hội viên",
-                cleanNote,
-                DateTime.UtcNow,
-                "completed"
-            );
-
-            var txList = _memberWalletTransactions.GetOrAdd(userGuid.ToString(), _ => new List<WalletTransactionDto>());
-            lock (txList)
-            {
-                txList.Insert(0, tx);
-            }
-
-            return (true, newBal, null);
-        }
-
-        /// <summary>
-        /// Xử lý giao dịch SePay/Casso nạp tiền tự động kèm hỗ trợ ghi trực tiếp vào Database.
-        /// </summary>
-        public static async Task<(bool Success, decimal NewBalance, string MatchedUserId, WalletTransactionDto? Tx)> ProcessSePayInboundAsync(
-            long txId,
-            decimal amount,
-            string content,
-            string? referenceNumber = null,
-            SmartGymDbContext? db = null)
-        {
-            if (amount <= 0) return (false, 0, "", null);
-
-            string? matchedUserId = null;
-            Guid? matchedUserGuid = null;
-
-            // 1. Thử tìm trong danh sách User của Database nếu có db
-            if (db != null)
-            {
-                try
-                {
-                    var users = await db.Users.AsNoTracking().Where(u => u.Status).ToListAsync();
-                    var found = users.FirstOrDefault(u => 
-                        (!string.IsNullOrWhiteSpace(u.MemberCode) && content.Contains(u.MemberCode, StringComparison.OrdinalIgnoreCase)) ||
-                        (!string.IsNullOrWhiteSpace(u.PhoneNumber) && content.Contains(u.PhoneNumber, StringComparison.OrdinalIgnoreCase)) ||
-                        (!string.IsNullOrWhiteSpace(u.Email) && content.Contains(u.Email.Split('@')[0], StringComparison.OrdinalIgnoreCase)));
-
-                    if (found != null)
-                    {
-                        matchedUserId = found.Id.ToString();
-                        matchedUserGuid = found.Id;
-                    }
-                }
-                catch { }
-            }
-
-            // 2. Nếu chưa thấy, tìm qua giao dịch bộ nhớ
-            if (string.IsNullOrWhiteSpace(matchedUserId))
-            {
-                foreach (var (uId, txs) in _memberWalletTransactions)
-                {
-                    lock (txs)
-                    {
-                        if (txs.Any(t => (!string.IsNullOrEmpty(t.Note) && t.Note.Contains(content, StringComparison.OrdinalIgnoreCase)) ||
-                                         (!string.IsNullOrEmpty(t.Id) && content.Contains(t.Id, StringComparison.OrdinalIgnoreCase))))
-                        {
-                            matchedUserId = uId;
-                            if (Guid.TryParse(uId, out var g)) matchedUserGuid = g;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (string.IsNullOrWhiteSpace(matchedUserId))
-            {
-                matchedUserId = _memberWallets.Keys.FirstOrDefault(k => k != "m-default" && Guid.TryParse(k, out _)) 
-                             ?? _memberWallets.Keys.FirstOrDefault(k => k != "m-default") 
-                             ?? "m-default";
-
-                if (Guid.TryParse(matchedUserId, out var g)) matchedUserGuid = g;
-            }
-
-            decimal newBalance;
-            var note = $"Hệ thống báo có: {content} (Ref: {referenceNumber ?? "Napas 247"})";
-            var refCode = $"SEPAY-{txId}";
-
-            if (db != null && matchedUserGuid.HasValue)
-            {
-                var cur = await GetMemberBalanceFromDbAsync(matchedUserGuid.Value, db);
-                newBalance = cur + amount;
-                await RecordWalletTransactionInDbAsync(
-                    db,
-                    matchedUserGuid.Value,
-                    refCode,
-                    "topup",
-                    amount,
-                    newBalance,
-                    "SePay Webhook",
-                    note,
-                    "completed",
-                    DateTime.UtcNow
-                );
-            }
-            else
-            {
-                newBalance = _memberWallets.AddOrUpdate(
-                    matchedUserId,
-                    amount,
-                    (_, current) => current + amount
-                );
-            }
-
-            _memberWallets[matchedUserId] = newBalance;
-            if (matchedUserGuid.HasValue) _memberWallets[matchedUserGuid.Value.ToString()] = newBalance;
-
-            var tx = new WalletTransactionDto(
-                refCode,
-                "topup",
-                amount,
-                "SePay Webhook",
-                note,
-                DateTime.UtcNow,
-                "completed"
-            );
-
-            var txList = _memberWalletTransactions.GetOrAdd(matchedUserId, _ => new List<WalletTransactionDto>());
-            lock (txList)
-            {
-                txList.Insert(0, tx);
-            }
-
-            return (true, newBalance, matchedUserId, tx);
-        }
-
-        /// <summary>
-        /// Phiên bản đồng bộ để đảm bảo tương thích ngược cho các lời gọi cũ.
-        /// </summary>
-        public static (bool Success, decimal NewBalance, string MatchedUserId, WalletTransactionDto? Tx) ProcessSePayInbound(
-            long txId,
-            decimal amount,
-            string content,
-            string? referenceNumber = null)
-        {
-            return ProcessSePayInboundAsync(txId, amount, content, referenceNumber, null).GetAwaiter().GetResult();
-        }
-
-        /// <summary>
-        /// DTO nhận thông báo webhook từ cổng SePay / Casso.
-        /// </summary>
-        public record SepayWebhookRequest(
-            long? id,
-            string? gateway,
-            string? transactionDate,
-            string? accountNumber,
-            decimal? amountIn,
-            decimal? amountOut,
-            decimal? accumulated,
-            string? code,
-            string? transactionContent,
-            string? referenceNumber,
-            string? body,
-            decimal? transferAmount = null,
-            string? content = null
-        );
     }
 }

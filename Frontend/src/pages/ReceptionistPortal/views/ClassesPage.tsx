@@ -48,7 +48,15 @@ export function ClassesPage() {
         ];
 
         const mapped = (Array.isArray(data) ? data : []).map((d: any, i: number) => {
-          const date = new Date(d.scheduleTime);
+          const rawTime = d.scheduleTime;
+          const normalizedTime =
+            typeof rawTime === "string" &&
+            rawTime.includes("T") &&
+            !rawTime.endsWith("Z") &&
+            !/[+-]\d{2}:\d{2}$/.test(rawTime)
+              ? rawTime + "Z"
+              : rawTime;
+          const date = new Date(normalizedTime);
           const day = dayNames[date.getDay()];
           const dd = String(date.getDate()).padStart(2, "0");
           const mm = String(date.getMonth() + 1).padStart(2, "0");

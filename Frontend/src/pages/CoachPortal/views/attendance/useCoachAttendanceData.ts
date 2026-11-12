@@ -15,8 +15,13 @@ export function useCoachAttendanceData(initialSessionId: string | null) {
       setIsLoadingSessions(true);
       try {
         const sessions = await CoachAPI.getSchedule();
+        const isCancelled = (s: any) => {
+          if (s.status === false || s.statusRaw === false) return true;
+          const st = String(s.status || "").toLowerCase().trim();
+          return st === "đã hủy" || st === "cancelled" || st === "canceled";
+        };
         const active = Array.isArray(sessions)
-          ? sessions.filter((s: MockSession) => s.status !== "đã hủy")
+          ? sessions.filter((s: MockSession) => !isCancelled(s))
           : [];
 
         setActiveSessions(active);
