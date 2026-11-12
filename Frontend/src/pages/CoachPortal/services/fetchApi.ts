@@ -27,7 +27,15 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   
   if (response.status === 401) {
     try {
-      const refRes = await fetch(`${BASE_URL}/auth/dev-token`, { method: 'POST' });
+      let emailParam = '';
+      try {
+        const u = JSON.parse(localStorage.getItem('user') || '{}');
+        if (u.email) {
+          emailParam = `?email=${encodeURIComponent(u.email)}`;
+        }
+      } catch {}
+
+      const refRes = await fetch(`${BASE_URL}/auth/dev-token${emailParam}`, { method: 'POST' });
       if (refRes.ok) {
         const refData = await refRes.json();
         if (refData.token) {

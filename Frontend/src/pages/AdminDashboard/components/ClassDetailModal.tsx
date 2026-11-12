@@ -150,7 +150,7 @@ export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: Class
       }}
     >
       <div
-        className="bg-white rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-slate-100 animate-fade-in-up"
+        className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-slate-100 animate-fade-in-up"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

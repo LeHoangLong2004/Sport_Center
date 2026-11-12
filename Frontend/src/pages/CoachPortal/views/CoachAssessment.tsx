@@ -13,14 +13,10 @@ import {
   Trash2,
   Check,
   CheckCircle2,
-  Calendar,
   Clock,
   MapPin,
   Users,
   Edit3,
-  Award,
-  BookOpen,
-  UserCheck,
 } from "lucide-react";
 import { UserAvatar } from "../../../components/UserAvatar";
 
@@ -53,7 +49,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
   const [draft, setDraft] = useState<Partial<AssessmentRecord>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
@@ -70,8 +66,8 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
         const sess = sch.find((s) => s.id === initialSessionId);
         if (sess) {
           const matchingMember = mem.find((m) =>
-            (Array.isArray(sess.registeredMemberIds) && sess.registeredMemberIds.some((id) => String(id) === String(m.id))) ||
-            (Array.isArray(m.classIds) && m.classIds.some((cid) => String(cid) === String(sess.id) || String(cid) === String(sess.classId)))
+            (Array.isArray(sess.registeredMemberIds) && sess.registeredMemberIds.some((id) => String(id).toLowerCase() === String(m.id).toLowerCase())) ||
+            (Array.isArray(m.classIds) && m.classIds.some((cid) => String(cid).toLowerCase() === String(sess.id).toLowerCase() || String(cid).toLowerCase() === String(sess.classId).toLowerCase()))
           );
           if (matchingMember) {
             setSelectedMemberId(matchingMember.id);
@@ -98,11 +94,11 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
     return members.filter((m) => {
       const inRegistered =
         Array.isArray(sess.registeredMemberIds) &&
-        sess.registeredMemberIds.some((id) => String(id) === String(m.id));
+        sess.registeredMemberIds.some((id) => String(id).toLowerCase() === String(m.id).toLowerCase());
       const inClassIds =
         Array.isArray(m.classIds) &&
         m.classIds.some(
-          (cid) => String(cid) === String(sess.id) || String(cid) === String(sess.classId)
+          (cid) => String(cid).toLowerCase() === String(sess.id).toLowerCase() || String(cid).toLowerCase() === String(sess.classId).toLowerCase()
         );
       return inRegistered || inClassIds;
     });
@@ -117,15 +113,27 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
       if (s.status === "đã hủy") return false;
       const registeredInSession =
         Array.isArray(s.registeredMemberIds) &&
-        s.registeredMemberIds.some((id) => String(id) === String(selectedMemberId));
+        s.registeredMemberIds.some((id) => String(id).toLowerCase() === String(selectedMemberId).toLowerCase());
       const memberHasClass =
         Array.isArray(selectedMember?.classIds) &&
         selectedMember.classIds.some(
-          (cid) => String(cid) === String(s.id) || String(cid) === String(s.classId)
+          (cid) => String(cid).toLowerCase() === String(s.id).toLowerCase() || String(cid).toLowerCase() === String(s.classId).toLowerCase()
         );
       return registeredInSession || memberHasClass;
     });
   }, [selectedMemberId, sessions, members]);
+
+  // Tự động chọn buổi học hợp lệ đầu tiên khi ở chế độ theo học viên
+  useEffect(() => {
+    if (viewMode !== "by_member") return;
+    if (!selectedSessionId) {
+      if (eligibleSessionsForMember.length > 0) {
+        setSelectedSessionId(eligibleSessionsForMember[0].id);
+      }
+    } else if (!eligibleSessionsForMember.some((s) => s.id === selectedSessionId)) {
+      setSelectedSessionId(eligibleSessionsForMember.length > 0 ? eligibleSessionsForMember[0].id : "");
+    }
+  }, [eligibleSessionsForMember, selectedSessionId, viewMode]);
 
   const memberAssessments = useMemo(
     () =>
@@ -151,7 +159,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
     setSelectedMemberId(mId);
     setSelectedSessionId(sId);
     const existing = assessments.find(
-      (a) => String(a.sessionId) === String(sId) && String(a.memberId) === String(mId)
+      (a) => String(a.sessionId) === String(sId) && String(a.memberId).toLowerCase() === String(mId).toLowerCase()
     );
     if (existing) {
       setDraft({ ...existing });
@@ -160,7 +168,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
       const id = `as_${Date.now()}`;
       setDraft({
         id,
-        sessionId: sId,
+        sessionId: sId === "general" ? undefined : sId,
         memberId: mId,
         completion: 80,
         metrics: [{ label: "", value: "", unit: "" }],
@@ -194,9 +202,13 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
         };
       });
 
+    const targetSessionId = draft.sessionId && draft.sessionId !== "general"
+      ? draft.sessionId
+      : (selectedSessionId && selectedSessionId !== "general" ? selectedSessionId : "");
+
     const full: AssessmentRecord = {
       id: draft.id || `as_${Date.now()}`,
-      sessionId: draft.sessionId || selectedSessionId,
+      sessionId: targetSessionId,
       memberId: draft.memberId || selectedMemberId,
       completion: draft.completion || 0,
       metrics: sanitizedMetrics,
@@ -243,7 +255,6 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
 
   const currentMember = members.find((m) => m.id === (draft.memberId || selectedMemberId));
   const currentSession = sessions.find((s) => s.id === (draft.sessionId || selectedSessionId));
-
   const selectedSession = sessions.find((s) => s.id === selectedSessionId);
 
   return (
@@ -347,7 +358,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {sessionMembers.map((m) => {
                   const ass = assessments.find(
-                    (a) => String(a.sessionId) === String(selectedSessionId) && String(a.memberId) === String(m.id)
+                    (a) => String(a.sessionId) === String(selectedSessionId) && String(a.memberId).toLowerCase() === String(m.id).toLowerCase()
                   );
                   return (
                     <div
@@ -490,48 +501,52 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
               </div>
             ) : (
               <div className="divide-y divide-slate-100 dark:divide-slate-700">
-            {memberAssessments.map((a) => {
-              const s = sessions.find((x) => x.id === a.sessionId);
-              return (
-                <div key={a.id} className="px-4 py-4 hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div>
-                      <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{s?.className || a.sessionId}</div>
-                      <div className="text-xs text-slate-400 mt-0.5">{s?.date} · {new Date(a.createdAt).toLocaleDateString("vi-VN")}</div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="text-right">
-                        <div className="text-xs text-slate-400">Hoàn thành</div>
-                        <div className={`text-lg font-black ${a.completion >= 80 ? "text-emerald-600" : a.completion >= 60 ? "text-slate-500" : "text-rose-600"}`}>
-                          {a.completion}%
+                {memberAssessments.map((a) => {
+                  const s = a.sessionId ? sessions.find((x) => x.id === a.sessionId) : null;
+                  return (
+                    <div key={a.id} className="px-4 py-4 hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div>
+                          <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm">
+                            {s?.className || (a.sessionId ? a.sessionId : "Đánh giá chung / Định kỳ")}
+                          </div>
+                          <div className="text-xs text-slate-400 mt-0.5">
+                            {s?.date ? `${s.date} · ` : ""}{new Date(a.createdAt).toLocaleDateString("vi-VN")}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-right">
+                            <div className="text-xs text-slate-400">Hoàn thành</div>
+                            <div className={`text-lg font-black ${a.completion >= 80 ? "text-emerald-600" : a.completion >= 60 ? "text-slate-500" : "text-rose-600"}`}>
+                              {a.completion}%
+                            </div>
+                          </div>
+                          {/* Simple bar chart */}
+                          <div className="w-20 h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full ${a.completion >= 80 ? "bg-emerald-500" : a.completion >= 60 ? "bg-slate-400" : "bg-rose-500"}`}
+                              style={{ width: `${a.completion}%` }} />
+                          </div>
                         </div>
                       </div>
-                      {/* Simple bar chart */}
-                      <div className="w-20 h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full ${a.completion >= 80 ? "bg-emerald-500" : a.completion >= 60 ? "bg-slate-400" : "bg-rose-500"}`}
-                          style={{ width: `${a.completion}%` }} />
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {a.metrics?.filter((m) => m && (m.value !== undefined && m.value !== "")).map((m, idx) => {
+                          const metricLabel = m.label || (m as any).metricName || `Chỉ số ${idx + 1}`;
+                          return (
+                            <span key={idx} className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full font-medium">
+                              {metricLabel}: {m.value}{m.unit ? ` ${m.unit}` : ""}
+                            </span>
+                          );
+                        })}
                       </div>
+                      {a.comment && <div className="text-sm text-slate-600 dark:text-slate-300 mt-2 italic">"{a.comment}"</div>}
+                      {a.nextStep && <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">→ Hướng tiếp: {a.nextStep}</div>}
                     </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {a.metrics?.filter((m) => m && (m.value !== undefined && m.value !== "")).map((m, idx) => {
-                      const metricLabel = m.label || (m as any).metricName || `Chỉ số ${idx + 1}`;
-                      return (
-                        <span key={idx} className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full font-medium">
-                          {metricLabel}: {m.value}{m.unit ? ` ${m.unit}` : ""}
-                        </span>
-                      );
-                    })}
-                  </div>
-                  {a.comment && <div className="text-sm text-slate-600 dark:text-slate-300 mt-2 italic">"{a.comment}"</div>}
-                  {a.nextStep && <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">→ Hướng tiếp: {a.nextStep}</div>}
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
-      </div>
-      </div>
+        </div>
       )}
 
       {/* Edit form */}
@@ -546,9 +561,13 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
                   <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                     Học viên: {currentMember?.name || "Học viên"}
                   </span>
-                  {currentSession && (
+                  {currentSession ? (
                     <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-200/70 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                       Buổi: {currentSession.className} ({currentSession.date})
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-200/70 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                      Đánh giá chung / Định kỳ
                     </span>
                   )}
                 </div>
@@ -782,4 +801,3 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
 }
 
 const selectCls = "border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none";
-const inputCls = "border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none w-full";

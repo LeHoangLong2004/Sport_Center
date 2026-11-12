@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { TIME_ROWS, type UnifiedScheduleItem } from "./types";
+import { X, Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
+import type { UnifiedScheduleItem } from "./types";
 import { DateInput } from "../../../../components/DateInput";
 
 interface Props {
@@ -29,48 +29,6 @@ function getTodayString(): string {
   return `${year}-${month}-${day}`;
 }
 
-// Tính toán thời gian kết thúc hợp lệ theo giờ bắt đầu
-function getEndTimeOptions(startTime: string): { time: string; label: string }[] {
-  const startTotalMinutes = toMinutes(startTime || "08:00");
-
-  const durations = [
-    { mins: 45, desc: "45 phút" },
-    { mins: 60, desc: "60 phút (1 giờ)" },
-    { mins: 75, desc: "75 phút" },
-    { mins: 90, desc: "90 phút (1h30p)" },
-    { mins: 120, desc: "120 phút (2 giờ)" },
-  ];
-
-  const result: { time: string; label: string }[] = [];
-  const addedTimes = new Set<string>();
-
-  for (const d of durations) {
-    const endTotal = startTotalMinutes + d.mins;
-    if (endTotal <= 23 * 60 + 30) {
-      const h = Math.floor(endTotal / 60);
-      const m = endTotal % 60;
-      const timeStr = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-      if (!addedTimes.has(timeStr)) {
-        addedTimes.add(timeStr);
-        result.push({ time: timeStr, label: `${timeStr} (${d.desc})` });
-      }
-    }
-  }
-
-  // Thêm các khung giờ chẵn nửa tiếng tiếp theo đến 23:00 nếu chưa có
-  for (let mins = startTotalMinutes + 30; mins <= 23 * 60; mins += 30) {
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    const timeStr = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-    if (!addedTimes.has(timeStr)) {
-      addedTimes.add(timeStr);
-      result.push({ time: timeStr, label: timeStr });
-    }
-  }
-
-  return result.sort((a, b) => a.time.localeCompare(b.time));
-}
-
 export default function OpenPtSlotModal({
   isOpen,
   onClose,
@@ -84,6 +42,7 @@ export default function OpenPtSlotModal({
   const [openSlotDate, setOpenSlotDate] = useState("");
   const [openSlotStartTime, setOpenSlotStartTime] = useState("08:00");
   const [openSlotEndTime, setOpenSlotEndTime] = useState("09:00");
+  const [timeError, setTimeError] = useState("");
   const [openSlotSport, setOpenSlotSport] = useState("");
   const [openSlotRoom, setOpenSlotRoom] = useState("");
   const [openSlotNote, setOpenSlotNote] = useState("");
@@ -96,33 +55,60 @@ export default function OpenPtSlotModal({
       const targetDate = initialDate || todayStr;
       setOpenSlotDate(targetDate);
 
+      let start = "08:00";
       if (initialStartTime) {
-        setOpenSlotStartTime(initialStartTime);
+        start = initialStartTime;
       } else if (targetDate === todayStr) {
         const now = new Date();
         const nextHour = Math.min(21, now.getHours() + 1);
-        const suggestedStart = `${String(nextHour).padStart(2, "0")}:00`;
-        setOpenSlotStartTime(suggestedStart);
-      } else {
-        setOpenSlotStartTime("08:00");
+        start = `${String(nextHour).padStart(2, "0")}:00`;
       }
+      setOpenSlotStartTime(start);
+
+      // Auto suggest end time + 1h
+      const [h, m] = start.split(":").map(Number);
+      if (!isNaN(h) && !isNaN(m)) {
+        const endH = (h + 1) % 24;
+        setOpenSlotEndTime(`${String(endH).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+      } else {
+        setOpenSlotEndTime("09:00");
+      }
+
+      setTimeError("");
       setError("");
     }
   }, [isOpen, initialDate, initialStartTime]);
 
-  // Sinh danh sách giờ kết thúc động dựa trên giờ bắt đầu đã chọn
-  const endTimeOptions = useMemo(() => getEndTimeOptions(openSlotStartTime), [openSlotStartTime]);
+  const handleStartTimeChange = (newStart: string) => {
+    setOpenSlotStartTime(newStart);
+    if (!newStart) return;
 
-  // Tự động điều chỉnh giờ kết thúc khi giờ bắt đầu thay đổi
-  useEffect(() => {
-    if (endTimeOptions.length > 0) {
-      const exists = endTimeOptions.some((o) => o.time === openSlotEndTime);
-      if (!exists) {
-        const defaultOneHour = endTimeOptions.find((o) => o.label.includes("60 phút")) || endTimeOptions[0];
-        if (defaultOneHour) setOpenSlotEndTime(defaultOneHour.time);
+    let targetEnd = openSlotEndTime;
+    // Tự động gợi ý giờ kết thúc là +1 tiếng nếu chưa có hoặc giờ kết thúc đang trước/bằng giờ bắt đầu
+    if (!targetEnd || targetEnd <= newStart) {
+      const [h, m] = newStart.split(":").map(Number);
+      if (!isNaN(h) && !isNaN(m)) {
+        const endH = (h + 1) % 24;
+        targetEnd = `${String(endH).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+        setOpenSlotEndTime(targetEnd);
       }
     }
-  }, [openSlotStartTime, endTimeOptions, openSlotEndTime]);
+
+    if (targetEnd && newStart >= targetEnd) {
+      setTimeError("Giờ kết thúc phải sau giờ bắt đầu.");
+    } else {
+      setTimeError("");
+    }
+  };
+
+  const handleEndTimeChange = (newEnd: string) => {
+    setOpenSlotEndTime(newEnd);
+    if (openSlotStartTime && newEnd && openSlotStartTime >= newEnd) {
+      setTimeError("Giờ kết thúc phải sau giờ bắt đầu.");
+    } else {
+      setTimeError("");
+    }
+  };
 
   // Kiểm tra khung giờ trong quá khứ
   const isPastTime = useMemo(() => {
@@ -168,6 +154,14 @@ export default function OpenPtSlotModal({
     e.preventDefault();
     if (!openSlotDate) {
       setError("Vui lòng chọn ngày mở ca trống.");
+      return;
+    }
+    if (!openSlotStartTime || !openSlotEndTime) {
+      setError("Vui lòng nhập đầy đủ giờ bắt đầu và giờ kết thúc.");
+      return;
+    }
+    if (openSlotStartTime >= openSlotEndTime) {
+      setError("Giờ kết thúc phải sau giờ bắt đầu.");
       return;
     }
 
@@ -229,7 +223,7 @@ export default function OpenPtSlotModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg cursor-pointer"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg cursor-pointer transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -255,40 +249,40 @@ export default function OpenPtSlotModal({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="font-bold text-slate-700 dark:text-slate-300 mb-1 block">
-                  Giờ bắt đầu:
-                </label>
-                <select
-                  value={openSlotStartTime}
-                  onChange={(e) => setOpenSlotStartTime(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium cursor-pointer"
-                >
-                  {TIME_ROWS.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
+            <div>
+              <label className="font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-slate-500" />
+                Khung giờ mở nhận học viên: <span className="text-rose-500">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1 font-medium">
+                    Giờ bắt đầu:
+                  </span>
+                  <input
+                    type="time"
+                    required
+                    value={openSlotStartTime}
+                    onChange={(e) => handleStartTimeChange(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1 font-medium">
+                    Giờ kết thúc:
+                  </span>
+                  <input
+                    type="time"
+                    required
+                    value={openSlotEndTime}
+                    onChange={(e) => handleEndTimeChange(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
               </div>
-
-              <div>
-                <label className="font-bold text-slate-700 dark:text-slate-300 mb-1 block">
-                  Giờ kết thúc:
-                </label>
-                <select
-                  value={openSlotEndTime}
-                  onChange={(e) => setOpenSlotEndTime(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium cursor-pointer"
-                >
-                  {endTimeOptions.map((opt) => (
-                    <option key={opt.time} value={opt.time}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {timeError && (
+                <p className="text-[11px] text-rose-500 mt-1 font-medium">{timeError}</p>
+              )}
             </div>
 
             {/* CẢNH BÁO TRÙNG LỊCH HOẶC QUÁ KHỨ */}
@@ -376,7 +370,7 @@ export default function OpenPtSlotModal({
                 placeholder="VD: Nhận kèm cá nhân tập trung siết cơ, cải thiện thể lực hoặc phục hồi chức năng..."
                 value={openSlotNote}
                 onChange={(e) => setOpenSlotNote(e.target.value)}
-                className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
+                className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
               />
             </div>
           </div>
@@ -392,7 +386,7 @@ export default function OpenPtSlotModal({
             </button>
             <button
               type="submit"
-              disabled={submitting || Boolean(conflictSession) || isPastTime}
+              disabled={submitting || Boolean(conflictSession) || isPastTime || !!timeError}
               className="px-5 py-2 font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700 dark:disabled:text-slate-500 rounded-xl shadow-xs transition-colors cursor-pointer"
             >
               {submitting
@@ -401,6 +395,8 @@ export default function OpenPtSlotModal({
                 ? "Bị trùng ca dạy khác"
                 : isPastTime
                 ? "Khung giờ trong quá khứ"
+                : timeError
+                ? "Giờ không hợp lệ"
                 : "Đăng lịch rảnh 1–1"}
             </button>
           </div>
