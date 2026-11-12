@@ -15,6 +15,7 @@ import {
   ArrowRight,
   PlusCircle,
   Sparkles,
+  Clock,
 } from "lucide-react";
 import { BankConfigService } from "../services/bankConfig";
 import { WalletService, MEMBER_WALLET_UPDATED_EVENT } from "../services/walletService";
@@ -32,6 +33,12 @@ export interface UniversalPaymentItem {
   discountAmount?: number;
   finalPrice: number;
   memoPrefix: string;     // VD: "MEMBER", "SPORT", "SHOP"
+  isRenewal?: boolean;
+  renewalPreview?: {
+    currentEndDate: string;
+    newEndDate: string;
+    addedMonths: number;
+  };
 }
 
 interface UniversalPaymentModalProps {
@@ -49,7 +56,7 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({
 }) => {
   if (!isOpen || !item) return null;
 
-  const [paymentMethod, setPaymentMethod] = useState<"qr" | "card" | "counter" | "wallet">("wallet");
+  const [paymentMethod, setPaymentMethod] = useState<"qr" | "counter" | "wallet">("wallet");
   const [membership, setMembership] = useState<MembershipStatus | null>(null);
 
   // Load membership status
@@ -267,10 +274,37 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({
               )}
             </div>
 
+            {/* Renewal Extension Box */}
+            {item.isRenewal && item.renewalPreview && (
+              <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-950 dark:text-emerald-200 space-y-2">
+                <div className="flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-300">
+                  <Clock className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>Cộng dồn thời hạn nối tiếp</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <div className="p-2.5 rounded-xl bg-white/80 dark:bg-slate-900/60 border border-emerald-500/20">
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Hạn dùng hiện tại:</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                      đến {item.renewalPreview.currentEndDate}
+                    </span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-emerald-100/70 dark:bg-emerald-950/70 border border-emerald-500/40">
+                    <span className="text-[10px] text-emerald-800 dark:text-emerald-300 block font-bold">Hạn mới sau gia hạn:</span>
+                    <span className="font-black text-emerald-700 dark:text-emerald-300">
+                      đến {item.renewalPreview.newEndDate}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-[10px] text-emerald-700/90 dark:text-emerald-300/80 leading-relaxed italic">
+                  ✓ Toàn bộ ngày chưa dùng được bảo lưu nguyên vẹn. Thời hạn mới tự động cộng thêm {item.renewalPreview.addedMonths} tháng ngay sau ngày hết hạn hiện tại.
+                </p>
+              </div>
+            )}
+
             {/* 2. Chi tiết hóa đơn */}
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700 space-y-2.5">
               <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
-                Chi tiết hóa đơn đăng ký
+                {item.isRenewal ? "Chi tiết hóa đơn gia hạn" : "Chi tiết hóa đơn đăng ký"}
               </span>
               <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
                 <span>Hạng thành viên của bạn:</span>
@@ -310,7 +344,7 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({
               <label className="font-extrabold text-xs text-slate-800 dark:text-slate-200 mb-2 block">
                 Chọn phương thức thanh toán:
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {/* 1. Ví */}
                 <button
                   type="button"
@@ -343,22 +377,7 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({
                   <span className="text-[9px] text-emerald-600 font-semibold">Tự động ⚡</span>
                 </button>
 
-                {/* 3. Thẻ */}
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("card")}
-                  className={`p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center gap-1 cursor-pointer ${
-                    paymentMethod === "card"
-                      ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 shadow-sm ring-2 ring-emerald-500/20"
-                      : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600 dark:text-slate-300"
-                  }`}
-                >
-                  <CreditCard className="w-5 h-5 text-emerald-600 shrink-0" />
-                  <span className="text-[11px] font-bold">Thẻ ATM/Visa</span>
-                  <span className="text-[9px] text-slate-400">3D Secure</span>
-                </button>
-
-                {/* 4. Tại quầy */}
+                {/* 3. Tại quầy */}
                 <button
                   type="button"
                   onClick={() => setPaymentMethod("counter")}
@@ -561,41 +580,6 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({
               </div>
             )}
 
-            {paymentMethod === "card" && (
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3">
-                <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-bold">
-                  <CreditCard className="w-4 h-4 text-emerald-600" />
-                  <span>Cổng thanh toán thẻ ATM / Visa / Mastercard</span>
-                </div>
-                <div className="space-y-2">
-                  <input
-                    type="text"
-                    placeholder="Số thẻ (VD: 9704 0000 0000 0000)"
-                    defaultValue="9704 2299 1234 5678"
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono outline-none focus:ring-1 focus:ring-emerald-500"
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="text"
-                      placeholder="MM/YY"
-                      defaultValue="12/28"
-                      className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono outline-none focus:ring-1 focus:ring-emerald-500"
-                    />
-                    <input
-                      type="password"
-                      placeholder="CVV"
-                      defaultValue="123"
-                      maxLength={3}
-                      className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono outline-none focus:ring-1 focus:ring-emerald-500"
-                    />
-                  </div>
-                </div>
-                <p className="text-[10px] text-slate-400">
-                  Giao dịch được bảo mật bởi chuẩn mã hóa 256-bit SSL & OTP Ngân hàng.
-                </p>
-              </div>
-            )}
-
             {paymentMethod === "counter" && (
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
                 <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-bold">
@@ -635,7 +619,7 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({
                 ) : (
                   <>
                     <Check className="w-4 h-4" />
-                    <span>Trừ {finalPrice.toLocaleString("vi-VN")} đ & Kích hoạt</span>
+                    <span>{item.isRenewal ? `Trừ ${finalPrice.toLocaleString("vi-VN")} đ & Gia hạn` : `Trừ ${finalPrice.toLocaleString("vi-VN")} đ & Kích hoạt`}</span>
                   </>
                 )}
               </button>
@@ -662,34 +646,6 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({
                   <>
                     <RefreshCw className="w-4 h-4" />
                     <span>Tôi đã chuyển tiền - Kiểm tra ngay</span>
-                  </>
-                )}
-              </button>
-            )}
-
-            {paymentMethod === "card" && (
-              <button
-                type="button"
-                disabled={isBusy}
-                onClick={async () => {
-                  setIsProcessing(true);
-                  try {
-                    await onSuccess("card");
-                  } finally {
-                    setIsProcessing(false);
-                  }
-                }}
-                className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md shadow-emerald-600/20 flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
-              >
-                {isProcessing ? (
-                  <>
-                    <LoaderCircle className="w-4 h-4 animate-spin" />
-                    <span>Đang xác thực...</span>
-                  </>
-                ) : (
-                  <>
-                    <Check className="w-4 h-4" />
-                    <span>Thanh toán thẻ {finalPrice.toLocaleString("vi-VN")} đ</span>
                   </>
                 )}
               </button>

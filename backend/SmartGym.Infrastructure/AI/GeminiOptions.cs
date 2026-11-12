@@ -9,6 +9,7 @@ public sealed class GeminiOptions
     public string Endpoint { get; set; } = "https://generativelanguage.googleapis.com/v1beta/models";
     // gemini-3.5-flash is active with available quota for this API key.
     public string Model { get; set; } = "gemini-3.5-flash";
+    public double Temperature { get; set; } = 0.7;
     public int TimeoutSeconds { get; set; } = 30;
     public int MaxRequestsPerMinute { get; set; } = 30;
     public int MaxRetries { get; set; } = 2;

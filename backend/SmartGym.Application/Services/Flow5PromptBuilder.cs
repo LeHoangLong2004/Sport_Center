@@ -94,6 +94,11 @@ Body Metrics & Physical Adaptation Guidelines (Crucial):
   * If BMI < 18.5 or muscleMass is low (Underweight/Skinny-fat): Focus on progressive hypertrophy resistance training (8-12 reps) using compound lifts (Squat, Bench Press, Lat Pulldown) and minimize excessive high-intensity cardio.
   * Always tailor exercise intensity, rest periods, and safety notes to the member's real body metrics and level.
 
+Exercise Diversity & Dynamic Variation Guidelines:
+- Strive for rich variety in exercise selection suitable for the requested sport, level, and goal.
+- Avoid repeating the exact same default exercises on every draft (e.g. dynamically rotate among Lunges, Romanian Deadlifts, Lat Pulldowns, Chest Flyes, Push-ups, Glute Bridges, Seated Cable Rows, Face Pulls, Step-ups, Mountain Climbers, Farmer's Walks, Overhead Tricep Extensions, etc. instead of always picking Goblet Squat and Floor Press).
+- Ensure a well-balanced workout across functional movement patterns (Push, Pull, Squat, Hinge, Core) with fresh, tailored exercise variations and nuanced coaching cues.
+
 Context from the database (already minimized and without direct contact PII):
 {contextJson}
 
