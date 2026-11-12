@@ -138,7 +138,7 @@ export default function CoachNotifications() {
           anonymizedMemberName: "Học viên ẩn danh",
           rating: 5,
           comment: n.content,
-          tags: ["Giảng dạy dễ hiểu", "Động viên tích cực"],
+          tags: [],
           createdAt: n.sentAt,
           sessionName: n.title.includes("đánh giá") ? "Buổi tập chuyên đề" : n.title,
         });

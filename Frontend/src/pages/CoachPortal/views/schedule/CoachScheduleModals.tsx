@@ -12,6 +12,7 @@ interface Props {
   setIsRequestModalOpen: (open: boolean) => void;
   isOpenSlotModalOpen: boolean;
   setIsOpenSlotModalOpen: (open: boolean) => void;
+  initialOpenSlotDate?: string;
   isClassProposalModalOpen: boolean;
   setIsClassProposalModalOpen: (open: boolean) => void;
   selectedSessionForRequest: string;
@@ -35,6 +36,7 @@ export function CoachScheduleModals({
   setIsRequestModalOpen,
   isOpenSlotModalOpen,
   setIsOpenSlotModalOpen,
+  initialOpenSlotDate,
   isClassProposalModalOpen,
   setIsClassProposalModalOpen,
   selectedSessionForRequest,
@@ -76,6 +78,8 @@ export function CoachScheduleModals({
         onSuccess={onCreateOpenSlotSuccess}
         sportOptions={sportOptions}
         roomOptions={roomOptions}
+        initialDate={initialOpenSlotDate}
+        existingSessions={allUnifiedSessions}
       />
 
       <OpenPtDetailModal

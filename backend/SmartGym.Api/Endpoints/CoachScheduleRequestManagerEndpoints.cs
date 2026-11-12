@@ -293,6 +293,15 @@ public static class CoachScheduleRequestManagerEndpoints
             LIMIT 1", sessionId, coachId.Value, end, scheduleStart).AnyAsync();
         if (coachConflict) return "Coach đã có lịch khác trùng thời gian.";
 
+        var ptSlotConflict = await db.Database.SqlQueryRaw<int>(@"
+            SELECT 1 AS ""Value"" FROM coach_availability_slots
+            WHERE coach_id = {0}
+              AND status IN ('open', 'booked')
+              AND start_time < {1}
+              AND end_time > {2}
+            LIMIT 1", coachId.Value, end, scheduleStart).AnyAsync();
+        if (ptSlotConflict) return "Coach đã mở lịch trống 1-1 hoặc có ca dạy PT trong khung giờ này.";
+
         // Nếu là dời lịch và có chọn phòng, kiểm tra phòng tập có bị trùng không
         if (!isSubstitute && facilityId.HasValue && facilityId.Value != Guid.Empty)
         {

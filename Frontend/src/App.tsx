@@ -47,12 +47,6 @@ export default function App() {
   const [selectedProductOrder, setSelectedProductOrder] = useState<ProductOrder | undefined>();
 
   useEffect(() => {
-    if (paymentOpen && !selectedPlanId && !selectedPackage && !selectedProductOrder) {
-      window.location.hash = "pricing";
-    }
-  }, [paymentOpen, selectedPlanId, selectedPackage, selectedProductOrder]);
-
-  useEffect(() => {
     if (paymentOpen) {
       window.scrollTo({ top: 0, left: 0, behavior: "instant" });
       document.documentElement.scrollTop = 0;
@@ -101,10 +95,6 @@ export default function App() {
   }
 
   if (paymentOpen) {
-    if (!selectedPlanId && !selectedPackage && !selectedProductOrder) {
-      return null;
-    }
-
     if (selectedProductOrder) {
       const exitProductPayment = () => {
         setSelectedProductOrder(undefined);
@@ -146,18 +136,12 @@ export default function App() {
     const userStr = localStorage.getItem("user");
     const user = userStr ? JSON.parse(userStr) : null;
     const role = user?.role?.toLowerCase();
-    if (!user || (role !== "coach" && role !== "admin" && role !== "manager")) {
-      const demoCoach = {
-        id: "coach-01",
-        fullName: "HLV Nam Hồ",
-        role: "Coach",
-        email: "hoxuananhnam1@gmail.com",
-        avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80",
-      };
-      localStorage.setItem("user", JSON.stringify(demoCoach));
-      if (!localStorage.getItem("token")) {
-        localStorage.setItem("token", "mock-valid-token-demo");
-      }
+    const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
+    if (!token || !user || (role !== "coach" && role !== "admin" && role !== "manager")) {
+      window.location.hash = "login";
+      setCoachOpen(false);
+      setAdminOpen(true);
+      return null;
     }
     return (
       <CoachPortal

@@ -121,6 +121,23 @@ public static partial class CoachEndpoints
             || recordsElement.ValueKind != System.Text.Json.JsonValueKind.Array)
             return Results.BadRequest(new { message = "Thiếu danh sách điểm danh." });
 
+        // Kiểm tra quy định khóa 24h: Nếu ca học đã bắt đầu quá 24 giờ, khóa vĩnh viễn không cho điểm danh hay điều chỉnh
+        try
+        {
+            var scheduleTime = await db.Database
+                .SqlQueryRaw<DateTime?>("SELECT schedule_time AS \"Value\" FROM classes WHERE id = {0}", sessionGuid)
+                .FirstOrDefaultAsync();
+
+            if (scheduleTime.HasValue && DateTime.UtcNow - scheduleTime.Value.ToUniversalTime() > TimeSpan.FromHours(24))
+            {
+                return Results.BadRequest(new
+                {
+                    message = "Buổi học này đã bắt đầu quá 24 giờ. Theo quy định, sổ điểm danh đã bị khóa vĩnh viễn và không thể điểm danh hoặc điều chỉnh."
+                });
+            }
+        }
+        catch {}
+
         await using var transaction = await db.Database.BeginTransactionAsync();
         foreach (var record in recordsElement.EnumerateArray())
         {

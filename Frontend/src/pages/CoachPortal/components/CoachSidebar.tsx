@@ -31,7 +31,7 @@ export default function CoachSidebar({
   userName = userName || "Huấn luyện viên";
 
   return (
-    <aside className="bg-[#0f172a] w-[240px] h-full flex flex-col justify-between shrink-0 pb-5 pt-6 px-4 select-none z-30 border-r border-[#1e293b]/70 overflow-hidden">
+    <aside className="bg-[#0f172a] w-[250px] min-w-[250px] max-w-[250px] h-full flex flex-col justify-between shrink-0 pb-5 pt-6 px-4 select-none z-30 border-r border-[#1e293b]/70 overflow-y-auto hidden-scrollbar">
       <div className="flex flex-col gap-4 items-start w-full min-h-0">
         {/* Brand */}
       <button

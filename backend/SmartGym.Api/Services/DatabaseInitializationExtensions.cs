@@ -357,6 +357,28 @@ public static partial class DatabaseInitializationExtensions
                     created_at TIMESTAMPTZ DEFAULT now()
                 );
 
+                ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS attachment_url TEXT;
+                ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS attachment_type VARCHAR(50);
+                ALTER TABLE reviews ADD COLUMN IF NOT EXISTS coach_reply TEXT;
+                ALTER TABLE reviews ADD COLUMN IF NOT EXISTS replied_at TIMESTAMPTZ;
+
+                ALTER TABLE users ADD COLUMN IF NOT EXISTS favorite_sports TEXT;
+                ALTER TABLE users ADD COLUMN IF NOT EXISTS preferred_time VARCHAR(100);
+                ALTER TABLE users ADD COLUMN IF NOT EXISTS health_notes TEXT;
+                ALTER TABLE users ADD COLUMN IF NOT EXISTS workout_goals TEXT;
+
+                CREATE TABLE IF NOT EXISTS payment_reports (
+                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    user_id UUID NOT NULL,
+                    order_id VARCHAR(100),
+                    amount NUMERIC DEFAULT 0,
+                    payment_method VARCHAR(50),
+                    reference_code VARCHAR(100),
+                    note TEXT,
+                    status VARCHAR(50) DEFAULT 'pending',
+                    created_at TIMESTAMPTZ DEFAULT now()
+                );
+
                 GRANT ALL ON public.chat_conversations TO anon, authenticated;
                 GRANT ALL ON public.chat_messages TO anon, authenticated;
                 CREATE INDEX IF NOT EXISTS idx_chat_conversations_coach ON chat_conversations(coach_id);

@@ -115,78 +115,153 @@ namespace SmartGym.Api.Endpoints
 
             group.MapPost("/schedule-requests", async (HttpContext context, SmartGymDbContext db, IGroupClassRepository classRepository, [FromBody] System.Text.Json.JsonElement req) =>
             {
-                var rawUserId = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                    ?? context.User.FindFirst("sub")?.Value;
-                if (!Guid.TryParse(rawUserId, out var userId)) return Results.Unauthorized();
-                var coachId = await CoachProfileResolver.FindByUserIdAsync(db, userId);
-                if (coachId == null) return Results.BadRequest(new { message = "Không tìm thấy hồ sơ Coach." });
-
-                var sessionId = Guid.TryParse(req.TryGetProperty("sessionId", out var sessionProp) ? sessionProp.GetString() : null, out var parsedSessionId)
-                    ? parsedSessionId : (Guid?)null;
-                var reason = req.TryGetProperty("reason", out var reasonProp) ? reasonProp.GetString() : null;
-                if (string.IsNullOrWhiteSpace(reason)) return Results.BadRequest(new { message = "Vui lòng nhập lý do." });
-                var requestType = req.TryGetProperty("requestType", out var typeProp) ? typeProp.GetString() : "dời lịch";
-                Guid? substituteCoachId = Guid.TryParse(
-                    req.TryGetProperty("substituteCoachId", out var substituteIdProp) ? substituteIdProp.GetString() : null,
-                    out var parsedSubstituteId) ? parsedSubstituteId : null;
-                if (substituteCoachId == null && string.Equals(requestType, "dạy thay", StringComparison.OrdinalIgnoreCase)
-                    && req.TryGetProperty("substituteCoachName", out var substituteNameProp))
+                try
                 {
-                    var substituteName = substituteNameProp.GetString();
-                    if (!string.IsNullOrWhiteSpace(substituteName))
-                        substituteCoachId = await db.Database.SqlQueryRaw<Guid?>(
-                            "SELECT c.id AS \"Value\" FROM coaches c INNER JOIN users u ON u.id = c.user_id WHERE LOWER(u.full_name) = LOWER({0}) LIMIT 1",
-                            substituteName.Trim()).FirstOrDefaultAsync();
-                }
-                // Nếu là yêu cầu dạy thay nhưng Coach không chỉ định trước thì substituteCoachId là null (Manager sẽ chỉ định khi duyệt)
-                var newDate = req.TryGetProperty("newDate", out var dateProp) && DateTime.TryParse(dateProp.GetString(), out var parsedDate)
-                    ? parsedDate.Date : (DateTime?)null;
-                var newTime = req.TryGetProperty("newTime", out var timeProp) ? timeProp.GetString() : null;
-                var className = req.TryGetProperty("className", out var classProp) ? classProp.GetString() : "Lớp học";
-                var sessionTime = req.TryGetProperty("sessionTime", out var timeStrProp) ? timeStrProp.GetString() : null;
-                var sportName = req.TryGetProperty("sport", out var sportProp) ? sportProp.GetString() : null;
-                var roomName = req.TryGetProperty("room", out var roomProp) ? roomProp.GetString() : null;
+                    var rawUserId = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                        ?? context.User.FindFirst("sub")?.Value;
+                    if (!Guid.TryParse(rawUserId, out var userId)) return Results.Unauthorized();
+                    var coachId = await CoachProfileResolver.FindByUserIdAsync(db, userId);
+                    if (coachId == null) return Results.BadRequest(new { message = "Không tìm thấy hồ sơ Coach." });
 
-                var id = Guid.NewGuid();
-                await db.Database.ExecuteSqlInterpolatedAsync($@"
-                    INSERT INTO coach_schedule_requests (id, coach_id, session_id, request_type, substitute_coach_id, new_date, new_time, reason, class_name, session_time, sport_name, room_name)
-                    VALUES ({id}, {coachId.Value}, {sessionId}, {requestType}, {substituteCoachId}, {newDate}, {newTime}, {reason}, {className}, {sessionTime}, {sportName}, {roomName})");
+                    var sessionId = Guid.TryParse(req.TryGetProperty("sessionId", out var sessionProp) ? sessionProp.GetString() : null, out var parsedSessionId)
+                        ? parsedSessionId : (Guid?)null;
+                    var reason = req.TryGetProperty("reason", out var reasonProp) ? reasonProp.GetString() : null;
+                    if (string.IsNullOrWhiteSpace(reason)) return Results.BadRequest(new { message = "Vui lòng nhập lý do." });
+                    var requestType = req.TryGetProperty("requestType", out var typeProp) ? typeProp.GetString() : "dời lịch";
+                    Guid? substituteCoachId = Guid.TryParse(
+                        req.TryGetProperty("substituteCoachId", out var substituteIdProp) ? substituteIdProp.GetString() : null,
+                        out var parsedSubstituteId) ? parsedSubstituteId : null;
+                    if (substituteCoachId == null && string.Equals(requestType, "dạy thay", StringComparison.OrdinalIgnoreCase)
+                        && req.TryGetProperty("substituteCoachName", out var substituteNameProp))
+                    {
+                        var substituteName = substituteNameProp.GetString();
+                        if (!string.IsNullOrWhiteSpace(substituteName))
+                            substituteCoachId = await db.Database.SqlQueryRaw<Guid?>(
+                                "SELECT c.id AS \"Value\" FROM coaches c INNER JOIN users u ON u.id = c.user_id WHERE LOWER(u.full_name) = LOWER({0}) LIMIT 1",
+                                substituteName.Trim()).FirstOrDefaultAsync();
+                    }
+                    // Parse ngày đề xuất hỗ trợ cả định dạng dd/MM/yyyy và yyyy-MM-dd (chuẩn hoá UTC cho PostgreSQL)
+                    DateTime? newDate = null;
+                    if (req.TryGetProperty("newDate", out var dateProp))
+                    {
+                        var dateStr = dateProp.GetString()?.Trim();
+                        if (!string.IsNullOrEmpty(dateStr))
+                        {
+                            if (DateTime.TryParseExact(dateStr, new[] { "dd/MM/yyyy", "yyyy-MM-dd", "d/M/yyyy" }, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var exactDate))
+                            {
+                                newDate = DateTime.SpecifyKind(exactDate.Date, DateTimeKind.Utc);
+                            }
+                            else if (DateTime.TryParse(dateStr, out var fallbackDate))
+                            {
+                                newDate = DateTime.SpecifyKind(fallbackDate.Date, DateTimeKind.Utc);
+                            }
+                        }
+                    }
+                    var newTime = req.TryGetProperty("newTime", out var timeProp) ? timeProp.GetString() : null;
+                    var className = req.TryGetProperty("className", out var classProp) ? classProp.GetString() : "Lớp học";
+                    var sessionTime = req.TryGetProperty("sessionTime", out var timeStrProp) ? timeStrProp.GetString() : null;
+                    var sportName = req.TryGetProperty("sport", out var sportProp) ? sportProp.GetString() : null;
+                    var roomName = req.TryGetProperty("room", out var roomProp) ? roomProp.GetString() : null;
 
-                await classRepository.NotifyManagersAsync(
-                    "Yêu cầu điều chỉnh ca dạy mới",
-                    $"Coach đã gửi yêu cầu cho lớp {className ?? "Lớp học"}.",
-                    "schedule_request",
-                    id);
+                    // Kiểm tra xung đột lịch ngay tại backend khi HLV gửi yêu cầu dời ca
+                    if (string.Equals(requestType, "dời lịch", StringComparison.OrdinalIgnoreCase) && newDate.HasValue && !string.IsNullOrWhiteSpace(newTime))
+                    {
+                        var parts = newTime.Split('-', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length >= 2 && TimeOnly.TryParse(parts[0], out var sTime) && TimeOnly.TryParse(parts[1], out var eTime))
+                        {
+                            var localStart = DateTime.SpecifyKind(newDate.Value.Date.Add(sTime.ToTimeSpan()), DateTimeKind.Unspecified);
+                            var localEnd = DateTime.SpecifyKind(newDate.Value.Date.Add(eTime.ToTimeSpan()), DateTimeKind.Unspecified);
+                            DateTime startUtc;
+                            DateTime endUtc;
+                            try
+                            {
+                                var zone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                                startUtc = TimeZoneInfo.ConvertTimeToUtc(localStart, zone);
+                                endUtc = TimeZoneInfo.ConvertTimeToUtc(localEnd, zone);
+                            }
+                            catch
+                            {
+                                startUtc = DateTime.SpecifyKind(localStart, DateTimeKind.Utc);
+                                endUtc = DateTime.SpecifyKind(localEnd, DateTimeKind.Utc);
+                            }
 
-                if (string.Equals(requestType, "dạy thay", StringComparison.OrdinalIgnoreCase) && substituteCoachId.HasValue)
-                {
-                    await classRepository.NotifyCoachAsync(
-                        substituteCoachId.Value,
-                        "Lời mời dạy thay",
-                        $"Bạn nhận được lời mời dạy thay lớp {className ?? "Lớp học"}. Vui lòng kiểm tra mục Lời mời dạy thay.",
+                            var sid = sessionId ?? Guid.Empty;
+                            var conflictClass = await db.Database.SqlQueryRaw<string>(@"
+                                SELECT class_name AS ""Value"" FROM classes
+                                WHERE coach_id = {0}
+                                  AND id <> {1}
+                                  AND status = true
+                                  AND COALESCE(approval_status, 'approved') <> 'rejected'
+                                  AND schedule_time < {2}
+                                  AND schedule_time + (COALESCE(duration_minutes, 60) * INTERVAL '1 minute') > {3}
+                                LIMIT 1", coachId.Value, sid, endUtc, startUtc).FirstOrDefaultAsync();
+
+                            if (!string.IsNullOrEmpty(conflictClass))
+                            {
+                                return Results.BadRequest(new { message = $"Không thể gửi yêu cầu: Khung giờ mới bị trùng với lịch dạy lớp '{conflictClass}' của bạn." });
+                            }
+
+                            var conflictSlot = await db.Database.SqlQueryRaw<string>(@"
+                                SELECT CONCAT('Lịch trống/PT 1-1 (', sport, ')') AS ""Value"" FROM coach_availability_slots
+                                WHERE coach_id = {0}
+                                  AND status IN ('open', 'booked')
+                                  AND start_time < {1}
+                                  AND end_time > {2}
+                                LIMIT 1", coachId.Value, endUtc, startUtc).FirstOrDefaultAsync();
+
+                            if (!string.IsNullOrEmpty(conflictSlot))
+                            {
+                                return Results.BadRequest(new { message = $"Không thể gửi yêu cầu: Khung giờ mới bị trùng với '{conflictSlot}' của bạn." });
+                            }
+                        }
+                    }
+
+                    var id = Guid.NewGuid();
+                    await db.Database.ExecuteSqlInterpolatedAsync($@"
+                        INSERT INTO coach_schedule_requests (id, coach_id, session_id, request_type, substitute_coach_id, new_date, new_time, reason, class_name, session_time, sport_name, room_name)
+                        VALUES ({id}, {coachId.Value}, {sessionId}, {requestType}, {substituteCoachId}, {newDate}, {newTime}, {reason}, {className}, {sessionTime}, {sportName}, {roomName})");
+
+                    await classRepository.NotifyManagersAsync(
+                        "Yêu cầu điều chỉnh ca dạy mới",
+                        $"Coach đã gửi yêu cầu cho lớp {className ?? "Lớp học"}.",
                         "schedule_request",
                         id);
-                }
 
-                return Results.Ok(new
-                {
-                    success = true,
-                    data = new
+                    if (string.Equals(requestType, "dạy thay", StringComparison.OrdinalIgnoreCase) && substituteCoachId.HasValue)
                     {
-                        id = id.ToString(),
-                        sessionId = sessionId?.ToString() ?? string.Empty,
-                        substituteCoachId = substituteCoachId?.ToString() ?? string.Empty,
-                        className,
-                        sessionTime = sessionTime ?? string.Empty,
-                        requestType,
-                        newDate = newDate?.ToString("yyyy-MM-dd") ?? string.Empty,
-                        newTime = newTime ?? string.Empty,
-                        reason,
-                        status = "chờ duyệt",
-                        createdAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
-                        managerNote = string.Empty
+                        await classRepository.NotifyCoachAsync(
+                            substituteCoachId.Value,
+                            "Lời mời dạy thay",
+                            $"Bạn nhận được lời mời dạy thay lớp {className ?? "Lớp học"}. Vui lòng kiểm tra mục Lời mời dạy thay.",
+                            "schedule_request",
+                            id);
                     }
-                });
+
+                    return Results.Ok(new
+                    {
+                        success = true,
+                        data = new
+                        {
+                            id = id.ToString(),
+                            sessionId = sessionId?.ToString() ?? string.Empty,
+                            substituteCoachId = substituteCoachId?.ToString() ?? string.Empty,
+                            className,
+                            sessionTime = sessionTime ?? string.Empty,
+                            requestType,
+                            newDate = newDate?.ToString("yyyy-MM-dd") ?? string.Empty,
+                            newTime = newTime ?? string.Empty,
+                            reason,
+                            status = "chờ duyệt",
+                            createdAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+                            managerNote = string.Empty
+                        }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Create Schedule Request Error] {ex}");
+                    return Results.BadRequest(new { message = $"Không thể gửi yêu cầu điều chỉnh ca dạy: {ex.Message}" });
+                }
             });
 
             // GET /api/coach/substitute-invitations — Danh sách lời mời dạy thay gửi đến Coach hiện tại

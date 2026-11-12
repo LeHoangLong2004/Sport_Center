@@ -269,3 +269,18 @@ export interface AssignFlow5PlanResponse {
     dueDate?: string | null;
   }>;
 }
+
+export interface CoachClassProposal {
+  id: string;
+  className: string;
+  sportName: string;
+  sportId: string;
+  branchName: string;
+  branchId: string;
+  maxCapacity: number;
+  defaultPrice: number;
+  requestedSlots: string;
+  notes?: string;
+  status: string;
+  createdAt: string;
+}

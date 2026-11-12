@@ -32,7 +32,7 @@ public static partial class SportFacilityEndpoints
             var form = await request.ReadFormAsync();
             var file = form.Files.GetFile("file") ?? form.Files.FirstOrDefault();
             var requestedFolder = form["folder"].FirstOrDefault();
-            var uploadFolder = requestedFolder is "sports" or "facilities" or "products" ? requestedFolder : "sports";
+            var uploadFolder = requestedFolder is "sports" or "facilities" or "products" or "chat" ? requestedFolder : "chat";
 
             if (file == null || file.Length == 0)
             {
@@ -59,7 +59,7 @@ public static partial class SportFacilityEndpoints
 
             return Results.Ok(new { url });
         })
-        .RequireAuthorization(policy => policy.RequireRole("manager", "admin"))
+        .RequireAuthorization()
         .DisableAntiforgery();
     }
 }

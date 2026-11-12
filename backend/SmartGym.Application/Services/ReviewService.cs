@@ -68,6 +68,8 @@ public class ReviewService : IReviewService
             SessionId = r.SessionId,
             SessionName = r.SessionName,
             Tags = ParseTags(r.TagsJson),
+            CoachReply = r.CoachReply,
+            RepliedAt = r.RepliedAt,
             CreatedAt = r.CreatedAt
         });
     }

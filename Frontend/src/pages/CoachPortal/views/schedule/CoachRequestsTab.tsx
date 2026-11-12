@@ -1,14 +1,21 @@
-import { useState } from "react";
-import { Plus, Check, Inbox, Send } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Check, Inbox, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import type { ScheduleChangeRequest, SubstituteInvitation } from "../../services/api";
+import {
+  CoachAPI,
+  type ScheduleChangeRequest,
+  type SubstituteInvitation,
+  type CoachClassProposal,
+} from "../../services/api";
 import { CoachInvitationsList } from "./coachRequests/CoachInvitationsList";
 import { CoachOwnRequestsList } from "./coachRequests/CoachOwnRequestsList";
+import { CoachClassProposalsList } from "./coachRequests/CoachClassProposalsList";
 
 interface Props {
   requests: ScheduleChangeRequest[];
   invitations?: SubstituteInvitation[];
   onOpenCreateRequest: () => void;
+  onOpenClassProposal?: () => void;
   onRespondInvitation?: (id: string, action: "accept" | "reject", note?: string) => Promise<void>;
 }
 
@@ -16,13 +23,14 @@ export default function CoachRequestsTab({
   requests,
   invitations = [],
   onOpenCreateRequest,
+  onOpenClassProposal,
   onRespondInvitation,
 }: Props) {
   const pendingInvitations = invitations.filter(
     (inv) => inv.status === "pending" || inv.status === "waiting_substitute",
   );
 
-  const [activeSubTab, setActiveSubTab] = useState<"invitations" | "my_requests">(
+  const [activeSubTab, setActiveSubTab] = useState<"invitations" | "my_requests" | "class_proposals">(
     pendingInvitations.length > 0 ? "invitations" : "my_requests",
   );
 
@@ -30,6 +38,40 @@ export default function CoachRequestsTab({
   const [declineReason, setDeclineReason] = useState<Record<string, string>>({});
   const [showDeclineInput, setShowDeclineInput] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
+
+  const [classProposals, setClassProposals] = useState<CoachClassProposal[]>([]);
+  const [loadingProposals, setLoadingProposals] = useState(false);
+  const [withdrawingProposalId, setWithdrawingProposalId] = useState<string | null>(null);
+
+  const loadProposals = async () => {
+    setLoadingProposals(true);
+    try {
+      const list = await CoachAPI.getMyClassProposals();
+      setClassProposals(list);
+    } catch (err) {
+      console.error("Lỗi tải đề xuất mở lớp:", err);
+    } finally {
+      setLoadingProposals(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProposals();
+  }, []);
+
+  const handleWithdrawProposal = async (id: string) => {
+    if (!window.confirm("Bạn có chắc chắn muốn thu hồi đề xuất mở lớp này không?")) return;
+    setWithdrawingProposalId(id);
+    try {
+      await CoachAPI.withdrawClassProposal(id);
+      toast.success("Đã thu hồi đề xuất mở lớp thành công!");
+      await loadProposals();
+    } catch (err: any) {
+      toast.error(err?.message || "Không thể thu hồi đề xuất mở lớp.");
+    } finally {
+      setWithdrawingProposalId(null);
+    }
+  };
 
   const handleAction = async (id: string, action: "accept" | "reject") => {
     if (!onRespondInvitation) return;
@@ -63,11 +105,11 @@ export default function CoachRequestsTab({
     <div className="flex flex-col gap-6">
       {/* Sub-tab Navigation */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">
-        <div className="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+        <div className="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg flex-wrap">
           <button
             type="button"
             onClick={() => setActiveSubTab("invitations")}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
               activeSubTab === "invitations"
                 ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs"
                 : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
@@ -85,7 +127,7 @@ export default function CoachRequestsTab({
           <button
             type="button"
             onClick={() => setActiveSubTab("my_requests")}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
               activeSubTab === "my_requests"
                 ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs"
                 : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
@@ -94,15 +136,41 @@ export default function CoachRequestsTab({
             <Send className="w-3.5 h-3.5" />
             <span>Yêu cầu của tôi ({requests.length})</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveSubTab("class_proposals");
+              loadProposals();
+            }}
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeSubTab === "class_proposals"
+                ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs"
+                : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Đề xuất mở lớp ({classProposals.length})</span>
+          </button>
         </div>
 
         {activeSubTab === "my_requests" && (
           <button
             type="button"
             onClick={onOpenCreateRequest}
-            className="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors flex items-center gap-1.5 self-start sm:self-auto shadow-sm"
+            className="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors flex items-center gap-1.5 self-start sm:self-auto shadow-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" /> Tạo yêu cầu mới
+          </button>
+        )}
+
+        {activeSubTab === "class_proposals" && onOpenClassProposal && (
+          <button
+            type="button"
+            onClick={onOpenClassProposal}
+            className="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors flex items-center gap-1.5 self-start sm:self-auto shadow-sm cursor-pointer"
+          >
+            <Plus className="w-4 h-4" /> Đề xuất mở lớp mới
           </button>
         )}
       </div>
@@ -131,6 +199,17 @@ export default function CoachRequestsTab({
       {/* 2. Yêu cầu của chính Coach */}
       {activeSubTab === "my_requests" && (
         <CoachOwnRequestsList requests={requests} />
+      )}
+
+      {/* 3. Đề xuất mở lớp của Coach */}
+      {activeSubTab === "class_proposals" && (
+        <CoachClassProposalsList
+          proposals={classProposals}
+          loading={loadingProposals}
+          onWithdraw={handleWithdrawProposal}
+          withdrawingId={withdrawingProposalId}
+          onOpenCreateProposal={onOpenClassProposal || (() => {})}
+        />
       )}
     </div>
   );

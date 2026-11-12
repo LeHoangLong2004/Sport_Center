@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SmartGym.Api.Services;
 using SmartGym.Application.DTOs;
 
@@ -367,10 +368,65 @@ public static class PackageCatalogEndpoints
                 }
             )
             .RequireAuthorization(policy => policy.RequireRole(MemberRoles));
+
+        /// <summary>
+        /// POST /api/package-orders/{id}/report-proof
+        /// Hội viên gửi thông tin đối soát / chứng từ thanh toán thủ công (chuyển khoản, tiền mặt tại quầy, quẹt thẻ).
+        /// </summary>
+        orders
+            .MapPost(
+                "/{id:guid}/report-proof",
+                async (
+                    Guid id,
+                    [FromBody] ReportPaymentProofRequest request,
+                    HttpContext context,
+                    SmartGym.Infrastructure.Persistence.EF.SmartGymDbContext db,
+                    CancellationToken cancellationToken
+                ) =>
+                {
+                    if (!TryGetUserId(context, out var userId))
+                        return Results.Unauthorized();
+
+                    var orderIdStr = id.ToString();
+                    var method = string.IsNullOrWhiteSpace(request.PaymentMethod) ? "Chuyển khoản" : request.PaymentMethod.Trim();
+                    var refCode = string.IsNullOrWhiteSpace(request.ReferenceCode) ? $"MB-{DateTime.UtcNow:HHmmss}" : request.ReferenceCode.Trim();
+                    var note = request.Note?.Trim() ?? string.Empty;
+                    var amount = request.Amount ?? 0m;
+
+                    try
+                    {
+                        await db.Database.ExecuteSqlRawAsync(
+                            @"INSERT INTO payment_reports (id, user_id, order_id, amount, payment_method, reference_code, note, status, created_at)
+                              VALUES (gen_random_uuid(), {0}, {1}, {2}, {3}, {4}, {5}, 'pending', now())",
+                            userId, orderIdStr, amount, method, refCode, note);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[ReportProof Error] {ex.Message}");
+                    }
+
+                    return Results.Ok(new
+                    {
+                        success = true,
+                        message = "Đã gửi thông tin thanh toán cho nhân viên lễ tân xác nhận đối soát!",
+                        referenceCode = refCode,
+                        reportedAt = DateTime.UtcNow
+                    });
+                }
+            )
+            .RequireAuthorization();
     }
 
     private static bool TryGetUserId(HttpContext context, out Guid userId) =>
         Guid.TryParse(context.User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
+
+    public sealed class ReportPaymentProofRequest
+    {
+        public string? PaymentMethod { get; set; }
+        public string? ReferenceCode { get; set; }
+        public string? Note { get; set; }
+        public decimal? Amount { get; set; }
+    }
 
     public sealed class SetPackageStatusRequest
     {

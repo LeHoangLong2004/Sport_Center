@@ -128,7 +128,7 @@ export default function InvoicesTab({
                         className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs inline-flex items-center gap-1.5 cursor-pointer"
                       >
                         <Receipt className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Xem phiếu thu</span>
+                        <span>Xem</span>
                       </button>
                     )}
                   </td>

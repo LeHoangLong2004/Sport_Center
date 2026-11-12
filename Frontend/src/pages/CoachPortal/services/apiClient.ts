@@ -1,4 +1,7 @@
-const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api';
+const configuredApiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+const BASE_URL = configuredApiUrl
+  ? `${configuredApiUrl}${configuredApiUrl.endsWith('/api') ? '' : '/api'}`
+  : '/api';
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   let token = localStorage.getItem('token') || localStorage.getItem('accessToken');
@@ -12,7 +15,12 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
 
   if (response.status === 401 && !token) {
     try {
-      const refRes = await fetch(`${BASE_URL}/auth/dev-token`, { method: 'POST' });
+      let emailParam = '';
+      try {
+        const u = JSON.parse(localStorage.getItem('user') || '{}');
+        if (u.email) emailParam = `?email=${encodeURIComponent(u.email)}`;
+      } catch {}
+      const refRes = await fetch(`${BASE_URL}/auth/dev-token${emailParam}`, { method: 'POST' });
       if (refRes.ok) {
         const refData = await refRes.json();
         if (refData.token) {

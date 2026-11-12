@@ -7,6 +7,7 @@ import {
   Droplets,
   Lock,
   Activity,
+  RefreshCw,
 } from "lucide-react";
 import type { CatalogPackage, PackagePeriod, MembershipStatus } from "../../../../services/packageApi";
 import { ActiveMembershipCard } from "./ActiveMembershipCard";
@@ -210,13 +211,24 @@ export default function MembershipTab({
 
                 <div className="pt-3">
                   {isCurrentTier ? (
-                    <button
-                      type="button"
-                      disabled
-                      className="w-full py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 font-bold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed"
-                    >
-                      <span>Hạng Hiện Tại Của Bạn</span>
-                    </button>
+                    pkg.tier === "basic" ? (
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 font-bold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed"
+                      >
+                        <span>Hạng Mặc Định Miễn Phí</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => onStartPurchase(pkg)}
+                        className="w-full py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Gia hạn gói này</span>
+                      </button>
+                    )
                   ) : (
                     <button
                       type="button"

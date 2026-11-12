@@ -8,7 +8,7 @@ namespace SmartGym.Api.Endpoints
 {
     public static partial class CoachEndpoints
     {
-        public record SendCoachChatMessageRequest(string ConversationId, string Text, string? CoachId, string? CoachName = null);
+        public record SendCoachChatMessageRequest(string ConversationId, string Text, string? CoachId, string? CoachName = null, string? AttachmentUrl = null, string? AttachmentType = null);
         public record StartCoachMemberConversationRequest(string MemberId);
 
         private static void MapCoachChatEndpoints(RouteGroupBuilder group)
@@ -56,12 +56,12 @@ namespace SmartGym.Api.Endpoints
                 var coachUserId = GetAuthenticatedCoachUserId(context);
                 if (coachUserId == null) return Results.Unauthorized();
 
-                if (string.IsNullOrWhiteSpace(req.Text))
+                if (string.IsNullOrWhiteSpace(req.Text) && string.IsNullOrWhiteSpace(req.AttachmentUrl))
                 {
                     return Results.BadRequest(new { message = "Nội dung tin nhắn không được rỗng" });
                 }
 
-                var newMsg = chatStore.AddMessage(req.ConversationId, req.Text, "coach", req.CoachName, coachUserId);
+                var newMsg = chatStore.AddMessage(req.ConversationId, req.Text, "coach", req.CoachName, coachUserId, req.AttachmentUrl, req.AttachmentType);
                 if (newMsg == null)
                 {
                     return Results.NotFound(new { message = "Không tìm thấy hội thoại" });

@@ -39,6 +39,7 @@ export default function CoachSchedule({ navigateTo }: Props) {
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
 
   const [isOpenSlotModalOpen, setIsOpenSlotModalOpen] = useState(false);
+  const [initialOpenSlotDate, setInitialOpenSlotDate] = useState<string | undefined>(undefined);
   const [isClassProposalModalOpen, setIsClassProposalModalOpen] = useState(false);
   const [selectedOpenSlot, setSelectedOpenSlot] = useState<UnifiedScheduleItem | null>(null);
   const [selectedPtSession, setSelectedPtSession] = useState<UnifiedScheduleItem | null>(null);
@@ -95,9 +96,15 @@ export default function CoachSchedule({ navigateTo }: Props) {
   );
 
   const SPORT_OPTIONS = useMemo(() => {
-    const list = Array.from(new Set(allUnifiedSessions.map((s) => s.sport).filter(Boolean)));
-    return ["all", ...list];
-  }, [allUnifiedSessions]);
+    const set = new Set<string>();
+    sportOptions.forEach((s) => {
+      if (s) set.add(s);
+    });
+    allUnifiedSessions.forEach((s) => {
+      if (s.sport) set.add(s.sport);
+    });
+    return ["all", ...Array.from(set)];
+  }, [sportOptions, allUnifiedSessions]);
 
   const filteredSessions = useMemo(() => {
     return allUnifiedSessions.filter((s) => {
@@ -117,6 +124,50 @@ export default function CoachSchedule({ navigateTo }: Props) {
     }
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b)) as [string, UnifiedScheduleItem[]][];
   }, [filteredSessions]);
+
+  // Tìm tuần gần nhất có ca dạy nếu tuần hiện tại trống
+  const nearestSessionInfo = useMemo(() => {
+    const hasCurrent = filteredSessions.some((s) => weekDates.includes(s.date));
+    if (hasCurrent || filteredSessions.length === 0) return null;
+
+    const midWeekMs = new Date(weekDates[3] || weekDates[0]).getTime();
+    let closest = filteredSessions[0];
+    let minDiff = Math.abs(new Date(filteredSessions[0].date).getTime() - midWeekMs);
+
+    for (const s of filteredSessions) {
+      const diff = Math.abs(new Date(s.date).getTime() - midWeekMs);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closest = s;
+      }
+    }
+    if (!closest) return null;
+
+    const now = new Date();
+    const day = now.getDay();
+    const distanceToMonday = (day + 6) % 7;
+    const currentMonday = new Date(now);
+    currentMonday.setDate(now.getDate() - distanceToMonday);
+    currentMonday.setHours(0, 0, 0, 0);
+
+    const targetDate = new Date(closest.date);
+    const targetDay = targetDate.getDay();
+    const targetMonday = new Date(targetDate);
+    targetMonday.setDate(targetDate.getDate() - ((targetDay + 6) % 7));
+    targetMonday.setHours(0, 0, 0, 0);
+
+    const diffWeeks = Math.round((targetMonday.getTime() - currentMonday.getTime()) / (7 * 24 * 3600 * 1000));
+    return {
+      offset: diffWeeks,
+      date: closest.date,
+      className: closest.className,
+    };
+  }, [filteredSessions, weekDates]);
+
+  const handleOpenSlotModal = (defaultDate?: string) => {
+    setInitialOpenSlotDate(defaultDate);
+    setIsOpenSlotModalOpen(true);
+  };
 
   const handleSubmitRequest = async (data: any) => {
     try {
@@ -155,12 +206,6 @@ export default function CoachSchedule({ navigateTo }: Props) {
         setActiveTab={setActiveTab}
         pendingInvitationsCount={pendingInvitationsCount}
         requestsCount={requests.length}
-        onOpenClassProposal={() => setIsClassProposalModalOpen(true)}
-        onOpenSlotModal={() => setIsOpenSlotModalOpen(true)}
-        onOpenRequestModal={() => {
-          setSelectedSessionForRequest(allUnifiedSessions[0]?.id || "");
-          setIsRequestModalOpen(true);
-        }}
       />
 
       {feedbackMsg && (
@@ -184,6 +229,7 @@ export default function CoachSchedule({ navigateTo }: Props) {
             setView={setView}
             weekOffset={weekOffset}
             setWeekOffset={setWeekOffset}
+            weekDates={weekDates}
           />
 
           {view === "week" && (
@@ -194,6 +240,10 @@ export default function CoachSchedule({ navigateTo }: Props) {
               onSelectOpenSlot={setSelectedOpenSlot}
               onSelectPtSession={setSelectedPtSession}
               navigateTo={navigateTo}
+              onSwitchToList={() => setView("list")}
+              onOpenSlotModal={handleOpenSlotModal}
+              nearestSessionInfo={nearestSessionInfo}
+              onJumpToWeek={(offset) => setWeekOffset(offset)}
             />
           )}
 
@@ -230,6 +280,7 @@ export default function CoachSchedule({ navigateTo }: Props) {
             setSelectedSessionForRequest(allUnifiedSessions[0]?.id || "");
             setIsRequestModalOpen(true);
           }}
+          onOpenClassProposal={() => setIsClassProposalModalOpen(true)}
         />
       )}
 
@@ -238,6 +289,7 @@ export default function CoachSchedule({ navigateTo }: Props) {
         setIsRequestModalOpen={setIsRequestModalOpen}
         isOpenSlotModalOpen={isOpenSlotModalOpen}
         setIsOpenSlotModalOpen={setIsOpenSlotModalOpen}
+        initialOpenSlotDate={initialOpenSlotDate}
         isClassProposalModalOpen={isClassProposalModalOpen}
         setIsClassProposalModalOpen={setIsClassProposalModalOpen}
         selectedSessionForRequest={selectedSessionForRequest}

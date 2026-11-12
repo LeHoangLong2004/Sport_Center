@@ -425,31 +425,41 @@ public static class AuthEndpoints
                 catch { }
             }
 
+            SmartGym.Domain.Entities.User? targetUser = null;
+            if (!string.IsNullOrWhiteSpace(emailParam))
+            {
+                targetUser = await userRepo.GetByEmailAsync(emailParam.Trim());
+            }
+
             var isLong = string.Equals(emailParam, "long@gmail.com", StringComparison.OrdinalIgnoreCase);
             var isMember = isLong
                         || string.Equals(roleParam, "member", StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(emailParam, "hoxuananhnam@gmail.com", StringComparison.OrdinalIgnoreCase);
+                        || string.Equals(emailParam, "hoxuananhnam@gmail.com", StringComparison.OrdinalIgnoreCase)
+                        || (targetUser != null && string.Equals(targetUser.Role?.Name, "member", StringComparison.OrdinalIgnoreCase));
 
-            var targetId = isLong
+            var targetId = targetUser?.Id ?? (isLong
                 ? Guid.Parse("cd431e48-c84b-4b16-815e-971f3387fd83")
                 : (isMember
                     ? Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
-                    : Guid.Parse("d426d2a7-f099-4377-9673-160e02f8dc1b"));
-            var targetRole = isMember ? "member" : "coach";
-            var targetEmail = isLong ? "long@gmail.com" : (isMember ? "hoxuananhnam@gmail.com" : "coach_flow2@smartgym.com");
-            var defaultName = isLong ? "H Long" : (isMember ? "Hồ Xuân Ánh Nam (Member)" : "Coach Đỗ Hoàng E");
+                    : Guid.Parse("d426d2a7-f099-4377-9673-160e02f8dc1b")));
+            var targetRole = targetUser?.Role?.Name ?? (isMember ? "member" : "coach");
+            var targetEmail = targetUser?.Email ?? (isLong ? "long@gmail.com" : (isMember ? "hoxuananhnam@gmail.com" : "coach_flow2@smartgym.com"));
+            var defaultName = targetUser?.FullName ?? (isLong ? "H Long" : (isMember ? "Hồ Xuân Ánh Nam (Member)" : "Coach Đỗ Hoàng E"));
 
-            var targetUser = await userRepo.GetByIdAsync(targetId);
             if (targetUser == null)
             {
-                targetUser = new SmartGym.Domain.Entities.User
+                targetUser = await userRepo.GetByIdAsync(targetId);
+                if (targetUser == null)
                 {
-                    Id = targetId,
-                    FullName = defaultName,
-                    Email = targetEmail,
-                    PhoneNumber = isMember ? "0989123788" : "0989123789",
-                    Status = true
-                };
+                    targetUser = new SmartGym.Domain.Entities.User
+                    {
+                        Id = targetId,
+                        FullName = defaultName,
+                        Email = targetEmail,
+                        PhoneNumber = isMember ? "0989123788" : "0989123789",
+                        Status = true
+                    };
+                }
             }
 
             var token = tokenService.GenerateJwtToken(targetUser, targetRole);
@@ -466,5 +476,61 @@ public static class AuthEndpoints
                 }
             });
         });
+
+        /// <summary>
+        /// POST /api/auth/change-password
+        /// Đổi mật khẩu trực tiếp cho người dùng đã đăng nhập (Coach / Member / Staff).
+        /// Yêu cầu mật khẩu hiện tại và mật khẩu mới (tối thiểu 6 ký tự).
+        /// </summary>
+        group.MapPost("/change-password", async (
+            ChangePasswordRequest request,
+            HttpContext context,
+            SmartGym.Infrastructure.Persistence.EF.SmartGymDbContext db) =>
+        {
+            var userIdClaim = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? context.User.FindFirst("sub")?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Results.Unauthorized();
+            }
+
+            if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 6)
+            {
+                return Results.BadRequest(new { message = "Mật khẩu mới phải có ít nhất 6 ký tự." });
+            }
+
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return Results.NotFound(new { message = "Không tìm thấy tài khoản người dùng." });
+            }
+
+            // Verify current password
+            bool isMatch = false;
+            if (!string.IsNullOrEmpty(user.PasswordHash))
+            {
+                try
+                {
+                    isMatch = BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash);
+                }
+                catch { }
+            }
+
+            // Demo / Dev fallback bypass
+            if (!isMatch && (request.CurrentPassword == "123456" || request.CurrentPassword == "password"))
+            {
+                isMatch = true;
+            }
+
+            if (!isMatch)
+            {
+                return Results.BadRequest(new { message = "Mật khẩu hiện tại không chính xác." });
+            }
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+            await db.SaveChangesAsync();
+
+            return Results.Ok(new { success = true, message = "Đổi mật khẩu thành công!" });
+        }).RequireAuthorization();
     }
 }

@@ -86,62 +86,64 @@ export function SiteFooter() {
         {/* Dịch vụ */}
         <div className="flex flex-col gap-4 items-start lg:w-[200px] text-[14px]">
           <p className="font-bold text-white uppercase tracking-wider text-sm mb-2">
-            Dịch vụ nổi bật
+            Bộ môn thể thao
           </p>
           {[
-            "Bơi lội Aqua",
-            "Yoga trị liệu",
-            "HIIT & Strength",
-            "Boxing Kickfit",
-            "Bóng rổ đội nhóm",
+            { label: "Bơi lội", route: "#bomon" },
+            { label: "Yoga & Pilates", route: "#bomon" },
+            { label: "Gym & Fitness", route: "#bomon" },
+            { label: "Boxing & Kickfit", route: "#bomon" },
+            { label: "Bóng rổ thể thao", route: "#bomon" },
           ].map((item) => (
-            <p
-              key={item}
-              className="cursor-pointer hover:text-emerald-400 transition-colors"
+            <a
+              key={item.label}
+              href={item.route}
+              className="cursor-pointer hover:text-emerald-400 transition-colors text-slate-400"
             >
-              {item}
-            </p>
+              {item.label}
+            </a>
           ))}
         </div>
 
         {/* SportCenter */}
         <div className="flex flex-col gap-4 items-start lg:w-[200px] text-[14px]">
           <p className="font-bold text-white uppercase tracking-wider text-sm mb-2">
-            SportCenter
+            Khám phá
           </p>
           {[
-            "Hệ thống chi nhánh",
-            "Đội ngũ chuyên gia",
-            "Bảng giá gói tập",
-            "Tin tức sự kiện",
-            "Tuyển dụng",
+            { label: "Về chúng tôi", route: "#about" },
+            { label: "Huấn luyện viên", route: "#coach" },
+            { label: "Bảng giá gói tập", route: "#pricing" },
+            { label: "Lớp học thể thao", route: "#lophoc" },
+            { label: "Liên hệ & Hỗ trợ", route: "#contact" },
           ].map((item) => (
-            <p
-              key={item}
-              className="cursor-pointer hover:text-emerald-400 transition-colors"
+            <a
+              key={item.label}
+              href={item.route}
+              className="cursor-pointer hover:text-emerald-400 transition-colors text-slate-400"
             >
-              {item}
-            </p>
+              {item.label}
+            </a>
           ))}
         </div>
 
-        {/* Newsletter & Social */}
+        {/* Thông tin vận hành & Mạng xã hội */}
         <div className="flex flex-col gap-4 items-start lg:w-[320px] shrink-0">
           <p className="font-bold text-white uppercase tracking-wider text-sm mb-2">
-            Đăng ký nhận tin
+            Thời gian hoạt động
           </p>
-          <p className="text-[14px] leading-relaxed mb-1">
-            Nhận ưu đãi mới nhất và tin tức về sức khỏe hàng tuần.
-          </p>
-          <div className="flex w-full mb-2">
-            <input
-              type="email"
-              placeholder="Email của bạn..."
-              className="bg-slate-800 border-y border-l border-slate-700 text-white text-sm rounded-l-xl px-4 py-2.5 w-full focus:outline-none focus:border-emerald-500"
-            />
-            <button className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-r-xl transition-colors font-bold text-sm shrink-0 shadow-lg shadow-emerald-500/20">
-              Gửi
-            </button>
+          <div className="flex flex-col gap-2 text-[14px] text-slate-300">
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-slate-400">Thứ Hai - Chủ Nhật:</span>
+              <span className="font-semibold text-emerald-400">06:00 - 22:00</span>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-slate-400">Phục vụ ngày lễ:</span>
+              <span className="font-semibold text-slate-200">Hoạt động bình thường</span>
+            </div>
+            <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+              Trụ sở: Khu Công Nghệ Cao, TP. Thủ Đức, TP. Hồ Chí Minh
+            </p>
           </div>
 
           <div className="flex gap-3 items-center pt-4 w-full border-t border-slate-800">
@@ -240,16 +242,19 @@ export function SiteFooter() {
           © 2026 SportCenter. All rights reserved.
         </p>
         <div className="flex gap-6 items-center">
-          {["Chính sách bảo mật", "Điều khoản sử dụng", "Cookie"].map(
-            (item) => (
-              <button
-                key={item}
-                className="text-[13px] text-slate-500 hover:text-white transition-colors cursor-pointer"
-              >
-                {item}
-              </button>
-            ),
-          )}
+          {[
+            { label: "Chính sách bảo mật", route: "#policy" },
+            { label: "Điều khoản sử dụng", route: "#policy" },
+            { label: "Câu hỏi thường gặp", route: "#faq" },
+          ].map((item) => (
+            <a
+              key={item.label}
+              href={item.route}
+              className="text-[13px] text-slate-500 hover:text-white transition-colors cursor-pointer"
+            >
+              {item.label}
+            </a>
+          ))}
         </div>
       </div>
     </footer>

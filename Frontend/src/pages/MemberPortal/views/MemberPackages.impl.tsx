@@ -1,70 +1,30 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react"; import { createPortal } from "react-dom"; import type { MemberScreen } from "../types"; import {
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import type { MemberScreen } from "../types";
+import {
     PackageAPI, CatalogPackage,
     PackageOrder, PackagePeriod, MembershipTier, SportFormat, getMembershipStatus, MembershipStatus,
-} from "../../../services/packageApi"; import {
+    calculateMembershipUpgrade,
+} from "../../../services/packageApi";
+import {
     Crown, Sparkles, ShieldCheck, CheckCircle2,
     Clock, ArrowRight, CreditCard, Dumbbell, Zap, Calendar,
     Ticket, Droplets, Layers, Lock, RefreshCw, AlertCircle,
     X, ChevronRight, Activity, Flame, Info, QrCode,
     Building,
 } from "lucide-react";
-import SePayQrModal from "../components/SePayQrModal";
+import UniversalPaymentModal, { UniversalPaymentItem } from "../components/UniversalPaymentModal";
 interface Props {
     onNavigate: (screen: MemberScreen) => void; onCheckout?: (item: CatalogPackage,
         duration: PackagePeriod, discountPct: number) => void;
 }
-// Fallback catalog in case backend is loading or offline
-const FALLBACK_CATALOG: CatalogPackage[] = [{
-    id: "membership-basic", category: "membership", tier: "basic", name: "Cơ bản (Default)",
-    description: "Hạng thành viên mặc định miễn phí trọn đời cho mọi hội viên.", isActive: true, prices: { 1: 0, 3: 0, 6: 0, 12: 0 }, benefits: ["Hạng mặc định miễn phí trọn đời", "Quyền mua lẻ bất kỳ gói môn tập nào",
-        "Tủ đồ tiêu chuẩn trong ca tập", "1 lần đo chỉ số InBody khi kích hoạt", "Đặt lớp trước tối đa 24 giờ",], terms: ["Gói thành viên không thay thế quyền vào khu tập."], groupDiscountPct: 0,
-    coachDiscountPct: 0, bookingAdvanceHours: 24, lockerTerms: "Tủ đồ tiêu chuẩn trong ca tập.",
-}, {
-    id: "membership-plus",
-    category: "membership", tier: "plus", name: "Plus Member", description: "Nâng tầm trải nghiệm với ưu đãi giảm giá và đặt lịch trước 3 ngày.", isActive: true, prices: { 1: 149000, 3: 399000, 6: 749000, 12: 1399000 },
-    benefits: ["Giảm 5% khi mua gói tự tập và lớp nhóm", "Giảm 2% khi thuê Huấn luyện viên kèm 1–1", "Đặt lớp trước 72 giờ (3 ngày) - Không lo hết chỗ", "1 vé mời bạn bè mỗi tháng (1 Day-Pass/tháng)", "Mượn 1 khăn tập miễn phí mỗi buổi",
-        "Đo InBody định kỳ 1 lần/tháng",], terms: ["Hiệu lực từ ngày xác nhận thanh toán hoặc nối tiếp hạn hiện tại."], groupDiscountPct: 5, coachDiscountPct: 2, bookingAdvanceHours: 72,
-    lockerTerms: "Tủ đồ tiêu chuẩn + 1 khăn tập miễn phí mỗi buổi.",
-}, {
-    id: "membership-premium", category: "membership", tier: "premium",
-    name: "Premium VIP", description: "Đặc quyền tối đa: Giảm 10%, Xông hơi & Jacuzzi, Tủ riêng thông minh.", isActive: true, prices: { 1: 299000, 3: 799000, 6: 1499000, 12: 2799000 }, benefits: ["Giảm 10% khi mua gói tự tập và lớp nhóm",
-        "Giảm 5% khi thuê Huấn luyện viên kèm 1–1", "Đặt lớp trước 120 giờ (5 ngày) - Ưu tiên hàng đầu", "2 vé mời bạn bè mỗi tháng (2 Day-Pass/tháng)", "Miễn phí Xông hơi đá muối & Hồ sục Jacuzzi thư giãn", "Tủ đồ thông minh riêng & Combo khăn tập cao cấp", "Đo InBody không giới hạn & Trợ lý tư vấn AI",
-    ], terms: ["Hiệu lực từ ngày xác nhận thanh toán hoặc nối tiếp hạn hiện tại."], groupDiscountPct: 10, coachDiscountPct: 5, bookingAdvanceHours: 120, lockerTerms: "Tủ thông minh riêng biệt kèm khăn cao cấp trong mỗi buổi tập.",
-}, {
-    id: "sport-gym-self", category: "sport", name: "Gym & Cardio Tự Tập", description: "Tập luyện linh hoạt không giới hạn thời gian với dàn máy tạ khối và cardio nhập khẩu.",
-    isActive: true, prices: { 1: 500000, 3: 1350000, 6: 2550000, 12: 4800000 }, benefits: ["Không giới hạn số buổi trong tháng (06:00 - 22:00)", "Sử dụng đầy đủ dàn máy tạ khối, máy chạy bộ, dàn đạp xe", "Tủ đồ cá nhân và phòng tắm nóng lạnh miễn phí",
-    ], terms: ["Chỉ sử dụng khu Gym trong khung giờ mở cửa."], sport: "Gym", area: "Khu Gym & Cardio", format: "self", accessHours: "06:00–22:00",
-    groupDiscountPct: 0, coachDiscountPct: 0, bookingAdvanceHours: 24, lockerTerms: "Tủ đồ cá nhân trong ca tập.",
-}, {
-    id: "sport-swimming-self", category: "sport", name: "Bơi Lội Tự Do (Bể 4 Mùa)", description: "Bơi lội thư giãn với hệ thống lọc muối khoáng và gia nhiệt nước ấm tiêu chuẩn.", isActive: true, prices: { 1: 700000, 3: 1890000, 6: 3570000, 12: 6720000 },
-    benefits: ["Không giới hạn số lượt bơi trong tháng", "Bể bơi nước ấm 4 mùa, khử khuẩn không mùi Clo", "Phao bơi hỗ trợ và phòng tắm tráng nước nóng riêng",], terms: ["Chỉ sử dụng khu Bể bơi trong khung giờ mở cửa."],
-    sport: "Bơi lội", area: "Khu Bể bơi 4 mùa", format: "self", accessHours: "06:00–21:30", groupDiscountPct: 0, coachDiscountPct: 0,
-    bookingAdvanceHours: 24, lockerTerms: "Tủ đồ cá nhân trong ca bơi.",
-}, {
-    id: "sport-yoga-group", category: "sport",
-    name: "Yoga & Pilates Nhóm", description: "Lớp nhóm đa dạng: Hatha, Vinyasa, Yoga Dây, Pilates thảm dưới sự hướng dẫn của HLV.", isActive: true, prices: { 1: 700000, 3: 1890000, 6: 3570000, 12: 6720000 }, benefits: ["12 buổi học lớp nhóm mỗi tháng (60 phút/buổi)",
-        "Đã bao gồm quyền vào Studio Yoga trước/sau giờ học", "Thảm tập, gạch xốp và dụng cụ hỗ trợ miễn phí", "Giáo án đa dạng theo lịch trung tâm",], terms: ["Hủy lớp trước ít nhất 2 giờ để được hoàn trả buổi."], sport: "Yoga",
-    area: "Studio Yoga & Pilates", format: "group", sessionsPerMonth: 12, minutesPerSession: 60, maxClassSize: 16, groupDiscountPct: 0,
-    coachDiscountPct: 0, bookingAdvanceHours: 72, lockerTerms: "Tủ đồ trong buổi học.",
-}, {
-    id: "sport-boxing-coach",
-    category: "sport", name: "Boxing & Kickfit Coach 1–1", description: "Huấn luyện cá nhân 1 kèm 1 chuyên sâu, rèn kỹ thuật đấm, né và xả stress cực tốt.", isActive: true, prices: { 1: 2400000, 3: 6480000, 6: 12240000, 12: 23040000 }, benefits: [
-        "8 buổi kèm riêng 1–1 với HLV chuyên nghiệp mỗi tháng", "60 phút mỗi buổi, đặt lịch linh hoạt theo khung giờ rảnh", "Đã bao gồm quyền sử dụng sàn đài Combat Zone và găng tập", "Thiết kế giáo án riêng theo thể lực từng học viên",], terms: ["Lịch tập đặt trước và hủy trước tối thiểu 4 giờ."],
-    sport: "Boxing", area: "Combat Zone", format: "coach", sessionsPerMonth: 8, minutesPerSession: 60, maxClassSize: 1,
-    groupDiscountPct: 0, coachDiscountPct: 0, bookingAdvanceHours: 72, lockerTerms: "Tủ đồ trong ca tập.",
-}, {
-    id: "sport-gym-coach", category: "sport", name: "Gym Kèm PT 1–1 Chuyên Sâu", description: "Huấn luyện viên cá nhân theo sát từng động tác, cam kết mục tiêu tăng cơ giảm mỡ chuẩn form.", isActive: true, prices: { 1: 3000000, 3: 8100000, 6: 15300000, 12: 28800000 },
-    benefits: ["12 buổi PT kèm riêng mỗi tháng (60 phút/buổi)", "Thiết kế thực đơn dinh dưỡng và giáo án cá nhân hóa", "Đã bao gồm quyền sử dụng toàn bộ khu Gym", "Đo chỉ số InBody và chỉnh form chuẩn y khoa",],
-    terms: ["Học viên và PT chủ động thống nhất lịch hẹn."], sport: "Gym", area: "Khu Gym & Cardio", format: "coach", sessionsPerMonth: 12, minutesPerSession: 60,
-    maxClassSize: 1, groupDiscountPct: 0, coachDiscountPct: 0, bookingAdvanceHours: 72, lockerTerms: "Tủ đồ trong ca tập.",
-},
-]; export default function MemberPackages({ onNavigate, onCheckout }: Props) {
+export default function MemberPackages({ onNavigate, onCheckout }: Props) {
     // State
     const [activeTab, setActiveTab] = useState<"membership" | "sport">("membership"); const [catalog, setCatalog] = useState<CatalogPackage[]>([]); const [orders, setOrders] = useState<PackageOrder[]>([]); const [loading, setLoading] = useState(true); const [selectedDuration, setSelectedDuration] = useState<PackagePeriod>(1); const [sportFilter, setSportFilter] = useState("all");
     const [formatFilter, setFormatFilter] = useState<"all" | SportFormat>("all");
     // Quick checkout modal state
-    const [selectedPackage, setSelectedPackage] = useState<CatalogPackage | null>(null); const [checkoutDuration, setCheckoutDuration] = useState<PackagePeriod>(1); const [checkoutMethod, setCheckoutMethod] = useState<"qr" | "counter">("qr"); const [isSubmitting, setIsSubmitting] = useState(false); const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
-    const [qrOrder, setQrOrder] = useState<{ id: string; name: string; total: number } | null>(null);
+    const [selectedPackage, setSelectedPackage] = useState<CatalogPackage | null>(null);
+    const [checkoutDuration, setCheckoutDuration] = useState<PackagePeriod>(1);
+    const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
     // Load data
     const loadData = useCallback(async () => {
         try {
@@ -111,26 +71,103 @@ const FALLBACK_CATALOG: CatalogPackage[] = [{
     }, [catalog]);
     // Calculate discount for a package based on active membership tier
     const calculateDiscount = useCallback((pkg: CatalogPackage): { discountPct: number; originalPrice: number; finalPrice: number } => {
-        const orig = pkg.prices[selectedDuration] || pkg.prices[1] || 0; if (pkg.category === "membership") { return { discountPct: 0, originalPrice: orig, finalPrice: orig }; }
+        const orig = pkg.prices[selectedDuration] || pkg.prices[1] || 0;
+        if (pkg.category === "membership") {
+            const upgrade = calculateMembershipUpgrade(membershipStatus, pkg, selectedDuration);
+            if (upgrade.isUpgrade) {
+                const discountPct = upgrade.originalPrice > 0
+                    ? Math.round((upgrade.remainingCredit / upgrade.originalPrice) * 100)
+                    : 0;
+                return { discountPct, originalPrice: upgrade.originalPrice, finalPrice: upgrade.finalPrice };
+            }
+            return { discountPct: 0, originalPrice: orig, finalPrice: orig };
+        }
         let discountPct = 0; if (pkg.format === "coach") { discountPct = membershipStatus.coachDiscountPct || 0; } else { discountPct = membershipStatus.groupDiscountPct || 0; }
         const finalPrice = Math.round(orig * (1 - discountPct / 100)); return { discountPct, originalPrice: orig, finalPrice };
     }, [membershipStatus, selectedDuration]);
     // Handle start purchase
     const handleStartPurchase = (pkg: CatalogPackage) => {
-        const { discountPct } = calculateDiscount(pkg); if (onCheckout) { onCheckout(pkg, selectedDuration, discountPct); return; }
-        setSelectedPackage(pkg); setCheckoutDuration(selectedDuration);
+        setSelectedPackage(pkg);
+        setCheckoutDuration(selectedDuration);
     };
-    // Submit quick checkout
-    const handleQuickCheckout = async () => {
-        if (!selectedPackage) return; try {
-            setIsSubmitting(true); const res = await PackageAPI.checkout(selectedPackage.id,
-                checkoutDuration, checkoutMethod); const orderData = res?.order; const pkgName = selectedPackage.name; setSelectedPackage(null); if (checkoutMethod === "qr" && orderData) { setQrOrder({ id: orderData.id, name: pkgName, total: orderData.total || 0 }); } else { setFeedback({ type: "success", text: `Đã tạo đơn đăng ký gói "${pkgName}". Vui lòng thanh toán tại quầy lễ tân để kích hoạt!`, }); await loadData(); }
+
+    const universalPaymentItem = useMemo<UniversalPaymentItem | null>(() => {
+        if (!selectedPackage) return null;
+        const { discountPct, originalPrice, finalPrice } = calculateDiscount(selectedPackage);
+        const upgrade = selectedPackage.category === "membership"
+            ? calculateMembershipUpgrade(membershipStatus, selectedPackage, checkoutDuration)
+            : null;
+
+        const isMembership = selectedPackage.category === "membership";
+        const isCurrentTier = isMembership && membershipStatus.tier !== "basic" && membershipStatus.tier === selectedPackage.tier;
+        const isRenewal = isCurrentTier;
+
+        let renewalPreview: { currentEndDate: string; newEndDate: string; addedMonths: number } | undefined;
+        if (isRenewal && membershipStatus.endDate) {
+            const curEnd = new Date(membershipStatus.endDate);
+            const curEndStr = curEnd.toLocaleDateString("vi-VN");
+            const newEnd = new Date(curEnd);
+            newEnd.setMonth(newEnd.getMonth() + checkoutDuration);
+            newEnd.setDate(newEnd.getDate() - 1);
+            const newEndStr = newEnd.toLocaleDateString("vi-VN");
+            renewalPreview = {
+                currentEndDate: curEndStr,
+                newEndDate: newEndStr,
+                addedMonths: checkoutDuration,
+            };
+        }
+
+        return {
+            id: selectedPackage.id,
+            categoryTitle: isRenewal
+                ? `GIA HẠN GÓI THÀNH VIÊN - ${selectedPackage.name.toUpperCase()}`
+                : upgrade?.isUpgrade
+                ? "NÂNG CẤP HẠNG THÀNH VIÊN"
+                : isMembership
+                ? "ĐĂNG KÝ GÓI THÀNH VIÊN"
+                : "ĐĂNG KÝ GÓI MÔN TẬP",
+            title: isRenewal
+                ? `Gia hạn thẻ ${selectedPackage.name}`
+                : selectedPackage.name,
+            subtitle: isRenewal
+                ? `Gia hạn ${checkoutDuration} tháng • Hạng ${selectedPackage.name}`
+                : upgrade?.isUpgrade
+                ? `${checkoutDuration} tháng • Bù chênh lệch từ gói ${upgrade.currentTierName} (${upgrade.remainingDays} ngày chưa dùng)`
+                : `${checkoutDuration} tháng • ${selectedPackage.sport || "Hội viên"}`,
+            description: isRenewal && renewalPreview
+                ? `Thời hạn gói sẽ được cộng dồn nối tiếp từ ngày ${renewalPreview.currentEndDate} đến ngày ${renewalPreview.newEndDate}.`
+                : upgrade?.isUpgrade
+                ? `Giá gốc ${originalPrice.toLocaleString("vi-VN")} đ. Khấu trừ ${upgrade.remainingCredit.toLocaleString("vi-VN")} đ từ gói ${upgrade.currentTierName} đang dùng.`
+                : selectedPackage.description,
+            originalPrice,
+            discountPct,
+            discountAmount: originalPrice - finalPrice,
+            finalPrice,
+            memoPrefix: selectedPackage.category === "membership" ? "MEMBER" : "SPORT",
+            isRenewal,
+            renewalPreview,
+        };
+    }, [selectedPackage, checkoutDuration, calculateDiscount, membershipStatus]);
+
+    const handleUniversalCheckoutSuccess = async (method: "qr" | "wallet" | "card" | "counter") => {
+        if (!selectedPackage) return;
+        const pkgName = selectedPackage.name;
+        try {
+            await PackageAPI.checkout(selectedPackage.id, checkoutDuration, method);
+            setSelectedPackage(null);
+            setFeedback({
+                type: "success",
+                text: method === "counter"
+                    ? `Đã tạo đơn đăng ký gói "${pkgName}". Vui lòng thanh toán tại quầy lễ tân để kích hoạt!`
+                    : `Thanh toán thành công gói "${pkgName}"! Quyền lợi đã được kích hoạt ngay lập tức.`,
+            });
+            await loadData();
         } catch (err: any) {
             setFeedback({
                 type: "error",
-                text: err?.message || "Không thể khởi tạo đơn thanh toán. Vui lòng thử lại.",
+                text: err?.message || "Không thể hoàn tất đơn đăng ký gói tập. Vui lòng thử lại.",
             });
-        } finally { setIsSubmitting(false); }
+        }
     };
     return (<div className="space-y-6"> {/* Toast feedback */} {feedback && (<div className={`p-4 rounded-2xl border text-xs font-semibold flex items-center justify-between shadow-lg transition-all animate-fadeIn ${feedback.type === "success" ? "bg-emerald-50 dark:bg-emerald-950/70 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200" : "bg-red-50 dark:bg-red-950/70 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200"}`} > <div className="flex items-center gap-2.5">
             {feedback.type === "success" ? (<CheckCircle2 className="w-5 h-5 shrink-0" />) : (<AlertCircle className="w-5 h-5 shrink-0" />)} <span>{feedback.text}</span>
@@ -250,80 +287,15 @@ const FALLBACK_CATALOG: CatalogPackage[] = [{
                                 onClick={() => handleStartPurchase(pkg)} className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer" > <span>Đăng ký gói môn</span> <ArrowRight className="w-4 h-4" /> </button>
                         </div> </div>);
                 })} </div> </div>
-        </div>)} {/* QUICK CHECKOUT MODAL (PORTAL) */} {selectedPackage && createPortal(<div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col animate-scaleUp"> {/* Modal Header */} <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between"> <div> <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-600 dark:text-emerald-400"> {selectedPackage.category === "membership"
-                ? "Đăng Ký Gói Thành Viên" : "Đăng Ký Gói Môn Tập"} </span> <h3 className="text-base font-bold text-slate-900 dark:text-white mt-0.5"> Xác nhận đơn thanh toán </h3>
-            </div> <button type="button" onClick={() => setSelectedPackage(null)} className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" >
-                    <X className="w-5 h-5" /> </button> </div> {/* Modal Body */} <div className="p-6 space-y-5 text-xs max-h-[70vh] overflow-y-auto"> {/* Summary Card */}
-                    {(() => {
-                        const { discountPct, originalPrice, finalPrice } = calculateDiscount(selectedPackage); return (<div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50/50 to-emerald-50/20 dark:from-emerald-950/30 dark:to-slate-850 border border-emerald-200/80 dark:border-emerald-800/80"> <div className="flex items-center justify-between"> <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                            {selectedPackage.sport || "Hội viên"} </span> <span className="font-bold text-slate-500 dark:text-slate-400"> Kỳ hạn: {checkoutDuration} tháng </span> </div>
-                            <h4 className="text-lg font-black text-slate-900 dark:text-white mt-2"> {selectedPackage.name} </h4> <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5"> {selectedPackage.description} </p>
-                            <div className="mt-4 pt-3 border-t border-emerald-200/50 dark:border-emerald-800/50 flex items-baseline justify-between"> <div> {discountPct > 0 && (<span className="text-xs text-slate-400 line-through mr-2"> {originalPrice.toLocaleString("vi-VN")} đ </span>
-                            )} <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400"> {finalPrice.toLocaleString("vi-VN")} đ </span> </div> {discountPct > 0 && (
-                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300"> Đã giảm {discountPct}% </span>)} </div> </div>
-                        );
-                    })()} {/* Payment method selector */} <div> <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2"> Chọn phương thức thanh toán:
-                    </label> <div className="grid grid-cols-2 gap-3"> <button type="button" onClick={() => setCheckoutMethod("qr")} className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between transition-all ${checkoutMethod === "qr" ? "bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-500 text-emerald-900 dark:text-emerald-200 ring-1 ring-emerald-500" : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"}`} > <div className="flex items-center gap-2">
-                            <QrCode className="w-5 h-5" /> <span className="font-bold text-xs">Chuyển khoản QR</span> </div> <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-2"> Quét mã VietQR nhanh 24/7 </span>
-                    </button> <button type="button" onClick={() => setCheckoutMethod("counter")} className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between transition-all ${checkoutMethod === "counter"
-                        ? "bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-500 text-emerald-900 dark:text-emerald-200 ring-1 ring-emerald-500" : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"}`} > <div className="flex items-center gap-2"> <Building className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                                    <span className="font-bold text-xs">Tiền mặt tại quầy</span> </div> <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-2"> Thanh toán với Lễ tân trung tâm </span> </button>
-                        </div> </div> {/* Important notice */} <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-[11px] space-y-1"> <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200"> <Info className="w-4 h-4" />
-                            <span>Lưu ý kích hoạt quyền lợi:</span> </div> <p>• Quyền lợi gói sẽ được kích hoạt ngay sau khi đối soát thanh toán thành công.</p> <p>• Nếu bạn đã có gói cùng môn đang hoạt động, hạn sử dụng sẽ được cộng dồn nối tiếp.</p> </div> </div>
-                {/* Modal Footer */}
-                <div className="p-5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3 bg-slate-50/50 dark:bg-slate-850">
-                  <button
-                    type="button"
-                    disabled={isSubmitting}
-                    onClick={() => setSelectedPackage(null)}
-                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isSubmitting}
-                    onClick={handleQuickCheckout}
-                    className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-emerald-500 dark:text-slate-950 dark:hover:bg-emerald-400 font-extrabold shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Đang xử lý...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Tạo đơn thanh toán</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>,
-            document.body
-          )}
+        </div>)}
 
-        {qrOrder && (
-          <SePayQrModal
-            isOpen={!!qrOrder}
-            onClose={() => {
-              setQrOrder(null);
-              void loadData();
-            }}
-            orderId={qrOrder.id}
-            orderTitle={qrOrder.name}
-            amount={qrOrder.total}
-            onPaymentSuccess={async () => {
-              setFeedback({
-                type: "success",
-                text: `Thanh toán thành công gói "${qrOrder.name}"! Quyền lợi đã được kích hoạt.`,
-              });
-              await loadData();
-            }}
-          />
-        )}
+        {/* UNIVERSAL PAYMENT MODAL */}
+        <UniversalPaymentModal
+            isOpen={!!selectedPackage}
+            item={universalPaymentItem}
+            onClose={() => setSelectedPackage(null)}
+            onSuccess={handleUniversalCheckoutSuccess}
+        />
       </div>
     );
 }

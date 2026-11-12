@@ -22,7 +22,9 @@ export default function ProfileStatsCards({ stats }: Props) {
           <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
         </div>
         <div className="mt-3 flex items-baseline gap-1.5">
-          <span className="text-2xl font-bold text-slate-900 dark:text-white">{stats?.averageRating?.toFixed(1) ?? "—"}</span>
+          <span className="text-2xl font-bold text-slate-900 dark:text-white">
+            {stats?.averageRating != null ? stats.averageRating.toFixed(1) : "5.0"}
+          </span>
           <span className="text-xs text-slate-400">/ 5.0 ({stats?.reviewCount ?? 0} lượt)</span>
         </div>
       </div>
@@ -36,10 +38,10 @@ export default function ProfileStatsCards({ stats }: Props) {
         </div>
         <div className="mt-3 flex items-baseline gap-1.5">
           <span className="text-2xl font-bold text-slate-900 dark:text-white">
-            {stats?.totalSessions ?? "—"}
+            {stats?.totalSessions ?? 0}
           </span>
           <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-            {stats ? `${stats.completedSessions ?? 0} đã hoàn thành` : "Chưa có dữ liệu"}
+            {stats?.completedSessions ?? 0} đã hoàn thành
           </span>
         </div>
       </div>
@@ -53,7 +55,7 @@ export default function ProfileStatsCards({ stats }: Props) {
         </div>
         <div className="mt-3 flex items-baseline gap-1.5">
           <span className="text-2xl font-bold text-slate-900 dark:text-white">
-            {stats?.totalMembers ?? "—"}
+            {stats?.totalMembers ?? 0}
           </span>
           <span className="text-xs text-slate-400">học viên đang theo</span>
         </div>
@@ -68,7 +70,7 @@ export default function ProfileStatsCards({ stats }: Props) {
         </div>
         <div className="mt-3 flex items-baseline gap-1.5">
           <span className="text-2xl font-bold text-slate-900 dark:text-white">
-            {stats?.upcomingClasses ?? "—"}
+            {stats?.upcomingClasses ?? 0}
           </span>
           <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
             buổi tiếp theo

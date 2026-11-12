@@ -2,14 +2,13 @@ import React from "react";
 import { QrCode, CreditCard, Building } from "lucide-react";
 
 interface Props {
-  method: "qr" | "card" | "counter";
-  setMethod: (m: "qr" | "card" | "counter") => void;
+  method: "qr" | "counter";
+  setMethod: (m: "qr" | "counter") => void;
 }
 
 export const TopUpMethodTabs: React.FC<Props> = ({ method, setMethod }) => {
   const options = [
-    { id: "qr" as const, label: "Mã Vietcombank", icon: QrCode, color: "text-emerald-600" },
-    { id: "card" as const, label: "Thẻ ATM / Visa", icon: CreditCard, color: "text-slate-600" },
+    { id: "qr" as const, label: "Mã VietQR / SePay", icon: QrCode, color: "text-emerald-600" },
     { id: "counter" as const, label: "Tại quầy", icon: Building, color: "text-slate-600" },
   ];
 
@@ -18,7 +17,7 @@ export const TopUpMethodTabs: React.FC<Props> = ({ method, setMethod }) => {
       <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
         Hình thức thanh toán
       </label>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         {options.map((m) => (
           <button
             key={m.id}

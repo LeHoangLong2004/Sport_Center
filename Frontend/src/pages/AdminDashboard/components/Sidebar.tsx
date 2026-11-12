@@ -31,7 +31,6 @@ export function Sidebar({ page, setPage, onLogout }: { page: AdminPage; setPage:
     { label: "Thanh toán", icon: iReceipt, page: "payment" },
     { label: "Báo cáo", icon: iBarChart, page: "reports" },
   ]
-  const isFinancePage = ["budget", "expenses", "payroll", "pl-report"].includes(page)
 
   return (
     <aside className="manager-sidebar bg-[#0f172a] flex flex-col gap-[28px] items-start pb-[24px] pt-[28px] px-[18px] shrink-0 w-[230px] sticky top-0 h-screen overflow-y-auto hidden-scrollbar select-none z-30">

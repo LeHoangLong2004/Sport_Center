@@ -81,6 +81,74 @@ public sealed partial class PackageCatalogService
             );
     }
 
+    public static int GetTierRank(string? tier) => tier?.ToLowerInvariant() switch
+    {
+        "basic" => 0,
+        "plus" => 1,
+        "premium" => 2,
+        "vip" => 3,
+        "diamond" => 4,
+        _ => 1
+    };
+
+    public async Task<Subscription?> GetActiveMembershipSubscriptionAsync(
+        Guid userId,
+        DateTime now,
+        CancellationToken cancellationToken
+    )
+    {
+        var subscriptions = await db
+            .Subscriptions
+            .Include(s => s.Package)
+            .Where(subscription =>
+                subscription.UserId == userId
+                && subscription.PaymentStatus == PaymentStatus.Completed
+                && subscription.StartDate <= now
+                && subscription.EndDate >= now
+                && subscription.PackageSnapshotJson != null
+            )
+            .OrderByDescending(subscription => subscription.StartDate)
+            .ToListAsync(cancellationToken);
+
+        return subscriptions.FirstOrDefault(s =>
+        {
+            var pkg = DeserializeSnapshot(s);
+            return pkg.Category == "membership" && pkg.Tier is "plus" or "premium";
+        });
+    }
+
+    public async Task ClosePreviousMembershipSubscriptionsAsync(
+        Guid userId,
+        Guid currentSubscriptionId,
+        DateTime cutoffDate,
+        CancellationToken cancellationToken
+    )
+    {
+        var oldMemberships = await db.Subscriptions
+            .Where(s => s.UserId == userId
+                     && s.Id != currentSubscriptionId
+                     && s.PaymentStatus == PaymentStatus.Completed
+                     && s.EndDate >= cutoffDate
+                     && s.PackageSnapshotJson != null)
+            .ToListAsync(cancellationToken);
+
+        var changed = false;
+        foreach (var oldSub in oldMemberships)
+        {
+            var oldSnap = DeserializeSnapshot(oldSub);
+            if (oldSnap.Category == "membership")
+            {
+                oldSub.EndDate = cutoffDate.AddSeconds(-1);
+                changed = true;
+            }
+        }
+
+        if (changed)
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+    }
+
     private async Task<(DateTime Start, DateTime End)> GetProjectedPeriodAsync(
         Guid userId,
         CatalogPackageDto snapshot,

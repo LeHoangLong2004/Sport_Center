@@ -1,6 +1,9 @@
 import type { SyncedSession } from "./scheduleSync";
 
-const BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000") + "/api";
+const configuredApiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+const BASE_URL = configuredApiUrl
+  ? `${configuredApiUrl}${configuredApiUrl.endsWith('/api') ? '' : '/api'}`
+  : '/api';
 
 export async function pushBookingToBackend(session: SyncedSession): Promise<{ ok: boolean; message?: string }> {
   try {
