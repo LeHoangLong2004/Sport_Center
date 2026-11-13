@@ -1,4 +1,5 @@
 import React from 'react';
+import { parseScheduleTime } from '../../../../utils/scheduleTimeHelper';
 
 interface ClassDetailInfoProps {
   classDetail: {
@@ -15,7 +16,7 @@ interface ClassDetailInfoProps {
 }
 
 export function ClassDetailInfo({ classDetail, isPendingProposal }: ClassDetailInfoProps) {
-  const scheduleDate = new Date(classDetail.scheduleTime);
+  const scheduleDate = parseScheduleTime(classDetail.scheduleTime);
 
   return (
     <>

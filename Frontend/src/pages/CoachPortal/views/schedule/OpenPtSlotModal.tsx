@@ -386,7 +386,17 @@ export default function OpenPtSlotModal({
             </button>
             <button
               type="submit"
-              disabled={submitting || Boolean(conflictSession) || isPastTime || !!timeError}
+              disabled={
+                submitting ||
+                !openSlotDate ||
+                !openSlotStartTime ||
+                !openSlotEndTime ||
+                !openSlotSport ||
+                !openSlotRoom ||
+                Boolean(conflictSession) ||
+                isPastTime ||
+                Boolean(timeError)
+              }
               className="px-5 py-2 font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700 dark:disabled:text-slate-500 rounded-xl shadow-xs transition-colors cursor-pointer"
             >
               {submitting

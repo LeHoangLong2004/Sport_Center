@@ -5,13 +5,58 @@ import { iSettings, iCheckCircle, iSearch2, mAvatar0 } from '../shared';
 export function SettingsPage() {
   const [activeTab, setActiveTab] = useState("Nhật ký hệ thống");
   const [searchLog, setSearchLog] = useState("");
-  const [centerConfig, setCenterConfig] = useState({
-    name: "SportCenter Fitness & Sports Complex",
-    hotline: "1900 6868",
-    email: "contact@sportcenter.vn",
-    address: "Khu Công Nghệ Cao, Long Thạnh Mỹ, TP. Thủ Đức, TP. Hồ Chí Minh",
-    openHours: "06:00 - 22:00 (Hàng ngày)",
+  const [centerConfig, setCenterConfig] = useState(() => {
+    try {
+      const saved = localStorage.getItem("center_config");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {
+      name: "SportCenter Fitness & Sports Complex",
+      hotline: "1900 6868",
+      email: "contact@sportcenter.vn",
+      address: "Khu Công Nghệ Cao, Long Thạnh Mỹ, TP. Thủ Đức, TP. Hồ Chí Minh",
+      openHours: "06:00 - 22:00 (Hàng ngày)",
+    };
   });
+
+  const [branches, setBranches] = useState(() => {
+    try {
+      const saved = localStorage.getItem("center_branches");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [
+      { id: "1", name: "Cơ sở 1 - SportCenter Khu Công Nghệ Cao (Trụ sở chính)", address: "Long Thạnh Mỹ, TP. Thủ Đức", hotline: "1900 6868", active: true },
+      { id: "2", name: "Cơ sở 2 - SportCenter Quận 7", address: "Nguyễn Thị Thập, P. Tân Phú, Quận 7", hotline: "1900 6869", active: true },
+    ];
+  });
+
+  const handleSaveCenterConfig = () => {
+    try {
+      localStorage.setItem("center_config", JSON.stringify(centerConfig));
+      toast.success("Đã lưu thông tin cấu hình trung tâm thành công!");
+    } catch {
+      toast.error("Không thể lưu cấu hình.");
+    }
+  };
+
+  const handleToggleBranch = (id: string) => {
+    const updated = branches.map((b: any) => b.id === id ? { ...b, active: !b.active } : b);
+    setBranches(updated);
+    try { localStorage.setItem("center_branches", JSON.stringify(updated)); } catch {}
+    toast.success("Đã cập nhật trạng thái chi nhánh!");
+  };
+
+  const handleAddBranch = () => {
+    const name = window.prompt("Nhập tên chi nhánh mới:");
+    if (!name || !name.trim()) return;
+    const address = window.prompt("Nhập địa chỉ chi nhánh:") || "Chưa cập nhật";
+    const hotline = window.prompt("Nhập hotline chi nhánh:") || "1900 6868";
+    const newBranch = { id: String(Date.now()), name: name.trim(), address, hotline, active: true };
+    const updated = [...branches, newBranch];
+    setBranches(updated);
+    try { localStorage.setItem("center_branches", JSON.stringify(updated)); } catch {}
+    toast.success(`Đã thêm chi nhánh "${name.trim()}" thành công!`);
+  };
 
   const auditLogs: any[] = [];
   const filteredLogs = auditLogs.filter(l => 
@@ -153,8 +198,8 @@ export function SettingsPage() {
                 </div>
                 <div className="pt-4">
                   <button
-                    onClick={() => toast.success("Đã lưu thông tin cấu hình trung tâm thành công!")}
-                    className="bg-slate-600 hover:bg-slate-700 active:scale-95 text-white font-bold text-sm px-5 py-2.5 rounded-lg shadow-sm transition-all cursor-pointer"
+                    onClick={handleSaveCenterConfig}
+                    className="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-sm px-5 py-2.5 rounded-lg shadow-sm transition-all cursor-pointer"
                   >
                     Lưu thay đổi
                   </button>
@@ -171,27 +216,32 @@ export function SettingsPage() {
                   <p className="text-slate-500 text-sm mt-1">Hệ thống mạng lưới cơ sở trực thuộc SportCenter</p>
                 </div>
                 <button
-                  onClick={() => toast.info("Đang mở form tạo cơ sở / chi nhánh mới...")}
-                  className="bg-slate-600 hover:bg-slate-700 text-white font-bold text-xs px-4 py-2 rounded-lg cursor-pointer transition-all"
+                  onClick={handleAddBranch}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-lg cursor-pointer transition-all shadow-xs"
                 >
                   + Thêm chi nhánh
                 </button>
               </div>
               <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
-                <div className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                  <div>
-                    <p className="font-bold text-slate-900 text-sm">Cơ sở 1 - SportCenter Khu Công Nghệ Cao (Trụ sở chính)</p>
-                    <p className="text-slate-500 text-xs mt-1">Long Thạnh Mỹ, TP. Thủ Đức | Hotline: 1900 6868</p>
+                {branches.map((b: any) => (
+                  <div key={b.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                    <div>
+                      <p className="font-bold text-slate-900 text-sm">{b.name}</p>
+                      <p className="text-slate-500 text-xs mt-1">{b.address} | Hotline: {b.hotline}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleBranch(b.id)}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors ${
+                        b.active
+                          ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                          : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                      }`}
+                    >
+                      {b.active ? "Đang hoạt động" : "Tạm ngưng"}
+                    </button>
                   </div>
-                  <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Đang hoạt động</span>
-                </div>
-                <div className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                  <div>
-                    <p className="font-bold text-slate-900 text-sm">Cơ sở 2 - SportCenter Quận 7</p>
-                    <p className="text-slate-500 text-xs mt-1">Nguyễn Thị Thập, P. Tân Phú, Quận 7 | Hotline: 1900 6869</p>
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Đang hoạt động</span>
-                </div>
+                ))}
               </div>
             </div>
           )}

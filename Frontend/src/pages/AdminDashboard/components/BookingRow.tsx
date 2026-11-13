@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { UserAvatar } from '../../../components/UserAvatar';
+import { parseScheduleTime } from '../../../utils/scheduleTimeHelper';
 
 export function BookingRow({ 
   booking: b, 
@@ -38,8 +39,8 @@ export function BookingRow({
         <span className="font-medium text-[#64748b] text-[11px] truncate">HLV: {b.coachName}</span>
       </div>
       <div className="flex flex-col w-[160px] shrink-0">
-        <span className="font-medium text-[#0f172a] text-[13px] truncate">{new Date(b.startTime).toLocaleDateString('vi-VN')}</span>
-        <span className="font-medium text-[#64748b] text-[11px]">{new Date(b.startTime).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}</span>
+        <span className="font-medium text-[#0f172a] text-[13px] truncate">{parseScheduleTime(b.startTime).toLocaleDateString('vi-VN')}</span>
+        <span className="font-medium text-[#64748b] text-[11px]">{parseScheduleTime(b.startTime).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}</span>
       </div>
       <div className="flex flex-col w-[160px] shrink-0">
         <span className="font-medium text-[#0f172a] text-[13px] truncate">{new Date(b.bookedAt).toLocaleDateString('vi-VN')}</span>

@@ -184,7 +184,7 @@ public sealed partial class SupabaseGroupClassRepository
                 );
 
                 await transaction.CommitAsync();
-                return (true, null);
+                return (true, string.Empty);
             }
             catch (Exception ex)
             {
@@ -225,7 +225,7 @@ public sealed partial class SupabaseGroupClassRepository
                 );
 
                 await transaction.CommitAsync();
-                return (true, null);
+                return (true, string.Empty);
             }
             catch (Exception ex)
             {

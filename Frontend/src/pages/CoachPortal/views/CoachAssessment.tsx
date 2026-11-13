@@ -1,32 +1,23 @@
 /**
- * CO-07 — Kết quả, Tiến độ & Đánh giá
- * Không tạo kết quả cho học viên vắng.
- * Biểu đồ chỉ hiển thị khi có dữ liệu thực.
+ * CO-07 — Kết quả, Tiến độ & Đánh giá học viên (Coach Assessment)
+ * Đã tách thành các Component nhỏ độc lập trong thư mục views/assessment/
  */
 import { useState, useEffect, useMemo } from "react";
 import { CoachAPI } from "../services/api";
-import { createPortal } from "react-dom";
 import type { AssessmentRecord, MockSession } from "../services/api";
 import {
-  X,
   Plus,
-  Trash2,
-  Check,
   CheckCircle2,
-  Calendar,
-  Clock,
-  MapPin,
-  Users,
   Edit3,
   Award,
-  BookOpen,
-  UserCheck,
   ArrowLeft,
-  Dumbbell,
   Lock,
 } from "lucide-react";
 import { UserAvatar } from "../../../components/UserAvatar";
 import AssessmentClassSessionsList from "./assessment/AssessmentClassSessionsList";
+import AssessmentEditResultModal from "./assessment/AssessmentEditResultModal";
+import AssessmentMemberHistoryView from "./assessment/AssessmentMemberHistoryView";
+import AssessmentSessionHeaderCard from "./assessment/AssessmentSessionHeaderCard";
 import { isAttendanceLocked24h } from "../utils/attendanceLock";
 
 interface CoachAssessmentProps {
@@ -90,6 +81,27 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
     }).catch(console.error)
       .finally(() => setLoading(false));
   }, [initialMemberId, initialSessionId]);
+
+  // Ca dạy và học viên đang chọn hoặc từ bản nháp
+  const currentSession = useMemo(
+    () => sessions.find((s) => s.id === (draft.sessionId || selectedSessionId)),
+    [sessions, draft.sessionId, selectedSessionId]
+  );
+
+  const currentMember = useMemo(
+    () => members.find((m) => m.id === (draft.memberId || selectedMemberId)),
+    [members, draft.memberId, selectedMemberId]
+  );
+
+  const selectedSession = useMemo(
+    () => sessions.find((s) => s.id === selectedSessionId),
+    [sessions, selectedSessionId]
+  );
+
+  const isExpired24h = useMemo(
+    () => isAttendanceLocked24h(selectedSession?.date, selectedSession?.startTime),
+    [selectedSession?.date, selectedSession?.startTime]
+  );
 
   // Học viên thuộc ca dạy đang chọn
   const sessionMembers = useMemo(() => {
@@ -247,17 +259,7 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
     }
   };
 
-  const currentMember = members.find((m) => m.id === (draft.memberId || selectedMemberId));
-  const currentSession = sessions.find((s) => s.id === (draft.sessionId || selectedSessionId));
-
-  const selectedSession = sessions.find((s) => s.id === selectedSessionId);
-
-  const isExpired24h = useMemo(
-    () => isAttendanceLocked24h(selectedSession?.date, selectedSession?.startTime),
-    [selectedSession?.date, selectedSession?.startTime]
-  );
-
-  // VIEW 1: Khi chưa chọn ca dạy cụ thể, hiển thị danh sách dạng thẻ trực quan (giống Điểm danh lớp)
+  // VIEW 1: Khi chưa chọn ca dạy cụ thể, hiển thị danh sách dạng thẻ trực quan
   if (viewMode === "by_session" && !selectedSessionId) {
     return (
       <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-400 max-w-6xl mx-auto pb-16">
@@ -366,64 +368,14 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
 
           {/* Thông tin ca dạy đang chọn */}
           {selectedSession && (
-            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                    <Dumbbell className="w-3.5 h-3.5" />
-                    {selectedSession.sport || "Lớp nhóm"}
-                  </span>
-                  {selectedSession.level && (
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                      {selectedSession.level}
-                    </span>
-                  )}
-                  {isExpired24h && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                      <Lock className="w-3.5 h-3.5 text-slate-500" />
-                      Đã đóng (Quá 24 giờ)
-                    </span>
-                  )}
-                </div>
-
-                <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">
-                  {selectedSession.className}
-                </h2>
-
-                <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400 pt-1 flex-wrap">
-                  <span className="flex items-center gap-1.5 font-medium">
-                    <Clock className="w-3.5 h-3.5 text-emerald-500" />
-                    {selectedSession.startTime} - {selectedSession.endTime}
-                  </span>
-                  <span className="flex items-center gap-1.5 font-medium">
-                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                    {selectedSession.date}
-                  </span>
-                  <span className="flex items-center gap-1.5 font-medium">
-                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                    {selectedSession.room || "Studio trung tâm"}
-                  </span>
-                  <span className="flex items-center gap-1.5 font-medium">
-                    <Users className="w-3.5 h-3.5 text-slate-400" />
-                    Sĩ số: {sessionMembers.length} học viên
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                <select
-                  value={selectedSessionId}
-                  onChange={(e) => setSelectedSessionId(e.target.value)}
-                  className="border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-semibold bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 outline-none"
-                >
-                  {sessions.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.className} — {s.date}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            <AssessmentSessionHeaderCard
+              selectedSession={selectedSession}
+              sessions={sessions}
+              selectedSessionId={selectedSessionId}
+              setSelectedSessionId={setSelectedSessionId}
+              isExpired24h={isExpired24h}
+              memberCount={sessionMembers.length}
+            />
           )}
 
           {/* Danh sách học viên trong ca dạy */}
@@ -527,433 +479,31 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
 
       {/* MODE 2: THEO HỌC VIÊN */}
       {viewMode === "by_member" && (
-        <div className="space-y-6">
-          {/* Chọn học viên */}
-          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex flex-wrap gap-4 items-end">
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Học viên</label>
-              <select
-                value={selectedMemberId}
-                onChange={(e) => {
-                  setSelectedMemberId(e.target.value);
-                  setSelectedSessionId("");
-                }}
-                className={selectCls}
-              >
-                {members.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name} ({m.code})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Buổi học (đủ điều kiện)</label>
-              <select
-                value={selectedSessionId}
-                onChange={(e) => setSelectedSessionId(e.target.value)}
-                disabled={eligibleSessionsForMember.length === 0}
-                className={`${selectCls} ${eligibleSessionsForMember.length === 0 ? "opacity-60 cursor-not-allowed" : ""}`}
-              >
-                <option value="">
-                  {eligibleSessionsForMember.length === 0
-                    ? "-- Học viên chưa có buổi học đủ điều kiện --"
-                    : "-- Chọn buổi --"}
-                </option>
-                {eligibleSessionsForMember.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.className} — {s.date}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button
-              type="button"
-              onClick={openNew}
-              disabled={!selectedSessionId}
-              className={`px-4 py-2 text-white rounded-xl text-sm font-semibold transition-all ${
-                !selectedSessionId
-                  ? "bg-slate-300 dark:bg-slate-700 cursor-not-allowed"
-                  : "bg-emerald-500 hover:bg-emerald-600 shadow-md shadow-emerald-500/20 cursor-pointer"
-              }`}
-            >
-              + Ghi kết quả
-            </button>
-          </div>
-
-          {/* Tiến độ theo thời gian */}
-          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-xs">
-            <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
-              <h2 className="font-semibold text-slate-800 dark:text-slate-100 text-sm">Lịch sử kết quả</h2>
-            </div>
-            {memberAssessments.length === 0 ? (
-              <div className="px-4 py-8 text-center text-slate-400 text-sm">
-                Chưa có kết quả nào. Bắt đầu ghi nhận sau mỗi buổi học.
-              </div>
-            ) : (
-              <div className="divide-y divide-slate-100 dark:divide-slate-700">
-            {memberAssessments.map((a) => {
-              const s = sessions.find((x) => x.id === a.sessionId);
-              return (
-                <div key={a.id} className="px-4 py-4 hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div>
-                      <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{s?.className || a.sessionId}</div>
-                      <div className="text-xs text-slate-400 mt-0.5">{s?.date} · {new Date(a.createdAt).toLocaleDateString("vi-VN")}</div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="text-right">
-                        <div className="text-xs text-slate-400">Hoàn thành</div>
-                        <div className={`text-lg font-black ${a.completion >= 80 ? "text-emerald-600" : a.completion >= 60 ? "text-slate-500" : "text-rose-600"}`}>
-                          {a.completion}%
-                        </div>
-                      </div>
-                      {/* Simple bar chart */}
-                      <div className="w-20 h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full ${a.completion >= 80 ? "bg-emerald-500" : a.completion >= 60 ? "bg-slate-400" : "bg-rose-500"}`}
-                          style={{ width: `${a.completion}%` }} />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {a.metrics?.filter((m) => m && (m.value !== undefined && m.value !== "")).map((m, idx) => {
-                      const metricLabel = m.label || (m as any).metricName || `Chỉ số ${idx + 1}`;
-                      return (
-                        <span key={idx} className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full font-medium">
-                          {metricLabel}: {m.value}{m.unit ? ` ${m.unit}` : ""}
-                        </span>
-                      );
-                    })}
-                  </div>
-                  {a.comment && <div className="text-sm text-slate-600 dark:text-slate-300 mt-2 italic">"{a.comment}"</div>}
-                  {a.nextStep && <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">→ Hướng tiếp: {a.nextStep}</div>}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-      </div>
+        <AssessmentMemberHistoryView
+          members={members}
+          selectedMemberId={selectedMemberId}
+          setSelectedMemberId={setSelectedMemberId}
+          selectedSessionId={selectedSessionId}
+          setSelectedSessionId={setSelectedSessionId}
+          eligibleSessionsForMember={eligibleSessionsForMember}
+          sessions={sessions}
+          memberAssessments={memberAssessments}
+          onOpenNew={openNew}
+        />
       )}
 
-      {/* Edit form */}
-      {editingId && (() => {
-        const isCurrentSessionExpired = isAttendanceLocked24h(currentSession?.date, currentSession?.startTime);
-
-        return createPortal(
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-xl flex flex-col max-h-[92vh] border border-slate-200 dark:border-slate-800 overflow-hidden">
-              
-              {/* Header */}
-              <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between shrink-0 bg-slate-50/70 dark:bg-slate-850">
-                <div>
-                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                      Học viên: {currentMember?.name || "Học viên"}
-                    </span>
-                    {currentSession && (
-                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-200/70 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                        Buổi: {currentSession.className} ({currentSession.date})
-                      </span>
-                    )}
-                    {isCurrentSessionExpired && (
-                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800 flex items-center gap-1">
-                        <Lock className="w-3 h-3 text-amber-600" />
-                        Buổi học đã đóng (Quá 24 giờ)
-                      </span>
-                    )}
-                  </div>
-                  <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-                    {isCurrentSessionExpired
-                      ? "Xem kết quả & tiến độ buổi học (Chỉ xem)"
-                      : "Ghi nhận kết quả & tiến độ buổi học"}
-                  </h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => { setEditingId(null); setDraft({}); }}
-                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Body */}
-              <div className="p-5 sm:p-6 flex flex-col gap-5 overflow-y-auto flex-1 custom-scrollbar min-h-0">
-                {/* Banner cảnh báo đã đóng khi quá 24h */}
-                {isCurrentSessionExpired && (
-                  <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 flex items-center gap-2 text-xs font-semibold text-amber-800 dark:text-amber-300">
-                    <Lock className="w-4 h-4 text-amber-600 shrink-0" />
-                    <span>Buổi học đã đóng ( Không thể sửa điểm vì đã quá 24 giờ ) - Chỉ xem kết quả.</span>
-                  </div>
-                )}
-
-                {/* 1. Mức độ hoàn thành */}
-                <div className="p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
-                      Mức độ hoàn thành bài tập
-                    </label>
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-black ${
-                      (draft.completion || 0) >= 80
-                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
-                        : (draft.completion || 0) >= 60
-                        ? "bg-slate-100 text-slate-700 dark:bg-slate-950/60 dark:text-slate-300"
-                        : "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300"
-                    }`}>
-                      {draft.completion || 0}%
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    step={5}
-                    disabled={isCurrentSessionExpired}
-                    value={draft.completion || 0}
-                    onChange={(e) => setDraft({ ...draft, completion: +e.target.value })}
-                    className={`w-full accent-emerald-500 ${isCurrentSessionExpired ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
-                  />
-                  {!isCurrentSessionExpired && (
-                    <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                      <span className="text-[11px] text-slate-400 mr-1">Mốc nhanh:</span>
-                      {[50, 70, 80, 90, 100].map((val) => (
-                        <button
-                          key={val}
-                          type="button"
-                          onClick={() => setDraft({ ...draft, completion: val })}
-                          className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
-                            draft.completion === val
-                              ? "bg-emerald-500 text-white border-emerald-500 shadow-xs"
-                              : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
-                          }`}
-                        >
-                          {val}%
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* 2. Chỉ số tập luyện & Thể lực */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div>
-                      <label className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider block">
-                        Chỉ số tập luyện & Thể lực
-                      </label>
-                      <span className="text-[11px] text-slate-400 dark:text-slate-500">
-                        {isCurrentSessionExpired
-                          ? "Các thành tích và chỉ số đã được ghi nhận cho buổi học này"
-                          : "Ghi nhận mức tạ, cự ly, số lần hoặc thành tích đạt được"}
-                      </span>
-                    </div>
-                    {!isCurrentSessionExpired && (
-                      <button
-                        type="button"
-                        onClick={() => addMetric("", "")}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800 rounded-xl transition-all cursor-pointer"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        Thêm chỉ số
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Quick suggestion chips (chỉ hiện khi chưa khóa) */}
-                  {!isCurrentSessionExpired && (
-                    <div className="flex items-center gap-1.5 flex-wrap bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
-                      <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Gợi ý nhanh:</span>
-                      {[
-                        { label: "Mức tạ", unit: "kg" },
-                        { label: "Quãng đường", unit: "km" },
-                        { label: "Thời gian", unit: "phút" },
-                        { label: "Số rep", unit: "lần" },
-                        { label: "Nhịp tim", unit: "bpm" },
-                        { label: "Calo", unit: "kcal" },
-                      ].map((chip) => (
-                        <button
-                          key={chip.label}
-                          type="button"
-                          onClick={() => addMetric(chip.label, chip.unit)}
-                          className="px-2 py-0.5 text-[11px] font-medium rounded-lg bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-300 dark:hover:bg-slate-650 border border-slate-200 dark:border-slate-600 transition-colors cursor-pointer shadow-2xs"
-                        >
-                          + {chip.label} ({chip.unit})
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Metric Items List */}
-                  {(!draft.metrics || draft.metrics.length === 0) ? (
-                    <div className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-center text-xs text-slate-400">
-                      {isCurrentSessionExpired
-                        ? "Không có chỉ số tập luyện nào được ghi nhận cho buổi này."
-                        : "Chưa có chỉ số nào. Bấm vào các nút gợi ý nhanh ở trên hoặc nút \"+ Thêm chỉ số\"."}
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {/* Header Columns */}
-                      <div className="flex items-center gap-2 px-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                        <span className="flex-1 min-w-0">Tên bài tập / Chỉ số</span>
-                        <span className="w-24 shrink-0 text-center">Giá trị</span>
-                        <span className="w-24 shrink-0 text-center">Đơn vị</span>
-                        {!isCurrentSessionExpired && <span className="w-8 shrink-0"></span>}
-                      </div>
-
-                      {draft.metrics.map((m, i) => (
-                        <div
-                          key={i}
-                          className="flex items-center gap-2 p-2 rounded-xl bg-slate-50/70 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700"
-                        >
-                          <input
-                            type="text"
-                            placeholder="VD: Đẩy ngực, Plank, Chạy bộ..."
-                            value={m.label}
-                            readOnly={isCurrentSessionExpired}
-                            onChange={(e) => {
-                              const ms = [...(draft.metrics || [])];
-                              ms[i] = { ...m, label: e.target.value };
-                              setDraft({ ...draft, metrics: ms });
-                            }}
-                            className={`flex-1 min-w-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 outline-none ${
-                              isCurrentSessionExpired ? "bg-slate-100/70 dark:bg-slate-800/80 cursor-default" : "focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                            }`}
-                          />
-                          <input
-                            type="text"
-                            placeholder="VD: 60"
-                            value={m.value}
-                            readOnly={isCurrentSessionExpired}
-                            onChange={(e) => {
-                              const ms = [...(draft.metrics || [])];
-                              ms[i] = { ...m, value: e.target.value };
-                              setDraft({ ...draft, metrics: ms });
-                            }}
-                            className={`w-24 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-2 text-xs text-center font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 outline-none ${
-                              isCurrentSessionExpired ? "bg-slate-100/70 dark:bg-slate-800/80 cursor-default" : "focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                            }`}
-                          />
-                          <input
-                            type="text"
-                            placeholder="kg, km, s..."
-                            value={m.unit}
-                            readOnly={isCurrentSessionExpired}
-                            onChange={(e) => {
-                              const ms = [...(draft.metrics || [])];
-                              ms[i] = { ...m, unit: e.target.value };
-                              setDraft({ ...draft, metrics: ms });
-                            }}
-                            className={`w-24 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-2 text-xs text-center text-slate-800 dark:text-slate-100 placeholder:text-slate-400 outline-none ${
-                              isCurrentSessionExpired ? "bg-slate-100/70 dark:bg-slate-800/80 cursor-default" : "focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                            }`}
-                          />
-                          {!isCurrentSessionExpired && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const ms = draft.metrics!.filter((_, j) => j !== i);
-                                setDraft({ ...draft, metrics: ms });
-                              }}
-                              className="w-8 h-8 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
-                              title="Xóa chỉ số này"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* 3. Nhận xét buổi tập */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider block">
-                    Nhận xét của Huấn luyện viên
-                  </label>
-                  <textarea
-                    value={draft.comment || ""}
-                    readOnly={isCurrentSessionExpired}
-                    onChange={(e) => setDraft({ ...draft, comment: e.target.value })}
-                    rows={3}
-                    className={`w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 outline-none resize-none leading-relaxed ${
-                      isCurrentSessionExpired ? "bg-slate-100/70 dark:bg-slate-850 cursor-default" : "focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                    }`}
-                    placeholder={
-                      isCurrentSessionExpired
-                        ? "Không có nhận xét nào được lưu."
-                        : "Nhận xét kỹ thuật, sự tập trung và mức độ nỗ lực của học viên trong buổi học này..."
-                    }
-                  />
-                </div>
-
-                {/* 4. Hướng tập tiếp theo */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider block">
-                    Kế hoạch & Định hướng buổi tập tiếp theo
-                  </label>
-                  <input
-                    type="text"
-                    value={draft.nextStep || ""}
-                    readOnly={isCurrentSessionExpired}
-                    onChange={(e) => setDraft({ ...draft, nextStep: e.target.value })}
-                    className={`w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 outline-none ${
-                      isCurrentSessionExpired ? "bg-slate-100/70 dark:bg-slate-850 cursor-default" : "focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                    }`}
-                    placeholder={
-                      isCurrentSessionExpired
-                        ? "Không có định hướng nào được ghi nhận."
-                        : "VD: Nâng mức tạ Bench Press lên 65kg, cải thiện nhịp thở khi Squat..."
-                    }
-                  />
-                </div>
-              </div>
-
-              {/* Footer */}
-              {isCurrentSessionExpired ? (
-                <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0 bg-slate-50/70 dark:bg-slate-900/60 rounded-b-2xl">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-amber-700 dark:text-amber-400">
-                    <Lock className="w-4 h-4 text-amber-600 shrink-0" />
-                    <span>Buổi học đã đóng ( Không thể sửa điểm vì đã quá 24 giờ )</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => { setEditingId(null); setDraft({}); }}
-                    className="w-full sm:w-auto px-6 py-2.5 bg-slate-900 text-white dark:bg-white dark:text-slate-900 rounded-xl text-xs font-bold transition-colors shadow-xs cursor-pointer hover:bg-slate-800"
-                  >
-                    Đóng
-                  </button>
-                </div>
-              ) : (
-                <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3 shrink-0 bg-slate-50/70 dark:bg-slate-900/60 rounded-b-2xl">
-                  <button
-                    type="button"
-                    onClick={() => { setEditingId(null); setDraft({}); }}
-                    className="px-5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-xs cursor-pointer"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-400 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-500/20 cursor-pointer"
-                  >
-                    <Check className="w-4 h-4" />
-                    <span>{isSaving ? "Đang lưu..." : "Lưu kết quả"}</span>
-                  </button>
-                </div>
-              )}
-              
-            </div>
-          </div>,
-          document.body
-        );
-      })()}
+      {/* Modal chỉnh sửa kết quả / Chấm điểm học viên */}
+      <AssessmentEditResultModal
+        isOpen={Boolean(editingId)}
+        draft={draft}
+        setDraft={setDraft}
+        currentMember={currentMember}
+        currentSession={currentSession}
+        isSaving={isSaving}
+        onSave={handleSave}
+        onClose={() => { setEditingId(null); setDraft({}); }}
+        addMetric={addMetric}
+      />
     </div>
   );
 }
-
-const selectCls = "border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none";
-const inputCls = "border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none w-full";
