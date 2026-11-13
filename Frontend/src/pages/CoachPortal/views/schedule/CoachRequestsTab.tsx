@@ -43,20 +43,49 @@ export default function CoachRequestsTab({
   const [loadingProposals, setLoadingProposals] = useState(false);
   const [withdrawingProposalId, setWithdrawingProposalId] = useState<string | null>(null);
 
-  const loadProposals = async () => {
-    setLoadingProposals(true);
+  const loadProposals = async (silent = false) => {
+    if (!silent) setLoadingProposals(true);
     try {
       const list = await CoachAPI.getMyClassProposals();
       setClassProposals(list);
     } catch (err) {
       console.error("Lỗi tải đề xuất mở lớp:", err);
     } finally {
-      setLoadingProposals(false);
+      if (!silent) setLoadingProposals(false);
     }
   };
 
   useEffect(() => {
     loadProposals();
+
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        void loadProposals(true);
+      }
+    }, 4000);
+
+    const onSync = () => {
+      void loadProposals(true);
+    };
+
+    const onStorageSync = (e: StorageEvent) => {
+      if (e.key === "coach-proposal-timestamp" || e.key === "class-proposal-updated") {
+        void loadProposals(true);
+      }
+    };
+
+    window.addEventListener("focus", onSync);
+    window.addEventListener("class-proposal-updated", onSync);
+    window.addEventListener("coach-schedule-updated", onSync);
+    window.addEventListener("storage", onStorageSync);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", onSync);
+      window.removeEventListener("class-proposal-updated", onSync);
+      window.removeEventListener("coach-schedule-updated", onSync);
+      window.removeEventListener("storage", onStorageSync);
+    };
   }, []);
 
   const handleWithdrawProposal = async (id: string) => {
@@ -64,6 +93,11 @@ export default function CoachRequestsTab({
     setWithdrawingProposalId(id);
     try {
       await CoachAPI.withdrawClassProposal(id);
+      window.dispatchEvent(new CustomEvent("class-proposal-updated"));
+      window.dispatchEvent(new CustomEvent("coach-schedule-updated"));
+      try {
+        localStorage.setItem("coach-proposal-timestamp", Date.now().toString());
+      } catch {}
       toast.success("Đã thu hồi đề xuất mở lớp thành công!");
       await loadProposals();
     } catch (err: any) {

@@ -42,13 +42,17 @@ public class GroupClassModel : BaseModel
 
     public GroupClass ToDomain()
     {
+        var scheduleUtc = ScheduleTime.Kind == DateTimeKind.Local
+            ? ScheduleTime.ToUniversalTime()
+            : DateTime.SpecifyKind(ScheduleTime, DateTimeKind.Utc);
+
         return new GroupClass(
             Id,
             SportId,
             CoachId,
             FacilityId,
             ClassName,
-            ScheduleTime,
+            scheduleUtc,
             DurationMinutes,
             Capacity,
             CurrentEnrolled,

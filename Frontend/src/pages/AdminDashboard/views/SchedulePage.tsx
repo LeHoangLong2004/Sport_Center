@@ -10,9 +10,10 @@ import { ScheduleListView } from "./ScheduleListView";
 import { ScheduleProposalsSection } from "./ScheduleProposalsSection";
 import { CoachScheduleRequestsSection } from "./CoachScheduleRequestsSection";
 import { useCoachScheduleRequests } from "./useCoachScheduleRequests";
+import { parseScheduleTime } from "../../../utils/scheduleTimeHelper";
 export function SchedulePage({ initialTab = "calendar" }: { initialTab?: ScheduleTab } = {}) {
   const days = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
-  const hours = Array.from({ length: 15 }, (_, index) =>
+  const hours = Array.from({ length: 17 }, (_, index) =>
     `${String(index + 6).padStart(2, "0")}:00`,
   );
 
@@ -69,7 +70,7 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
       if (res.ok) {
         const data = await res.json();
         const formattedClasses = data.map((c: any, i: number) => {
-          const start = new Date(c.scheduleTime);
+          const start = parseScheduleTime(c.scheduleTime);
           const end = new Date(start.getTime() + (c.durationMinutes || 60) * 60000);
           const day = start.getDay() === 0 ? 6 : start.getDay() - 1;
           const startHour = start.getHours() + start.getMinutes() / 60;
@@ -161,14 +162,39 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
     fetchClasses();
     fetchFacilities();
     fetchBookings();
-    const refreshBookings = () => {
-      if (document.visibilityState === "visible") void fetchBookings();
+
+    const refreshData = () => {
+      if (document.visibilityState === "visible") {
+        void fetchClasses();
+        void fetchBookings();
+      }
     };
-    const interval = window.setInterval(refreshBookings, 15000);
-    window.addEventListener("focus", refreshBookings);
+
+    // Auto-refresh every 4 seconds for real-time synchronization between Coach and Manager
+    const interval = window.setInterval(refreshData, 4000);
+
+    const onProposalSync = () => {
+      void fetchClasses();
+      void fetchBookings();
+    };
+
+    const onStorageSync = (e: StorageEvent) => {
+      if (e.key === "coach-proposal-timestamp" || e.key === "class-proposal-updated") {
+        void fetchClasses();
+      }
+    };
+
+    window.addEventListener("focus", refreshData);
+    window.addEventListener("class-proposal-updated", onProposalSync);
+    window.addEventListener("coach-schedule-updated", onProposalSync);
+    window.addEventListener("storage", onStorageSync);
+
     return () => {
       window.clearInterval(interval);
-      window.removeEventListener("focus", refreshBookings);
+      window.removeEventListener("focus", refreshData);
+      window.removeEventListener("class-proposal-updated", onProposalSync);
+      window.removeEventListener("coach-schedule-updated", onProposalSync);
+      window.removeEventListener("storage", onStorageSync);
     };
   }, []);
   const handlePrevWeek = () => {
@@ -260,6 +286,11 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
         throw new Error(errorMessage || `Không thể xử lý đề xuất lớp học (HTTP ${res.status}).`);
       }
       await fetchClasses();
+      window.dispatchEvent(new CustomEvent("class-proposal-updated"));
+      window.dispatchEvent(new CustomEvent("coach-schedule-updated"));
+      try {
+        localStorage.setItem("coach-proposal-timestamp", Date.now().toString());
+      } catch {}
       toast.success(
         action === "approve"
           ? "Đã phê duyệt đề xuất lớp học thành công."
