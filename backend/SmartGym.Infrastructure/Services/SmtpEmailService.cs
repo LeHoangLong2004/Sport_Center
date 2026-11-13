@@ -166,36 +166,6 @@ public class SmtpEmailService : IEmailService
 
             var errorBody = await response.Content.ReadAsStringAsync();
             _logger.LogWarning("Resend API phản hồi mã {Code}: {Body}", response.StatusCode, errorBody);
-
-            // Chế độ thử nghiệm Resend Sandbox chỉ cho phép gửi về email của tài khoản đăng ký
-            if (response.StatusCode == HttpStatusCode.Forbidden || errorBody.Contains("testing emails"))
-            {
-                var fallbackOwnerEmail = "longlhse182662@fpt.edu.vn";
-                _logger.LogInformation("Resend Sandbox chuyển tiếp email OTP sang email nhà phát triển ({Owner}).", fallbackOwnerEmail);
-
-                var noticeHtml = $"<div style='background:#fef3c7;padding:12px;border-radius:6px;margin-bottom:16px;border:1px solid #f59e0b;font-family:sans-serif;'><p style='margin:0;color:#92400e;font-size:14px;'><b>Chế độ thử nghiệm Resend:</b> Email OTP này gửi cho tài khoản <b>{to}</b> và đã được chuyển tiếp đến hòm thư nhà phát triển ({fallbackOwnerEmail}).</p></div>" + htmlBody;
-
-                var fallbackPayload = new Dictionary<string, object>
-                {
-                    ["from"] = "SportCenter <onboarding@resend.dev>",
-                    ["to"] = new[] { fallbackOwnerEmail },
-                    ["subject"] = $"[SportCenter OTP cho {to}] {subject}",
-                    ["html"] = noticeHtml
-                };
-
-                using var fallbackRequest = new HttpRequestMessage(HttpMethod.Post, "https://api.resend.com/emails")
-                {
-                    Content = new StringContent(JsonSerializer.Serialize(fallbackPayload), Encoding.UTF8, "application/json")
-                };
-                fallbackRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-
-                var fallbackResponse = await _resendHttpClient.SendAsync(fallbackRequest);
-                if (fallbackResponse.IsSuccessStatusCode)
-                {
-                    _logger.LogInformation("Đã chuyển tiếp email OTP thành công tới {Owner}.", fallbackOwnerEmail);
-                    return true;
-                }
-            }
         }
         catch (Exception ex)
         {

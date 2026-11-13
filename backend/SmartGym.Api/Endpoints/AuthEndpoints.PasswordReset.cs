@@ -78,8 +78,7 @@ public static partial class AuthEndpoints
 
             return Results.Ok(new
             {
-                message = "Nếu email tồn tại, mã đặt lại mật khẩu đã được gửi.",
-                resetToken = token
+                message = "Nếu email tồn tại, mã đặt lại mật khẩu đã được gửi đến hộp thư của bạn."
             });
         });
 
