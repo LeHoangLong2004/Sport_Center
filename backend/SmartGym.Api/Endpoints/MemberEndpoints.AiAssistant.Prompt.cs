@@ -391,16 +391,6 @@ namespace SmartGym.Api.Endpoints
                 return ("🕐 SportCenter mở cửa từ 06:00 đến 22:00 mỗi ngày, kể cả Thứ 7, Chủ Nhật và ngày Lễ.", "none");
             }
 
-            if (Has("thực đơn", "ăn", "đạm", "dinh dưỡng", "calo"))
-            {
-                return ("🥗 Gợi ý thực đơn phục hồi giàu đạm:\n• Sáng: 2 quả trứng, 1 lát bánh mì nguyên cám, sữa chua Hy Lạp.\n• Trưa: 150g ức gà, cơm gạo lứt, rau xanh.\n• Trước tập 1h: 1 quả chuối hoặc 1 muỗng Whey.\n• Tối: 150g cá hồi hoặc thịt bò nạc, salad dầu oliu.\nUống đủ 2-2.5 lít nước mỗi ngày nhé!", "none");
-            }
-
-            if (Has("đau", "mỏi", "nhức", "giãn cơ", "phục hồi"))
-            {
-                return ("💪 Giảm đau mỏi cơ (DOMS) sau buổi tập:\n• Giãn cơ tĩnh hoặc lăn Foam Roller 10-15 phút.\n• Đi bộ nhẹ 15-20 phút thay vì nằm yên.\n• Uống đủ nước, ngủ 7-8 tiếng.\nNếu đau nhói, sưng hoặc kéo dài trên 3 ngày, hãy ngừng tập và hỏi ý kiến HLV/bác sĩ.", "none");
-            }
-
             if (Has("bài tập", "giáo án", "kỹ thuật", "động tác", "giao an", "bai tap", "dong tac", "ky thuat", "tap luyen"))
             {
                 if (ctx.AssignedWorkouts.Count > 0)
@@ -411,7 +401,7 @@ namespace SmartGym.Api.Endpoints
                 return ("🏋️ Giáo án và bài tập về nhà HLV giao cho bạn nằm ở mục Giáo án & Bài tập. Nếu cần hướng dẫn kỹ thuật cụ thể, bạn có thể nhắn trực tiếp cho HLV.", "workouts");
             }
 
-            return ("🤖 Trợ lý AI đang bận một chút. Bạn có thể hỏi về gói tập, cửa hàng sản phẩm, huấn luyện viên, cơ sở vật chất, lịch tập hoặc gửi Phiếu hỗ trợ để Lễ tân hỗ trợ nhé!", "support_ticket");
+            return ("⚠️ Hiện tại hệ thống không thể kết nối tới mô hình AI để trả lời câu hỏi này. Bạn vui lòng kiểm tra lại cấu hình API key của AI hoặc gửi Phiếu hỗ trợ để được đội ngũ HLV & Lễ tân tư vấn trực tiếp nhé!", "support_ticket");
         }
     }
 }

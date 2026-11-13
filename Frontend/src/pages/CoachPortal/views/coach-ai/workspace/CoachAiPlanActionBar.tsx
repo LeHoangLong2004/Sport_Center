@@ -3,8 +3,6 @@ import {
   Save,
   CheckCircle2,
   Zap,
-  ClipboardCopy,
-  Printer,
   BookOpen,
   Send,
   ArrowRight,
@@ -21,8 +19,8 @@ interface Props {
   onApprove: () => void;
   onApproveAndAssign?: () => void;
   onOpenAssign: () => void;
-  onCopyPlan: () => void;
-  onPrintPlan: () => void;
+  onCopyPlan?: () => void;
+  onPrintPlan?: () => void;
   onClone: () => void;
   onArchive: () => void;
 }
@@ -81,26 +79,6 @@ export function CoachAiPlanActionBar({
                 <span>🚀 Duyệt & Giao ngay</span>
               </button>
             )}
-
-            <button
-              type="button"
-              onClick={onCopyPlan}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-              title="Sao chép danh sách bài tập để gửi tin nhắn"
-            >
-              <ClipboardCopy className="w-4 h-4 text-slate-500" />
-              <span>Sao chép bài tập</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={onPrintPlan}
-              className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-              title="In hoặc Xuất PDF giáo án"
-            >
-              <Printer className="w-4 h-4 text-slate-500" />
-              <span>In / PDF</span>
-            </button>
           </>
         )}
 
@@ -126,26 +104,6 @@ export function CoachAiPlanActionBar({
               <Send className="w-4 h-4" />
               <span>Giao bài tập ngay</span>
             </button>
-
-            <button
-              type="button"
-              onClick={onCopyPlan}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-              title="Sao chép danh sách bài tập"
-            >
-              <ClipboardCopy className="w-4 h-4 text-slate-500" />
-              <span>Sao chép</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={onPrintPlan}
-              className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-              title="In hoặc Xuất PDF giáo án"
-            >
-              <Printer className="w-4 h-4 text-slate-500" />
-              <span>In / PDF</span>
-            </button>
           </>
         )}
 
@@ -164,14 +122,6 @@ export function CoachAiPlanActionBar({
             >
               <span>Xem trong Thư viện</span>
               <ArrowRight className="w-3 h-3" />
-            </button>
-            <button
-              type="button"
-              onClick={onCopyPlan}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-            >
-              <ClipboardCopy className="w-3 h-3" />
-              <span>Sao chép bài tập</span>
             </button>
           </div>
         )}

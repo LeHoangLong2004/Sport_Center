@@ -112,54 +112,137 @@ public sealed class Flow5RecommendationService : IFlow5RecommendationService
         var sportName = !string.IsNullOrWhiteSpace(context.RequestedSport?.Name)
             ? context.RequestedSport.Name
             : "Thể hình & Thể thao";
-        var planName = $"Giáo án {sportName} - {request.Goal}";
+
+        var effectiveGoal = !string.IsNullOrWhiteSpace(request.Goal)
+            ? request.Goal.Trim()
+            : "Tăng cường thể lực & Sức khỏe";
+
+        var planName = $"Giáo án {sportName} - {effectiveGoal}";
         if (planName.Length > 160) planName = planName[..160];
 
-        var exercises = new List<Flow5ExerciseDto>();
         var sLower = sportName.ToLowerInvariant();
+        var gLower = effectiveGoal.ToLowerInvariant();
+        var candidates = new List<Flow5ExerciseDto>();
+
+        var rng = new Random();
 
         if (sLower.Contains("boxing"))
         {
-            exercises.Add(new Flow5ExerciseDto { Name = "Nhảy dây khởi động & Di chuyển bước chân (Footwork)", Sets = "3", Reps = "3 phút", Duration = "10 phút", Note = "Giữ nhịp thở đều, thả lỏng cổ chân", Order = 1 });
-            exercises.Add(new Flow5ExerciseDto { Name = "Đấm bóng phản xạ / Shadow boxing (Jab - Cross - Hook)", Sets = "4", Reps = "3 phút", Duration = "12 phút", Note = "Siết cơ bụng, thu tay về thái dương sau mỗi cú đấm", Order = 2 });
-            exercises.Add(new Flow5ExerciseDto { Name = "Tập đấm bao cát nặng kết hợp né đòn (Heavy bag combo)", Sets = "4", Reps = "15 lần/tổ hợp", Duration = "12 phút", Note = "Tạo lực từ hông và chân", Order = 3 });
-            exercises.Add(new Flow5ExerciseDto { Name = "Hít đất kim cương & Plank tăng sức mạnh lõi", Sets = "3", Reps = "15 lần / 60s", Duration = "8 phút", Note = "Siết cơ trung tâm", Order = 4 });
-            exercises.Add(new Flow5ExerciseDto { Name = "Giãn cơ vai, lưng xô & thả lỏng", Sets = "1", Reps = "1 lần", Duration = "5 phút", Note = "Thả lỏng hoàn toàn cơ bắp", Order = 5 });
+            candidates.Add(new Flow5ExerciseDto { Name = "Nhảy dây tốc độ & Di chuyển bộ pháp (Footwork)", Sets = "3", Reps = "50 lan", Duration = "5 min", Rest = "60s", Note = "Duy trì nhịp thở đều, chuyển trọng tâm linh hoạt" });
+            candidates.Add(new Flow5ExerciseDto { Name = "Shadow boxing tổ hợp đòn (Jab - Cross - Hook - Uppercut)", Sets = "4", Reps = "20 lan", Duration = "10 min", Rest = "60s", Note = "Siết chặt cơ lõi, thu tay che hàm sau mỗi đòn đánh" });
+            candidates.Add(new Flow5ExerciseDto { Name = "Tập đấm bao cát nặng phát lực (Heavy bag power punches)", Sets = "4", Reps = "15 lan", Duration = "10 min", Rest = "60s", Note = "Phát lực xoay từ khớp hông và mũi chân" });
+            candidates.Add(new Flow5ExerciseDto { Name = "Tập phản xạ luồn lách né đòn (Slip & Duck drill)", Sets = "4", Reps = "20 lan", Duration = "8 min", Rest = "60s", Note = "Hạ thấp gối, giữ thắt lưng thẳng" });
+            candidates.Add(new Flow5ExerciseDto { Name = "Hít đất kim cương & Plank tăng lực cổ tay", Sets = "3", Reps = "15 lan", Duration = "8 min", Rest = "60s", Note = "Tăng sức chịu đựng của khớp tay khi va chạm" });
+            candidates.Add(new Flow5ExerciseDto { Name = "Bài tập tốc độ đấm bóng dây phản xạ (Speed ball drill)", Sets = "3", Reps = "30 lan", Duration = "6 min", Rest = "45s", Note = "Rèn luyện khả năng quan sát và phản xạ nhanh" });
+            candidates.Add(new Flow5ExerciseDto { Name = "Burpees bật nhảy kết hợp đấm thẳng", Sets = "3", Reps = "12 lan", Duration = "6 min", Rest = "60s", Note = "Đốt mỡ tối đa và tăng cường sức bền tim mạch" });
+            candidates.Add(new Flow5ExerciseDto { Name = "Giãn cơ vai, cẳng tay & xả cơ lưng xô", Sets = "1", Reps = "1 lan", Duration = "5 min", Rest = "30s", Note = "Thư giãn hoàn toàn hệ thần kinh và cơ bắp" });
         }
         else if (sLower.Contains("yoga"))
         {
-            exercises.Add(new Flow5ExerciseDto { Name = "Thở Pranayama & Khởi động nhẹ khớp cổ, vai", Sets = "1", Reps = "5 phút", Duration = "5 phút", Note = "Hít sâu thở chậm bằng mũi", Order = 1 });
-            exercises.Add(new Flow5ExerciseDto { Name = "Chuỗi Chào Mặt Trời (Surya Namaskar)", Sets = "5", Reps = "5 vòng", Duration = "10 phút", Note = "Chuyển động nhịp nhàng theo hơi thở", Order = 2 });
-            exercises.Add(new Flow5ExerciseDto { Name = "Tư thế Chiến Binh II (Virabhadrasana II) & Tam Giác", Sets = "3", Reps = "5 nhịp thở/bên", Duration = "10 phút", Note = "Mở rộng lồng ngực, hạ thấp trọng tâm", Order = 3 });
-            exercises.Add(new Flow5ExerciseDto { Name = "Tư thế Cây Cầu (Setu Bandhasana) & Vặn mình", Sets = "3", Reps = "30 giây", Duration = "10 phút", Note = "Bảo vệ thắt lưng, thư giãn cột sống", Order = 4 });
-            exercises.Add(new Flow5ExerciseDto { Name = "Tư thế Xác Chết (Savasana) thư giãn sâu", Sets = "1", Reps = "1 lần", Duration = "10 phút", Note = "Tĩnh tâm và hồi phục hoàn toàn", Order = 5 });
+            candidates.Add(new Flow5ExerciseDto { Name = "Thở Pranayama & Khởi động nhẹ khớp cổ, vai", Sets = "1", Reps = "1 lan", Duration = "5 min", Rest = "30s", Note = "Hít sâu thở chậm bằng mũi, tập trung tâm trí" });
+            candidates.Add(new Flow5ExerciseDto { Name = "Chuỗi Chào Mặt Trời (Surya Namaskar)", Sets = "5", Reps = "5 lan", Duration = "10 min", Rest = "60s", Note = "Chuyển động nhịp nhàng theo từng nhịp hít thở" });
+            candidates.Add(new Flow5ExerciseDto { Name = "Tư thế Chiến Binh II (Virabhadrasana II) & Tam Giác", Sets = "3", Reps = "5 lan", Duration = "10 min", Rest = "60s", Note = "Mở rộng lồng ngực, hạ thấp trọng tâm vững chãi" });
+            candidates.Add(new Flow5ExerciseDto { Name = "Tư thế Cây Cầu (Setu Bandhasana) & Vặn mình", Sets = "3", Reps = "5 lan", Duration = "8 min", Rest = "60s", Note = "Bảo vệ thắt lưng, thư giãn cột sống sâu" });
+            candidates.Add(new Flow5ExerciseDto { Name = "Tư thế Rắn Hổ Mang (Bhujangasana) mở ngực", Sets = "3", Reps = "5 lan", Duration = "6 min", Rest = "60s", Note = "Kéo giãn cột sống lưng an toàn và giải tỏa căng thẳng" });
+            candidates.Add(new Flow5ExerciseDto { Name = "Tư thế Cánh Bướm (Baddha Konasana) mở khớp háng", Sets = "3", Reps = "8 lan", Duration = "6 min", Rest = "45s", Note = "Giải phóng áp lực vùng xương chậu" });
+            candidates.Add(new Flow5ExerciseDto { Name = "Tư thế Đứa Trẻ (Balasana) phục hồi", Sets = "2", Reps = "1 lan", Duration = "5 min", Rest = "30s", Note = "Thả lỏng toàn bộ cơ lưng và vai" });
+            candidates.Add(new Flow5ExerciseDto { Name = "Tư thế Xác Chết (Savasana) thư giãn sâu", Sets = "1", Reps = "1 lan", Duration = "6 min", Rest = "30s", Note = "Tĩnh tâm và hồi phục hoàn toàn năng lượng" });
         }
         else if (sLower.Contains("bóng đá") || sLower.Contains("football"))
         {
-            exercises.Add(new Flow5ExerciseDto { Name = "Khởi động động & Chạy zíc zắc qua cọc (Agility ladder)", Sets = "3", Reps = "5 phút", Duration = "8 phút", Note = "Tăng tốc độ guồng chân và thăng bằng", Order = 1 });
-            exercises.Add(new Flow5ExerciseDto { Name = "Dẫn bóng biến tốc & Chuyền ban bật 1 chạm (One-touch pass)", Sets = "4", Reps = "20 lần", Duration = "12 phút", Note = "Mắt quan sát rộng, tiếp xúc bóng bằng lòng bàn chân", Order = 2 });
-            exercises.Add(new Flow5ExerciseDto { Name = "Tập dứt điểm cầu môn & Sút bóng sống sau đường chuyền", Sets = "4", Reps = "10 cú sút", Duration = "12 phút", Note = "Khóa cổ chân khi tiếp bóng", Order = 3 });
-            exercises.Add(new Flow5ExerciseDto { Name = "Bật nhảy đánh đầu & Bứt tốc cự ly ngắn (Interval sprint)", Sets = "4", Reps = "6 lần", Duration = "8 phút", Note = "Rèn thể lực và sức bật", Order = 4 });
-            exercises.Add(new Flow5ExerciseDto { Name = "Đi bộ thả lỏng & Căng cơ đùi trước, bắp chân", Sets = "1", Reps = "1 lần", Duration = "5 phút", Note = "Hạ nhịp tim từ từ", Order = 5 });
+            candidates.Add(new Flow5ExerciseDto { Name = "Khởi động động & Chạy thang dây phối hợp (Agility ladder)", Sets = "3", Reps = "6 lan", Duration = "8 min", Rest = "60s", Note = "Tăng guồng chân nhanh và khả năng đổi hướng tức thì" });
+            candidates.Add(new Flow5ExerciseDto { Name = "Dẫn bóng zíc zắc qua cọc & Chuyền bật tường 1 chạm", Sets = "4", Reps = "20 lan", Duration = "12 min", Rest = "60s", Note = "Mắt quan sát bao quát, tiếp xúc bóng êm bằng lòng trong" });
+            candidates.Add(new Flow5ExerciseDto { Name = "Tập sút bóng sống mu chính diện & Khống chế bước một", Sets = "4", Reps = "10 lan", Duration = "10 min", Rest = "60s", Note = "Khóa cổ chân chắc chắn, vung chân theo đà" });
+            candidates.Add(new Flow5ExerciseDto { Name = "Bật nhảy tranh chấp bóng bổng & Bứt tốc đoạn ngắn", Sets = "4", Reps = "6 lan", Duration = "8 min", Rest = "60s", Note = "Rèn sức bật cổ chân và phản xạ bứt tốc trong cự ly 10m" });
+            candidates.Add(new Flow5ExerciseDto { Name = "Tập chuyền dài vượt tuyến & Chuyển trạng thái tấn công", Sets = "3", Reps = "12 lan", Duration = "8 min", Rest = "60s", Note = "Ước lượng quỹ đạo bóng và điểm rơi chuẩn xác" });
+            candidates.Add(new Flow5ExerciseDto { Name = "Di chuyển phòng ngự 1 kèm 1 & Tì đè tranh chấp", Sets = "3", Reps = "8 lan", Duration = "8 min", Rest = "60s", Note = "Hạ thấp trọng tâm, không lao người cản phá mù quáng" });
+            candidates.Add(new Flow5ExerciseDto { Name = "Đi bộ thả lỏng & Căng cơ đùi trước, gân kheo", Sets = "1", Reps = "1 lan", Duration = "5 min", Rest = "30s", Note = "Hạ nhịp tim dần dần, đào thải axit lactic tích tụ" });
         }
         else
         {
-            exercises.Add(new Flow5ExerciseDto { Name = "Khởi động xoay khớp & Đi bộ dốc trên máy chạy (Treadmill warm-up)", Sets = "1", Reps = "5-7 phút", Duration = "7 phút", Note = "Làm nóng cơ thể và tăng tuần hoàn máu", Order = 1 });
-            exercises.Add(new Flow5ExerciseDto { Name = "Gánh tạ đòn (Barbell Squat) / Goblet Squat", Sets = "4", Reps = "10-12 lần", Duration = "12 phút", Note = "Giữ lưng thẳng, siết mông khi đứng lên", Order = 2 });
-            exercises.Add(new Flow5ExerciseDto { Name = "Đẩy ngực tạ đòn trên ghế bằng (Barbell Bench Press)", Sets = "4", Reps = "10-12 lần", Duration = "12 phút", Note = "Hạ tạ có kiểm soát, thở ra khi đẩy", Order = 3 });
-            exercises.Add(new Flow5ExerciseDto { Name = "Kéo lưng xô với cáp (Lat Pulldown) / Bent-over Row", Sets = "4", Reps = "12 lần", Duration = "10 phút", Note = "Ép chặt bả vai về sau", Order = 4 });
-            exercises.Add(new Flow5ExerciseDto { Name = "Gập bụng (Cable Crunch) & Plank tĩnh", Sets = "3", Reps = "15 lần / 45s", Duration = "6 phút", Note = "Siết chặt cơ bụng", Order = 5 });
-            exercises.Add(new Flow5ExerciseDto { Name = "Căng giãn cơ toàn thân & Hạ nhiệt", Sets = "1", Reps = "1 lần", Duration = "5 phút", Note = "Thư giãn các nhóm cơ chính", Order = 6 });
+            // Rich Gym Exercise Pool categorized by body target & goals
+            var warmups = new[]
+            {
+                new Flow5ExerciseDto { Name = "Khởi động xoay khớp & Đi bộ dốc trên máy chạy (Treadmill warm-up)", Sets = "1", Reps = "1 lan", Duration = "7 min", Rest = "30s", Note = "Làm nóng cơ thể và tăng tuần hoàn máu toàn thân" },
+                new Flow5ExerciseDto { Name = "Khởi động nhảy dây & Xoay khớp vai toàn diện", Sets = "1", Reps = "1 lan", Duration = "6 min", Rest = "30s", Note = "Kích hoạt hệ thần kinh vận động và nhịp tim ổn định" },
+                new Flow5ExerciseDto { Name = "Đạp xe biến tốc nhẹ nhàng (Air Bike Warm-up)", Sets = "1", Reps = "1 lan", Duration = "6 min", Rest = "30s", Note = "Làm ấm khớp gối, cổ chân và kích hoạt cơ mông đùi" }
+            };
+
+            var mainLifts = new[]
+            {
+                new Flow5ExerciseDto { Name = "Gánh tạ đòn trên vai (Barbell Back Squat)", Sets = "4", Reps = "10-12", Duration = "12 min", Rest = "90s", Note = "Giữ thẳng lưng, siết cơ bụng và phát lực từ gót chân" },
+                new Flow5ExerciseDto { Name = "Đẩy ngực tạ đòn trên ghế bằng (Barbell Bench Press)", Sets = "4", Reps = "10-12", Duration = "12 min", Rest = "90s", Note = "Ép bả vai, hạ tạ có kiểm soát và thở ra dứt khoát khi đẩy" },
+                new Flow5ExerciseDto { Name = "Kéo lưng xô với cáp rộng tay (Lat Pulldown)", Sets = "4", Reps = "12 lan", Duration = "10 min", Rest = "60s", Note = "Kéo thanh đòn về phía xương ức, ép chặt cơ lưng xô" },
+                new Flow5ExerciseDto { Name = "Đẩy ngực tạ đơn trên ghế nghiêng dốc lên (Incline Dumbbell Press)", Sets = "4", Reps = "10-12", Duration = "10 min", Rest = "75s", Note = "Phát triển phần ngực trên, duỗi ngực hết biên độ" },
+                new Flow5ExerciseDto { Name = "Kéo tạ đòn gập người (Barbell Bent-over Row)", Sets = "4", Reps = "10-12", Duration = "10 min", Rest = "75s", Note = "Khóa chặt sống lưng, kéo tạ chạm rốn" },
+                new Flow5ExerciseDto { Name = "Đẩy tạ đơn qua đầu phát triển cơ vai (Dumbbell Shoulder Press)", Sets = "4", Reps = "10-12", Duration = "10 min", Rest = "60s", Note = "Không khóa thẳng khớp cùi chỏ ở điểm cao nhất" },
+                new Flow5ExerciseDto { Name = "Nâng đùi đẩy máy tạ (Leg Press 45 độ)", Sets = "4", Reps = "12-15", Duration = "10 min", Rest = "90s", Note = "Bàn chân đặt rộng bằng vai, hạ sâu có kiểm soát" },
+                new Flow5ExerciseDto { Name = "Deadlift với tạ đòn (Romanian Deadlift)", Sets = "4", Reps = "10-12", Duration = "12 min", Rest = "90s", Note = "Đẩy hông về phía sau, cảm nhận căng cơ đùi sau và mông" },
+                new Flow5ExerciseDto { Name = "Bung ngực với máy ép cáp (Cable Flyes)", Sets = "3", Reps = "15 lan", Duration = "8 min", Rest = "60s", Note = "Tập trung cảm giác ép cơ ngực giữa" },
+                new Flow5ExerciseDto { Name = "Cuốn tạ đòn tập cơ tay trước (Barbell Bicep Curl)", Sets = "3", Reps = "12 lan", Duration = "8 min", Rest = "60s", Note = "Giữ cố định cánh tay, không đung đưa thân người" },
+                new Flow5ExerciseDto { Name = "Kéo cáp qua đầu tập cơ tay sau (Tricep Rope Pushdown)", Sets = "3", Reps = "15 lan", Duration = "8 min", Rest = "60s", Note = "Tách dây cáp ở điểm cuối để kích hoạt trọn vẹn tay sau" }
+            };
+
+            var coreAndCoolDown = new[]
+            {
+                new Flow5ExerciseDto { Name = "Gập bụng trên máy kéo cáp (Cable Crunch)", Sets = "3", Reps = "15 lan", Duration = "6 min", Rest = "60s", Note = "Cuộn tròn cột sống, siết chặt cơ bụng 6 múi" },
+                new Flow5ExerciseDto { Name = "Treo người nâng gối trên xà đơn (Hanging Knee Raise)", Sets = "3", Reps = "12-15", Duration = "6 min", Rest = "60s", Note = "Tập trung siết cơ bụng dưới, không dùng lực quán tính" },
+                new Flow5ExerciseDto { Name = "Plank tĩnh chuẩn form & Xoay hông", Sets = "3", Reps = "1 lan", Duration = "5 min", Rest = "45s", Note = "Giữ thân người thẳng như một tấm ván, siết mông bụng" },
+                new Flow5ExerciseDto { Name = "Con lăn tập bụng (Ab Roller Wheel)", Sets = "3", Reps = "10-12", Duration = "6 min", Rest = "60s", Note = "Kiểm soát độ gồng cơ lõi khi đẩy con lăn ra xa" },
+                new Flow5ExerciseDto { Name = "Căng giãn cơ toàn thân trên thảm & Hạ nhiệt", Sets = "1", Reps = "1 lan", Duration = "5 min", Rest = "30s", Note = "Thư giãn các nhóm cơ chính, hỗ trợ phục hồi cơ bắp nhanh chóng" },
+                new Flow5ExerciseDto { Name = "Dãn cơ lưng dưới, gân kheo và bắp chân", Sets = "1", Reps = "1 lan", Duration = "5 min", Rest = "30s", Note = "Kéo giãn chậm rãi, giữ nhịp thở sâu" }
+            };
+
+            // Mix: 1 warmup + randomized main lifts + core/cooldown
+            var pickedWarmup = warmups[rng.Next(warmups.Length)];
+            candidates.Add(pickedWarmup);
+
+            // Shuffle main lifts
+            var shuffledLifts = mainLifts.OrderBy(_ => rng.Next()).ToList();
+            candidates.AddRange(shuffledLifts);
+
+            // Add core & cooldowns
+            var shuffledCore = coreAndCoolDown.OrderBy(_ => rng.Next()).ToList();
+            candidates.AddRange(shuffledCore);
+        }
+
+        // Shuffle candidate pool if not gym (gym is already structured)
+        if (sLower.Contains("boxing") || sLower.Contains("yoga") || sLower.Contains("bóng đá"))
+        {
+            var first = candidates.First();
+            var last = candidates.Last();
+            var middle = candidates.Skip(1).Take(candidates.Count - 2).OrderBy(_ => rng.Next()).ToList();
+            candidates = new List<Flow5ExerciseDto> { first };
+            candidates.AddRange(middle);
+            candidates.Add(last);
+        }
+
+        // Must match request.ExerciseCount exactly if provided, otherwise default to 5
+        var targetCount = Math.Clamp(request.ExerciseCount ?? 5, 1, 20);
+        var finalExercises = new List<Flow5ExerciseDto>();
+        for (var i = 0; i < targetCount; i++)
+        {
+            var template = candidates[i % candidates.Count];
+            finalExercises.Add(new Flow5ExerciseDto
+            {
+                Name = i >= candidates.Count ? $"{template.Name} (Nâng cao {i + 1})" : template.Name,
+                Sets = template.Sets,
+                Reps = template.Reps,
+                Duration = template.Duration,
+                Rest = template.Rest,
+                Note = template.Note,
+                Order = i + 1
+            });
         }
 
         return new Flow5AiRecommendationOutputDto
         {
             PlanName = planName,
-            Description = $"Kế hoạch huấn luyện chuyên sâu bộ môn {sportName}, được tối ưu hóa cho mục tiêu {request.Goal} ở cấp độ {request.Level}.",
+            Description = $"Kế hoạch huấn luyện chuyên sâu bộ môn {sportName}, được tối ưu hóa cho mục tiêu {effectiveGoal} ở cấp độ {request.Level}.",
             Goal = request.Goal,
             Level = request.Level,
             DurationMinutes = request.DurationMinutes,
-            Exercises = exercises
+            Exercises = finalExercises
         };
     }
 
