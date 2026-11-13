@@ -10,7 +10,7 @@ interface Props {
   onSelectPtSession: (item: UnifiedScheduleItem) => void;
   navigateTo: (s: CoachScreen, extra?: { sessionId?: string; memberId?: string }) => void;
   onSwitchToList?: () => void;
-  onOpenSlotModal?: (defaultDate?: string) => void;
+  onOpenSlotModal?: (defaultDate?: string, defaultHour?: string) => void;
   nearestSessionInfo?: any;
   onJumpToWeek?: (offset: number) => void;
 }
@@ -22,6 +22,7 @@ export default function ScheduleWeekGrid({
   onSelectOpenSlot,
   onSelectPtSession,
   navigateTo,
+  onOpenSlotModal,
 }: Props) {
   return (
     <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 shadow-sm">
@@ -73,8 +74,15 @@ export default function ScheduleWeekGrid({
               return (
                 <div
                   key={di}
-                  className="p-1.5 border-r border-slate-100 dark:border-slate-800/60 last:border-0 relative space-y-1.5"
+                  onClick={() => onOpenSlotModal?.(colDate, hour)}
+                  className="p-1.5 border-r border-slate-100 dark:border-slate-800/60 last:border-0 relative space-y-1.5 min-h-[92px] group/cell hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 cursor-pointer transition-colors"
+                  title="Bấm để đăng ca rảnh 1–1 vào khung giờ này"
                 >
+                  {cellSessions.length === 0 && (
+                    <div className="hidden group-hover/cell:flex items-center justify-center h-full text-[11px] font-medium text-emerald-600 dark:text-emerald-400 border border-dashed border-emerald-300/80 dark:border-emerald-700/80 rounded-lg p-2 pointer-events-none">
+                      + Đăng ca rảnh
+                    </div>
+                  )}
                   {cellSessions.map((sessionItem) => {
                     const isPT = sessionItem.type === "pt";
                     const isOpenPT = sessionItem.type === "open_pt";
@@ -83,7 +91,8 @@ export default function ScheduleWeekGrid({
                       <button
                         key={sessionItem.id}
                         type="button"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           if (isOpenPT) {
                             onSelectOpenSlot(sessionItem);
                           } else if (isPT) {
