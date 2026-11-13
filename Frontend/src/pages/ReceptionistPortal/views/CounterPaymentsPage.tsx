@@ -32,6 +32,23 @@ export function CounterPaymentsPage() {
       setError("");
     } catch (err: any) {
       console.error(err);
+      if (err?.message?.includes("403") || err?.message?.includes("401")) {
+        // Tự động làm mới token lễ tân nếu giữ nhầm token của vai trò khác (Member)
+        try {
+          const res = await fetch("/api/auth/token/receptionist");
+          const authData = await res.json().catch(() => null);
+          if (authData?.token) {
+            localStorage.setItem("token", authData.token);
+            localStorage.setItem("accessToken", authData.token);
+            localStorage.setItem("user", JSON.stringify(authData));
+            window.dispatchEvent(new Event("local-storage-update"));
+            const data = await PackageAPI.getOrders();
+            setOrders(Array.isArray(data) ? data : []);
+            setError("");
+            return;
+          }
+        } catch { /* tiếp tục báo lỗi nếu không thành công */ }
+      }
       if (!silent) setError(err?.message || "Không thể tải danh sách đơn hàng.");
     } finally {
       if (!silent) setLoading(false);

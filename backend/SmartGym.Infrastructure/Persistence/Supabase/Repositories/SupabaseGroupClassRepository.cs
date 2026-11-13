@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using SmartGym.Application.Common;
 using SmartGym.Application.DTOs.Classes;
 using SmartGym.Application.Interfaces.Repositories;
 using SmartGym.Domain.Entities;
@@ -85,7 +86,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             CoachId: c.CoachId,
             CoachName: coachUser?.FullName ?? "N/A",
             ClassName: c.ClassName,
-            ScheduleTime: c.ScheduleTime,
+            ScheduleTime: CenterTime.ToLocal(c.ScheduleTime),
             DurationMinutes: c.DurationMinutes,
             Capacity: c.Capacity,
             CurrentEnrolled: c.CurrentEnrolled,
@@ -207,7 +208,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                     CoachId: c.CoachId,
                     CoachName: user?.FullName ?? "N/A",
                     ClassName: c.ClassName,
-                    ScheduleTime: c.ScheduleTime,
+                    ScheduleTime: CenterTime.ToLocal(c.ScheduleTime),
                     DurationMinutes: c.DurationMinutes,
                     Capacity: c.Capacity,
                     CurrentEnrolled: c.CurrentEnrolled,
@@ -229,14 +230,17 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
 
     public async Task<IEnumerable<ClassResponse>> GetAvailableClassesAsync()
     {
+        var nowUtc = DateTime.UtcNow;
         var classResponse = await _client
             .From<GroupClassModel>()
             .Where(x => x.Status == true)
-            .Where(x => x.ScheduleTime > DateTime.UtcNow)
+            .Where(x => x.ScheduleTime > nowUtc)
             .Get();
 
         var classModels = classResponse.Models
-            .Where(c => c.Status && string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase))
+            .Where(c => c.Status && 
+                        string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase) &&
+                        c.ScheduleTime > nowUtc)
             .ToList();
         if (!classModels.Any())
             return Enumerable.Empty<ClassResponse>();
@@ -270,7 +274,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                     CoachId: c.CoachId,
                     CoachName: user?.FullName ?? "N/A",
                     ClassName: c.ClassName,
-                    ScheduleTime: c.ScheduleTime,
+                    ScheduleTime: CenterTime.ToLocal(c.ScheduleTime),
                     DurationMinutes: c.DurationMinutes,
                     Capacity: c.Capacity,
                     CurrentEnrolled: c.CurrentEnrolled,

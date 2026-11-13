@@ -86,10 +86,10 @@ export function Login({
       },
       receptionist: {
         id: "rec-01",
-        fullName: "Lễ tân Mai Anh",
+        fullName: "Nguyễn Văn Lễ Tân",
         role: "Receptionist",
         email: "receptionist01@smartgym.com",
-        avatarUrl: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=256&q=80",
+        avatarUrl: null,
       },
       member: {
         id: "cd431e48-c84b-4b16-815e-971f3387fd83",

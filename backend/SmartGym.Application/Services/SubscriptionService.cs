@@ -49,6 +49,9 @@ public class SubscriptionService : ISubscriptionService
             ? (package.YearlyPrice ?? 0) 
             : (package.MonthlyPrice ?? 0);
 
+        var isFree = amount <= 0;
+        var now = DateTime.UtcNow;
+
         var subscription = new Subscription
         {
             UserId = userId,
@@ -56,11 +59,13 @@ public class SubscriptionService : ISubscriptionService
             BillingPeriod = request.BillingPeriod,
             TotalAmount = amount,
             PaymentMethod = request.PaymentMethod,
-            PaymentStatus = SmartGym.Domain.Enums.PaymentStatus.Pending, // Will be updated to paid via webhook/gateway
-            StartDate = DateTime.UtcNow,
-            EndDate = request.BillingPeriod == "yearly" ? DateTime.UtcNow.AddYears(1) : DateTime.UtcNow.AddMonths(1),
+            PaymentStatus = isFree ? SmartGym.Domain.Enums.PaymentStatus.Completed : SmartGym.Domain.Enums.PaymentStatus.Pending,
+            StartDate = now.Date,
+            EndDate = request.BillingPeriod == "yearly" ? now.Date.AddYears(1) : now.Date.AddMonths(1),
             AutoRenew = false,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = now,
+            PaidAt = isFree ? now : null,
+            PackageSnapshotJson = package.CatalogJson
         };
 
         await _subscriptionRepository.AddAsync(subscription);

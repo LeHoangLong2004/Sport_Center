@@ -50,34 +50,34 @@ public static class SubscriptionEndpoints
         /// POST /api/subscriptions
         /// Đăng ký gói tập mới cho hội viên hiện tại.
         /// </summary>
-        group.MapPost(
-            "/",
-            async (
-                HttpContext context,
-                [FromBody] CreateSubscriptionRequest request,
-                ISubscriptionService subscriptionService
-            ) =>
+        var handleSubscription = async (
+            HttpContext context,
+            [FromBody] CreateSubscriptionRequest request,
+            ISubscriptionService subscriptionService
+        ) =>
+        {
+            try
             {
-                try
-                {
-                    var userIdString = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-                    if (
-                        string.IsNullOrEmpty(userIdString)
-                        || !Guid.TryParse(userIdString, out var userId)
-                    )
-                        return Results.Unauthorized();
+                var userIdString = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (
+                    string.IsNullOrEmpty(userIdString)
+                    || !Guid.TryParse(userIdString, out var userId)
+                )
+                    return Results.Unauthorized();
 
-                    var subscription = await subscriptionService.SubscribeToPackageAsync(
-                        userId,
-                        request
-                    );
-                    return Results.Created($"/api/subscriptions/{subscription.Id}", subscription);
-                }
-                catch (Exception ex)
-                {
-                    return Results.BadRequest(ex.Message);
-                }
+                var subscription = await subscriptionService.SubscribeToPackageAsync(
+                    userId,
+                    request
+                );
+                return Results.Created($"/api/subscriptions/{subscription.Id}", subscription);
             }
-        );
+            catch (Exception ex)
+            {
+                return Results.BadRequest(new { message = ex.Message });
+            }
+        };
+
+        group.MapPost("", handleSubscription);
+        group.MapPost("/", handleSubscription);
     }
 }

@@ -20,10 +20,16 @@ public sealed partial class PackageCatalogService
         if (!includeInactive)
             query = query.Where(package => package.Status);
 
+        // Chỉ truy vấn các gói có CatalogJson
+        query = query.Where(package => package.CatalogJson != null);
+
         var packages = await query
             .OrderBy(package => package.PackageType)
             .ThenBy(package => package.Id)
             .ToListAsync(cancellationToken);
+
+        // Lọc bỏ bản ghi rỗng CatalogJson trên bộ nhớ để tránh xung đột kiểu dữ liệu JSONB trong PostgreSQL
+        packages = packages.Where(package => !string.IsNullOrWhiteSpace(package.CatalogJson)).ToList();
 
         return packages
             .Select(package =>

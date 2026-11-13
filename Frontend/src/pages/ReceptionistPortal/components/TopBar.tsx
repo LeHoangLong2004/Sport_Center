@@ -168,13 +168,14 @@ export function TopBar({ breadcrumb, title, shiftLabel, onProfileClick, onNaviga
   };
 
   const userStr = localStorage.getItem("user");
-  let userName = "Lễ tân";
-  let avatarUrl = null;
+  let userName = "Nguyễn Văn Lễ Tân";
+  let avatarUrl: string | null = null;
   if (userStr) {
     try {
       const user = JSON.parse(userStr);
-      userName = user.fullName || user.name || user.email?.split('@')[0] || "Lễ tân";
-      avatarUrl = user.avatarUrl;
+      userName = user.fullName || user.name || user.email?.split('@')[0] || "Nguyễn Văn Lễ Tân";
+      // Giữ avatar chữ cái với màu sắc mặc định (không dùng ảnh cá nhân)
+      avatarUrl = null;
     } catch(e) {}
   }
 
