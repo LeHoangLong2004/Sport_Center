@@ -82,6 +82,27 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
       .finally(() => setLoading(false));
   }, [initialMemberId, initialSessionId]);
 
+  // Ca dạy và học viên đang chọn hoặc từ bản nháp
+  const currentSession = useMemo(
+    () => sessions.find((s) => s.id === (draft.sessionId || selectedSessionId)),
+    [sessions, draft.sessionId, selectedSessionId]
+  );
+
+  const currentMember = useMemo(
+    () => members.find((m) => m.id === (draft.memberId || selectedMemberId)),
+    [members, draft.memberId, selectedMemberId]
+  );
+
+  const selectedSession = useMemo(
+    () => sessions.find((s) => s.id === selectedSessionId),
+    [sessions, selectedSessionId]
+  );
+
+  const isExpired24h = useMemo(
+    () => isAttendanceLocked24h(selectedSession?.date, selectedSession?.startTime),
+    [selectedSession?.date, selectedSession?.startTime]
+  );
+
   // Học viên thuộc ca dạy đang chọn
   const sessionMembers = useMemo(() => {
     if (!selectedSessionId) return [];
@@ -237,16 +258,6 @@ export default function CoachAssessment({ initialSessionId, initialMemberId }: C
       setFeedback("Đã ghi kết quả thành công");
     }
   };
-
-  const currentMember = members.find((m) => m.id === (draft.memberId || selectedMemberId));
-  const currentSession = sessions.find((s) => s.id === (draft.sessionId || selectedSessionId));
-
-  const selectedSession = sessions.find((s) => s.id === selectedSessionId);
-
-  const isExpired24h = useMemo(
-    () => isAttendanceLocked24h(selectedSession?.date, selectedSession?.startTime),
-    [selectedSession?.date, selectedSession?.startTime]
-  );
 
   // VIEW 1: Khi chưa chọn ca dạy cụ thể, hiển thị danh sách dạng thẻ trực quan
   if (viewMode === "by_session" && !selectedSessionId) {

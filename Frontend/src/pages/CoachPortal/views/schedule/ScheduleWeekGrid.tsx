@@ -1,4 +1,4 @@
-import { Sparkles, Clock, MapPin, Users, CheckCircle2, Eye, Plus } from "lucide-react";
+import { Calendar, Sparkles, Clock, MapPin, Users, CheckCircle2, Eye, Plus } from "lucide-react";
 import type { CoachScreen } from "../../types";
 import { DAYS_NAMES, TIME_ROWS, type UnifiedScheduleItem } from "./types";
 import { isAttendanceLocked24h } from "../../utils/attendanceLock";
@@ -26,6 +26,11 @@ export default function ScheduleWeekGrid({
   onOpenSlotModal,
 }: Props) {
   const activeTimeRows = TIME_ROWS;
+  const weekSessionsCount = filteredSessions.filter((s) => weekDates.includes(s.date)).length;
+  const hasSessionsInWeek = weekSessionsCount > 0;
+  const weekRangeLabel = weekDates.length >= 7
+    ? `${weekDates[0]?.split("-").slice(1).reverse().join("/")} - ${weekDates[6]?.split("-").slice(1).reverse().join("/")}`
+    : "";
 
   return (
     <div className="flex flex-col gap-4">
@@ -59,9 +64,39 @@ export default function ScheduleWeekGrid({
             </p>
           </div>
         </div>
+      </div>
 
-        {/* Body Rows theo từng khung giờ */}
-        {activeTimeRows.map((hour) => {
+      {/* Lưới lịch tuần */}
+      <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 shadow-sm">
+        <div className="min-w-[960px]">
+          {/* Header Row: Giờ | Thứ 2 | Thứ 3 | Thứ 4 | Thứ 5 | Thứ 6 | Thứ 7 | Chủ nhật */}
+          <div className="grid grid-cols-[76px_repeat(7,1fr)] border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-850">
+            <div className="p-3 text-xs font-semibold text-slate-400 text-center border-r border-slate-200 dark:border-slate-800">
+              Giờ
+            </div>
+            {DAYS_NAMES.map((d, di) => {
+              const dateStr = weekDates[di];
+              const isToday = dateStr === todayStr;
+              return (
+                <div
+                  key={d}
+                  className={`p-3 text-xs font-semibold text-center border-r border-slate-200 dark:border-slate-800 last:border-0 ${
+                    isToday
+                      ? "bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 font-bold"
+                      : "text-slate-700 dark:text-slate-300"
+                  }`}
+                >
+                  <div>{d}</div>
+                  <div className="text-[10px] font-normal text-slate-400 mt-0.5">
+                    {dateStr?.split("-").slice(1).reverse().join("/")}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Body Rows theo từng khung giờ */}
+          {activeTimeRows.map((hour) => {
             const hourNum = parseInt(hour.split(":")[0], 10);
 
             return (
@@ -242,5 +277,6 @@ export default function ScheduleWeekGrid({
           })}
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}

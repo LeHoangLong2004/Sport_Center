@@ -3,6 +3,7 @@ import type { MemberSessionItem } from "../../types";
 import { MemberAPI } from "../../services/api";
 import { getRealCoachAvatar } from "../../utils/coachAvatar";
 import { getCounterPendingIds } from "./bookingTypes";
+import { parseScheduleTime } from "../../../../utils/scheduleTimeHelper";
 
 export function useMemberBookingData() {
   const [mySessions, setMySessions] = useState<MemberSessionItem[]>([]);
@@ -36,15 +37,7 @@ export function useMemberBookingData() {
       );
 
       const mappedClasses = (Array.isArray(availableClasses) ? availableClasses : []).map((item: any) => {
-        const rawTime = item.scheduleTime;
-        const normalizedTime =
-          typeof rawTime === "string" &&
-          rawTime.includes("T") &&
-          !rawTime.endsWith("Z") &&
-          !/[+-]\d{2}:\d{2}$/.test(rawTime)
-            ? rawTime + "Z"
-            : rawTime;
-        const start = new Date(normalizedTime);
+        const start = parseScheduleTime(item.scheduleTime);
         const end = new Date(start.getTime() + Number(item.durationMinutes || 60) * 60000);
         const dateStr = [
           start.getFullYear(),
@@ -91,15 +84,7 @@ export function useMemberBookingData() {
 
       const counterPendingIds = getCounterPendingIds();
       const dbBookings = (memberSchedule?.classBookings || []).map((booking: any) => {
-        const rawTime = booking.scheduleTime;
-        const normalizedTime =
-          typeof rawTime === "string" &&
-          rawTime.includes("T") &&
-          !rawTime.endsWith("Z") &&
-          !/[+-]\d{2}:\d{2}$/.test(rawTime)
-            ? rawTime + "Z"
-            : rawTime;
-        const start = new Date(normalizedTime);
+        const start = parseScheduleTime(booking.scheduleTime);
         const end = new Date(start.getTime() + Number(booking.durationMinutes || 60) * 60000);
         const date = [
           start.getFullYear(),

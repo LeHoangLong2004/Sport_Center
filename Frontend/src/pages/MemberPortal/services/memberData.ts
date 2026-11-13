@@ -59,6 +59,7 @@ import {
   AppointmentService,
   calculateAppointmentEndTime,
 } from "../../../services/appointmentService";
+import { parseScheduleTime } from "../../../utils/scheduleTimeHelper";
 
 // Flow 6 — AI Assistant response
 export type MemberAiAction =
@@ -134,7 +135,7 @@ export const MemberBackendAPI = {
       if (["in_progress", "đang diễn ra"].includes(status)) return "đang diễn ra";
 
       if (scheduleTime) {
-        const startDate = new Date(scheduleTime);
+        const startDate = parseScheduleTime(scheduleTime);
         if (!Number.isNaN(startDate.getTime())) {
           const duration = Number(durationMinutes || 60);
           const endDate = new Date(startDate.getTime() + duration * 60000);
@@ -154,7 +155,8 @@ export const MemberBackendAPI = {
     };
 
     const toSessionTime = (value: string | undefined, fallback = "00:00") => {
-      const date = value ? new Date(value) : null;
+      if (!value) return { date: "", time: fallback };
+      const date = parseScheduleTime(value);
       if (!date || Number.isNaN(date.getTime())) return { date: "", time: fallback };
       return {
         date: [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-"),
@@ -178,7 +180,7 @@ export const MemberBackendAPI = {
         classBookings = (Array.isArray(data?.classBookings) ? data.classBookings : []).map((booking: any) => {
           const start = toSessionTime(booking.scheduleTime);
           const duration = Number(booking.durationMinutes || 60);
-          const startDate = booking.scheduleTime ? new Date(booking.scheduleTime) : null;
+          const startDate = booking.scheduleTime ? parseScheduleTime(booking.scheduleTime) : null;
           const endDate = startDate && !Number.isNaN(startDate.getTime())
             ? new Date(startDate.getTime() + duration * 60000)
             : null;
@@ -214,7 +216,7 @@ export const MemberBackendAPI = {
         ptSessions = (Array.isArray(data?.ptSessions) ? data.ptSessions : []).map((session: any) => {
           const start = toSessionTime(session.scheduleTime);
           const duration = Number(session.durationMinutes || 60);
-          const startDate = session.scheduleTime ? new Date(session.scheduleTime) : null;
+          const startDate = session.scheduleTime ? parseScheduleTime(session.scheduleTime) : null;
           const endDate = startDate && !Number.isNaN(startDate.getTime())
             ? new Date(startDate.getTime() + duration * 60000)
             : null;

@@ -1,23 +1,21 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Calendar,
   Clock,
   MapPin,
   Users,
   Search,
-  CheckCircle2,
   ShieldCheck,
   AlertCircle,
   Dumbbell,
   ArrowRight,
-  Filter,
   Sparkles,
   Lock,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 import type { MockSession } from "../../services/api";
-import { isAttendanceLocked24h, getAttendanceLockDeadlineInfo } from "../../utils/attendanceLock";
+import { isAttendanceLocked24h } from "../../utils/attendanceLock";
 import { isSessionPast24Hours } from "../../utils/attendanceTimeUtils";
 
 interface Props {
@@ -148,6 +146,24 @@ export default function AttendanceClassSessionsList({
     () => activeSessions.filter((s) => !!finalizedMap[s.id]).length,
     [activeSessions, finalizedMap]
   );
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 9;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [dateTab, statusFilter, search]);
+
+  const totalPages = Math.ceil(filteredSessions.length / pageSize) || 1;
+
+  const paginatedSessions = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredSessions.slice(start, start + pageSize);
+  }, [filteredSessions, currentPage, pageSize]);
+
+  const startRecord = filteredSessions.length > 0 ? (currentPage - 1) * pageSize + 1 : 0;
+  const endRecord = Math.min(currentPage * pageSize, filteredSessions.length);
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in duration-300">
@@ -331,22 +347,21 @@ export default function AttendanceClassSessionsList({
                       ? "border-emerald-300 dark:border-emerald-800/80 ring-2 ring-emerald-500/10"
                       : "border-slate-200/90 dark:border-slate-800 hover:border-emerald-500/50"
                   }`}
-                />
-
-                <div className="space-y-3.5 pt-1">
-                  {/* Tags & Status */}
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex items-center gap-1.5">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                        <Dumbbell className="w-3 h-3" />
-                        {session.sport || "Lớp nhóm"}
-                      </span>
-                      {session.level && (
-                        <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                          {session.level}
+                >
+                  <div className="space-y-3.5 pt-1">
+                    {/* Tags & Status */}
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                          <Dumbbell className="w-3 h-3" />
+                          {session.sport || "Lớp nhóm"}
                         </span>
-                      )}
-                    </div>
+                        {session.level && (
+                          <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                            {session.level}
+                          </span>
+                        )}
+                      </div>
 
                       {/* Attendance State Badge */}
                       {isPast24h ? (
@@ -372,24 +387,51 @@ export default function AttendanceClassSessionsList({
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span className="truncate">{session.room || "Studio trung tâm"}</span>
+                    {/* Class Name & Time */}
+                    <div>
+                      <h3 className="font-bold text-base text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-1">
+                        {session.className}
+                      </h3>
+                      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span>{session.startTime} - {session.endTime}</span>
+                        <span>•</span>
+                        <span>{formatSessionDate(session.date)}</span>
+                      </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                    {/* Location & Capacity */}
+                    <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
                       <div className="flex items-center gap-1.5">
-                        <Users className="w-3.5 h-3.5 text-slate-400" />
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span className="truncate max-w-[130px]">{session.room || "Studio trung tâm"}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span className="font-medium text-slate-700 dark:text-slate-300">
                           {enrolled}/{session.capacity} HV
                         </span>
+                        <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                          ({occupancy}%)
+                        </span>
                       </div>
-                      <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-                        {occupancy}% lấp đầy
-                      </span>
                     </div>
                   </div>
+
+                  {/* Card Action footer */}
+                  <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                    <span className="text-slate-400 dark:text-slate-500 text-[11px]">
+                      {isPast24h ? "Chỉ xem sổ điểm danh" : isFinalized ? "Đã lưu kết quả" : "Điểm danh học viên"}
+                    </span>
+                    <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 transition-transform text-xs">
+                      <span>{isPast24h ? "Xem chi tiết" : "Vào điểm danh"}</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
                 </div>
+              );
+            })}
+          </div>
 
           {/* Phân trang danh sách ca dạy */}
           {filteredSessions.length > 0 && (
@@ -429,10 +471,20 @@ export default function AttendanceClassSessionsList({
                     );
                   })}
                 </div>
+
+                <button
+                  type="button"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg font-semibold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                >
+                  <span>Sau</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

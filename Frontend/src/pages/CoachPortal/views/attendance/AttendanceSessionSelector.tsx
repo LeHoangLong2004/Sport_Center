@@ -57,7 +57,6 @@ export default function AttendanceSessionSelector({
                 <Dumbbell className="w-3.5 h-3.5" />
                 {session.sport || "Lớp nhóm"}
               </span>
-            )}
             {isExpired24h ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                 <Lock className="w-3.5 h-3.5 text-slate-500" />
@@ -126,8 +125,9 @@ export default function AttendanceSessionSelector({
           </div>
         </div>
       </div>
+    </div>
 
-      {/* Session Metadata Info Grid */}
+    {/* Session Metadata Info Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-slate-100 dark:divide-slate-800 text-xs sm:text-sm">
         {/* Time */}
         <div className="p-4 flex items-center gap-3">

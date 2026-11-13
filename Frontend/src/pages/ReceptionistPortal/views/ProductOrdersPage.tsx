@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
 type FulfillmentStatus = "pending" | "preparing" | "ready" | "delivering" | "delivered" | "cancelled"
+type OrderFilter = "all" | FulfillmentStatus | "refund"
 
 type ProductOrder = {
   id: string
@@ -64,7 +65,7 @@ function nextAction(order: ProductOrder) {
 
 export function ProductOrdersPage() {
   const [orders, setOrders] = useState<ProductOrder[]>([])
-  const [filter, setFilter] = useState<"all" | FulfillmentStatus>("all")
+  const [filter, setFilter] = useState<OrderFilter>("all")
   const [loading, setLoading] = useState(true)
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [openChatId, setOpenChatId] = useState<string | null>(null)

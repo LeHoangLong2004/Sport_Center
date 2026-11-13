@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
   // Kiểm tra cờ true/false:
   // - Nếu VITE_USE_LOCAL = "true" -> Trỏ về Localhost:5000 (C# .NET)
   // - Mặc định hoặc "false" -> Trỏ về Deploy Backend (Render: https://sport-center-ga9j.onrender.com)
-  const isLocal = env.VITE_USE_LOCAL === 'false'
+  const isLocal = env.VITE_USE_LOCAL === 'true'
   const activeApiUrl = isLocal
     ? (env.VITE_LOCAL_API_URL || 'http://localhost:5000')
     : (env.VITE_DEPLOY_API_URL || 'https://sport-center-ga9j.onrender.com')
