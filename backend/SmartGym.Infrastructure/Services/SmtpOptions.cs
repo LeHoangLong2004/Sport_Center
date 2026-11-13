@@ -11,4 +11,5 @@ public class SmtpOptions
     public string From { get; set; } = "no-reply@smartgym.vn";
     public string? FromName { get; set; } = "SmartGym Center";
     public bool EnableSsl { get; set; } = true;
+    public string? ResendApiKey { get; set; }
 }
