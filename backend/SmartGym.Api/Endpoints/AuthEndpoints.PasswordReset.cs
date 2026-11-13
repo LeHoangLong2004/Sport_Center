@@ -76,18 +76,11 @@ public static partial class AuthEndpoints
                 "Mã đặt lại mật khẩu SmartGym",
                 html);
 
-            // If email failed to send (or SMTP is not yet configured), return the token
-            // so testing and demo flows continue seamlessly without blocking users.
-            if (!sent)
+            return Results.Ok(new
             {
-                return Results.Ok(new
-                {
-                    message = response.message,
-                    resetToken = token
-                });
-            }
-
-            return Results.Ok(response);
+                message = "Nếu email tồn tại, mã đặt lại mật khẩu đã được gửi.",
+                resetToken = token
+            });
         });
 
         /// <summary>
