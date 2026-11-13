@@ -208,6 +208,7 @@ export default function CoachSchedule({ navigateTo }: Props) {
         setActiveTab={setActiveTab}
         pendingInvitationsCount={pendingInvitationsCount}
         requestsCount={requests.length}
+        onOpenSlotModal={() => handleOpenSlotModal()}
       />
 
       {feedbackMsg && (
