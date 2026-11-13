@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using SmartGym.Application.Common;
 using SmartGym.Infrastructure.Persistence.EF;
 using SmartGym.Infrastructure.Persistence.Supabase.Models;
+using SmartGym.Infrastructure.Persistence.Supabase.Repositories;
 
 namespace SmartGym.Api.Endpoints;
 

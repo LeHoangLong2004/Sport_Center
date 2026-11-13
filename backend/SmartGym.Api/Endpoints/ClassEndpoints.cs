@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SmartGym.Application.DTOs.Classes;
 using SmartGym.Application.Services;
+using SmartGym.Application.Common;
 using SmartGym.Api.Services;
 using SmartGym.Infrastructure.Persistence.EF;
 

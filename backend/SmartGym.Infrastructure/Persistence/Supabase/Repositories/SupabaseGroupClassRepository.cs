@@ -164,6 +164,9 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             model.ApprovalStatus
         );
 
+    private static DateTime AsUtc(DateTimeOffset value)
+        => value.UtcDateTime;
+
     private static DateTime AsUtc(DateTime value)
         => value.Kind switch
         {
@@ -230,7 +233,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
 
     public async Task<IEnumerable<ClassResponse>> GetAvailableClassesAsync()
     {
-        var nowUtc = DateTime.UtcNow;
+        var nowUtc = DateTimeOffset.UtcNow;
         var classResponse = await _client
             .From<GroupClassModel>()
             .Where(x => x.Status == true)

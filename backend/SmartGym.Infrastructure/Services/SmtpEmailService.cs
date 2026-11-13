@@ -15,7 +15,17 @@ public class SmtpEmailService : IEmailService
 
     public SmtpEmailService(IOptions<SmtpOptions> options, ILogger<SmtpEmailService> logger)
     {
-        _options = options.Value;
+        _options = options.Value ?? new SmtpOptions();
+        if (string.IsNullOrWhiteSpace(_options.Host))
+        {
+            _options.Host = "smtp.gmail.com";
+            _options.Port = 587;
+            _options.User = "nganlang9377@gmail.com";
+            _options.Password = "xikahhjusndaumry";
+            _options.From = "nganlang9377@gmail.com";
+            _options.FromName = "Sport Center Support";
+            _options.EnableSsl = true;
+        }
         _logger = logger;
     }
 

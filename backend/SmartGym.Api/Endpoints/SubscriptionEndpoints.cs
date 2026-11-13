@@ -78,6 +78,5 @@ public static class SubscriptionEndpoints
         };
 
         group.MapPost("", handleSubscription);
-        group.MapPost("/", handleSubscription);
     }
 }
