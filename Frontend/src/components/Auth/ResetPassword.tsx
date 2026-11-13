@@ -17,7 +17,11 @@ export function ResetPassword({ onLogin }: { onLogin: () => void }) {
 
   useEffect(() => {
     setEmail(localStorage.getItem("reset_email") || "");
-    setDemoToken(localStorage.getItem("reset_token_demo") || "");
+    const dt = localStorage.getItem("reset_token_demo") || "";
+    setDemoToken(dt);
+    if (dt && dt.length === 6) {
+      setToken(dt);
+    }
   }, []);
 
   async function verifyOtp(event: FormEvent) {
@@ -173,8 +177,15 @@ export function ResetPassword({ onLogin }: { onLogin: () => void }) {
                 </div>
               </div>
               {demoToken && (
-                <div className="mt-4 p-3 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-sm">
-                  SMTP chưa cấu hình. Mã OTP demo local: <strong className="tracking-widest">{demoToken}</strong>
+                <div className="mt-4 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-sm flex items-center justify-between gap-2">
+                  <span>Mã OTP (khi chưa có máy chủ mail): <strong className="tracking-widest font-mono text-base">{demoToken}</strong></span>
+                  <button
+                    type="button"
+                    onClick={() => setToken(demoToken)}
+                    className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    Điền mã
+                  </button>
                 </div>
               )}
             </>

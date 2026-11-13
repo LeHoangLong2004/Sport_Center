@@ -15,17 +15,15 @@ export default defineConfig(({ mode }) => {
     ...loadEnv(mode, __dirname, ''),
   }
 
-  // Kiểm tra cờ true/false:
-  // - Nếu VITE_USE_LOCAL = "true" -> Trỏ về Localhost:5000 (C# .NET)
-  // - Mặc định hoặc "false" -> Trỏ về Deploy Backend (Render: https://sport-center-ga9j.onrender.com)
-  const isLocal = env.VITE_USE_LOCAL === 'true'
-  const activeApiUrl = isLocal
-    ? (env.VITE_LOCAL_API_URL || 'http://localhost:5000')
-    : (env.VITE_DEPLOY_API_URL || 'https://sport-center-ga9j.onrender.com')
+  // Mặc định chạy Localhost (http://localhost:5000) trừ khi cấu hình rõ ràng VITE_USE_LOCAL=false
+  const isDeploy = env.VITE_USE_LOCAL === 'false'
+  const activeApiUrl = isDeploy
+    ? (env.VITE_DEPLOY_API_URL || 'https://sport-center-ga9j.onrender.com')
+    : (env.VITE_LOCAL_API_URL || 'http://localhost:5000')
 
   console.log(`\n===============================================================`)
   console.log(`>>> [Vite API Proxy] ĐANG TRỎ VỀ: ${activeApiUrl}`)
-  console.log(`>>> [Chế độ] ${isLocal ? 'CHẠY LOCALHOST (Cần bật backend C#)' : 'CHẠY CLOUD DEPLOY (Render online)'}`)
+  console.log(`>>> [Chế độ] ${isDeploy ? 'CHẠY CLOUD DEPLOY (Render online)' : 'CHẠY LOCALHOST (Cần bật backend C#)'}`)
   console.log(`===============================================================\n`)
 
   return {
