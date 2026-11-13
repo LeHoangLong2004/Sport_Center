@@ -44,16 +44,16 @@ public sealed partial class ClassService
             return (false, "Thời gian bắt đầu lớp học đề xuất phải cách thời điểm hiện tại ít nhất 24 giờ để Ban quản lý kịp phê duyệt và hội viên đăng ký.");
         }
 
-        var newStart = request.ScheduleTime;
+        var newStart = scheduleTimeUtc;
         var newEnd = newStart.AddMinutes(request.DurationMinutes);
 
         var existingClasses = await _classRepository.GetClassesByCoachAndDateAsync(
             request.CoachId,
-            request.ScheduleTime
+            scheduleTimeUtc
         );
         var existingPtSessions = await _ptSessionRepository.GetSessionsByCoachAndDateAsync(
             request.CoachId,
-            request.ScheduleTime
+            scheduleTimeUtc
         );
 
         foreach (var c in existingClasses.Where(c => c.Status && string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase)))
@@ -82,7 +82,7 @@ public sealed partial class ClassService
 
         var existingFacilityClasses = await _classRepository.GetClassesByFacilityAndDateAsync(
             request.FacilityId,
-            request.ScheduleTime
+            scheduleTimeUtc
         );
         foreach (var c in existingFacilityClasses.Where(c => c.Status && string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase)))
         {
@@ -98,7 +98,7 @@ public sealed partial class ClassService
             coachId: request.CoachId,
             facilityId: request.FacilityId,
             className: request.ClassName,
-            scheduleTime: request.ScheduleTime,
+            scheduleTime: scheduleTimeUtc,
             durationMinutes: request.DurationMinutes,
             capacity: request.Capacity,
             currentEnrolled: 0,
@@ -112,7 +112,7 @@ public sealed partial class ClassService
         {
             await _classRepository.NotifyManagersAsync(
                 "Có đề xuất lớp học mới cần duyệt",
-                $"Coach vừa gửi đề xuất lớp {request.ClassName} vào {CenterTime.ToLocal(request.ScheduleTime):dd/MM/yyyy HH:mm}.",
+                $"Coach vừa gửi đề xuất lớp {request.ClassName} vào {CenterTime.ToLocal(scheduleTimeUtc):dd/MM/yyyy HH:mm}.",
                 "class",
                 newClass.Id
             );
@@ -122,7 +122,7 @@ public sealed partial class ClassService
             await _classRepository.NotifyCoachAsync(
                 request.CoachId,
                 "Bạn được phân công lớp học mới",
-                $"Bạn vừa được phân công lớp {request.ClassName} vào {CenterTime.ToLocal(request.ScheduleTime):dd/MM/yyyy HH:mm}.",
+                $"Bạn vừa được phân công lớp {request.ClassName} vào {CenterTime.ToLocal(scheduleTimeUtc):dd/MM/yyyy HH:mm}.",
                 "class",
                 newClass.Id
             );
@@ -154,29 +154,33 @@ public sealed partial class ClassService
                 return (false, "Thời lượng lớp học phải lớn hơn 0 phút.");
             }
 
-            if (request.ScheduleTime <= DateTime.UtcNow)
+            var scheduleTimeUtc = request.ScheduleTime.Kind == DateTimeKind.Utc
+                ? request.ScheduleTime
+                : request.ScheduleTime.ToUniversalTime();
+
+            if (scheduleTimeUtc <= DateTime.UtcNow)
             {
                 return (false, "Thời gian học phải lớn hơn thời điểm hiện tại.");
             }
 
             // Check overlap if schedule or coach changed
             if (
-                targetClass.ScheduleTime != request.ScheduleTime
+                targetClass.ScheduleTime != scheduleTimeUtc
                 || targetClass.CoachId != request.CoachId
                 || targetClass.DurationMinutes != request.DurationMinutes
                 || targetClass.FacilityId != request.FacilityId
             )
             {
-                var newStart = request.ScheduleTime;
+                var newStart = scheduleTimeUtc;
                 var newEnd = newStart.AddMinutes(request.DurationMinutes);
 
                 var existingClasses = await _classRepository.GetClassesByCoachAndDateAsync(
                     request.CoachId,
-                    request.ScheduleTime
+                    scheduleTimeUtc
                 );
                 var existingPtSessions = await _ptSessionRepository.GetSessionsByCoachAndDateAsync(
                     request.CoachId,
-                    request.ScheduleTime
+                    scheduleTimeUtc
                 );
 
                 foreach (var c in existingClasses.Where(c => c.Status && c.ApprovalStatus != "rejected"))
@@ -207,7 +211,7 @@ public sealed partial class ClassService
 
                 var existingFacilityClasses = await _classRepository.GetClassesByFacilityAndDateAsync(
                     request.FacilityId,
-                    request.ScheduleTime
+                    scheduleTimeUtc
                 );
                 foreach (var c in existingFacilityClasses.Where(c => c.Status && c.ApprovalStatus != "rejected"))
                 {
@@ -224,7 +228,7 @@ public sealed partial class ClassService
                 coachId: request.CoachId,
                 facilityId: request.FacilityId,
                 className: request.ClassName,
-                scheduleTime: request.ScheduleTime,
+                scheduleTime: scheduleTimeUtc,
                 durationMinutes: request.DurationMinutes,
                 capacity: request.Capacity,
                 currentEnrolled: targetClass.CurrentEnrolled,
@@ -247,7 +251,7 @@ public sealed partial class ClassService
             await _classRepository.NotifyCoachAsync(
                 request.CoachId,
                 "Lịch lớp học đã được cập nhật",
-                $"Lớp {request.ClassName} đã được cập nhật lịch vào {CenterTime.ToLocal(request.ScheduleTime):dd/MM/yyyy HH:mm}.",
+                $"Lớp {request.ClassName} đã được cập nhật lịch vào {CenterTime.ToLocal(scheduleTimeUtc):dd/MM/yyyy HH:mm}.",
                 "class",
                 classId
             );

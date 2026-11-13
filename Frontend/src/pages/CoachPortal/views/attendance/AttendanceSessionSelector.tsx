@@ -1,17 +1,18 @@
-import { Calendar, Clock, MapPin, Users, Award, ShieldCheck, ChevronDown, Dumbbell, Lock } from "lucide-react";
+import { Calendar, Clock, MapPin, Users, Award, ShieldCheck, ChevronDown, Dumbbell, Lock, CheckCircle2, RotateCcw } from "lucide-react";
 import type { MockSession } from "../../services/api";
 import type { AttendanceDeadlineInfo } from "../../utils/attendanceLock";
 
 interface Props {
-  selectedSessionId: string;
+  selectedSessionId?: string | null;
   onSessionChange: (id: string) => void;
   activeSessions: MockSession[];
   session: MockSession;
   isFinalized: boolean;
   isDraft?: boolean;
   isExpired24h?: boolean;
-  deadlineInfo?: AttendanceDeadlineInfo;
+  deadlineInfo?: any;
   enrolledCount: number;
+  stats?: any;
 }
 
 export default function AttendanceSessionSelector({
@@ -24,6 +25,7 @@ export default function AttendanceSessionSelector({
   isExpired24h,
   deadlineInfo,
   enrolledCount,
+  stats = { total: 0, attended: 0, absent: 0, late: 0, pending: 0, attendanceRate: 0 },
 }: Props) {
   // Format Vietnamese date
   const formatSessionDate = (dateStr?: string) => {
@@ -55,85 +57,77 @@ export default function AttendanceSessionSelector({
                 <Dumbbell className="w-3.5 h-3.5" />
                 {session.sport || "Lớp nhóm"}
               </span>
-              {session.level && (
-                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                  {session.level}
-                </span>
-              )}
-              {isExpired24h ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                  <Lock className="w-3.5 h-3.5 text-slate-500" />
-                  Đã đóng (Quá 24 giờ)
-                </span>
-              ) : (
-                <span
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                    isFinalized
-                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400"
-                      : isDraft
-                      ? "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400"
-                      : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400"
-                  }`}
-                >
-                  {isFinalized ? (
-                    <>
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      Đã chốt sổ điểm danh
-                    </>
-                  ) : isDraft ? (
-                    <>
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                      Bản nháp (Đang lưu nháp)
-                    </>
-                  ) : (
-                    <>
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                      Chưa điểm danh
-                    </>
-                  )}
-                </span>
-              )}
-            </div>
-
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              {session.className}
-            </h2>
-            {deadlineInfo && deadlineInfo.formattedDeadline && (
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-slate-400" />
-                <span>
-                  Thời hạn điểm danh: {isExpired24h ? "Đã hết hạn lúc " : "Hết hạn lúc "}
-                  <strong>{deadlineInfo.formattedDeadline}</strong> (
-                  {isExpired24h ? "Không thể sửa điểm vì đã quá 24 giờ" : deadlineInfo.remainingText})
-                </span>
-              </p>
+            {isExpired24h ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                <Lock className="w-3.5 h-3.5 text-slate-500" />
+                Đã đóng (Quá 24 giờ)
+              </span>
+            ) : (
+              <span
+                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                  isFinalized
+                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400"
+                    : isDraft
+                    ? "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400"
+                    : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                }`}
+              >
+                {isFinalized ? (
+                  <>
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    Đã chốt sổ điểm danh
+                  </>
+                ) : isDraft ? (
+                  <>
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                    Bản nháp (Đang lưu nháp)
+                  </>
+                ) : (
+                  <>
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                    Chưa điểm danh
+                  </>
+                )}
+              </span>
             )}
           </div>
 
-          {/* Session Switcher Dropdown */}
-          <div className="w-full lg:w-96">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1.5">
-              Chọn ca dạy cần điểm danh
-            </label>
-            <div className="relative">
-              <select
-                value={selectedSessionId || ""}
-                onChange={(e) => onSessionChange(e.target.value)}
-                className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl pl-3.5 pr-10 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-xs"
-              >
-                {activeSessions.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.className} — {s.date} ({s.startTime} - {s.endTime})
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
+          <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            {session.className}
+          </h2>
+          {deadlineInfo && deadlineInfo.formattedDeadline && (
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-slate-400" />
+              <span>
+                Thời hạn điểm danh: {isExpired24h ? "Đã hết hạn lúc " : "Hết hạn lúc "}
+                <strong>{deadlineInfo.formattedDeadline}</strong> (
+                {isExpired24h ? "Không thể sửa điểm vì đã quá 24 giờ" : deadlineInfo.remainingText})
+              </span>
+            </p>
+          )}
+        </div>
+
+        {/* Dropdown Ca dạy */}
+        <div className="w-full md:w-80">
+          <div className="relative">
+            <select
+              value={selectedSessionId || ""}
+              onChange={(e) => onSessionChange(e.target.value)}
+              className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl pl-3 pr-9 py-2 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-xs"
+            >
+              {activeSessions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.className} — {s.date} ({s.startTime} - {s.endTime})
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
         </div>
       </div>
+    </div>
 
-      {/* Session Metadata Info Grid */}
+    {/* Session Metadata Info Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-slate-100 dark:divide-slate-800 text-xs sm:text-sm">
         {/* Time */}
         <div className="p-4 flex items-center gap-3">
@@ -187,6 +181,32 @@ export default function AttendanceSessionSelector({
           </div>
         </div>
       </div>
+
+      {/* Progress Bar chuyên cần mỏng (6px) nằm gọn dưới đáy */}
+      {stats.total > 0 && (
+        <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 flex overflow-hidden">
+          <div
+            style={{ width: `${(stats.attended / stats.total) * 100}%` }}
+            className="bg-emerald-500 transition-all duration-300"
+            title={`Có mặt: ${stats.attended}`}
+          />
+          <div
+            style={{ width: `${(((stats.late || 0)) / stats.total) * 100}%` }}
+            className="bg-amber-400 transition-all duration-300"
+            title={`Đi trễ: ${stats.late || 0}`}
+          />
+          <div
+            style={{ width: `${(stats.absent / stats.total) * 100}%` }}
+            className="bg-rose-500 transition-all duration-300"
+            title={`Vắng: ${stats.absent}`}
+          />
+          <div
+            style={{ width: `${(stats.pending / stats.total) * 100}%` }}
+            className="bg-slate-200 dark:bg-slate-700 transition-all duration-300"
+            title={`Chưa điểm danh: ${stats.pending}`}
+          />
+        </div>
+      )}
     </div>
   );
 }

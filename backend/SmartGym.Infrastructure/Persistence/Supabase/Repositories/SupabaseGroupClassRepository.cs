@@ -86,7 +86,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             CoachId: c.CoachId,
             CoachName: coachUser?.FullName ?? "N/A",
             ClassName: c.ClassName,
-            ScheduleTime: CenterTime.ToLocal(c.ScheduleTime),
+            ScheduleTime: AsUtc(c.ScheduleTime),
             DurationMinutes: c.DurationMinutes,
             Capacity: c.Capacity,
             CurrentEnrolled: c.CurrentEnrolled,
@@ -164,6 +164,9 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             model.ApprovalStatus
         );
 
+    private static DateTime AsUtc(DateTimeOffset value)
+        => value.UtcDateTime;
+
     private static DateTime AsUtc(DateTime value)
         => value.Kind switch
         {
@@ -208,7 +211,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                     CoachId: c.CoachId,
                     CoachName: user?.FullName ?? "N/A",
                     ClassName: c.ClassName,
-                    ScheduleTime: CenterTime.ToLocal(c.ScheduleTime),
+                    ScheduleTime: AsUtc(c.ScheduleTime),
                     DurationMinutes: c.DurationMinutes,
                     Capacity: c.Capacity,
                     CurrentEnrolled: c.CurrentEnrolled,
@@ -274,7 +277,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                     CoachId: c.CoachId,
                     CoachName: user?.FullName ?? "N/A",
                     ClassName: c.ClassName,
-                    ScheduleTime: CenterTime.ToLocal(c.ScheduleTime),
+                    ScheduleTime: AsUtc(c.ScheduleTime),
                     DurationMinutes: c.DurationMinutes,
                     Capacity: c.Capacity,
                     CurrentEnrolled: c.CurrentEnrolled,
