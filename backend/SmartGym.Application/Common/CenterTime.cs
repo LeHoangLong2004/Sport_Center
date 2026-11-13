@@ -10,6 +10,11 @@ public static class CenterTime
 {
     private static readonly TimeZoneInfo Zone = ResolveZone();
 
+    public static DateTime ToLocal(DateTimeOffset value)
+    {
+        return TimeZoneInfo.ConvertTimeFromUtc(value.UtcDateTime, Zone);
+    }
+
     public static DateTime ToLocal(DateTime value)
     {
         var utc = value.Kind == DateTimeKind.Utc

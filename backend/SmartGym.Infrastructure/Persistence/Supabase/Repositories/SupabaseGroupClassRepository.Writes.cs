@@ -60,7 +60,9 @@ public sealed partial class SupabaseGroupClassRepository
             CoachId = groupClass.CoachId,
             FacilityId = groupClass.FacilityId,
             ClassName = groupClass.ClassName,
-            ScheduleTime = groupClass.ScheduleTime,
+            ScheduleTime = groupClass.ScheduleTime.Kind == DateTimeKind.Utc
+                ? groupClass.ScheduleTime
+                : groupClass.ScheduleTime.ToUniversalTime(),
             DurationMinutes = groupClass.DurationMinutes,
             Capacity = groupClass.Capacity,
             CurrentEnrolled = groupClass.CurrentEnrolled,
@@ -80,7 +82,9 @@ public sealed partial class SupabaseGroupClassRepository
             CoachId = groupClass.CoachId,
             FacilityId = groupClass.FacilityId,
             ClassName = groupClass.ClassName,
-            ScheduleTime = groupClass.ScheduleTime,
+            ScheduleTime = groupClass.ScheduleTime.Kind == DateTimeKind.Utc
+                ? groupClass.ScheduleTime
+                : groupClass.ScheduleTime.ToUniversalTime(),
             DurationMinutes = groupClass.DurationMinutes,
             Capacity = groupClass.Capacity,
             CurrentEnrolled = groupClass.CurrentEnrolled,

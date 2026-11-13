@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SmartGym.Application.DTOs.Classes;
 using SmartGym.Application.Services;
+using SmartGym.Application.Common;
 using SmartGym.Api.Services;
 using SmartGym.Infrastructure.Persistence.EF;
 
@@ -155,7 +156,7 @@ public static partial class ClassEndpoints
                     {
                         id = p.id,
                         className = p.class_name,
-                        scheduleTime = p.schedule_time,
+                        scheduleTime = CenterTime.ToLocal(p.schedule_time),
                         durationMinutes = p.duration_minutes,
                         capacity = p.capacity,
                         sportName = p.sport_name ?? "Bộ môn",

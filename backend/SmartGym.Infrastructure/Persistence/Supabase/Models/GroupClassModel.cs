@@ -23,7 +23,7 @@ public class GroupClassModel : BaseModel
     public string ClassName { get; set; } = string.Empty;
 
     [Column("schedule_time")]
-    public DateTime ScheduleTime { get; set; }
+    public DateTimeOffset ScheduleTime { get; set; }
 
     [Column("duration_minutes")]
     public int DurationMinutes { get; set; }
@@ -48,7 +48,7 @@ public class GroupClassModel : BaseModel
             CoachId,
             FacilityId,
             ClassName,
-            ScheduleTime,
+            ScheduleTime.UtcDateTime,
             DurationMinutes,
             Capacity,
             CurrentEnrolled,

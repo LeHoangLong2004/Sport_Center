@@ -230,7 +230,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
 
     public async Task<IEnumerable<ClassResponse>> GetAvailableClassesAsync()
     {
-        var nowUtc = DateTime.UtcNow;
+        var nowUtc = DateTimeOffset.UtcNow;
         var classResponse = await _client
             .From<GroupClassModel>()
             .Where(x => x.Status == true)
