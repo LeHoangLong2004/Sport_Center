@@ -6,7 +6,7 @@ export type { CoachScheduleRequest } from "./useCoachScheduleRequests";
 import { AppointmentService } from "../../../services/appointmentService";
 import type { CoachOption } from "./coachScheduleRequests/types";
 import { isSubstituteRequest } from "./coachScheduleRequests/types";
-import { parseShiftTimeWindow, checkCoachConflict } from "./coachScheduleRequests/conflictUtils";
+import { parseShiftTimeWindow, checkCoachConflict, isCoachQualifiedForSport } from "./coachScheduleRequests/conflictUtils";
 import { CoachScheduleRequestCard } from "./coachScheduleRequests/CoachScheduleRequestCard";
 import { CoachScheduleRequestModal } from "./coachScheduleRequests/CoachScheduleRequestModal";
 
@@ -112,7 +112,16 @@ export function CoachScheduleRequestsSection({ requests, loading, onAction }: Pr
     if (!selectedRequest) return [];
     const otherCoaches = coaches.filter((c) => c.id !== selectedRequest.coachId);
 
-    return otherCoaches.map((c) => {
+    // Lọc HLV theo đúng bộ môn của ca dạy
+    const qualifiedCoaches = otherCoaches.filter((c) =>
+      isCoachQualifiedForSport(
+        c.specialty,
+        selectedRequest.sportName,
+        selectedRequest.className,
+      ),
+    );
+
+    return qualifiedCoaches.map((c) => {
       const conflict = checkCoachConflict(
         c,
         shiftTimeWindow,

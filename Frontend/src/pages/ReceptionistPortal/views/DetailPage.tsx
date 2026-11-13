@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react"
-import { Edit3, AlertTriangle, X } from "lucide-react"
-import { toast } from "sonner"
-import { MemberCardModal } from "../components/MemberCardModal"
+import { Calendar, CreditCard, Clock, CheckCircle2, AlertCircle } from "lucide-react"
 import { MemberAvatar } from "./LookupPage"
 
 export function DetailPage({
@@ -28,9 +26,7 @@ export function DetailPage({
   const m = member || cachedMember
 
   const [currentStatus, setCurrentStatus] = useState<string>(m?.status || "Đang hoạt động")
-  const [showCardModal, setShowCardModal] = useState(false)
-  const [showLockModal, setShowLockModal] = useState(false)
-  const [isLocking, setIsLocking] = useState(false)
+  const [activeTab, setActiveTab] = useState<"training" | "payment">("training")
 
   const [trainingHistory, setTrainingHistory] = useState<any[]>([])
   const [paymentHistory, setPaymentHistory] = useState<any[]>([])
@@ -158,45 +154,6 @@ export function DetailPage({
     }
   }, [m?.id])
 
-  const handleToggleLock = async (newActiveState: boolean) => {
-    if (!m?.id) return
-    setIsLocking(true)
-    try {
-      const token = localStorage.getItem("token") || localStorage.getItem("accessToken")
-      const res = await fetch(`/api/users/${m.id}/status`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ status: newActiveState }),
-      })
-
-      if (!res.ok) {
-        const errText = await res.text()
-        throw new Error(errText || "Không thể cập nhật trạng thái thẻ.")
-      }
-
-      const newStatusStr = newActiveState ? "Đang hoạt động" : "Tạm khóa"
-      setCurrentStatus(newStatusStr)
-
-      // Update cached member in sessionStorage
-      const updated = { ...m, status: newStatusStr }
-      sessionStorage.setItem("receptionist_selected_member", JSON.stringify(updated))
-
-      toast.success(
-        newActiveState
-          ? `Đã mở khóa thẻ thành viên cho ${m.fullName} thành công!`
-          : `Đã tạm khóa thẻ thành viên của ${m.fullName}.`
-      )
-      setShowLockModal(false)
-    } catch (err: any) {
-      toast.error(err?.message || "Đã xảy ra lỗi khi đổi trạng thái thẻ.")
-    } finally {
-      setIsLocking(false)
-    }
-  }
-
   if (!m) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center min-h-[400px] p-[32px] gap-4 w-full">
@@ -217,6 +174,11 @@ export function DetailPage({
   const daysRemaining = m.expiryDate
     ? Math.max(0, Math.ceil((new Date(m.expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : 0
+
+  const totalDays = m.startDate && m.expiryDate
+    ? Math.max(1, Math.ceil((new Date(m.expiryDate).getTime() - new Date(m.startDate).getTime()) / (1000 * 60 * 60 * 24)))
+    : 30
+  const progressPercent = Math.min(100, Math.max(0, Math.round((daysRemaining / totalDays) * 100)))
 
   const personalInfo = [
     {
@@ -297,7 +259,7 @@ export function DetailPage({
             </div>
             <div className="flex gap-[16px] items-center shrink-0 text-[14px]">
               <span className="font-bold text-slate-800">
-                Mã thẻ: {m.memberCode}
+                Mã hội viên: {m.memberCode}
               </span>
               <span className="text-[#64748b]">•</span>
               <span className="font-bold font-semibold text-[#64748b]">
@@ -316,32 +278,6 @@ export function DetailPage({
           </button>
           <button
             type="button"
-            onClick={() => setShowCardModal(true)}
-            className="bg-white border border-[#e2e8f0] px-[18px] py-[10px] rounded-[8px] font-bold text-[#0f172a] text-[14px] hover:bg-slate-50 transition-colors cursor-pointer"
-          >
-            In thẻ thành viên
-          </button>
-          {isLocked ? (
-            <button
-              type="button"
-              disabled={isLocking}
-              onClick={() => handleToggleLock(true)}
-              className="bg-[#dcfce7] text-[#15803d] border border-emerald-300 px-[18px] py-[10px] rounded-[8px] font-bold text-[14px] hover:bg-emerald-100 transition-colors disabled:opacity-50 cursor-pointer"
-            >
-              {isLocking ? "Đang xử lý..." : "Mở khóa thẻ"}
-            </button>
-          ) : (
-            <button
-              type="button"
-              disabled={isLocking}
-              onClick={() => setShowLockModal(true)}
-              className="bg-[#fee2e2] text-[#ef4444] px-[18px] py-[10px] rounded-[8px] font-bold text-[14px] hover:bg-red-200 transition-colors disabled:opacity-50 cursor-pointer"
-            >
-              Tạm khóa thẻ
-            </button>
-          )}
-          <button
-            type="button"
             onClick={onBack}
             className="border border-[#e2e8f0] px-[18px] py-[10px] rounded-[8px] font-bold text-[#64748b] text-[14px] hover:bg-slate-50 transition-colors cursor-pointer"
           >
@@ -352,16 +288,13 @@ export function DetailPage({
 
       {/* Content Split */}
       <div className="flex flex-1 gap-[24px] items-start min-h-0 w-full">
-        {/* Left column */}
-        <div className="flex flex-col gap-[24px] items-start shrink-0 w-[450px]">
+        {/* Left column - Hồ sơ & Gói tập */}
+        <div className="flex flex-col gap-[20px] items-start shrink-0 w-[420px]">
           {/* Thông tin cá nhân */}
-          <div className="bg-white border border-[#e2e8f0] flex flex-col gap-[16px] items-start p-[24px] rounded-[12px] w-full">
-            <div className="flex items-center justify-between w-full">
-              <span className="font-extrabold text-[#0f172a] text-[16px]">
-                Thông tin cá nhân
-              </span>
-              <Edit3 className="size-[16px] text-[#64748b] cursor-pointer" />
-            </div>
+          <div className="bg-white border border-[#e2e8f0] flex flex-col gap-[16px] items-start p-[24px] rounded-[12px] w-full shadow-sm">
+            <span className="font-extrabold text-[#0f172a] text-[16px]">
+              Thông tin cá nhân
+            </span>
             <div className="bg-[#e2e8f0] h-px w-full" />
             {personalInfo.map((row) => (
               <div key={row.label} className="flex gap-[12px] items-start w-full text-[13px]">
@@ -375,192 +308,241 @@ export function DetailPage({
             ))}
           </div>
 
-          {/* Thông tin gói tập hiện tại */}
-          <div className="bg-white border border-[#e2e8f0] flex flex-col gap-[16px] items-start p-[24px] rounded-[12px] w-full">
-            <span className="font-extrabold text-[#0f172a] text-[16px]">
-              Thông tin gói tập hiện tại
-            </span>
-            <div className="bg-[#e2e8f0] h-px w-full" />
-            {packageInfo.map((row) => (
-              <div key={row.label} className="flex gap-[12px] items-start w-full text-[13px]">
-                <span className="font-normal text-[#64748b] w-[140px] shrink-0">
-                  {row.label}
-                </span>
-                <span className={row.highlight ? "font-extrabold text-slate-800" : "font-bold font-semibold text-[#0f172a]"}>
-                  {row.value}
-                </span>
-              </div>
-            ))}
-            <div className="flex gap-[12px] items-start w-full text-[13px]">
-              <span className="font-normal text-[#64748b] w-[140px] shrink-0">
-                Số ngày còn lại:
+          {/* Thông tin gói tập hiện tại với Progress Bar */}
+          <div className="bg-white border border-[#e2e8f0] flex flex-col gap-[16px] items-start p-[24px] rounded-[12px] w-full shadow-sm">
+            <div className="flex items-center justify-between w-full">
+              <span className="font-extrabold text-[#0f172a] text-[16px]">
+                Gói tập hiện tại
               </span>
-              <span className="bg-emerald-50 font-bold px-[8px] py-[2px] rounded-[4px] text-emerald-700 text-[12px]">
-                {daysRemaining > 0 ? `${daysRemaining} ngày` : "0 ngày (Hết hạn)"}
-              </span>
-            </div>
-            <div className="flex gap-[12px] items-start w-full text-[13px]">
-              <span className="font-normal text-[#64748b] w-[140px] shrink-0">
-                Trạng thái thanh toán:
-              </span>
-              <span className={`${paymentStatusColor} font-bold px-[8px] py-[2px] rounded-[4px] text-[11px]`}>
+              <span className={`${paymentStatusColor} font-bold px-[8px] py-[3px] rounded-[6px] text-[11px]`}>
                 {paymentStatusDisplay}
               </span>
             </div>
+
+            <div className="bg-[#e2e8f0] h-px w-full" />
+
+            <div className="bg-slate-50 border border-slate-100 rounded-[10px] p-[16px] w-full flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[11px] font-bold text-[#64748b] uppercase tracking-wider">Tên gói đăng ký</div>
+                  <div className="text-[16px] font-black text-slate-900 mt-0.5">{m.packageName || "Chưa đăng ký"}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[11px] font-bold text-[#64748b] uppercase tracking-wider">Tổng cước phí</div>
+                  <div className="text-[15px] font-extrabold text-emerald-700 mt-0.5">
+                    {m.totalAmount ? Number(m.totalAmount).toLocaleString("vi-VN") + " đ" : "0 đ"}
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress Bar thời hạn */}
+              <div className="flex flex-col gap-1.5 pt-1">
+                <div className="flex items-center justify-between text-[12px]">
+                  <span className="text-slate-500 font-medium">Thời hạn sử dụng:</span>
+                  <span className={`font-bold ${
+                    daysRemaining <= 0 ? "text-red-600" : daysRemaining <= 7 ? "text-amber-600" : "text-emerald-700"
+                  }`}>
+                    {daysRemaining > 0 ? `Còn ${daysRemaining} ngày` : "Đã hết hạn"}
+                  </span>
+                </div>
+                <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      daysRemaining <= 0
+                        ? "bg-red-500"
+                        : daysRemaining <= 7
+                        ? "bg-amber-500"
+                        : "bg-emerald-600"
+                    }`}
+                    style={{ width: `${daysRemaining <= 0 ? 100 : progressPercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Chi tiết thời gian */}
+            <div className="flex flex-col gap-3 w-full text-[13px] pt-1">
+              <div className="flex justify-between items-center w-full">
+                <span className="text-[#64748b]">Ngày kích hoạt:</span>
+                <span className="font-semibold text-[#0f172a]">
+                  {m.startDate ? new Date(m.startDate).toLocaleDateString("vi-VN") : "N/A"}
+                </span>
+              </div>
+              <div className="flex justify-between items-center w-full">
+                <span className="text-[#64748b]">Ngày hết hạn:</span>
+                <span className="font-semibold text-[#0f172a]">
+                  {m.expiryDate ? new Date(m.expiryDate).toLocaleDateString("vi-VN") : "N/A"}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Right column */}
-        <div className="flex flex-1 flex-col gap-[24px] items-start min-w-0">
-          {/* Lịch sử tập luyện */}
-          <div className="bg-white border border-[#e2e8f0] flex flex-col gap-[16px] items-start px-[24px] py-[20px] rounded-[12px] w-full">
-            <div className="flex items-center justify-between shrink-0 w-full">
-              <span className="font-extrabold text-[#0f172a] text-[16px]">
-                Lịch sử tập luyện gần đây
-              </span>
-              <span className="font-bold text-emerald-600 text-[13px] cursor-pointer">
-                Xem tất cả ({trainingHistory.length})
-              </span>
-            </div>
-            <div className="border border-[#e2e8f0] flex flex-col items-start overflow-hidden rounded-[8px] w-full">
-              <div className="bg-[#f1f5f9] flex font-extrabold items-center px-[16px] py-[10px] text-[#64748b] text-[12px] w-full">
-                <span className="w-[110px] shrink-0">NGÀY</span>
-                <span className="flex-1 min-w-0">PHÒNG / HOẠT ĐỘNG</span>
-                <span className="w-[120px] shrink-0">HLV HƯỚNG DẪN</span>
-                <span className="w-[100px] shrink-0">THỜI LƯỢNG</span>
-                <span className="w-[100px] shrink-0 text-right">GIỜ CHECK-IN</span>
-              </div>
-              {loadingHistory ? (
-                <div className="bg-white p-[24px] text-center text-[#64748b] text-[13px] w-full">
-                  Đang tải lịch sử tập luyện...
-                </div>
-              ) : trainingHistory.length === 0 ? (
-                <div className="bg-white p-[24px] text-center text-[#64748b] text-[13px] w-full">
-                  Chưa có lịch sử tập luyện nào được ghi nhận.
-                </div>
-              ) : (
-                trainingHistory.slice(0, 10).map((r, i) => (
-                  <div key={i} className="bg-white border-[#e2e8f0] border-b flex items-center px-[16px] py-[12px] text-[13px] w-full last:border-b-0">
-                    <span className="font-semibold text-[#0f172a] w-[110px] shrink-0">{r.date}</span>
-                    <span className="flex-1 font-semibold min-w-0 text-[#0f172a] truncate">{r.activity}</span>
-                    <span className="font-normal text-[#64748b] w-[120px] shrink-0 truncate">{r.trainer}</span>
-                    <span className="font-normal text-[#64748b] w-[100px] shrink-0">{r.duration}</span>
-                    <span className="font-bold text-emerald-700 text-right w-[100px] shrink-0">{r.checkin}</span>
-                  </div>
-                ))
-              )}
+        {/* Right column - Tabs & Bảng chi tiết */}
+        <div className="flex flex-1 flex-col gap-[16px] items-start min-w-0">
+          {/* Tabs header card */}
+          <div className="bg-white border border-[#e2e8f0] flex items-center justify-between p-[8px] rounded-[12px] w-full shadow-sm">
+            <div className="flex gap-[6px] items-center">
+              <button
+                type="button"
+                onClick={() => setActiveTab("training")}
+                className={`flex items-center gap-2 px-[18px] py-[10px] rounded-[8px] font-bold text-[13px] transition-all cursor-pointer ${
+                  activeTab === "training"
+                    ? "bg-emerald-50 text-emerald-700 shadow-sm border border-emerald-200"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-transparent"
+                }`}
+              >
+                <Calendar className="size-4" />
+                <span>Lịch sử tập luyện & lớp học</span>
+                <span
+                  className={`text-[11px] px-[7px] py-[1px] rounded-full font-extrabold ${
+                    activeTab === "training"
+                      ? "bg-emerald-200/80 text-emerald-800"
+                      : "bg-slate-100 text-slate-500"
+                  }`}
+                >
+                  {trainingHistory.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("payment")}
+                className={`flex items-center gap-2 px-[18px] py-[10px] rounded-[8px] font-bold text-[13px] transition-all cursor-pointer ${
+                  activeTab === "payment"
+                    ? "bg-emerald-50 text-emerald-700 shadow-sm border border-emerald-200"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-transparent"
+                }`}
+              >
+                <CreditCard className="size-4" />
+                <span>Lịch sử giao dịch & hóa đơn</span>
+                <span
+                  className={`text-[11px] px-[7px] py-[1px] rounded-full font-extrabold ${
+                    activeTab === "payment"
+                      ? "bg-emerald-200/80 text-emerald-800"
+                      : "bg-slate-100 text-slate-500"
+                  }`}
+                >
+                  {paymentHistory.length}
+                </span>
+              </button>
             </div>
           </div>
 
-          {/* Lịch sử giao dịch */}
-          <div className="bg-white border border-[#e2e8f0] flex flex-col gap-[16px] items-start px-[24px] py-[20px] rounded-[12px] w-full">
-            <div className="flex items-center justify-between shrink-0 w-full">
-              <span className="font-extrabold text-[#0f172a] text-[16px]">
-                Lịch sử giao dịch thanh toán
-              </span>
-              <span className="font-bold text-emerald-600 text-[13px] cursor-pointer">
-                Xem tất cả hóa đơn ({paymentHistory.length})
-              </span>
-            </div>
-            <div className="border border-[#e2e8f0] flex flex-col items-start overflow-hidden rounded-[8px] w-full">
-              <div className="bg-[#f1f5f9] flex font-extrabold items-center px-[16px] py-[10px] text-[#64748b] text-[12px] w-full">
-                <span className="w-[110px] shrink-0">NGÀY GD</span>
-                <span className="flex-1 min-w-0">NỘI DUNG THANH TOÁN</span>
-                <span className="w-[120px] shrink-0">HÌNH THỨC</span>
-                <span className="w-[120px] shrink-0">TRẠNG THÁI</span>
-                <span className="w-[110px] shrink-0 text-right">SỐ TIỀN</span>
-              </div>
-              {loadingHistory ? (
-                <div className="bg-white p-[24px] text-center text-[#64748b] text-[13px] w-full">
-                  Đang tải lịch sử giao dịch...
-                </div>
-              ) : paymentHistory.length === 0 ? (
-                <div className="bg-white p-[24px] text-center text-[#64748b] text-[13px] w-full">
-                  Chưa có lịch sử giao dịch thanh toán nào.
-                </div>
-              ) : (
-                paymentHistory.slice(0, 10).map((r, i) => (
-                  <div key={i} className="bg-white border-[#e2e8f0] border-b flex items-center px-[16px] py-[12px] w-full last:border-b-0 text-[13px]">
-                    <span className="font-semibold text-[#0f172a] w-[110px] shrink-0">{r.date}</span>
-                    <span className="flex-1 font-semibold min-w-0 text-[#0f172a] truncate">{r.content}</span>
-                    <span className="font-normal text-[#64748b] w-[120px] shrink-0 truncate">{r.method}</span>
-                    <div className="w-[120px] shrink-0">
-                      <span className="bg-emerald-50 font-bold px-[6px] py-[2px] rounded-[4px] text-emerald-700 text-[11px] truncate">
-                        {r.status}
-                      </span>
-                    </div>
-                    <span className="font-bold text-[#0f172a] text-right w-[110px] shrink-0">{r.amount}</span>
+          {/* Tab content area */}
+          <div className="bg-white border border-[#e2e8f0] flex flex-col gap-[16px] items-start p-[24px] rounded-[12px] w-full min-h-[420px] shadow-sm">
+            {activeTab === "training" ? (
+              <>
+                <div className="flex items-center justify-between shrink-0 w-full">
+                  <div>
+                    <h3 className="font-extrabold text-[#0f172a] text-[16px]">
+                      Lịch sử buổi tập & lớp học đã tham gia
+                    </h3>
+                    <p className="text-[12px] text-slate-500 mt-0.5">
+                      Ghi nhận các buổi tập luyện lớp học và lịch tập có HLV
+                    </p>
                   </div>
-                ))
-              )}
-            </div>
+                  <span className="font-bold text-slate-500 text-[12px]">
+                    Tổng số: <strong className="text-emerald-700 font-extrabold">{trainingHistory.length}</strong> buổi
+                  </span>
+                </div>
+
+                <div className="border border-[#e2e8f0] flex flex-col items-start overflow-hidden rounded-[8px] w-full">
+                  <div className="bg-[#f8fafc] flex font-extrabold items-center px-[16px] py-[11px] text-[#64748b] text-[12px] w-full border-b border-[#e2e8f0]">
+                    <span className="w-[120px] shrink-0">NGÀY TẬP</span>
+                    <span className="flex-1 min-w-0">LỚP HỌC / HOẠT ĐỘNG</span>
+                    <span className="w-[160px] shrink-0">HLV PHỤ TRÁCH</span>
+                    <span className="w-[110px] shrink-0">THỜI LƯỢNG</span>
+                    <span className="w-[130px] shrink-0 text-right">TRẠNG THÁI</span>
+                  </div>
+                  {loadingHistory ? (
+                    <div className="bg-white p-[36px] text-center text-[#64748b] text-[13px] w-full">
+                      Đang tải lịch sử tập luyện...
+                    </div>
+                  ) : trainingHistory.length === 0 ? (
+                    <div className="bg-white p-[36px] text-center text-[#64748b] text-[13px] w-full flex flex-col items-center gap-2">
+                      <Calendar className="size-8 text-slate-300" />
+                      <span>Chưa có lịch sử tập luyện nào được ghi nhận.</span>
+                    </div>
+                  ) : (
+                    trainingHistory.map((r, i) => (
+                      <div
+                        key={i}
+                        className="bg-white border-[#e2e8f0] border-b flex items-center px-[16px] py-[13px] text-[13px] w-full last:border-b-0 hover:bg-slate-50/80 transition-colors"
+                      >
+                        <span className="font-semibold text-[#0f172a] w-[120px] shrink-0">{r.date}</span>
+                        <span className="flex-1 font-semibold min-w-0 text-[#0f172a] truncate">{r.activity}</span>
+                        <span className="font-normal text-[#64748b] w-[160px] shrink-0 truncate">{r.trainer}</span>
+                        <span className="font-normal text-[#64748b] w-[110px] shrink-0">{r.duration}</span>
+                        <div className="w-[130px] shrink-0 text-right">
+                          <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-bold px-[8px] py-[3px] rounded-[6px] text-[11px] inline-flex items-center gap-1">
+                            <CheckCircle2 className="size-3" />
+                            Đã tham gia
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-between shrink-0 w-full">
+                  <div>
+                    <h3 className="font-extrabold text-[#0f172a] text-[16px]">
+                      Lịch sử giao dịch & hóa đơn thanh toán
+                    </h3>
+                    <p className="text-[12px] text-slate-500 mt-0.5">
+                      Danh sách các hóa đơn, gia hạn và nạp tiền dịch vụ của hội viên
+                    </p>
+                  </div>
+                  <span className="font-bold text-slate-500 text-[12px]">
+                    Tổng số: <strong className="text-emerald-700 font-extrabold">{paymentHistory.length}</strong> giao dịch
+                  </span>
+                </div>
+
+                <div className="border border-[#e2e8f0] flex flex-col items-start overflow-hidden rounded-[8px] w-full">
+                  <div className="bg-[#f8fafc] flex font-extrabold items-center px-[16px] py-[11px] text-[#64748b] text-[12px] w-full border-b border-[#e2e8f0]">
+                    <span className="w-[120px] shrink-0">NGÀY GD</span>
+                    <span className="flex-1 min-w-0">NỘI DUNG THANH TOÁN</span>
+                    <span className="w-[140px] shrink-0">HÌNH THỨC</span>
+                    <span className="w-[130px] shrink-0">TRẠNG THÁI</span>
+                    <span className="w-[120px] shrink-0 text-right">SỐ TIỀN</span>
+                  </div>
+                  {loadingHistory ? (
+                    <div className="bg-white p-[36px] text-center text-[#64748b] text-[13px] w-full">
+                      Đang tải lịch sử giao dịch...
+                    </div>
+                  ) : paymentHistory.length === 0 ? (
+                    <div className="bg-white p-[36px] text-center text-[#64748b] text-[13px] w-full flex flex-col items-center gap-2">
+                      <CreditCard className="size-8 text-slate-300" />
+                      <span>Chưa có lịch sử giao dịch thanh toán nào.</span>
+                    </div>
+                  ) : (
+                    paymentHistory.map((r, i) => (
+                      <div
+                        key={i}
+                        className="bg-white border-[#e2e8f0] border-b flex items-center px-[16px] py-[13px] w-full last:border-b-0 text-[13px] hover:bg-slate-50/80 transition-colors"
+                      >
+                        <span className="font-semibold text-[#0f172a] w-[120px] shrink-0">{r.date}</span>
+                        <span className="flex-1 font-semibold min-w-0 text-[#0f172a] truncate">{r.content}</span>
+                        <span className="font-normal text-[#64748b] w-[140px] shrink-0 truncate">{r.method}</span>
+                        <div className="w-[130px] shrink-0">
+                          <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-bold px-[8px] py-[3px] rounded-[6px] text-[11px] inline-flex items-center gap-1">
+                            <CheckCircle2 className="size-3" />
+                            {r.status}
+                          </span>
+                        </div>
+                        <span className="font-black text-slate-900 text-right w-[120px] shrink-0">{r.amount}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
-
-      {/* Member Card Modal */}
-      <MemberCardModal
-        member={{ ...m, status: currentStatus }}
-        isOpen={showCardModal}
-        onClose={() => setShowCardModal(false)}
-      />
-
-      {/* Lock Confirmation Modal */}
-      {showLockModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 backdrop-blur-sm p-4 animate-in fade-in duration-200"
-          onClick={() => setShowLockModal(false)}
-        >
-          <div
-            className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col gap-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2 text-red-600">
-                <AlertTriangle className="size-5 shrink-0" />
-                <span className="font-extrabold text-[15px] font-['Manrope:ExtraBold']">
-                  Xác nhận tạm khóa thẻ
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowLockModal(false)}
-                className="text-slate-400 hover:text-slate-600 cursor-pointer p-1 rounded-lg"
-              >
-                <X className="size-5" />
-              </button>
-            </div>
-
-            <p className="text-[13px] text-slate-600 dark:text-slate-300 leading-relaxed font-['Manrope:Regular']">
-              Bạn có chắc chắn muốn tạm khóa thẻ thành viên của{" "}
-              <strong className="text-slate-900 dark:text-white font-bold">{m.fullName}</strong> (Mã thẻ:{" "}
-              <strong className="text-blue-600 font-bold">{m.memberCode}</strong>)?
-              <br />
-              <br />
-              Hội viên sẽ không thể check-in vào phòng tập hoặc sử dụng dịch vụ cho đến khi thẻ được mở khóa lại.
-            </p>
-
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-              <button
-                type="button"
-                disabled={isLocking}
-                onClick={() => setShowLockModal(false)}
-                className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 font-bold text-xs text-slate-600 hover:bg-slate-50 transition cursor-pointer"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                type="button"
-                disabled={isLocking}
-                onClick={() => handleToggleLock(false)}
-                className="px-5 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-600/20 transition cursor-pointer disabled:opacity-50"
-              >
-                {isLocking ? "Đang xử lý..." : "Xác nhận khóa thẻ"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

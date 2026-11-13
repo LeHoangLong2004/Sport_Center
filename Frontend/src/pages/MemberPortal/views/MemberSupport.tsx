@@ -21,13 +21,25 @@ export default function MemberSupport({ onNavigate }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    MemberBackendAPI.getSupportTickets().then((loaded) => {
-      if (!cancelled && Array.isArray(loaded)) {
-        setTickets(loaded);
-      }
-    });
+    const reloadTickets = () => {
+      MemberBackendAPI.getSupportTickets().then((loaded) => {
+        if (!cancelled && Array.isArray(loaded)) {
+          setTickets(loaded);
+        }
+      });
+    };
+
+    reloadTickets();
+
+    window.addEventListener("support-tickets-updated", reloadTickets);
+    window.addEventListener("storage", reloadTickets);
+    window.addEventListener("focus", reloadTickets);
+
     return () => {
       cancelled = true;
+      window.removeEventListener("support-tickets-updated", reloadTickets);
+      window.removeEventListener("storage", reloadTickets);
+      window.removeEventListener("focus", reloadTickets);
     };
   }, []);
 

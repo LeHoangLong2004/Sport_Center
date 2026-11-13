@@ -192,7 +192,8 @@ export function CoachScheduleRequestModal({
                   </div>
 
                   <p className="text-[11px] text-slate-600">
-                    Hệ thống lọc các Huấn luyện viên rảnh lịch trong khung giờ{" "}
+                    Hệ thống tự động lọc các HLV có chuyên môn{" "}
+                    <strong className="text-emerald-700">{selectedRequest.sportName || "phù hợp"}</strong> và rảnh lịch trong khung giờ{" "}
                     <strong className="text-slate-800">
                       {shiftTimeWindow
                         ? `${shiftTimeWindow.date} (${shiftTimeWindow.formattedTime})`
@@ -209,7 +210,7 @@ export function CoachScheduleRequestModal({
                     <option value="">-- Chọn Huấn luyện viên tiếp nhận ca dạy --</option>
                     {freeCoaches.length === 0 ? (
                       <option value="" disabled>
-                        -- Không có Huấn luyện viên nào rảnh lịch vào khung giờ này --
+                        -- Không có HLV {selectedRequest.sportName ? `chuyên môn ${selectedRequest.sportName}` : ""} nào rảnh lịch vào khung giờ này --
                       </option>
                     ) : (
                       freeCoaches.map((c) => (

@@ -177,8 +177,15 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
 
     public async Task<IEnumerable<ClassResponse>> GetAllClassesAsync()
     {
-        var classResponse = await _client.From<GroupClassModel>().Get();
-        var classModels = classResponse.Models;
+        var classModels = await _dbContext.Database
+            .SqlQueryRaw<ClassSqlRawModel>(
+                @"SELECT id, sport_id, facility_id, coach_id, class_name,
+                         schedule_time, duration_minutes, capacity,
+                         current_enrolled, status, approval_status
+                  FROM classes"
+            )
+            .ToListAsync();
+
         if (!classModels.Any())
             return Enumerable.Empty<ClassResponse>();
 
