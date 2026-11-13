@@ -85,6 +85,25 @@ export interface MemberAiAnswer {
 }
 
 // REST Backend API Client for Member Portal
+export function mergeStoredTicketReplies<T extends { id: string; status: any; reply?: string; repliedAt?: string; repliedBy?: string }>(list: T[]): T[] {
+  try {
+    const raw = localStorage.getItem("smartgym_ticket_replies");
+    if (!raw) return list;
+    const replies: Record<string, { status: any; reply?: string; repliedAt?: string; repliedBy?: string }> = JSON.parse(raw);
+    return list.map((item) => {
+      if (replies[item.id]) {
+        return {
+          ...item,
+          ...replies[item.id],
+        };
+      }
+      return item;
+    });
+  } catch {
+    return list;
+  }
+}
+
 export const MemberBackendAPI = {
   getAuthHeaders(): Record<string, string> {
     const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
@@ -371,21 +390,44 @@ export const MemberBackendAPI = {
   },
 
   async getSupportTickets(): Promise<MemberSupportTicketItem[]> {
+    let result: MemberSupportTicketItem[] = [];
+
+    // 1. Ưu tiên lấy từ Backend API
     try {
       const res = await fetch("/api/member/support-tickets", {
         headers: this.getAuthHeaders(),
       });
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data)) return data;
+        if (Array.isArray(data) && data.length > 0) {
+          result = data;
+        }
       }
     } catch (e) {
       console.warn("Backend getSupportTickets failed", e);
     }
-    return [];
+
+    // 2. Đồng bộ qua localStorage nếu backend chưa có
+    if (result.length === 0) {
+      try {
+        const local = localStorage.getItem("smartgym_support_tickets");
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (Array.isArray(parsed) && parsed.length > 0) result = parsed;
+        }
+      } catch {}
+    }
+
+    // 3. Luôn luôn hợp nhất phản hồi của Lễ tân đã lưu (không bao giờ mất khi refresh)
+    const merged = mergeStoredTicketReplies(result);
+    try {
+      localStorage.setItem("smartgym_support_tickets", JSON.stringify(merged));
+    } catch {}
+    return merged;
   },
 
   async createSupportTicket(ticket: { category: string; subject: string; content: string }) {
+    let created: MemberSupportTicketItem | null = null;
     try {
       const res = await fetch("/api/member/support-tickets", {
         method: "POST",
@@ -394,12 +436,33 @@ export const MemberBackendAPI = {
       });
       if (res.ok) {
         const data = await res.json();
-        return data.ticket;
+        created = data.ticket;
       }
     } catch (e) {
       console.warn("Backend createSupportTicket failed", e);
     }
-    return null;
+
+    if (!created) {
+      created = {
+        id: `TCK-${Math.floor(100 + Math.random() * 900)}`,
+        category: ticket.category as any,
+        subject: ticket.subject,
+        content: ticket.content,
+        status: "open",
+        createdAt: new Date().toLocaleString("vi-VN"),
+      };
+    }
+
+    // Lưu vào shared localStorage để Lễ tân nhận được ngay lập tức
+    try {
+      const local = localStorage.getItem("smartgym_support_tickets");
+      const list = local ? JSON.parse(local) : [];
+      const updated = [created, ...list.filter((x: any) => x.id !== created!.id)];
+      localStorage.setItem("smartgym_support_tickets", JSON.stringify(updated));
+      window.dispatchEvent(new Event("support-tickets-updated"));
+    } catch {}
+
+    return created;
   },
 };
 

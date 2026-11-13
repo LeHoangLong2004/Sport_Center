@@ -12,17 +12,8 @@ public static class LegacyClassEndpoints
 {
     public static void MapLegacyClassEndpoints(this WebApplication app)
     {
-app.MapGet(
-    "/api/classes/all",
-    async (ClassService service) =>
-    {
-        var classes = await service.GetAllClassesAsync();
-        return Results.Ok(classes);
-    }
-)
-.RequireAuthorization(policy => policy.RequireRole("admin", "manager", "receptionist"));
-app.MapGet(
-        "/api/bookings/all",
+        app.MapGet(
+            "/api/bookings/all",
         async (ClassService service) =>
         {
             var bookings = await service.GetAllBookingsForManagerAsync();
@@ -71,31 +62,6 @@ app.MapPut(
             if (!isSuccess)
                 return Results.BadRequest(new { message = errorMessage });
             return Results.Ok(new { message = "Class updated successfully" });
-        }
-    )
-    .RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
-
-// Giai đoạn F: Hủy lớp học (Quản lý)
-app.MapPost(
-        "/api/classes/{id}/cancel",
-        async (Guid id, ClassService service) =>
-        {
-            var (isSuccess, errorMessage) = await service.CancelClassAsync(id);
-            if (!isSuccess)
-                return Results.BadRequest(new { message = errorMessage });
-            return Results.Ok(new { message = "Class cancelled successfully" });
-        }
-    )
-    .RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
-
-app.MapPost(
-        "/api/classes/{id}/restore",
-        async (Guid id, ClassService service) =>
-        {
-            var (isSuccess, errorMessage) = await service.RestoreClassAsync(id);
-            if (!isSuccess)
-                return Results.BadRequest(new { message = errorMessage });
-            return Results.Ok(new { message = "Class restored successfully" });
         }
     )
     .RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
