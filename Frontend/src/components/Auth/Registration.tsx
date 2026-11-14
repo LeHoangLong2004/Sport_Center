@@ -1,4 +1,5 @@
 import React, { FormEvent, useState } from 'react';
+import { toast } from 'sonner';
 import { ThemeToggle } from './ThemeToggle';
 import { assets } from './shared';
 
@@ -11,25 +12,28 @@ export function Registration({
   onLogin: () => void
   onHome?: () => void
 }) {
-  const [successMsg, setSuccessMsg] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   async function submit(event: FormEvent) {
     event.preventDefault()
-    setErrorMsg("")
     
     const formData = new FormData(event.target as HTMLFormElement)
-    const name = formData.get("name") as string
-    const email = formData.get("email") as string
-    const phone = formData.get("phone") as string
+    const name = (formData.get("name") as string)?.trim() || ""
+    const email = (formData.get("email") as string)?.trim() || ""
+    const phone = (formData.get("phone") as string)?.trim() || ""
     const password = formData.get("password") as string
     const passwordConfirmation = formData.get("passwordConfirmation") as string
 
     if (password !== passwordConfirmation) {
-      setErrorMsg("Mật khẩu xác nhận không khớp!")
+      toast.error("Xác nhận mật khẩu thất bại", {
+        id: "auth-toast",
+        description: "Mật khẩu xác nhận không khớp!",
+      })
       return
     }
 
+    setLoading(true)
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -52,20 +56,30 @@ export function Registration({
         } else if (typeof msg === 'string' && msg.includes("An error occurred while saving")) {
           msg = "Số điện thoại hoặc email của bạn đã tồn tại trong hệ thống.";
         }
-        setErrorMsg(msg);
+        toast.error("Đăng ký không thành công", {
+          id: "auth-toast",
+          description: msg,
+        });
+        setLoading(false);
         return;
       }
       
-      // Note: intentionally skipping token/user save if we force them to login again,
-      // but keeping it as it was if backend auto-logs in.
-      // However, we redirect to login screen anyway.
-      
-      setSuccessMsg("Đăng ký thành công! Đang chuyển qua trang đăng nhập...");
+      setLoading(false);
+      setIsRedirecting(true);
+      toast.success("Đăng ký tài khoản thành công!", {
+        id: "auth-toast",
+        description: `Chào mừng ${name} đến với Sport Center! Vui lòng đăng nhập để bắt đầu.`,
+        duration: 3500,
+      });
       setTimeout(() => {
         onLogin();
-      }, 2000);
-    } catch (err) {
-      setErrorMsg("Lỗi kết nối đến server API.")
+      }, 1200);
+    } catch {
+      toast.error("Lỗi kết nối", {
+        id: "auth-toast",
+        description: "Lỗi kết nối đến server API.",
+      })
+      setLoading(false);
     }
   }
 
@@ -130,24 +144,6 @@ export function Registration({
               <span className="inline-block px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-bold text-xs tracking-widest uppercase rounded-full mb-4">Tạo tài khoản mới</span>
               <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Đăng ký</h2>
             </div>
-            
-            {successMsg && (
-              <div className="mb-6 p-4 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                </div>
-                <p className="text-emerald-700 dark:text-emerald-400 font-medium text-sm">{successMsg}</p>
-              </div>
-            )}
-
-            {errorMsg && (
-              <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center shrink-0">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                </div>
-                <p className="text-red-700 dark:text-red-400 font-medium text-sm">{errorMsg}</p>
-              </div>
-            )}
 
             <div className="space-y-5">
               <div>
@@ -241,15 +237,31 @@ export function Registration({
 
             <button
               type="submit"
-              disabled={!!successMsg}
-              className={`w-full flex items-center justify-center gap-2 font-bold py-4 px-6 rounded-xl shadow-lg transition-all active:scale-[0.98] hover:-translate-y-1 mt-8 ${
-                successMsg 
-                  ? "bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed shadow-none" 
+              disabled={loading || isRedirecting}
+              className={`w-full flex items-center justify-center gap-2 font-bold py-4 px-6 rounded-xl shadow-lg transition-all active:scale-[0.98] hover:-translate-y-1 mt-8 disabled:opacity-75 disabled:pointer-events-none cursor-pointer ${
+                isRedirecting
+                  ? "bg-emerald-600 text-white shadow-emerald-600/40"
                   : "bg-emerald-600 hover:bg-[#0d9488] text-white shadow-emerald-500/30"
               }`}
             >
-              Đăng ký tài khoản
-              {!successMsg && <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>}
+              {isRedirecting ? (
+                <>
+                  <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span>Đăng ký thành công! Đang chuyển qua đăng nhập...</span>
+                </>
+              ) : loading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  Đang xử lý đăng ký...
+                </>
+              ) : (
+                <>
+                  Đăng ký tài khoản
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </>
+              )}
             </button>
 
             <div className="mt-8 text-center text-sm font-medium text-slate-500 dark:text-slate-400">
