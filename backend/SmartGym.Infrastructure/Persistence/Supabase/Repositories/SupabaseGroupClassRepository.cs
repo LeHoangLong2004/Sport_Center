@@ -164,6 +164,9 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             model.ApprovalStatus
         );
 
+    private static DateTime AsUtc(DateTimeOffset value)
+        => value.UtcDateTime;
+
     private static DateTime AsUtc(DateTime value)
         => value.Kind switch
         {
@@ -174,8 +177,15 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
 
     public async Task<IEnumerable<ClassResponse>> GetAllClassesAsync()
     {
-        var classResponse = await _client.From<GroupClassModel>().Get();
-        var classModels = classResponse.Models;
+        var classModels = await _dbContext.Database
+            .SqlQueryRaw<ClassSqlRawModel>(
+                @"SELECT id, sport_id, facility_id, coach_id, class_name,
+                         schedule_time, duration_minutes, capacity,
+                         current_enrolled, status, approval_status
+                  FROM classes"
+            )
+            .ToListAsync();
+
         if (!classModels.Any())
             return Enumerable.Empty<ClassResponse>();
 
@@ -230,7 +240,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
 
     public async Task<IEnumerable<ClassResponse>> GetAvailableClassesAsync()
     {
-        var nowUtc = DateTime.UtcNow;
+        var nowUtc = DateTimeOffset.UtcNow;
         var classResponse = await _client
             .From<GroupClassModel>()
             .Where(x => x.Status == true)

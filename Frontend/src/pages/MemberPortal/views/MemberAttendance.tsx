@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import type { MemberScreen } from "../types";
-import { UserCheck, DoorOpen, QrCode, Award } from "lucide-react";
+import { UserCheck, DoorOpen, Award } from "lucide-react";
 import { MemberBackendAPI } from "../services/memberData";
 
 import type {
@@ -12,9 +12,7 @@ import type {
 import AttendanceHeader from "./attendance/AttendanceHeader";
 import AttendanceClassList from "./attendance/AttendanceClassList";
 import AttendanceGateList from "./attendance/AttendanceGateList";
-import AttendanceQrPass from "./attendance/AttendanceQrPass";
 import AttendanceDetailModal from "./attendance/AttendanceDetailModal";
-import AttendanceQrModal from "./attendance/AttendanceQrModal";
 import AttendanceAssessmentList from "./attendance/AttendanceAssessmentList";
 
 interface Props {
@@ -29,7 +27,7 @@ export default function MemberAttendance({ onNavigate }: Props) {
   const memberId = user?.id || "m-demo";
 
   // Active Tab
-  const [activeTab, setActiveTab] = useState<"classes" | "gate" | "qrcode" | "assessments">("classes");
+  const [activeTab, setActiveTab] = useState<"classes" | "gate" | "assessments">("classes");
 
   // State
   const [loading, setLoading] = useState(true);
@@ -55,7 +53,6 @@ export default function MemberAttendance({ onNavigate }: Props) {
 
   // Modals
   const [selectedSession, setSelectedSession] = useState<AttendanceSession | null>(null);
-  const [showQrModal, setShowQrModal] = useState(false);
 
   // Load Data
   const loadAttendanceData = async (isManualRefresh = false) => {
@@ -222,7 +219,6 @@ export default function MemberAttendance({ onNavigate }: Props) {
         activePackages={summary.activePackages}
         refreshing={refreshing}
         onRefresh={() => loadAttendanceData(true)}
-        onOpenQrModal={() => setShowQrModal(true)}
       />
 
       {/* 2. Navigation Tabs */}
@@ -257,18 +253,6 @@ export default function MemberAttendance({ onNavigate }: Props) {
             <span className="ml-1 px-2 py-0.5 rounded-full text-xs bg-slate-200/60 dark:bg-slate-700">
               {gateCheckIns.length}
             </span>
-          </button>
-          <button
-            id="tab-btn-qrcode"
-            onClick={() => setActiveTab("qrcode")}
-            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 cursor-pointer ${
-              activeTab === "qrcode"
-                ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <QrCode className="w-4 h-4" />
-            Thẻ QR Hội Viên
           </button>
           <button
             id="tab-btn-assessments"
@@ -310,15 +294,6 @@ export default function MemberAttendance({ onNavigate }: Props) {
       {activeTab === "gate" && (
         <AttendanceGateList
           gateCheckIns={gateCheckIns}
-          onOpenQrModal={() => setShowQrModal(true)}
-        />
-      )}
-
-      {activeTab === "qrcode" && (
-        <AttendanceQrPass
-          memberId={memberId}
-          memberName={memberName}
-          memberEmail={memberEmail}
         />
       )}
 
@@ -335,13 +310,6 @@ export default function MemberAttendance({ onNavigate }: Props) {
         session={selectedSession}
         onClose={() => setSelectedSession(null)}
         onNavigate={onNavigate}
-      />
-
-      <AttendanceQrModal
-        isOpen={showQrModal}
-        onClose={() => setShowQrModal(false)}
-        memberName={memberName}
-        memberId={memberId}
       />
     </div>
   );

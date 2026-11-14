@@ -11,6 +11,7 @@ using Microsoft.Extensions.Hosting;
 using SmartGym.Application.DTOs;
 using SmartGym.Application.Interfaces;
 using SmartGym.Application.Interfaces.Repositories;
+using IUserRepository = SmartGym.Application.Interfaces.IUserRepository;
 using SmartGym.Infrastructure.Persistence.EF;
 using AuthForgotPasswordRequest = SmartGym.Application.DTOs.Auth.ForgotPasswordRequest;
 using AuthResetPasswordRequest = SmartGym.Application.DTOs.Auth.ResetPasswordRequest;
@@ -75,19 +76,10 @@ public static partial class AuthEndpoints
                 "Mã đặt lại mật khẩu SmartGym",
                 html);
 
-            // SMTP is optional for local/demo environments. Returning the short-lived
-            // token only in Development keeps the local flow testable without email
-            // while avoiding token disclosure in production responses.
-            if (environment.IsDevelopment() && !sent)
+            return Results.Ok(new
             {
-                return Results.Ok(new
-                {
-                    message = response.message,
-                    resetToken = token
-                });
-            }
-
-            return Results.Ok(response);
+                message = "Nếu email tồn tại, mã đặt lại mật khẩu đã được gửi đến hộp thư của bạn."
+            });
         });
 
         /// <summary>

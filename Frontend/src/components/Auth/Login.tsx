@@ -43,31 +43,14 @@ export function Login({
         localStorage.setItem("user", JSON.stringify(data))
 
         const roleStr = data.role?.toLowerCase() || ""
-        const roleTitle = roleStr === "manager" || roleStr === "admin" 
-          ? "Quản trị viên (Admin)"
-          : roleStr === "coach"
-          ? "Huấn luyện viên (Coach)"
-          : roleStr === "receptionist"
-          ? "Lễ tân (Receptionist)"
-          : "Hội viên (Member)"
-
-        const welcomeText = `Chào mừng ${data.fullName || data.name || "bạn"} (${roleTitle}). Đang chuyển đến trang làm việc...`
-        setSuccessMsg(welcomeText)
-        toast.success("Đăng nhập thành công!", {
-          description: welcomeText,
-          duration: 2500,
-        })
-
-        setTimeout(() => {
-          if (onLoginAs) {
-            if (roleStr === "manager" || roleStr === "admin") onLoginAs("admin")
-            else if (roleStr === "coach") onLoginAs("coach")
-            else if (roleStr === "receptionist") onLoginAs("receptionist")
-            else onLoginAs("member")
-          } else {
-            onLogin()
-          }
-        }, 1100)
+        if (onLoginAs) {
+          if (roleStr === "manager" || roleStr === "admin") onLoginAs("admin")
+          else if (roleStr === "coach") onLoginAs("coach")
+          else if (roleStr === "receptionist") onLoginAs("receptionist")
+          else onLoginAs("member")
+        } else {
+          onLogin()
+        }
         return
       }
 
@@ -136,26 +119,11 @@ export function Login({
       })
       .catch(() => {})
 
-    const roleTitles: Record<UserRole, string> = {
-      admin: "Quản trị viên (Admin)",
-      coach: "Huấn luyện viên (Coach)",
-      receptionist: "Lễ tân (Receptionist)",
-      member: "Hội viên (Member)",
+    if (onLoginAs) {
+      onLoginAs(role)
+    } else {
+      onLogin()
     }
-    const welcomeText = `Chào mừng ${targetUser.fullName} (${roleTitles[role]}). Đang chuyển đến trang làm việc...`
-    setSuccessMsg(welcomeText)
-    toast.success("Đăng nhập thành công!", {
-      description: welcomeText,
-      duration: 2000,
-    })
-
-    setTimeout(() => {
-      if (onLoginAs) {
-        onLoginAs(role)
-      } else {
-        onLogin()
-      }
-    }, 1000)
   }
 
   React.useEffect(() => {

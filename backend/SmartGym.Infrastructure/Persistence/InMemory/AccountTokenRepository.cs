@@ -1,12 +1,53 @@
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 using SmartGym.Application.Interfaces.Repositories;
 
 namespace SmartGym.Infrastructure.Persistence.InMemory;
 
 public sealed class AccountTokenRepository : IAccountTokenRepository
 {
-    private readonly ConcurrentDictionary<string, AccountToken> _tokens = new();
+    private static readonly string TokenFilePath = Path.Combine(AppContext.BaseDirectory, "account_tokens.json");
+    private static readonly ConcurrentDictionary<string, AccountToken> _tokens = LoadTokens();
+
+    private static ConcurrentDictionary<string, AccountToken> LoadTokens()
+    {
+        try
+        {
+            if (File.Exists(TokenFilePath))
+            {
+                var json = File.ReadAllText(TokenFilePath);
+                var data = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, AccountToken>>(json);
+                if (data != null)
+                {
+                    var dict = new ConcurrentDictionary<string, AccountToken>();
+                    foreach (var kvp in data)
+                    {
+                        if (kvp.Value.ExpiresAt > DateTimeOffset.UtcNow)
+                            dict[kvp.Key] = kvp.Value;
+                    }
+                    return dict;
+                }
+            }
+        }
+        catch { }
+        return new ConcurrentDictionary<string, AccountToken>();
+    }
+
+    private static void SaveTokens()
+    {
+        try
+        {
+            var active = _tokens.Where(x => x.Value.ExpiresAt > DateTimeOffset.UtcNow).ToDictionary(x => x.Key, x => x.Value);
+            var json = System.Text.Json.JsonSerializer.Serialize(active);
+            File.WriteAllText(TokenFilePath, json);
+        }
+        catch { }
+    }
 
     public Task<string> CreatePasswordResetTokenAsync(string email)
     {
@@ -39,6 +80,7 @@ public sealed class AccountTokenRepository : IAccountTokenRepository
         var token = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
         var key = BuildKey(purpose, normalizedEmail, token);
         _tokens[key] = new AccountToken(DateTimeOffset.UtcNow.Add(lifetime));
+        SaveTokens();
         return token;
     }
 
@@ -50,6 +92,7 @@ public sealed class AccountTokenRepository : IAccountTokenRepository
             return false;
         }
 
+        SaveTokens();
         return accountToken.ExpiresAt > DateTimeOffset.UtcNow;
     }
 

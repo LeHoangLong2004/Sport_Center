@@ -11,6 +11,7 @@ import { ProductOrdersPage } from './views/ProductOrdersPage';
 import { CounterPaymentsPage } from './views/CounterPaymentsPage';
 import { LookupPage } from './views/LookupPage';
 import { DetailPage } from './views/DetailPage';
+import { SupportTicketsPage } from './views/SupportTicketsPage';
 import { ProfileSettings } from '../../components/ProfileSettings';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { toast } from 'sonner';
@@ -18,7 +19,7 @@ import { PageTransition } from '../../components/PageTransition';
 
 const VALID_RECEPTIONIST_PAGES: Page[] = [
   "checkin", "counter-payments", "register", "classes", "schedule",
-  "pos", "orders", "lookup", "detail", "profile"
+  "pos", "orders", "lookup", "detail", "profile", "support"
 ];
 
 function getReceptionistPageFromHash(): Page {
@@ -172,6 +173,7 @@ export default function ReceptionistPortal({ onExit }: { onExit: () => void }) {
             {page === "schedule" && <SchedulePage />}
             {page === "pos" && <PosPage />}
             {page === "orders" && <ProductOrdersPage />}
+            {page === "support" && <SupportTicketsPage />}
             {page === "lookup" && (
               <LookupPage
                 onDetail={(m) => {

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { toast as sonnerToast } from "sonner";
 import {
   ClassesFilters,
   ClassesGrid,
@@ -175,10 +176,14 @@ export function ClassesPage() {
         membersList={membersList}
         onClose={() => setSelectedClass(null)}
         onSuccess={(msg) => {
+          sonnerToast.success(msg);
           showToast(msg, "success");
           fetchClasses();
         }}
-        onError={(msg) => showToast(msg, "error")}
+        onError={(msg) => {
+          sonnerToast.error(msg);
+          showToast(msg, "error");
+        }}
       />
     </div>
   );

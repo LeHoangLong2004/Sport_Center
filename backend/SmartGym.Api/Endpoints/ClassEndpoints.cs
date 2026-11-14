@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SmartGym.Application.DTOs.Classes;
 using SmartGym.Application.Services;
+using SmartGym.Application.Common;
 using SmartGym.Api.Services;
 using SmartGym.Infrastructure.Persistence.EF;
 
@@ -344,7 +345,17 @@ public static partial class ClassEndpoints
         /// </summary>
         classGroup.MapGet(
             "/all",
-            async (ClassService service) => Results.Ok(await service.GetAllClassesAsync())
+            async (ClassService service) =>
+            {
+                try
+                {
+                    return Results.Ok(await service.GetAllClassesAsync());
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(detail: ex.ToString(), statusCode: 500);
+                }
+            }
         );
 
         classGroup.MapGet(

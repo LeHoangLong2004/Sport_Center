@@ -370,7 +370,6 @@ export function RegisterPage() {
             ) : (
               <select value={form.paymentMethod} onChange={(e) => updateField("paymentMethod", e.target.value)}>
                 <option value="counter">Tiền mặt tại quầy</option>
-                <option value="pos">Thẻ qua POS</option>
                 <option value="bank_transfer">Chuyển khoản ngân hàng (QR)</option>
                 <option value="wallet">Ví điện tử</option>
               </select>

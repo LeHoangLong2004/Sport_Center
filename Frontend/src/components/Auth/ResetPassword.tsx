@@ -8,7 +8,6 @@ export function ResetPassword({ onLogin }: { onLogin: () => void }) {
   const [step, setStep] = useState<Step>("otp");
   const [email, setEmail] = useState("");
   const [token, setToken] = useState("");
-  const [demoToken, setDemoToken] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
@@ -17,7 +16,6 @@ export function ResetPassword({ onLogin }: { onLogin: () => void }) {
 
   useEffect(() => {
     setEmail(localStorage.getItem("reset_email") || "");
-    setDemoToken(localStorage.getItem("reset_token_demo") || "");
   }, []);
 
   async function verifyOtp(event: FormEvent) {
@@ -172,11 +170,6 @@ export function ResetPassword({ onLogin }: { onLogin: () => void }) {
                   ))}
                 </div>
               </div>
-              {demoToken && (
-                <div className="mt-4 p-3 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-sm">
-                  SMTP chưa cấu hình. Mã OTP demo local: <strong className="tracking-widest">{demoToken}</strong>
-                </div>
-              )}
             </>
           ) : (
             <div className="space-y-4 mt-4">

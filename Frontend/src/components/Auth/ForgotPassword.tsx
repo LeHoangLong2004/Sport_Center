@@ -35,7 +35,7 @@ export function ForgotPassword({
       }
       
       localStorage.setItem("reset_email", email);
-      if (data.resetToken) localStorage.setItem("reset_token_demo", data.resetToken);
+      localStorage.removeItem("reset_token_demo");
       toast.success("Mã khôi phục đã được gửi về email của bạn!");
       onSubmit();
     } catch (err) {

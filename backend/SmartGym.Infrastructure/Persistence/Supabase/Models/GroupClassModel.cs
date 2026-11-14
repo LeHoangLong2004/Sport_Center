@@ -23,7 +23,7 @@ public class GroupClassModel : BaseModel
     public string ClassName { get; set; } = string.Empty;
 
     [Column("schedule_time")]
-    public DateTime ScheduleTime { get; set; }
+    public DateTimeOffset ScheduleTime { get; set; }
 
     [Column("duration_minutes")]
     public int DurationMinutes { get; set; }
@@ -42,17 +42,13 @@ public class GroupClassModel : BaseModel
 
     public GroupClass ToDomain()
     {
-        var scheduleUtc = ScheduleTime.Kind == DateTimeKind.Local
-            ? ScheduleTime.ToUniversalTime()
-            : DateTime.SpecifyKind(ScheduleTime, DateTimeKind.Utc);
-
         return new GroupClass(
             Id,
             SportId,
             CoachId,
             FacilityId,
             ClassName,
-            scheduleUtc,
+            ScheduleTime.UtcDateTime,
             DurationMinutes,
             Capacity,
             CurrentEnrolled,

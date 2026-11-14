@@ -1,15 +1,13 @@
 import React from "react";
 import type { GateCheckInRecord } from "./types";
-import { DoorOpen, QrCode, Timer } from "lucide-react";
+import { DoorOpen, Timer } from "lucide-react";
 
 interface AttendanceGateListProps {
   gateCheckIns: GateCheckInRecord[];
-  onOpenQrModal: () => void;
 }
 
 export default function AttendanceGateList({
   gateCheckIns,
-  onOpenQrModal,
 }: AttendanceGateListProps) {
   const formatDateTimeDisplay = (isoStr: string) => {
     if (!isoStr) return "—";
@@ -36,16 +34,9 @@ export default function AttendanceGateList({
           <h3 className="text-base font-bold text-slate-700 dark:text-slate-300 mb-1">
             Chưa có lịch sử check-in tại sảnh
           </h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-5">
-            Khi đến trung tâm, hãy xuất trình mã QR cá nhân cho lễ tân để check-in vào cửa và kích hoạt phiên tập.
+          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+            Khi đến trung tâm, thông tin check-in tại quầy lễ tân hoặc cổng ra vào sẽ được tự động đồng bộ tại đây.
           </p>
-          <button
-            onClick={onOpenQrModal}
-            className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-md shadow-emerald-600/20 transition-all inline-flex items-center gap-2 cursor-pointer"
-          >
-            <QrCode className="w-4 h-4" />
-            Mở mã QR Check-in
-          </button>
         </div>
       ) : (
         <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">

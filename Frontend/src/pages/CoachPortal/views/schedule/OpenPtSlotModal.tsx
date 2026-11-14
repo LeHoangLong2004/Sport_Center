@@ -76,8 +76,15 @@ export default function OpenPtSlotModal({
 
       setTimeError("");
       setError("");
+
+      const defaultSport = sportOptions[0] || "Gym & Thể lực";
+      setOpenSlotSport((prev) => prev || defaultSport);
+
+      const defaultRooms = ["Khu tập PT 1-1 / Sàn chính", "Phòng tập chức năng", "Khu vực Boxing", "Bể bơi 4 mùa"];
+      const availableRooms = roomOptions.length > 0 ? roomOptions : defaultRooms;
+      setOpenSlotRoom((prev) => prev || availableRooms[0] || "Khu tập PT 1-1");
     }
-  }, [isOpen, initialDate, initialStartTime]);
+  }, [isOpen, initialDate, initialStartTime, sportOptions, roomOptions]);
 
   const handleStartTimeChange = (newStart: string) => {
     setOpenSlotStartTime(newStart);
@@ -391,8 +398,8 @@ export default function OpenPtSlotModal({
                 !openSlotDate ||
                 !openSlotStartTime ||
                 !openSlotEndTime ||
-                !openSlotSport ||
-                !openSlotRoom ||
+                !selectedSport ||
+                !selectedRoom ||
                 Boolean(conflictSession) ||
                 isPastTime ||
                 Boolean(timeError)

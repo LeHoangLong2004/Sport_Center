@@ -1,49 +1,49 @@
+import { createPortal } from "react-dom";
+
 export function ClassesToast({
   toast,
 }: {
   toast: { msg: string; type: string } | null;
 }) {
-  return (
-    <>
-      {toast && (
-        <div
-          className={`fixed top-6 right-1/2 translate-x-1/2 z-[100] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border ${
-            toast.type === "success"
-              ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-              : "bg-[#fef2f2] border-[#fecaca] text-[#b91c1c]"
-          } transition-all animate-in slide-in-from-top-4 fade-in duration-300`}
+  if (!toast) return null;
+  return createPortal(
+    <div
+      className={`fixed top-6 right-6 z-[99999] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border ${
+        toast.type === "success"
+          ? "bg-emerald-50 border-emerald-300 text-emerald-800 shadow-emerald-900/10"
+          : "bg-red-50 border-red-300 text-red-800 shadow-red-900/10"
+      } transition-all animate-in slide-in-from-top-4 fade-in duration-300 pointer-events-auto`}
+    >
+      <div
+        className={`flex items-center justify-center size-7 shrink-0 rounded-full ${
+          toast.type === "success" ? "bg-emerald-600" : "bg-red-600"
+        }`}
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="white"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         >
-          <div
-            className={`flex items-center justify-center size-7 shrink-0 rounded-full ${
-              toast.type === "success" ? "bg-emerald-600" : "bg-[#ef4444]"
-            }`}
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="white"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              {toast.type === "success" ? (
-                <polyline points="20 6 9 17 4 12"></polyline>
-              ) : (
-                <>
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </>
-              )}
-            </svg>
-          </div>
-          <span className="font-bold text-[15px] tracking-wide">
-            {toast.msg}
-          </span>
-        </div>
-      )}
-    </>
+          {toast.type === "success" ? (
+            <polyline points="20 6 9 17 4 12"></polyline>
+          ) : (
+            <>
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </>
+          )}
+        </svg>
+      </div>
+      <span className="font-bold text-[14px] tracking-wide">
+        {toast.msg}
+      </span>
+    </div>,
+    document.body
   );
 }
 
