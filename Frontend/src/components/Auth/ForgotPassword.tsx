@@ -29,17 +29,17 @@ export function ForgotPassword({
       const data = await res.json().catch(() => ({}))
       
       if (!res.ok) {
-        toast.error(data.message || "Gửi yêu cầu thất bại.");
+        toast.error(data.message || "Gửi yêu cầu thất bại.", { id: "auth-toast" });
         setLoading(false);
         return;
       }
       
       localStorage.setItem("reset_email", email);
       localStorage.removeItem("reset_token_demo");
-      toast.success("Mã khôi phục đã được gửi về email của bạn!");
+      toast.success("Mã khôi phục đã được gửi về email của bạn!", { id: "auth-toast" });
       onSubmit();
     } catch (err) {
-      toast.error("Lỗi kết nối đến server API.");
+      toast.error("Lỗi kết nối đến server API.", { id: "auth-toast" });
       setLoading(false);
     }
   }
