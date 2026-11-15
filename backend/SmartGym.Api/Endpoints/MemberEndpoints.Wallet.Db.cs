@@ -15,13 +15,17 @@ namespace SmartGym.Api.Endpoints
         /// </summary>
         private static async Task<Guid?> ResolveMemberGuidAsync(HttpContext context, SmartGymDbContext db, string? fallbackUserId = null)
         {
-            var raw = GetUserId(context);
-            if (string.IsNullOrWhiteSpace(raw))
-            {
-                raw = context.Request.Query["userId"].FirstOrDefault()
-                   ?? context.Request.Headers["X-User-Id"].FirstOrDefault()
-                   ?? fallbackUserId;
-            }
+            var queryUserId = context.Request.Query["userId"].FirstOrDefault();
+            var headerUserId = context.Request.Headers["X-User-Id"].FirstOrDefault();
+            var role = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+                       ?? context.User.FindFirst("role")?.Value;
+            var isStaff = string.Equals(role, "receptionist", StringComparison.OrdinalIgnoreCase)
+                       || string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase)
+                       || string.Equals(role, "manager", StringComparison.OrdinalIgnoreCase);
+
+            var raw = !string.IsNullOrWhiteSpace(queryUserId) ? queryUserId
+                    : (!string.IsNullOrWhiteSpace(headerUserId) && (isStaff || string.IsNullOrWhiteSpace(GetUserId(context))) ? headerUserId
+                    : GetUserId(context) ?? headerUserId ?? fallbackUserId);
 
             if (string.IsNullOrWhiteSpace(raw)) return null;
 

@@ -5,6 +5,16 @@ export interface BookingFeedback {
   type: "success" | "error";
 }
 
+export interface CancelBookingTarget {
+  classId: string;
+  className: string;
+  scheduleTime?: string;
+  startTime?: string;
+  endTime?: string;
+  dateStr?: string;
+  price?: number;
+}
+
 export const COUNTER_PENDING_KEY = "member_counter_pending_classes";
 
 export function getCounterPendingIds(): string[] {

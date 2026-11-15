@@ -67,29 +67,37 @@ export function TopBar({ breadcrumb, title, shiftLabel, onProfileClick, onNaviga
 
   useEffect(() => {
     let cancelled = false;
+    const load = () => {
+      notificationApi.list()
+        .then(data => {
+          if (!cancelled) {
+            const readDerived = getReadDerivedIds();
+            const mapped = data.map(item => ({
+              ...item,
+              isRead: item.isRead || (item.id.startsWith('derived-') && readDerived.includes(item.id))
+            }));
+            setNotifications(mapped);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setNotificationsError(true);
+        })
+        .finally(() => {
+          if (!cancelled) setIsNotificationsLoading(false);
+        });
+    };
+
     setIsNotificationsLoading(true);
     setNotificationsError(false);
+    load();
 
-    notificationApi.list()
-      .then(data => {
-        if (!cancelled) {
-          const readDerived = getReadDerivedIds();
-          const mapped = data.map(item => ({
-            ...item,
-            isRead: item.isRead || (item.id.startsWith('derived-') && readDerived.includes(item.id))
-          }));
-          setNotifications(mapped);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setNotificationsError(true);
-      })
-      .finally(() => {
-        if (!cancelled) setIsNotificationsLoading(false);
-      });
+    const interval = setInterval(load, 15000);
+    window.addEventListener("support-tickets-updated", load);
 
     return () => {
       cancelled = true;
+      clearInterval(interval);
+      window.removeEventListener("support-tickets-updated", load);
     };
   }, [isNotificationsOpen]);
 
@@ -143,6 +151,14 @@ export function TopBar({ breadcrumb, title, shiftLabel, onProfileClick, onNaviga
       onNavigate?.('classes');
     } else if (notification.type === 'member') {
       onNavigate?.('lookup');
+    } else if (
+      notification.type === 'support' ||
+      notification.id.startsWith('derived-ticket-') ||
+      lowerTitle.includes('hỗ trợ') ||
+      lowerTitle.includes('yêu cầu') ||
+      lowerMsg.includes('phiếu')
+    ) {
+      onNavigate?.('support');
     }
   };
 

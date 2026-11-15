@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react"
-import { Calendar, CreditCard, Clock, CheckCircle2, AlertCircle } from "lucide-react"
+import { Calendar, CreditCard, Clock, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react"
 import { MemberAvatar } from "./LookupPage"
+import { RenewPackageModal } from "./RenewPackageModal"
 
 export function DetailPage({
   member,
@@ -23,7 +24,17 @@ export function DetailPage({
     return null
   })
 
-  const m = member || cachedMember
+  const [currentMember, setCurrentMember] = useState<any>(member || cachedMember)
+  const [isRenewModalOpen, setIsRenewModalOpen] = useState(false)
+
+  useEffect(() => {
+    if (member) {
+      setCurrentMember(member)
+      sessionStorage.setItem("receptionist_selected_member", JSON.stringify(member))
+    }
+  }, [member])
+
+  const m = currentMember
 
   const [currentStatus, setCurrentStatus] = useState<string>(m?.status || "Đang hoạt động")
   const [activeTab, setActiveTab] = useState<"training" | "payment">("training")
@@ -154,6 +165,34 @@ export function DetailPage({
     }
   }, [m?.id])
 
+  const handleRenewSuccess = (result: { newEndDate: string; packageName: string; totalAmount: number }) => {
+    setIsRenewModalOpen(false)
+    setCurrentMember((prev: any) => {
+      const updated = {
+        ...prev,
+        packageName: result.packageName,
+        expiryDate: result.newEndDate,
+        totalAmount: result.totalAmount,
+        status: "Đang hoạt động",
+      }
+      sessionStorage.setItem("receptionist_selected_member", JSON.stringify(updated))
+      return updated
+    })
+    setCurrentStatus("Đang hoạt động")
+    // Prepend new payment transaction
+    setPaymentHistory((prev) => [
+      {
+        rawDate: new Date().toISOString(),
+        date: new Date().toLocaleDateString("vi-VN"),
+        content: `Gia hạn / Nâng cấp ${result.packageName}`,
+        method: "Chuyển khoản QR / Tiền mặt",
+        status: "Thành công",
+        amount: Number(result.totalAmount).toLocaleString("vi-VN") + " đ",
+      },
+      ...prev,
+    ])
+  }
+
   if (!m) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center min-h-[400px] p-[32px] gap-4 w-full">
@@ -272,8 +311,10 @@ export function DetailPage({
         <div className="flex gap-[12px] items-start shrink-0">
           <button
             type="button"
-            className="bg-emerald-600 text-white px-[18px] py-[10px] rounded-[8px] font-bold text-[14px] hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 transition-all cursor-pointer"
+            onClick={() => setIsRenewModalOpen(true)}
+            className="bg-emerald-600 text-white px-[18px] py-[10px] rounded-[8px] font-bold text-[14px] hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 transition-all cursor-pointer flex items-center gap-2"
           >
+            <RefreshCw className="size-4" />
             Gia hạn gói tập
           </button>
           <button
@@ -543,6 +584,13 @@ export function DetailPage({
           </div>
         </div>
       </div>
+
+      <RenewPackageModal
+        isOpen={isRenewModalOpen}
+        onClose={() => setIsRenewModalOpen(false)}
+        member={m}
+        onSuccess={handleRenewSuccess}
+      />
     </div>
   )
 }

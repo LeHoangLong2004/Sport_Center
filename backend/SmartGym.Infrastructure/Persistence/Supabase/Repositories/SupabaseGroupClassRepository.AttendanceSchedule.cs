@@ -119,10 +119,10 @@ public sealed partial class SupabaseGroupClassRepository
                         CoachRating = coach?.Rating,
                         CoachExperienceYears = coach?.ExperienceYears,
                         Price = 150000m,
-                        ScheduleTime = targetClass != null ? CenterTime.ToLocal(targetClass.ScheduleTime) : DateTime.MinValue,
+                        ScheduleTime = targetClass != null ? AsUtc(targetClass.ScheduleTime) : DateTime.MinValue,
                         DurationMinutes = targetClass?.DurationMinutes ?? 60,
                         Status = (targetClass != null 
-                                  && targetClass.ScheduleTime.AddMinutes(targetClass.DurationMinutes) <= DateTime.UtcNow 
+                                  && (targetClass.ScheduleTime.Hour >= 6 ? targetClass.ScheduleTime.AddHours(-7) : targetClass.ScheduleTime).AddMinutes(targetClass.DurationMinutes) <= DateTime.UtcNow 
                                   && !string.Equals(cb.Status, "cancelled", StringComparison.OrdinalIgnoreCase)
                                   && !string.Equals(cb.Status, "canceled", StringComparison.OrdinalIgnoreCase))
                                   ? "completed"

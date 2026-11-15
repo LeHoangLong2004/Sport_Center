@@ -10,6 +10,7 @@ import {
   MessageSquare,
   Shield,
 } from "lucide-react";
+import { TicketReplyContent } from "../../../../components/TicketReplyContent";
 
 interface SupportTicketsProps {
   tickets: MemberSupportTicketItem[];
@@ -110,7 +111,7 @@ export const SupportTickets: React.FC<SupportTicketsProps> = ({ tickets, onCreat
                     <Shield className="w-3.5 h-3.5" />
                     <span>Phản hồi từ Ban Quản lý SportCenter:</span>
                   </div>
-                  <p>{t.reply}</p>
+                  <TicketReplyContent content={t.reply} />
                 </div>
               )}
               <div className="text-[10px] text-slate-400 pt-1">Ngày gửi: {t.createdAt}</div>
