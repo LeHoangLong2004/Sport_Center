@@ -1,19 +1,37 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore;
+using SmartGym.Infrastructure.Persistence.EF;
 
 namespace SmartGym.Api.Endpoints;
+
+public class SupportTicketDbRow
+{
+    public string Id { get; set; } = "";
+    public Guid? UserId { get; set; }
+    public string MemberName { get; set; } = "";
+    public string MemberPhone { get; set; } = "";
+    public string Category { get; set; } = "";
+    public string Subject { get; set; } = "";
+    public string Content { get; set; } = "";
+    public string Status { get; set; } = "open";
+    public string? Reply { get; set; }
+    public string? RepliedBy { get; set; }
+    public DateTime? RepliedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
 
 public class SupportTicketModel
 {
     public string id { get; set; } = "";
-    public string userId { get; set; } = "m-demo";
+    public string? userId { get; set; } = "m-demo";
     public string memberName { get; set; } = "Lê Quang Vinh";
     public string memberPhone { get; set; } = "0987654321";
     public string category { get; set; } = "Tư vấn dịch vụ & Gia hạn gói";
@@ -26,90 +44,6 @@ public class SupportTicketModel
     public string? repliedBy { get; set; }
 }
 
-public static class SupportTicketStore
-{
-    private static readonly string _filePath = Path.Combine(AppContext.BaseDirectory, "support_tickets.json");
-    private static readonly object _lock = new();
-    private static List<SupportTicketModel>? _cachedTickets;
-
-    public static List<SupportTicketModel> GetAll()
-    {
-        lock (_lock)
-        {
-            if (_cachedTickets != null) return _cachedTickets;
-            if (File.Exists(_filePath))
-            {
-                try
-                {
-                    var json = File.ReadAllText(_filePath);
-                    _cachedTickets = JsonSerializer.Deserialize<List<SupportTicketModel>>(json) ?? new();
-                    return _cachedTickets;
-                }
-                catch { }
-            }
-
-            _cachedTickets = new List<SupportTicketModel>
-            {
-                new SupportTicketModel
-                {
-                    id = "TCK-971",
-                    userId = "m-demo",
-                    memberName = "Lê Quang Vinh",
-                    memberPhone = "0987654321",
-                    category = "Tư vấn dịch vụ & Gia hạn gói",
-                    subject = "Xin bảo lưu gói tập 2 tuần do đi công tác",
-                    content = "Chào ban quản lý, tuần tới tôi có chuyến công tác từ ngày 15/11 đến 30/11 nên không thể đến phòng tập. Nhờ trung tâm hỗ trợ tạm dừng/bảo lưu thời hạn thẻ tập của tôi trong thời gian này giúp tôi với ạ. Xin cảm ơn!",
-                    status = "open",
-                    createdAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
-                }
-            };
-            SaveUnsafe();
-            return _cachedTickets;
-        }
-    }
-
-    public static SupportTicketModel Add(SupportTicketModel ticket)
-    {
-        lock (_lock)
-        {
-            var list = GetAll();
-            list.Insert(0, ticket);
-            SaveUnsafe();
-            return ticket;
-        }
-    }
-
-    public static SupportTicketModel? Reply(string id, string reply, string repliedBy = "Nguyễn Văn Lễ Tân")
-    {
-        lock (_lock)
-        {
-            var list = GetAll();
-            var ticket = list.FirstOrDefault(t => t.id.Equals(id, StringComparison.OrdinalIgnoreCase));
-            if (ticket == null) return null;
-
-            ticket.reply = reply;
-            ticket.repliedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
-            ticket.repliedBy = repliedBy;
-            ticket.status = "resolved";
-            SaveUnsafe();
-            return ticket;
-        }
-    }
-
-    private static void SaveUnsafe()
-    {
-        try
-        {
-            if (_cachedTickets != null)
-            {
-                var json = JsonSerializer.Serialize(_cachedTickets, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(_filePath, json);
-            }
-        }
-        catch { }
-    }
-}
-
 public static class SupportTicketEndpoints
 {
     public static void MapSupportTicketEndpoints(this IEndpointRouteBuilder app)
@@ -117,21 +51,63 @@ public static class SupportTicketEndpoints
         // ── Receptionist Support Endpoints ──
         var recGroup = app.MapGroup("/api/receptionist/support-tickets");
 
-        recGroup.MapGet("", () =>
+        recGroup.MapGet("", async (SmartGymDbContext db) =>
         {
-            var list = SupportTicketStore.GetAll();
-            return Results.Ok(new
+            try
             {
-                total = list.Count,
-                openCount = list.Count(t => t.status == "open"),
-                resolvedCount = list.Count(t => t.status == "resolved"),
-                tickets = list
-            });
+                var rows = await db.Database.SqlQueryRaw<SupportTicketDbRow>(@"
+                    SELECT 
+                        t.id AS ""Id"",
+                        t.user_id AS ""UserId"",
+                        COALESCE(u.full_name, 'Hội viên') AS ""MemberName"",
+                        COALESCE(u.phone_number, 'Chưa có SĐT') AS ""MemberPhone"",
+                        t.category AS ""Category"",
+                        t.subject AS ""Subject"",
+                        t.content AS ""Content"",
+                        t.status AS ""Status"",
+                        t.reply AS ""Reply"",
+                        t.replied_by AS ""RepliedBy"",
+                        t.replied_at AS ""RepliedAt"",
+                        t.created_at AS ""CreatedAt""
+                    FROM support_tickets t
+                    LEFT JOIN users u ON t.user_id = u.id
+                    ORDER BY t.created_at DESC
+                ").ToListAsync();
+
+                var list = rows.Select(r => new SupportTicketModel
+                {
+                    id = r.Id,
+                    userId = r.UserId?.ToString(),
+                    memberName = r.MemberName,
+                    memberPhone = r.MemberPhone,
+                    category = r.Category,
+                    subject = r.Subject,
+                    content = r.Content,
+                    status = r.Status,
+                    reply = r.Reply,
+                    repliedBy = r.RepliedBy,
+                    repliedAt = r.RepliedAt.HasValue ? r.RepliedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") : null,
+                    createdAt = r.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
+                }).ToList();
+
+                return Results.Ok(new
+                {
+                    total = list.Count,
+                    openCount = list.Count(t => t.status == "open"),
+                    resolvedCount = list.Count(t => t.status == "resolved"),
+                    tickets = list
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SupportTicket] DB query error: {ex.Message}");
+                return Results.Ok(new { total = 0, openCount = 0, resolvedCount = 0, tickets = new List<SupportTicketModel>() });
+            }
         })
         .WithTags("Receptionist Portal")
-        .WithSummary("Danh sách toàn bộ phiếu hỗ trợ từ hội viên");
+        .WithSummary("Danh sách toàn bộ phiếu hỗ trợ từ hội viên (Supabase DB)");
 
-        recGroup.MapPost("/{id}/reply", (string id, [FromBody] JsonElement body) =>
+        recGroup.MapPost("/{id}/reply", async (string id, [FromBody] JsonElement body, SmartGymDbContext db) =>
         {
             var replyText = body.TryGetProperty("reply", out var r) ? r.GetString() : "";
             var staffName = body.TryGetProperty("repliedBy", out var s) ? s.GetString() : "Nguyễn Văn Lễ Tân";
@@ -141,21 +117,70 @@ public static class SupportTicketEndpoints
                 return Results.BadRequest(new { message = "Vui lòng nhập nội dung phản hồi cho hội viên." });
             }
 
-            var updated = SupportTicketStore.Reply(id, replyText.Trim(), staffName ?? "Nguyễn Văn Lễ Tân");
-            if (updated == null)
+            try
             {
-                return Results.NotFound(new { message = "Không tìm thấy mã phiếu hỗ trợ này." });
-            }
+                var affected = await db.Database.ExecuteSqlInterpolatedAsync($@"
+                    UPDATE support_tickets
+                    SET reply = {replyText.Trim()},
+                        replied_by = {staffName ?? "Nguyễn Văn Lễ Tân"},
+                        replied_at = now(),
+                        status = 'resolved'
+                    WHERE id = {id};
+                ");
 
-            return Results.Ok(new
+                if (affected == 0)
+                {
+                    return Results.NotFound(new { message = "Không tìm thấy mã phiếu hỗ trợ này trong CSDL." });
+                }
+
+                var updatedRow = await db.Database.SqlQueryRaw<SupportTicketDbRow>(@"
+                    SELECT 
+                        t.id AS ""Id"",
+                        t.user_id AS ""UserId"",
+                        COALESCE(u.full_name, 'Hội viên') AS ""MemberName"",
+                        COALESCE(u.phone_number, 'Chưa có SĐT') AS ""MemberPhone"",
+                        t.category AS ""Category"",
+                        t.subject AS ""Subject"",
+                        t.content AS ""Content"",
+                        t.status AS ""Status"",
+                        t.reply AS ""Reply"",
+                        t.replied_by AS ""RepliedBy"",
+                        t.replied_at AS ""RepliedAt"",
+                        t.created_at AS ""CreatedAt""
+                    FROM support_tickets t
+                    LEFT JOIN users u ON t.user_id = u.id
+                    WHERE t.id = {0}
+                ", id).FirstOrDefaultAsync();
+
+                var ticketDto = updatedRow != null ? new SupportTicketModel
+                {
+                    id = updatedRow.Id,
+                    userId = updatedRow.UserId?.ToString(),
+                    memberName = updatedRow.MemberName,
+                    memberPhone = updatedRow.MemberPhone,
+                    category = updatedRow.Category,
+                    subject = updatedRow.Subject,
+                    content = updatedRow.Content,
+                    status = updatedRow.Status,
+                    reply = updatedRow.Reply,
+                    repliedBy = updatedRow.RepliedBy,
+                    repliedAt = updatedRow.RepliedAt.HasValue ? updatedRow.RepliedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") : null,
+                    createdAt = updatedRow.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
+                } : null;
+
+                return Results.Ok(new
+                {
+                    success = true,
+                    message = "Đã phản hồi và xử lý phiếu thành công!",
+                    ticket = ticketDto
+                });
+            }
+            catch (Exception ex)
             {
-                success = true,
-                message = "Đã phản hồi và xử lý phiếu thành công!",
-                ticket = updated
-            });
+                return Results.Problem($"Lỗi cập nhật CSDL: {ex.Message}");
+            }
         })
         .WithTags("Receptionist Portal")
-        .WithSummary("Lễ tân phản hồi và giải quyết phiếu hỗ trợ");
+        .WithSummary("Lễ tân phản hồi và giải quyết phiếu hỗ trợ (Supabase DB)");
     }
 }
-
