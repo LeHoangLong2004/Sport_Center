@@ -4,6 +4,7 @@ import { PayAndBookModal } from "./PayAndBookModal";
 import { BookingSuccessModal } from "./BookingSuccessModal";
 import { CancelBookingModal } from "./CancelBookingModal";
 import { PtBookingModal } from "./PtBookingModal";
+import type { CancelBookingTarget } from "./bookingTypes";
 
 interface BookingModalsProps {
   selectedClassDetail: any | null;
@@ -24,9 +25,10 @@ interface BookingModalsProps {
   onCloseSuccessModal: () => void;
   onViewMyClasses: () => void;
 
-  cancelTarget: { classId: string; className: string } | null;
+  cancelTarget: CancelBookingTarget | null;
   onCloseCancelModal: () => void;
   onConfirmCancel: (classId: string) => void;
+  isCancelling?: boolean;
 
   bookingPtSlot: any | null;
   onClosePtBookingModal: () => void;
@@ -56,6 +58,7 @@ export function BookingModals({
   cancelTarget,
   onCloseCancelModal,
   onConfirmCancel,
+  isCancelling,
   bookingPtSlot,
   onClosePtBookingModal,
   ptGoal,
@@ -95,6 +98,7 @@ export function BookingModals({
         cancelTarget={cancelTarget}
         onClose={onCloseCancelModal}
         onConfirmCancel={onConfirmCancel}
+        isCancelling={isCancelling}
       />
 
       <PtBookingModal

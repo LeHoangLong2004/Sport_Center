@@ -244,7 +244,7 @@ public static partial class ClassEndpoints
                 }
                 catch { }
 
-                var (isSuccess, errorMessage) = await service.CancelBookingAsync(userId, id);
+                var (isSuccess, isLate, errorMessage) = await service.CancelBookingAsync(userId, id);
                 if (!isSuccess)
                     return Results.BadRequest(new { message = errorMessage });
 
@@ -268,7 +268,11 @@ public static partial class ClassEndpoints
                 bool isRefunded = false;
                 decimal updatedBalance = 0m;
 
-                if (!wasCounterPending)
+                // Hoàn tiền vào ví CHỈ KHI: không phải trả sau tại quầy VÀ hủy hợp lệ trước giờ học từ 2 tiếng trở lên
+                // Nếu hủy muộn (< 2 tiếng): Tuyệt đối KHÔNG hoàn tiền theo đúng quy chế trung tâm
+                bool shouldRefund = !wasCounterPending && !isLate;
+
+                if (shouldRefund)
                 {
                     var className = classDetail?.ClassName ?? "lớp học";
                     var (refundSuccess, newBal, _) = await MemberEndpoints.RefundToWalletAsync(
@@ -285,9 +289,19 @@ public static partial class ClassEndpoints
                 }
 
                 var targetClassName = classDetail?.ClassName ?? "lớp học";
-                var message = isRefunded
-                    ? $"Đã hủy đặt lớp \"{targetClassName}\" thành công. Số tiền {refundAmount:N0} đ đã được hoàn lại vào Ví hội viên của bạn!"
-                    : $"Đã hủy đặt lớp \"{targetClassName}\" thành công.";
+                string message;
+                if (isRefunded)
+                {
+                    message = $"Đã hủy đặt lớp \"{targetClassName}\" thành công. Số tiền {refundAmount:N0} đ đã được hoàn lại vào Ví hội viên của bạn!";
+                }
+                else if (isLate && !wasCounterPending)
+                {
+                    message = $"Đã hủy đặt lớp \"{targetClassName}\" thành công. Chỗ học đã được giải phóng (Hủy muộn trong vòng 2 tiếng trước giờ học nên không hoàn tiền ví theo quy định).";
+                }
+                else
+                {
+                    message = $"Đã hủy đặt lớp \"{targetClassName}\" thành công.";
+                }
 
                 return Results.Ok(new
                 {
