@@ -64,12 +64,14 @@ export default function MemberBooking({ onNavigate }: Props) {
     setBookingSuccessInfo,
     cancelTarget,
     setCancelTarget,
+    isCancelling,
     bookingPtSlot,
     setBookingPtSlot,
     ptGoal,
     setPtGoal,
     ptNote,
     setPtNote,
+    membership,
     feedback,
     setFeedback,
     handleInitiateBookClass,
@@ -221,6 +223,8 @@ export default function MemberBooking({ onNavigate }: Props) {
           refreshing={refreshingGroupClasses}
           classes={filteredGroupClasses}
           mySessions={mySessions}
+          membership={membership}
+          onNavigate={onNavigate}
           onRetry={() => void loadGroupClasses()}
           onOpenDetail={setSelectedClassDetail}
           onInitiateBook={handleInitiateBookClass}
@@ -268,6 +272,7 @@ export default function MemberBooking({ onNavigate }: Props) {
         cancelTarget={cancelTarget}
         onCloseCancelModal={() => setCancelTarget(null)}
         onConfirmCancel={handleCancelBooking}
+        isCancelling={isCancelling}
         bookingPtSlot={bookingPtSlot}
         onClosePtBookingModal={() => setBookingPtSlot(null)}
         ptGoal={ptGoal}
