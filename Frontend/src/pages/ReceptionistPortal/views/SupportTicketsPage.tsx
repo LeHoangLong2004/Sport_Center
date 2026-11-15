@@ -13,9 +13,14 @@ import {
   Tag,
   ShieldCheck,
   RefreshCw,
-  Sparkles
+  Sparkles,
+  QrCode,
+  Calendar,
+  Banknote
 } from "lucide-react";
 import { mergeStoredTicketReplies } from "../../MemberPortal/services/memberData";
+import { TicketReplyContent } from "../../../components/TicketReplyContent";
+import { PackageAPI, CatalogPackage } from "../../../services/packageApi";
 
 export interface SupportTicket {
   id: string;
@@ -68,62 +73,31 @@ export function SupportTicketsPage() {
   const [replyText, setReplyText] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Fetch tickets
+  // Fetch tickets directly from Supabase via Backend API
   const fetchTickets = async () => {
     setLoading(true);
-    let rawList: SupportTicket[] = [];
-
-    // 1. Thử lấy từ Backend Lễ tân
     try {
       const res = await fetch("/api/receptionist/support-tickets");
       if (res.ok) {
         const data = await res.json();
-        if (data && Array.isArray(data.tickets) && data.tickets.length > 0) {
-          rawList = data.tickets;
+        if (data && Array.isArray(data.tickets)) {
+          setTickets(data.tickets);
+          setLoading(false);
+          return;
         }
       }
-    } catch {}
-
-    // 2. Thử lấy từ Backend Hội viên
-    if (rawList.length === 0) {
-      try {
-        const memRes = await fetch("/api/member/support-tickets");
-        if (memRes.ok) {
-          const memData = await memRes.json();
-          if (Array.isArray(memData) && memData.length > 0) {
-            rawList = memData;
-          }
-        }
-      } catch {}
+    } catch (e) {
+      console.warn("Backend receptionist support-tickets failed", e);
     }
-
-    // 3. Đọc từ shared localStorage
-    if (rawList.length === 0) {
-      try {
-        const local = localStorage.getItem("smartgym_support_tickets");
-        if (local) {
-          const parsed = JSON.parse(local);
-          if (Array.isArray(parsed) && parsed.length > 0) rawList = parsed;
-        }
-      } catch {}
-    }
-
-    // 4. Nếu chưa có gì thì dùng DEFAULT_TICKETS
-    if (rawList.length === 0) {
-      rawList = DEFAULT_TICKETS;
-    }
-
-    // Luôn luôn hợp nhất các phản hồi đã lưu (đảm bảo không bao giờ bị mất khi refresh)
-    const merged = mergeStoredTicketReplies(rawList);
-    setTickets(merged);
-    try {
-      localStorage.setItem("smartgym_support_tickets", JSON.stringify(merged));
-    } catch {}
+    setTickets([]);
     setLoading(false);
   };
 
   useEffect(() => {
     fetchTickets();
+    const handleUpdate = () => fetchTickets();
+    window.addEventListener("support-tickets-updated", handleUpdate);
+    return () => window.removeEventListener("support-tickets-updated", handleUpdate);
   }, []);
 
   // Filtered tickets
@@ -153,10 +127,63 @@ export function SupportTicketsPage() {
   const openCount = tickets.filter((t) => t.status === "open").length;
   const resolvedCount = tickets.filter((t) => t.status === "resolved").length;
 
+  const [isQrBuilderOpen, setIsQrBuilderOpen] = useState(false);
+  const [packagesList, setPackagesList] = useState<CatalogPackage[]>([]);
+  const [selectedPkgId, setSelectedPkgId] = useState<string>("");
+  const [selectedMonths, setSelectedMonths] = useState<number>(1);
+
+  useEffect(() => {
+    PackageAPI.getPackages()
+      .then((data) => {
+        if (Array.isArray(data)) {
+          const active = data.filter((p) => p.isActive);
+          setPackagesList(active);
+          if (active.length > 0) setSelectedPkgId(active[0].id);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const activeSelectedPkg = useMemo(() => {
+    return packagesList.find((p) => p.id === selectedPkgId) || null;
+  }, [packagesList, selectedPkgId]);
+
+  const qrCalculatedPrice = useMemo(() => {
+    if (!activeSelectedPkg) {
+      const base = 500000;
+      if (selectedMonths === 1) return base;
+      if (selectedMonths === 3) return Math.round(base * 3 * 0.95);
+      if (selectedMonths === 6) return Math.round(base * 6 * 0.9);
+      return Math.round(base * 12 * 0.85);
+    }
+    return activeSelectedPkg.prices?.[selectedMonths as 1 | 3 | 6 | 12] || 500000;
+  }, [activeSelectedPkg, selectedMonths]);
+
+  const handleInsertVietQr = () => {
+    if (!selectedTicket) return;
+    const pkgName = activeSelectedPkg ? activeSelectedPkg.name : "Gói Gym Premium";
+    const amount = qrCalculatedPrice;
+    const transferCode = `GIAHAN ${selectedTicket.id} ${selectedMonths}THANG`;
+
+    const template = `Chào bạn, Ban Quản lý SportCenter xin thông tin chi phí gia hạn/nâng cấp gói tập cho bạn như sau:
+• Gói đăng ký: ${pkgName} (${selectedMonths} tháng)
+• Mức phí thanh toán: ${amount.toLocaleString("vi-VN")} đ
+• Ngân hàng: MBBank (Quân Đội) - STK: 0335889765 (SPORT CENTER)
+• Cú pháp chuyển khoản: ${transferCode}
+
+Bạn quét mã VietQR đính kèm bên dưới để thanh toán nhé. Sau khi nhận được tiền, Lễ tân sẽ xác nhận và kích hoạt gói ngay cho bạn!
+[VIETQR_PAYMENT:package=${encodeURIComponent(pkgName)}&amount=${amount}&duration=${selectedMonths}&account=0335889765&bank=MBBank&content=${encodeURIComponent(transferCode)}]`;
+
+    setReplyText(template);
+    setIsQrBuilderOpen(false);
+    toast.success("Đã chèn báo giá & mã VietQR vào nội dung phản hồi!");
+  };
+
   // Open modal
   const handleOpenReply = (ticket: SupportTicket) => {
     setSelectedTicket(ticket);
     setReplyText(ticket.reply || "");
+    setIsQrBuilderOpen(false);
   };
 
   // Quick replies
@@ -186,42 +213,15 @@ export function SupportTicketsPage() {
       if (res.ok) {
         toast.success(`Đã phản hồi và giải quyết phiếu ${selectedTicket.id}!`);
       } else {
-        toast.success(`Đã cập nhật trạng thái đã xử lý cho phiếu ${selectedTicket.id}!`);
+        const err = await res.json().catch(() => null);
+        toast.error(err?.message || `Không thể xử lý phiếu ${selectedTicket.id}`);
       }
     } catch {
-      toast.success(`Đã cập nhật trạng thái phiếu ${selectedTicket.id}!`);
+      toast.error(`Lỗi kết nối khi phản hồi phiếu ${selectedTicket.id}!`);
     }
 
-    // Update state locally and in shared localStorage
-    const updatedTickets = tickets.map((t) =>
-      t.id === selectedTicket.id
-        ? {
-            ...t,
-            status: "resolved" as const,
-            reply: replyText.trim(),
-            repliedAt: nowStr,
-            repliedBy: "Nguyễn Văn Lễ Tân",
-          }
-        : t
-    );
-
-    setTickets(updatedTickets);
-
-    try {
-      const raw = localStorage.getItem("smartgym_ticket_replies");
-      const currentReplies = raw ? JSON.parse(raw) : {};
-      currentReplies[selectedTicket.id] = {
-        status: "resolved",
-        reply: replyText.trim(),
-        repliedAt: nowStr,
-        repliedBy: "Nguyễn Văn Lễ Tân",
-      };
-      localStorage.setItem("smartgym_ticket_replies", JSON.stringify(currentReplies));
-      localStorage.setItem("smartgym_support_tickets", JSON.stringify(updatedTickets));
-      window.dispatchEvent(new Event("support-tickets-updated"));
-      window.dispatchEvent(new StorageEvent("storage", { key: "smartgym_support_tickets" }));
-    } catch {}
-
+    await fetchTickets();
+    window.dispatchEvent(new Event("support-tickets-updated"));
     setSubmitting(false);
     setSelectedTicket(null);
     setReplyText("");
@@ -397,7 +397,9 @@ export function SupportTicketsPage() {
                     </span>
                     {t.repliedAt && <span className="text-[11px] font-normal text-emerald-700 dark:text-emerald-400">{t.repliedAt}</span>}
                   </div>
-                  <p className="text-emerald-800 dark:text-emerald-300 leading-relaxed pt-0.5">{t.reply}</p>
+                  <div className="pt-1">
+                    <TicketReplyContent content={t.reply} />
+                  </div>
                 </div>
               )}
             </div>
@@ -440,6 +442,85 @@ export function SupportTicketsPage() {
                   Gợi ý phản hồi nhanh:
                 </label>
                 <div className="flex flex-col gap-1.5">
+                  {/* VietQR Builder Button */}
+                  <button
+                    type="button"
+                    onClick={() => setIsQrBuilderOpen(!isQrBuilderOpen)}
+                    className="w-full text-left p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-[11px] font-bold text-emerald-800 dark:text-emerald-300 transition-all cursor-pointer border border-emerald-300/80 dark:border-emerald-700/60 flex items-center justify-between shadow-xs"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <QrCode className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <span>💳 Báo giá & Đính kèm mã VietQR thanh toán online</span>
+                    </span>
+                    <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-full border border-emerald-200">
+                      {isQrBuilderOpen ? "Thu gọn ▲" : "Tạo mã ▼"}
+                    </span>
+                  </button>
+
+                  {/* QR Builder Panel */}
+                  {isQrBuilderOpen && (
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-emerald-200 dark:border-emerald-800 space-y-2.5 animate-in fade-in duration-150">
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">1. Chọn gói tập:</span>
+                        <select
+                          value={selectedPkgId}
+                          onChange={(e) => setSelectedPkgId(e.target.value)}
+                          className="w-full p-1.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none"
+                        >
+                          {packagesList.length > 0 ? (
+                            packagesList.map((p) => (
+                              <option key={p.id} value={p.id}>
+                                {p.name} ({Number(p.prices?.[1] || 0).toLocaleString("vi-VN")} đ/tháng)
+                              </option>
+                            ))
+                          ) : (
+                            <>
+                              <option value="gym_premium">Gói Gym Premium (1.000.000 đ/tháng)</option>
+                              <option value="yoga_pack">Gói Tập Yoga (500.000 đ/tháng)</option>
+                              <option value="gym_basic">Gói Gym Cơ Bản (350.000 đ/tháng)</option>
+                            </>
+                          )}
+                        </select>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">2. Chọn thời hạn:</span>
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {([1, 3, 6, 12] as const).map((m) => (
+                            <button
+                              key={m}
+                              type="button"
+                              onClick={() => setSelectedMonths(m)}
+                              className={`py-1.5 px-2 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                                selectedMonths === m
+                                  ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300"
+                                  : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                              }`}
+                            >
+                              {m} Tháng
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/60 text-xs">
+                        <span className="font-semibold text-slate-600">Tổng phí thanh toán:</span>
+                        <strong className="text-emerald-700 font-extrabold text-sm">
+                          {qrCalculatedPrice.toLocaleString("vi-VN")} đ
+                        </strong>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleInsertVietQr}
+                        className="w-full py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                      >
+                        <QrCode className="w-3.5 h-3.5" />
+                        <span>Chèn nội dung & Mã VietQR vào phản hồi</span>
+                      </button>
+                    </div>
+                  )}
+
                   <button
                     type="button"
                     onClick={() =>

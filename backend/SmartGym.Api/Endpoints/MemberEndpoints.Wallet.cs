@@ -27,13 +27,17 @@ namespace SmartGym.Api.Endpoints
             // 1. GET /api/member/wallet - Lấy số dư và lịch sử giao dịch ví (kết nối trực tiếp Database)
             wallet.MapGet("/", async (HttpContext context, SmartGymDbContext db) =>
             {
-                var rawUserId = GetUserId(context);
-                if (string.IsNullOrWhiteSpace(rawUserId))
-                {
-                    rawUserId = context.Request.Query["userId"].FirstOrDefault()
-                          ?? context.Request.Headers["X-User-Id"].FirstOrDefault()
-                          ?? "m-default";
-                }
+                var queryUserId = context.Request.Query["userId"].FirstOrDefault();
+                var headerUserId = context.Request.Headers["X-User-Id"].FirstOrDefault();
+                var role = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+                           ?? context.User.FindFirst("role")?.Value;
+                var isStaff = string.Equals(role, "receptionist", StringComparison.OrdinalIgnoreCase)
+                           || string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase)
+                           || string.Equals(role, "manager", StringComparison.OrdinalIgnoreCase);
+
+                var rawUserId = !string.IsNullOrWhiteSpace(queryUserId) ? queryUserId
+                              : (!string.IsNullOrWhiteSpace(headerUserId) && (isStaff || string.IsNullOrWhiteSpace(GetUserId(context))) ? headerUserId
+                              : GetUserId(context) ?? headerUserId ?? "m-default");
 
                 var memberGuid = await ResolveMemberGuidAsync(context, db, rawUserId);
                 decimal balance;
@@ -94,13 +98,17 @@ namespace SmartGym.Api.Endpoints
                     return Results.BadRequest(new { message = "Số tiền nạp một lần không được vượt quá 100.000.000 đ." });
                 }
 
-                var rawUserId = GetUserId(context);
-                if (string.IsNullOrWhiteSpace(rawUserId))
-                {
-                    rawUserId = context.Request.Query["userId"].FirstOrDefault()
-                          ?? context.Request.Headers["X-User-Id"].FirstOrDefault()
-                          ?? "m-default";
-                }
+                var queryUserId = context.Request.Query["userId"].FirstOrDefault();
+                var headerUserId = context.Request.Headers["X-User-Id"].FirstOrDefault();
+                var role = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+                           ?? context.User.FindFirst("role")?.Value;
+                var isStaff = string.Equals(role, "receptionist", StringComparison.OrdinalIgnoreCase)
+                           || string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase)
+                           || string.Equals(role, "manager", StringComparison.OrdinalIgnoreCase);
+
+                var rawUserId = !string.IsNullOrWhiteSpace(queryUserId) ? queryUserId
+                              : (!string.IsNullOrWhiteSpace(headerUserId) && (isStaff || string.IsNullOrWhiteSpace(GetUserId(context))) ? headerUserId
+                              : GetUserId(context) ?? headerUserId ?? "m-default");
 
                 var memberGuid = await ResolveMemberGuidAsync(context, db, rawUserId);
                 var method = string.IsNullOrWhiteSpace(request.Method) ? "VietQR" : request.Method;
@@ -224,13 +232,17 @@ namespace SmartGym.Api.Endpoints
             // 2.1 POST /api/member/wallet/confirm-pending/{txId} - Xác nhận đã thu tiền phiếu nạp tại quầy
             wallet.MapPost("/confirm-pending/{txId}", async (HttpContext context, string txId, SmartGymDbContext db) =>
             {
-                var rawUserId = GetUserId(context);
-                if (string.IsNullOrWhiteSpace(rawUserId))
-                {
-                    rawUserId = context.Request.Query["userId"].FirstOrDefault()
-                          ?? context.Request.Headers["X-User-Id"].FirstOrDefault()
-                          ?? "m-default";
-                }
+                var queryUserId = context.Request.Query["userId"].FirstOrDefault();
+                var headerUserId = context.Request.Headers["X-User-Id"].FirstOrDefault();
+                var role = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+                           ?? context.User.FindFirst("role")?.Value;
+                var isStaff = string.Equals(role, "receptionist", StringComparison.OrdinalIgnoreCase)
+                           || string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase)
+                           || string.Equals(role, "manager", StringComparison.OrdinalIgnoreCase);
+
+                var rawUserId = !string.IsNullOrWhiteSpace(queryUserId) ? queryUserId
+                              : (!string.IsNullOrWhiteSpace(headerUserId) && (isStaff || string.IsNullOrWhiteSpace(GetUserId(context))) ? headerUserId
+                              : GetUserId(context) ?? headerUserId ?? "m-default");
 
                 var memberGuid = await ResolveMemberGuidAsync(context, db, rawUserId);
 
@@ -295,13 +307,17 @@ namespace SmartGym.Api.Endpoints
                     return Results.BadRequest(new { message = "Số tiền thanh toán phải lớn hơn 0." });
                 }
 
-                var rawUserId = GetUserId(context);
-                if (string.IsNullOrWhiteSpace(rawUserId))
-                {
-                    rawUserId = context.Request.Query["userId"].FirstOrDefault()
-                          ?? context.Request.Headers["X-User-Id"].FirstOrDefault()
-                          ?? "m-default";
-                }
+                var queryUserId = context.Request.Query["userId"].FirstOrDefault();
+                var headerUserId = context.Request.Headers["X-User-Id"].FirstOrDefault();
+                var role = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+                           ?? context.User.FindFirst("role")?.Value;
+                var isStaff = string.Equals(role, "receptionist", StringComparison.OrdinalIgnoreCase)
+                           || string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase)
+                           || string.Equals(role, "manager", StringComparison.OrdinalIgnoreCase);
+
+                var rawUserId = !string.IsNullOrWhiteSpace(queryUserId) ? queryUserId
+                              : (!string.IsNullOrWhiteSpace(headerUserId) && (isStaff || string.IsNullOrWhiteSpace(GetUserId(context))) ? headerUserId
+                              : GetUserId(context) ?? headerUserId ?? "m-default");
 
                 var memberGuid = await ResolveMemberGuidAsync(context, db, rawUserId);
                 var currentBalance = memberGuid.HasValue
@@ -375,13 +391,17 @@ namespace SmartGym.Api.Endpoints
             // 4. GET /api/member/wallet/check-transfer - Kiểm tra tự động hoặc xác nhận chuyển khoản VietQR
             wallet.MapGet("/check-transfer", async (HttpContext context, IConfiguration config, SmartGymDbContext db, [FromQuery] string? memo, [FromQuery] decimal? amount, [FromQuery] string? sepayToken, [FromQuery] bool? confirm) =>
             {
-                var rawUserId = GetUserId(context);
-                if (string.IsNullOrWhiteSpace(rawUserId))
-                {
-                    rawUserId = context.Request.Query["userId"].FirstOrDefault()
-                          ?? context.Request.Headers["X-User-Id"].FirstOrDefault()
-                          ?? "m-default";
-                }
+                var queryUserId = context.Request.Query["userId"].FirstOrDefault();
+                var headerUserId = context.Request.Headers["X-User-Id"].FirstOrDefault();
+                var role = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+                           ?? context.User.FindFirst("role")?.Value;
+                var isStaff = string.Equals(role, "receptionist", StringComparison.OrdinalIgnoreCase)
+                           || string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase)
+                           || string.Equals(role, "manager", StringComparison.OrdinalIgnoreCase);
+
+                var rawUserId = !string.IsNullOrWhiteSpace(queryUserId) ? queryUserId
+                              : (!string.IsNullOrWhiteSpace(headerUserId) && (isStaff || string.IsNullOrWhiteSpace(GetUserId(context))) ? headerUserId
+                              : GetUserId(context) ?? headerUserId ?? "m-default");
 
                 var memberGuid = await ResolveMemberGuidAsync(context, db, rawUserId);
                 var cleanMemo = (memo ?? "").Trim();
@@ -628,13 +648,17 @@ namespace SmartGym.Api.Endpoints
             // 6. POST /api/member/wallet/simulate-webhook - Mô phỏng Webhook tiền về tức thì (Dành cho Test / Demo)
             wallet.MapPost("/simulate-webhook", async (HttpContext context, [FromBody] TopUpRequest request, SmartGymDbContext db) =>
             {
-                var rawUserId = GetUserId(context);
-                if (string.IsNullOrWhiteSpace(rawUserId))
-                {
-                    rawUserId = context.Request.Query["userId"].FirstOrDefault()
-                          ?? context.Request.Headers["X-User-Id"].FirstOrDefault()
-                          ?? "m-default";
-                }
+                var queryUserId = context.Request.Query["userId"].FirstOrDefault();
+                var headerUserId = context.Request.Headers["X-User-Id"].FirstOrDefault();
+                var role = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+                           ?? context.User.FindFirst("role")?.Value;
+                var isStaff = string.Equals(role, "receptionist", StringComparison.OrdinalIgnoreCase)
+                           || string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase)
+                           || string.Equals(role, "manager", StringComparison.OrdinalIgnoreCase);
+
+                var rawUserId = !string.IsNullOrWhiteSpace(queryUserId) ? queryUserId
+                              : (!string.IsNullOrWhiteSpace(headerUserId) && (isStaff || string.IsNullOrWhiteSpace(GetUserId(context))) ? headerUserId
+                              : GetUserId(context) ?? headerUserId ?? "m-default");
 
                 var memberGuid = await ResolveMemberGuidAsync(context, db, rawUserId);
                 if (request.Amount <= 0)
@@ -717,13 +741,17 @@ namespace SmartGym.Api.Endpoints
             // 7. POST /api/member/wallet/reset - Đặt lại hoặc cân chỉnh số dư ví (Dành cho kiểm thử/đối soát)
             wallet.MapPost("/reset", async (HttpContext context, [FromQuery] decimal? newBalance, SmartGymDbContext db) =>
             {
-                var rawUserId = GetUserId(context);
-                if (string.IsNullOrWhiteSpace(rawUserId))
-                {
-                    rawUserId = context.Request.Query["userId"].FirstOrDefault()
-                          ?? context.Request.Headers["X-User-Id"].FirstOrDefault()
-                          ?? "m-default";
-                }
+                var queryUserId = context.Request.Query["userId"].FirstOrDefault();
+                var headerUserId = context.Request.Headers["X-User-Id"].FirstOrDefault();
+                var role = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+                           ?? context.User.FindFirst("role")?.Value;
+                var isStaff = string.Equals(role, "receptionist", StringComparison.OrdinalIgnoreCase)
+                           || string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase)
+                           || string.Equals(role, "manager", StringComparison.OrdinalIgnoreCase);
+
+                var rawUserId = !string.IsNullOrWhiteSpace(queryUserId) ? queryUserId
+                              : (!string.IsNullOrWhiteSpace(headerUserId) && (isStaff || string.IsNullOrWhiteSpace(GetUserId(context))) ? headerUserId
+                              : GetUserId(context) ?? headerUserId ?? "m-default");
 
                 var memberGuid = await ResolveMemberGuidAsync(context, db, rawUserId);
                 var targetBal = Math.Max(0m, newBalance ?? 0m);
