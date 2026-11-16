@@ -1,4 +1,5 @@
 import React, { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { AuthVisual } from "./AuthVisual";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -68,13 +69,17 @@ export function ResetPassword({ onLogin }: { onLogin: () => void }) {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setMessage({ type: "error", text: data.message || "Không thể đặt lại mật khẩu." });
+        const errText = data.message || "Không thể đặt lại mật khẩu.";
+        setMessage({ type: "error", text: errText });
+        toast.error("Đặt lại mật khẩu thất bại", { id: "auth-toast", description: errText });
         return;
       }
 
       localStorage.removeItem("reset_email");
       localStorage.removeItem("reset_token_demo");
-      setMessage({ type: "success", text: data.message || "Đặt lại mật khẩu thành công." });
+      const succText = data.message || "Đặt lại mật khẩu thành công.";
+      setMessage({ type: "success", text: succText });
+      toast.success("Đặt lại mật khẩu thành công!", { id: "auth-toast", description: "Vui lòng đăng nhập với mật khẩu mới của bạn." });
       window.setTimeout(onLogin, 900);
     } catch {
       setMessage({ type: "error", text: "Lỗi kết nối đến server API." });
