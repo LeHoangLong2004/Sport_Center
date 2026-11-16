@@ -66,6 +66,11 @@ namespace SmartGym.Api.Endpoints
                     user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.PhoneNumber == candPhone, ct);
                     if (user != null) memberId = user.Id;
                 }
+                else if (!string.IsNullOrWhiteSpace(candName))
+                {
+                    user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.FullName == candName || (u.FullName != null && u.FullName.ToLower() == candName.ToLower()), ct);
+                    if (user != null) memberId = user.Id;
+                }
             }
             catch (Exception ex)
             {
@@ -136,7 +141,7 @@ namespace SmartGym.Api.Endpoints
                 var classes = await db.Database.SqlQueryRaw<AiUpcomingClassRow>(
                     @"SELECT c.class_name AS ""ClassName"",
                              COALESCE(s.name, '') AS ""Sport"",
-                             COALESCE(f.name, '') AS ""Room"",
+                             COALESCE(c.room, f.name, '') AS ""Room"",
                              c.schedule_time AS ""ScheduleTime"",
                              COALESCE(c.duration_minutes, 60) AS ""DurationMinutes"",
                              COALESCE(u.full_name, 'HLV Trung tâm') AS ""CoachName""
@@ -273,7 +278,10 @@ namespace SmartGym.Api.Endpoints
             }
 
             foreach (var s in upcomingSessions.OrderBy(s => s.LocalStart).Take(8))
+            {
                 result.UpcomingSessions.Add(s.Text);
+                result.UpcomingSessionItems.Add((s.LocalStart, s.Text));
+            }
 
             foreach (var s in completedSessions.OrderByDescending(s => s.LocalStart).Take(8))
                 result.CompletedSessions.Add(s.Text);
@@ -627,6 +635,35 @@ namespace SmartGym.Api.Endpoints
                 }
             }
             catch (Exception ex) { logger.LogDebug(ex, "Flow 6: cannot load facilities."); }
+
+            // 12. Center upcoming scheduled classes
+            try
+            {
+                var centerClasses = await db.Database.SqlQueryRaw<AiUpcomingClassRow>(
+                    @"SELECT c.class_name AS ""ClassName"",
+                             COALESCE(s.name, '') AS ""Sport"",
+                             COALESCE(c.room, f.name, '') AS ""Room"",
+                             c.schedule_time AS ""ScheduleTime"",
+                             COALESCE(c.duration_minutes, 60) AS ""DurationMinutes"",
+                             COALESCE(u.full_name, 'HLV Trung tâm') AS ""CoachName""
+                      FROM classes c
+                      LEFT JOIN sports s ON s.id = c.sport_id
+                      LEFT JOIN facilities f ON f.id = c.facility_id
+                      LEFT JOIN coaches co ON co.id = c.coach_id
+                      LEFT JOIN users u ON u.id = co.user_id
+                      WHERE c.status = true
+                        AND c.schedule_time >= NOW()
+                      ORDER BY c.schedule_time ASC
+                      LIMIT 20").ToListAsync(ct);
+
+                foreach (var c in centerClasses)
+                {
+                    var start = ToVn(c.ScheduleTime);
+                    var room = string.IsNullOrWhiteSpace(c.Room) ? "" : $", phòng {c.Room}";
+                    result.CenterClasses.Add($"Lớp \"{c.ClassName}\" ({c.Sport}) — {FormatVnDateTime(start, vi)}–{start.AddMinutes(c.DurationMinutes):HH:mm}{room}, HLV {c.CoachName}");
+                }
+            }
+            catch (Exception ex) { logger.LogDebug(ex, "Flow 6: cannot load center classes."); }
 
             return result;
         }

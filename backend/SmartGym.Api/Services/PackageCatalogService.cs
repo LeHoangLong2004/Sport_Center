@@ -31,7 +31,7 @@ public sealed partial class PackageCatalogService(SmartGymDbContext db)
             Description = "Hạng mặc định dành cho mọi hội viên.",
             IsActive = true,
             Prices = Prices(0, 0, 0, 0),
-            Benefits = ["Hạng mặc định miễn phí", "Có thể mua riêng từng gói môn tập"],
+            Benefits = ["Hạng mặc định miễn phí", "Có thể mua riêng từng gói môn tập", "1 vé mời bạn bè mỗi tháng (1 Day-Pass/tháng)"],
             Terms =
             [
                 "Miễn phí và không giới hạn thời hạn.",
@@ -50,12 +50,11 @@ public sealed partial class PackageCatalogService(SmartGymDbContext db)
             Prices = Prices(149000, 399000, 749000, 1399000),
             Benefits =
             [
-                "Giảm 5% gói tự tập và lớp nhóm",
+                "Giảm 8% gói tự tập và lớp nhóm",
                 "Giảm 2% gói Coach 1–1",
                 "Đặt lớp trước 72 giờ (3 ngày)",
-                "1 vé mời bạn bè mỗi tháng (1 Day-Pass/tháng)",
+                "3 vé mời bạn bè mỗi tháng (3 Day-Pass/tháng)",
                 "Mượn 1 khăn tập miễn phí mỗi buổi",
-                "Đo InBody định kỳ 1 lần/tháng",
             ],
             Terms =
             [
@@ -63,7 +62,7 @@ public sealed partial class PackageCatalogService(SmartGymDbContext db)
                 "Ưu đãi không thay thế quyền tập theo gói môn.",
                 "Gói thành viên không bao gồm quyền vào khu tập.",
             ],
-            GroupDiscountPct = 5,
+            GroupDiscountPct = 8,
             CoachDiscountPct = 2,
             BookingAdvanceHours = 72,
             LockerTerms = "Được sử dụng tủ trong buổi tập hợp lệ theo điều kiện của gói môn.",
@@ -79,13 +78,12 @@ public sealed partial class PackageCatalogService(SmartGymDbContext db)
             Prices = Prices(299000, 799000, 1499000, 2799000),
             Benefits =
             [
-                "Giảm 10% gói tự tập và lớp nhóm",
+                "Giảm 15% gói tự tập và lớp nhóm",
                 "Giảm 5% gói Coach 1–1",
                 "Đặt lớp trước 120 giờ (5 ngày)",
-                "2 vé mời bạn bè mỗi tháng (2 Day-Pass/tháng)",
+                "5 vé mời bạn bè mỗi tháng (5 Day-Pass/tháng)",
                 "Miễn phí Xông hơi đá muối & Hồ sục Jacuzzi",
                 "Tủ đồ thông minh riêng & Combo khăn tập cao cấp",
-                "Đo InBody không giới hạn & Trợ lý tư vấn AI",
             ],
             Terms =
             [
@@ -93,7 +91,7 @@ public sealed partial class PackageCatalogService(SmartGymDbContext db)
                 "Ưu đãi không thay thế quyền tập theo gói môn.",
                 "Gói thành viên không bao gồm quyền vào khu tập.",
             ],
-            GroupDiscountPct = 10,
+            GroupDiscountPct = 15,
             CoachDiscountPct = 5,
             BookingAdvanceHours = 120,
             LockerTerms = "Tủ đồ thông minh riêng trong buổi tập kèm combo khăn cao cấp.",

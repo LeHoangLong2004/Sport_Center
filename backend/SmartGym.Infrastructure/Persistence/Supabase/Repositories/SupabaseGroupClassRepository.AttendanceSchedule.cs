@@ -57,7 +57,7 @@ public sealed partial class SupabaseGroupClassRepository
 
         var classBookings = await _dbContext
             .Database.SqlQueryRaw<ClassBookingRawModel>(
-                "SELECT id, user_id, class_id, status, created_at FROM class_bookings WHERE user_id = {0}",
+                "SELECT id, user_id, class_id, status, created_at FROM class_bookings WHERE user_id = {0} AND LOWER(COALESCE(status, '')) IN ('confirmed', 'approved')",
                 userId
             )
             .ToListAsync();

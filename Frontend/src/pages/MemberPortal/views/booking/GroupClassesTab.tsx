@@ -122,7 +122,9 @@ export const GroupClassesTab: React.FC<GroupClassesTabProps> = ({
         ) : (
           classes.map((item) => {
             const bookedSession = findActiveBooking(item.id, item.dateStr);
-            const booked = Boolean(bookedSession);
+            const rawBookingStatus = bookedSession ? String(getBookingStatus(bookedSession) || "").toLowerCase() : null;
+            const isCounterPending = rawBookingStatus === "pending";
+            const booked = Boolean(bookedSession) && !isCounterPending;
             const isFull = item.registeredCount >= item.capacity;
 
             let classStartMs: number | null = null;
@@ -142,7 +144,7 @@ export const GroupClassesTab: React.FC<GroupClassesTabProps> = ({
               classStartMs = parseScheduleTime(item.scheduleTime).getTime();
             }
 
-            const isTooLate = classStartMs !== null && classStartMs - now < 30 * 60 * 1000;
+            const isTooLate = classStartMs !== null && classStartMs <= now;
             const isTooEarly = classStartMs !== null && classStartMs - now > advanceHours * 3600 * 1000;
 
             let opensAtDateStr = "";
@@ -179,9 +181,13 @@ export const GroupClassesTab: React.FC<GroupClassesTabProps> = ({
                     <span className="mt-2 inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
                       <Check className="w-3 h-3" /> Đã đăng ký lớp này
                     </span>
+                  ) : isCounterPending ? (
+                    <span className="mt-2 inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-800 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
+                      <Clock className="w-3 h-3 text-amber-600" /> Chờ thanh toán tại quầy
+                    </span>
                   ) : isTooLate ? (
                     <span className="mt-2 inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[10px] font-bold text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300">
-                      <Clock className="w-3 h-3" /> Đã đóng đặt (Dưới 30 phút)
+                      <Clock className="w-3 h-3" /> Đã kết thúc / Đang diễn ra
                     </span>
                   ) : isTooEarly ? (
                     <span className="mt-2 inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300">
@@ -255,7 +261,26 @@ export const GroupClassesTab: React.FC<GroupClassesTabProps> = ({
                     Xem chi tiết
                   </button>
 
-                  {booked ? (
+                  {isCounterPending ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const targetClassId = (bookedSession as any)?.classId || item.id;
+                        onCancelBooking({
+                          classId: targetClassId,
+                          className: item.name,
+                          scheduleTime: item.scheduleTime,
+                          startTime: item.startTime,
+                          endTime: item.endTime,
+                          dateStr: item.dateStr,
+                          price: item.price,
+                        });
+                      }}
+                      className="px-4 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 font-bold text-xs transition-colors border border-amber-200 dark:border-amber-800 cursor-pointer"
+                    >
+                      Hủy giữ chỗ
+                    </button>
+                  ) : booked ? (
                     <button
                       type="button"
                       onClick={() => {

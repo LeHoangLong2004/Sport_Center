@@ -188,16 +188,13 @@ export default function MemberBooking({ onNavigate }: Props) {
         </div>
       )}
 
-      {/* Header Banner & 3-Tabs & Coach Carousel */}
+      {/* Header Banner & 3-Tabs */}
       <BookingHeader
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         groupClassesCount={filteredGroupClasses.length}
         ptSlotsCount={filteredPtSlots.length}
         myActiveClassesCount={myUpcomingClasses.length}
-        coaches={coaches}
-        selectedCoachId={selectedCoachId}
-        setSelectedCoachId={setSelectedCoachId}
       />
 
       {/* Filter Toolbar */}

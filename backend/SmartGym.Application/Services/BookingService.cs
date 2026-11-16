@@ -46,11 +46,11 @@ public sealed class BookingService
         var now = DateTime.UtcNow;
         var timeUntilClass = schedule.StartTime - now;
 
-        if (timeUntilClass.TotalMinutes < 30)
+        if (timeUntilClass.TotalSeconds <= 0)
         {
             return (
                 null,
-                "Không thể đặt chỗ. Lớp học sẽ bắt đầu trong vòng 30 phút hoặc đã diễn ra."
+                "Không thể đặt chỗ. Lớp học đã bắt đầu hoặc đã diễn ra."
             );
         }
 

@@ -27,15 +27,19 @@ public static class PaymentMethodExtensions
     /// <summary>
     /// Đọc mã <c>payment_method</c> từ database, chấp nhận cả mã ngắn và tên enum.
     /// </summary>
-    public static PaymentMethod ParseDbValue(string value) => value.Trim().ToLowerInvariant() switch
+    public static PaymentMethod ParseDbValue(string value)
     {
-        "qr" or "qrcode" => PaymentMethod.QRCode,
-        "card" or "creditcard" or "credit_card" or "pos" => PaymentMethod.CreditCard,
-        "wallet" or "ewallet" => PaymentMethod.EWallet,
-        "counter" or "cashatcounter" or "cash" or "tien_mat" or "tienmat" => PaymentMethod.CashAtCounter,
-        "bank_transfer" or "banktransfer" or "transfer" or "chuyen_khoan" or "chuyenkhoan" => PaymentMethod.BankTransfer,
-        _ => Enum.Parse<PaymentMethod>(value, true)
-    };
+        if (string.IsNullOrWhiteSpace(value)) return PaymentMethod.CashAtCounter;
+        return value.Trim().ToLowerInvariant() switch
+        {
+            "qr" or "qrcode" or "vietqr" or "viet_qr" => PaymentMethod.QRCode,
+            "card" or "creditcard" or "credit_card" or "pos" => PaymentMethod.CreditCard,
+            "wallet" or "ewallet" => PaymentMethod.EWallet,
+            "counter" or "cashatcounter" or "cash" or "tien_mat" or "tienmat" => PaymentMethod.CashAtCounter,
+            "bank_transfer" or "banktransfer" or "transfer" or "chuyen_khoan" or "chuyenkhoan" => PaymentMethod.BankTransfer,
+            _ => System.Enum.TryParse<PaymentMethod>(value, true, out var parsed) ? parsed : PaymentMethod.CashAtCounter
+        };
+    }
 
     /// <summary>Nhãn hiển thị trên hóa đơn/email.</summary>
     public static string ToDisplayName(this PaymentMethod method) => method switch
