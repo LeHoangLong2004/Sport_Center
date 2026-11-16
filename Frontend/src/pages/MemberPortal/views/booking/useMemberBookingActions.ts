@@ -94,9 +94,9 @@ export function useMemberBookingActions({
     }
 
     if (classStartMs !== null) {
-      // 1. Ràng buộc thời gian tối thiểu: Phải trước giờ học ít nhất 30 phút
-      if (classStartMs - now < 30 * 60 * 1000) {
-        const msg = "Không thể đặt chỗ. Lớp học sẽ bắt đầu trong vòng chưa đầy 30 phút hoặc đã kết thúc.";
+      // 1. Ràng buộc thời gian: Chỉ cần trước giờ học (chưa bắt đầu)
+      if (classStartMs <= now) {
+        const msg = "Không thể đặt chỗ. Lớp học đã bắt đầu hoặc đã kết thúc.";
         showFeedback(msg, "error");
         toast.error(msg);
         return;

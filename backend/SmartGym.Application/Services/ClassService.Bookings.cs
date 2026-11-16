@@ -45,10 +45,10 @@ public sealed partial class ClassService
         var now = DateTime.UtcNow;
         var timeUntilClass = classStartTimeUtc - now;
 
-        // 3. RÀNG BUỘC THỜI GIAN ĐẶT CHỖ TỐI THIỂU: Tối thiểu 30 phút trước giờ học
-        if (timeUntilClass.TotalMinutes < 30)
+        // 3. RÀNG BUỘC THỜI GIAN ĐẶT CHỖ TỐI THIỂU: Chỉ cần trước giờ bắt đầu lớp học
+        if (timeUntilClass.TotalSeconds <= 0)
         {
-            return (false, "Không thể đặt chỗ. Lớp học sẽ bắt đầu trong vòng chưa đầy 30 phút hoặc đã diễn ra.");
+            return (false, "Không thể đặt chỗ. Lớp học đã bắt đầu hoặc đã diễn ra.");
         }
 
         // 4. Lấy danh sách subscription của User và kiểm tra còn hạn tại thời điểm diễn ra lớp học

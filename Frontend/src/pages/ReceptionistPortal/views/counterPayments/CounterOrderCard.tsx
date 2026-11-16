@@ -4,7 +4,9 @@ import type { PackageOrder } from "../../../../services/packageApi";
 
 interface Props {
   order: PackageOrder;
-  processingId: string | null;
+  confirmingId?: string | null;
+  cancellingId?: string | null;
+  processingId?: string | null;
   onOpenConfirm: (order: PackageOrder) => void;
   onOpenReceipt: (order: PackageOrder) => void;
   onCancelOrder: (order: PackageOrder) => void;
@@ -13,6 +15,8 @@ interface Props {
 
 export default function CounterOrderCard({
   order,
+  confirmingId,
+  cancellingId,
   processingId,
   onOpenConfirm,
   onOpenReceipt,
@@ -21,6 +25,9 @@ export default function CounterOrderCard({
 }: Props) {
   const isPending = order.status === "pending";
   const isPaid = order.status === "paid";
+  const isThisConfirming = confirmingId === order.id;
+  const isThisCancelling = cancellingId === order.id || (processingId === order.id && !isThisConfirming);
+  const isBusy = Boolean(confirmingId || cancellingId || processingId);
 
   return (
     <div
@@ -131,13 +138,15 @@ export default function CounterOrderCard({
             <>
               <button
                 type="button"
-                disabled={processingId === order.id}
+                disabled={isBusy}
                 onClick={() => onOpenConfirm(order)}
-                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-emerald-600/20 flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-emerald-600/20 flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Check className="w-4 h-4" />
                 <span>
-                  {order.packageSnapshot?.category === "class"
+                  {isThisConfirming
+                    ? "Đang xử lý..."
+                    : order.packageSnapshot?.category === "class"
                     ? "Thu tiền & Vào lớp"
                     : "Thu tiền & Kích hoạt"}
                 </span>
@@ -155,12 +164,12 @@ export default function CounterOrderCard({
 
               <button
                 type="button"
-                disabled={Boolean(processingId)}
+                disabled={isBusy}
                 onClick={() => onCancelOrder(order)}
                 className="px-3 py-2.5 rounded-xl border border-red-200 dark:border-red-900 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 font-bold text-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Hủy đơn quá hạn hoặc khách đổi ý"
               >
-                {processingId === order.id ? "Đang hủy..." : "Hủy đơn"}
+                {isThisCancelling ? "Đang hủy..." : "Hủy đơn"}
               </button>
             </>
           ) : (

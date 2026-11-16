@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using SmartGym.Application.DTOs;
 using SmartGym.Domain.Entities;
+using SmartGym.Domain.Enums;
 using SmartGym.Infrastructure.Persistence.EF;
 
 namespace SmartGym.Api.Services;
@@ -60,6 +61,28 @@ public sealed partial class PackageCatalogService
             foreach (var cb in classOrders)
             {
                 var isPending = cb.Status.Trim().ToLowerInvariant() == "pending";
+                var subtotal = 150000m;
+                var classInvoice = await db.Invoices
+                    .AsNoTracking()
+                    .Where(i => i.UserId == cb.UserId && i.Status == (isPending ? PaymentStatus.Pending : PaymentStatus.Completed))
+                    .OrderByDescending(i => i.CreatedAt)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                decimal total;
+                if (classInvoice != null && classInvoice.TotalAmount > 0)
+                {
+                    total = classInvoice.TotalAmount;
+                }
+                else
+                {
+                    var activeMem = await GetActiveMembershipAsync(cb.UserId, cb.CreatedAt, cancellationToken);
+                    var pct = activeMem?.GroupDiscountPct ?? 0;
+                    total = Math.Max(0, subtotal - decimal.Round(subtotal * pct / 100m, 0, MidpointRounding.AwayFromZero));
+                }
+
+                var discountAmount = Math.Max(0, subtotal - total);
+                var discountPct = subtotal > 0 ? decimal.Round(discountAmount / subtotal * 100m, 0) : 0;
+
                 subOrders.Add(new PackageOrderResponse
                 {
                     Id = cb.BookingId,
@@ -79,10 +102,10 @@ public sealed partial class PackageCatalogService
                         Format = "group",
                     },
                     DurationMonths = 1,
-                    Subtotal = 150000m,
-                    DiscountPct = 0,
-                    DiscountAmount = 0,
-                    Total = 150000m,
+                    Subtotal = subtotal,
+                    DiscountPct = discountPct,
+                    DiscountAmount = discountAmount,
+                    Total = total,
                     PaymentMethod = "counter",
                     Status = isPending ? "pending" : "paid",
                     CreatedAt = cb.CreatedAt,

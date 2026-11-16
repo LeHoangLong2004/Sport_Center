@@ -37,6 +37,7 @@ namespace SmartGym.Api.Endpoints
             public string? TrainingLevel { get; set; }
             public List<string> ActivePackages { get; } = new();
             public List<string> UpcomingSessions { get; } = new();
+            public List<(DateTime Start, string Text)> UpcomingSessionItems { get; } = new();
             public List<string> CompletedSessions { get; } = new();
             public List<string> AssignedWorkouts { get; } = new();
             public string? BodyMetricsSummary { get; set; }
@@ -51,6 +52,7 @@ namespace SmartGym.Api.Endpoints
             public List<string> StoreProducts { get; } = new();
             public List<string> CenterCoaches { get; } = new();
             public List<string> CenterFacilities { get; } = new();
+            public List<string> CenterClasses { get; } = new();
             public bool IsAuthenticated => !string.IsNullOrEmpty(UserId);
         }
 

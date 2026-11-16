@@ -78,7 +78,7 @@ export const BookingClassHeader: React.FC<Props> = ({
           <span>Ưu đãi thành viên:</span>
           {discountAmount > 0 ? (
             <span className="font-bold text-emerald-600 dark:text-emerald-400">
-              - {discountAmount.toLocaleString("vi-VN")} đ ({isPremium ? "Giảm 10% Hạng Premium" : "Giảm 5% Hạng Plus"})
+              - {discountAmount.toLocaleString("vi-VN")} đ ({isPremium ? `Giảm ${discountPct}% Hạng Premium` : `Giảm ${discountPct}% Hạng Plus`})
             </span>
           ) : (
             <span className="font-bold text-slate-500">

@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using SmartGym.Application.DTOs;
 using SmartGym.Application.Interfaces;
+using SmartGym.Domain.Enums;
 using SmartGym.Infrastructure.Persistence.EF;
 
 namespace SmartGym.Api.Endpoints;
@@ -154,6 +155,7 @@ public static class SubscriptionEndpoints
 
             // Ghi nhận hóa đơn tại quầy
             var invoiceId = Guid.NewGuid();
+            var dbMethod = PaymentMethodExtensions.ParseDbValue(request.PaymentMethod).ToDbValue();
             try
             {
                 await db.Database.ExecuteSqlInterpolatedAsync($@"
@@ -161,7 +163,7 @@ public static class SubscriptionEndpoints
                         id, user_id, total_amount, payment_method, payment_status, paid_at, created_at, fulfillment_status
                     )
                     VALUES (
-                        {invoiceId}, {memberId}, {request.Amount}, {request.PaymentMethod}, 'completed', now(), now(), 'completed'
+                        {invoiceId}, {memberId}, {request.Amount}, {dbMethod}, 'completed', now(), now(), 'completed'
                     );
                 ");
             }

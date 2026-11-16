@@ -95,7 +95,7 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
           rawStatus.includes("cancel") ||
           rawStatus.includes("huy") ||
           rawStatus === "rejected";
-        return !isCancelled && !isClassPast(s);
+        return !isCancelled && rawStatus !== "pending" && !isClassPast(s);
       })
       .sort((a, b) => {
         const timeA = getSessionTimes(a).start.getTime();
@@ -113,7 +113,7 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
           rawStatus.includes("cancel") ||
           rawStatus.includes("huy") ||
           rawStatus === "rejected";
-        return isCancelled || isClassPast(s);
+        return (isCancelled || isClassPast(s)) && rawStatus !== "pending";
       })
       .sort((a, b) => {
         const timeA = getSessionTimes(a).start.getTime();
