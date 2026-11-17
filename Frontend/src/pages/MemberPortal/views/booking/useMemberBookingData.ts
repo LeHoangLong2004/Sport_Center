@@ -38,7 +38,8 @@ export function useMemberBookingData() {
 
       const mappedClasses = (Array.isArray(availableClasses) ? availableClasses : []).map((item: any) => {
         const start = parseScheduleTime(item.scheduleTime);
-        const end = new Date(start.getTime() + Number(item.durationMinutes || 60) * 60000);
+        const durationMinutes = Number(item.durationMinutes || 60);
+        const end = new Date(start.getTime() + durationMinutes * 60000);
         const dateStr = [
           start.getFullYear(),
           String(start.getMonth() + 1).padStart(2, "0"),
@@ -59,6 +60,9 @@ export function useMemberBookingData() {
           level: item.level || "Mọi cấp độ",
           startTime: time(start),
           endTime: time(end),
+          startMs: start.getTime(),
+          endMs: end.getTime(),
+          durationMinutes,
           room: item.facilityName || "Studio Thể thao",
           coachId: item.coachId || "",
           coachName,

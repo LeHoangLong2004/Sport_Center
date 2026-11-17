@@ -675,8 +675,8 @@ namespace SmartGym.Api.Endpoints
             {
                 return ("👑 Bảng Hạng Thành Viên tại SportCenter gồm 3 gói đặc quyền:\n" +
                         "• Hạng Cơ bản (Basic): Miễn phí trọn đời, sử dụng tủ đồ tiêu chuẩn trong ca tập, đặt lịch trước 24 giờ, 1 vé mời bạn bè/tháng.\n" +
-                        "• Hạng Plus (149.000đ/tháng): Tự động GIẢM 8% gói lớp / 2% PT 1-1, 3 vé mời bạn bè/tháng, mượn 1 khăn tập miễn phí mỗi buổi, đặt lịch trước 72 giờ.\n" +
-                        "• Hạng Premium VIP (299.000đ/tháng): Tự động GIẢM 15% gói lớp / 5% PT 1-1, MIỄN PHÍ phòng xông hơi Sauna & Jacuzzi đá muối, 5 vé mời bạn bè/tháng, tủ riêng VIP + khăn cao cấp, đặt lịch trước 120 giờ.\n" +
+                        "• Hạng Plus (149.000đ/tháng): Tự động GIẢM 8% khi mua gói môn & ca tập lẻ (2% PT 1-1), 3 vé mời bạn bè/tháng, mượn 1 khăn tập miễn phí mỗi buổi, đặt lịch trước 72 giờ.\n" +
+                        "• Hạng Premium VIP (299.000đ/tháng): Tự động GIẢM 15% khi mua gói môn & ca tập lẻ (5% PT 1-1), MIỄN PHÍ phòng xông hơi Sauna & Jacuzzi đá muối, 5 vé mời bạn bè/tháng, tủ riêng VIP + khăn cao cấp, đặt lịch trước 120 giờ.\n" +
                         "👉 Bạn bấm nút bên dưới để xem chi tiết và nâng cấp hạng VIP nhé!", "packages_membership");
             }
 

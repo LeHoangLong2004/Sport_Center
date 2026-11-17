@@ -184,62 +184,68 @@ export const CurriculumEditorModal: React.FC<CurriculumEditorModalProps> = ({
             </div>
 
             <div className="flex flex-col gap-2.5">
-              {draft.exercises.map((ex, i) => (
-                <div
-                  key={i}
-                  className="p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 flex flex-col sm:flex-row gap-2.5 items-start sm:items-center"
-                >
-                  <div className="flex-1 w-full">
-                    <input
-                      type="text"
-                      placeholder="Tên bài (VD: Squat, Plank...)"
-                      value={ex.name}
-                      onChange={(e) => {
-                        const updated = [...draft.exercises];
-                        updated[i].name = e.target.value;
-                        setDraft({ ...draft, exercises: updated });
-                      }}
-                      className="w-full p-1.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <input
-                      type="text"
-                      placeholder="Hiệp/Lần (3x12)"
-                      value={ex.reps}
-                      onChange={(e) => {
-                        const updated = [...draft.exercises];
-                        updated[i].reps = e.target.value;
-                        setDraft({ ...draft, exercises: updated });
-                      }}
-                      className="w-24 p-1.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Nghỉ (45s)"
-                      value={ex.rest}
-                      onChange={(e) => {
-                        const updated = [...draft.exercises];
-                        updated[i].rest = e.target.value;
-                        setDraft({ ...draft, exercises: updated });
-                      }}
-                      className="w-20 p-1.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const updated = draft.exercises.filter((_, idx) => idx !== i);
-                        setDraft({ ...draft, exercises: updated });
-                      }}
-                      className="p-1.5 text-slate-400 hover:text-rose-500 rounded transition-colors"
-                      title="Xóa bài này"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+              {draft.exercises.length === 0 ? (
+                <div className="p-4 text-center rounded-lg border border-dashed border-slate-200 dark:border-slate-700 text-slate-400 text-xs">
+                  Chưa có bài tập nào. Bấm &quot;+ Thêm bài tập&quot; để bổ sung bài tập vào giáo án.
                 </div>
-              ))}
+              ) : (
+                draft.exercises.map((ex, i) => (
+                  <div
+                    key={i}
+                    className="p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 flex flex-col sm:flex-row gap-2.5 items-start sm:items-center"
+                  >
+                    <div className="flex-1 w-full">
+                      <input
+                        type="text"
+                        placeholder="Tên bài (VD: Squat, Plank...)"
+                        value={ex.name}
+                        onChange={(e) => {
+                          const updated = [...draft.exercises];
+                          updated[i].name = e.target.value;
+                          setDraft({ ...draft, exercises: updated });
+                        }}
+                        className="w-full p-1.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <input
+                        type="text"
+                        placeholder="Hiệp/Lần (3x12)"
+                        value={ex.reps}
+                        onChange={(e) => {
+                          const updated = [...draft.exercises];
+                          updated[i].reps = e.target.value;
+                          setDraft({ ...draft, exercises: updated });
+                        }}
+                        className="w-24 p-1.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Nghỉ (45s)"
+                        value={ex.rest}
+                        onChange={(e) => {
+                          const updated = [...draft.exercises];
+                          updated[i].rest = e.target.value;
+                          setDraft({ ...draft, exercises: updated });
+                        }}
+                        className="w-20 p-1.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = draft.exercises.filter((_, idx) => idx !== i);
+                          setDraft({ ...draft, exercises: updated });
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-rose-500 rounded transition-colors"
+                        title="Xóa bài này"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

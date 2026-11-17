@@ -8,6 +8,7 @@ interface EarlyBookingModalProps {
     opensAtDateStr: string;
     advanceHours: number;
     tierName: string;
+    isMaxTier?: boolean;
   } | null;
   onClose: () => void;
   onUpgrade?: () => void;
@@ -20,6 +21,9 @@ export const EarlyBookingModal: React.FC<EarlyBookingModalProps> = ({
 }) => {
   if (!target) return null;
   const { item, opensAtDateStr, advanceHours, tierName } = target;
+  const isMaxTier =
+    target.isMaxTier ??
+    (advanceHours >= 120 || (tierName || "").toLowerCase().includes("premium"));
 
   const advanceText =
     advanceHours >= 24 ? `${Math.round(advanceHours / 24)} ngày (${advanceHours} giờ)` : `${advanceHours} giờ`;
@@ -84,16 +88,28 @@ export const EarlyBookingModal: React.FC<EarlyBookingModalProps> = ({
             </div>
           </div>
 
-          {/* Upsell Banner (Call to action) */}
-          <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-teal-50 to-white p-4 dark:border-emerald-800/60 dark:from-emerald-950/40 dark:to-slate-900 space-y-2">
-            <div className="flex items-center gap-2 text-xs font-bold text-emerald-800 dark:text-emerald-300">
-              <Sparkles className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-              <span>Muốn giữ chỗ sớm ngay hôm nay?</span>
+          {/* Upsell Banner or VIP Privilege Notice */}
+          {isMaxTier ? (
+            <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50/80 via-yellow-50/40 to-white p-4 dark:border-amber-800/60 dark:from-amber-950/30 dark:to-slate-900 space-y-2">
+              <div className="flex items-center gap-2 text-xs font-bold text-amber-800 dark:text-amber-300">
+                <Sparkles className="w-4 h-4 shrink-0 text-amber-500" />
+                <span>Đặc quyền mở đặt sớm nhất hệ thống (VIP)</span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-300 font-medium">
+                Bạn đang sở hữu hạng thành viên cao nhất với đặc quyền đặt trước <strong>5 ngày</strong> (sớm hơn các hạng khác từ 2 – 4 ngày). Lớp học này sẽ mở ưu tiên cho bạn đầu tiên vào đúng thời điểm trên.
+              </p>
             </div>
-            <p className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-300 font-medium">
-              Thành viên <strong>Plus (mở trước 3 ngày)</strong> và <strong>Premium (mở trước 5 ngày)</strong> đang được ưu tiên đặt giữ chỗ lớp này ngay lúc này.
-            </p>
-          </div>
+          ) : (
+            <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-teal-50 to-white p-4 dark:border-emerald-800/60 dark:from-emerald-950/40 dark:to-slate-900 space-y-2">
+              <div className="flex items-center gap-2 text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                <Sparkles className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                <span>Muốn giữ chỗ sớm ngay hôm nay?</span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-300 font-medium">
+                Thành viên <strong>Plus (mở trước 3 ngày)</strong> và <strong>Premium (mở trước 5 ngày)</strong> đang được ưu tiên đặt giữ chỗ lớp này ngay lúc này.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Footer actions */}
@@ -101,11 +117,15 @@ export const EarlyBookingModal: React.FC<EarlyBookingModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-white dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+            className={`rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold cursor-pointer transition-colors ${
+              isMaxTier
+                ? "bg-slate-900 text-white hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 border-transparent font-bold"
+                : "text-slate-700 hover:bg-white dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+            }`}
           >
             Đã hiểu
           </button>
-          {onUpgrade && (
+          {!isMaxTier && onUpgrade && (
             <button
               type="button"
               onClick={() => {

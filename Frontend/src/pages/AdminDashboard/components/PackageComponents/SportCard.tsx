@@ -31,6 +31,25 @@ export function SportCard({
         ? "bg-blue-50 text-blue-700 border border-blue-200/70"
         : "bg-slate-100 text-slate-600"
 
+  const rawBenefits = item.benefits || []
+  const hasCorePerk = rawBenefits.some((b) => {
+    const l = b.toLowerCase()
+    return (
+      l.includes("miễn phí") &&
+      (l.includes("đặt") || l.includes("vào sân") || l.includes("0đ") || l.includes("ca tập") || l.includes("lớp"))
+    )
+  })
+  const displayBenefits = hasCorePerk
+    ? rawBenefits
+    : [
+        item.format === "coach"
+          ? `Miễn phí đặt lịch ca tập kèm riêng theo số buổi (${item.sessionsPerMonth || 8} buổi/tháng)`
+          : item.format === "group"
+          ? `Miễn phí đặt chỗ lớp nhóm theo số buổi (${item.sessionsPerMonth || 12} buổi/tháng)`
+          : `Miễn phí 100% phí đặt ca / vào sân môn ${item.sport || "tập"} (0đ/buổi)`,
+        ...rawBenefits,
+      ]
+
   return (
     <article className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
@@ -80,13 +99,15 @@ export function SportCard({
         </p>
       )}
       <div className="mt-4 flex-1 space-y-1.5">
-        {item.benefits.map((benefit, index) => (
+        {displayBenefits.map((benefit, index) => (
           <p
             key={`${benefit}-${index}`}
             className="flex gap-2 text-sm text-slate-700"
           >
             <Check size={15} className="mt-0.5 shrink-0 text-emerald-600" />
-            {benefit}
+            <span className={index === 0 && !hasCorePerk ? "font-bold text-slate-900" : ""}>
+              {benefit}
+            </span>
           </p>
         ))}
       </div>

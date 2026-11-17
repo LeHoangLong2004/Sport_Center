@@ -15,6 +15,7 @@ import InvoicesTab from "./payments/InvoicesTab";
 import ReportPaymentModal from "./payments/ReportPaymentModal";
 import ReceiptModal from "./payments/ReceiptModal";
 import PendingTicketModal from "./payments/PendingTicketModal";
+import WalletReceiptModal from "./payments/WalletReceiptModal";
 
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
@@ -29,6 +30,7 @@ export default function MemberPayments({ onNavigate }: Props) {
   const [loading, setLoading] = useState(true);
   const [activePaymentModal, setActivePaymentModal] = useState<MemberPaymentItem | null>(null);
   const [receiptModal, setReceiptModal] = useState<MemberPaymentItem | null>(null);
+  const [walletReceiptModal, setWalletReceiptModal] = useState<WalletTransaction | null>(null);
   const [refCode, setRefCode] = useState("");
   const [bankMethod, setBankMethod] = useState<"Chuyển khoản" | "Tiền mặt tại quầy">("Chuyển khoản");
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -206,6 +208,7 @@ export default function MemberPayments({ onNavigate }: Props) {
           transactions={transactions}
           onOpenTopUp={() => setShowWalletModal(true)}
           onOpenPendingTicket={(tx) => setPendingTicketModal(tx)}
+          onOpenReceipt={(tx) => setWalletReceiptModal(tx)}
         />
       ) : (
         <InvoicesTab
@@ -235,6 +238,12 @@ export default function MemberPayments({ onNavigate }: Props) {
         receiptModal={receiptModal}
         userName={userName}
         onClose={() => setReceiptModal(null)}
+      />
+
+      <WalletReceiptModal
+        transaction={walletReceiptModal}
+        userName={userName}
+        onClose={() => setWalletReceiptModal(null)}
       />
 
       <PendingTicketModal

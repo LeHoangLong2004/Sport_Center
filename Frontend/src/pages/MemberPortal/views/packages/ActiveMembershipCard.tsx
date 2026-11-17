@@ -117,7 +117,7 @@ export function ActiveMembershipCard({
         <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs flex flex-col justify-between">
           <div className="flex items-center gap-2 text-slate-400">
             <Flame className="w-4 h-4 text-slate-400" />
-            <span className="text-[11px] font-semibold">Ưu đãi mua môn</span>
+            <span className="text-[11px] font-semibold">Chiết khấu dịch vụ</span>
           </div>
           <div className="mt-2 text-sm font-black text-white">
             {membershipStatus.tier === "premium" ? (
@@ -128,7 +128,13 @@ export function ActiveMembershipCard({
               <span className="text-slate-400">Giá gốc (0%)</span>
             )}
           </div>
-          <span className="text-[10px] text-slate-400 mt-0.5">Lớp nhóm & PT 1-1</span>
+          <span className="text-[10px] text-slate-400 mt-0.5">
+            {membershipStatus.tier === "premium"
+              ? "Gói môn & Đặt lịch lẻ (5% PT)"
+              : membershipStatus.tier === "plus"
+              ? "Gói môn & Đặt lịch lẻ (2% PT)"
+              : "Không áp dụng giảm giá"}
+          </span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs flex flex-col justify-between">

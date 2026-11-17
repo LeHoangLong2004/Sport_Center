@@ -9,6 +9,7 @@ import { GroupClassesTab } from "./booking/GroupClassesTab";
 import { PtSlotsTab } from "./booking/PtSlotsTab";
 import { MyClassesTab } from "./booking/MyClassesTab";
 import { BookingModals } from "./booking/BookingModals";
+import { parseScheduleTime } from "../../../utils/scheduleTimeHelper";
 
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
@@ -116,9 +117,13 @@ export default function MemberBooking({ onNavigate }: Props) {
   const filteredGroupClasses = useMemo(() => {
     const nowTime = Date.now();
     return groupClasses.filter((c) => {
-      // Đảm bảo chỉ hiển thị lớp học diễn ra trong tương lai so với thời gian thực tế
-      const classStart = c.scheduleTime ? new Date(c.scheduleTime).getTime() : 0;
-      if (classStart && classStart <= nowTime) return false;
+      // Ẩn hoàn toàn các lớp học đã kết thúc (thời gian kết thúc <= thời gian hiện tại)
+      const endMs =
+        c.endMs ??
+        (c.scheduleTime
+          ? parseScheduleTime(c.scheduleTime).getTime() + Number(c.durationMinutes || 60) * 60000
+          : 0);
+      if (endMs > 0 && endMs <= nowTime) return false;
 
       const matchDate = !selectedDate || c.dateStr === selectedDate;
       const matchSport = selectedSport === "all" || c.sport.toLowerCase() === selectedSport.toLowerCase();
