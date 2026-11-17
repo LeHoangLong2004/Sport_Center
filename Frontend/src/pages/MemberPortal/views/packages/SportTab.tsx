@@ -134,6 +134,38 @@ export default function SportTab({
     };
   };
 
+  const getDisplayBenefits = (pkg: CatalogPackage) => {
+    const sportName = pkg.sport || "môn tập";
+    const raw = pkg.benefits || [];
+    const hasCorePerk = raw.some((b) => {
+      const lower = b.toLowerCase();
+      return (
+        lower.includes("miễn phí") &&
+        (lower.includes("đặt") ||
+          lower.includes("vào sân") ||
+          lower.includes("0đ") ||
+          lower.includes("ca tập") ||
+          lower.includes("lớp"))
+      );
+    });
+
+    if (hasCorePerk) {
+      return raw.map((text, idx) => ({ text, isCore: idx === 0 }));
+    }
+
+    const coreText =
+      pkg.format === "coach"
+        ? `Miễn phí đặt lịch ca tập kèm riêng theo số buổi (${pkg.sessionsPerMonth || 8} buổi/tháng)`
+        : pkg.format === "group"
+        ? `Miễn phí đặt chỗ lớp nhóm theo số buổi (${pkg.sessionsPerMonth || 12} buổi/tháng)`
+        : `Miễn phí 100% phí đặt ca / vào sân môn ${sportName} (0đ/buổi)`;
+
+    return [
+      { text: coreText, isCore: true },
+      ...raw.map((text) => ({ text, isCore: false })),
+    ];
+  };
+
   return (
     <div className="space-y-6">
       {/* SECTION 2A: MY ACTIVE SPORT PACKAGES */}
@@ -383,10 +415,12 @@ export default function SportTab({
                   </div>
 
                   <ul className="mt-4 space-y-2 text-xs text-slate-600 dark:text-slate-300">
-                    {pkg.benefits.map((b, idx) => (
+                    {getDisplayBenefits(pkg).map((b, idx) => (
                       <li key={idx} className="flex items-start gap-2">
                         <CheckCircle2 className={`w-3.5 h-3.5 ${theme.checkIcon} shrink-0 mt-0.5`} />
-                        <span>{b}</span>
+                        <span className={b.isCore ? "font-bold text-slate-900 dark:text-white" : ""}>
+                          {b.text}
+                        </span>
                       </li>
                     ))}
                   </ul>

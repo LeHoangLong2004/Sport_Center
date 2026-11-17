@@ -98,8 +98,40 @@ export function PackagesWorkspace() {
 
     try {
       setSaving(true)
+
+      const finalBenefits = [...draft.benefits.map((b) => b.trim()).filter(Boolean)]
+      if (draft.category === "sport") {
+        const hasCore = finalBenefits.some((b) => {
+          const l = b.toLowerCase()
+          return (
+            l.includes("miễn phí") &&
+            (l.includes("đặt") ||
+              l.includes("vào sân") ||
+              l.includes("0đ") ||
+              l.includes("ca tập") ||
+              l.includes("lớp"))
+          )
+        })
+        if (!hasCore) {
+          const coreText =
+            draft.format === "coach"
+              ? `Miễn phí đặt lịch ca tập kèm riêng theo số buổi (${draft.sessionsPerMonth || 8} buổi/tháng)`
+              : draft.format === "group"
+                ? `Miễn phí đặt chỗ lớp nhóm theo số buổi (${draft.sessionsPerMonth || 12} buổi/tháng)`
+                : `Miễn phí 100% phí đặt ca / vào sân môn ${draft.sport?.trim() || "tập"} (0đ/buổi)`
+          finalBenefits.unshift(coreText)
+        }
+      }
+
       await PackageAPI.savePackage(
-        { ...draft, name: draft.name.trim(), description: draft.description.trim(), sport: draft.sport?.trim(), area: (draft.area || "").trim() },
+        {
+          ...draft,
+          name: draft.name.trim(),
+          description: draft.description.trim(),
+          sport: draft.sport?.trim(),
+          area: (draft.area || "").trim(),
+          benefits: finalBenefits,
+        },
         !catalog.some((item) => item.id === draft.id)
       )
       setDraft(null)

@@ -26,8 +26,7 @@ export function makeDraft(sports: SportOption[] = []): MockCurriculum {
     updatedAt: new Date().toISOString().split("T")[0],
     description: "",
     exercises: [
-      { name: "Khởi động toàn thân", reps: "5 phút", rest: "30s", note: "Xoay khớp cổ tay, chân" },
-      { name: "", reps: "", rest: "", note: "" },
+      { ...EMPTY_EXERCISE },
     ],
     assignedTo: [],
   };

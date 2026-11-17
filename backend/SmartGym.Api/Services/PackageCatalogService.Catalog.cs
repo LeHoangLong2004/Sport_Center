@@ -84,6 +84,24 @@ public sealed partial class PackageCatalogService
         ValidatePackage(id, request, create);
         await EnsureDefaultsAsync(cancellationToken);
 
+        if (request.Category == "sport")
+        {
+            var hasCore = request.Benefits.Any(b =>
+            {
+                var l = b.ToLowerInvariant();
+                return l.Contains("miễn phí") && (l.Contains("đặt") || l.Contains("vào sân") || l.Contains("0đ") || l.Contains("ca tập") || l.Contains("lớp"));
+            });
+            if (!hasCore)
+            {
+                var core = request.Format == "coach"
+                    ? $"Miễn phí đặt lịch {request.SessionsPerMonth ?? 8} buổi Coach kèm riêng mỗi tháng (0đ)"
+                    : request.Format == "group"
+                    ? $"Miễn phí đặt chỗ {request.SessionsPerMonth ?? 12} buổi học nhóm mỗi tháng (0đ)"
+                    : $"Miễn phí 100% phí đặt ca / vào sân môn {request.Sport ?? "tập"} (0đ/buổi)";
+                request.Benefits = [core, ..request.Benefits];
+            }
+        }
+
         var package = await db
             .Packages
             .FirstOrDefaultAsync(item => item.Id == id, cancellationToken);

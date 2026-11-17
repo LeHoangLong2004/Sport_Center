@@ -8,6 +8,7 @@ import {
   ArrowDownLeft,
   ChevronLeft,
   ChevronRight,
+  Receipt,
 } from "lucide-react";
 import type { WalletTransaction } from "../../services/walletService";
 
@@ -16,6 +17,7 @@ interface Props {
   transactions: WalletTransaction[];
   onOpenTopUp: () => void;
   onOpenPendingTicket: (tx: WalletTransaction) => void;
+  onOpenReceipt?: (tx: WalletTransaction) => void;
 }
 
 export default function WalletTransactionsTab({
@@ -23,6 +25,7 @@ export default function WalletTransactionsTab({
   transactions,
   onOpenTopUp,
   onOpenPendingTicket,
+  onOpenReceipt,
 }: Props) {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
@@ -82,7 +85,7 @@ export default function WalletTransactionsTab({
                 <th className="p-4">Nội dung</th>
                 <th className="p-4">Thời gian</th>
                 <th className="p-4">Trạng thái</th>
-                <th className="p-4 text-right">Thao tác</th>
+                <th className="p-4 text-left">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
@@ -149,7 +152,7 @@ export default function WalletTransactionsTab({
                         </span>
                       )}
                     </td>
-                    <td className="p-4 text-right">
+                    <td className="p-4 text-left">
                       {isPending ? (
                         <button
                           type="button"
@@ -159,7 +162,14 @@ export default function WalletTransactionsTab({
                           Xem phiếu
                         </button>
                       ) : (
-                        <span className="text-slate-400 text-[11px]">—</span>
+                        <button
+                          type="button"
+                          onClick={() => onOpenReceipt?.(tx)}
+                          className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs inline-flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Receipt className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Xem</span>
+                        </button>
                       )}
                     </td>
                   </tr>

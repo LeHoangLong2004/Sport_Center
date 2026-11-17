@@ -50,7 +50,7 @@ public sealed partial class PackageCatalogService(SmartGymDbContext db)
             Prices = Prices(149000, 399000, 749000, 1399000),
             Benefits =
             [
-                "Giảm 8% gói tự tập và lớp nhóm",
+                "Giảm 8% khi mua gói môn & các buổi đặt lịch lẻ",
                 "Giảm 2% gói Coach 1–1",
                 "Đặt lớp trước 72 giờ (3 ngày)",
                 "3 vé mời bạn bè mỗi tháng (3 Day-Pass/tháng)",
@@ -78,7 +78,7 @@ public sealed partial class PackageCatalogService(SmartGymDbContext db)
             Prices = Prices(299000, 799000, 1499000, 2799000),
             Benefits =
             [
-                "Giảm 15% gói tự tập và lớp nhóm",
+                "Giảm 15% khi mua gói môn & các buổi đặt lịch lẻ",
                 "Giảm 5% gói Coach 1–1",
                 "Đặt lớp trước 120 giờ (5 ngày)",
                 "5 vé mời bạn bè mỗi tháng (5 Day-Pass/tháng)",
@@ -104,7 +104,7 @@ public sealed partial class PackageCatalogService(SmartGymDbContext db)
             Description = "Tập luyện linh hoạt trong khu Gym với đầy đủ máy móc tạ khối và Cardio.",
             IsActive = true,
             Prices = Prices(500000, 1350000, 2550000, 4800000),
-            Benefits = ["Sử dụng toàn bộ thiết bị khu Gym", "Tủ đồ cá nhân và phòng tắm nóng lạnh trong buổi tập"],
+            Benefits = ["Miễn phí 100% phí đặt ca / vào phòng Gym (0đ)", "Sử dụng toàn bộ thiết bị khu Gym", "Tủ đồ cá nhân và phòng tắm nóng lạnh trong buổi tập"],
             Terms =
             [
                 "Chỉ sử dụng khu Gym trong khung giờ mở cửa.",
@@ -124,7 +124,7 @@ public sealed partial class PackageCatalogService(SmartGymDbContext db)
             Description = "Bơi lội thoải mái với hệ thống gia nhiệt nước ấm và xử lý muối khoáng.",
             IsActive = true,
             Prices = Prices(700000, 1890000, 3570000, 6720000),
-            Benefits = ["Sử dụng làn bơi và phao bơi hỗ trợ", "Nước ấm 4 mùa và phòng tắm tráng nước nóng"],
+            Benefits = ["Miễn phí 100% phí đặt vé / vào Bể bơi (0đ)", "Sử dụng làn bơi và phao bơi hỗ trợ", "Nước ấm 4 mùa và phòng tắm tráng nước nóng"],
             Terms =
             [
                 "Chỉ sử dụng khu Bể bơi trong khung giờ mở cửa.",
@@ -146,7 +146,7 @@ public sealed partial class PackageCatalogService(SmartGymDbContext db)
             Prices = Prices(700000, 1890000, 3570000, 6720000),
             Benefits =
             [
-                "12 buổi tập mỗi tháng",
+                "Miễn phí đặt chỗ 12 buổi học Yoga nhóm mỗi tháng (0đ)",
                 "Thời lượng 60 phút mỗi buổi",
                 "Thảm tập, gạch xốp và dụng cụ hỗ trợ miễn phí",
                 "Đã bao gồm quyền sử dụng Studio Yoga trong ca tập",
@@ -174,7 +174,7 @@ public sealed partial class PackageCatalogService(SmartGymDbContext db)
             Prices = Prices(2400000, 6480000, 12240000, 23040000),
             Benefits =
             [
-                "8 buổi Coach kèm riêng mỗi tháng",
+                "Miễn phí đặt lịch 8 buổi Coach kèm riêng mỗi tháng (0đ)",
                 "60 phút mỗi buổi",
                 "Đã bao gồm quyền sử dụng Combat Zone & găng tập",
                 "Chỉnh sửa kỹ thuật đấm, né và rèn thể lực chuyên sâu",
@@ -202,7 +202,7 @@ public sealed partial class PackageCatalogService(SmartGymDbContext db)
             Prices = Prices(3000000, 8100000, 15300000, 28800000),
             Benefits =
             [
-                "12 buổi PT kèm riêng mỗi tháng",
+                "Miễn phí đặt lịch 12 buổi PT kèm riêng mỗi tháng (0đ)",
                 "Thiết kế giáo án tập luyện và thực đơn dinh dưỡng riêng",
                 "Đã bao gồm quyền sử dụng khu Gym",
                 "Theo dõi chỉ số InBody và điều chỉnh form chuẩn xác",
