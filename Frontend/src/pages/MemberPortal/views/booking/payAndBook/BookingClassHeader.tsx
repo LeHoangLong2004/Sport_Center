@@ -1,7 +1,7 @@
 import React from "react";
 import { CoachAvatar } from "../../../utils/coachAvatar";
 import { type MembershipStatus } from "../../../../../services/packageApi";
-import { Sparkles } from "lucide-react";
+import { Sparkles, CheckCircle2 } from "lucide-react";
 
 interface Props {
   classToBook: any;
@@ -10,6 +10,7 @@ interface Props {
   discountAmount: number;
   finalPrice: number;
   membership: MembershipStatus | null;
+  coveringPackageName?: string | null;
 }
 
 export const BookingClassHeader: React.FC<Props> = ({
@@ -19,6 +20,7 @@ export const BookingClassHeader: React.FC<Props> = ({
   discountAmount,
   finalPrice,
   membership,
+  coveringPackageName,
 }) => {
   const isPremium = membership?.tier === "premium";
   const isPlus = membership?.tier === "plus";
@@ -47,7 +49,7 @@ export const BookingClassHeader: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* BẢNG CHI TIẾT THANH TOÁN KÈM ƯU ĐÃI THÀNH VIÊN */}
+      {/* BẢNG CHI TIẾT THANH TOÁN KÈM ƯU ĐÃI THÀNH VIÊN HOẶC GÓI MÔN */}
       <div className="p-4 rounded-2xl bg-teal-50/50 dark:bg-slate-800/80 border border-teal-200 dark:border-slate-700 space-y-2.5">
         <h4 className="font-extrabold text-xs uppercase tracking-wider text-teal-800 dark:text-teal-300">
           Chi tiết hóa đơn đăng ký
@@ -68,6 +70,16 @@ export const BookingClassHeader: React.FC<Props> = ({
             </span>
           )}
         </div>
+
+        {coveringPackageName && (
+          <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
+            <span>Gói môn tập áp dụng:</span>
+            <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5" /> {coveringPackageName} (-100%)
+            </span>
+          </div>
+        )}
+
         <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
           <span>Giá gốc niêm yết buổi học:</span>
           <span className="font-bold text-slate-800 dark:text-slate-200">
@@ -75,8 +87,12 @@ export const BookingClassHeader: React.FC<Props> = ({
           </span>
         </div>
         <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
-          <span>Ưu đãi thành viên:</span>
-          {discountAmount > 0 ? (
+          <span>Ưu đãi áp dụng:</span>
+          {coveringPackageName ? (
+            <span className="font-bold text-emerald-600 dark:text-emerald-400">
+              - {originalPrice.toLocaleString("vi-VN")} đ (Miễn phí 100% theo gói)
+            </span>
+          ) : discountAmount > 0 ? (
             <span className="font-bold text-emerald-600 dark:text-emerald-400">
               - {discountAmount.toLocaleString("vi-VN")} đ ({isPremium ? `Giảm ${discountPct}% Hạng Premium` : `Giảm ${discountPct}% Hạng Plus`})
             </span>

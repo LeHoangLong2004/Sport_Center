@@ -135,23 +135,24 @@ export function useMemberBookingActions({
     setIsProcessingPayment(true);
     setPaymentError(null);
 
-    const paidAmount = customAmount ?? classToBook.price ?? 150000;
+    const paidAmount = customAmount ?? (classToBook.price ?? 150000);
+    const effectivePaymentMethod = paidAmount === 0 ? "package" : paymentMethod;
 
     try {
       const response = await MemberAPI.payAndBookClass(
         classToBook.id,
-        paymentMethod,
+        effectivePaymentMethod,
         paidAmount
       );
 
-      if (paymentMethod === "counter") addCounterPendingId(classToBook.id);
+      if (effectivePaymentMethod === "counter") addCounterPendingId(classToBook.id);
 
       setBookingSuccessInfo({
         classItem: classToBook,
         paidAmount,
-        paymentMethod,
+        paymentMethod: effectivePaymentMethod,
         invoiceId: response?.invoiceId || `INV-${Date.now().toString().slice(-6)}`,
-        bookingStatus: paymentMethod === "counter" ? "pending" : "confirmed",
+        bookingStatus: effectivePaymentMethod === "counter" ? "pending" : "confirmed",
       });
 
       // Bắn sự kiện cập nhật ví khi thanh toán thành công
