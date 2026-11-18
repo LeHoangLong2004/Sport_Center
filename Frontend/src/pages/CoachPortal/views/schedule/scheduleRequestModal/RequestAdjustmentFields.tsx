@@ -160,12 +160,18 @@ export const RequestAdjustmentFields: React.FC<RequestAdjustmentFieldsProps> = (
             disabled={loadingCoaches}
             className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer"
           >
-            <option value="">-- Để ban quản lý phân công HLV phù hợp --</option>
-            {filteredCoaches.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.fullName} {c.specialty ? `(${c.specialty})` : ""}
+            <option value="">-- Chưa chỉ định --</option>
+            {filteredCoaches.length === 0 ? (
+              <option value="" disabled>
+                -- Không có HLV nào khác rảnh vào khung giờ này --
               </option>
-            ))}
+            ) : (
+              filteredCoaches.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.fullName} {c.specialty ? `(${c.specialty})` : ""}
+                </option>
+              ))
+            )}
           </select>
         </div>
       )}

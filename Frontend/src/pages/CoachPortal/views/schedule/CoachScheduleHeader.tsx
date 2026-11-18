@@ -1,5 +1,5 @@
 import React from "react";
-import { Calendar, Clock, Bell } from "lucide-react";
+import { Calendar, Clock, Bell, Plus } from "lucide-react";
 import type { MainTab } from "./types";
 
 interface Props {
@@ -17,17 +17,30 @@ export function CoachScheduleHeader({
   setActiveTab,
   pendingInvitationsCount,
   requestsCount,
+  onOpenSlotModal,
 }: Props) {
   return (
     <div className="flex flex-col gap-4">
-      {/* Top Title */}
-      <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-          Lịch dạy & Ca làm việc
-        </h1>
-        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-          Theo dõi ca dạy lớp nhóm, lịch kèm PT 1–1 và quản lý điều chỉnh ca làm việc.
-        </p>
+      {/* Top Title & Action */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+            Lịch dạy & Ca làm việc
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+            Theo dõi ca dạy lớp nhóm, lịch kèm PT 1–1 và quản lý điều chỉnh ca làm việc.
+          </p>
+        </div>
+        {onOpenSlotModal && (
+          <button
+            type="button"
+            onClick={onOpenSlotModal}
+            className="self-start sm:self-center inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 rounded-xl shadow-sm transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Đăng ca rảnh 1–1</span>
+          </button>
+        )}
       </div>
 
       {/* Segmented Subtabs */}

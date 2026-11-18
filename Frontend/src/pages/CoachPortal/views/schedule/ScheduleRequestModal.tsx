@@ -11,6 +11,7 @@ import {
   parseSessionStartDateTime,
   isSessionInFuture,
   checkScheduleConflict,
+  isCoachQualifiedForSport,
 } from "./scheduleRequestModal/scheduleConflictHelper";
 
 interface Props {
@@ -56,6 +57,7 @@ export default function ScheduleRequestModal({
   const [submitting, setSubmitting] = useState(false);
 
   const [availableCoaches, setAvailableCoaches] = useState<CoachOption[]>([]);
+  const [allClasses, setAllClasses] = useState<any[]>([]);
   const [loadingCoaches, setLoadingCoaches] = useState(false);
 
   // Chỉ lấy những ca dạy trong tương lai (chưa bắt đầu) và sắp xếp theo thời gian sớm nhất
@@ -81,13 +83,19 @@ export default function ScheduleRequestModal({
     }
   }, [initialSessionId, upcomingSessions, selectedSessionId]);
 
-  // Load coaches from database when modal is open
+  // Load coaches & schedule from database to check real-time availability
   useEffect(() => {
     if (!isOpen) return;
     setLoadingCoaches(true);
-    CoachAPI.getCoaches()
-      .then((data) => setAvailableCoaches(data))
-      .catch((err) => console.error("Lỗi nạp danh sách huấn luyện viên:", err))
+    Promise.all([
+      CoachAPI.getCoaches().catch(() => []),
+      fetch("/api/classes/available").then((res) => (res.ok ? res.json() : [])).catch(() => []),
+    ])
+      .then(([coachesData, classesData]) => {
+        setAvailableCoaches(Array.isArray(coachesData) ? coachesData : []);
+        setAllClasses(Array.isArray(classesData) ? classesData : []);
+      })
+      .catch((err) => console.error("Lỗi nạp dữ liệu kiểm tra HLV rảnh:", err))
       .finally(() => setLoadingCoaches(false));
   }, [isOpen]);
 
@@ -104,7 +112,7 @@ export default function ScheduleRequestModal({
     return checkScheduleConflict(sessions, selectedSessionId, newDate, newTime);
   }, [requestType, sessions, selectedSessionId, newDate, newTime]);
 
-  // Filter out the current coach
+  // Tự động lọc HLV: Chỉ hiển thị những HLV KHÔNG bị trùng lịch vào đúng khung giờ của ca dạy này
   const filteredCoaches = useMemo(() => {
     const currentCoachName = currentSession?.coachName?.toLowerCase().trim();
     let currentUserName = "";
@@ -116,13 +124,56 @@ export default function ScheduleRequestModal({
       }
     } catch {}
 
-    return availableCoaches.filter((c) => {
+    // 1. Loại bỏ bản thân HLV hiện tại & lọc theo đúng bộ môn của ca dạy
+    const otherCoaches = availableCoaches.filter((c) => {
       const name = c.fullName?.toLowerCase().trim();
       if (currentCoachName && name === currentCoachName) return false;
       if (currentUserName && name === currentUserName) return false;
-      return true;
+      return isCoachQualifiedForSport(c.specialty, currentSession?.sport, currentSession?.className);
     });
-  }, [availableCoaches, currentSession]);
+
+    if (!currentSession || !currentSession.date || !currentSession.startTime) {
+      return otherCoaches;
+    }
+
+    // 2. Tính toán khung giờ ca dạy cần thay
+    const sessionDate = currentSession.date.slice(0, 10);
+    const startParts = currentSession.startTime.split(":").map(Number);
+    const endParts = (currentSession.endTime || "").split(":").map(Number);
+    const sessionStartMin = startParts[0] * 60 + (startParts[1] || 0);
+    const sessionEndMin = endParts.length >= 2 ? endParts[0] * 60 + endParts[1] : sessionStartMin + 60;
+
+    // 3. Chỉ giữ lại những HLV rảnh vào khung giờ này (loại bỏ HLV đang bận lớp khác)
+    return otherCoaches.filter((coach) => {
+      const coachName = (coach.fullName || "").toLowerCase().trim();
+
+      const isBusy = allClasses.some((cls: any) => {
+        if (cls.status === false || cls.isCancelled === true) return false;
+        if (cls.id === currentSession.id || cls.id === currentSession.classId) return false;
+
+        const matchCoach =
+          (cls.coachId && cls.coachId === coach.id) ||
+          (cls.coachName && cls.coachName.toLowerCase().trim() === coachName);
+        if (!matchCoach) return false;
+
+        if (!cls.scheduleTime) return false;
+        const clsDt = new Date(cls.scheduleTime);
+        if (isNaN(clsDt.getTime())) return false;
+
+        const clsDateStr = clsDt.toISOString().slice(0, 10);
+        if (clsDateStr !== sessionDate) return false;
+
+        const clsStartMin = clsDt.getHours() * 60 + clsDt.getMinutes();
+        const clsDur = Number(cls.durationMinutes) || 60;
+        const clsEndMin = clsStartMin + clsDur;
+
+        // Xung đột nếu 2 khoảng thời gian giao nhau
+        return sessionStartMin < clsEndMin && sessionEndMin > clsStartMin;
+      });
+
+      return !isBusy;
+    });
+  }, [availableCoaches, currentSession, allClasses]);
 
   if (!isOpen) return null;
 

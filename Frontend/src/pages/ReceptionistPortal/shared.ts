@@ -2,7 +2,7 @@ import { useState } from "react"
 
 export const A = "/assets"
 
-export type Page = "checkin" | "register" | "classes" | "schedule" | "pos" | "orders" | "counter-payments" | "lookup" | "detail" | "profile"
+export type Page = "checkin" | "register" | "classes" | "schedule" | "pos" | "orders" | "counter-payments" | "lookup" | "detail" | "profile" | "support"
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
@@ -15,6 +15,7 @@ export const navItems: { id: Page; label: string; icon: string }[] = [
   { id: "pos", label: "Bán hàng", icon: `${A}/d1f41.svg` },
   { id: "orders", label: "Đơn hàng Member", icon: `${A}/d1f41.svg` },
   { id: "lookup", label: "Tra cứu thông tin", icon: `${A}/5031c.svg` },
+  { id: "support", label: "Tiếp nhận hỗ trợ", icon: `${A}/5031c.svg` },
 ]
 
 export const avatarByPage: Record<Page, string> = {
@@ -28,6 +29,7 @@ export const avatarByPage: Record<Page, string> = {
   lookup: `${A}/8a918.png`,
   detail: `${A}/8a918.png`,
   profile: `${A}/8a918.png`,
+  support: `${A}/8a918.png`,
 }
 
 // ─── Main ReceptionistPortal ──────────────────────────────────────────────────
@@ -43,4 +45,5 @@ export const breadcrumbs: Record<Page, { bc: string; title: string; shift?: stri
   lookup: { bc: "Lễ tân / Danh sách hệ thống", title: "Tra cứu thông tin thành viên", shift: "Ca làm việc" },
   detail: { bc: "Lễ tân / Tra cứu thành viên / Chi tiết", title: "Chi tiết thành viên", shift: "Ca làm việc" },
   profile: { bc: "Lễ tân / Hồ sơ cá nhân", title: "Hồ sơ Lễ tân", shift: "Ca làm việc" },
+  support: { bc: "Lễ tân / CSKH & Hỗ trợ", title: "Tiếp nhận & Xử lý yêu cầu hội viên", shift: "Ca làm việc" },
 }

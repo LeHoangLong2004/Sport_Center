@@ -93,7 +93,15 @@ export function Classes({
           const dayNames = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
 
           const mapped = data.map((d: any, i: number) => {
-            const date = new Date(d.scheduleTime);
+            const rawTime = d.scheduleTime;
+            const normalizedTime =
+              typeof rawTime === "string" &&
+              rawTime.includes("T") &&
+              !rawTime.endsWith("Z") &&
+              !/[+-]\d{2}:\d{2}$/.test(rawTime)
+                ? rawTime + "Z"
+                : rawTime;
+            const date = new Date(normalizedTime);
             const day = dayNames[date.getDay()];
             const yyyy = date.getFullYear();
             const MM = String(date.getMonth() + 1).padStart(2, '0');

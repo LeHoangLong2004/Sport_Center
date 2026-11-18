@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using SmartGym.Application.Common;
+using SmartGym.Domain.Entities;
 
 namespace SmartGym.Application.Services;
 
@@ -35,8 +37,77 @@ public sealed partial class ClassService
             return (false, "Tài khoản hội viên đang bị tạm khóa hoặc ngưng hoạt động.");
         }
 
-        // 3. Lấy danh sách subscription của User và kiểm tra còn hạn tại thời điểm diễn ra lớp học
-        var userSubs = await _subscriptionRepository.GetByUserIdAsync(userId);
+        // Chuẩn hóa thời gian lớp học về UTC thực tế:
+        var classStartTimeUtc = targetClass.ScheduleTime.Hour >= 6
+            ? targetClass.ScheduleTime.AddHours(-7)
+            : targetClass.ScheduleTime;
+
+        var now = DateTime.UtcNow;
+        var timeUntilClass = classStartTimeUtc - now;
+
+        // 3. RÀNG BUỘC THỜI GIAN ĐẶT CHỖ TỐI THIỂU: Chỉ cần trước giờ bắt đầu lớp học
+        if (timeUntilClass.TotalSeconds <= 0)
+        {
+            return (false, "Không thể đặt chỗ. Lớp học đã bắt đầu hoặc đã diễn ra.");
+        }
+
+        // 4. Lấy danh sách subscription của User và kiểm tra còn hạn tại thời điểm diễn ra lớp học
+        var userSubs = (await _subscriptionRepository.GetByUserIdAsync(userId))?.ToList() ?? new List<Subscription>();
+
+        // 5. RÀNG BUỘC THỜI GIAN ĐẶT CHỖ TỐI ĐA THEO HẠNG THÀNH VIÊN:
+        // Cơ bản (Basic): 24 giờ (1 ngày) | Plus: 72 giờ (3 ngày) | Premium: 120 giờ (5 ngày)
+        var memberTier = "basic";
+        var maxAdvanceHours = 24.0;
+
+        var activeMembershipSub = userSubs.FirstOrDefault(s =>
+            s.PaymentStatus == SmartGym.Domain.Enums.PaymentStatus.Completed
+            && s.StartDate <= now
+            && s.EndDate >= now
+            && (
+                (!string.IsNullOrWhiteSpace(s.PackageSnapshotJson) && s.PackageSnapshotJson.Contains("\"membership\""))
+                || (!string.IsNullOrWhiteSpace(s.PackageId) && (s.PackageId.Contains("plus", StringComparison.OrdinalIgnoreCase) || s.PackageId.Contains("premium", StringComparison.OrdinalIgnoreCase)))
+                || (s.Package != null && (s.Package.Name.Contains("plus", StringComparison.OrdinalIgnoreCase) || s.Package.Name.Contains("premium", StringComparison.OrdinalIgnoreCase)))
+            )
+        );
+
+        if (activeMembershipSub != null)
+        {
+            var snap = activeMembershipSub.PackageSnapshotJson ?? "";
+            var pkgId = activeMembershipSub.PackageId ?? "";
+            var pkgName = activeMembershipSub.Package?.Name ?? "";
+
+            if (snap.Contains("\"premium\"", StringComparison.OrdinalIgnoreCase) 
+                || pkgId.Contains("premium", StringComparison.OrdinalIgnoreCase)
+                || pkgName.Contains("premium", StringComparison.OrdinalIgnoreCase))
+            {
+                memberTier = "premium";
+                maxAdvanceHours = 120.0;
+            }
+            else if (snap.Contains("\"plus\"", StringComparison.OrdinalIgnoreCase) 
+                || pkgId.Contains("plus", StringComparison.OrdinalIgnoreCase)
+                || pkgName.Contains("plus", StringComparison.OrdinalIgnoreCase))
+            {
+                memberTier = "plus";
+                maxAdvanceHours = 72.0;
+            }
+        }
+
+        if (timeUntilClass.TotalHours > maxAdvanceHours)
+        {
+            var tierDisplayName = memberTier switch
+            {
+                "premium" => "Premium",
+                "plus" => "Plus",
+                _ => "Cơ bản"
+            };
+            var advanceText = memberTier switch
+            {
+                "premium" => "5 ngày (120 giờ)",
+                "plus" => "3 ngày (72 giờ)",
+                _ => "24 giờ (1 ngày)"
+            };
+            return (false, $"Lớp học này chưa mở đặt chỗ cho hạng thành viên của bạn (Hạng {tierDisplayName} chỉ được đặt trước tối đa {advanceText}). Vui lòng quay lại sau hoặc nâng cấp hạng để đặt lịch sớm hơn!");
+        }
 
         var validSub = userSubs.FirstOrDefault(s =>
             s.PaymentStatus == SmartGym.Domain.Enums.PaymentStatus.Completed
@@ -110,7 +181,7 @@ public sealed partial class ClassService
         return result;
     }
 
-    public async Task<(bool IsSuccess, string? ErrorMessage)> CancelBookingAsync(
+    public async Task<(bool IsSuccess, bool IsLate, string? ErrorMessage)> CancelBookingAsync(
         Guid userId,
         Guid classId
     )
@@ -118,14 +189,23 @@ public sealed partial class ClassService
         var targetClass = await _classRepository.GetByIdAsync(classId);
         if (targetClass == null)
         {
-            return (false, "Không tìm thấy lớp học.");
+            return (false, false, "Không tìm thấy lớp học.");
         }
 
-        // Logic check time (e.g. at least 2 hours before)
-        if (DateTime.UtcNow.AddHours(2) > targetClass.ScheduleTime)
+        // Chuẩn hóa thời gian lớp học về UTC thực tế:
+        // Nếu ScheduleTime có giờ >= 6 (lưu theo giờ địa phương VN), trừ 7 tiếng để về UTC chuẩn
+        var classStartTimeUtc = targetClass.ScheduleTime.Hour >= 6
+            ? targetClass.ScheduleTime.AddHours(-7)
+            : targetClass.ScheduleTime;
+
+        var classEndTimeUtc = classStartTimeUtc.AddMinutes(targetClass.DurationMinutes);
+        if (DateTime.UtcNow >= classEndTimeUtc)
         {
-            return (false, "Chỉ có thể hủy lớp trước 2 tiếng so với giờ bắt đầu.");
+            return (false, false, "Lớp học này đã kết thúc, không thể hủy đặt chỗ.");
         }
+
+        // Quy định hủy lớp: Nếu hủy trong vòng 2 tiếng trước giờ học là hủy muộn (Late Cancellation)
+        var isLate = DateTime.UtcNow.AddHours(2) > classStartTimeUtc;
 
         var result = await _classRepository.CancelBookingTransactionAsync(userId, classId);
         if (result.IsSuccess)
@@ -150,7 +230,7 @@ public sealed partial class ClassService
             }
         }
 
-        return result;
+        return (result.IsSuccess, isLate, result.ErrorMessage);
     }
 
     public async Task<(bool IsSuccess, string? ErrorMessage)> ApproveBookingAsync(Guid bookingId)

@@ -16,6 +16,7 @@ import { StaffPage } from './views/StaffPage';
 import { FacilitiesPage } from './views/FacilitiesPage';
 import { ProductsPage } from './views/ProductsPage';
 import { SettingsPage } from './views/SettingsPage';
+import { AuditLogPage } from './views/AuditLogPage';
 import { ProfileSettings } from '../../components/ProfileSettings';
 import { type ManagerNotification } from '../../hooks/notificationApi';
 import { PageTransition } from '../../components/PageTransition';
@@ -181,7 +182,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     "member-edit":["Quản lý / Người dùng / Hội viên / Chỉnh sửa", "Chỉnh sửa thông tin hội viên"],
     profile:    ["Quản lý / Hồ sơ cá nhân",         "Hồ sơ Quản trị viên"],
     permissions:["Quản lý / Người dùng / Phân quyền", "Phân quyền truy cập"],
-    "audit-log": ["Quản lý / Nhật ký hệ thống",      "Nhật ký hoạt động"],
+    "audit-log": ["Quản lý / Nhật ký giao dịch",      "Nhật ký giao dịch"],
     "check-ins": ["Quản lý / Lịch sử Check-in",      "Lịch sử Check-in"],
     support:     ["Quản lý / Hỗ trợ",               "Hỗ trợ khách hàng"],
   }
@@ -205,6 +206,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             {page === "payment"    && <PaymentPage />}
             {page === "reports"    && <ReportsPage />}
             {page === "settings"   && <SettingsPage />}
+            {page === "audit-log"  && <AuditLogPage onBack={() => setPage("overview")} />}
             {page === "member-edit"&& <MemberEditPage memberData={selectedMember} onBack={() => setPage("members")} />}
             {page === "profile"    && (
               <div className="flex flex-col gap-4">

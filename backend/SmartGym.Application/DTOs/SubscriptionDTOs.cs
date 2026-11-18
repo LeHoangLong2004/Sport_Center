@@ -23,6 +23,5 @@ public class CreateSubscriptionRequest
 {
     public string PackageId { get; set; } = null!;
     public string BillingPeriod { get; set; } = "monthly"; // monthly, yearly
-    public SmartGym.Domain.Enums.PaymentMethod PaymentMethod { get; set; } =
-        SmartGym.Domain.Enums.PaymentMethod.CreditCard;
+    public string PaymentMethod { get; set; } = "counter";
 }

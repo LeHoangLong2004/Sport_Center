@@ -48,50 +48,49 @@ export function SupportTicketModal({
 
               <form onSubmit={onSubmit} className="p-5 space-y-4 text-xs">
                 <div>
-                  <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+                  <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
                     Danh mục vấn đề:
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={ticketCategory}
                     onChange={(e) => onCategoryChange(e.target.value)}
-                    placeholder="Chọn hoặc nhập danh mục vấn đề..."
-                    list="modal-ticket-categories"
                     required
-                    className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none focus:border-emerald-500 transition-colors"
-                  />
-                  <datalist id="modal-ticket-categories">
-                    <option value="Tư vấn dịch vụ & Gia hạn gói" />
-                    <option value="Thắc mắc Lịch tập & Đổi Huấn luyện viên" />
-                    <option value="Thanh toán, Hóa đơn & Đối soát" />
-                    <option value="Góp ý Cơ sở vật chất & Thiết bị" />
-                    <option value="Hỗ trợ kỹ thuật ứng dụng" />
-                  </datalist>
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-medium cursor-pointer"
+                  >
+                    <option value="Tư vấn dịch vụ & Gia hạn gói">📋 Tư vấn dịch vụ & Gia hạn gói tập</option>
+                    <option value="Thắc mắc Lịch tập & Đổi Huấn luyện viên">🏋️ Đổi Huấn luyện viên (PT) & Lịch tập</option>
+                    <option value="Thanh toán, Hóa đơn & Đối soát">💳 Thanh toán, Hóa đơn & Nạp ví</option>
+                    <option value="Góp ý Cơ sở vật chất & Thiết bị">🛠️ Phản ánh Cơ sở vật chất & Thiết bị</option>
+                    <option value="Hỗ trợ kỹ thuật ứng dụng">📱 Hỗ trợ kỹ thuật tài khoản & Ứng dụng</option>
+                    <option value="Yêu cầu hỗ trợ khác">❓ Yêu cầu hỗ trợ khác</option>
+                  </select>
                 </div>
 
                 <div>
-                  <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                    Tiêu đề yêu cầu:
+                  <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    Tiêu đề yêu cầu: <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={ticketSubject}
                     onChange={(e) => onSubjectChange(e.target.value)}
-                    placeholder="VD: Nhờ hỗ trợ dời hạn gói tập do đi công tác"
-                    className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                    placeholder="VD: Xin dời lịch tập tuần tới do đi công tác đột xuất"
+                    required
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-                    Nội dung chi tiết:
+                  <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
+                    Nội dung chi tiết: <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     rows={4}
                     value={ticketContent}
                     onChange={(e) => onContentChange(e.target.value)}
-                    placeholder="Mô tả cụ thể thông tin để nhân viên CSKH hỗ trợ bạn thuận tiện nhất..."
-                    className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white resize-none"
+                    placeholder="Mô tả cụ thể thông tin (thời gian, lớp học, huấn luyện viên hoặc sự cố) để bộ phận Lễ tân & CSKH hỗ trợ bạn nhanh nhất..."
+                    required
+                    className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all resize-none"
                   />
                 </div>
 

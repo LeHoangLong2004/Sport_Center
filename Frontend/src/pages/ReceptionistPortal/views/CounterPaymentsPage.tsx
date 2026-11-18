@@ -17,6 +17,8 @@ export function CounterPaymentsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"pending" | "paid" | "all">("pending");
   const [categoryFilter, setCategoryFilter] = useState<"all" | "membership" | "sport" | "class">("all");
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [confirmOrder, setConfirmOrder] = useState<PackageOrder | null>(null);
   const [cancelTargetOrder, setCancelTargetOrder] = useState<PackageOrder | null>(null);
@@ -32,6 +34,23 @@ export function CounterPaymentsPage() {
       setError("");
     } catch (err: any) {
       console.error(err);
+      if (err?.message?.includes("403") || err?.message?.includes("401")) {
+        // Tự động làm mới token lễ tân nếu giữ nhầm token của vai trò khác (Member)
+        try {
+          const res = await fetch("/api/auth/token/receptionist");
+          const authData = await res.json().catch(() => null);
+          if (authData?.token) {
+            localStorage.setItem("token", authData.token);
+            localStorage.setItem("accessToken", authData.token);
+            localStorage.setItem("user", JSON.stringify(authData));
+            window.dispatchEvent(new Event("local-storage-update"));
+            const data = await PackageAPI.getOrders();
+            setOrders(Array.isArray(data) ? data : []);
+            setError("");
+            return;
+          }
+        } catch { /* tiếp tục báo lỗi nếu không thành công */ }
+      }
       if (!silent) setError(err?.message || "Không thể tải danh sách đơn hàng.");
     } finally {
       if (!silent) setLoading(false);
@@ -102,6 +121,7 @@ export function CounterPaymentsPage() {
 
   const handleConfirmPayment = async () => {
     if (!confirmOrder) return;
+    setConfirmingId(confirmOrder.id);
     setProcessingId(confirmOrder.id);
     try {
       await PackageAPI.confirmPayment(confirmOrder.id, selectedPayMethod);
@@ -111,6 +131,7 @@ export function CounterPaymentsPage() {
     } catch (err: any) {
       toast.error(err?.message || "Không thể xác nhận thanh toán.");
     } finally {
+      setConfirmingId(null);
       setProcessingId(null);
     }
   };
@@ -122,6 +143,7 @@ export function CounterPaymentsPage() {
   const executeCancelOrder = async () => {
     if (!cancelTargetOrder) return;
     const orderToCancel = cancelTargetOrder;
+    setCancellingId(orderToCancel.id);
     setProcessingId(orderToCancel.id);
     try {
       await PackageAPI.cancelOrder(orderToCancel.id);
@@ -131,6 +153,7 @@ export function CounterPaymentsPage() {
     } catch (err: any) {
       toast.error(err?.message || "Không thể hủy đơn hàng.");
     } finally {
+      setCancellingId(null);
       setProcessingId(null);
     }
   };
@@ -194,6 +217,8 @@ export function CounterPaymentsPage() {
             <CounterOrderCard
               key={order.id}
               order={order}
+              confirmingId={confirmingId}
+              cancellingId={cancellingId}
               processingId={processingId}
               onOpenConfirm={(o) => {
                 setConfirmOrder(o);

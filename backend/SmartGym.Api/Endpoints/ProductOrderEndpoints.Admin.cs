@@ -103,6 +103,61 @@ public static partial class ProductOrderEndpoints
 
         await using var connection = db.Database.GetDbConnection();
         await connection.OpenAsync();
+
+        if (status == "cancelled")
+        {
+            await using var tx = await connection.BeginTransactionAsync();
+            try
+            {
+                var checkCmd = connection.CreateCommand();
+                checkCmd.Transaction = tx;
+                checkCmd.CommandText = "SELECT payment_status FROM invoices WHERE id = @invoiceId";
+                AddParameter(checkCmd, "invoiceId", invoiceId);
+                var currentPaymentStatus = (string?)await checkCmd.ExecuteScalarAsync();
+
+                if (currentPaymentStatus is null)
+                    return Results.BadRequest(new { message = "Đơn hàng không tồn tại." });
+
+                var nextPaymentStatus = currentPaymentStatus == "completed" ? "refund_pending" : "cancelled";
+
+                var updateCmd = connection.CreateCommand();
+                updateCmd.Transaction = tx;
+                updateCmd.CommandText = """
+                    UPDATE invoices
+                    SET fulfillment_status = 'cancelled',
+                        payment_status = @nextPaymentStatus,
+                        fulfilled_at = NOW()
+                    WHERE id = @invoiceId;
+                    """;
+                AddParameter(updateCmd, "nextPaymentStatus", nextPaymentStatus);
+                AddParameter(updateCmd, "invoiceId", invoiceId);
+                await updateCmd.ExecuteNonQueryAsync();
+
+                // Nếu đơn đã thanh toán trước đó (tồn kho đã bị trừ), hoàn trả lại số lượng tồn kho của sản phẩm
+                if (currentPaymentStatus == "completed")
+                {
+                    var restoreStockCmd = connection.CreateCommand();
+                    restoreStockCmd.Transaction = tx;
+                    restoreStockCmd.CommandText = """
+                        UPDATE products p
+                        SET stock_quantity = p.stock_quantity + ii.quantity
+                        FROM invoice_items ii
+                        WHERE ii.product_id = p.id AND ii.invoice_id = @invoiceId;
+                        """;
+                    AddParameter(restoreStockCmd, "invoiceId", invoiceId);
+                    await restoreStockCmd.ExecuteNonQueryAsync();
+                }
+
+                await tx.CommitAsync();
+                return Results.Ok(new { message = "Đã hủy đơn hàng thành công.", status = "cancelled" });
+            }
+            catch
+            {
+                await tx.RollbackAsync();
+                throw;
+            }
+        }
+
         await using var command = connection.CreateCommand();
         command.CommandText = """
             UPDATE invoices
@@ -112,12 +167,12 @@ public static partial class ProductOrderEndpoints
                     ELSE assigned_to
                 END,
                 fulfilled_at = CASE
-                    WHEN @status IN ('delivered', 'cancelled') THEN NOW()
+                    WHEN @status = 'delivered' THEN NOW()
                     ELSE fulfilled_at
                 END,
                 delivery_location = COALESCE(NULLIF(@deliveryLocation, ''), delivery_location)
             WHERE id = @invoiceId
-              AND (@status = 'cancelled' OR payment_status = 'completed');
+              AND payment_status = 'completed';
             """;
         AddParameter(command, "status", status);
         AddParameter(command, "actorId", actorId.Value);
@@ -128,6 +183,97 @@ public static partial class ProductOrderEndpoints
             return Results.BadRequest(new { message = "Đơn chưa được thanh toán hoặc không tồn tại." });
 
         return Results.Ok(new { message = "Đã cập nhật trạng thái đơn hàng.", status });
+    }
+
+    private static async Task<IResult> ConfirmRefundAsync(
+        Guid invoiceId,
+        SmartGymDbContext db,
+        HttpContext context)
+    {
+        var actorId = GetUserId(context);
+        if (actorId is null)
+            return Results.Unauthorized();
+
+        await using var connection = db.Database.GetDbConnection();
+        await connection.OpenAsync();
+        await using var tx = await connection.BeginTransactionAsync();
+
+        try
+        {
+            var selectCmd = connection.CreateCommand();
+            selectCmd.Transaction = tx;
+            selectCmd.CommandText = "SELECT payment_status, total_amount, user_id, payment_method FROM invoices WHERE id = @invoiceId";
+            AddParameter(selectCmd, "invoiceId", invoiceId);
+
+            string currentPaymentStatus;
+            decimal totalAmount;
+            Guid userId;
+            string paymentMethod;
+
+            await using (var reader = await selectCmd.ExecuteReaderAsync())
+            {
+                if (!await reader.ReadAsync())
+                    return Results.BadRequest(new { message = "Đơn hàng không tồn tại." });
+
+                currentPaymentStatus = reader.GetString(0);
+                totalAmount = reader.GetDecimal(1);
+                userId = reader.GetGuid(2);
+                paymentMethod = reader.IsDBNull(3) ? "counter" : reader.GetString(3);
+            }
+
+            if (currentPaymentStatus != "refund_pending" && currentPaymentStatus != "completed")
+            {
+                return Results.BadRequest(new { message = "Đơn này không ở trạng thái chờ hoàn tiền." });
+            }
+
+            // Nếu thanh toán bằng ví, hoàn tiền lại vào ví của user
+            if (paymentMethod == "wallet" && totalAmount > 0)
+            {
+                try
+                {
+                    var refundWalletCmd = connection.CreateCommand();
+                    refundWalletCmd.Transaction = tx;
+                    refundWalletCmd.CommandText = """
+                        INSERT INTO wallet_transactions (
+                            id, user_id, amount, transaction_type, payment_method, status, description, created_at
+                        ) VALUES (
+                            @txId, @userId, @amount, 'refund', 'wallet', 'completed', @desc, NOW()
+                        );
+                        UPDATE member_wallet_balances
+                        SET balance = balance + @amount, updated_at = NOW()
+                        WHERE user_id = @userId;
+                        """;
+                    AddParameter(refundWalletCmd, "txId", Guid.NewGuid());
+                    AddParameter(refundWalletCmd, "userId", userId);
+                    AddParameter(refundWalletCmd, "amount", totalAmount);
+                    AddParameter(refundWalletCmd, "desc", $"Hoàn tiền đơn hàng #{invoiceId.ToString()[..8].ToUpper()}");
+                    await refundWalletCmd.ExecuteNonQueryAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[ConfirmRefundAsync] Wallet refund note: {ex.Message}");
+                }
+            }
+
+            var updateCmd = connection.CreateCommand();
+            updateCmd.Transaction = tx;
+            updateCmd.CommandText = """
+                UPDATE invoices
+                SET payment_status = 'refunded',
+                    fulfilled_at = COALESCE(fulfilled_at, NOW())
+                WHERE id = @invoiceId;
+                """;
+            AddParameter(updateCmd, "invoiceId", invoiceId);
+            await updateCmd.ExecuteNonQueryAsync();
+
+            await tx.CommitAsync();
+            return Results.Ok(new { message = "Đã xác nhận hoàn tiền thành công.", status = "refunded" });
+        }
+        catch
+        {
+            await tx.RollbackAsync();
+            throw;
+        }
     }
 
     private static async Task<IResult> ReadMessagesAsync(

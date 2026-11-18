@@ -136,6 +136,78 @@ public static class NotificationEndpoints
             {
                 // Giữ API usable trong lúc schema invoices chưa đồng bộ.
             }
+
+            // Thông báo yêu cầu hỗ trợ mới từ hội viên dành cho Lễ tân / Quản lý
+            try
+            {
+                var openTickets = await db.Database.SqlQueryRaw<OpenTicketRow>(
+                    """
+                    SELECT t.id AS "Id",
+                           COALESCE(u.full_name, 'Hội viên') AS "MemberName",
+                           t.subject AS "Subject",
+                           t.created_at AS "CreatedAt"
+                    FROM support_tickets t
+                    LEFT JOIN users u ON t.user_id = u.id
+                    WHERE t.status = 'open'
+                    ORDER BY t.created_at DESC
+                    LIMIT 5
+                    """)
+                    .ToListAsync(cancellationToken);
+
+                foreach (var ticket in openTickets)
+                {
+                    notifications.Add(new NotificationResponse(
+                        $"derived-ticket-{ticket.Id}",
+                        $"Yêu cầu hỗ trợ: {ticket.MemberName}",
+                        $"Phiếu {ticket.Id}: {ticket.Subject}",
+                        "support",
+                        false,
+                        ticket.CreatedAt,
+                        "support",
+                        ticket.Id));
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Notifications] Query open tickets error: {ex.Message}");
+            }
+        }
+        else if (userId.HasValue && !IsStaffRole(context.User))
+        {
+            // Thông báo phản hồi phiếu hỗ trợ dành cho Hội viên
+            try
+            {
+                var resolvedTickets = await db.Database.SqlQueryRaw<ResolvedTicketRow>(
+                    """
+                    SELECT t.id AS "Id",
+                           t.subject AS "Subject",
+                           COALESCE(t.replied_by, 'Ban Quản lý') AS "RepliedBy",
+                           COALESCE(t.replied_at, t.created_at) AS "RepliedAt"
+                    FROM support_tickets t
+                    WHERE t.user_id = {0} AND t.status = 'resolved'
+                    ORDER BY t.replied_at DESC
+                    LIMIT 3
+                    """,
+                    userId.Value)
+                    .ToListAsync(cancellationToken);
+
+                foreach (var ticket in resolvedTickets)
+                {
+                    notifications.Add(new NotificationResponse(
+                        $"derived-reply-{ticket.Id}",
+                        $"Phiếu {ticket.Id} đã được phản hồi",
+                        $"{ticket.RepliedBy} đã trả lời: \"{ticket.Subject}\"",
+                        "support",
+                        false,
+                        ticket.RepliedAt,
+                        "support",
+                        ticket.Id));
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Notifications] Query member resolved tickets error: {ex.Message}");
+            }
         }
 
         return Results.Ok(notifications
@@ -198,6 +270,22 @@ public static class NotificationEndpoints
     private sealed class CountRow
     {
         public int Value { get; init; }
+    }
+
+    private sealed class OpenTicketRow
+    {
+        public string Id { get; init; } = string.Empty;
+        public string MemberName { get; init; } = string.Empty;
+        public string Subject { get; init; } = string.Empty;
+        public DateTime CreatedAt { get; init; }
+    }
+
+    private sealed class ResolvedTicketRow
+    {
+        public string Id { get; init; } = string.Empty;
+        public string Subject { get; init; } = string.Empty;
+        public string RepliedBy { get; init; } = string.Empty;
+        public DateTime RepliedAt { get; init; }
     }
 
     private sealed record NotificationResponse(

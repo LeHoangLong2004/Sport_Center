@@ -149,14 +149,14 @@ public sealed partial class ClassService
             return (false, "Không thể duyệt: thời gian bắt đầu lớp học đã trôi qua.");
         }
 
-        var newStart = targetClass.ScheduleTime;
+        var newStart = scheduleTimeUtc;
         var newEnd = newStart.AddMinutes(targetClass.DurationMinutes);
 
         if (targetClass.CoachId.HasValue)
         {
             var existingClasses = await _classRepository.GetClassesByCoachAndDateAsync(
                 targetClass.CoachId.Value,
-                targetClass.ScheduleTime
+                scheduleTimeUtc
             );
 
             if (existingClasses.Any(c =>
@@ -170,7 +170,7 @@ public sealed partial class ClassService
 
             var existingPtSessions = await _ptSessionRepository.GetSessionsByCoachAndDateAsync(
                 targetClass.CoachId.Value,
-                targetClass.ScheduleTime
+                scheduleTimeUtc
             );
             if (existingPtSessions.Any(p =>
                 IsBlockingPtSession(p) &&
@@ -190,7 +190,7 @@ public sealed partial class ClassService
 
         var existingFacilityClasses = await _classRepository.GetClassesByFacilityAndDateAsync(
             targetClass.FacilityId,
-            targetClass.ScheduleTime
+            scheduleTimeUtc
         );
         if (existingFacilityClasses.Any(c =>
             c.Id != classId &&

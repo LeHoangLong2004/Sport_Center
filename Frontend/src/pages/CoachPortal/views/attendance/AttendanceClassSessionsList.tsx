@@ -6,17 +6,16 @@ import {
   Users,
   Search,
   ShieldCheck,
+  AlertCircle,
   Dumbbell,
   ArrowRight,
   Sparkles,
   Lock,
-} from "lucide-react";
-import type { MockSession } from "../../services/api";
-import { isAttendanceLocked24h, getAttendanceLockDeadlineInfo } from "../../utils/attendanceLock";
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
 } from "lucide-react";
 import type { MockSession } from "../../services/api";
+import { isAttendanceLocked24h } from "../../utils/attendanceLock";
 import { isSessionPast24Hours } from "../../utils/attendanceTimeUtils";
 
 interface Props {
@@ -28,8 +27,6 @@ interface Props {
 
 type DateTab = "all" | "today" | "tomorrow" | "this_week";
 type StatusFilter = "all" | "pending" | "finalized" | "locked";
-
-const ITEMS_PER_PAGE = 6;
 
 export default function AttendanceClassSessionsList({
   activeSessions,
@@ -43,7 +40,6 @@ export default function AttendanceClassSessionsList({
   });
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
 
   const todayIso = useMemo(() => new Date().toISOString().split("T")[0], []);
 
@@ -102,8 +98,6 @@ export default function AttendanceClassSessionsList({
   // Filter sessions
   const filteredSessions = useMemo(() => {
     return activeSessions.filter((s) => {
-      const isPast24h = isSessionPast24Hours(s.date, s.startTime);
-
       // 1. Date filter
       if (dateTab === "today" && s.date !== todayIso) return false;
       if (dateTab === "tomorrow" && s.date !== tomorrowIso) return false;
@@ -118,9 +112,6 @@ export default function AttendanceClassSessionsList({
       if (statusFilter === "finalized" && state !== "finalized") return false;
       if (statusFilter === "pending" && (state === "finalized" || isLocked24h)) return false;
       if (statusFilter === "locked" && !isLocked24h) return false;
-      if (statusFilter === "finalized" && (!finalizedMap[s.id] || isPast24h)) return false;
-      if (statusFilter === "pending" && (finalizedMap[s.id] || isPast24h)) return false;
-      if (statusFilter === "locked" && !isPast24h) return false;
 
       // 3. Search query
       if (search.trim()) {
@@ -135,20 +126,6 @@ export default function AttendanceClassSessionsList({
     });
   }, [activeSessions, dateTab, statusFilter, search, todayIso, tomorrowIso, weekRange, finalizedMap]);
 
-  // Reset page when filter changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [dateTab, statusFilter, search]);
-
-  const totalPages = Math.ceil(filteredSessions.length / ITEMS_PER_PAGE) || 1;
-  const paginatedSessions = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredSessions.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredSessions, currentPage]);
-
-  const startRecord = filteredSessions.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
-  const endRecord = Math.min(currentPage * ITEMS_PER_PAGE, filteredSessions.length);
-
   // Statistics
   const todaySessionsCount = useMemo(
     () => activeSessions.filter((s) => s.date === todayIso).length,
@@ -156,8 +133,7 @@ export default function AttendanceClassSessionsList({
   );
 
   const pendingAttendanceCount = useMemo(
-    () => activeSessions.filter((s) => !finalizedMap[s.id] && !isAttendanceLocked24h(s.date, s.startTime)).length,
-    () => activeSessions.filter((s) => !finalizedMap[s.id] && !isSessionPast24Hours(s.date, s.startTime)).length,
+    () => activeSessions.filter((s) => !finalizedMap[s.id] && !isAttendanceLocked24h(s.date, s.startTime) && !isSessionPast24Hours(s.date, s.startTime)).length,
     [activeSessions, finalizedMap]
   );
 
@@ -170,6 +146,24 @@ export default function AttendanceClassSessionsList({
     () => activeSessions.filter((s) => !!finalizedMap[s.id]).length,
     [activeSessions, finalizedMap]
   );
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 9;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [dateTab, statusFilter, search]);
+
+  const totalPages = Math.ceil(filteredSessions.length / pageSize) || 1;
+
+  const paginatedSessions = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredSessions.slice(start, start + pageSize);
+  }, [filteredSessions, currentPage, pageSize]);
+
+  const startRecord = filteredSessions.length > 0 ? (currentPage - 1) * pageSize + 1 : 0;
+  const endRecord = Math.min(currentPage * pageSize, filteredSessions.length);
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in duration-300">
@@ -184,23 +178,23 @@ export default function AttendanceClassSessionsList({
             <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
               Danh sách ca dạy & Điểm danh
             </h1>
-            <p className="text-sm text-slate-300 max-w-xl">
+            <p className="text-sm text-slate-300 max-w-xl leading-relaxed">
               Chọn ca dạy bên dưới để mở sổ điểm danh chi tiết, xác nhận học viên có mặt và cập nhật chuyên cần.
             </p>
           </div>
 
-          <div className="flex items-center gap-2 self-start md:self-auto bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/10 text-xs font-semibold">
-            <Calendar className="w-4 h-4 text-emerald-400" />
-            <span>Hôm nay có <strong className="text-emerald-400 font-bold">{todaySessionsCount}</strong> ca dạy</span>
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="px-4 py-2.5 rounded-xl bg-white/10 text-white font-semibold text-xs backdrop-blur-sm border border-white/10">
+              Hôm nay có <strong className="text-emerald-400 font-bold">{todaySessionsCount}</strong> ca dạy
+            </div>
           </div>
         </div>
 
-        {/* Decorative background glow */}
-        <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"></div>
       </div>
 
-      {/* 2. Quick Stat Counters */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* 2. Quick Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Tổng ca dạy</p>
@@ -214,23 +208,23 @@ export default function AttendanceClassSessionsList({
 
         <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Ca dạy hôm nay</p>
+            <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Ca dạy hôm nay</p>
             <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{todaySessionsCount}</p>
             <p className="text-[11px] text-slate-400 mt-0.5">cần phụ trách</p>
           </div>
-          <div className="size-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+          <div className="size-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
             <Clock className="w-5 h-5" />
           </div>
         </div>
 
         <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Chưa chốt điểm danh</p>
+            <p className="text-xs font-semibold text-amber-600 dark:text-amber-400">Chưa chốt điểm danh</p>
             <p className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">{pendingAttendanceCount}</p>
             <p className="text-[11px] text-slate-400 mt-0.5">cần hoàn tất</p>
           </div>
-          <div className="size-11 rounded-xl bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center text-amber-600 dark:text-amber-400">
-            <Clock className="w-5 h-5" />
+          <div className="size-11 rounded-xl bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center text-amber-600 dark:text-amber-400">
+            <AlertCircle className="w-5 h-5" />
           </div>
         </div>
 
@@ -276,15 +270,12 @@ export default function AttendanceClassSessionsList({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+            className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none"
           >
             <option value="all">Mọi trạng thái điểm danh</option>
             <option value="pending">Chưa chốt ({pendingAttendanceCount})</option>
             <option value="finalized">Đã chốt sổ ({finalizedCount})</option>
             <option value="locked">Đã đóng (Quá 24 giờ) ({lockedCount})</option>
-            <option value="pending">Chưa chốt điểm danh</option>
-            <option value="finalized">Đã chốt sổ điểm danh</option>
-            <option value="locked">Đã khóa (Quá 24h)</option>
           </select>
 
           <div className="relative flex-1 sm:w-64">
@@ -334,39 +325,6 @@ export default function AttendanceClassSessionsList({
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredSessions.map((session) => {
-            const state = getSessionAttendanceState(session);
-            const isFinalized = state === "finalized";
-            const isDraft = state === "draft";
-            const isLocked24h = isAttendanceLocked24h(session.date, session.startTime);
-            const deadlineInfo = getAttendanceLockDeadlineInfo(session.date, session.startTime);
-            const enrolled = Array.isArray(session.registeredMemberIds)
-              ? session.registeredMemberIds.length
-              : (session as any).registeredCount || 0;
-            const occupancy = session.capacity > 0 ? Math.round((enrolled / session.capacity) * 100) : 0;
-            const isToday = session.date === todayIso;
-
-            return (
-              <div
-                key={session.id}
-                onClick={() => onSelectSession(session.id)}
-                className={`group bg-white dark:bg-slate-900 rounded-2xl border p-5 shadow-xs hover:shadow-lg transition-all cursor-pointer flex flex-col justify-between relative overflow-hidden ${
-                  isToday
-                    ? "border-emerald-300 dark:border-emerald-800/80 ring-2 ring-emerald-500/10"
-                    : "border-slate-200/90 dark:border-slate-800 hover:border-emerald-500/50"
-                }`}
-              >
-                {/* Accent top stripe */}
-                <div
-                  className={`absolute top-0 left-0 right-0 h-1.5 ${
-                    isLocked24h
-                      ? "bg-slate-400 dark:bg-slate-700"
-                      : isFinalized
-                      ? "bg-slate-400 dark:bg-slate-600"
-                      : isDraft
-                      ? "bg-amber-500"
-                      : "bg-emerald-500"
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {paginatedSessions.map((session) => {
@@ -390,19 +348,6 @@ export default function AttendanceClassSessionsList({
                       : "border-slate-200/90 dark:border-slate-800 hover:border-emerald-500/50"
                   }`}
                 >
-                  {/* Accent top stripe */}
-                  <div
-                    className={`absolute top-0 left-0 right-0 h-1.5 ${
-                      isPast24h
-                        ? "bg-slate-400 dark:bg-slate-600"
-                        : isFinalized
-                        ? "bg-emerald-600"
-                        : isDraft
-                        ? "bg-amber-500"
-                        : "bg-emerald-500"
-                    }`}
-                  />
-
                   <div className="space-y-3.5 pt-1">
                     {/* Tags & Status */}
                     <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -418,64 +363,6 @@ export default function AttendanceClassSessionsList({
                         )}
                       </div>
 
-                    {/* Attendance State Badge */}
-                    {isLocked24h ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                        <Lock className="w-3 h-3 text-slate-500" />
-                        Đã đóng (Quá 24 giờ)
-                      </span>
-                    ) : (
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                          isFinalized
-                            ? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                            : isDraft
-                            ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 animate-pulse"
-                            : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
-                        }`}
-                      >
-                        {isFinalized ? (
-                          <>
-                            <ShieldCheck className="w-3 h-3 text-slate-500" />
-                            Đã chốt sổ
-                          </>
-                        ) : isDraft ? (
-                          <>
-                            <span className="size-1.5 rounded-full bg-amber-500" />
-                            Đang lưu nháp
-                          </>
-                        ) : (
-                          <>
-                            <span className="size-1.5 rounded-full bg-emerald-500" />
-                            Chưa điểm danh
-                          </>
-                        )}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Class Title */}
-                  <div>
-                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                      {session.className}
-                    </h3>
-                  </div>
-
-                  {/* Meta Details */}
-                  <div className="space-y-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-50/70 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/60">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        {session.startTime} – {session.endTime}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span>{formatSessionDate(session.date)}</span>
-                      {isToday && (
-                        <span className="px-1.5 py-0.2 rounded bg-emerald-500 text-white font-extrabold text-[10px]">
-                          HÔM NAY
                       {/* Attendance State Badge */}
                       {isPast24h ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
@@ -500,115 +387,52 @@ export default function AttendanceClassSessionsList({
                       )}
                     </div>
 
-                    {/* Class Title */}
+                    {/* Class Name & Time */}
                     <div>
-                      <h3 className="text-base font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                      <h3 className="font-bold text-base text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-1">
                         {session.className}
                       </h3>
+                      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span>{session.startTime} - {session.endTime}</span>
+                        <span>•</span>
+                        <span>{formatSessionDate(session.date)}</span>
+                      </div>
                     </div>
 
-                    {/* Meta Details */}
-                    <div className="space-y-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-50/70 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/60">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
-                          {session.startTime} – {session.endTime}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span>{formatSessionDate(session.date)}</span>
-                        {isToday && (
-                          <span className="px-1.5 py-0.2 rounded bg-emerald-500 text-white font-extrabold text-[10px]">
-                            HÔM NAY
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2">
+                    {/* Location & Capacity */}
+                    <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
+                      <div className="flex items-center gap-1.5">
                         <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span className="truncate">{session.room || "Studio trung tâm"}</span>
+                        <span className="truncate max-w-[130px]">{session.room || "Studio trung tâm"}</span>
                       </div>
-
-                      <div className="flex items-center justify-between pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
-                        <div className="flex items-center gap-1.5">
-                          <Users className="w-3.5 h-3.5 text-slate-400" />
-                          <span className="font-semibold text-slate-800 dark:text-slate-200">
-                            {enrolled}/{session.capacity} HV
-                          </span>
-                        </div>
+                      <div className="flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span className="font-medium text-slate-700 dark:text-slate-300">
+                          {enrolled}/{session.capacity} HV
+                        </span>
                         <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-                          {occupancy}% lấp đầy
+                          ({occupancy}%)
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Card Action Footer */}
-                  <div className="pt-4 mt-2">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectSession(session.id);
-                      }}
-                      className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                        isPast24h
-                          ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
-                          : isFinalized
-                          ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
-                          : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 group-hover:scale-[1.02]"
-                      }`}
-                    >
-                      <span>
-                        {isPast24h
-                          ? "Xem chi tiết (Đã khóa)"
-                          : isFinalized
-                          ? "Xem sổ điểm danh / Điều chỉnh"
-                          : "Điểm danh ngay"}
-                      </span>
+                  {/* Card Action footer */}
+                  <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                    <span className="text-slate-400 dark:text-slate-500 text-[11px]">
+                      {isPast24h ? "Chỉ xem sổ điểm danh" : isFinalized ? "Đã lưu kết quả" : "Điểm danh học viên"}
+                    </span>
+                    <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 transition-transform text-xs">
+                      <span>{isPast24h ? "Xem chi tiết" : "Vào điểm danh"}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
+                    </span>
                   </div>
                 </div>
               );
             })}
           </div>
 
-                {/* Card Action Footer */}
-                <div className="pt-4 mt-2">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectSession(session.id);
-                    }}
-                    className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                      isLocked24h
-                        ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-750"
-                        : isFinalized
-                        ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 group-hover:bg-slate-200"
-                        : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 group-hover:scale-[1.02]"
-                    }`}
-                  >
-                    {isLocked24h ? (
-                      <>
-                        <Lock className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Xem sổ điểm danh (Đã đóng)</span>
-                      </>
-                    ) : isFinalized ? (
-                      <>
-                        <span>Xem sổ điểm danh / Điều chỉnh</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </>
-                    ) : (
-                      <>
-                        <span>Điểm danh ngay</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </>
-                    )}
-                  </button>
           {/* Phân trang danh sách ca dạy */}
           {filteredSessions.length > 0 && (
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 text-xs bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">

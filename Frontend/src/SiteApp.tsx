@@ -143,7 +143,7 @@ export default function SiteApp({
       label.includes("Xem chi tiết") ||
       label.includes("SỰ KIỆN NỔI BẬT")
     ) {
-      navigate("article")
+      navigate("article" as any)
       return
     }
 

@@ -94,7 +94,7 @@ export interface MemberCoachReviewItem {
 
 export interface MemberSupportTicketItem {
   id: string;
-  category: "Tư vấn dịch vụ" | "Đổi lịch" | "Hoàn tiền" | "Cơ sở vật chất" | "Khác";
+  category: "Tư vấn dịch vụ" | "Đổi lịch" | "Hoàn tiền" | "Cơ sở vật chất" | "Khác" | string;
   subject: string;
   content: string;
   status: "open" | "in_progress" | "resolved";

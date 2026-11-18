@@ -2,30 +2,35 @@
 # .gitignore — Frontend (React 19 + Vite + TypeScript + Tailwind CSS)
 # ==============================================================================
 
-# Dependencies
+# 1. Dependencies
 node_modules/
+**/node_modules/
 .pnp
 .pnp.js
 
-# Production build outputs
+# 2. Production build outputs
 dist/
 dist-ssr/
 build/
 out/
 
-# Cache & temporary build directories
+# 3. Cache & temporary tooling directories
 .vite/
 .eslintcache
 .stylelintcache
 .cache/
 *.tsbuildinfo
 
-# Environment files (sensitive tokens & local variables)
+# 4. Environment files (chứa token, API keys bí mật)
 .env
 .env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 !.env.example
 
-# Package manager & server logs
+# 5. Package manager & Server logs
 logs/
 *.log
 npm-debug.log*
@@ -34,24 +39,41 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Microsoft Office temporary lock files
+# 6. Microsoft Office temporary & lock files
 ~$*
 ~$*.docx
 ~$*.xlsx
+~$*.pptx
 
-# Editor & OS files
+# 7. Code Editors & IDEs
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
 .idea/
-.DS_Store
-Thumbs.db
-Desktop.ini
 *.suo
 *.user
 *.swp
 *.bak
 *.tmp
 *~
+
+# 8. Operating System Files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# 9. AI Assistants & Tooling caches
+.gemini/
+**/.gemini/
+.agents/
+**/.agents/
+.cursor/
+.windsurf/
+.claude/
+.copilot/

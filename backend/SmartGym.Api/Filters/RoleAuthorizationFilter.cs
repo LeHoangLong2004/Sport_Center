@@ -31,12 +31,52 @@ public sealed class RoleAuthorizationFilter : IEndpointFilter
             );
         }
 
-        var roleClaim = httpContext.User.FindFirstValue(ClaimTypes.Role);
-        if (
-            string.IsNullOrEmpty(roleClaim)
-            || !Enum.TryParse<UserRole>(roleClaim, ignoreCase: true, out var userRole)
-            || !_allowedRoles.Contains(userRole)
-        )
+        var roleClaim = httpContext.User.FindFirstValue(ClaimTypes.Role)
+            ?? httpContext.User.FindFirst("role")?.Value;
+
+        if (string.IsNullOrWhiteSpace(roleClaim))
+        {
+            return Results.Json(
+                new
+                {
+                    message = "Bạn không có quyền truy cập chức năng này.",
+                    requiredRoles = _allowedRoles.Select(r => r.ToString()),
+                },
+                statusCode: 403
+            );
+        }
+
+        var normalized = roleClaim.Trim().ToLowerInvariant().Replace("_", "").Replace(" ", "").Replace("-", "");
+
+        bool isAllowed = false;
+
+        // Admin có toàn quyền quản trị và thực hiện mọi tác vụ của Manager & Lễ tân
+        if (normalized is "admin" or "administrator")
+        {
+            isAllowed = true;
+        }
+        else if (normalized is "manager" or "centermanager")
+        {
+            isAllowed = _allowedRoles.Contains(UserRole.CenterManager) || _allowedRoles.Contains(UserRole.Receptionist);
+        }
+        else if (normalized is "receptionist" or "reception" or "staff")
+        {
+            isAllowed = _allowedRoles.Contains(UserRole.Receptionist) || _allowedRoles.Contains(UserRole.CenterManager);
+        }
+        else if (normalized is "coach" or "trainer" or "pt")
+        {
+            isAllowed = _allowedRoles.Contains(UserRole.Coach);
+        }
+        else if (normalized is "member" or "customer" or "user")
+        {
+            isAllowed = _allowedRoles.Contains(UserRole.Member);
+        }
+        else if (Enum.TryParse<UserRole>(roleClaim, ignoreCase: true, out var userRole))
+        {
+            isAllowed = _allowedRoles.Contains(userRole);
+        }
+
+        if (!isAllowed)
         {
             return Results.Json(
                 new

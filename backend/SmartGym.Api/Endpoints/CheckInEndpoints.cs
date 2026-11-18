@@ -201,7 +201,7 @@ public static class CheckInEndpoints
         {
             var packages = await packageRepo.GetAllAsync();
             var plans = packages
-                .Where(package => package.Status)
+                .Where(package => package.Status && !string.IsNullOrEmpty(package.CatalogJson))
                 .Select(package => new
                 {
                     id = package.Id,

@@ -11,6 +11,7 @@ import { ProductOrdersPage } from './views/ProductOrdersPage';
 import { CounterPaymentsPage } from './views/CounterPaymentsPage';
 import { LookupPage } from './views/LookupPage';
 import { DetailPage } from './views/DetailPage';
+import { SupportTicketsPage } from './views/SupportTicketsPage';
 import { ProfileSettings } from '../../components/ProfileSettings';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { toast } from 'sonner';
@@ -18,7 +19,7 @@ import { PageTransition } from '../../components/PageTransition';
 
 const VALID_RECEPTIONIST_PAGES: Page[] = [
   "checkin", "counter-payments", "register", "classes", "schedule",
-  "pos", "orders", "lookup", "detail", "profile"
+  "pos", "orders", "lookup", "detail", "profile", "support"
 ];
 
 function getReceptionistPageFromHash(): Page {
@@ -71,6 +72,35 @@ export default function ReceptionistPortal({ onExit }: { onExit: () => void }) {
     };
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  // Tự động kiểm tra và làm mới token nhân viên lễ tân khi truy cập portal lễ tân
+  useEffect(() => {
+    const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
+    let isReceptionistToken = false;
+    if (token && token.includes(".")) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        const tokenRole = (payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || payload.role || "").toLowerCase();
+        if (tokenRole === "receptionist" || tokenRole === "manager" || tokenRole === "admin" || tokenRole === "staff") {
+          isReceptionistToken = true;
+        }
+      } catch {}
+    }
+
+    if (!isReceptionistToken) {
+      fetch("/api/auth/token/receptionist")
+        .then(res => res.json())
+        .then(data => {
+          if (data?.token) {
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("accessToken", data.token);
+            localStorage.setItem("user", JSON.stringify(data));
+            window.dispatchEvent(new Event("local-storage-update"));
+          }
+        })
+        .catch(() => {});
+    }
   }, []);
   const [selectedMember, setSelectedMember] = useState<any>(() => {
     try {
@@ -143,6 +173,7 @@ export default function ReceptionistPortal({ onExit }: { onExit: () => void }) {
             {page === "schedule" && <SchedulePage />}
             {page === "pos" && <PosPage />}
             {page === "orders" && <ProductOrdersPage />}
+            {page === "support" && <SupportTicketsPage />}
             {page === "lookup" && (
               <LookupPage
                 onDetail={(m) => {

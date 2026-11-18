@@ -39,12 +39,19 @@ public static class PackageCatalogEndpoints
                 CancellationToken cancellationToken
             ) =>
             {
-                var role = context.User.FindFirstValue(ClaimTypes.Role);
-                var includeInactive =
-                    role is not null
-                    && ManagerRoles.Contains(role, StringComparer.OrdinalIgnoreCase);
-                var packages = await service.GetCatalogAsync(includeInactive, cancellationToken);
-                return Results.Ok(packages);
+                try
+                {
+                    var role = context.User.FindFirstValue(ClaimTypes.Role);
+                    var includeInactive =
+                        role is not null
+                        && ManagerRoles.Contains(role, StringComparer.OrdinalIgnoreCase);
+                    var packages = await service.GetCatalogAsync(includeInactive, cancellationToken);
+                    return Results.Ok(packages);
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(detail: ex.Message, statusCode: StatusCodes.Status500InternalServerError);
+                }
             }
         );
 
@@ -386,17 +393,8 @@ public static class PackageCatalogEndpoints
                     var note = request.Note?.Trim() ?? string.Empty;
                     var amount = request.Amount ?? 0m;
 
-                    try
-                    {
-                        await db.Database.ExecuteSqlRawAsync(
-                            @"INSERT INTO payment_reports (id, user_id, order_id, amount, payment_method, reference_code, note, status, created_at)
-                              VALUES (gen_random_uuid(), {0}, {1}, {2}, {3}, {4}, {5}, 'pending', now())",
-                            userId, orderIdStr, amount, method, refCode, note);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"[ReportProof Error] {ex.Message}");
-                    }
+                    // Ghi nhận mã tham chiếu đối soát thanh toán
+                    Console.WriteLine($"[ReportProof] User {userId} reported payment proof for order {orderIdStr}: {refCode} ({method})");
 
                     return Results.Ok(new
                     {

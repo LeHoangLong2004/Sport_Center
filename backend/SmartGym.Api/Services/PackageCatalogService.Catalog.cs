@@ -20,10 +20,16 @@ public sealed partial class PackageCatalogService
         if (!includeInactive)
             query = query.Where(package => package.Status);
 
+        // Chỉ truy vấn các gói có CatalogJson
+        query = query.Where(package => package.CatalogJson != null);
+
         var packages = await query
             .OrderBy(package => package.PackageType)
             .ThenBy(package => package.Id)
             .ToListAsync(cancellationToken);
+
+        // Lọc bỏ bản ghi rỗng CatalogJson trên bộ nhớ để tránh xung đột kiểu dữ liệu JSONB trong PostgreSQL
+        packages = packages.Where(package => !string.IsNullOrWhiteSpace(package.CatalogJson)).ToList();
 
         return packages
             .Select(package =>
@@ -77,6 +83,24 @@ public sealed partial class PackageCatalogService
     {
         ValidatePackage(id, request, create);
         await EnsureDefaultsAsync(cancellationToken);
+
+        if (request.Category == "sport")
+        {
+            var hasCore = request.Benefits.Any(b =>
+            {
+                var l = b.ToLowerInvariant();
+                return l.Contains("miễn phí") && (l.Contains("đặt") || l.Contains("vào sân") || l.Contains("0đ") || l.Contains("ca tập") || l.Contains("lớp"));
+            });
+            if (!hasCore)
+            {
+                var core = request.Format == "coach"
+                    ? $"Miễn phí đặt lịch {request.SessionsPerMonth ?? 8} buổi Coach kèm riêng mỗi tháng (0đ)"
+                    : request.Format == "group"
+                    ? $"Miễn phí đặt chỗ {request.SessionsPerMonth ?? 12} buổi học nhóm mỗi tháng (0đ)"
+                    : $"Miễn phí 100% phí đặt ca / vào sân môn {request.Sport ?? "tập"} (0đ/buổi)";
+                request.Benefits = [core, ..request.Benefits];
+            }
+        }
 
         var package = await db
             .Packages

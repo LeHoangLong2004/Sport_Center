@@ -2,6 +2,7 @@ import React from "react";
 import { User, Users, AlertTriangle, ShieldCheck, HeartPulse, Activity, Calendar, Dumbbell, History, Sparkles, CheckCircle2, TrendingUp } from "lucide-react";
 import type { MockMember, CoachClassOverview } from "../../services/api";
 import type { MemberProfileData } from "../member-profile/types";
+import { getAttendanceStatusInfo, formatDateVN } from "../member-profile/attendanceHelper";
 import { UserAvatar } from "../../../../components/UserAvatar";
 
 interface CoachAiTargetSelectorProps {
@@ -159,7 +160,7 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
                     <span className="leading-tight">
                       <strong>Buổi gần nhất:</strong>{" "}
                       {memberProfile?.stats?.latestSession
-                        ? `${memberProfile.stats.latestSession.className} (${memberProfile.stats.latestSession.status}) · ${memberProfile.stats.latestSession.date}`
+                        ? `${memberProfile.stats.latestSession.className} (${getAttendanceStatusInfo(memberProfile.stats.latestSession.status).label}) · ${formatDateVN(memberProfile.stats.latestSession.date)}`
                         : (memberProfile?.attendanceHistory && memberProfile.attendanceHistory.length > 0
                           ? `${memberProfile.attendanceHistory[0].className} (${memberProfile.attendanceHistory[0].sport}) · ${memberProfile.attendanceHistory[0].date}`
                           : "Học viên mới · Chưa có lịch sử tập luyện trước đó")}

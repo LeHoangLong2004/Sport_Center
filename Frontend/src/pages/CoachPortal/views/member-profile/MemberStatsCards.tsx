@@ -1,6 +1,7 @@
 import React from "react";
-import { CheckCircle2, Activity, Clock, TrendingUp } from "lucide-react";
+import { CheckCircle2, Clock, TrendingUp } from "lucide-react";
 import type { MemberProfileData } from "./types";
+import { getAttendanceStatusInfo, formatDateVN } from "./attendanceHelper";
 
 interface Props {
   stats: MemberProfileData["stats"];
@@ -9,9 +10,10 @@ interface Props {
 export const MemberStatsCards: React.FC<Props> = ({ stats }) => {
   const attendanceRate = stats.attendanceRate;
   const latest = stats.latestSession;
+  const latestStatus = latest ? getAttendanceStatusInfo(latest.status) : null;
   const formatNumber = (value?: number | null, suffix = "") => value == null ? "Chưa cập nhật" : `${value}${suffix}`;
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Chuyên cần */}
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/90 dark:border-slate-800 p-4 shadow-xs">
         <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
@@ -27,21 +29,6 @@ export const MemberStatsCards: React.FC<Props> = ({ stats }) => {
         </div>
       </div>
 
-      {/* Cân nặng & BMI */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/90 dark:border-slate-800 p-4 shadow-xs">
-        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-          <span>CHỈ SỐ THỂ CHẤT</span>
-          <Activity className="w-4 h-4 text-slate-500" />
-        </div>
-        <div className="mt-2 flex items-baseline gap-2">
-          <span className="text-2xl font-bold text-slate-900 dark:text-white">
-            {formatNumber(stats.weight)}{stats.weight != null && <span className="text-sm font-normal text-slate-500"> kg</span>}
-          </span>
-          <span className="text-xs text-slate-600 font-medium">BMI {formatNumber(stats.bmi)}</span>
-        </div>
-        <p className="text-[11px] text-slate-400 mt-1">Cao: {formatNumber(stats.height, "cm")} · Mỡ: {formatNumber(stats.bodyFat, "%")}</p>
-      </div>
-
       {/* Buổi tập gần nhất */}
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/90 dark:border-slate-800 p-4 shadow-xs">
         <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
@@ -50,7 +37,18 @@ export const MemberStatsCards: React.FC<Props> = ({ stats }) => {
         </div>
         <div className="mt-2">
           <span className="text-sm font-bold text-slate-900 dark:text-white block truncate">{latest?.className || "Chưa có dữ liệu"}</span>
-          <span className="text-xs text-emerald-600 font-medium">{latest ? `${latest.status} (${latest.date})` : "Chưa có dữ liệu"}</span>
+          {latest && latestStatus ? (
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className={`text-xs font-semibold ${latestStatus.textClass}`}>
+                {latestStatus.label}
+              </span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">
+                ({formatDateVN(latest.date)})
+              </span>
+            </div>
+          ) : (
+            <span className="text-xs text-slate-400 font-medium">Chưa có dữ liệu</span>
+          )}
         </div>
         <p className="text-[11px] text-slate-400 mt-1">{latest?.completion != null ? `Hoàn thành ${latest.completion}% giáo án` : "Chưa có đánh giá"}</p>
       </div>

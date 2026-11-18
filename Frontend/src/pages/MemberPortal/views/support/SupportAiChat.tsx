@@ -251,11 +251,6 @@ export const SupportAiChat: React.FC<SupportAiChatProps> = ({
                 )}
                 <div className="flex items-center gap-2 px-1">
                   <span className="text-[10px] text-slate-400">{m.time}</span>
-                  {isAi && idx > 0 && m.source && m.source !== "ai" && (
-                    <span className="text-[10px] text-slate-600 dark:text-slate-400" title="AI tạm thời không khả dụng, đang dùng câu trả lời dự phòng">
-                      • Chế độ dự phòng
-                    </span>
-                  )}
                 </div>
               </div>
             </div>

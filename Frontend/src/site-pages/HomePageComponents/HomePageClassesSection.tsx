@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { FadeUp } from "../../components/Motion";
 import { imgHeroBg } from "../homePageData";
+import { getClassImage } from "../../utils/classImageHelper";
 
 type HomeClass = {
   id: string;
@@ -25,7 +26,7 @@ export default function HomePageClassesSection() {
           const available = Math.max(0, Number(item.capacity || 0) - Number(item.currentEnrolled || 0));
           return {
             id: String(item.id),
-            img: item.imageUrl || imgHeroBg,
+            img: getClassImage(item.sportName, item.className, item.imageUrl),
             name: item.className || "Lớp học",
             coach: item.coachName || "Huấn luyện viên chưa cập nhật",
             time: `${start.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} – ${end.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`,
@@ -72,7 +73,7 @@ export default function HomePageClassesSection() {
             key={id}
             onClick={(e) => {
               e.stopPropagation();
-              window.location.hash = "#chitietlophoc";
+              window.location.hash = `#chitietlophoc?classId=${id}`;
             }}
             className="bg-white border border-[#e2e8f0] rounded-[16px] overflow-hidden flex flex-col hover:border-[#10b981] hover:-translate-y-1 hover:shadow-lg transition-all duration-300 cursor-pointer"
           >

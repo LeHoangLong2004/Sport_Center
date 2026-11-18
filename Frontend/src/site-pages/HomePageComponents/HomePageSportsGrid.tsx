@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { FadeUp } from "../../components/Motion";
 import { imgHeroBg } from "../homePageData";
+import { getClassImage } from "../../utils/classImageHelper";
 
 type HomeSport = { id: string; img: string; label: string };
 
@@ -53,13 +54,7 @@ export default function HomePageSportsGrid() {
               className="absolute inset-0 w-full h-full object-cover max-w-none transition-transform duration-500 group-hover:scale-105"
               src={img}
               onError={(e) => {
-                const norm = (label || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-                let fallback = imgHeroBg;
-                if (norm.includes("boi") || norm.includes("swim")) fallback = "/assets/cfb22.png";
-                else if (norm.includes("yoga")) fallback = "/assets/88bba.png";
-                else if (norm.includes("gym") || norm.includes("the hinh") || norm.includes("hiit")) fallback = "/assets/e865e.png";
-                else if (norm.includes("box")) fallback = "/assets/252a5.png";
-                else if (norm.includes("bong ro") || norm.includes("basket")) fallback = "/assets/3c386.png";
+                const fallback = getClassImage(label);
                 if (e.currentTarget.src !== fallback) {
                   e.currentTarget.src = fallback;
                 }

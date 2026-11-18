@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SmartGym.Application.Common;
 using SmartGym.Application.DTOs.Classes;
 using SmartGym.Application.Services;
 using SmartGym.Infrastructure.Persistence.EF;
@@ -74,7 +75,7 @@ app.MapGet(
                 {
                     SessionId = slot.Id,
                     CoachName = slot.CoachName,
-                    ScheduleTime = slot.StartTime,
+                    ScheduleTime = CenterTime.ToLocal(slot.StartTime),
                     DurationMinutes = Math.Max(1, (int)(slot.EndTime - slot.StartTime).TotalMinutes),
                     Status = slot.EndTime <= DateTime.UtcNow ? "completed" : "confirmed"
                 }));

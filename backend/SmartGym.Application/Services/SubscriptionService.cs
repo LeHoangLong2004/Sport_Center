@@ -49,18 +49,36 @@ public class SubscriptionService : ISubscriptionService
             ? (package.YearlyPrice ?? 0) 
             : (package.MonthlyPrice ?? 0);
 
+        var isFree = amount <= 0;
+        var now = DateTime.UtcNow;
+
+        var parsedMethod = SmartGym.Domain.Enums.PaymentMethod.CashAtCounter;
+        if (!string.IsNullOrWhiteSpace(request.PaymentMethod))
+        {
+            try
+            {
+                parsedMethod = SmartGym.Domain.Enums.PaymentMethodExtensions.ParseDbValue(request.PaymentMethod);
+            }
+            catch
+            {
+                parsedMethod = SmartGym.Domain.Enums.PaymentMethod.CashAtCounter;
+            }
+        }
+
         var subscription = new Subscription
         {
             UserId = userId,
             PackageId = package.Id,
             BillingPeriod = request.BillingPeriod,
             TotalAmount = amount,
-            PaymentMethod = request.PaymentMethod,
-            PaymentStatus = SmartGym.Domain.Enums.PaymentStatus.Pending, // Will be updated to paid via webhook/gateway
-            StartDate = DateTime.UtcNow,
-            EndDate = request.BillingPeriod == "yearly" ? DateTime.UtcNow.AddYears(1) : DateTime.UtcNow.AddMonths(1),
+            PaymentMethod = parsedMethod,
+            PaymentStatus = isFree ? SmartGym.Domain.Enums.PaymentStatus.Completed : SmartGym.Domain.Enums.PaymentStatus.Pending,
+            StartDate = now.Date,
+            EndDate = request.BillingPeriod == "yearly" ? now.Date.AddYears(1) : now.Date.AddMonths(1),
             AutoRenew = false,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = now,
+            PaidAt = isFree ? now : null,
+            PackageSnapshotJson = string.IsNullOrWhiteSpace(package.CatalogJson) ? null : package.CatalogJson
         };
 
         await _subscriptionRepository.AddAsync(subscription);

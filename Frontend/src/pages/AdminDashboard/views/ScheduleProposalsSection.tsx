@@ -110,7 +110,16 @@ export const ScheduleProposalsSection: React.FC<ScheduleProposalsSectionProps> =
                   <p className="mt-0.5 text-xs text-slate-500">{item.sport} · {item.room}</p>
                 </div>
                 <div className="text-sm text-slate-700">{item.coach || "Chưa phân công"}</div>
-                <div className="text-sm text-slate-700">{item.rawStart.toLocaleString("vi-VN")}</div>
+                <div className="text-xs text-slate-700 font-medium">
+                  <div>
+                    {item.rawStart.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                    {" – "}
+                    {new Date(item.rawStart.getTime() + (item.durationMinutes || 60) * 60000).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                  </div>
+                  <div className="text-[11px] text-slate-400">
+                    {item.rawStart.toLocaleDateString("vi-VN", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })}
+                  </div>
+                </div>
                 <div>
                   <span className="inline-flex rounded-full bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700 ring-1 ring-slate-200">
                     Chờ duyệt

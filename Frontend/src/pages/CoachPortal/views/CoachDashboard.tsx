@@ -76,7 +76,12 @@ export default function CoachDashboard({ navigateTo }: Props) {
           AppointmentService.getForCoach(coachName),
         ]);
         const todayStr = new Date().toISOString().split("T")[0];
-        const todays = allSessions.filter((s: MockSession) => s.date === todayStr);
+        const isCancelled = (s: any) => {
+          if (s.status === false || s.statusRaw === false) return true;
+          const st = String(s.status || "").toLowerCase().trim();
+          return st === "đã hủy" || st === "cancelled" || st === "canceled";
+        };
+        const todays = allSessions.filter((s: MockSession) => s.date === todayStr && !isCancelled(s));
         setTodaySessions(todays);
         setAppointments(apptData);
         setDashboardStats({

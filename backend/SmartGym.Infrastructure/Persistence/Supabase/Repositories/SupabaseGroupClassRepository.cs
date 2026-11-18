@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using SmartGym.Application.Common;
 using SmartGym.Application.DTOs.Classes;
 using SmartGym.Application.Interfaces.Repositories;
 using SmartGym.Domain.Entities;
@@ -85,7 +86,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             CoachId: c.CoachId,
             CoachName: coachUser?.FullName ?? "N/A",
             ClassName: c.ClassName,
-            ScheduleTime: c.ScheduleTime,
+            ScheduleTime: AsUtc(c.ScheduleTime),
             DurationMinutes: c.DurationMinutes,
             Capacity: c.Capacity,
             CurrentEnrolled: c.CurrentEnrolled,
@@ -163,6 +164,9 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             model.ApprovalStatus
         );
 
+    private static DateTime AsUtc(DateTimeOffset value)
+        => value.UtcDateTime;
+
     private static DateTime AsUtc(DateTime value)
         => value.Kind switch
         {
@@ -173,8 +177,15 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
 
     public async Task<IEnumerable<ClassResponse>> GetAllClassesAsync()
     {
-        var classResponse = await _client.From<GroupClassModel>().Get();
-        var classModels = classResponse.Models;
+        var classModels = await _dbContext.Database
+            .SqlQueryRaw<ClassSqlRawModel>(
+                @"SELECT id, sport_id, facility_id, coach_id, class_name,
+                         schedule_time, duration_minutes, capacity,
+                         current_enrolled, status, approval_status
+                  FROM classes"
+            )
+            .ToListAsync();
+
         if (!classModels.Any())
             return Enumerable.Empty<ClassResponse>();
 
@@ -207,7 +218,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                     CoachId: c.CoachId,
                     CoachName: user?.FullName ?? "N/A",
                     ClassName: c.ClassName,
-                    ScheduleTime: c.ScheduleTime,
+                    ScheduleTime: AsUtc(c.ScheduleTime),
                     DurationMinutes: c.DurationMinutes,
                     Capacity: c.Capacity,
                     CurrentEnrolled: c.CurrentEnrolled,
@@ -229,7 +240,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
 
     public async Task<IEnumerable<ClassResponse>> GetAvailableClassesAsync()
     {
-        var nowUtc = DateTime.UtcNow;
+        var nowUtc = DateTimeOffset.UtcNow;
         var classResponse = await _client
             .From<GroupClassModel>()
             .Where(x => x.Status == true)
@@ -273,7 +284,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                     CoachId: c.CoachId,
                     CoachName: user?.FullName ?? "N/A",
                     ClassName: c.ClassName,
-                    ScheduleTime: c.ScheduleTime,
+                    ScheduleTime: AsUtc(c.ScheduleTime),
                     DurationMinutes: c.DurationMinutes,
                     Capacity: c.Capacity,
                     CurrentEnrolled: c.CurrentEnrolled,

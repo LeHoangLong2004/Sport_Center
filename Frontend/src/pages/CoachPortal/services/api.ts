@@ -26,6 +26,7 @@ import type {
 } from "./types";
 import type { MemberProfileData } from "../views/member-profile/types";
 import { fetchApi } from "./fetchApi";
+import { parseScheduleTime } from "../../../utils/scheduleTimeHelper";
 
 export type {
   SessionStatus,
@@ -69,15 +70,22 @@ export const CoachAPI = {
       const qs = query.toString() ? `?${query.toString()}` : '';
       const res = await fetchApi(`/coach/schedule${qs}`);
       if (Array.isArray(res)) {
-        return res.map((s: any) => ({
-          ...s,
-          date: typeof s.date === 'string' ? s.date.slice(0, 10) : s.date,
-          startTime: typeof s.startTime === 'string' ? s.startTime.slice(0, 5) : s.startTime,
-          endTime: typeof s.endTime === 'string' ? s.endTime.slice(0, 5) : s.endTime,
-          registeredMemberIds: Array.isArray(s.registeredMemberIds)
-            ? s.registeredMemberIds
-            : (s.memberId ? [s.memberId] : []),
-        }));
+        return res
+          .filter((s: any) => {
+            if (s.status === false || s.statusRaw === false) return false;
+            const st = String(s.status || '').toLowerCase().trim();
+            if (st === 'đã hủy' || st === 'cancelled' || st === 'canceled') return false;
+            return true;
+          })
+          .map((s: any) => ({
+            ...s,
+            date: typeof s.date === 'string' ? s.date.slice(0, 10) : s.date,
+            startTime: typeof s.startTime === 'string' ? s.startTime.slice(0, 5) : s.startTime,
+            endTime: typeof s.endTime === 'string' ? s.endTime.slice(0, 5) : s.endTime,
+            registeredMemberIds: Array.isArray(s.registeredMemberIds)
+              ? s.registeredMemberIds
+              : (s.memberId ? [s.memberId] : []),
+          }));
       }
     } catch {}
     return [];
@@ -461,7 +469,31 @@ export const CoachAPI = {
   getMyClassProposals: async (): Promise<CoachClassProposal[]> => {
     try {
       const res = await fetchApi('/classes/proposals/my');
-      return Array.isArray(res) ? res : [];
+      if (!Array.isArray(res)) return [];
+      return res.map((p: any) => {
+        const d = parseScheduleTime(p.scheduleTime);
+        const timeStr = !isNaN(d.getTime())
+          ? d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })
+          : "--:--";
+        const dateStr = !isNaN(d.getTime())
+          ? d.toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" })
+          : "";
+        const slotText = `${dateStr} lúc ${timeStr} (${p.durationMinutes || 60} phút)`;
+        return {
+          id: p.id,
+          className: p.className,
+          sportName: p.sportName || "Bộ môn",
+          sportId: p.sportId || "",
+          branchName: p.facilityName || "Phòng tập",
+          branchId: p.facilityId || "",
+          maxCapacity: p.capacity || 20,
+          defaultPrice: p.price || 150000,
+          requestedSlots: p.requestedSlots || slotText,
+          notes: p.notes || "",
+          status: p.status || "pending",
+          createdAt: p.createdAt || p.scheduleTime || new Date().toISOString(),
+        };
+      });
     } catch {
       return [];
     }

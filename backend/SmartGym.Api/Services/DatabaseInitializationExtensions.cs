@@ -60,9 +60,17 @@ public static partial class DatabaseInitializationExtensions
                     WHERE approval_status IS NULL OR approval_status = '';
                 CREATE INDEX IF NOT EXISTS idx_classes_approval_status
                     ON classes(approval_status);
+
+                -- Đồng bộ trạng thái các đơn hàng đã bị hủy
+                UPDATE invoices
+                    SET payment_status = 'refund_pending'
+                    WHERE fulfillment_status = 'cancelled' AND payment_status = 'completed';
+                UPDATE invoices
+                    SET payment_status = 'cancelled'
+                    WHERE fulfillment_status = 'cancelled' AND payment_status = 'pending';
                 "
             );
-            app.Logger.LogInformation("classes approval workflow schema is ready.");
+            app.Logger.LogInformation("classes approval workflow schema and cancelled invoices sync is ready.");
         }
         catch (Exception ex)
         {
@@ -358,18 +366,6 @@ public static partial class DatabaseInitializationExtensions
                 ALTER TABLE users ADD COLUMN IF NOT EXISTS preferred_time VARCHAR(100);
                 ALTER TABLE users ADD COLUMN IF NOT EXISTS health_notes TEXT;
                 ALTER TABLE users ADD COLUMN IF NOT EXISTS workout_goals TEXT;
-
-                CREATE TABLE IF NOT EXISTS payment_reports (
-                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                    user_id UUID NOT NULL,
-                    order_id VARCHAR(100),
-                    amount NUMERIC DEFAULT 0,
-                    payment_method VARCHAR(50),
-                    reference_code VARCHAR(100),
-                    note TEXT,
-                    status VARCHAR(50) DEFAULT 'pending',
-                    created_at TIMESTAMPTZ DEFAULT now()
-                );
 
                 GRANT ALL ON public.chat_conversations TO anon, authenticated;
                 GRANT ALL ON public.chat_messages TO anon, authenticated;

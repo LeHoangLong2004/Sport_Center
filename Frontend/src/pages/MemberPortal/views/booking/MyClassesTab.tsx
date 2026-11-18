@@ -15,13 +15,14 @@ import {
 } from "lucide-react";
 import { CoachAvatar } from "../../utils/coachAvatar";
 import type { MemberSessionItem } from "../../types";
+import type { CancelBookingTarget } from "./bookingTypes";
 
 interface MyClassesTabProps {
   myActiveClasses?: MemberSessionItem[];
   mySessions?: MemberSessionItem[];
   getBookingStatus: (session: MemberSessionItem) => string;
   onStartChatWithCoach: (coachName: string, coachId?: string, coachAvatar?: string) => void;
-  onCancelBooking: (target: { classId: string; className: string }) => void;
+  onCancelBooking: (target: CancelBookingTarget) => void;
 }
 
 export const MyClassesTab: React.FC<MyClassesTabProps> = ({
@@ -94,7 +95,7 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
           rawStatus.includes("cancel") ||
           rawStatus.includes("huy") ||
           rawStatus === "rejected";
-        return !isCancelled && !isClassPast(s);
+        return !isCancelled && rawStatus !== "pending" && !isClassPast(s);
       })
       .sort((a, b) => {
         const timeA = getSessionTimes(a).start.getTime();
@@ -112,7 +113,7 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
           rawStatus.includes("cancel") ||
           rawStatus.includes("huy") ||
           rawStatus === "rejected";
-        return isCancelled || isClassPast(s);
+        return (isCancelled || isClassPast(s)) && rawStatus !== "pending";
       })
       .sort((a, b) => {
         const timeA = getSessionTimes(a).start.getTime();
@@ -396,6 +397,11 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
                         onCancelBooking({
                           classId: (booking as any).classId || booking.id,
                           className: booking.name,
+                          scheduleTime: (booking as any).scheduleTime,
+                          startTime: booking.startTime,
+                          endTime: booking.endTime,
+                          dateStr: booking.date,
+                          price: booking.price,
                         })
                       }
                       className="px-4 py-2.5 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-700 dark:text-rose-300 font-bold text-xs transition-colors cursor-pointer"

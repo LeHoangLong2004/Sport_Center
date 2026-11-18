@@ -20,7 +20,6 @@ public partial class SmartGymDbContext : DbContext
     public DbSet<MembershipBenefit> MembershipBenefits { get; set; } = null!;
     public DbSet<Subscription> Subscriptions { get; set; } = null!;
     public DbSet<Invoice> Invoices { get; set; } = null!;
-    public DbSet<BodyMetric> BodyMetrics { get; set; } = null!;
     public DbSet<WorkoutPlan> WorkoutPlans { get; set; } = null!;
     public DbSet<WorkoutPlanExercise> WorkoutPlanExercises { get; set; } = null!;
     public DbSet<HomeworkProgress> HomeworkProgresses { get; set; } = null!;
@@ -192,11 +191,19 @@ public partial class SmartGymDbContext : DbContext
                 .Property(e => e.StartDate)
                 .HasColumnName("start_date")
                 .HasColumnType("date")
+                .HasConversion(
+                    v => DateTime.SpecifyKind(v.Date, DateTimeKind.Unspecified),
+                    v => DateTime.SpecifyKind(v.Date, DateTimeKind.Utc)
+                )
                 .IsRequired();
             entity
                 .Property(e => e.EndDate)
                 .HasColumnName("end_date")
                 .HasColumnType("date")
+                .HasConversion(
+                    v => DateTime.SpecifyKind(v.Date, DateTimeKind.Unspecified),
+                    v => DateTime.SpecifyKind(v.Date, DateTimeKind.Utc)
+                )
                 .IsRequired();
             entity.Property(e => e.AutoRenew).HasColumnName("auto_renew").HasDefaultValue(false);
             entity
@@ -246,29 +253,6 @@ public partial class SmartGymDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.SetNull);
-        });
-
-        modelBuilder.Entity<BodyMetric>(entity =>
-        {
-            entity.ToTable("body_metrics");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
-            entity.Property(e => e.UserId).HasColumnName("user_id");
-            entity.Property(e => e.Weight).HasColumnName("weight");
-            entity.Property(e => e.Height).HasColumnName("height");
-            entity.Property(e => e.BodyFat).HasColumnName("body_fat");
-            entity.Property(e => e.MuscleMass).HasColumnName("muscle_mass");
-            entity.Property(e => e.Bmi).HasColumnName("bmi");
-            entity
-                .Property(e => e.RecordedAt)
-                .HasColumnName("recorded_at")
-                .HasDefaultValueSql("now()");
-
-            entity
-                .HasOne(d => d.User)
-                .WithMany()
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
         });
 
         ConfigureWorkoutAndReviewEntities(modelBuilder);

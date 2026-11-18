@@ -41,22 +41,22 @@ export default function MembershipTab({
       {/* Membership Tiers Upgrade Section */}
       <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
+          <div className="min-w-0 flex-1">
             <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
               Bảng Hạng Thành Viên Chuẩn
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Nâng cấp gói thành viên để tự động giảm giá cho toàn bộ các gói môn tập và tận hưởng đặc quyền cao cấp
+              Nâng cấp gói thành viên để tự động giảm giá khi mua trọn gói môn tập & đặt lịch từng buổi lẻ, cùng đặc quyền đặt trước giờ vàng
             </p>
           </div>
 
-          <div className="flex p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 self-start sm:self-auto">
+          <div className="flex shrink-0 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 self-start sm:self-auto">
             {([1, 3, 6, 12] as PackagePeriod[]).map((period) => (
               <button
                 key={period}
                 type="button"
                 onClick={() => onSelectDuration(period)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
                   selectedDuration === period
                     ? "bg-slate-900 text-white dark:bg-emerald-500 dark:text-slate-950 shadow-xs"
                     : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -157,11 +157,11 @@ export default function MembershipTab({
                       <CheckCircle2 className={`w-4 h-4 shrink-0 ${isPremium ? "text-amber-500" : isPlus ? "text-emerald-500" : "text-slate-400"}`} />
                       <span className="text-slate-700 dark:text-slate-300">
                         {isPremium ? (
-                          <strong className="text-amber-600 dark:text-amber-400 font-bold">Giảm {pkg.groupDiscountPct || 10}% Lớp / {pkg.coachDiscountPct || 5}% PT 1-1</strong>
+                          <strong className="text-amber-600 dark:text-amber-400 font-bold">Giảm {pkg.groupDiscountPct || 15}% Gói môn & Lịch lẻ / {pkg.coachDiscountPct || 5}% PT 1-1</strong>
                         ) : isPlus ? (
-                          <strong className="text-emerald-600 dark:text-emerald-400 font-bold">Giảm {pkg.groupDiscountPct || 5}% Lớp / {pkg.coachDiscountPct || 2}% PT 1-1</strong>
+                          <strong className="text-emerald-600 dark:text-emerald-400 font-bold">Giảm {pkg.groupDiscountPct || 8}% Gói môn & Lịch lẻ / {pkg.coachDiscountPct || 2}% PT 1-1</strong>
                         ) : (
-                          "Không có giảm giá mua môn"
+                          "Áp dụng giá gốc (không giảm gói môn & lịch lẻ)"
                         )}
                       </span>
                     </div>
@@ -177,11 +177,11 @@ export default function MembershipTab({
                       <Ticket className="w-4 h-4 text-emerald-500 shrink-0" />
                       <span className="text-slate-700 dark:text-slate-300">
                         {isPremium ? (
-                          <>Vé mời bạn bè: <strong>2 lượt/tháng</strong></>
+                          <>Vé mời bạn bè: <strong>5 lượt/tháng</strong></>
                         ) : isPlus ? (
-                          <>Vé mời bạn bè: <strong>1 lượt/tháng</strong></>
+                          <>Vé mời bạn bè: <strong>3 lượt/tháng</strong></>
                         ) : (
-                          "Không có vé mời bạn bè"
+                          <>Vé mời bạn bè: <strong>1 lượt/tháng</strong></>
                         )}
                       </span>
                     </div>
@@ -197,13 +197,6 @@ export default function MembershipTab({
                       <Lock className="w-4 h-4 text-purple-500 shrink-0" />
                       <span className="text-slate-700 dark:text-slate-300">
                         Tủ đồ: <strong>{pkg.lockerTerms || (isPremium ? "Tủ riêng VIP" : "Tủ chung")}</strong>
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-xs">
-                      <Activity className="w-4 h-4 text-rose-500 shrink-0" />
-                      <span className="text-slate-700 dark:text-slate-300">
-                        Phân tích InBody: <strong>{isPremium ? "Không giới hạn" : isPlus ? "1 lần / tháng" : "Chưa hỗ trợ"}</strong>
                       </span>
                     </div>
                   </div>

@@ -9,6 +9,7 @@ import { GroupClassesTab } from "./booking/GroupClassesTab";
 import { PtSlotsTab } from "./booking/PtSlotsTab";
 import { MyClassesTab } from "./booking/MyClassesTab";
 import { BookingModals } from "./booking/BookingModals";
+import { parseScheduleTime } from "../../../utils/scheduleTimeHelper";
 
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
@@ -64,12 +65,14 @@ export default function MemberBooking({ onNavigate }: Props) {
     setBookingSuccessInfo,
     cancelTarget,
     setCancelTarget,
+    isCancelling,
     bookingPtSlot,
     setBookingPtSlot,
     ptGoal,
     setPtGoal,
     ptNote,
     setPtNote,
+    membership,
     feedback,
     setFeedback,
     handleInitiateBookClass,
@@ -114,9 +117,13 @@ export default function MemberBooking({ onNavigate }: Props) {
   const filteredGroupClasses = useMemo(() => {
     const nowTime = Date.now();
     return groupClasses.filter((c) => {
-      // Đảm bảo chỉ hiển thị lớp học diễn ra trong tương lai so với thời gian thực tế
-      const classStart = c.scheduleTime ? new Date(c.scheduleTime).getTime() : 0;
-      if (classStart && classStart <= nowTime) return false;
+      // Ẩn hoàn toàn các lớp học đã kết thúc (thời gian kết thúc <= thời gian hiện tại)
+      const endMs =
+        c.endMs ??
+        (c.scheduleTime
+          ? parseScheduleTime(c.scheduleTime).getTime() + Number(c.durationMinutes || 60) * 60000
+          : 0);
+      if (endMs > 0 && endMs <= nowTime) return false;
 
       const matchDate = !selectedDate || c.dateStr === selectedDate;
       const matchSport = selectedSport === "all" || c.sport.toLowerCase() === selectedSport.toLowerCase();
@@ -186,16 +193,13 @@ export default function MemberBooking({ onNavigate }: Props) {
         </div>
       )}
 
-      {/* Header Banner & 3-Tabs & Coach Carousel */}
+      {/* Header Banner & 3-Tabs */}
       <BookingHeader
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         groupClassesCount={filteredGroupClasses.length}
         ptSlotsCount={filteredPtSlots.length}
         myActiveClassesCount={myUpcomingClasses.length}
-        coaches={coaches}
-        selectedCoachId={selectedCoachId}
-        setSelectedCoachId={setSelectedCoachId}
       />
 
       {/* Filter Toolbar */}
@@ -221,6 +225,8 @@ export default function MemberBooking({ onNavigate }: Props) {
           refreshing={refreshingGroupClasses}
           classes={filteredGroupClasses}
           mySessions={mySessions}
+          membership={membership}
+          onNavigate={onNavigate}
           onRetry={() => void loadGroupClasses()}
           onOpenDetail={setSelectedClassDetail}
           onInitiateBook={handleInitiateBookClass}
@@ -268,6 +274,7 @@ export default function MemberBooking({ onNavigate }: Props) {
         cancelTarget={cancelTarget}
         onCloseCancelModal={() => setCancelTarget(null)}
         onConfirmCancel={handleCancelBooking}
+        isCancelling={isCancelling}
         bookingPtSlot={bookingPtSlot}
         onClosePtBookingModal={() => setBookingPtSlot(null)}
         ptGoal={ptGoal}

@@ -12,13 +12,39 @@ public sealed partial class PackageCatalogService
 {
     private async Task EnsureDefaultsAsync(CancellationToken cancellationToken)
     {
-        var existingIds = await db
-            .Packages.Where(package => Defaults.Select(item => item.Id).Contains(package.Id))
-            .Select(package => package.Id)
+        var defaultIds = Defaults.Select(item => item.Id).ToList();
+        var existingPackages = await db
+            .Packages.Where(package => defaultIds.Contains(package.Id))
             .ToListAsync(cancellationToken);
+        var existingIds = existingPackages.Select(p => p.Id).ToHashSet();
         var missing = Defaults.Where(item => !existingIds.Contains(item.Id)).ToArray();
+
+        var updated = false;
+        foreach (var def in Defaults.Where(d => d.Category == "membership"))
+        {
+            var existing = existingPackages.FirstOrDefault(p => p.Id == def.Id);
+            if (existing != null && !string.IsNullOrWhiteSpace(existing.CatalogJson))
+            {
+                var cur = DeserializeCatalog(existing.CatalogJson);
+                if (cur.GroupDiscountPct != def.GroupDiscountPct 
+                    || cur.CoachDiscountPct != def.CoachDiscountPct
+                    || string.Join("|", cur.Benefits) != string.Join("|", def.Benefits))
+                {
+                    cur.GroupDiscountPct = def.GroupDiscountPct;
+                    cur.CoachDiscountPct = def.CoachDiscountPct;
+                    cur.Benefits = def.Benefits;
+                    existing.CatalogJson = JsonSerializer.Serialize(cur, JsonOptions);
+                    updated = true;
+                }
+            }
+        }
+
         if (missing.Length == 0)
+        {
+            if (updated)
+                await db.SaveChangesAsync(cancellationToken);
             return;
+        }
 
         foreach (var item in missing)
         {

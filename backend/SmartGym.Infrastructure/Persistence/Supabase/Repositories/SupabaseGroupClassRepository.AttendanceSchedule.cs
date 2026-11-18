@@ -57,7 +57,7 @@ public sealed partial class SupabaseGroupClassRepository
 
         var classBookings = await _dbContext
             .Database.SqlQueryRaw<ClassBookingRawModel>(
-                "SELECT id, user_id, class_id, status, created_at FROM class_bookings WHERE user_id = {0}",
+                "SELECT id, user_id, class_id, status, created_at FROM class_bookings WHERE user_id = {0} AND LOWER(COALESCE(status, '')) IN ('confirmed', 'approved')",
                 userId
             )
             .ToListAsync();
@@ -119,10 +119,10 @@ public sealed partial class SupabaseGroupClassRepository
                         CoachRating = coach?.Rating,
                         CoachExperienceYears = coach?.ExperienceYears,
                         Price = 150000m,
-                        ScheduleTime = targetClass?.ScheduleTime ?? DateTime.MinValue,
+                        ScheduleTime = targetClass != null ? AsUtc(targetClass.ScheduleTime) : DateTime.MinValue,
                         DurationMinutes = targetClass?.DurationMinutes ?? 60,
                         Status = (targetClass != null 
-                                  && targetClass.ScheduleTime.AddMinutes(targetClass.DurationMinutes) <= DateTime.UtcNow 
+                                  && (targetClass.ScheduleTime.Hour >= 6 ? targetClass.ScheduleTime.AddHours(-7) : targetClass.ScheduleTime).AddMinutes(targetClass.DurationMinutes) <= DateTime.UtcNow 
                                   && !string.Equals(cb.Status, "cancelled", StringComparison.OrdinalIgnoreCase)
                                   && !string.Equals(cb.Status, "canceled", StringComparison.OrdinalIgnoreCase))
                                   ? "completed"
@@ -313,7 +313,7 @@ public sealed partial class SupabaseGroupClassRepository
                     CoachId: c.CoachId,
                     CoachName: user?.FullName ?? "N/A",
                     ClassName: c.ClassName,
-                    ScheduleTime: c.ScheduleTime,
+                    ScheduleTime: CenterTime.ToLocal(c.ScheduleTime),
                     DurationMinutes: c.DurationMinutes,
                     Capacity: c.Capacity,
                     CurrentEnrolled: c.CurrentEnrolled,

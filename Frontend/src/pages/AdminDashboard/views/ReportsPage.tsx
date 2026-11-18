@@ -22,6 +22,13 @@ export function ReportsPage() {
   const dashboard = useApiResource<DashboardMetricsResponse>("/api/reports/dashboard");
   const retention = useApiResource<MemberRetentionResponse>("/api/reports/members/retention");
 
+  const currentDateStr = new Intl.DateTimeFormat('vi-VN', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).format(new Date());
+
   const handleExport = async () => {
     setIsExporting(true);
     try {
@@ -39,7 +46,7 @@ export function ReportsPage() {
       {/* header */}
       <div className="flex items-end justify-between">
         <div>
-          <p className="font-extrabold text-emerald-600 text-[11px] tracking-[1.5px] uppercase">Thứ hai, 21 tháng 9</p>
+          <p className="font-extrabold text-emerald-600 text-[11px] tracking-[1.5px] uppercase">{currentDateStr}</p>
           <p className="font-extrabold text-[#0f172a] text-[28px] mt-1">Báo cáo & Thống kê</p>
           <p className="text-[#64748b] text-sm mt-1">Phân tích hiệu suất vận hành, doanh thu và xu hướng tăng trưởng hội viên toàn trung tâm.</p>
         </div>

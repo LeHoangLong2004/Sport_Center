@@ -59,6 +59,7 @@ import {
   AppointmentService,
   calculateAppointmentEndTime,
 } from "../../../services/appointmentService";
+import { parseScheduleTime } from "../../../utils/scheduleTimeHelper";
 
 // Flow 6 — AI Assistant response
 export type MemberAiAction =
@@ -84,12 +85,39 @@ export interface MemberAiAnswer {
 }
 
 // REST Backend API Client for Member Portal
+export function mergeStoredTicketReplies<T extends { id: string; status: any; reply?: string; repliedAt?: string; repliedBy?: string }>(list: T[]): T[] {
+  try {
+    const raw = localStorage.getItem("smartgym_ticket_replies");
+    if (!raw) return list;
+    const replies: Record<string, { status: any; reply?: string; repliedAt?: string; repliedBy?: string }> = JSON.parse(raw);
+    return list.map((item) => {
+      if (replies[item.id]) {
+        return {
+          ...item,
+          ...replies[item.id],
+        };
+      }
+      return item;
+    });
+  } catch {
+    return list;
+  }
+}
+
 export const MemberBackendAPI = {
   getAuthHeaders(): Record<string, string> {
     const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
+    let userMeta: any = null;
+    try {
+      const rawUser = localStorage.getItem("user");
+      if (rawUser) userMeta = JSON.parse(rawUser);
+    } catch {}
+
     return {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(userMeta?.id ? { "X-User-Id": String(userMeta.id) } : {}),
+      ...(userMeta?.email ? { "X-User-Email": String(userMeta.email) } : {}),
     };
   },
 
@@ -134,7 +162,7 @@ export const MemberBackendAPI = {
       if (["in_progress", "đang diễn ra"].includes(status)) return "đang diễn ra";
 
       if (scheduleTime) {
-        const startDate = new Date(scheduleTime);
+        const startDate = parseScheduleTime(scheduleTime);
         if (!Number.isNaN(startDate.getTime())) {
           const duration = Number(durationMinutes || 60);
           const endDate = new Date(startDate.getTime() + duration * 60000);
@@ -154,7 +182,8 @@ export const MemberBackendAPI = {
     };
 
     const toSessionTime = (value: string | undefined, fallback = "00:00") => {
-      const date = value ? new Date(value) : null;
+      if (!value) return { date: "", time: fallback };
+      const date = parseScheduleTime(value);
       if (!date || Number.isNaN(date.getTime())) return { date: "", time: fallback };
       return {
         date: [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-"),
@@ -178,7 +207,7 @@ export const MemberBackendAPI = {
         classBookings = (Array.isArray(data?.classBookings) ? data.classBookings : []).map((booking: any) => {
           const start = toSessionTime(booking.scheduleTime);
           const duration = Number(booking.durationMinutes || 60);
-          const startDate = booking.scheduleTime ? new Date(booking.scheduleTime) : null;
+          const startDate = booking.scheduleTime ? parseScheduleTime(booking.scheduleTime) : null;
           const endDate = startDate && !Number.isNaN(startDate.getTime())
             ? new Date(startDate.getTime() + duration * 60000)
             : null;
@@ -214,7 +243,7 @@ export const MemberBackendAPI = {
         ptSessions = (Array.isArray(data?.ptSessions) ? data.ptSessions : []).map((session: any) => {
           const start = toSessionTime(session.scheduleTime);
           const duration = Number(session.durationMinutes || 60);
-          const startDate = session.scheduleTime ? new Date(session.scheduleTime) : null;
+          const startDate = session.scheduleTime ? parseScheduleTime(session.scheduleTime) : null;
           const endDate = startDate && !Number.isNaN(startDate.getTime())
             ? new Date(startDate.getTime() + duration * 60000)
             : null;
@@ -375,7 +404,9 @@ export const MemberBackendAPI = {
       });
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data)) return data;
+        if (Array.isArray(data)) {
+          return data;
+        }
       }
     } catch (e) {
       console.warn("Backend getSupportTickets failed", e);
@@ -392,7 +423,10 @@ export const MemberBackendAPI = {
       });
       if (res.ok) {
         const data = await res.json();
-        return data.ticket;
+        if (data && data.ticket) {
+          window.dispatchEvent(new Event("support-tickets-updated"));
+          return data.ticket;
+        }
       }
     } catch (e) {
       console.warn("Backend createSupportTicket failed", e);

@@ -71,7 +71,7 @@ export default function InvoicesTab({
                 <th className="p-4">Ngày tạo</th>
                 <th className="p-4">Hình thức</th>
                 <th className="p-4">Trạng thái</th>
-                <th className="p-4 text-right">Thao tác</th>
+                <th className="p-4 text-left">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
@@ -112,7 +112,7 @@ export default function InvoicesTab({
                       )}
                     </span>
                   </td>
-                  <td className="p-4 text-right">
+                  <td className="p-4 text-left">
                     {p.status === "pending" ? (
                       <button
                         type="button"

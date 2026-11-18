@@ -1,8 +1,17 @@
 import React, { useState, FormEvent } from 'react';
 import { ThemeToggle } from './ThemeToggle';
 import { assets } from './shared';
+import { toast } from 'sonner';
 
 export type UserRole = "admin" | "member" | "coach" | "receptionist"
+
+function getRoleTitle(role?: string): string {
+  const r = role?.toLowerCase() || ""
+  if (r === "manager" || r === "admin") return "Quản lý"
+  if (r === "coach") return "Huấn luyện viên"
+  if (r === "receptionist") return "Lễ tân"
+  return "Hội viên"
+}
 
 
 export function Login({
@@ -19,13 +28,13 @@ export function Login({
   onHome?: () => void
 }) {
   const [loading, setLoading] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
 
   async function executeLogin(targetEmail: string, targetPass: string, fallbackRole?: UserRole) {
     setLoading(true)
-    setError("")
+    setIsRedirecting(false)
     setEmail(targetEmail)
     setPassword(targetPass)
     try {
@@ -39,15 +48,29 @@ export function Login({
         localStorage.setItem("token", data.token)
         localStorage.setItem("user", JSON.stringify(data))
 
-        if (onLoginAs) {
-          const roleStr = data.role?.toLowerCase() || ""
-          if (roleStr === "manager" || roleStr === "admin") onLoginAs("admin")
-          else if (roleStr === "coach") onLoginAs("coach")
-          else if (roleStr === "receptionist") onLoginAs("receptionist")
-          else onLoginAs("member")
-        } else {
-          onLogin()
-        }
+        const roleStr = data.role?.toLowerCase() || ""
+        const roleTitle = getRoleTitle(roleStr)
+        const displayName = data.fullName || data.name || data.email || "Quý khách"
+
+        setLoading(false)
+        setIsRedirecting(true)
+
+        toast.success("Đăng nhập thành công!", {
+          id: "auth-toast",
+          description: `Chào mừng ${displayName} (${roleTitle}) đã quay trở lại Sport Center.`,
+          duration: 3500,
+        })
+
+        setTimeout(() => {
+          if (onLoginAs) {
+            if (roleStr === "manager" || roleStr === "admin") onLoginAs("admin")
+            else if (roleStr === "coach") onLoginAs("coach")
+            else if (roleStr === "receptionist") onLoginAs("receptionist")
+            else onLoginAs("member")
+          } else {
+            onLogin()
+          }
+        }, 700)
         return
       }
 
@@ -56,14 +79,22 @@ export function Login({
         return
       }
 
-      setError(data.message || data.title || "Đăng nhập thất bại. Hãy kiểm tra thông tin.")
+      const errMsg = data.message || data.title || "Đăng nhập thất bại. Hãy kiểm tra thông tin."
+      toast.error("Đăng nhập thất bại", {
+        id: "auth-toast",
+        description: errMsg,
+      })
       setLoading(false)
     } catch {
       if (fallbackRole) {
         applyDemoUser(fallbackRole)
         return
       }
-      setError("Lỗi kết nối đến server API.")
+      const netErrMsg = "Lỗi kết nối đến server API."
+      toast.error("Lỗi kết nối", {
+        id: "auth-toast",
+        description: netErrMsg,
+      })
       setLoading(false)
     }
   }
@@ -86,10 +117,10 @@ export function Login({
       },
       receptionist: {
         id: "rec-01",
-        fullName: "Lễ tân Mai Anh",
+        fullName: "Nguyễn Văn Lễ Tân",
         role: "Receptionist",
         email: "receptionist01@smartgym.com",
-        avatarUrl: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=256&q=80",
+        avatarUrl: null,
       },
       member: {
         id: "cd431e48-c84b-4b16-815e-971f3387fd83",
@@ -102,6 +133,16 @@ export function Login({
     const targetUser = demos[role]
     localStorage.setItem("user", JSON.stringify(targetUser))
 
+    const roleTitle = getRoleTitle(role)
+    setLoading(false)
+    setIsRedirecting(true)
+
+    toast.success("Đăng nhập thành công!", {
+      id: "auth-toast",
+      description: `Chào mừng ${targetUser.fullName} (${roleTitle}) đã quay trở lại Sport Center.`,
+      duration: 3500,
+    })
+
     // Fetch genuine JWT dev-token asynchronously so authenticated APIs succeed immediately
     fetch(`/api/auth/dev-token?role=${role}&email=${encodeURIComponent(targetUser.email)}`, { method: "POST" })
       .then(res => res.json())
@@ -111,11 +152,14 @@ export function Login({
         }
       })
       .catch(() => {})
-    if (onLoginAs) {
-      onLoginAs(role)
-    } else {
-      onLogin()
-    }
+
+    setTimeout(() => {
+      if (onLoginAs) {
+        onLoginAs(role)
+      } else {
+        onLogin()
+      }
+    }, 600)
   }
 
   React.useEffect(() => {
@@ -209,7 +253,7 @@ export function Login({
                   </div>
                   <input
                     value={email}
-                    onChange={(e) => { setEmail(e.target.value); setError("") }}
+                    onChange={(e) => { setEmail(e.target.value); setIsRedirecting(false); }}
                     type="text"
                     required
                     className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/40 focus:border-[#14b8a6] transition-all focus:bg-white dark:focus:bg-slate-800"
@@ -226,7 +270,7 @@ export function Login({
                   </div>
                   <input
                     value={password}
-                    onChange={(e) => { setPassword(e.target.value); setError("") }}
+                    onChange={(e) => { setPassword(e.target.value); setIsRedirecting(false); }}
                     type="password"
                     required
                     className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/40 focus:border-[#14b8a6] transition-all focus:bg-white dark:focus:bg-slate-800"
@@ -235,13 +279,6 @@ export function Login({
                 </div>
               </div>
             </div>
-
-            {error && (
-              <div className="mt-5 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl flex items-start gap-3 text-red-600 dark:text-red-400 text-sm font-medium animate-in fade-in slide-in-from-top-2">
-                <svg className="shrink-0 mt-0.5" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
-                <span>{error}</span>
-              </div>
-            )}
 
             <div className="flex justify-end mt-4 mb-8">
               <button 
@@ -254,18 +291,29 @@ export function Login({
             </div>
 
             <button
-              disabled={loading}
+              disabled={loading || isRedirecting}
               type="submit"
-              className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-[#0d9488] text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-emerald-500/30 transition-all active:scale-[0.98] hover:-translate-y-1 disabled:opacity-70 disabled:pointer-events-none disabled:transform-none"
+              className={`w-full flex items-center justify-center gap-2 font-bold py-4 px-6 rounded-xl shadow-lg transition-all active:scale-[0.98] hover:-translate-y-1 disabled:opacity-75 disabled:pointer-events-none disabled:transform-none cursor-pointer ${
+                isRedirecting
+                  ? "bg-emerald-600 text-white shadow-emerald-600/40"
+                  : "bg-emerald-600 hover:bg-[#0d9488] text-white shadow-emerald-500/30"
+              }`}
             >
-              {loading ? (
+              {isRedirecting ? (
+                <>
+                  <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span>Đăng nhập thành công! Đang chuyển hướng...</span>
+                </>
+              ) : loading ? (
                 <>
                   <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                   Đang xác thực...
                 </>
               ) : (
                 <>
-                  Đăng nhập an toàn
+                  Đăng nhập
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                 </>
               )}

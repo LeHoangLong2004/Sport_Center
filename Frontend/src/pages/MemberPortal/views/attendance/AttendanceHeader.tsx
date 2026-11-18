@@ -5,7 +5,6 @@ import {
   DoorOpen,
   AlertCircle,
   CheckCircle2,
-  QrCode,
   RefreshCw,
 } from "lucide-react";
 
@@ -18,7 +17,6 @@ interface AttendanceHeaderProps {
   activePackages?: ActivePackageInfo[];
   refreshing: boolean;
   onRefresh: () => void;
-  onOpenQrModal: () => void;
 }
 
 export default function AttendanceHeader({
@@ -28,7 +26,6 @@ export default function AttendanceHeader({
   activePackages = [],
   refreshing,
   onRefresh,
-  onOpenQrModal,
 }: AttendanceHeaderProps) {
   return (
     <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-900 via-emerald-900 to-slate-900 p-6 sm:p-7 text-white shadow-xl border border-emerald-500/20">
@@ -85,14 +82,6 @@ export default function AttendanceHeader({
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          <button
-            id="btn-qr-modal-header"
-            onClick={onOpenQrModal}
-            className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-bold text-sm shadow-lg shadow-emerald-500/25 transition-all duration-200 flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <QrCode className="w-4 h-4" />
-            Mã QR Check-in
-          </button>
           <button
             id="btn-refresh-attendance"
             onClick={onRefresh}

@@ -2,19 +2,31 @@ import React from 'react';
 import { iKpiRevenue, iKpiMembers, iKpiClasses, iActivity0, iActivity1, iActivity2 } from '../shared';
 import KpiCard from '../components/KpiCard';
 import { useApiResource } from '../../../hooks/useApiResource';
-import { type DashboardMetricsResponse, type MonthlyRevenueResponse } from '../../../hooks/flow3Api';
+import { type DashboardMetricsResponse, type MonthlyRevenueResponse, type InvoiceResponse } from '../../../hooks/flow3Api';
 import { formatVnd } from '../../../hooks/apiClient';
 
 import { toast } from 'sonner';
 
 export function OverviewPage({ onNavigate }: { onNavigate?: (page: any) => void }) {
-  const activities: any[] = [];
-
   const dashboard = useApiResource<DashboardMetricsResponse>("/api/reports/dashboard");
   const monthly = useApiResource<MonthlyRevenueResponse[]>("/api/reports/revenue/monthly?months=12");
+  const payments = useApiResource<InvoiceResponse[]>("/api/payments");
 
   const months = monthly.data ?? [];
   const maxRevenue = Math.max(1, ...months.map((m) => m.revenue));
+
+  const activities = (payments.data ?? []).slice(0, 5).map((inv) => {
+    const isCompleted = inv.status === "completed";
+    return {
+      id: inv.id,
+      text: `${inv.memberName || "Hội viên"} thanh toán hóa đơn ${inv.invoiceNumber} (${formatVnd(inv.totalAmount)})`,
+      time: new Date(inv.paidAt || inv.createdAt).toLocaleDateString('vi-VN', {
+        day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+      }),
+      color: isCompleted ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600" : "bg-amber-50 dark:bg-amber-950/40 text-amber-600",
+      icon: isCompleted ? iActivity1 : iActivity0,
+    };
+  });
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -62,6 +74,7 @@ export function OverviewPage({ onNavigate }: { onNavigate?: (page: any) => void 
               onClick={() => {
                 dashboard.reload();
                 monthly.reload();
+                payments.reload();
                 toast.success("Đã làm mới dữ liệu thống kê tổng quan!");
               }}
               className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-medium px-3 py-1.5 rounded-lg text-sm text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition-all cursor-pointer shadow-sm"
@@ -104,11 +117,11 @@ export function OverviewPage({ onNavigate }: { onNavigate?: (page: any) => void 
         </div>
 
         <div className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 p-6 rounded-2xl hover:shadow-xl transition-shadow flex flex-col">
-          <p className="font-bold text-slate-900 dark:text-white text-lg mb-6">Hoạt động gần đây</p>
+          <p className="font-bold text-slate-900 dark:text-white text-lg mb-6">Giao dịch gần đây</p>
           <div className="flex flex-col gap-6 flex-1">
             {activities.length === 0 && (
               <p className="text-slate-500 dark:text-slate-400 text-sm">
-                Nhật ký hoạt động chưa được ghi nhận trong hệ thống.
+                Chưa có giao dịch thanh toán nào được ghi nhận.
               </p>
             )}
             {activities.map((act) => (
@@ -126,14 +139,14 @@ export function OverviewPage({ onNavigate }: { onNavigate?: (page: any) => void 
           <button
             onClick={() => {
               if (onNavigate) {
-                onNavigate("settings");
+                onNavigate("payment");
               } else {
-                toast.info("Đang chuyển đến màn hình Cài đặt & Nhật ký hệ thống...");
+                toast.info("Đang chuyển đến màn hình Thanh toán & Hóa đơn...");
               }
             }}
             className="mt-8 w-full py-3 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-300 text-sm hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white active:scale-[0.99] transition-all cursor-pointer"
           >
-            Xem toàn bộ nhật ký
+            Xem toàn bộ lịch sử giao dịch
           </button>
         </div>
       </div>

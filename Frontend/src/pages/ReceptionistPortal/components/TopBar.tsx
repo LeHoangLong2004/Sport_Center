@@ -67,29 +67,37 @@ export function TopBar({ breadcrumb, title, shiftLabel, onProfileClick, onNaviga
 
   useEffect(() => {
     let cancelled = false;
+    const load = () => {
+      notificationApi.list()
+        .then(data => {
+          if (!cancelled) {
+            const readDerived = getReadDerivedIds();
+            const mapped = data.map(item => ({
+              ...item,
+              isRead: item.isRead || (item.id.startsWith('derived-') && readDerived.includes(item.id))
+            }));
+            setNotifications(mapped);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setNotificationsError(true);
+        })
+        .finally(() => {
+          if (!cancelled) setIsNotificationsLoading(false);
+        });
+    };
+
     setIsNotificationsLoading(true);
     setNotificationsError(false);
+    load();
 
-    notificationApi.list()
-      .then(data => {
-        if (!cancelled) {
-          const readDerived = getReadDerivedIds();
-          const mapped = data.map(item => ({
-            ...item,
-            isRead: item.isRead || (item.id.startsWith('derived-') && readDerived.includes(item.id))
-          }));
-          setNotifications(mapped);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setNotificationsError(true);
-      })
-      .finally(() => {
-        if (!cancelled) setIsNotificationsLoading(false);
-      });
+    const interval = setInterval(load, 15000);
+    window.addEventListener("support-tickets-updated", load);
 
     return () => {
       cancelled = true;
+      clearInterval(interval);
+      window.removeEventListener("support-tickets-updated", load);
     };
   }, [isNotificationsOpen]);
 
@@ -143,6 +151,14 @@ export function TopBar({ breadcrumb, title, shiftLabel, onProfileClick, onNaviga
       onNavigate?.('classes');
     } else if (notification.type === 'member') {
       onNavigate?.('lookup');
+    } else if (
+      notification.type === 'support' ||
+      notification.id.startsWith('derived-ticket-') ||
+      lowerTitle.includes('hỗ trợ') ||
+      lowerTitle.includes('yêu cầu') ||
+      lowerMsg.includes('phiếu')
+    ) {
+      onNavigate?.('support');
     }
   };
 
@@ -168,13 +184,14 @@ export function TopBar({ breadcrumb, title, shiftLabel, onProfileClick, onNaviga
   };
 
   const userStr = localStorage.getItem("user");
-  let userName = "Lễ tân";
-  let avatarUrl = null;
+  let userName = "Nguyễn Văn Lễ Tân";
+  let avatarUrl: string | null = null;
   if (userStr) {
     try {
       const user = JSON.parse(userStr);
-      userName = user.fullName || user.name || user.email?.split('@')[0] || "Lễ tân";
-      avatarUrl = user.avatarUrl;
+      userName = user.fullName || user.name || user.email?.split('@')[0] || "Nguyễn Văn Lễ Tân";
+      // Giữ avatar chữ cái với màu sắc mặc định (không dùng ảnh cá nhân)
+      avatarUrl = null;
     } catch(e) {}
   }
 

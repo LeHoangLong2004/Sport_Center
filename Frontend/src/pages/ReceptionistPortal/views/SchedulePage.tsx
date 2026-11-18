@@ -281,7 +281,10 @@ export function SchedulePage() {
         onClose={() => setShowModal(false)}
         coaches={coaches}
         members={members}
-        onCreated={fetchAppointments}
+        onCreated={() => {
+          fetchAppointments();
+          toast.success("Tạo lịch hẹn thành công cho hội viên!");
+        }}
       />
     </div>
   );

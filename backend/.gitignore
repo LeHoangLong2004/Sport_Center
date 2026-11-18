@@ -1,18 +1,20 @@
 ## ============================================================
-##  .gitignore — SmartGym Backend (.NET / ASP.NET Core)
+##  .gitignore — SmartGym Backend (.NET 10 / ASP.NET Core)
 ## ============================================================
 
 # -------------------------------------------------------
-# Build outputs
+# 1. Build outputs & Compilations
 # -------------------------------------------------------
 [Bb]in/
 [Oo]bj/
 [Oo]ut/
+artifacts/
 [Ll]og/
 [Ll]ogs/
+*.log
 
 # -------------------------------------------------------
-# Visual Studio / Rider
+# 2. Visual Studio & Code Editors
 # -------------------------------------------------------
 .vs/
 .idea/
@@ -28,51 +30,45 @@
 *.VC.db
 *.VC.VC.opendb
 
+# VS Code (giữ lại cấu hình dùng chung)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
 # -------------------------------------------------------
-# .NET CLI & MSBuild
+# 3. .NET CLI, MSBuild & NuGet
 # -------------------------------------------------------
 project.lock.json
 project.fragment.lock.json
-artifacts/
 **/Properties/launchSettings.json
-
-# -------------------------------------------------------
-# NuGet
-# -------------------------------------------------------
 *.nupkg
 *.snupkg
 .nuget/
 packages/
 nuget.config
 !**/[Pp]ackages/build/
-# Uncomment if you use packages.lock.json intentionally:
-# !packages.lock.json
 
 # -------------------------------------------------------
-# Publish profiles & deployment
+# 4. Publish profiles & Deployment
 # -------------------------------------------------------
 *.[Pp]ublish.xml
 *.azurePubxml
 *.pubxml
 *.publishproj
+docker-compose.override.yml
 
 # -------------------------------------------------------
-# ASP.NET Core
+# 5. Static Assets & Uploads
 # -------------------------------------------------------
-# Bundled static files & local uploads (using Cloudinary)
 wwwroot/dist/
 wwwroot/uploads/**
 !wwwroot/uploads/
 !wwwroot/uploads/**/.gitkeep
 
 # -------------------------------------------------------
-# Entity Framework Core migrations (keep tracked)
-# Un-comment if you want to ignore auto-generated ones:
-# **/Migrations/
-# -------------------------------------------------------
-
-# -------------------------------------------------------
-# Environment & secrets — NEVER commit these
+# 6. Local Environment & Secrets (Không push thông tin mật)
 # -------------------------------------------------------
 .env
 .env.*
@@ -88,9 +84,10 @@ secrets.json
 **/*.key
 **/*.cer
 **/*.crt
+**/*.pem
 
 # -------------------------------------------------------
-# Test results & coverage
+# 7. Test Results & Coverage
 # -------------------------------------------------------
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
@@ -103,49 +100,41 @@ coverage*.json
 _ReSharper*/
 
 # -------------------------------------------------------
-# Rider / JetBrains
+# 8. Temporary Files & Office Lock Files
 # -------------------------------------------------------
-.idea/
-*.sln.iml
+~$*
+~$*.docx
+~$*.xlsx
+*.swp
+*.bak
+*.tmp
+*~
 
 # -------------------------------------------------------
-# macOS
-# -------------------------------------------------------
-.DS_Store
-.AppleDouble
-.LSOverride
-
+# 9. Operating System Files
 # -------------------------------------------------------
 # Windows
-# -------------------------------------------------------
 Thumbs.db
 ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 
-# -------------------------------------------------------
-# Docker (keep Dockerfile tracked, ignore local overrides)
-# -------------------------------------------------------
-docker-compose.override.yml
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
 
 # -------------------------------------------------------
-# Node (if any frontend tooling lives here)
+# 10. AI Agents & .NET Tooling Caches
 # -------------------------------------------------------
-node_modules/
-
-# -------------------------------------------------------
-# Miscellaneous & AI / .NET Tooling Cache
-# -------------------------------------------------------
-*.swp
-*.bak
-*.tmp
-*~
 .gemini/
 **/.gemini/
 .agents/
 **/.agents/
+.cursor/
+.windsurf/
+.copilot/
 .dotnet/
 **/.dotnet/
 *.dotnetUserLevelCache
 *.toolpath.sentinel
-

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
 import { BookClassHeader } from "./bookClass/BookClassHeader";
 import { BookClassSummary } from "./bookClass/BookClassSummary";
 import { BookClassMemberList } from "./bookClass/BookClassMemberList";
@@ -85,15 +86,23 @@ export function ReceptionistBookClassModal({
         },
         body: JSON.stringify({ MemberId: memberId }),
       });
-      const d = await res.json();
+      const d = await res.json().catch(() => null);
       if (res.ok) {
-        onSuccess("Đặt lớp thành công cho hội viên!");
+        const memberName = selectedMember?.fullName || selectedMember?.name || "hội viên";
+        const className = selectedClass.title || selectedClass.sportName || "lớp học";
+        const successMsg = `Đặt lớp "${className}" thành công cho hội viên ${memberName}!`;
+        toast.success(successMsg);
+        onSuccess(successMsg);
         handleClose();
       } else {
-        onError(d.message || "Không thể đặt lớp");
+        const errMsg = d?.message || "Không thể đặt lớp cho hội viên. Vui lòng kiểm tra lại số buổi còn lại.";
+        toast.error(errMsg);
+        onError(errMsg);
       }
-    } catch (e) {
-      onError("Có lỗi xảy ra: " + String(e));
+    } catch (e: any) {
+      const errMsg = "Có lỗi xảy ra khi kết nối máy chủ: " + (e?.message || String(e));
+      toast.error(errMsg);
+      onError(errMsg);
     } finally {
       setLoadingBook(false);
     }
