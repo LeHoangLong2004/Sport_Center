@@ -41,6 +41,7 @@ public sealed partial class PackageCatalogService
         {
             var sql = """
                 SELECT cb.id AS "BookingId", cb.user_id AS "UserId", cb.class_id AS "ClassId",
+                       cb.subscription_id AS "SubscriptionId",
                        COALESCE(cb.status, 'pending') AS "Status",
                        COALESCE(cb.created_at, now()) AS "CreatedAt",
                        COALESCE(c.class_name, 'Lớp học') AS "ClassName",
@@ -62,26 +63,44 @@ public sealed partial class PackageCatalogService
             {
                 var isPending = cb.Status.Trim().ToLowerInvariant() == "pending";
                 var subtotal = 150000m;
-                var classInvoice = await db.Invoices
-                    .AsNoTracking()
-                    .Where(i => i.UserId == cb.UserId && i.Status == (isPending ? PaymentStatus.Pending : PaymentStatus.Completed))
-                    .OrderByDescending(i => i.CreatedAt)
-                    .FirstOrDefaultAsync(cancellationToken);
-
                 decimal total;
-                if (classInvoice != null && classInvoice.TotalAmount > 0)
+                decimal discountAmount;
+                decimal discountPct;
+
+                if (cb.SubscriptionId.HasValue)
                 {
-                    total = classInvoice.TotalAmount;
+                    // Đặt theo quyền lợi gói tập/gói môn đã sở hữu -> Chi phí đặt lớp = 0 đ (giảm 100%)
+                    total = 0m;
+                    discountAmount = subtotal;
+                    discountPct = 100m;
                 }
                 else
                 {
-                    var activeMem = await GetActiveMembershipAsync(cb.UserId, cb.CreatedAt, cancellationToken);
-                    var pct = activeMem?.GroupDiscountPct ?? 0;
-                    total = Math.Max(0, subtotal - decimal.Round(subtotal * pct / 100m, 0, MidpointRounding.AwayFromZero));
-                }
+                    // Đặt theo vé lẻ ngoài gói: tìm hóa đơn thanh toán lớp học tương ứng (tạo gần thời điểm đặt và <= 150.000 đ)
+                    var classInvoice = await db.Invoices
+                        .AsNoTracking()
+                        .Where(i => i.UserId == cb.UserId
+                                 && i.Status == (isPending ? PaymentStatus.Pending : PaymentStatus.Completed)
+                                 && i.TotalAmount <= 150000m
+                                 && i.CreatedAt >= cb.CreatedAt.AddMinutes(-10)
+                                 && i.CreatedAt <= cb.CreatedAt.AddMinutes(10))
+                        .OrderByDescending(i => i.CreatedAt)
+                        .FirstOrDefaultAsync(cancellationToken);
 
-                var discountAmount = Math.Max(0, subtotal - total);
-                var discountPct = subtotal > 0 ? decimal.Round(discountAmount / subtotal * 100m, 0) : 0;
+                    if (classInvoice != null && classInvoice.TotalAmount > 0)
+                    {
+                        total = classInvoice.TotalAmount;
+                    }
+                    else
+                    {
+                        var activeMem = await GetActiveMembershipAsync(cb.UserId, cb.CreatedAt, cancellationToken);
+                        var pct = activeMem?.GroupDiscountPct ?? 0;
+                        total = Math.Max(0, subtotal - decimal.Round(subtotal * pct / 100m, 0, MidpointRounding.AwayFromZero));
+                    }
+
+                    discountAmount = Math.Max(0, subtotal - total);
+                    discountPct = subtotal > 0 ? decimal.Round(discountAmount / subtotal * 100m, 0) : 0;
+                }
 
                 subOrders.Add(new PackageOrderResponse
                 {
@@ -96,8 +115,10 @@ public sealed partial class PackageCatalogService
                         Id = cb.ClassId.ToString(),
                         Name = $"Lớp: {cb.ClassName}",
                         Category = "class",
-                        Tier = "Vé lớp học",
-                        Description = $"Lịch học: {cb.ScheduleTime:HH:mm dd/MM/yyyy} • Đặt chỗ tại quầy",
+                        Tier = cb.SubscriptionId.HasValue ? "Theo gói môn" : "Vé lớp học",
+                        Description = cb.SubscriptionId.HasValue
+                            ? $"Lịch học: {cb.ScheduleTime:HH:mm dd/MM/yyyy} • Quyền lợi gói tập"
+                            : $"Lịch học: {cb.ScheduleTime:HH:mm dd/MM/yyyy} • Đặt chỗ vé lẻ",
                         Sport = "Lớp nhóm",
                         Format = "group",
                     },
@@ -106,7 +127,7 @@ public sealed partial class PackageCatalogService
                     DiscountPct = discountPct,
                     DiscountAmount = discountAmount,
                     Total = total,
-                    PaymentMethod = "counter",
+                    PaymentMethod = cb.SubscriptionId.HasValue ? "package" : "counter",
                     Status = isPending ? "pending" : "paid",
                     CreatedAt = cb.CreatedAt,
                     PaidAt = isPending ? null : cb.CreatedAt,
@@ -129,6 +150,7 @@ public class ClassBookingOrderRaw
     public Guid BookingId { get; set; }
     public Guid UserId { get; set; }
     public Guid ClassId { get; set; }
+    public Guid? SubscriptionId { get; set; }
     public string Status { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public string ClassName { get; set; } = string.Empty;

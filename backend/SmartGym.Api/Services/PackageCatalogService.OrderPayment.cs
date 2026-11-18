@@ -111,6 +111,7 @@ public sealed partial class PackageCatalogService
             var booking = await db.Database.SqlQueryRaw<ClassBookingOrderRaw>(
                 """
                 SELECT cb.id AS "BookingId", cb.user_id AS "UserId", cb.class_id AS "ClassId",
+                       cb.subscription_id AS "SubscriptionId",
                        COALESCE(cb.status, 'pending') AS "Status",
                        COALESCE(cb.created_at, now()) AS "CreatedAt",
                        COALESCE(c.class_name, 'Lớp học') AS "ClassName",
@@ -248,6 +249,7 @@ public sealed partial class PackageCatalogService
             var booking = await db.Database.SqlQueryRaw<ClassBookingOrderRaw>(
                 """
                 SELECT cb.id AS "BookingId", cb.user_id AS "UserId", cb.class_id AS "ClassId",
+                       cb.subscription_id AS "SubscriptionId",
                        COALESCE(cb.status, 'pending') AS "Status",
                        COALESCE(cb.created_at, now()) AS "CreatedAt",
                        COALESCE(c.class_name, 'Lớp học') AS "ClassName",

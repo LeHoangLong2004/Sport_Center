@@ -233,12 +233,19 @@ public static partial class ClassEndpoints
                 catch { }
 
                 // Kiểm tra thông tin đặt chỗ trước khi hủy
-                SmartGym.Infrastructure.Persistence.Supabase.Repositories.ClassBookingRawModel? bookingRow = null;
+                CancelBookingInfoRaw? bookingRow = null;
                 try
                 {
                     bookingRow = await db.Database
-                        .SqlQueryRaw<SmartGym.Infrastructure.Persistence.Supabase.Repositories.ClassBookingRawModel>(
-                            "SELECT id, user_id, class_id, status, created_at FROM class_bookings WHERE user_id = {0} AND class_id = {1}",
+                        .SqlQueryRaw<CancelBookingInfoRaw>(
+                            """
+                            SELECT id AS "Id", user_id AS "UserId", class_id AS "ClassId",
+                                   COALESCE(status, '') AS "Status",
+                                   COALESCE(created_at, now()) AS "CreatedAt",
+                                   subscription_id AS "SubscriptionId"
+                            FROM class_bookings
+                            WHERE user_id = {0} AND class_id = {1}
+                            """,
                             userId, id)
                         .FirstOrDefaultAsync();
                 }
@@ -248,55 +255,92 @@ public static partial class ClassEndpoints
                 if (!isSuccess)
                     return Results.BadRequest(new { message = errorMessage });
 
-                // Kiểm tra xem đơn đặt có phải là trả sau tại quầy (pending) không
+                // Phân loại hình thức đặt chỗ:
+                // 1. Đặt theo gói môn / gói tập (SubscriptionId != null): Suất đặt 0 đ theo gói, không có tiền mặt cần hoàn
+                var isUnderSubscription = bookingRow?.SubscriptionId.HasValue == true;
+
+                // 2. Đặt vé lẻ trả sau tại quầy (pending): Chưa thanh toán tiền
                 var wasCounterPending = bookingRow != null &&
                     string.Equals(bookingRow.Status, "pending", StringComparison.OrdinalIgnoreCase);
 
-                decimal refundAmount = 150000m;
-                try
-                {
-                    var paidInvoice = await db.Invoices
-                        .Where(i => i.UserId == userId && i.Status == PaymentStatus.Completed)
-                        .OrderByDescending(i => i.CreatedAt)
-                        .FirstOrDefaultAsync();
-                    if (paidInvoice != null && paidInvoice.TotalAmount > 0)
-                    {
-                        refundAmount = paidInvoice.TotalAmount;
-                    }
-                }
-                catch { }
+                decimal refundAmount = 0m;
                 bool isRefunded = false;
                 decimal updatedBalance = 0m;
 
-                // Hoàn tiền vào ví CHỈ KHI: không phải trả sau tại quầy VÀ hủy hợp lệ trước giờ học từ 2 tiếng trở lên
-                // Nếu hủy muộn (< 2 tiếng): Tuyệt đối KHÔNG hoàn tiền theo đúng quy chế trung tâm
-                bool shouldRefund = !wasCounterPending && !isLate;
+                // Hoàn tiền vào ví CHỈ KHI:
+                // - Đặt vé lẻ ngoài gói (không phải theo gói môn)
+                // - Đã thanh toán tiền (không phải trả sau tại quầy)
+                // - Hủy hợp lệ trước giờ học từ 2 tiếng trở lên (!isLate)
+                bool shouldRefund = !isUnderSubscription && !wasCounterPending && !isLate;
 
                 if (shouldRefund)
                 {
-                    var className = classDetail?.ClassName ?? "lớp học";
-                    var (refundSuccess, newBal, _) = await MemberEndpoints.RefundToWalletAsync(
-                        db,
-                        userId,
-                        refundAmount,
-                        $"Hoàn tiền hủy đặt lớp: {className}"
-                    );
-                    if (refundSuccess)
+                    refundAmount = 150000m;
+                    try
                     {
-                        isRefunded = true;
-                        updatedBalance = newBal;
+                        var bookingTime = bookingRow?.CreatedAt ?? DateTime.UtcNow;
+                        // Tìm hóa đơn vé lẻ tương ứng (chỉ lấy hóa đơn <= 150.000 đ tạo cùng thời điểm đặt, TUYỆT ĐỐI không lấy nhầm hóa đơn gói tập lớn)
+                        var paidInvoice = await db.Invoices
+                            .Where(i => i.UserId == userId 
+                                     && i.Status == PaymentStatus.Completed
+                                     && i.TotalAmount <= 150000m
+                                     && i.CreatedAt >= bookingTime.AddMinutes(-10) 
+                                     && i.CreatedAt <= bookingTime.AddMinutes(10))
+                            .OrderByDescending(i => i.CreatedAt)
+                            .FirstOrDefaultAsync();
+
+                        if (paidInvoice != null && paidInvoice.TotalAmount > 0)
+                        {
+                            refundAmount = paidInvoice.TotalAmount;
+                        }
+                        else
+                        {
+                            // Nếu không tìm thấy hóa đơn rời, kiểm tra xem có được hưởng giảm giá hạng thành viên không
+                            var activeSub = await db.Subscriptions
+                                .Where(s => s.UserId == userId && s.PaymentStatus == PaymentStatus.Completed && s.StartDate <= bookingTime && s.EndDate >= bookingTime)
+                                .ToListAsync();
+                            if (activeSub.Any(s => (s.PackageSnapshotJson ?? "").Contains("premium", StringComparison.OrdinalIgnoreCase)))
+                                refundAmount = 127500m;
+                            else if (activeSub.Any(s => (s.PackageSnapshotJson ?? "").Contains("plus", StringComparison.OrdinalIgnoreCase)))
+                                refundAmount = 138000m;
+                        }
+                    }
+                    catch { }
+
+                    if (refundAmount > 0)
+                    {
+                        var className = classDetail?.ClassName ?? "lớp học";
+                        var (refundSuccess, newBal, _) = await MemberEndpoints.RefundToWalletAsync(
+                            db,
+                            userId,
+                            refundAmount,
+                            $"Hoàn tiền hủy đặt lớp: {className}"
+                        );
+                        if (refundSuccess)
+                        {
+                            isRefunded = true;
+                            updatedBalance = newBal;
+                        }
                     }
                 }
 
                 var targetClassName = classDetail?.ClassName ?? "lớp học";
                 string message;
-                if (isRefunded)
+                if (isUnderSubscription)
+                {
+                    message = $"Đã hủy đặt lớp \"{targetClassName}\" thành công. Suất tập thuộc gói môn của bạn đã được giải phóng để bạn có thể đặt lịch tập khác!";
+                }
+                else if (isRefunded)
                 {
                     message = $"Đã hủy đặt lớp \"{targetClassName}\" thành công. Số tiền {refundAmount:N0} đ đã được hoàn lại vào Ví hội viên của bạn!";
                 }
                 else if (isLate && !wasCounterPending)
                 {
                     message = $"Đã hủy đặt lớp \"{targetClassName}\" thành công. Chỗ học đã được giải phóng (Hủy muộn trong vòng 2 tiếng trước giờ học nên không hoàn tiền ví theo quy định).";
+                }
+                else if (wasCounterPending)
+                {
+                    message = $"Đã hủy lịch giữ chỗ lớp \"{targetClassName}\" thành công (Chưa thanh toán tại quầy).";
                 }
                 else
                 {
@@ -353,3 +397,13 @@ public static partial class ClassEndpoints
 }
 
 public record PayAndBookClassRequest(string? PaymentMethod = "qr", decimal Amount = 150000);
+
+public class CancelBookingInfoRaw
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public Guid ClassId { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public Guid? SubscriptionId { get; set; }
+}
