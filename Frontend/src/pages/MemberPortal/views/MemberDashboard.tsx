@@ -92,14 +92,25 @@ export default function MemberDashboard({ onNavigate }: Props) {
     if (orders.length > 0) {
       const now = new Date();
       return orders
-        .filter((o) => o.status === "paid" && o.packageSnapshot)
+        .filter((o) => {
+          if (o.status !== "paid" || !o.packageSnapshot) return false;
+          // Phân biệt gói tập / thẻ hội viên với lượt đặt chỗ lớp học:
+          // Bỏ qua các đơn vé lớp học lẻ (category === "class")
+          if (o.packageSnapshot.category === "class") return false;
+          // Chỉ lấy các gói còn hạn sử dụng (endDate >= now)
+          if (o.endDate) {
+            const end = new Date(o.endDate);
+            if (end.getTime() < now.getTime()) return false;
+          }
+          return true;
+        })
         .map((o) => {
           const end = o.endDate ? new Date(o.endDate) : new Date();
           const daysRemaining = Math.max(0, Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
           return {
             id: o.id,
             name: o.packageSnapshot.name,
-            sport: o.packageSnapshot.sport || (o.packageSnapshot.category === "membership" ? "Thành viên" : "Gym"),
+            sport: o.packageSnapshot.sport || (o.packageSnapshot.category === "membership" ? "Thành viên" : "Gói môn"),
             endDate: o.endDate ? o.endDate.split("T")[0] : "--",
             daysRemaining,
           };
