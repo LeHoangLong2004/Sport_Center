@@ -10,9 +10,14 @@ export function BookClassSummary({ selectedClass }: Props) {
       {/* Class Summary */}
       <div className="flex gap-3.5 items-center p-3 bg-slate-50/90 rounded-2xl border border-slate-100">
         <img
-          src={`/assets/member-booking/${selectedClass.image}`}
+          src={
+            selectedClass.image &&
+            (selectedClass.image.startsWith("/") || selectedClass.image.startsWith("http"))
+              ? selectedClass.image
+              : `/assets/member-booking/${selectedClass.image}`
+          }
           className="size-14 rounded-xl object-cover shadow-2xs shrink-0 border border-slate-200"
-          alt=""
+          alt={selectedClass.title || "Lớp học"}
         />
         <div className="flex flex-col justify-center min-w-0 flex-1">
           <h4 className="font-bold text-slate-800 text-sm leading-snug truncate">

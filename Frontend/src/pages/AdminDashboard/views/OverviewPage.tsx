@@ -117,11 +117,11 @@ export function OverviewPage({ onNavigate }: { onNavigate?: (page: any) => void 
         </div>
 
         <div className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 p-6 rounded-2xl hover:shadow-xl transition-shadow flex flex-col">
-          <p className="font-bold text-slate-900 dark:text-white text-lg mb-6">Hoạt động gần đây</p>
+          <p className="font-bold text-slate-900 dark:text-white text-lg mb-6">Giao dịch gần đây</p>
           <div className="flex flex-col gap-6 flex-1">
             {activities.length === 0 && (
               <p className="text-slate-500 dark:text-slate-400 text-sm">
-                Nhật ký hoạt động chưa được ghi nhận trong hệ thống.
+                Chưa có giao dịch thanh toán nào được ghi nhận.
               </p>
             )}
             {activities.map((act) => (
@@ -139,14 +139,14 @@ export function OverviewPage({ onNavigate }: { onNavigate?: (page: any) => void 
           <button
             onClick={() => {
               if (onNavigate) {
-                onNavigate("settings");
+                onNavigate("payment");
               } else {
-                toast.info("Đang chuyển đến màn hình Cài đặt & Nhật ký hệ thống...");
+                toast.info("Đang chuyển đến màn hình Thanh toán & Hóa đơn...");
               }
             }}
             className="mt-8 w-full py-3 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-300 text-sm hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white active:scale-[0.99] transition-all cursor-pointer"
           >
-            Xem toàn bộ nhật ký
+            Xem toàn bộ lịch sử giao dịch
           </button>
         </div>
       </div>

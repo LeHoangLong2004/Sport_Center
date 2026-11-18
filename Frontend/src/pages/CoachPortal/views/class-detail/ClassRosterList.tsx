@@ -15,7 +15,7 @@ const ATTENDANCE_STYLE: Record<string, string> = {
 const ATTENDANCE_LABEL: Record<string, string> = {
   "chưa điểm danh": "Chưa điểm danh",
   attended: "Có mặt",
-  no_show: "Vắng",
+  no_show: "Vắng mặt",
   late: "Đi trễ",
   excused: "Có phép",
 };

@@ -172,22 +172,27 @@ export const CreateAppointmentModal: React.FC<Props> = ({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs">
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full border border-slate-200 flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        {/* Compact Header */}
-        <div className="px-4 py-2.5 bg-slate-900 text-white flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-emerald-600/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400">
-              <Calendar className="w-3.5 h-3.5" />
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 bg-slate-900/50 backdrop-blur-xs">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        {/* Modern Header */}
+        <div className="px-5 py-3.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white flex items-center justify-between shrink-0 shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-white/20 border border-white/30 flex items-center justify-center text-white shadow-xs">
+              <Calendar className="w-4 h-4" />
             </div>
-            <h3 className="text-sm font-bold text-white">
-              Tạo Lịch Hẹn Coach & Tư Vấn
-            </h3>
+            <div>
+              <h3 className="text-sm font-extrabold text-white">
+                Tạo Lịch Hẹn Coach & Tư Vấn
+              </h3>
+              <p className="text-[10px] text-emerald-100 font-medium">
+                Sắp xếp buổi tập thử, InBody hoặc tư vấn với HLV
+              </p>
+            </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition cursor-pointer"
+            className="p-1.5 text-white/80 hover:text-white rounded-lg hover:bg-white/15 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>

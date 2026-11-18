@@ -1,62 +1,40 @@
-import React, { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
+import React, { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Eye, EyeOff, Lock, CheckCircle2, ArrowLeft } from "lucide-react";
 import { AuthVisual } from "./AuthVisual";
 import { ThemeToggle } from "./ThemeToggle";
 
-type Step = "otp" | "password";
-
 export function ResetPassword({ onLogin }: { onLogin: () => void }) {
-  const [step, setStep] = useState<Step>("otp");
   const [email, setEmail] = useState("");
-  const [token, setToken] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
-  const otpInputs = useRef<Array<HTMLInputElement | null>>([]);
 
   useEffect(() => {
-    setEmail(localStorage.getItem("reset_email") || "");
+    const savedEmail = localStorage.getItem("reset_email") || "";
+    setEmail(savedEmail);
   }, []);
 
-  async function verifyOtp(event: FormEvent) {
+  async function handleResetPassword(event: FormEvent) {
     event.preventDefault();
     setMessage(null);
-    if (token.length !== 6) {
-      setMessage({ type: "error", text: "Vui lòng nhập đủ 6 chữ số OTP." });
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setMessage({ type: "error", text: "Vui lòng nhập địa chỉ email tài khoản." });
       return;
     }
-    setLoading(true);
-
-    try {
-      const response = await fetch("/api/auth/verify-reset-token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, token }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setMessage({ type: "error", text: data.message || "Mã OTP không hợp lệ." });
-        return;
-      }
-      setStep("password");
-    } catch {
-      setMessage({ type: "error", text: "Lỗi kết nối đến server API." });
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function resetPassword(event: FormEvent) {
-    event.preventDefault();
-    setMessage(null);
 
     if (newPassword.length < 6) {
       setMessage({ type: "error", text: "Mật khẩu mới phải có tối thiểu 6 ký tự." });
       return;
     }
+
     if (newPassword !== confirmPassword) {
-      setMessage({ type: "error", text: "Mật khẩu xác nhận không trùng khớp." });
+      setMessage({ type: "error", text: "Mật khẩu xác nhận không trùng khớp với mật khẩu mới." });
       return;
     }
 
@@ -65,133 +43,191 @@ export function ResetPassword({ onLogin }: { onLogin: () => void }) {
       const response = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, token, newPassword }),
+        body: JSON.stringify({
+          email: trimmedEmail,
+          newPassword,
+        }),
       });
+
       const data = await response.json().catch(() => ({}));
+
       if (!response.ok) {
-        const errText = data.message || "Không thể đặt lại mật khẩu.";
+        const errText = data.message || "Không thể đặt lại mật khẩu. Vui lòng thử lại.";
         setMessage({ type: "error", text: errText });
-        toast.error("Đặt lại mật khẩu thất bại", { id: "auth-toast", description: errText });
+        toast.error("Cập nhật mật khẩu thất bại", { id: "auth-toast", description: errText });
         return;
       }
 
       localStorage.removeItem("reset_email");
-      localStorage.removeItem("reset_token_demo");
-      const succText = data.message || "Đặt lại mật khẩu thành công.";
+      const succText = data.message || "Đặt lại mật khẩu thành công!";
       setMessage({ type: "success", text: succText });
-      toast.success("Đặt lại mật khẩu thành công!", { id: "auth-toast", description: "Vui lòng đăng nhập với mật khẩu mới của bạn." });
-      window.setTimeout(onLogin, 900);
+      toast.success("Cập nhật mật khẩu thành công!", {
+        id: "auth-toast",
+        description: "Vui lòng đăng nhập với mật khẩu mới của bạn.",
+      });
+
+      window.setTimeout(onLogin, 1200);
     } catch {
-      setMessage({ type: "error", text: "Lỗi kết nối đến server API." });
+      setMessage({ type: "error", text: "Lỗi kết nối đến máy chủ. Vui lòng kiểm tra lại mạng." });
+      toast.error("Lỗi kết nối đến máy chủ", { id: "auth-toast" });
     } finally {
       setLoading(false);
     }
   }
 
-  const isOtpStep = step === "otp";
-  const otpDigits = Array.from({ length: 6 }, (_, index) => token[index] || "");
-
-  function updateOtp(index: number, value: string) {
-    const digits = value.replace(/\D/g, "");
-    if (!digits) {
-      setToken((current) => current.slice(0, index) + current.slice(index + 1));
-      return;
-    }
-
-    const next = token.split("");
-    next[index] = digits[digits.length - 1];
-    setToken(next.join("").slice(0, 6));
-    setMessage(null);
-    if (index < 5) otpInputs.current[index + 1]?.focus();
-  }
-
-  function handleOtpKeyDown(index: number, event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Backspace" && !otpDigits[index] && index > 0) {
-      const previous = token.slice(0, index - 1) + token.slice(index);
-      setToken(previous);
-      otpInputs.current[index - 1]?.focus();
-    } else if (event.key === "ArrowLeft" && index > 0) {
-      otpInputs.current[index - 1]?.focus();
-    } else if (event.key === "ArrowRight" && index < 5) {
-      otpInputs.current[index + 1]?.focus();
-    }
-  }
-
-  function handleOtpPaste(event: React.ClipboardEvent<HTMLInputElement>) {
-    event.preventDefault();
-    const pasted = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (!pasted) return;
-    setToken(pasted);
-    setMessage(null);
-    otpInputs.current[Math.min(pasted.length, 6) - 1]?.focus();
-  }
-
   return (
-    <main className="flex min-h-screen bg-slate-50 dark:bg-[#0f172a] font-sans">
+    <main className="flex min-h-screen bg-slate-50 dark:bg-[#0f172a] font-sans selection:bg-emerald-600 selection:text-white transition-colors duration-300">
       <AuthVisual emphasized />
-      <section className="flex-1 flex flex-col justify-center items-center p-8 lg:p-12 relative">
+
+      <section className="flex-1 flex flex-col justify-center items-center p-8 lg:p-12 relative overflow-y-auto">
         <ThemeToggle />
-        <form className="w-full max-w-md relative z-10" onSubmit={isOtpStep ? verifyOtp : resetPassword}>
-          <button type="button" onClick={onLogin} className="text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white mb-10">
-            ← Quay lại đăng nhập
+
+        {/* Glow effect in background */}
+        <div className="absolute top-1/4 -right-20 w-72 h-72 bg-emerald-600/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-1/4 -left-20 w-72 h-72 bg-emerald-600/10 rounded-full blur-[100px] pointer-events-none" />
+
+        <form className="w-full max-w-md relative z-10" onSubmit={handleResetPassword}>
+          <button
+            type="button"
+            onClick={onLogin}
+            className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:text-white transition-colors mb-8 group cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            Quay lại đăng nhập
           </button>
 
-          <div className="mb-8">
-            <span className="text-slate-800 font-bold text-xs tracking-widest uppercase">KHÔI PHỤC MẬT KHẨU</span>
-            <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white mt-2 mb-2">
-              {isOtpStep ? "Xác minh OTP" : "Đặt lại mật khẩu"}
+          <div className="mb-6">
+            <span className="inline-block text-emerald-600 dark:text-emerald-400 font-bold text-xs tracking-widest uppercase mb-2">
+              THIẾT LẬP BẢO MẬT
+            </span>
+            <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-2 tracking-tight">
+              Tạo mật khẩu mới
             </h2>
-            <p className="text-slate-500 dark:text-slate-400 text-sm">
-              {isOtpStep
-                ? "Nhập mã OTP 6 số được gửi đến email của bạn để tiếp tục."
-                : "Tạo mật khẩu mới cho tài khoản của bạn."}
+            <p className="text-slate-500 dark:text-[#94a3b8] text-sm">
+              Nhập mật khẩu mới và xác nhận để cập nhật thông tin đăng nhập của bạn.
             </p>
           </div>
 
-          <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
-            Email
-            <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" required disabled={!isOtpStep} className="mt-1.5 block w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-normal disabled:opacity-70" />
-          </label>
-
-          {isOtpStep ? (
-            <>
-              <div className="mt-5">
-                <span className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Mã OTP</span>
-                <div className="flex justify-center gap-2 sm:gap-3" role="group" aria-label="Mã OTP 6 chữ số">
-                  {otpDigits.map((digit, index) => (
-                    <input
-                      key={index}
-                      ref={(element) => { otpInputs.current[index] = element; }}
-                      value={digit}
-                      onChange={(event) => updateOtp(index, event.target.value)}
-                      onKeyDown={(event) => handleOtpKeyDown(index, event)}
-                      onPaste={handleOtpPaste}
-                      inputMode="numeric"
-                      maxLength={1}
-                      autoFocus={index === 0}
-                      aria-label={`Chữ số OTP ${index + 1}`}
-                      className="w-11 h-14 sm:w-12 sm:h-14 text-center text-xl font-bold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#14b8a6] focus:border-[#14b8a6] transition-all"
-                    />
-                  ))}
-                </div>
+          {/* Email Card */}
+          <div className="p-3 bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-xl mb-5 flex items-center justify-between">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
+                @
               </div>
-            </>
-          ) : (
-            <div className="space-y-4 mt-4">
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+              <div className="min-w-0">
+                <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold uppercase tracking-wider block">
+                  Tài khoản đặt lại
+                </span>
+                <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate block">
+                  {email || "Chưa xác định"}
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onLogin}
+              className="text-[11px] font-medium text-emerald-700 hover:text-emerald-900 dark:text-emerald-400 dark:hover:underline shrink-0 ml-2 cursor-pointer"
+            >
+              Đổi email
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {/* Mật khẩu mới */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-[#cbd5e1] mb-1.5">
                 Mật khẩu mới
-                <input value={newPassword} onChange={(event) => setNewPassword(event.target.value)} type="password" minLength={6} autoFocus required className="mt-1.5 block w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-normal" />
               </label>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-[#64748b]">
+                  <Lock className="w-4 h-4" />
+                </div>
+                <input
+                  type={showNewPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                    if (message) setMessage(null);
+                  }}
+                  minLength={6}
+                  required
+                  placeholder="Tối thiểu 6 ký tự"
+                  autoFocus
+                  className="block w-full pl-10 pr-10 py-3 bg-white dark:bg-[#1e293b]/50 border border-slate-200 dark:border-[#334155] rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/50 focus:border-[#14b8a6] transition-all shadow-sm dark:shadow-none text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                >
+                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Xác nhận mật khẩu mới */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-[#cbd5e1] mb-1.5">
                 Xác nhận mật khẩu mới
-                <input value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} type="password" minLength={6} required className="mt-1.5 block w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-normal" />
               </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-[#64748b]">
+                  <Lock className="w-4 h-4" />
+                </div>
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    if (message) setMessage(null);
+                  }}
+                  minLength={6}
+                  required
+                  placeholder="Nhập lại mật khẩu mới"
+                  className="block w-full pl-10 pr-10 py-3 bg-white dark:bg-[#1e293b]/50 border border-slate-200 dark:border-[#334155] rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-[#14b8a6]/50 focus:border-[#14b8a6] transition-all shadow-sm dark:shadow-none text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Validation or status message */}
+          {message && (
+            <div
+              className={`mt-4 p-3 rounded-xl text-xs flex items-start gap-2 ${
+                message.type === "success"
+                  ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                  : "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
+              }`}
+            >
+              {message.type === "success" && <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />}
+              <span>{message.text}</span>
             </div>
           )}
 
-          {message && <div className={`mt-5 p-3 rounded-lg text-sm ${message.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}`}>{message.text}</div>}
-          <button disabled={loading} type="submit" className="w-full mt-6 bg-gradient-to-r from-[#14b8a6] to-[#0d9488] text-white font-bold py-3.5 px-4 rounded-xl disabled:opacity-70">
-            {loading ? "Đang xử lý..." : isOtpStep ? "Xác minh OTP" : "Đặt lại mật khẩu"}
+          {/* Submit button */}
+          <button
+            disabled={loading}
+            type="submit"
+            className="w-full mt-6 flex items-center justify-center gap-2 bg-gradient-to-r from-[#14b8a6] to-[#0d9488] hover:from-[#0d9488] hover:to-[#0f766e] text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-500/20 dark:shadow-emerald-500/10 transition-all active:scale-[0.98] disabled:opacity-70 disabled:pointer-events-none cursor-pointer"
+          >
+            {loading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Đang cập nhật...
+              </>
+            ) : (
+              "Xác nhận đặt lại mật khẩu"
+            )}
           </button>
         </form>
       </section>
