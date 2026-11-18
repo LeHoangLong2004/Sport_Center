@@ -79,11 +79,6 @@ public sealed class Flow5ContextService : IFlow5ContextService
             coach,
             memberId,
             cancellationToken);
-        var latestMetric = await _db.BodyMetrics
-            .AsNoTracking()
-            .Where(metric => metric.UserId == memberId)
-            .OrderByDescending(metric => metric.RecordedAt)
-            .FirstOrDefaultAsync(cancellationToken);
 
         context.Member = new Flow5MemberContextDto
         {
@@ -92,17 +87,7 @@ public sealed class Flow5ContextService : IFlow5ContextService
             Gender = member.Gender,
             HasPtEnrollment = await HasActivePtEnrollmentAsync(coach, memberId, cancellationToken),
             AssignedClassCount = classRows.Count,
-            LatestBodyMetrics = latestMetric is null
-                ? null
-                : new Flow5BodyMetricContextDto
-                {
-                    Weight = latestMetric.Weight,
-                    Height = latestMetric.Height,
-                    BodyFat = latestMetric.BodyFat,
-                    MuscleMass = latestMetric.MuscleMass,
-                    Bmi = latestMetric.Bmi,
-                    RecordedAt = latestMetric.RecordedAt
-                }
+            LatestBodyMetrics = null
         };
 
         context.Attendance = await BuildAttendanceAsync(

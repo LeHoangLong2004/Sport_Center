@@ -180,27 +180,39 @@ public static partial class ClassEndpoints
                 async (
                     Guid id,
                     HttpContext context,
-                    SmartGymDbContext db) =>
+                    SmartGymDbContext db,
+                    ILoggerFactory loggerFactory) =>
                 {
-                    var userIdValue = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                        ?? context.User.FindFirst("sub")?.Value;
-                    if (!Guid.TryParse(userIdValue, out var userId))
-                        return Results.Unauthorized();
-
-                    var coachId = await CoachProfileResolver.FindByUserIdAsync(db, userId, activeOnly: true);
-                    if (coachId == null)
-                        return Results.BadRequest(new { message = "Tài khoản Coach chưa có hồ sơ hoạt động." });
-
-                    var affected = await db.Database.ExecuteSqlInterpolatedAsync($@"
-                        DELETE FROM classes
-                        WHERE id = {id} AND coach_id = {coachId.Value} AND (approval_status = 'pending' OR status = 'pending')");
-
-                    if (affected == 0)
+                    try
                     {
-                        return Results.BadRequest(new { message = "Không tìm thấy đề xuất lớp học hoặc đề xuất không ở trạng thái chờ duyệt." });
-                    }
+                        var userIdValue = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                            ?? context.User.FindFirst("sub")?.Value;
+                        if (!Guid.TryParse(userIdValue, out var userId))
+                            return Results.Unauthorized();
 
-                    return Results.Ok(new { success = true, message = "Đã thu hồi đề xuất mở lớp học thành công." });
+                        var coachId = await CoachProfileResolver.FindByUserIdAsync(db, userId, activeOnly: true);
+                        if (coachId == null)
+                            return Results.BadRequest(new { message = "Tài khoản Coach chưa có hồ sơ hoạt động." });
+
+                        var affected = await db.Database.ExecuteSqlInterpolatedAsync($@"
+                            DELETE FROM classes
+                            WHERE id = {id} 
+                              AND (coach_id = {coachId.Value} OR coach_id = {userId}) 
+                              AND approval_status = 'pending'");
+
+                        if (affected == 0)
+                        {
+                            return Results.BadRequest(new { message = "Không tìm thấy đề xuất lớp học hoặc đề xuất không ở trạng thái chờ duyệt." });
+                        }
+
+                        return Results.Ok(new { success = true, message = "Đã thu hồi đề xuất mở lớp học thành công." });
+                    }
+                    catch (Exception ex)
+                    {
+                        var logger = loggerFactory.CreateLogger("ClassEndpoints");
+                        logger.LogError(ex, "Lỗi khi thu hồi đề xuất lớp học {ClassId}", id);
+                        return Results.Problem(detail: ex.Message, statusCode: 500);
+                    }
                 }
             )
             .RequireAuthorization(policy => policy.RequireRole("coach"));

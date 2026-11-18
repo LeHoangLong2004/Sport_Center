@@ -57,10 +57,10 @@ export const AppointmentDateTimeSelector: React.FC<AppointmentDateTimeSelectorPr
               setDateQuickChoice("today");
               setSelectedDate(getTodayIso());
             }}
-            className={`py-1.5 px-2 rounded text-[11px] font-semibold border transition cursor-pointer text-center ${
+            className={`py-1.5 px-2 rounded-lg text-[11px] font-semibold border transition cursor-pointer text-center ${
               dateQuickChoice === "today"
-                ? "bg-slate-900 text-white border-slate-900 shadow-2xs font-bold"
-                : "bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300"
+                ? "bg-emerald-600 text-white border-emerald-600 shadow-xs shadow-emerald-600/25 font-bold"
+                : "bg-slate-50 text-slate-700 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/30"
             }`}
           >
             Hôm nay
@@ -72,10 +72,10 @@ export const AppointmentDateTimeSelector: React.FC<AppointmentDateTimeSelectorPr
               setDateQuickChoice("tomorrow");
               setSelectedDate(getTomorrowIso());
             }}
-            className={`py-1.5 px-2 rounded text-[11px] font-semibold border transition cursor-pointer text-center ${
+            className={`py-1.5 px-2 rounded-lg text-[11px] font-semibold border transition cursor-pointer text-center ${
               dateQuickChoice === "tomorrow"
-                ? "bg-slate-900 text-white border-slate-900 shadow-2xs font-bold"
-                : "bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300"
+                ? "bg-emerald-600 text-white border-emerald-600 shadow-xs shadow-emerald-600/25 font-bold"
+                : "bg-slate-50 text-slate-700 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/30"
             }`}
           >
             Ngày mai
@@ -86,10 +86,10 @@ export const AppointmentDateTimeSelector: React.FC<AppointmentDateTimeSelectorPr
             onClick={() => {
               setDateQuickChoice("custom");
             }}
-            className={`py-1.5 px-2 rounded text-[11px] font-semibold border transition cursor-pointer text-center ${
+            className={`py-1.5 px-2 rounded-lg text-[11px] font-semibold border transition cursor-pointer text-center ${
               dateQuickChoice === "custom"
-                ? "bg-slate-900 text-white border-slate-900 shadow-2xs font-bold"
-                : "bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300"
+                ? "bg-emerald-600 text-white border-emerald-600 shadow-xs shadow-emerald-600/25 font-bold"
+                : "bg-slate-50 text-slate-700 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/30"
             }`}
           >
             Chọn ngày khác
@@ -172,12 +172,12 @@ export const AppointmentDateTimeSelector: React.FC<AppointmentDateTimeSelectorPr
                   type="button"
                   disabled={inPast}
                   onClick={() => !inPast && setSelectedTime(slot)}
-                  className={`py-1 rounded text-[11px] font-bold border transition ${
+                  className={`py-1.5 rounded-lg text-[11px] font-bold border transition ${
                     inPast
                       ? "bg-slate-100 text-slate-300 border-slate-200 cursor-not-allowed line-through"
                       : isSelected
-                      ? "bg-slate-900 text-white border-slate-900 shadow-2xs cursor-pointer"
-                      : "bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300 cursor-pointer"
+                      ? "bg-emerald-600 text-white border-emerald-600 shadow-xs shadow-emerald-600/25 cursor-pointer font-extrabold"
+                      : "bg-slate-50 text-slate-700 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/30 cursor-pointer"
                   }`}
                   title={inPast ? "Khung giờ này đã trôi qua trong ngày hôm nay" : undefined}
                 >

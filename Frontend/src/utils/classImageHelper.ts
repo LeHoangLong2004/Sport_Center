@@ -4,19 +4,19 @@
  * 1. customImageUrl (nếu có và hợp lệ)
  * 2. Tên bộ môn (sportName)
  * 3. Tên lớp học (className)
- * Đảm bảo 100% đúng môn thể thao, không bị lệch ảnh.
+ * Đảm bảo 100% đúng môn thể thao, đồng bộ hoàn toàn với Homepage và Landing Page.
  */
 
 export const DEFAULT_SPORT_IMAGES = {
-  football: "/assets/images/football.jpg",
+  football: "https://th.bing.com/th/id/OIP.AR6rbafXz9J0JnTMRmXdTQHaEj?r=0&o=7rm=3&rs=1&pid=ImgDetMain",
   badminton: "/assets/images/hero_bg.jpg",
-  swimming: "/assets/cfb22.png",
-  gym: "/assets/e865e.png",
-  yoga: "/assets/88bba.png",
+  swimming: "https://tse3.mm.bing.net/th/id/OIP.c-OVTeh55Aja-g-JN7nDFAHaEK?r=0&rs=1&pid=ImgDetMain",
+  gym: "https://tse3.mm.bing.net/th/id/OIP.DkRCZVOhusEBQrIjBTGqjAHaE7?r=0&rs=1&pid=ImgDetMain",
+  yoga: "https://th.bing.com/th/id/OIP.M7zSkUbRBnbJ7OjaQm1SnAHaD4?r=0&o=7rm=3&rs=1&pid=ImgDetMain",
   boxing: "/assets/252a5.png",
   basketball: "/assets/3c386.png",
-  zumba: "/assets/b457c.png",
-  default: "/assets/images/hero_bg.jpg",
+  zumba: "https://th.bing.com/th/id/OIP.1-y-qxG-nI72dBGJuBA6JQHaEK?r=0&o=7rm=3&rs=1&pid=ImgDetMain",
+  default: "https://tse3.mm.bing.net/th/id/OIP.DkRCZVOhusEBQrIjBTGqjAHaE7?r=0&rs=1&pid=ImgDetMain",
 };
 
 export function getClassImage(
@@ -40,6 +40,8 @@ export function getClassImage(
   const text = rawText
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "d")
     .toLowerCase();
 
   // 1. Bóng đá / Futsal / Sân cỏ / Soccer / Football
@@ -50,7 +52,8 @@ export function getClassImage(
     text.includes("soccer") ||
     text.includes("da banh") ||
     text.includes("san banh") ||
-    text.includes("san co")
+    text.includes("san co") ||
+    text.includes("sut phat")
   ) {
     return DEFAULT_SPORT_IMAGES.football;
   }
@@ -136,4 +139,3 @@ export function getClassImage(
 
   return DEFAULT_SPORT_IMAGES.default;
 }
-

@@ -16,10 +16,11 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetByEmailAsync(string email)
     {
+        var trimmed = (email ?? string.Empty).Trim().ToLower();
         return await _dbContext
             .Users.Include(u => u.Role)
             .Include(u => u.CoachProfile)
-            .FirstOrDefaultAsync(u => u.Email == email);
+            .FirstOrDefaultAsync(u => u.Email.ToLower() == trimmed);
     }
 
     public async Task<User?> GetByPhoneNumberAsync(string phoneNumber)

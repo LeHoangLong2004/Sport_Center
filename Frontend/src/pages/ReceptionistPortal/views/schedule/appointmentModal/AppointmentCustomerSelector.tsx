@@ -69,17 +69,17 @@ export const AppointmentCustomerSelector: React.FC<AppointmentCustomerSelectorPr
           1. Khách hàng
         </span>
         {/* Small Segmented Switch */}
-        <div className="flex p-0.5 bg-slate-100 rounded text-[11px] font-semibold">
+        <div className="flex p-0.5 bg-slate-100 rounded-lg text-[11px] font-semibold">
           <button
             type="button"
             onClick={() => {
               setCustomerMode("member");
               setShowMemberDropdown(false);
             }}
-            className={`px-2 py-0.5 rounded transition cursor-pointer ${
+            className={`px-2.5 py-0.5 rounded-md transition cursor-pointer ${
               customerMode === "member"
-                ? "bg-white text-slate-700 shadow-2xs"
-                : "text-slate-500 hover:text-slate-800"
+                ? "bg-emerald-600 text-white shadow-xs font-bold"
+                : "text-slate-600 hover:text-slate-900"
             }`}
           >
             Hội viên
@@ -90,10 +90,10 @@ export const AppointmentCustomerSelector: React.FC<AppointmentCustomerSelectorPr
               setCustomerMode("guest");
               setShowMemberDropdown(false);
             }}
-            className={`px-2 py-0.5 rounded transition cursor-pointer ${
+            className={`px-2.5 py-0.5 rounded-md transition cursor-pointer ${
               customerMode === "guest"
-                ? "bg-white text-slate-700 shadow-2xs"
-                : "text-slate-500 hover:text-slate-800"
+                ? "bg-emerald-600 text-white shadow-xs font-bold"
+                : "text-slate-600 hover:text-slate-900"
             }`}
           >
             Khách mới
