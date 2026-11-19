@@ -141,7 +141,6 @@ public partial class SmartGymDbContext : DbContext
             entity.Property(e => e.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.PackageId).HasColumnName("package_id").IsRequired();
             entity.Property(e => e.BenefitType).HasColumnName("benefit_type").IsRequired();
-            entity.Property(e => e.BenefitValue).HasColumnName("benefit_value");
             entity.Property(e => e.Description).HasColumnName("description").IsRequired();
 
             entity
