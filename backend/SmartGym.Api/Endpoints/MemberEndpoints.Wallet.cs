@@ -134,8 +134,9 @@ namespace SmartGym.Api.Endpoints
                         try
                         {
                             var cnt = await db.Database.SqlQueryRaw<int>(
-                                "SELECT COUNT(*)::int AS \"Value\" FROM wallet_transactions WHERE reference_code = {0}",
-                                request.Id
+                                "SELECT COUNT(*)::int AS \"Value\" FROM wallet_transactions WHERE reference_code = {0} AND user_id = {1}",
+                                request.Id,
+                                memberGuid.Value
                             ).ToListAsync();
                             alreadyRecorded = cnt.FirstOrDefault() > 0;
                         }

@@ -73,7 +73,15 @@ export default function WalletTopUpModal({
 
   const [sessionCode, setSessionCode] = useState(() => Math.floor(1000 + Math.random() * 9000).toString());
   const actualAmount = customAmount ? Number(customAmount.replace(/\D/g, "")) : selectedAmount;
-  const transferMemo = `NAPVI ${sessionCode}`.toUpperCase();
+  
+  const storedUser = getStoredUser();
+  const effectivePhone = (phone && phone !== "0901234567" ? phone : "") || storedUser?.phoneNumber || storedUser?.phone || "";
+  const cleanPhone = effectivePhone.replace(/\D/g, "");
+  const memberCode = (storedUser?.memberCode || "").trim().toUpperCase();
+  const userIdentifier = cleanPhone || memberCode;
+  const transferMemo = userIdentifier
+    ? `NAPVI ${userIdentifier} ${sessionCode}`.toUpperCase()
+    : `NAPVI ${sessionCode}`.toUpperCase();
 
   useEffect(() => {
     if (isOpen) {
@@ -91,10 +99,14 @@ export default function WalletTopUpModal({
     const interval = setInterval(async () => {
       try {
         const res = await WalletService.checkTransfer(transferMemo, actualAmount);
-        if (!isCancelled && res.received && typeof res.newBalance === "number") {
+        if (!isCancelled && res.received) {
           clearInterval(interval);
-          setSuccessResult({ amount: actualAmount, newBalance: res.newBalance });
-          onSuccess?.(res.newBalance);
+          const freshWallet = await WalletService.getWallet(undefined, true);
+          const resolvedBal = typeof res.newBalance === "number" && res.newBalance > currentBalance
+            ? res.newBalance
+            : (freshWallet.balance > currentBalance ? freshWallet.balance : currentBalance + actualAmount);
+          setSuccessResult({ amount: actualAmount, newBalance: resolvedBal });
+          onSuccess?.(resolvedBal);
           return;
         }
 
@@ -144,9 +156,13 @@ export default function WalletTopUpModal({
     setCheckStatusText("Đang kiểm tra biến động số dư...");
     try {
       const res = await WalletService.checkTransfer(transferMemo, actualAmount, undefined, false);
-      if (res.received && typeof res.newBalance === "number") {
-        setSuccessResult({ amount: actualAmount, newBalance: res.newBalance });
-        onSuccess?.(res.newBalance);
+      if (res.received) {
+        const freshWallet = await WalletService.getWallet(undefined, true);
+        const resolvedBal = typeof res.newBalance === "number" && res.newBalance > currentBalance
+          ? res.newBalance
+          : (freshWallet.balance > currentBalance ? freshWallet.balance : currentBalance + actualAmount);
+        setSuccessResult({ amount: actualAmount, newBalance: resolvedBal });
+        onSuccess?.(resolvedBal);
         return;
       }
 
