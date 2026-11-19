@@ -14,6 +14,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { WalletService } from "../services/walletService";
+import { getStoredUser } from "../services/walletUtils";
 import { BankConfigService, BankConfig } from "../services/bankConfig";
 import { TopUpSuccessView } from "./walletTopUp/TopUpSuccessView";
 import { TopUpBalanceBanner } from "./walletTopUp/TopUpBalanceBanner";

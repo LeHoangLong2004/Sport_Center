@@ -296,9 +296,9 @@ public static partial class MemberEndpoints
             var absentCount = allSessionItems.Count(s => s.status == "vắng");
             var lateCount = allSessionItems.Count(s => s.status == "đi muộn");
             var completedOrPastCount = allSessionItems.Count(s => s.status != "chưa diễn ra");
-            double? attendanceRate = completedOrPastCount > 0
+            double attendanceRate = completedOrPastCount > 0
                 ? Math.Round((double)attendedCount / completedOrPastCount * 100, 0)
-                : null;
+                : 0;
 
             var totalGateMinutes = gateItems.Where(g => g.durationMinutes.HasValue).Sum(g => g.durationMinutes!.Value);
             var totalHours = Math.Round((double)totalGateMinutes / 60, 1);
