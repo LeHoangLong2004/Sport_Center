@@ -9,15 +9,29 @@
 
 export const DEFAULT_SPORT_IMAGES = {
   football: "https://th.bing.com/th/id/OIP.AR6rbafXz9J0JnTMRmXdTQHaEj?r=0&o=7rm=3&rs=1&pid=ImgDetMain",
-  badminton: "/assets/images/hero_bg.jpg",
+  badminton: "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80",
   swimming: "https://tse3.mm.bing.net/th/id/OIP.c-OVTeh55Aja-g-JN7nDFAHaEK?r=0&rs=1&pid=ImgDetMain",
   gym: "https://tse3.mm.bing.net/th/id/OIP.DkRCZVOhusEBQrIjBTGqjAHaE7?r=0&rs=1&pid=ImgDetMain",
   yoga: "https://th.bing.com/th/id/OIP.M7zSkUbRBnbJ7OjaQm1SnAHaD4?r=0&o=7rm=3&rs=1&pid=ImgDetMain",
-  boxing: "/assets/252a5.png",
-  basketball: "/assets/3c386.png",
+  boxing: "https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?auto=format&fit=crop&w=800&q=80",
+  basketball: "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=800&q=80",
   zumba: "https://th.bing.com/th/id/OIP.1-y-qxG-nI72dBGJuBA6JQHaEK?r=0&o=7rm=3&rs=1&pid=ImgDetMain",
   default: "https://tse3.mm.bing.net/th/id/OIP.DkRCZVOhusEBQrIjBTGqjAHaE7?r=0&rs=1&pid=ImgDetMain",
 };
+
+export function resolveClassImageUrl(img?: string | null, fallback = DEFAULT_SPORT_IMAGES.default): string {
+  if (!img || typeof img !== "string" || img.trim() === "") return fallback;
+  const trimmed = img.trim();
+  if (
+    trimmed.startsWith("data:") ||
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("/")
+  ) {
+    return trimmed;
+  }
+  return `/assets/member-booking/${trimmed}`;
+}
 
 export function getClassImage(
   sportName?: string,

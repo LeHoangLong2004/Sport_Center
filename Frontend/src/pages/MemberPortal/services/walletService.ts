@@ -154,7 +154,7 @@ export const WalletService = {
   ): Promise<{ received: boolean; amount?: number; message?: string }> {
     try {
       const cleanMemo = (memo || "").trim();
-      // 1. Kiểm tra trực tiếp qua sepay-check-memo
+      // 1. Kiểm tra trực tiếp qua sepay-check-memo (kiểm tra có thẩm quyền từ Backend & SePay)
       const checkUrl = `/api/payments/sepay-check-memo?memo=${encodeURIComponent(cleanMemo)}&amount=${encodeURIComponent(amount || 0)}`;
       const resMemo = await fetch(checkUrl, { cache: "no-store" });
       if (resMemo.ok) {
@@ -166,15 +166,20 @@ export const WalletService = {
             message: dataMemo.message || "Đã nhận được tiền chuyển khoản thành công từ ngân hàng!",
           };
         }
+        // Backend xác nhận chưa có giao dịch hợp lệ -> trả về false ngay, không quét lại giao dịch cũ
+        return { received: false };
       }
 
-      // 2. Thử kiểm tra qua danh sách giao dịch SePay gần nhất (in-memory log)
+      // 2. Dự phòng khi backend check-memo không phản hồi (chỉ xét giao dịch chưa bị tiêu thụ)
       const resTx = await fetch(`/api/payments/sepay-transactions`, { cache: "no-store" });
       if (resTx.ok) {
         const dataTx = await resTx.json();
         const txs: any[] = dataTx?.transactions || [];
         const normMemo = cleanMemo.toUpperCase().replace(/\s+/g, "");
         const matched = txs.find((t: any) => {
+          if (t.matchedOrderId || t.status === "consumed" || t.status === "confirmed" || t.status === "already_paid") {
+            return false;
+          }
           const content = String(t.content || "").toUpperCase().replace(/\s+/g, "");
           const tAmount = Number(t.amount || 0);
           const amountMatches = !amount || amount <= 0 || Math.abs(tAmount - amount) < 1;
