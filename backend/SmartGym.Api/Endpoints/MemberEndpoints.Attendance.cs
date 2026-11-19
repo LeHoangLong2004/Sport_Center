@@ -278,17 +278,25 @@ public static partial class MemberEndpoints
                 ?? activeSubs.FirstOrDefault();
             var gatePackageName = gateSub?.Package?.Name ?? "Thẻ hội viên Sport Center";
 
-            var gateItems = gateRecords.Select(g => new
+            var gateItems = gateRecords.Select(g =>
             {
-                id = g.Id.ToString(),
-                checkInTime = g.CheckInTime,
-                checkOutTime = g.CheckOutTime,
-                durationMinutes = g.CheckOutTime.HasValue
-                    ? Math.Max(0, (int)Math.Round((g.CheckOutTime.Value - g.CheckInTime).TotalMinutes))
-                    : (int?)null,
-                gate = "Cổng chính Sport Center",
-                packageName = gatePackageName,
-                status = g.CheckOutTime.HasValue ? "CHECKED_OUT" : "APPROVED"
+                var matchedSub = (g.MemberPackageId != Guid.Empty
+                    ? activeSubs.FirstOrDefault(s => s.Id == g.MemberPackageId)
+                    : null) ?? gateSub;
+                var pkgName = matchedSub?.Package?.Name ?? gatePackageName;
+
+                return new
+                {
+                    id = g.Id.ToString(),
+                    checkInTime = g.CheckInTime,
+                    checkOutTime = g.CheckOutTime,
+                    durationMinutes = g.CheckOutTime.HasValue
+                        ? Math.Max(0, (int)Math.Round((g.CheckOutTime.Value - g.CheckInTime).TotalMinutes))
+                        : (int?)null,
+                    gate = "Cổng chính Sport Center",
+                    packageName = pkgName,
+                    status = g.CheckOutTime.HasValue ? "CHECKED_OUT" : "APPROVED"
+                };
             }).ToList();
 
             // Calculate metrics

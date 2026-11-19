@@ -1,11 +1,19 @@
-using SmartGym.Domain.Entities;
+1using SmartGym.Domain.Entities;
 using SmartGym.Domain.Enums;
 
 namespace SmartGym.Application.Interfaces.Repositories;
 
 public interface ICheckInRepository
 {
-    Task<CheckInRecord> AddAsync(Guid memberId, Guid? scheduleId, DateTime checkInTime, CheckInResult result);
+    Task<CheckInRecord> AddAsync(
+        Guid memberId,
+        Guid? scheduleId,
+        DateTime checkInTime,
+        CheckInResult result,
+        Guid? subscriptionId = null,
+        Guid? facilityId = null,
+        string? method = "qr"
+    );
     Task<CheckInRecord?> FindOpenByMemberAsync(Guid memberId);
     Task<CheckInRecord?> CheckOutAsync(Guid recordId, DateTime checkOutTime);
     Task<IReadOnlyList<CheckInRecord>> GetByMemberAsync(Guid memberId);

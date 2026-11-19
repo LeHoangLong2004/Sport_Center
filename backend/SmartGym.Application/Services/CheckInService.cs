@@ -24,7 +24,9 @@ public sealed class CheckInService
 
     public async Task<(bool Allowed, string Reason, string? PackageName)> ValidateAndCheckInAsync(
         Guid memberId,
-        DateTime checkInTime
+        DateTime checkInTime,
+        Guid? facilityId = null,
+        string? method = "qr"
     )
     {
         var openRecord = await _checkInRepository.FindOpenByMemberAsync(memberId);
@@ -36,20 +38,20 @@ public sealed class CheckInService
         var package = await _packageRepository.FindActivePackageAsync(memberId);
         if (package is null)
         {
-            await _checkInRepository.AddAsync(memberId, null, checkInTime, CheckInResult.Denied);
+            await _checkInRepository.AddAsync(memberId, null, checkInTime, CheckInResult.Denied, null, facilityId, method);
             return (false, "Không tìm thấy gói tập đang hoạt động (ACTIVE).", null);
         }
 
         if (checkInTime.Date > package.EndDate)
         {
-            await _checkInRepository.AddAsync(memberId, null, checkInTime, CheckInResult.Denied);
+            await _checkInRepository.AddAsync(memberId, null, checkInTime, CheckInResult.Denied, package.Id, facilityId, method);
             return (false, $"Gói tập đã hết hạn vào ngày {package.EndDate:dd/MM/yyyy}.", null);
         }
 
         var plan = await _packageRepository.FindPlanByIdAsync(package.PlanId);
         if (plan is null)
         {
-            await _checkInRepository.AddAsync(memberId, null, checkInTime, CheckInResult.Denied);
+            await _checkInRepository.AddAsync(memberId, null, checkInTime, CheckInResult.Denied, package.Id, facilityId, method);
             return (false, "Không tìm thấy thông tin gói cước.", null);
         }
 
@@ -62,7 +64,10 @@ public sealed class CheckInService
                     memberId,
                     null,
                     checkInTime,
-                    CheckInResult.Denied
+                    CheckInResult.Denied,
+                    package.Id,
+                    facilityId,
+                    method
                 );
                 return (
                     false,
@@ -74,7 +79,7 @@ public sealed class CheckInService
 
         if (package.RemainingSessions.HasValue && package.RemainingSessions <= 0)
         {
-            await _checkInRepository.AddAsync(memberId, null, checkInTime, CheckInResult.Denied);
+            await _checkInRepository.AddAsync(memberId, null, checkInTime, CheckInResult.Denied, package.Id, facilityId, method);
             return (
                 false,
                 "Gói tập đã hết số buổi. Vui lòng gia hạn hoặc mua gói mới.",
@@ -82,7 +87,19 @@ public sealed class CheckInService
             );
         }
 
-        await _checkInRepository.AddAsync(memberId, null, checkInTime, CheckInResult.Approved);
+        var effectiveFacilityId = (facilityId.HasValue && facilityId.Value != Guid.Empty)
+            ? facilityId
+            : (package.AssignedBranchId != Guid.Empty ? package.AssignedBranchId : (Guid?)null);
+
+        await _checkInRepository.AddAsync(
+            memberId,
+            null,
+            checkInTime,
+            CheckInResult.Approved,
+            package.Id,
+            effectiveFacilityId,
+            method ?? "qr");
+
         return (true, "Check-in thành công! Chào mừng bạn đến SmartGym.", plan.PlanName);
     }
 
