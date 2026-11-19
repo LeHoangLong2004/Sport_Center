@@ -46,7 +46,11 @@ public static class CheckInEndpoints
             }
 
             var now = DateTime.UtcNow;
-            var (allowed, reason, packageName) = await checkInService.ValidateAndCheckInAsync(request.MemberId, now);
+            var (allowed, reason, packageName) = await checkInService.ValidateAndCheckInAsync(
+                request.MemberId,
+                now,
+                request.FacilityId,
+                request.Method ?? "qr");
 
             if (!allowed)
             {
