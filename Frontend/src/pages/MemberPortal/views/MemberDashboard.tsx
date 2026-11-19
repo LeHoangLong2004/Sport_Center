@@ -127,7 +127,7 @@ export default function MemberDashboard({ onNavigate }: Props) {
   const completedSessions = useMemo(() => sessions.filter((s) => s.status === "hoàn thành"), [sessions]);
   const attendanceRate = completedSessions.length > 0
     ? `${Math.round((completedSessions.filter((s) => s.attendanceStatus === "có mặt").length / completedSessions.length) * 100)}%`
-    : "--%";
+    : "0%";
 
   const handleToggleTask = (taskId: string) => {
     const updated = tasks.map((t) => (t.id === taskId ? { ...t, completed: !t.completed } : t));
@@ -148,8 +148,13 @@ export default function MemberDashboard({ onNavigate }: Props) {
     })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (!cancelled && data?.summary?.attendanceRate !== undefined) {
-          setRealAttendanceRate(`${data.summary.attendanceRate}%`);
+        if (!cancelled) {
+          const rate = data?.summary?.attendanceRate;
+          if (typeof rate === "number" && !isNaN(rate)) {
+            setRealAttendanceRate(`${rate}%`);
+          } else {
+            setRealAttendanceRate("0%");
+          }
         }
       })
       .catch(() => {});
@@ -179,7 +184,9 @@ export default function MemberDashboard({ onNavigate }: Props) {
     },
     {
       label: "Tỷ lệ tham dự",
-      val: realAttendanceRate || attendanceRate,
+      val: (realAttendanceRate && realAttendanceRate !== "null%" && realAttendanceRate !== "--%")
+        ? realAttendanceRate
+        : (attendanceRate && attendanceRate !== "null%" && attendanceRate !== "--%" ? attendanceRate : "0%"),
       sub: "Xem chi tiết điểm danh →",
       onClick: () => onNavigate("attendance"),
     },

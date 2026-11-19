@@ -389,8 +389,12 @@ namespace SmartGym.Api.Endpoints
 
             // ── CÂU HỎI VỀ GÓI TẬP / HẠNG THÀNH VIÊN CỦA CHÍNH HỘI VIÊN ──
             var isPersonalPackageQuery =
-                Has("gói của tôi", "goi cua toi", "gói của mình", "goi cua minh", "gói đã mua", "goi da mua",
-                    "gói đang dùng", "goi dang dung", "gói đang có", "goi dang co", "gói đang tập", "goi dang tap",
+                Has("gói của tôi", "goi cua toi", "gói tập của tôi", "goi tap cua toi",
+                    "gói của mình", "goi cua minh", "gói tập của mình", "goi tap cua minh",
+                    "gói đã mua", "goi da mua", "gói tập đã mua", "goi tap da mua",
+                    "gói đang dùng", "goi dang dung", "gói tập đang dùng", "goi tap dang dung",
+                    "gói đang có", "goi dang co", "gói tập đang có", "goi tap dang co",
+                    "gói đang tập", "goi dang tap", "gói tập đang tập", "goi tap dang tap",
                     "đang có gói", "dang co goi", "đang dùng gói", "dang dung goi", "đã mua gói", "da mua goi",
                     "có gói nào", "co goi nao", "có gói gì", "co goi gi", "tôi đang có", "toi dang co",
                     "tôi có gói", "toi co goi", "mình có gói", "minh co goi", "gói tôi có", "goi toi co",
@@ -400,8 +404,15 @@ namespace SmartGym.Api.Endpoints
                     "tôi đang ở hạng", "toi dang o hang", "tôi là hạng", "toi la hang",
                     "tôi hạng gì", "toi hang gi", "hạng thẻ của tôi", "hang the cua toi",
                     "hạn gói", "han goi", "hết hạn", "het han", "gia hạn", "gia han",
-                    "còn hạn bao lâu", "con han bao lau", "còn bao nhiêu ngày", "con bao nhieu ngay",
-                    "thời hạn gói", "thoi han goi", "gói còn hạn", "goi con han");
+                    "còn hạn bao lâu", "con han bao lau", "còn hạn trong bao lâu", "con han trong bao lau",
+                    "còn bao nhiêu ngày", "con bao nhieu ngay", "còn bao lâu", "con bao lau",
+                    "khi nào hết hạn", "khi nao het han", "bao giờ hết hạn", "bao gio het han",
+                    "hết hạn khi nào", "het han khi nao", "hết hạn ngày nào", "het han ngay nao",
+                    "ngày hết hạn", "ngay het han", "hạn dùng", "han dung", "hạn sử dụng", "han su dung",
+                    "thời hạn gói", "thoi han goi", "gói còn hạn", "goi con han", "gói tập còn hạn", "goi tap con han",
+                    "còn hạn không", "con han khong", "thời hạn", "thoi han")
+                || ((Has("gói", "goi", "hạng", "hang", "thành viên", "thanh vien") || Has("tôi", "toi", "mình", "minh"))
+                    && Has("còn hạn", "con han", "hết hạn", "het han", "bao lâu", "bao lau", "bao nhiêu ngày", "bao nhieu ngay", "khi nào", "khi nao", "thời hạn", "thoi han", "ngày nào", "ngay nao", "trong bao lâu", "trong bao lau"));
 
             if (isPersonalPackageQuery)
             {
@@ -695,7 +706,28 @@ namespace SmartGym.Api.Endpoints
                 return ("🏋️ Giáo án và bài tập về nhà HLV giao cho bạn nằm ở mục Giáo án & Bài tập. Nếu cần hướng dẫn kỹ thuật cụ thể, bạn có thể nhắn trực tiếp cho HLV.", "workouts");
             }
 
-            return ("⚠️ Hiện tại hệ thống không thể kết nối tới mô hình AI để trả lời câu hỏi này. Bạn vui lòng kiểm tra lại cấu hình API key của AI hoặc gửi Phiếu hỗ trợ để được đội ngũ HLV & Lễ tân tư vấn trực tiếp nhé!", "support_ticket");
+            if (Has("chào", "chao", "hello", "hi ", "hey", "alo", "bắt đầu", "bat dau", "giúp gì", "giup gi", "hướng dẫn", "huong dan"))
+            {
+                return ($"👋 Xin chào {ctx.FullName}! Tôi là Trợ lý AI của SportCenter. Tôi có thể hỗ trợ bạn:\n" +
+                        "• Tra cứu lịch tập hôm nay, ngày mai hoặc buổi sắp tới\n" +
+                        "• Kiểm tra thời hạn gói tập & hạng thành viên\n" +
+                        "• Kiểm tra số dư ví hội viên & hướng dẫn nạp tiền\n" +
+                        "• Tra cứu thông tin HLV phụ trách & lớp học\n" +
+                        "• Hướng dẫn tiện ích (khăn, tủ đồ, gửi xe, InBody)\n\n" +
+                        "👉 Bạn hãy nhập câu hỏi bên dưới để được giải đáp ngay nhé!", "none");
+            }
+
+            if (Has("liên hệ", "lien he", "hotline", "sđt", "sdt", "số điện thoại", "so dien thoai", "địa chỉ", "dia chi"))
+            {
+                return ("🏢 Trung tâm Thể thao SportCenter:\n• Địa chỉ: Tòa nhà SportCenter, Khu Đô thị mới, TP. Hồ Chí Minh\n• Giờ hoạt động: 06:00 - 22:00 hàng ngày (kể cả Thứ 7, Chủ Nhật & ngày Lễ)\n• Hotline hỗ trợ: 1900 6868 hoặc gửi Phiếu hỗ trợ ngay trên ứng dụng.", "support_ticket");
+            }
+
+            return ($"🤖 Tôi là Trợ lý SportCenter! Bạn có thể hỏi tôi về:\n" +
+                    "• 📅 Lịch tập: \"Hôm nay có lịch gì?\", \"Lịch ngày mai\", \"Buổi tập sắp tới\"\n" +
+                    "• 💳 Gói tập: \"Gói tập của tôi còn hạn trong bao lâu?\", \"Hạng thành viên của tôi\"\n" +
+                    "• 💰 Ví tiền: \"Số dư ví của tôi\", \"Cách nạp tiền\"\n" +
+                    "• 🏋️ HLV & Lớp học: \"Ai phụ trách buổi tới?\", \"Lớp yoga mấy giờ?\"\n\n" +
+                    "Nếu cần hỗ trợ kỹ thuật hoặc khiếu nại, bạn hãy gửi Phiếu hỗ trợ bên dưới để đội ngũ Lễ tân & HLV tư vấn trực tiếp nhé!", "support_ticket");
         }
     }
 }
