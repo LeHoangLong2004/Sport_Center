@@ -68,7 +68,7 @@ ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 
-# 9. AI Assistants & Tooling caches
+# 9. AI Assistants, Scratch & Junk Files
 .gemini/
 **/.gemini/
 .agents/
@@ -77,3 +77,5 @@ $RECYCLE.BIN/
 .windsurf/
 .claude/
 .copilot/
+classes.json
+CLAUDE.md

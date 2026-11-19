@@ -57,7 +57,71 @@ $RECYCLE.BIN/
 *.iws
 
 # ------------------------------------------------------------------------------
-# 4. Backend (.NET 10 / ASP.NET Core / C#)
+# 4. Sensitive Configurations & Local Secrets
+# ------------------------------------------------------------------------------
+# Local development appsettings overrides & user secrets
+backend/**/appsettings.Development.json
+backend/**/appsettings.Local.json
+backend/**/secrets.json
+
+# Environment variables containing private tokens & credentials
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+Frontend/.env
+Frontend/.env.*
+Frontend/.env.local
+backend/.env
+backend/.env.*
+!.env.example
+!Frontend/.env.example
+!backend/.env.example
+
+# User secrets, private keys & certificates
+secrets.json
+**/secrets.json
+**/secrets/
+**/*.pfx
+**/*.p12
+**/*.key
+**/*.cer
+**/*.pem
+**/*.cert
+**/*.crt
+*.id_rsa
+*.id_ed25519
+
+# ------------------------------------------------------------------------------
+# 5. Database Files, Schema Dumps & Exported Structures
+# ------------------------------------------------------------------------------
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+local.db
+**/local.db
+
+# Live database dumps & backups
+database_schema.sql
+database_schema_full.sql
+database_schema_live_38.sql
+supabase_schema.sql
+live_supabase_structure.json
+*.dump
+*.dmp
+*.sql.bak
+dump/
+dumps/
+cracked_accounts.json
+users_dump.json
+users_summary.txt
+
+# ------------------------------------------------------------------------------
+# 6. Backend (.NET 10 / ASP.NET Core / C#)
 # ------------------------------------------------------------------------------
 # Build outputs
 [Bb]in/
@@ -66,17 +130,9 @@ $RECYCLE.BIN/
 backend/**/bin/
 backend/**/obj/
 backend/**/out/
-
-# Local configuration files & Secrets (Do not commit to public repositories)
-backend/**/appsettings.Development.json
-backend/**/appsettings.Local.json
-backend/**/secrets.json
-**/*.pfx
-**/*.p12
-**/*.key
-**/*.cer
-**/*.pem
-**/*.cert
+artifacts/
+.api-build-check/
+backend/.api-build-check/
 
 # Local uploaded media directory fallback (when not using Cloudinary CDN)
 **/wwwroot/uploads/**
@@ -94,7 +150,7 @@ coverage*/
 *.coverage
 
 # ------------------------------------------------------------------------------
-# 5. Frontend (React 19 / Vite / TypeScript / Tailwind CSS)
+# 7. Frontend (React 19 / Vite / TypeScript / Tailwind CSS)
 # ------------------------------------------------------------------------------
 # Dependencies
 node_modules/
@@ -122,19 +178,6 @@ Frontend/.stylelintcache
 Frontend/.cache/
 *.tsbuildinfo
 
-# Frontend Environment variables (contain API keys and private tokens)
-.env
-.env.local
-.env.*.local
-Frontend/.env
-Frontend/.env.local
-Frontend/.env.development.local
-Frontend/.env.test.local
-Frontend/.env.production.local
-Frontend/.env.*.local
-!.env.example
-!Frontend/.env.example
-
 # Package manager logs
 npm-debug.log*
 yarn-debug.log*
@@ -146,7 +189,7 @@ Frontend/yarn-error.log*
 Frontend/pnpm-debug.log*
 
 # ------------------------------------------------------------------------------
-# 6. AI Assistants, CLI Tools & .NET Global Caches
+# 8. AI Assistants, CLI Tools & .NET Global Caches
 # ------------------------------------------------------------------------------
 .gemini/
 **/.gemini/
@@ -165,35 +208,33 @@ Frontend/pnpm-debug.log*
 *.toolpath.sentinel
 
 # ------------------------------------------------------------------------------
-# 7. Scratch Scripts & Temporary Testing Artifacts
+# 9. Junk, Scratch & Temporary Testing Files
 # ------------------------------------------------------------------------------
+0.26.0
+classes.json
+Frontend/classes.json
+CLAUDE.md
+Frontend/CLAUDE.md
+chat_summary.md
+DEMO_FLOW.md
+test_github.txt
+Bao_Cao_Testing_Va_Demo_SWT301.docx
+SWP391_AI_Usage_Report.csv
+docs/Final_Release_Document.md
 scratch/
 **/scratch/
 *CheckDbTables*
 CheckDbTablesTest.cs
+ngrok.log
+.ngrok*
 
-# Planning documents (keep shared implementation plan)
+# Planning scratch documents
 docs/Flow_5*.md
 docs/Flow_6*.md
 !docs/Flow_5_6_AI_Implementation_Plan.md
 
 # ------------------------------------------------------------------------------
-# 8. Test Data Dumps, Sensitive Logs & Tunneling
-# ------------------------------------------------------------------------------
-cracked_accounts.json
-users_dump.json
-users_summary.txt
-test_github.txt
-*.dump
-*.dmp
-*.sql.bak
-dump/
-dumps/
-ngrok.log
-.ngrok*
-
-# ------------------------------------------------------------------------------
-# 9. Python Cache (if running auxiliary scripts)
+# 10. Python Cache
 # ------------------------------------------------------------------------------
 __pycache__/
 *.py[cod]
