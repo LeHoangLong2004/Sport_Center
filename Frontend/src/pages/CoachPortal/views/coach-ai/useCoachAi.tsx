@@ -256,8 +256,8 @@ export function useCoachAi(initialMemberId?: string | null) {
 
     try {
       const selectedSport = sports.find((s) => s.id === sportId)?.name || "Gym";
-      const dynamicEquipment = getDefaultEquipmentForSport(selectedSport);
-      const sanitizedEquipment = cleanEquipmentList(dynamicEquipment);
+      const userOrDynamicEquipment = equipment.length > 0 ? equipment : getDefaultEquipmentForSport(selectedSport);
+      const sanitizedEquipment = cleanEquipmentList(userOrDynamicEquipment);
 
       const apiCall = CoachAPI.generateFlow5Recommendation({
         target,
@@ -302,6 +302,17 @@ export function useCoachAi(initialMemberId?: string | null) {
     if (!currentPlan) return;
     setIsSaving(true);
     try {
+      const sanitizedExercises = (currentPlan.exercises || []).map((e, idx) => ({
+        id: e.id,
+        name: e.name || `Bài tập ${idx + 1}`,
+        sets: e.sets || "3",
+        reps: e.reps || "10",
+        duration: e.duration || "5 min",
+        rest: e.rest || "60s",
+        note: e.note || "",
+        order: idx + 1,
+      }));
+
       const updated = await CoachAPI.updateFlow5Draft(currentPlan.id, {
         planName: currentPlan.planName,
         sportId: currentPlan.sportId,
@@ -312,9 +323,10 @@ export function useCoachAi(initialMemberId?: string | null) {
         source: currentPlan.source,
         expectedVersion: currentPlan.version,
         target: currentPlan.recommendationTarget || { type: targetType, id: targetId },
-        exercises: currentPlan.exercises,
+        exercises: sanitizedExercises,
       }).catch(() => ({
         ...currentPlan,
+        exercises: sanitizedExercises,
         version: currentPlan.version + 1,
         updatedAt: new Date().toISOString(),
       }));
@@ -338,6 +350,16 @@ export function useCoachAi(initialMemberId?: string | null) {
     setIsApproving(true);
     try {
       let activePlan = currentPlan;
+      const sanitizedExercises = (currentPlan.exercises || []).map((e, idx) => ({
+        id: e.id,
+        name: e.name || `Bài tập ${idx + 1}`,
+        sets: e.sets || "3",
+        reps: e.reps || "10",
+        duration: e.duration || "5 min",
+        rest: e.rest || "60s",
+        note: e.note || "",
+        order: idx + 1,
+      }));
 
       // 1. First persist any edits made by Coach in the UI
       try {
@@ -351,10 +373,13 @@ export function useCoachAi(initialMemberId?: string | null) {
           source: currentPlan.source,
           expectedVersion: currentPlan.version,
           target: currentPlan.recommendationTarget || { type: targetType, id: targetId },
-          exercises: currentPlan.exercises,
+          exercises: sanitizedExercises,
         });
         if (saved && typeof saved.version === "number") {
-          activePlan = saved;
+          activePlan = {
+            ...saved,
+            exercises: saved.exercises?.length ? saved.exercises : sanitizedExercises,
+          };
         }
       } catch (saveErr) {
         console.warn("Notice: auto-save before approval warning:", saveErr);
@@ -368,6 +393,13 @@ export function useCoachAi(initialMemberId?: string | null) {
           activePlan.version,
           "Đã duyệt và lưu vào Thư viện giáo án bởi HLV"
         );
+        // Ensure exercises are never lost in frontend state
+        if (!approved.exercises || approved.exercises.length === 0) {
+          approved = {
+            ...approved,
+            exercises: activePlan.exercises?.length ? activePlan.exercises : sanitizedExercises,
+          };
+        }
       } catch (approveErr) {
         // If the draft was generated client-side or not yet in database, persist directly via saveCurriculum!
         console.info("Plan draft not found on server, persisting directly as new curriculum:", approveErr);
@@ -389,6 +421,7 @@ export function useCoachAi(initialMemberId?: string | null) {
           status: "approved" as const,
           version: activePlan.version + 1,
           approvedAt: new Date().toISOString(),
+          exercises: activePlan.exercises?.length ? activePlan.exercises : sanitizedExercises,
         };
       }
 

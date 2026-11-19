@@ -88,6 +88,18 @@ User requirements:
 - Total duration in minutes: {{request.DurationMinutes}}
 - Requested exercise count: {{exerciseCount}}
 
+STRICT SPORT-SPECIFIC RELEVANCE REQUIREMENT (CRITICAL):
+- Every single exercise MUST strictly belong and be directly relevant to the requested sport: "{{context.RequestedSport.Name}}".
+- For example:
+  * If Sport is "Cầu lông" (Badminton): Generate EXCLUSIVELY badminton exercises (e.g. Footwork di chuyển 6 góc sân, Jump Smash, Clear shot phông cầu, Drop shot cắt cầu, Net kill phản xạ lưới, Drive phản tạt, Shuttle run agility). NEVER generate unrelated gym bodybuilding exercises like Bench Press, Cable Flyes, Bicep Curls!
+  * If Sport is "Bơi lội" (Swimming): Generate swimming-specific drills (đập chân sải/ếch, quạt tay bơi, thở nước, bơi biến tốc).
+  * If Sport is "Pilates": Generate Pilates movements (The Hundred, Roll Up, Criss Cross, Teaser, Swan Dive).
+  * If Sport is "Zumba": Generate Zumba dance cardio and Latin choreography.
+  * If Sport is "Bóng đá" / "Futsal": Generate soccer agility, passing, shooting, dribbling drills.
+  * If Sport is "Boxing": Generate boxing footwork, shadow boxing, heavy bag, and slip drills.
+  * If Sport is "Yoga": Generate authentic yoga asanas and breathing.
+- All equipment specified by the Coach ("{{equipment}}") must be properly utilized in the exercises.
+
 Body Metrics & Physical Adaptation Guidelines (Crucial):
 - Carefully inspect member's "latestBodyMetrics" in the database context (weight, height, BMI, bodyFat, muscleMass):
   * If BMI >= 25 or bodyFat is high (Overweight/Obesity): Strictly protect knee, ankle, and lumbar joints by avoiding high-impact jumping exercises (e.g. Box Jumps, Burpees, heavy jumping lunges). Select joint-friendly exercises such as machine compound presses, cycling, and controlled resistance movements.

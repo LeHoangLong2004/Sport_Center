@@ -370,11 +370,6 @@ public static partial class ClassEndpoints
             }
         );
 
-        classGroup.MapGet(
-            "/",
-            async (ClassService service) => Results.Ok(await service.GetAllClassesAsync())
-        );
-
         // 5. Available Classes
         /// <summary>
         /// GET /api/classes/available

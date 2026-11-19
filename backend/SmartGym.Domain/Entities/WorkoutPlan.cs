@@ -28,8 +28,6 @@ public class WorkoutPlan
     public DateTime? ApprovedAt { get; set; }
     public Guid? ApprovedBy { get; set; }
     public string? ApprovalNote { get; set; }
-    public DateTime? ArchivedAt { get; set; }
-    public Guid? ArchivedBy { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

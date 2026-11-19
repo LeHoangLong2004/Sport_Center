@@ -35,10 +35,6 @@ public static partial class DatabaseInitializationExtensions
                     ADD COLUMN IF NOT EXISTS approved_by UUID;
                 ALTER TABLE workout_plans
                     ADD COLUMN IF NOT EXISTS approval_note TEXT;
-                ALTER TABLE workout_plans
-                    ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
-                ALTER TABLE workout_plans
-                    ADD COLUMN IF NOT EXISTS archived_by UUID;
                 ALTER TABLE workout_plan_exercises
                     ADD COLUMN IF NOT EXISTS sets TEXT;
                 ALTER TABLE workout_plan_exercises
