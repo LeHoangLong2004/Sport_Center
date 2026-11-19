@@ -121,18 +121,18 @@ export function ActiveMembershipCard({
           </div>
           <div className="mt-2 text-sm font-black text-white">
             {membershipStatus.tier === "premium" ? (
-              <span className="text-emerald-400">Giảm {membershipStatus.groupDiscountPct || 15}% / {membershipStatus.coachDiscountPct || 5}%</span>
+              <span className="text-emerald-400">Giảm {membershipStatus.groupDiscountPct || 15}% / {membershipStatus.coachDiscountPct || 8}%</span>
             ) : membershipStatus.tier === "plus" ? (
-              <span className="text-emerald-400">Giảm {membershipStatus.groupDiscountPct || 8}% / {membershipStatus.coachDiscountPct || 2}%</span>
+              <span className="text-emerald-400">Giảm {membershipStatus.groupDiscountPct || 8}% / {membershipStatus.coachDiscountPct || 5}%</span>
             ) : (
               <span className="text-slate-400">Giá gốc (0%)</span>
             )}
           </div>
           <span className="text-[10px] text-slate-400 mt-0.5">
             {membershipStatus.tier === "premium"
-              ? "Gói môn & Đặt lịch lẻ (5% PT)"
+              ? "Gói môn & Đặt lịch lẻ (8% PT)"
               : membershipStatus.tier === "plus"
-              ? "Gói môn & Đặt lịch lẻ (2% PT)"
+              ? "Gói môn & Đặt lịch lẻ (5% PT)"
               : "Không áp dụng giảm giá"}
           </span>
         </div>

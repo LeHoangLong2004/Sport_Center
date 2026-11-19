@@ -21,6 +21,8 @@ import { BookingClassHeader } from "./payAndBook/BookingClassHeader";
 import { CardPaymentPanel } from "./payAndBook/CardPaymentPanel";
 import { CounterPaymentPanel } from "./payAndBook/CounterPaymentPanel";
 import { WalletPaymentPanel } from "./payAndBook/WalletPaymentPanel";
+import { findConflictingSession } from "./bookingTypes";
+import { toast } from "sonner";
 
 interface PayAndBookModalProps {
   classToBook: any | null;
@@ -30,6 +32,7 @@ interface PayAndBookModalProps {
   isProcessingPayment: boolean;
   paymentError: string | null;
   onConfirmPayment: (finalAmount?: number) => void;
+  mySessions?: any[];
 }
 
 export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
@@ -40,8 +43,13 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
   isProcessingPayment,
   paymentError,
   onConfirmPayment,
+  mySessions = [],
 }) => {
   if (!classToBook) return null;
+
+  const conflictingSession = React.useMemo(() => {
+    return findConflictingSession(classToBook, mySessions);
+  }, [classToBook, mySessions]);
 
   const [membership, setMembership] = useState<MembershipStatus | null>(null);
   const [activeSportOrders, setActiveSportOrders] = useState<PackageOrder[]>([]);
@@ -232,7 +240,27 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
+  const notifyConflictIfAny = () => {
+    if (conflictingSession) {
+      const msg = `Phát hiện xung đột lịch học! Bạn đã có lịch "${conflictingSession.name}" vào khung giờ ${conflictingSession.startTime} - ${conflictingSession.endTime} (Ngày ${conflictingSession.date}).`;
+      toast.error(msg);
+      return true;
+    }
+    return false;
+  };
+
+  const handleConfirmCovered = () => {
+    if (notifyConflictIfAny()) return;
+    onConfirmPayment(0);
+  };
+
+  const handleConfirmCounter = () => {
+    if (notifyConflictIfAny()) return;
+    onConfirmPayment(classPrice);
+  };
+
   const handleCheckPayment = async () => {
+    if (notifyConflictIfAny()) return;
     if (isPaid) {
       onConfirmPayment(classPrice);
       return;
@@ -263,6 +291,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
   };
 
   const handlePayWithWallet = () => {
+    if (notifyConflictIfAny()) return;
     if (walletBalance < classPrice) {
       setShowTopUpModal(true);
       return;
@@ -547,7 +576,28 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
 
           {/* Footer */}
           <div className="p-4 border-t border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50/50 dark:bg-slate-850 space-y-3">
-            {paymentError && (
+            {conflictingSession && (
+              <div
+                role="alert"
+                className="flex items-start gap-2.5 rounded-2xl border-2 border-rose-300 dark:border-rose-700 bg-rose-50/95 dark:bg-rose-950/70 p-3.5 text-rose-800 dark:text-rose-200 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-200"
+              >
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400 animate-pulse" />
+                <div className="text-left flex-1 min-w-0">
+                  <p className="font-black text-xs text-rose-700 dark:text-rose-300 uppercase tracking-wider">
+                    Phát hiện xung đột lịch học (Trùng giờ)
+                  </p>
+                  <p className="mt-1 leading-relaxed text-[11px] font-semibold text-rose-800 dark:text-rose-200">
+                    Bạn đã có lịch <strong>"{conflictingSession.name}"</strong> vào khung giờ{" "}
+                    <strong>{conflictingSession.startTime} - {conflictingSession.endTime}</strong> (Ngày {conflictingSession.date}).
+                  </p>
+                  <p className="mt-0.5 text-[10px] text-rose-600 dark:text-rose-400 font-medium italic">
+                    Vui lòng chọn khung giờ khác hoặc hủy lịch cũ trước khi đặt lớp này.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {paymentError && !conflictingSession && (
               <div
                 role="alert"
                 className="flex items-start gap-2.5 rounded-2xl border-2 border-rose-300 dark:border-rose-700 bg-rose-50/95 dark:bg-rose-950/70 p-3 text-rose-800 dark:text-rose-200 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-200"
@@ -573,8 +623,8 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                 <button
                   type="button"
                   disabled={isBusy}
-                  onClick={() => onConfirmPayment(0)}
-                  className="px-6 py-2.5 font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 text-white bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+                  onClick={handleConfirmCovered}
+                  className="px-6 py-2.5 font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 text-white bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20 active:scale-95 cursor-pointer"
                 >
                   {isProcessingPayment ? (
                     <>
@@ -644,10 +694,10 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                   type="button"
                   disabled={isBusy || isPaid}
                   onClick={handleCheckPayment}
-                  className={`px-5 py-2.5 font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer ${
+                  className={`px-5 py-2.5 font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 ${
                     isPaid
                       ? "bg-emerald-600 text-white shadow-emerald-600/30 cursor-wait"
-                      : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 active:scale-95 disabled:opacity-50"
+                      : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 active:scale-95 disabled:opacity-50 cursor-pointer"
                   }`}
                 >
                   {isPaid ? (
@@ -681,8 +731,8 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                 <button
                   type="button"
                   disabled={isBusy}
-                  onClick={() => onConfirmPayment(classPrice)}
-                  className="px-6 py-2.5 font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 text-white bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                  onClick={handleConfirmCounter}
+                  className="px-6 py-2.5 font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 shadow-emerald-600/20 text-white bg-emerald-600 hover:bg-emerald-500 active:scale-95 disabled:opacity-50 cursor-pointer"
                 >
                   {isProcessingPayment ? (
                     <>

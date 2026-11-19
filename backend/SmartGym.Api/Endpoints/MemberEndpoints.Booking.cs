@@ -11,6 +11,8 @@ using Microsoft.EntityFrameworkCore;
 using SmartGym.Api.Services;
 using SmartGym.Application.Common;
 using SmartGym.Application.Interfaces.Repositories;
+using SmartGym.Domain.Entities;
+using SmartGym.Domain.Enums;
 using SmartGym.Infrastructure.Persistence.EF;
 
 namespace SmartGym.Api.Endpoints
@@ -172,6 +174,81 @@ namespace SmartGym.Api.Endpoints
                     }
                 }
 
+                // Xử lý thanh toán ca tập kèm PT 1-1
+                var method = body.TryGetProperty("paymentMethod", out var pm) ? pm.GetString()?.ToLowerInvariant() ?? "counter" : "counter";
+                var amount = body.TryGetProperty("amount", out var am) ? am.GetDecimal() : 0m;
+                var isWallet = method is "wallet" or "ewallet";
+                var isCounter = method is "counter" or "cashatcounter";
+                var deductedFromWallet = false;
+                var memberGuid = await ResolveMemberGuidAsync(context, db, userId);
+                decimal? updatedWalletBalance = null;
+
+                if (amount > 0 && isWallet)
+                {
+                    if (memberGuid.HasValue)
+                    {
+                        var curBalance = await MemberEndpoints.GetMemberBalanceAsync(db, memberGuid.Value);
+                        if (curBalance < amount)
+                        {
+                            return Results.BadRequest(new { message = $"Số dư ví không đủ (hiện có {curBalance:N0} đ). Vui lòng nạp thêm tiền vào ví để đặt lịch!" });
+                        }
+                        var (deductOk, newBal, deductErr) = await MemberEndpoints.DeductFromWalletAsync(
+                            db,
+                            memberGuid.Value,
+                            amount,
+                            $"Thanh toán đặt ca tập kèm PT 1-1 với {req.CoachName} ({req.Sport})"
+                        );
+                        if (!deductOk)
+                        {
+                            return Results.BadRequest(new { message = deductErr ?? "Số dư ví không đủ để thanh toán." });
+                        }
+                        deductedFromWallet = true;
+                        updatedWalletBalance = newBal;
+                    }
+                    else
+                    {
+                        var curBal = _memberWallets.GetOrAdd(userId, _ => 0m);
+                        if (curBal < amount)
+                        {
+                            return Results.BadRequest(new { message = $"Số dư ví không đủ (hiện có {curBal:N0} đ). Vui lòng nạp thêm tiền vào ví để đặt lịch!" });
+                        }
+                        var newBal = curBal - amount;
+                        _memberWallets[userId] = newBal;
+                        deductedFromWallet = true;
+                        updatedWalletBalance = newBal;
+                    }
+                }
+
+                if (amount > 0 && memberGuid.HasValue)
+                {
+                    try
+                    {
+                        var invoice = new Invoice
+                        {
+                            Id = Guid.NewGuid(),
+                            UserId = memberGuid.Value,
+                            TotalAmount = amount,
+                            PaymentMethod = method switch
+                            {
+                                "card" or "creditcard" or "credit_card" => PaymentMethod.CreditCard,
+                                "counter" or "cashatcounter" => PaymentMethod.CashAtCounter,
+                                "wallet" or "ewallet" => PaymentMethod.EWallet,
+                                "bank_transfer" or "banktransfer" => PaymentMethod.BankTransfer,
+                                _ => PaymentMethod.QRCode
+                            },
+                            Status = isCounter ? PaymentStatus.Pending : PaymentStatus.Completed,
+                            PaidAt = isCounter ? null : DateTime.UtcNow,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        await db.Invoices.AddAsync(invoice);
+                        await db.SaveChangesAsync();
+                    }
+                    catch (Exception invEx)
+                    {
+                        Console.WriteLine($"[Booking PT] Lỗi lưu hóa đơn: {invEx.Message}");
+                    }
+                }
+
                 if (persistentSlot != null)
                 {
                     var bookedMemberId = Guid.TryParse(userId, out var parsedMemberId)
@@ -179,7 +256,13 @@ namespace SmartGym.Api.Endpoints
                         : (Guid?)null;
                     var changed = await db.Database.ExecuteSqlInterpolatedAsync($@"UPDATE coach_availability_slots SET status = 'booked', booked_member_id = {bookedMemberId}, booked_member_name = {req.MemberName}, booked_member_phone = {req.MemberPhone}, goal = {req.Goal} WHERE id = {persistentSlot.Id} AND status = 'open'");
                     if (changed == 0)
+                    {
+                        if (deductedFromWallet && Guid.TryParse(userId, out var refundMemberGuid))
+                        {
+                            try { await MemberEndpoints.RefundToWalletAsync(db, refundMemberGuid, amount, "Hoàn tiền ví do khung giờ PT vừa có người khác đặt."); } catch {}
+                        }
                         return Results.Conflict(new { message = "Khung giờ PT này vừa được người khác đặt." });
+                    }
 
                     var persistentBooking = new
                     {
@@ -194,13 +277,19 @@ namespace SmartGym.Api.Endpoints
                         room = req.Room,
                         coachName = req.CoachName ?? "HLV SportCenter",
                         coachId = req.CoachId,
-                        status = "confirmed",
+                        status = isCounter ? "pending" : "confirmed",
+                        paymentStatus = isCounter ? "pending" : "completed",
                         attendanceStatus = "chưa điểm danh",
                         coachNote = req.CoachNote,
                         bookedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
                     };
                     bookings.Insert(0, persistentBooking);
-                    return Results.Ok(new { message = "Đặt lịch thành công!", booking = persistentBooking });
+                    return Results.Ok(new {
+                        message = isCounter ? "Đặt giữ chỗ ca PT 1-1 thành công! Vui lòng thanh toán tại quầy lễ tân trước giờ tập." : "Đặt lịch kèm 1-1 và thanh toán thành công!",
+                        booking = persistentBooking,
+                        deducted = deductedFromWallet,
+                        newBalance = updatedWalletBalance
+                    });
                 }
 
                 if (!scheduleStore.TryBookPtSlot(req, out var bookedSession, out var conflictMessage) || bookedSession == null)
@@ -236,7 +325,12 @@ namespace SmartGym.Api.Endpoints
                 };
 
                 bookings.Insert(0, newBooking);
-                return Results.Ok(new { message = "Đặt lịch thành công!", booking = newBooking });
+                return Results.Ok(new {
+                    message = "Đặt lịch thành công!",
+                    booking = newBooking,
+                    deducted = deductedFromWallet,
+                    newBalance = updatedWalletBalance
+                });
             })
             .WithTags("Member Portal")
             .WithSummary("Create new booking for group class or 1-on-1 PT slot");
@@ -250,9 +344,30 @@ namespace SmartGym.Api.Endpoints
 
                 var cancelledSession = scheduleStore.GetAllSessions().FirstOrDefault(s => s.Id == id);
                 var reopenedPersistentSlot = false;
+                Guid? persistentCoachId = null;
+                DateTime? slotStartTime = null;
+
                 if (Guid.TryParse(userId, out var memberId) && Guid.TryParse(id, out var persistentSlotId))
                 {
-                    reopenedPersistentSlot = await db.Database.ExecuteSqlInterpolatedAsync($@"UPDATE coach_availability_slots SET status = 'open', booked_member_id = NULL, booked_member_name = NULL, booked_member_phone = NULL, goal = NULL WHERE id = {persistentSlotId} AND booked_member_id = {memberId} AND status = 'booked'") > 0;
+                    var slotRow = await db.Database.SqlQueryRaw<CoachAvailabilitySlotSqlModel>(
+                        @"SELECT s.id AS ""Id"", s.coach_id AS ""CoachId"", s.start_time AS ""StartTime"",
+                                 s.end_time AS ""EndTime"", s.sport AS ""Sport"", s.room AS ""Room"",
+                                 s.note AS ""Note"", s.status AS ""Status"", s.booked_member_id AS ""BookedMemberId"",
+                                 s.booked_member_name AS ""BookedMemberName"", s.booked_member_phone AS ""BookedMemberPhone"",
+                                 s.goal AS ""Goal"", u.full_name AS ""CoachName""
+                          FROM coach_availability_slots s
+                          INNER JOIN coaches c ON c.id = s.coach_id
+                          LEFT JOIN users u ON u.id = c.user_id
+                          WHERE s.id = {0} AND s.booked_member_id = {1} AND s.status = 'booked'",
+                        persistentSlotId, memberId)
+                        .FirstOrDefaultAsync();
+
+                    if (slotRow != null)
+                    {
+                        persistentCoachId = slotRow.CoachId;
+                        slotStartTime = slotRow.StartTime;
+                        reopenedPersistentSlot = await db.Database.ExecuteSqlInterpolatedAsync($@"UPDATE coach_availability_slots SET status = 'open', booked_member_id = NULL, booked_member_name = NULL, booked_member_phone = NULL, goal = NULL WHERE id = {persistentSlotId} AND booked_member_id = {memberId} AND status = 'booked'") > 0;
+                    }
                 }
 
                 if (!reopenedPersistentSlot)
@@ -260,12 +375,63 @@ namespace SmartGym.Api.Endpoints
                     scheduleStore.CancelBooking(id, reason ?? "Học viên tự hủy");
                 }
 
-                if (cancelledSession != null && Guid.TryParse(cancelledSession.CoachId, out var coachId))
+                DateTime? startTimeUtc = slotStartTime;
+                if (!startTimeUtc.HasValue && cancelledSession != null)
                 {
+                    if (TryBuildInterval(cancelledSession.Date, cancelledSession.StartTime, cancelledSession.EndTime, out var sUtc, out _))
+                    {
+                        startTimeUtc = sUtc;
+                    }
+                }
+                var isLate = startTimeUtc.HasValue && startTimeUtc.Value <= DateTime.UtcNow.AddHours(2);
+
+                decimal refundedAmount = 0m;
+                decimal updatedBalance = 0m;
+                bool isRefunded = false;
+
+                if (!isLate && Guid.TryParse(userId, out var cancelMemberGuid))
+                {
+                    try
+                    {
+                        var paidInvoice = await db.Invoices
+                            .Where(i => i.UserId == cancelMemberGuid 
+                                     && i.Status == PaymentStatus.Completed 
+                                     && (i.PaymentMethod == PaymentMethod.EWallet || i.PaymentMethod == PaymentMethod.QRCode || i.PaymentMethod == PaymentMethod.CreditCard)
+                                     && i.TotalAmount >= 50000m && i.TotalAmount <= 500000m)
+                            .OrderByDescending(i => i.CreatedAt)
+                            .FirstOrDefaultAsync();
+
+                        if (paidInvoice != null)
+                        {
+                            refundedAmount = paidInvoice.TotalAmount;
+                            var (refundSuccess, newBal, _) = await MemberEndpoints.RefundToWalletAsync(
+                                db,
+                                cancelMemberGuid,
+                                paidInvoice.TotalAmount,
+                                "Hoàn tiền ví do hủy ca tập kèm PT 1-1"
+                            );
+                            if (refundSuccess)
+                            {
+                                isRefunded = true;
+                                updatedBalance = newBal;
+                                paidInvoice.Status = PaymentStatus.Refunded;
+                                await db.SaveChangesAsync();
+                            }
+                        }
+                    }
+                    catch { }
+                }
+
+                var targetCoachId = persistentCoachId ?? (cancelledSession != null && Guid.TryParse(cancelledSession.CoachId, out var cId) ? cId : (Guid?)null);
+                if (targetCoachId.HasValue)
+                {
+                    var timeStr = slotStartTime.HasValue 
+                        ? CenterTime.ToLocal(slotStartTime.Value).ToString("yyyy-MM-dd HH:mm") 
+                        : (cancelledSession != null ? $"{cancelledSession.Date} {cancelledSession.StartTime}" : "");
                     await classRepository.NotifyCoachAsync(
-                        coachId,
+                        targetCoachId.Value,
                         "Lịch PT 1-1 đã bị hủy",
-                        $"{cancelledSession.MemberName ?? "Hội viên"} đã hủy lịch PT 1-1 vào {cancelledSession.Date} {cancelledSession.StartTime}.",
+                        $"Học viên đã hủy lịch PT 1-1 vào {timeStr}.",
                         "pt"
                     );
                 }
@@ -286,7 +452,29 @@ namespace SmartGym.Api.Endpoints
                     });
                 }
 
-                return Results.Ok(new { message = "Hủy lịch thành công!", id });
+                string returnMessage;
+                if (isRefunded)
+                {
+                    returnMessage = $"Đã hủy lịch tập kèm PT 1-1 thành công. Số tiền {refundedAmount:N0} đ đã được hoàn lại vào Ví hội viên của bạn!";
+                }
+                else if (isLate)
+                {
+                    returnMessage = "Đã hủy lịch tập kèm PT 1-1 thành công (Hủy muộn trong vòng 2 tiếng trước ca tập nên không hoàn tiền theo quy định).";
+                }
+                else
+                {
+                    returnMessage = "Đã hủy lịch tập kèm PT 1-1 thành công!";
+                }
+
+                return Results.Ok(new
+                {
+                    success = true,
+                    message = returnMessage,
+                    id,
+                    refunded = isRefunded,
+                    refundAmount = isRefunded ? refundedAmount : 0m,
+                    newBalance = updatedBalance
+                });
             })
             .WithTags("Member Portal")
             .WithSummary("Cancel a booked session with reason");

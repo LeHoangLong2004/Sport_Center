@@ -68,11 +68,15 @@ export default function MemberBooking({ onNavigate }: Props) {
     isCancelling,
     bookingPtSlot,
     setBookingPtSlot,
+    ptBookingError,
+    setPtBookingError,
+    isProcessingPtBooking,
     ptGoal,
     setPtGoal,
     ptNote,
     setPtNote,
     membership,
+    activeOrders,
     feedback,
     setFeedback,
     handleInitiateBookClass,
@@ -226,6 +230,7 @@ export default function MemberBooking({ onNavigate }: Props) {
           classes={filteredGroupClasses}
           mySessions={mySessions}
           membership={membership}
+          activeOrders={activeOrders}
           onNavigate={onNavigate}
           onRetry={() => void loadGroupClasses()}
           onOpenDetail={setSelectedClassDetail}
@@ -238,7 +243,15 @@ export default function MemberBooking({ onNavigate }: Props) {
       )}
 
       {/* TAB 2: PT 1-1 */}
-      {activeTab === "pt" && <PtSlotsTab slots={filteredPtSlots} onBookPtSlot={setBookingPtSlot} />}
+      {activeTab === "pt" && (
+        <PtSlotsTab
+          slots={filteredPtSlots}
+          onBookPtSlot={setBookingPtSlot}
+          membership={membership}
+          activeOrders={activeOrders}
+          mySessions={mySessions}
+        />
+      )}
 
       {/* TAB 3: MY CLASSES */}
       {activeTab === "my_classes" && (
@@ -248,6 +261,8 @@ export default function MemberBooking({ onNavigate }: Props) {
           getBookingStatus={getBookingStatus}
           onStartChatWithCoach={handleStartChatWithCoach}
           onCancelBooking={setCancelTarget}
+          membership={membership}
+          activeOrders={activeOrders}
         />
       )}
 
@@ -281,6 +296,11 @@ export default function MemberBooking({ onNavigate }: Props) {
         setPtGoal={setPtGoal}
         ptNote={ptNote}
         setPtNote={setPtNote}
+        membership={membership}
+        activeOrders={activeOrders}
+        mySessions={mySessions}
+        ptBookingError={ptBookingError}
+        isProcessingPtBooking={isProcessingPtBooking}
         onConfirmPtBooking={handleConfirmPtBooking}
       />
     </div>

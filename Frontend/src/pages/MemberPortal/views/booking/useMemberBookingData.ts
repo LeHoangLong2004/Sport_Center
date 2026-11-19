@@ -210,6 +210,7 @@ export function useMemberBookingData() {
           scheduleTime: session.scheduleTime,
           durationMinutes: Number(session.durationMinutes || 60),
           status: session.status || "confirmed",
+          price: session.price,
         };
       });
 

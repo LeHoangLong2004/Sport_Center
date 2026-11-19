@@ -33,6 +33,7 @@ public class MemberPtSessionDto
     public string? CoachSpecialty { get; set; }
     public string? CoachPhone { get; set; }
     public decimal? CoachRating { get; set; }
+    public decimal Price { get; set; } = 300000;
     public DateTime ScheduleTime { get; set; }
     public int DurationMinutes { get; set; }
     public string Status { get; set; } = string.Empty;

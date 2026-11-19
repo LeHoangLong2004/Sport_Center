@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { CoachAvatar } from "../../utils/coachAvatar";
 import type { MemberSessionItem } from "../../types";
-import type { CancelBookingTarget } from "./bookingTypes";
+import { isClassCoveredByPackage, type CancelBookingTarget } from "./bookingTypes";
 import { parseScheduleTime } from "../../../../utils/scheduleTimeHelper";
 import { EarlyBookingModal } from "./EarlyBookingModal";
 
@@ -24,6 +24,7 @@ interface GroupClassesTabProps {
   classes: any[];
   mySessions: MemberSessionItem[];
   membership?: any;
+  activeOrders?: any[];
   onNavigate?: (screen: any) => void;
   onRetry: () => void;
   onOpenDetail: (cls: any) => void;
@@ -41,6 +42,7 @@ export const GroupClassesTab: React.FC<GroupClassesTabProps> = ({
   classes,
   mySessions,
   membership,
+  activeOrders = [],
   onNavigate,
   onRetry,
   onOpenDetail,
@@ -269,6 +271,7 @@ export const GroupClassesTab: React.FC<GroupClassesTabProps> = ({
                       type="button"
                       onClick={() => {
                         const targetClassId = (bookedSession as any)?.classId || item.id;
+                        const isCovered = isClassCoveredByPackage(item, activeOrders);
                         onCancelBooking({
                           classId: targetClassId,
                           className: item.name,
@@ -276,7 +279,10 @@ export const GroupClassesTab: React.FC<GroupClassesTabProps> = ({
                           startTime: item.startTime,
                           endTime: item.endTime,
                           dateStr: item.dateStr,
-                          price: item.price,
+                          price: isCovered ? 0 : item.price,
+                          isCovered: isCovered,
+                          sport: item.sport,
+                          room: item.room,
                         });
                       }}
                       className="px-4 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 font-bold text-xs transition-colors border border-amber-200 dark:border-amber-800 cursor-pointer"
@@ -288,6 +294,7 @@ export const GroupClassesTab: React.FC<GroupClassesTabProps> = ({
                       type="button"
                       onClick={() => {
                         const targetClassId = (bookedSession as any)?.classId || item.id;
+                        const isCovered = isClassCoveredByPackage(item, activeOrders);
                         onCancelBooking({
                           classId: targetClassId,
                           className: item.name,
@@ -295,7 +302,10 @@ export const GroupClassesTab: React.FC<GroupClassesTabProps> = ({
                           startTime: item.startTime,
                           endTime: item.endTime,
                           dateStr: item.dateStr,
-                          price: item.price,
+                          price: isCovered ? 0 : item.price,
+                          isCovered: isCovered,
+                          sport: item.sport,
+                          room: item.room,
                         });
                       }}
                       className="px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 font-bold text-xs transition-colors border border-rose-200 dark:border-rose-800 cursor-pointer"
