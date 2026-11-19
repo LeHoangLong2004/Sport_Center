@@ -23,7 +23,7 @@ public sealed class SupabaseCheckInRepository : ICheckInRepository
         CheckInResult result,
         Guid? subscriptionId = null,
         Guid? facilityId = null,
-        string? method = "qr"
+        string? method = "manual"
     )
     {
         var record = new CheckInRecord(
@@ -74,7 +74,7 @@ public sealed class SupabaseCheckInRepository : ICheckInRepository
             {
                 try
                 {
-                    var facResponse = await _client.From<FacilityModel>().Limit(1).Get();
+                    var facResponse = await _client.From<FacilityModel>().Get();
                     var defaultFac = facResponse.Models.FirstOrDefault();
                     if (defaultFac != null && defaultFac.Id != Guid.Empty)
                     {

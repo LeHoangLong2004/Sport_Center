@@ -47,7 +47,7 @@ public class Flow4CheckInServiceTests
             CheckInResult result,
             Guid? subscriptionId = null,
             Guid? facilityId = null,
-            string? method = "qr")
+            string? method = "manual")
         {
             var record = new CheckInRecord(
                 Guid.NewGuid(),

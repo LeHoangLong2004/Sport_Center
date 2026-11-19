@@ -1,4 +1,4 @@
-1using SmartGym.Domain.Entities;
+using SmartGym.Domain.Entities;
 using SmartGym.Domain.Enums;
 
 namespace SmartGym.Application.Interfaces.Repositories;
@@ -12,7 +12,7 @@ public interface ICheckInRepository
         CheckInResult result,
         Guid? subscriptionId = null,
         Guid? facilityId = null,
-        string? method = "qr"
+        string? method = "manual"
     );
     Task<CheckInRecord?> FindOpenByMemberAsync(Guid memberId);
     Task<CheckInRecord?> CheckOutAsync(Guid recordId, DateTime checkOutTime);
