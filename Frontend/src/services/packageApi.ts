@@ -326,4 +326,9 @@ export const PackageAPI = {
         method: "PUT",
       },
     ),
+
+  cancelMembership: () =>
+    request<{ success: boolean; message: string }>("/subscriptions/cancel-membership", {
+      method: "POST",
+    }),
 }

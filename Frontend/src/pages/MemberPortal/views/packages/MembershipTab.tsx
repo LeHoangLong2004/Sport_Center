@@ -8,6 +8,7 @@ import {
   Lock,
   Activity,
   RefreshCw,
+  XCircle,
 } from "lucide-react";
 import type { CatalogPackage, PackagePeriod, MembershipStatus } from "../../../../services/packageApi";
 import { ActiveMembershipCard } from "./ActiveMembershipCard";
@@ -18,6 +19,7 @@ interface Props {
   selectedDuration: PackagePeriod;
   onSelectDuration: (period: PackagePeriod) => void;
   onStartPurchase: (pkg: CatalogPackage) => void;
+  onCancelMembership?: () => void;
   catalog: CatalogPackage[];
 }
 
@@ -27,6 +29,7 @@ export default function MembershipTab({
   selectedDuration,
   onSelectDuration,
   onStartPurchase,
+  onCancelMembership,
   catalog,
 }: Props) {
   return (
@@ -36,6 +39,7 @@ export default function MembershipTab({
         membershipStatus={membershipStatus}
         catalog={catalog}
         onStartPurchase={onStartPurchase}
+        onCancelMembership={onCancelMembership}
       />
 
       {/* Membership Tiers Upgrade Section */}
@@ -213,14 +217,27 @@ export default function MembershipTab({
                         <span>Hạng Mặc Định Miễn Phí</span>
                       </button>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => onStartPurchase(pkg)}
-                        className="w-full py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" />
-                        <span>Gia hạn gói này</span>
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => onStartPurchase(pkg)}
+                          className="flex-1 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          <span>Gia hạn gói này</span>
+                        </button>
+                        {onCancelMembership && (
+                          <button
+                            type="button"
+                            onClick={onCancelMembership}
+                            className="px-3 py-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-300 border border-rose-400/30 font-bold text-xs flex items-center justify-center gap-1 transition-all cursor-pointer"
+                            title="Hủy gói hiện tại và quay về Hạng Cơ bản"
+                          >
+                            <XCircle className="w-3.5 h-3.5" />
+                            <span>Hủy</span>
+                          </button>
+                        )}
+                      </div>
                     )
                   ) : (
                     <button
