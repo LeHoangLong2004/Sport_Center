@@ -248,133 +248,28 @@ public static partial class ClassEndpoints
                 if (!Guid.TryParse(userIdClaim, out var userId))
                     return Results.Unauthorized();
 
-                ClassDetailResponse? classDetail = null;
-                try
-                {
-                    classDetail = await service.GetClassDetailAsync(id);
-                }
-                catch { }
-
-                // Kiểm tra thông tin đặt chỗ trước khi hủy
-                CancelBookingInfoRaw? bookingRow = null;
-                try
-                {
-                    bookingRow = await db.Database
-                        .SqlQueryRaw<CancelBookingInfoRaw>(
-                            """
-                            SELECT id AS "Id", user_id AS "UserId", class_id AS "ClassId",
-                                   COALESCE(status, '') AS "Status",
-                                   COALESCE(created_at, now()) AS "CreatedAt",
-                                   subscription_id AS "SubscriptionId"
-                            FROM class_bookings
-                            WHERE user_id = {0} AND class_id = {1}
-                            """,
-                            userId, id)
-                        .FirstOrDefaultAsync();
-                }
-                catch { }
-
-                var (isSuccess, isLate, errorMessage) = await service.CancelBookingAsync(userId, id);
-                if (!isSuccess)
-                    return Results.BadRequest(new { message = errorMessage });
-
-                // Phân loại hình thức đặt chỗ:
-                var bookingTime = bookingRow?.CreatedAt ?? DateTime.UtcNow;
-
-                // Tìm hóa đơn liên quan trực tiếp tới lượt đặt lớp này (trong vòng +-5 phút khi đặt)
-                Invoice? bookingInvoice = null;
-                try
-                {
-                    bookingInvoice = await db.Invoices
-                        .Where(i => i.UserId == userId 
-                                 && i.CreatedAt >= bookingTime.AddMinutes(-5)
-                                 && i.CreatedAt <= bookingTime.AddMinutes(5))
-                        .OrderByDescending(i => i.CreatedAt)
-                        .FirstOrDefaultAsync();
-                }
-                catch { }
-
-                // 1. Đặt theo gói môn / miễn phí:
-                // - bookingRow.SubscriptionId có giá trị
-                // - hoặc hóa đơn ghi nhận số tiền thanh toán = 0 đ (TotalAmount <= 0)
-                // - hoặc không có hóa đơn thanh toán nào trong hệ thống
-                var isFreeBooking = (bookingRow?.SubscriptionId.HasValue == true)
-                    || (bookingInvoice != null && bookingInvoice.TotalAmount <= 0)
-                    || bookingInvoice == null;
-
-                // 2. Đặt vé lẻ trả sau tại quầy (pending): Chưa thanh toán tiền
-                var wasCounterPending = (bookingRow != null &&
-                    string.Equals(bookingRow.Status, "pending", StringComparison.OrdinalIgnoreCase))
-                    || (bookingInvoice != null && bookingInvoice.PaymentMethod == PaymentMethod.CashAtCounter && bookingInvoice.Status == PaymentStatus.Pending);
-
-                decimal refundAmount = 0m;
-                bool isRefunded = false;
-                decimal updatedBalance = 0m;
-
-                // Hoàn tiền vào ví CHỈ KHI:
-                // - ĐÃ THANH TOÁN TIỀN THỰC TẾ: bookingInvoice != null && bookingInvoice.TotalAmount > 0 && bookingInvoice.Status == PaymentStatus.Completed
-                // - KHÔNG PHẢI MIỄN PHÍ: !isFreeBooking
-                // - KHÔNG PHẢI TRẢ SAU TẠI QUẦY: !wasCounterPending
-                // - HỦY TRƯỚC GIỜ HỌC TRÊN 2 TIẾNG: !isLate
-                bool shouldRefund = !isFreeBooking && !wasCounterPending && !isLate 
-                    && bookingInvoice != null && bookingInvoice.TotalAmount > 0 && bookingInvoice.Status == PaymentStatus.Completed;
-
-                if (shouldRefund && bookingInvoice != null)
-                {
-                    refundAmount = bookingInvoice.TotalAmount;
-                    if (refundAmount > 0)
-                    {
-                        var className = classDetail?.ClassName ?? "lớp học";
-                        var (refundSuccess, newBal, _) = await MemberEndpoints.RefundToWalletAsync(
-                            db,
-                            userId,
-                            refundAmount,
-                            $"Hoàn tiền hủy đặt lớp: {className}"
-                        );
-                        if (refundSuccess)
-                        {
-                            isRefunded = true;
-                            updatedBalance = newBal;
-                            bookingInvoice.Status = PaymentStatus.Refunded;
-                            await db.SaveChangesAsync();
-                        }
-                    }
-                }
-
-                var targetClassName = classDetail?.ClassName ?? "lớp học";
-                string message;
-                if (isRefunded)
-                {
-                    message = $"Đã hủy đặt lớp \"{targetClassName}\" thành công. Số tiền {refundAmount:N0} đ đã được hoàn lại vào Ví hội viên của bạn!";
-                }
-                else if (isFreeBooking || bookingInvoice == null || bookingInvoice.TotalAmount <= 0)
-                {
-                    message = $"Đã hủy đặt lớp \"{targetClassName}\" thành công. Suất tập thuộc gói môn của bạn đã được giải phóng để bạn có thể đặt lịch tập khác!";
-                }
-                else if (isLate && !wasCounterPending)
-                {
-                    message = $"Đã hủy đặt lớp \"{targetClassName}\" thành công. Chỗ học đã được giải phóng (Hủy muộn trong vòng 2 tiếng trước giờ học nên không hoàn tiền ví theo quy định).";
-                }
-                else if (wasCounterPending)
-                {
-                    message = $"Đã hủy lịch giữ chỗ lớp \"{targetClassName}\" thành công (Chưa thanh toán tại quầy).";
-                }
-                else
-                {
-                    message = $"Đã hủy đặt lớp \"{targetClassName}\" thành công.";
-                }
-
-                return Results.Ok(new
-                {
-                    success = true,
-                    message = message,
-                    refunded = isRefunded,
-                    refundAmount = isRefunded ? refundAmount : 0m,
-                    newBalance = updatedBalance
-                });
+                return await ProcessCancelBookingInternalAsync(id, userId, isStaffAction: false, service, db);
             }
         )
         .RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
+
+        // 3.1 Cancel Booking For Member (Staff/Receptionist Action)
+        /// <summary>
+        /// POST /api/classes/{id}/cancel-for-member
+        /// Nhân viên lễ tân hoặc quản lý hủy lịch đặt lớp hộ cho một hội viên tại quầy.
+        /// Quyền hạn yêu cầu: Receptionist, Manager, Staff hoặc Admin.
+        /// </summary>
+        classGroup.MapPost(
+            "/{id:guid}/cancel-for-member",
+            async (Guid id, [FromBody] CancelForMemberRequest request, ClassService service, SmartGymDbContext db) =>
+            {
+                if (request == null || request.MemberId == Guid.Empty)
+                    return Results.BadRequest(new { message = "Vui lòng chọn hội viên cần hủy lịch." });
+
+                return await ProcessCancelBookingInternalAsync(id, request.MemberId, isStaffAction: true, service, db);
+            }
+        )
+        .RequireAuthorization(policy => policy.RequireRole("receptionist", "admin", "manager", "staff"));
 
         // 4. Receptionist / Manager Book For Member
         /// <summary>
@@ -411,8 +306,164 @@ public static partial class ClassEndpoints
         )
         .RequireAuthorization(policy => policy.RequireRole("receptionist", "admin", "manager", "staff"));
     }
+
+    private static async Task<IResult> ProcessCancelBookingInternalAsync(
+        Guid classId,
+        Guid targetUserId,
+        bool isStaffAction,
+        ClassService service,
+        SmartGymDbContext db)
+    {
+        ClassDetailResponse? classDetail = null;
+        try
+        {
+            classDetail = await service.GetClassDetailAsync(classId);
+        }
+        catch { }
+
+        // Kiểm tra thông tin đặt chỗ trước khi hủy
+        CancelBookingInfoRaw? bookingRow = null;
+        try
+        {
+            bookingRow = await db.Database
+                .SqlQueryRaw<CancelBookingInfoRaw>(
+                    """
+                    SELECT id AS "Id", user_id AS "UserId", class_id AS "ClassId",
+                           COALESCE(status, '') AS "Status",
+                           COALESCE(created_at, now()) AS "CreatedAt",
+                           subscription_id AS "SubscriptionId"
+                    FROM class_bookings
+                    WHERE user_id = {0} AND class_id = {1}
+                    """,
+                    targetUserId, classId)
+                .FirstOrDefaultAsync();
+        }
+        catch { }
+
+        var (isSuccess, isLate, errorMessage) = await service.CancelBookingAsync(targetUserId, classId);
+        if (!isSuccess)
+            return Results.BadRequest(new { message = errorMessage });
+
+        // Phân loại hình thức đặt chỗ:
+        var bookingTime = bookingRow?.CreatedAt ?? DateTime.UtcNow;
+
+        // Tìm hóa đơn liên quan trực tiếp tới lượt đặt lớp này (trong vòng +-5 phút khi đặt)
+        Invoice? bookingInvoice = null;
+        try
+        {
+            bookingInvoice = await db.Invoices
+                .Where(i => i.UserId == targetUserId 
+                         && i.CreatedAt >= bookingTime.AddMinutes(-5)
+                         && i.CreatedAt <= bookingTime.AddMinutes(5))
+                .OrderByDescending(i => i.CreatedAt)
+                .FirstOrDefaultAsync();
+        }
+        catch { }
+
+        // 1. Đặt theo gói môn / miễn phí:
+        // - bookingRow.SubscriptionId có giá trị
+        // - hoặc hóa đơn ghi nhận số tiền thanh toán = 0 đ (TotalAmount <= 0)
+        // - hoặc không có hóa đơn thanh toán nào trong hệ thống
+        var isFreeBooking = (bookingRow?.SubscriptionId.HasValue == true)
+            || (bookingInvoice != null && bookingInvoice.TotalAmount <= 0)
+            || bookingInvoice == null;
+
+        // 2. Đặt vé lẻ trả sau tại quầy (pending): Chưa thanh toán tiền
+        var wasCounterPending = (bookingRow != null &&
+            string.Equals(bookingRow.Status, "pending", StringComparison.OrdinalIgnoreCase))
+            || (bookingInvoice != null && bookingInvoice.PaymentMethod == PaymentMethod.CashAtCounter && bookingInvoice.Status == PaymentStatus.Pending);
+
+        decimal refundAmount = 0m;
+        bool isRefunded = false;
+        decimal updatedBalance = 0m;
+
+        // Hoàn tiền vào ví CHỈ KHI:
+        // - ĐÃ THANH TOÁN TIỀN THỰC TẾ: bookingInvoice != null && bookingInvoice.TotalAmount > 0 && bookingInvoice.Status == PaymentStatus.Completed
+        // - KHÔNG PHẢI MIỄN PHÍ: !isFreeBooking
+        // - KHÔNG PHẢI TRẢ SAU TẠI QUẦY: !wasCounterPending
+        // - HỦY TRƯỚC GIỜ HỌC TRÊN 2 TIẾNG HOẶC DO NHÂN VIÊN LỄ TÂN HỦY HỘ: (!isLate || isStaffAction)
+        bool shouldRefund = !isFreeBooking && !wasCounterPending && (!isLate || isStaffAction)
+            && bookingInvoice != null && bookingInvoice.TotalAmount > 0 && bookingInvoice.Status == PaymentStatus.Completed;
+
+        if (shouldRefund && bookingInvoice != null)
+        {
+            refundAmount = bookingInvoice.TotalAmount;
+            if (refundAmount > 0)
+            {
+                var className = classDetail?.ClassName ?? "lớp học";
+                var (refundSuccess, newBal, _) = await MemberEndpoints.RefundToWalletAsync(
+                    db,
+                    targetUserId,
+                    refundAmount,
+                    $"Hoàn tiền hủy đặt lớp: {className}" + (isStaffAction ? " (Lễ tân hủy hộ)" : "")
+                );
+                if (refundSuccess)
+                {
+                    isRefunded = true;
+                    updatedBalance = newBal;
+                    bookingInvoice.Status = PaymentStatus.Refunded;
+                    await db.SaveChangesAsync();
+                }
+            }
+        }
+
+        var targetClassName = classDetail?.ClassName ?? "lớp học";
+        string message;
+        if (isStaffAction)
+        {
+            if (isRefunded)
+            {
+                message = $"Đã hủy lịch tập lớp \"{targetClassName}\" hộ học viên thành công! Số tiền {refundAmount:N0} đ đã được hoàn lại vào Ví học viên.";
+            }
+            else if (isFreeBooking || bookingInvoice == null || bookingInvoice.TotalAmount <= 0)
+            {
+                message = $"Đã hủy lịch tập lớp \"{targetClassName}\" hộ học viên thành công! Suất tập gói môn của học viên đã được giải phóng.";
+            }
+            else if (wasCounterPending)
+            {
+                message = $"Đã hủy lịch giữ chỗ lớp \"{targetClassName}\" hộ học viên thành công (Chưa thanh toán tại quầy).";
+            }
+            else
+            {
+                message = $"Đã hủy lịch tập lớp \"{targetClassName}\" hộ học viên thành công.";
+            }
+        }
+        else
+        {
+            if (isRefunded)
+            {
+                message = $"Đã hủy đặt lớp \"{targetClassName}\" thành công. Số tiền {refundAmount:N0} đ đã được hoàn lại vào Ví hội viên của bạn!";
+            }
+            else if (isFreeBooking || bookingInvoice == null || bookingInvoice.TotalAmount <= 0)
+            {
+                message = $"Đã hủy đặt lớp \"{targetClassName}\" thành công. Suất tập thuộc gói môn của bạn đã được giải phóng để bạn có thể đặt lịch tập khác!";
+            }
+            else if (isLate && !wasCounterPending)
+            {
+                message = $"Đã hủy đặt lớp \"{targetClassName}\" thành công. Chỗ học đã được giải phóng (Hủy muộn trong vòng 2 tiếng trước giờ học nên không hoàn tiền ví theo quy định).";
+            }
+            else if (wasCounterPending)
+            {
+                message = $"Đã hủy lịch giữ chỗ lớp \"{targetClassName}\" thành công (Chưa thanh toán tại quầy).";
+            }
+            else
+            {
+                message = $"Đã hủy đặt lớp \"{targetClassName}\" thành công.";
+            }
+        }
+
+        return Results.Ok(new
+        {
+            success = true,
+            message = message,
+            refunded = isRefunded,
+            refundAmount = isRefunded ? refundAmount : 0m,
+            newBalance = updatedBalance
+        });
+    }
 }
 
+public record CancelForMemberRequest(Guid MemberId);
 public record PayAndBookClassRequest(string? PaymentMethod = "qr", decimal Amount = 150000);
 
 public class CancelBookingInfoRaw

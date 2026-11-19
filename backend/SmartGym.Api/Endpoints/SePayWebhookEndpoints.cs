@@ -67,8 +67,38 @@ public static class SePayWebhookEndpoints
     /// <summary>Các từ tiền tố chung (không định danh giao dịch) - không dùng để so khớp mờ giữa các lần chuyển khoản.</summary>
     private static readonly HashSet<string> GenericMemoWords = new(StringComparer.OrdinalIgnoreCase)
     {
-        "NAPVI", "DATLOP", "GYM",
+        "NAPVI", "DATLOP", "GYM", "MEMBER", "SPORT", "SC", "PACKAGE", "CARD", "SUB", "GOI", "TIEN", "CHUYEN", "KHOAN", "THANHTOAN", "ORDER"
     };
+
+    private static bool IsMemoMatched(string content, string cleanMemo, decimal? targetAmount, decimal txAmount)
+    {
+        if (string.IsNullOrWhiteSpace(content) || string.IsNullOrWhiteSpace(cleanMemo))
+            return false;
+
+        // 1. Phải khớp số tiền (nếu có yêu cầu amount)
+        if (targetAmount.HasValue && targetAmount.Value > 0 && Math.Abs(txAmount - targetAmount.Value) >= 1m)
+            return false;
+
+        var compactContent = content.Replace(" ", "").ToUpperInvariant();
+        var compactMemo = cleanMemo.Replace(" ", "").ToUpperInvariant();
+
+        // 2. Khớp trực tiếp nguyên chuỗi memo (ví dụ "SC9174MEMBER5821" hoặc "DATLOP04419F05")
+        if (compactContent.Contains(compactMemo))
+            return true;
+
+        // 3. Khớp chính xác các từ định danh không phải từ chung (VD: mã số ngẫu nhiên 9174, mã lớp 04419F05)
+        var meaningfulParts = cleanMemo.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Where(part => !GenericMemoWords.Contains(part.ToUpperInvariant()))
+            .ToList();
+
+        // BẮT BUỘC: Phải có ít nhất 1 mã định danh cụ thể VÀ TẤT CẢ các mã định danh đó phải nằm trong nội dung CK
+        if (meaningfulParts.Count > 0 && meaningfulParts.All(part => compactContent.Contains(part.Replace(" ", "").ToUpperInvariant())))
+        {
+            return true;
+        }
+
+        return false;
+    }
 
     public record SePayTransactionLog(
         long SePayId,
@@ -314,15 +344,26 @@ public static class SePayWebhookEndpoints
                 var matched = _transactionLogs.FirstOrDefault(t =>
                     t.ReceivedAt >= recentCutoff &&
                     !string.IsNullOrWhiteSpace(cleanMemo) &&
-                    (
-                        t.Content.Contains(cleanMemo, StringComparison.OrdinalIgnoreCase) ||
-                        cleanMemo.Replace(" ", "").Length >= 6 && t.Content.Replace(" ", "").Contains(cleanMemo.Replace(" ", ""), StringComparison.OrdinalIgnoreCase) ||
-                        (amount.HasValue && amount.Value > 0 && Math.Abs(t.Amount - amount.Value) < 1m && cleanMemo.Split(' ').Any(part => part.Length >= 4 && !GenericMemoWords.Contains(part.ToUpperInvariant()) && t.Content.Contains(part, StringComparison.OrdinalIgnoreCase)))
-                    )
+                    t.Status != "consumed" &&
+                    t.Status != "already_paid" &&
+                    t.Status != "confirmed" &&
+                    string.IsNullOrEmpty(t.MatchedOrderId) &&
+                    IsMemoMatched(t.Content, cleanMemo, amount, t.Amount)
                 );
 
                 if (matched != null)
                 {
+                    // Đánh dấu ngay lập tức là đã tiêu thụ (consumed) để không bao giờ bị khớp lại lần 2
+                    var idx = _transactionLogs.IndexOf(matched);
+                    if (idx >= 0)
+                    {
+                        _transactionLogs[idx] = matched with
+                        {
+                            Status = "consumed",
+                            MatchedOrderId = $"CONSUMED_{cleanMemo.Replace(" ", "")}_{DateTime.UtcNow.Ticks}"
+                        };
+                    }
+
                     return Results.Ok(new
                     {
                         received = true,
@@ -381,18 +422,38 @@ public static class SePayWebhookEndpoints
                                     : (txObj.TryGetProperty("amountIn", out var aIn2) ? (aIn2.GetString() ?? aIn2.GetRawText()) : "0");
                                 decimal.TryParse(txAmountStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var txAmount);
 
-                                bool memoMatches = content.Contains(cleanMemo, StringComparison.OrdinalIgnoreCase) ||
-                                                   cleanMemo.Replace(" ", "").Length >= 6 && content.Replace(" ", "").Contains(cleanMemo.Replace(" ", ""), StringComparison.OrdinalIgnoreCase) ||
-                                                   (amount.HasValue && amount.Value > 0 && Math.Abs(txAmount - amount.Value) < 1m && cleanMemo.Split(' ').Any(part => part.Length >= 4 && !GenericMemoWords.Contains(part.ToUpperInvariant()) && content.Contains(part, StringComparison.OrdinalIgnoreCase)));
+                                var sePayId = txObj.TryGetProperty("id", out var idEl) && idEl.TryGetInt64(out var idVal) ? idVal : 0L;
 
-                                if (memoMatches)
+                                // Kiểm tra nếu giao dịch này đã được ghi nhận hoặc tiêu thụ rồi thì bỏ qua
+                                lock (_logLock)
                                 {
+                                    if (sePayId > 0 && _transactionLogs.Any(t => t.SePayId == sePayId && (t.Status == "consumed" || t.Status == "confirmed" || !string.IsNullOrEmpty(t.MatchedOrderId))))
+                                    {
+                                        continue;
+                                    }
+                                }
+
+                                if (IsMemoMatched(content, cleanMemo, amount, txAmount))
+                                {
+                                    // Ghi nhận ngay vào log với trạng thái consumed
+                                    lock (_logLock)
+                                    {
+                                        _transactionLogs.Add(new SePayTransactionLog(
+                                            sePayId,
+                                            txAmount,
+                                            content,
+                                            $"CONSUMED_{cleanMemo.Replace(" ", "")}_{DateTime.UtcNow.Ticks}",
+                                            "consumed",
+                                            DateTime.UtcNow
+                                        ));
+                                    }
+
                                     return Results.Ok(new
                                     {
                                         received = true,
                                         amount = txAmount,
                                         content,
-                                        message = "Đã nhận được tiền chuyển khoản thành công từ MB Bank!"
+                                        message = "Đã nhận được tiền chuyển khoản thành công từ Sacombank qua SePay!"
                                     });
                                 }
                             }

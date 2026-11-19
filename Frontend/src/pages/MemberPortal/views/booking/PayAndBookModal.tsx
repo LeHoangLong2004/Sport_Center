@@ -166,8 +166,10 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
 
   const classPrice = Math.max(0, originalPrice - discountAmount);
 
+  // Generate unique attempt code per modal instance to guarantee uniqueness
+  const [attemptCode] = useState(() => Math.floor(1000 + Math.random() * 9000).toString());
   const bankConfig = BankConfigService.getConfig();
-  const bookingMemo = `DATLOP ${classToBook.id ? String(classToBook.id).slice(0, 8).toUpperCase() : "CLASS"}`;
+  const bookingMemo = `DATLOP ${classToBook.id ? String(classToBook.id).slice(0, 8).toUpperCase() : "CLASS"} ${attemptCode}`;
   const vietQrUrl = BankConfigService.getVietQrUrl(classPrice, bookingMemo, bankConfig);
 
   const [checkStatusText, setCheckStatusText] = useState<string | null>(null);
