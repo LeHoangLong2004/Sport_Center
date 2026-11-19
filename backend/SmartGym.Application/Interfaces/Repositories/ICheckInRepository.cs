@@ -5,7 +5,15 @@ namespace SmartGym.Application.Interfaces.Repositories;
 
 public interface ICheckInRepository
 {
-    Task<CheckInRecord> AddAsync(Guid memberId, Guid? scheduleId, DateTime checkInTime, CheckInResult result);
+    Task<CheckInRecord> AddAsync(
+        Guid memberId,
+        Guid? scheduleId,
+        DateTime checkInTime,
+        CheckInResult result,
+        Guid? subscriptionId = null,
+        Guid? facilityId = null,
+        string? method = "manual"
+    );
     Task<CheckInRecord?> FindOpenByMemberAsync(Guid memberId);
     Task<CheckInRecord?> CheckOutAsync(Guid recordId, DateTime checkOutTime);
     Task<IReadOnlyList<CheckInRecord>> GetByMemberAsync(Guid memberId);

@@ -40,13 +40,20 @@ public class Flow4CheckInServiceTests
     {
         public readonly List<CheckInRecord> Records = new();
 
-        public Task<CheckInRecord> AddAsync(Guid memberId, Guid? scheduleId, DateTime checkInTime, CheckInResult result)
+        public Task<CheckInRecord> AddAsync(
+            Guid memberId,
+            Guid? scheduleId,
+            DateTime checkInTime,
+            CheckInResult result,
+            Guid? subscriptionId = null,
+            Guid? facilityId = null,
+            string? method = "manual")
         {
             var record = new CheckInRecord(
                 Guid.NewGuid(),
                 memberId,
-                Guid.NewGuid(),
-                Guid.NewGuid(),
+                facilityId ?? Guid.NewGuid(),
+                subscriptionId ?? Guid.NewGuid(),
                 checkInTime,
                 null,
                 null

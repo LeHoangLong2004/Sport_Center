@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using SmartGym.Application.Interfaces.Repositories;
 using SmartGym.Domain.Entities;
 using SmartGym.Domain.Enums;
@@ -18,34 +20,93 @@ public sealed class SupabaseCheckInRepository : ICheckInRepository
         Guid memberId,
         Guid? scheduleId,
         DateTime checkInTime,
-        CheckInResult result
+        CheckInResult result,
+        Guid? subscriptionId = null,
+        Guid? facilityId = null,
+        string? method = "manual"
     )
     {
         var record = new CheckInRecord(
             Guid.NewGuid(),
             memberId,
-            Guid.Empty,
-            Guid.Empty,
+            facilityId ?? Guid.Empty,
+            subscriptionId ?? Guid.Empty,
             checkInTime,
             null
         );
 
         if (result == CheckInResult.Approved)
         {
-            // Lấy subscription đang ACTIVE của member
+            // 1. Tự động tìm subscription đang active nếu chưa được truyền
+            if (!subscriptionId.HasValue || subscriptionId.Value == Guid.Empty)
+            {
+                try
+                {
+                    var subResponse = await _client.From<SubscriptionCheckInModel>()
+                        .Where(x => x.UserId == memberId)
+                        .Get();
+                    var now = DateTime.UtcNow;
+                    var activeSub = subResponse.Models
+                        .Where(x => (string.Equals(x.PaymentStatus, "completed", StringComparison.OrdinalIgnoreCase)
+                                  || string.Equals(x.PaymentStatus, "paid", StringComparison.OrdinalIgnoreCase)
+                                  || string.Equals(x.PaymentStatus, "active", StringComparison.OrdinalIgnoreCase))
+                                 && x.EndDate.Date >= now.Date)
+                        .OrderByDescending(x => x.EndDate)
+                        .FirstOrDefault();
+
+                    if (activeSub != null && activeSub.Id != Guid.Empty)
+                    {
+                        subscriptionId = activeSub.Id;
+                        if (!facilityId.HasValue || facilityId.Value == Guid.Empty)
+                        {
+                            facilityId = activeSub.FacilityId;
+                        }
+                    }
+                }
+                catch
+                {
+                    // Fallback
+                }
+            }
+
+            // 2. Tự động lấy facility mặc định đầu tiên nếu chưa có facility_id
+            if (!facilityId.HasValue || facilityId.Value == Guid.Empty)
+            {
+                try
+                {
+                    var facResponse = await _client.From<FacilityModel>().Get();
+                    var defaultFac = facResponse.Models.FirstOrDefault();
+                    if (defaultFac != null && defaultFac.Id != Guid.Empty)
+                    {
+                        facilityId = defaultFac.Id;
+                    }
+                }
+                catch
+                {
+                    // Fallback
+                }
+            }
+
             var model = new GateCheckinModel
             {
                 Id = record.Id,
                 MemberId = memberId,
-                BranchId = null,       // facility_id — để null nếu không xác định được
-                MemberPackageId = null,
+                BranchId = (facilityId.HasValue && facilityId.Value != Guid.Empty) ? facilityId.Value : null,
+                MemberPackageId = (subscriptionId.HasValue && subscriptionId.Value != Guid.Empty) ? subscriptionId.Value : null,
                 CheckInTime = checkInTime,
-                Method = "manual",
+                Method = string.IsNullOrWhiteSpace(method) ? "qr" : method,
             };
 
             await _client.From<GateCheckinModel>().Insert(model);
 
-            record = new CheckInRecord(record.Id, memberId, Guid.Empty, Guid.Empty, checkInTime, null);
+            record = new CheckInRecord(
+                record.Id,
+                memberId,
+                facilityId ?? Guid.Empty,
+                subscriptionId ?? Guid.Empty,
+                checkInTime,
+                null
+            );
         }
 
         return record;
