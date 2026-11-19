@@ -95,6 +95,16 @@ export default function WalletTopUpModal({
           clearInterval(interval);
           setSuccessResult({ amount: actualAmount, newBalance: res.newBalance });
           onSuccess?.(res.newBalance);
+          return;
+        }
+
+        // Tự động kiểm tra số dư ví nếu webhook đã tự cộng trực tiếp vào Database
+        const freshWallet = await WalletService.getWallet(undefined, true);
+        if (!isCancelled && freshWallet.balance > currentBalance) {
+          clearInterval(interval);
+          const added = freshWallet.balance - currentBalance;
+          setSuccessResult({ amount: added, newBalance: freshWallet.balance });
+          onSuccess?.(freshWallet.balance);
         }
       } catch {}
     }, 2500);
@@ -103,7 +113,7 @@ export default function WalletTopUpModal({
       isCancelled = true;
       clearInterval(interval);
     };
-  }, [isOpen, method, transferMemo, actualAmount, successResult, onSuccess]);
+  }, [isOpen, method, transferMemo, actualAmount, successResult, currentBalance, onSuccess]);
 
   if (!isOpen) return null;
 
@@ -137,12 +147,22 @@ export default function WalletTopUpModal({
       if (res.received && typeof res.newBalance === "number") {
         setSuccessResult({ amount: actualAmount, newBalance: res.newBalance });
         onSuccess?.(res.newBalance);
-      } else {
-        setCheckStatusText(
-          res.message ||
-            `Chưa phát hiện giao dịch ${actualAmount.toLocaleString("vi-VN")} đ với nội dung "${transferMemo}". Vui lòng quét mã QR và hoàn tất chuyển tiền trước khi bấm kiểm tra!`
-        );
+        return;
       }
+
+      // Kiểm tra trực tiếp số dư ví mới nhất từ database
+      const freshWallet = await WalletService.getWallet(undefined, true);
+      if (freshWallet.balance > currentBalance) {
+        const added = freshWallet.balance - currentBalance;
+        setSuccessResult({ amount: added, newBalance: freshWallet.balance });
+        onSuccess?.(freshWallet.balance);
+        return;
+      }
+
+      setCheckStatusText(
+        res.message ||
+          `Chưa phát hiện giao dịch ${actualAmount.toLocaleString("vi-VN")} đ với nội dung "${transferMemo}". Vui lòng quét mã QR và hoàn tất chuyển tiền trước khi bấm kiểm tra!`
+      );
     } finally {
       setLoading(false);
     }

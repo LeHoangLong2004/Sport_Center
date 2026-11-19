@@ -11,8 +11,10 @@ import {
   calculateMembershipUpgrade,
 } from "../../../services/packageApi";
 import { Crown, Dumbbell, CheckCircle2, AlertCircle, X } from "lucide-react";
+import { toast } from "sonner";
 import MembershipTab from "./packages/MembershipTab";
 import SportTab from "./packages/SportTab";
+import CancelMembershipModal from "./packages/CancelMembershipModal";
 import UniversalPaymentModal, { UniversalPaymentItem } from "../components/UniversalPaymentModal";
 
 interface Props {
@@ -47,6 +49,10 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
   const [selectedPackage, setSelectedPackage] = useState<CatalogPackage | null>(null);
   const [checkoutDuration, setCheckoutDuration] = useState<PackagePeriod>(1);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Cancel membership modal state
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [isCancellingMembership, setIsCancellingMembership] = useState(false);
 
   // Load data
   const loadData = useCallback(async () => {
@@ -263,6 +269,26 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
     }
   };
 
+  const handleConfirmCancelMembership = async () => {
+    setIsCancellingMembership(true);
+    try {
+      const res = await PackageAPI.cancelMembership();
+      toast.success(res.message || "Đã hủy gói thành viên thành công! Tài khoản đã quay về Hạng Cơ bản.");
+      setShowCancelModal(false);
+      await loadData();
+      try {
+        const channel = new BroadcastChannel("smartgym_orders_sync");
+        channel.postMessage({ type: "MEMBERSHIP_CANCELLED", timestamp: Date.now() });
+        channel.close();
+        localStorage.setItem("smartgym_order_event", String(Date.now()));
+      } catch {}
+    } catch (err: any) {
+      toast.error(err?.message || "Không thể hủy gói thành viên. Vui lòng thử lại sau!");
+    } finally {
+      setIsCancellingMembership(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Toast feedback */}
@@ -361,6 +387,7 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
           selectedDuration={selectedDuration}
           onSelectDuration={setSelectedDuration}
           onStartPurchase={handleStartPurchase}
+          onCancelMembership={() => setShowCancelModal(true)}
           catalog={catalog}
         />
       )}
@@ -390,6 +417,15 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
         item={universalPaymentItem}
         onClose={() => setSelectedPackage(null)}
         onSuccess={handleUniversalCheckoutSuccess}
+      />
+
+      {/* CANCEL MEMBERSHIP CONFIRMATION MODAL */}
+      <CancelMembershipModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={handleConfirmCancelMembership}
+        membershipStatus={membershipStatus}
+        isCancelling={isCancellingMembership}
       />
     </div>
   );

@@ -8,6 +8,7 @@ import {
   Lock,
   Activity,
   RefreshCw,
+  XCircle,
 } from "lucide-react";
 import type { CatalogPackage, MembershipStatus } from "../../../../services/packageApi";
 
@@ -15,12 +16,14 @@ interface ActiveMembershipCardProps {
   membershipStatus: MembershipStatus;
   catalog: CatalogPackage[];
   onStartPurchase: (pkg: CatalogPackage) => void;
+  onCancelMembership?: () => void;
 }
 
 export function ActiveMembershipCard({
   membershipStatus,
   catalog,
   onStartPurchase,
+  onCancelMembership,
 }: ActiveMembershipCardProps) {
   const daysLeft = membershipStatus.endDate
     ? Math.max(0, Math.ceil((new Date(membershipStatus.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
@@ -96,7 +99,7 @@ export function ActiveMembershipCard({
             <span>Nâng cấp nhận thêm đặc quyền</span>
           </button>
         ) : (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <button
               type="button"
               onClick={() => {
@@ -108,6 +111,17 @@ export function ActiveMembershipCard({
               <RefreshCw className="w-3.5 h-3.5" />
               <span>Gia hạn thẻ</span>
             </button>
+            {onCancelMembership && (
+              <button
+                type="button"
+                onClick={onCancelMembership}
+                className="px-4 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 hover:text-rose-200 font-bold text-xs border border-rose-500/30 transition-all flex items-center gap-1.5 cursor-pointer"
+                title="Hủy gói thành viên hiện tại và quay về Hạng Cơ bản"
+              >
+                <XCircle className="w-3.5 h-3.5" />
+                <span>Hủy gói</span>
+              </button>
+            )}
           </div>
         )}
       </div>

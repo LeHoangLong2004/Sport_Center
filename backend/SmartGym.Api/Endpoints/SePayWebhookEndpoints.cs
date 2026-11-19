@@ -200,11 +200,12 @@ public static class SePayWebhookEndpoints
             // Thử khớp nạp ví: NAPVI <mã>
             if (content.Contains("NAPVI", StringComparison.OrdinalIgnoreCase))
             {
-                var walletResult = MemberEndpoints.ProcessSePayInbound(
+                var walletResult = await MemberEndpoints.ProcessSePayInboundAsync(
                     webhook.Id,
                     amount,
                     content,
-                    webhook.ReferenceCode ?? webhook.ReferenceNumber
+                    webhook.ReferenceCode ?? webhook.ReferenceNumber,
+                    db
                 );
                 if (walletResult.Success)
                 {
@@ -347,7 +348,7 @@ public static class SePayWebhookEndpoints
                     t.Status != "consumed" &&
                     t.Status != "already_paid" &&
                     t.Status != "confirmed" &&
-                    string.IsNullOrEmpty(t.MatchedOrderId) &&
+                    (string.IsNullOrEmpty(t.MatchedOrderId) || t.Status == "wallet_topup_completed") &&
                     IsMemoMatched(t.Content, cleanMemo, amount, t.Amount)
                 );
 
