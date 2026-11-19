@@ -53,6 +53,9 @@ public static partial class DatabaseInitializationExtensions
         {
             db.Database.ExecuteSqlRaw(
                 @"
+                ALTER TABLE membership_benefits
+                    ADD COLUMN IF NOT EXISTS benefit_value TEXT;
+
                 ALTER TABLE classes
                     ADD COLUMN IF NOT EXISTS approval_status VARCHAR(20) NOT NULL DEFAULT 'approved';
                 UPDATE classes

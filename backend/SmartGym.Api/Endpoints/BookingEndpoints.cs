@@ -36,18 +36,27 @@ public static class BookingEndpoints
         classes.MapGet(
             "/",
             async (
+                ClassService classService,
                 IClassScheduleRepository scheduleRepo,
                 IUserRepository userRepo,
                 string? sport,
                 DateTime? date
             ) =>
             {
-                var results = await scheduleRepo.SearchAsync(sport, date);
-                var responseTasks = results.Select(async s =>
-                    await ToClassResponseAsync(s, userRepo)
-                );
-                var response = await Task.WhenAll(responseTasks);
-                return Results.Ok(response);
+                try
+                {
+                    var results = await scheduleRepo.SearchAsync(sport, date);
+                    var responseTasks = results.Select(async s =>
+                        await ToClassResponseAsync(s, userRepo)
+                    );
+                    var response = await Task.WhenAll(responseTasks);
+                    return Results.Ok(response);
+                }
+                catch
+                {
+                    var fallback = await classService.GetAllClassesAsync();
+                    return Results.Ok(fallback);
+                }
             }
         );
 

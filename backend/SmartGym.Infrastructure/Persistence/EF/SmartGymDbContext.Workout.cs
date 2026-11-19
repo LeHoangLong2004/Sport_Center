@@ -29,8 +29,6 @@ public partial class SmartGymDbContext
             entity.Property(e => e.ApprovedAt).HasColumnName("approved_at");
             entity.Property(e => e.ApprovedBy).HasColumnName("approved_by");
             entity.Property(e => e.ApprovalNote).HasColumnName("approval_note");
-            entity.Property(e => e.ArchivedAt).HasColumnName("archived_at");
-            entity.Property(e => e.ArchivedBy).HasColumnName("archived_by");
             entity
                 .Property(e => e.CreatedAt)
                 .HasColumnName("created_at")
@@ -108,6 +106,8 @@ public partial class SmartGymDbContext
             entity.Property(e => e.SessionId).HasColumnName("session_id");
             entity.Property(e => e.SessionName).HasColumnName("session_name");
             entity.Property(e => e.TagsJson).HasColumnName("tags_json");
+            entity.Property(e => e.CoachReply).HasColumnName("coach_reply");
+            entity.Property(e => e.RepliedAt).HasColumnName("replied_at");
             entity
                 .Property(e => e.CreatedAt)
                 .HasColumnName("created_at")

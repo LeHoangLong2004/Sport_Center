@@ -20,9 +20,10 @@ public sealed class Flow5WorkoutPlanValidator : IFlow5WorkoutPlanValidator
 
     private static readonly HashSet<string> SupportedEquipment = new(StringComparer.Ordinal)
     {
-        "tham tap", "ta tay", "ho boi", "xa don", "day khang luc",
+        "tham tap", "tham", "ta tay", "ho boi", "xa don", "day khang luc",
         "khong dung cu", "ta don", "may tap", "kettlebell", "ghe tap",
-        "vo cau long", "vot cau long", "bong", "day nhay", "kickboard", "phao boi"
+        "vo cau long", "vot cau long", "vot", "vo", "racket", "cau", "qua cau",
+        "bong", "bong da", "day nhay", "kickboard", "phao boi", "phao", "non tap", "cone"
     };
 
     private static readonly Regex SetsPattern = new(

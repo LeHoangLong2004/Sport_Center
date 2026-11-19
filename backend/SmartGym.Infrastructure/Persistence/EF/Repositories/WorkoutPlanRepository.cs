@@ -31,8 +31,71 @@ public class WorkoutPlanRepository : IWorkoutPlanRepository
             .Where(e => e.PlanId == plan.Id)
             .ToListAsync();
 
-        _context.WorkoutPlanExercises.RemoveRange(existingExercises);
-        _context.WorkoutPlans.Update(plan);
+        if (plan.Exercises != null)
+        {
+            var desiredExercises = plan.Exercises.ToList();
+            var desiredIds = desiredExercises
+                .Where(e => e.Id != Guid.Empty)
+                .Select(e => e.Id)
+                .ToHashSet();
+
+            // 1. Remove only exercises that were deleted (in DB but not in desired list)
+            var toRemove = existingExercises
+                .Where(e => !desiredIds.Contains(e.Id))
+                .ToList();
+
+            if (toRemove.Count > 0)
+            {
+                _context.WorkoutPlanExercises.RemoveRange(toRemove);
+            }
+
+            // 2. Update existing or insert new
+            var existingDict = existingExercises.ToDictionary(e => e.Id);
+
+            foreach (var desired in desiredExercises)
+            {
+                desired.PlanId = plan.Id;
+
+                if (desired.Id != Guid.Empty && existingDict.TryGetValue(desired.Id, out var existing))
+                {
+                    existing.Name = desired.Name;
+                    existing.Sets = desired.Sets;
+                    existing.Reps = desired.Reps;
+                    existing.Duration = desired.Duration;
+                    existing.Rest = desired.Rest;
+                    existing.Note = desired.Note;
+                    existing.Order = desired.Order;
+                }
+                else
+                {
+                    if (desired.Id == Guid.Empty)
+                    {
+                        desired.Id = Guid.NewGuid();
+                    }
+
+                    var entry = _context.Entry(desired);
+                    if (entry.State == EntityState.Detached)
+                    {
+                        _context.WorkoutPlanExercises.Add(desired);
+                    }
+                    else
+                    {
+                        entry.State = EntityState.Added;
+                    }
+                }
+            }
+        }
+
+        var planEntry = _context.Entry(plan);
+        if (planEntry.State == EntityState.Detached)
+        {
+            _context.WorkoutPlans.Update(plan);
+        }
+        else
+        {
+            planEntry.State = EntityState.Modified;
+        }
+
         await _context.SaveChangesAsync();
         return await GetByIdAsync(plan.Id) ?? plan;
     }
