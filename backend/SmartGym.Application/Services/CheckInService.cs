@@ -26,7 +26,7 @@ public sealed class CheckInService
         Guid memberId,
         DateTime checkInTime,
         Guid? facilityId = null,
-        string? method = "qr"
+        string? method = "manual"
     )
     {
         var openRecord = await _checkInRepository.FindOpenByMemberAsync(memberId);
@@ -98,7 +98,7 @@ public sealed class CheckInService
             CheckInResult.Approved,
             package.Id,
             effectiveFacilityId,
-            method ?? "qr");
+            method ?? "manual");
 
         return (true, "Check-in thành công! Chào mừng bạn đến SmartGym.", plan.PlanName);
     }

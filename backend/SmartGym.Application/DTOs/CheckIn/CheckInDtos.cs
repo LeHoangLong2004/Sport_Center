@@ -1,7 +1,7 @@
 namespace SmartGym.Application.DTOs.CheckIn;
 
 // --- Requests ---
-public sealed record CheckInRequest(Guid MemberId, Guid? FacilityId = null, string? Method = "qr");
+public sealed record CheckInRequest(Guid MemberId, Guid? FacilityId = null, string? Method = "manual");
 public sealed record CheckOutRequest(Guid MemberId);
 
 // --- Responses ---

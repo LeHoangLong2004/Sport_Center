@@ -108,7 +108,7 @@ export function CheckInPage() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({ memberId: foundMember.id })
+        body: JSON.stringify({ memberId: foundMember.id, method: "manual" })
       });
       if (res.ok) {
         setConfirmed(true);
