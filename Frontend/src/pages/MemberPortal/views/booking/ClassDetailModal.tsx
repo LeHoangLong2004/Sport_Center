@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Award, Star, MessageCircle, ShieldCheck, Check, CreditCard } from "lucide-react";
+import { X, Award, Star, MessageCircle, ShieldCheck, Check, CreditCard, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 import { CoachAvatar } from "../../utils/coachAvatar";
+import { findConflictingSession } from "./bookingTypes";
 
 interface ClassDetailModalProps {
   classDetail: any | null;
@@ -9,6 +11,7 @@ interface ClassDetailModalProps {
   isBooked: boolean;
   onInitiateBook: (cls: any) => void;
   onStartChatWithCoach: (coachName: string, coachId?: string, coachAvatar?: string) => void;
+  mySessions?: any[];
 }
 
 export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
@@ -16,9 +19,26 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
   onClose,
   isBooked,
   onInitiateBook,
-  onStartChatWithCoach
+  onStartChatWithCoach,
+  mySessions = [],
 }) => {
   if (!classDetail) return null;
+
+  const conflictingSession = useMemo(() => {
+    return findConflictingSession(classDetail, mySessions);
+  }, [classDetail, mySessions]);
+
+  const [conflictAlert, setConflictAlert] = useState<string | null>(null);
+
+  const handleBookClick = () => {
+    if (conflictingSession) {
+      const msg = `Phát hiện xung đột lịch học! Bạn đã có lịch "${conflictingSession.name}" vào khung giờ ${conflictingSession.startTime} - ${conflictingSession.endTime} (Ngày ${conflictingSession.date}).`;
+      setConflictAlert(msg);
+      toast.error(msg);
+      return;
+    }
+    onInitiateBook(classDetail);
+  };
 
   return createPortal(
     <div
@@ -128,6 +148,23 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
             </button>
           </div>
 
+          {/* Cảnh báo xung đột lịch ngay trên Modal */}
+          {conflictingSession && !isBooked && (
+            <div className="p-4 rounded-2xl bg-rose-50/95 dark:bg-rose-950/60 border-2 border-rose-300 dark:border-rose-700 text-rose-900 dark:text-rose-200 shadow-sm animate-in fade-in slide-in-from-top-2 duration-150 space-y-1.5">
+              <div className="flex items-center gap-2 font-black text-rose-700 dark:text-rose-300 text-xs uppercase tracking-wider">
+                <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 animate-pulse" />
+                <span>Phát hiện xung đột lịch học (Trùng giờ)</span>
+              </div>
+              <p className="text-[11px] leading-relaxed font-semibold text-rose-800 dark:text-rose-300">
+                Bạn đã có lịch <strong>"{conflictingSession.name}"</strong> vào khung giờ{" "}
+                <strong>{conflictingSession.startTime} - {conflictingSession.endTime}</strong> (Ngày {conflictingSession.date}).
+              </p>
+              <p className="text-[10px] text-rose-600 dark:text-rose-400 font-medium italic">
+                Hệ thống không thể đặt trùng 2 ca cùng thời điểm. Vui lòng chọn lớp khác hoặc hủy lịch trùng trước khi đặt lớp này.
+              </p>
+            </div>
+          )}
+
           <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/30 text-slate-900 dark:text-slate-300 border border-slate-200 dark:border-slate-800">
             <p className="font-bold flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-slate-600" /> Chính sách linh hoạt:
@@ -150,11 +187,11 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
           <button
             type="button"
             disabled={isBooked}
-            onClick={() => onInitiateBook(classDetail)}
+            onClick={handleBookClick}
             className={`px-5 py-2.5 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5 ${
               isBooked
                 ? "cursor-not-allowed bg-emerald-50 text-emerald-700 border border-emerald-200"
-                : "text-white bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20 active:scale-95"
+                : "text-white bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20 active:scale-95 cursor-pointer"
             }`}
           >
             {isBooked ? (

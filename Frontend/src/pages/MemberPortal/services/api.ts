@@ -5,9 +5,18 @@ const BASE_URL = configuredApiUrl
 
 async function fetchApi(endpoint: string, options: RequestInit = {}) {
     const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+    const user = (() => {
+        try {
+            return JSON.parse(localStorage.getItem('user') || '{}');
+        } catch {
+            return {};
+        }
+    })();
+    const uid = user?.id || user?.userId || user?.memberId || user?.email;
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        ...(options.headers as Record<string, string> || {})
+        ...(options.headers as Record<string, string> || {}),
+        ...(uid ? { 'X-User-Id': String(uid) } : {})
     };
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -131,6 +140,8 @@ export const MemberAPI = {
         coachName?: string;
         goal?: string;
         coachNote?: string;
+        paymentMethod?: "qr" | "counter" | "wallet" | "package";
+        amount?: number;
     }) => {
         return fetchApi('/member/bookings', {
             method: 'POST',

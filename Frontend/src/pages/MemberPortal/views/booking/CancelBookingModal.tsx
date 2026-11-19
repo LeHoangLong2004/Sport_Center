@@ -2,13 +2,15 @@ import React, { useMemo } from "react";
 import { createPortal } from "react-dom";
 import { AlertCircle, AlertTriangle, CheckCircle2, X, LoaderCircle, Clock } from "lucide-react";
 import { parseScheduleTime } from "../../../../utils/scheduleTimeHelper";
-import type { CancelBookingTarget } from "./bookingTypes";
+import { isClassCoveredByPackage, type CancelBookingTarget } from "./bookingTypes";
 
 interface CancelBookingModalProps {
   cancelTarget: CancelBookingTarget | null;
   onClose: () => void;
-  onConfirmCancel: (classId: string) => void;
+  onConfirmCancel: (classId: string, type?: "class" | "pt") => void;
   isCancelling?: boolean;
+  membership?: any | null;
+  activeOrders?: any[];
 }
 
 export const CancelBookingModal: React.FC<CancelBookingModalProps> = ({
@@ -16,8 +18,33 @@ export const CancelBookingModal: React.FC<CancelBookingModalProps> = ({
   onClose,
   onConfirmCancel,
   isCancelling = false,
+  membership,
+  activeOrders = [],
 }) => {
   if (!cancelTarget) return null;
+
+  const isPt = cancelTarget.type === "pt";
+  const isPackageCovered = !isPt && (
+    cancelTarget.isCovered === true ||
+    cancelTarget.price === 0 ||
+    isClassCoveredByPackage(
+      { name: cancelTarget.className, sport: cancelTarget.sport, room: cancelTarget.room },
+      activeOrders
+    )
+  );
+
+  const ptDiscountRate = membership?.tier === "premium" ? 0.08 : membership?.tier === "plus" ? 0.05 : 0;
+  const classDiscountRate = membership?.tier === "premium" ? 0.15 : membership?.tier === "plus" ? 0.08 : 0;
+  const defaultPtPrice = Math.round(300000 * (1 - ptDiscountRate));
+  const defaultClassPrice = Math.round(150000 * (1 - classDiscountRate));
+
+  const effectivePrice = isPackageCovered
+    ? 0
+    : (cancelTarget.price && cancelTarget.price > 0)
+    ? cancelTarget.price
+    : (isPt ? defaultPtPrice : defaultClassPrice);
+
+  const priceDisplay = `${effectivePrice.toLocaleString("vi-VN")} đ`;
 
   // Tính toán thời gian thực tế để biết hội viên đang hủy trước hay sau mốc 2 tiếng (tránh lệch múi giờ UTC+7)
   const isLate = useMemo(() => {
@@ -55,7 +82,6 @@ export const CancelBookingModal: React.FC<CancelBookingModalProps> = ({
     return false;
   }, [cancelTarget]);
 
-  const priceDisplay = cancelTarget.price ? `${cancelTarget.price.toLocaleString("vi-VN")} đ` : "150.000 đ";
   const timeInfo = cancelTarget.startTime
     ? `${cancelTarget.startTime}${cancelTarget.endTime ? ` - ${cancelTarget.endTime}` : ""} (${cancelTarget.dateStr || "Hôm nay"})`
     : cancelTarget.dateStr || "";
@@ -82,11 +108,21 @@ export const CancelBookingModal: React.FC<CancelBookingModalProps> = ({
           </div>
           <div className="min-w-0 flex-1">
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
-              {isLate ? "Xác nhận hủy lịch (Sát giờ học)" : "Xác nhận hủy đặt lớp"}
+              {isLate
+                ? isPt
+                  ? "Xác nhận hủy lịch PT (Sát giờ tập)"
+                  : "Xác nhận hủy lịch (Sát giờ học)"
+                : isPt
+                ? "Xác nhận hủy lịch kèm riêng 1-1"
+                : "Xác nhận hủy đặt lớp"}
             </h3>
             <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
               {isLate
-                ? "Lớp học sắp bắt đầu trong vòng chưa đầy 2 tiếng."
+                ? isPt
+                  ? "Ca tập PT 1-1 sắp bắt đầu trong vòng chưa đầy 2 tiếng."
+                  : "Lớp học sắp bắt đầu trong vòng chưa đầy 2 tiếng."
+                : isPt
+                ? "Bạn có chắc chắn muốn hủy ca tập này với Huấn luyện viên không?"
                 : "Bạn có chắc chắn muốn hủy chỗ tại lớp học này không?"}
             </p>
           </div>
@@ -124,12 +160,32 @@ export const CancelBookingModal: React.FC<CancelBookingModalProps> = ({
               </div>
               <ul className="text-[11px] leading-relaxed space-y-1 list-disc pl-4 text-amber-800/90 dark:text-amber-300/90 font-medium">
                 <li>
-                  Chỗ tập của bạn sẽ được <strong>giải phóng ngay</strong> để nhường lại cho học viên khác.
+                  {isPt ? (
+                    <>Ca tập của bạn sẽ được <strong>giải phóng ngay</strong> để Huấn luyện viên có thể nhận học viên khác.</>
+                  ) : (
+                    <>Chỗ tập của bạn sẽ được <strong>giải phóng ngay</strong> để nhường lại cho học viên khác.</>
+                  )}
                 </li>
-                <li>
-                  Theo chính sách trung tâm, chi phí vé ({priceDisplay}) sẽ <strong>KHÔNG ĐƯỢC HOÀN LẠI</strong> vào ví.
-                </li>
+                {isPackageCovered ? (
+                  <li>
+                    Theo quy định trung tâm, việc hủy lớp dưới 2 tiếng có thể ảnh hưởng đến quyền ưu tiên đặt lớp tiếp theo của gói tập.
+                  </li>
+                ) : (
+                  <li>
+                    Theo chính sách trung tâm, chi phí ({priceDisplay}) sẽ <strong>KHÔNG ĐƯỢC HOÀN LẠI</strong> vào ví.
+                  </li>
+                )}
               </ul>
+            </div>
+          ) : isPackageCovered ? (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/90 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200 space-y-1.5">
+              <div className="flex items-center gap-2 text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                <span>Hủy hợp lệ & Giải phóng suất tập</span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-emerald-800/90 dark:text-emerald-300/90 font-medium">
+                Bạn đang hủy trước giờ học trên 2 tiếng. Buổi tập này thuộc <strong>quyền lợi gói môn của bạn (miễn phí)</strong>, suất tập sẽ được hoàn trả/giải phóng ngay lập tức để bạn có thể đặt buổi tập khác!
+              </p>
             </div>
           ) : (
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50/90 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200 space-y-1.5">
@@ -138,7 +194,7 @@ export const CancelBookingModal: React.FC<CancelBookingModalProps> = ({
                 <span>Hủy hợp lệ & Hoàn tiền 100%</span>
               </div>
               <p className="text-[11px] leading-relaxed text-emerald-800/90 dark:text-emerald-300/90 font-medium">
-                Bạn đang hủy trước giờ học trên 2 tiếng. Số tiền <strong>{priceDisplay}</strong> sẽ được <strong>hoàn trả 100% vào Ví hội viên</strong> của bạn ngay lập tức!
+                Bạn đang hủy trước {isPt ? "ca tập" : "giờ học"} trên 2 tiếng. Số tiền <strong>{priceDisplay}</strong> sẽ được <strong>hoàn trả 100% vào Ví hội viên</strong> của bạn ngay lập tức!
               </p>
             </div>
           )}
@@ -152,12 +208,12 @@ export const CancelBookingModal: React.FC<CancelBookingModalProps> = ({
             onClick={onClose}
             className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-white disabled:opacity-50 cursor-pointer"
           >
-            {isLate ? "Giữ lại lịch học" : "Giữ lại lịch"}
+            {isLate ? (isPt ? "Giữ lại ca tập" : "Giữ lại lịch học") : "Giữ lại lịch"}
           </button>
           <button
             type="button"
             disabled={isCancelling}
-            onClick={() => onConfirmCancel(cancelTarget.classId)}
+            onClick={() => onConfirmCancel(cancelTarget.classId, cancelTarget.type)}
             className={`rounded-xl px-4 py-2 text-xs font-bold text-white shadow-sm transition-all flex items-center gap-1.5 cursor-pointer ${
               isLate
                 ? "bg-amber-600 hover:bg-amber-500 shadow-amber-600/20"
@@ -170,7 +226,9 @@ export const CancelBookingModal: React.FC<CancelBookingModalProps> = ({
                 <span>Đang xử lý hủy...</span>
               </>
             ) : isLate ? (
-              <span>Chấp nhận hủy (Không hoàn tiền)</span>
+              <span>{isPackageCovered ? "Chấp nhận hủy lịch" : "Chấp nhận hủy (Không hoàn tiền)"}</span>
+            ) : isPackageCovered ? (
+              <span>Xác nhận hủy đặt</span>
             ) : (
               <span>Xác nhận hủy & Hoàn tiền</span>
             )}

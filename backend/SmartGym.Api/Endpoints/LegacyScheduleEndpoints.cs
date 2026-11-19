@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using SmartGym.Application.Common;
 using SmartGym.Application.DTOs.Classes;
 using SmartGym.Application.Services;
+using SmartGym.Domain.Enums;
 using SmartGym.Infrastructure.Persistence.EF;
 
 namespace SmartGym.Api.Endpoints;
@@ -71,13 +72,38 @@ app.MapGet(
                       ORDER BY s.start_time",
                     userId).ToListAsync();
 
+                var activeSub = await db.Subscriptions
+                    .Where(s => s.UserId == userId && s.PaymentStatus == PaymentStatus.Completed && s.StartDate <= DateTime.UtcNow && s.EndDate >= DateTime.UtcNow)
+                    .ToListAsync();
+
+                decimal ptDefaultPrice = 300000m;
+                if (activeSub.Any(s => (s.PackageSnapshotJson ?? "").Contains("premium", StringComparison.OrdinalIgnoreCase)))
+                    ptDefaultPrice = 276000m;
+                else if (activeSub.Any(s => (s.PackageSnapshotJson ?? "").Contains("plus", StringComparison.OrdinalIgnoreCase)))
+                    ptDefaultPrice = 285000m;
+
+                decimal classDefaultPrice = 150000m;
+                if (activeSub.Any(s => (s.PackageSnapshotJson ?? "").Contains("premium", StringComparison.OrdinalIgnoreCase)))
+                    classDefaultPrice = 127500m;
+                else if (activeSub.Any(s => (s.PackageSnapshotJson ?? "").Contains("plus", StringComparison.OrdinalIgnoreCase)))
+                    classDefaultPrice = 138000m;
+
+                foreach (var cb in schedule.ClassBookings)
+                {
+                    if (cb.Price <= 0 || cb.Price == 150000m)
+                    {
+                        cb.Price = classDefaultPrice;
+                    }
+                }
+
                 schedule.PtSessions.AddRange(persistentPtSlots.Select(slot => new MemberPtSessionDto
                 {
                     SessionId = slot.Id,
                     CoachName = slot.CoachName,
                     ScheduleTime = CenterTime.ToLocal(slot.StartTime),
                     DurationMinutes = Math.Max(1, (int)(slot.EndTime - slot.StartTime).TotalMinutes),
-                    Status = slot.EndTime <= DateTime.UtcNow ? "completed" : "confirmed"
+                    Status = slot.EndTime <= DateTime.UtcNow ? "completed" : "confirmed",
+                    Price = ptDefaultPrice
                 }));
                 schedule.PtSessions = schedule.PtSessions.OrderBy(session => session.ScheduleTime).ToList();
                 return Results.Ok(schedule);

@@ -38,8 +38,8 @@ namespace SmartGym.Api.Endpoints
             sb.AppendLine("• Tiện ích đặc biệt: Phòng xông hơi khô Sauna và bể bơi áp dụng theo các gói Plus / Premium / VIP hoặc gói chuyên biệt.");
             sb.AppendLine("• BẢNG GÓI THÀNH VIÊN (Nền tảng đặc quyền & chiết khấu):");
             sb.AppendLine("  1. Hạng Cơ bản (Basic): Miễn phí trọn đời, sử dụng tủ đồ tiêu chuẩn trong ca tập, đặt lịch trước 24 giờ, 1 vé mời bạn bè/tháng.");
-            sb.AppendLine("  2. Hạng Plus (149.000đ/tháng): Tự động giảm 8% gói lớp nhóm & 2% PT 1-1, 3 vé mời bạn bè/tháng, mượn 1 khăn tập miễn phí mỗi buổi, đặt lịch trước 72 giờ.");
-            sb.AppendLine("  3. Hạng Premium VIP (299.000đ/tháng): Tự động giảm 15% gói lớp nhóm & 5% PT 1-1, MIỄN PHÍ phòng xông hơi khô Sauna & Bồn sục Jacuzzi đá muối, 5 vé mời bạn bè/tháng, tủ riêng VIP + khăn cao cấp, đặt lịch trước 120 giờ (5 ngày).");
+            sb.AppendLine("  2. Hạng Plus (149.000đ/tháng): Tự động giảm 8% gói lớp nhóm & 5% PT 1-1, 3 vé mời bạn bè/tháng, mượn 1 khăn tập miễn phí mỗi buổi, đặt lịch trước 72 giờ.");
+            sb.AppendLine("  3. Hạng Premium VIP (299.000đ/tháng): Tự động giảm 15% gói lớp nhóm & 8% PT 1-1, MIỄN PHÍ phòng xông hơi khô Sauna & Bồn sục Jacuzzi đá muối, 5 vé mời bạn bè/tháng, tủ riêng VIP + khăn cao cấp, đặt lịch trước 120 giờ (5 ngày).");
             sb.AppendLine("• BẢNG GÓI MÔN TẬP (Quyền vào sàn tập theo từng môn):");
             sb.AppendLine("  1. Gym Fitness: Sàn gym hiện đại, máy cardio & dàn tạ cao cấp (350.000đ/tháng).");
             sb.AppendLine("  2. Bể bơi bốn mùa: Bể chuẩn thi đấu, điện phân muối khoáng, nước ấm quanh năm (450.000đ/tháng).");
@@ -675,8 +675,8 @@ namespace SmartGym.Api.Endpoints
             {
                 return ("👑 Bảng Hạng Thành Viên tại SportCenter gồm 3 gói đặc quyền:\n" +
                         "• Hạng Cơ bản (Basic): Miễn phí trọn đời, sử dụng tủ đồ tiêu chuẩn trong ca tập, đặt lịch trước 24 giờ, 1 vé mời bạn bè/tháng.\n" +
-                        "• Hạng Plus (149.000đ/tháng): Tự động GIẢM 8% khi mua gói môn & ca tập lẻ (2% PT 1-1), 3 vé mời bạn bè/tháng, mượn 1 khăn tập miễn phí mỗi buổi, đặt lịch trước 72 giờ.\n" +
-                        "• Hạng Premium VIP (299.000đ/tháng): Tự động GIẢM 15% khi mua gói môn & ca tập lẻ (5% PT 1-1), MIỄN PHÍ phòng xông hơi Sauna & Jacuzzi đá muối, 5 vé mời bạn bè/tháng, tủ riêng VIP + khăn cao cấp, đặt lịch trước 120 giờ.\n" +
+                        "• Hạng Plus (149.000đ/tháng): Tự động GIẢM 8% khi mua gói môn & ca tập lẻ (5% PT 1-1), 3 vé mời bạn bè/tháng, mượn 1 khăn tập miễn phí mỗi buổi, đặt lịch trước 72 giờ.\n" +
+                        "• Hạng Premium VIP (299.000đ/tháng): Tự động GIẢM 15% khi mua gói môn & ca tập lẻ (8% PT 1-1), MIỄN PHÍ phòng xông hơi Sauna & Jacuzzi đá muối, 5 vé mời bạn bè/tháng, tủ riêng VIP + khăn cao cấp, đặt lịch trước 120 giờ.\n" +
                         "👉 Bạn bấm nút bên dưới để xem chi tiết và nâng cấp hạng VIP nhé!", "packages_membership");
             }
 

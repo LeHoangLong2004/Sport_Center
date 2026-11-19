@@ -125,9 +125,10 @@ public static partial class ClassEndpoints
                     }
 
                     // 3. Đặt lớp thành công -> Mới tiến hành trừ tiền từ ví hội viên
+                    decimal? updatedWalletBalance = null;
                     if (isWallet)
                     {
-                        var (deductOk, _, deductErr) = await MemberEndpoints.DeductFromWalletAsync(
+                        var (deductOk, newBal, deductErr) = await MemberEndpoints.DeductFromWalletAsync(
                             db,
                             userId,
                             amount,
@@ -140,19 +141,40 @@ public static partial class ClassEndpoints
                             return Results.BadRequest(new { message = deductErr ?? "Số dư ví không đủ để thanh toán." });
                         }
                         deductedFromWallet = true;
+                        updatedWalletBalance = newBal;
                     }
 
                     var isCounter = method.ToLower() is "counter" or "cashatcounter";
-                    if (isCounter)
+                    try
                     {
-                        try
+                        if (amount > 0)
                         {
                             await db.Database.ExecuteSqlRawAsync(
-                                "UPDATE class_bookings SET status = 'pending' WHERE user_id = {0} AND class_id = {1}",
+                                "UPDATE class_bookings SET subscription_id = NULL" + (isCounter ? ", status = 'pending'" : "") + " WHERE user_id = {0} AND class_id = {1}",
                                 userId, id);
                         }
-                        catch { }
+                        else
+                        {
+                            // Đặt miễn phí theo gói môn (0 đ): Gán subscription_id nếu có
+                            var activeSub = await db.Subscriptions
+                                .Where(s => s.UserId == userId && s.PaymentStatus == PaymentStatus.Completed)
+                                .OrderByDescending(s => s.CreatedAt)
+                                .FirstOrDefaultAsync();
+                            if (activeSub != null)
+                            {
+                                await db.Database.ExecuteSqlRawAsync(
+                                    "UPDATE class_bookings SET subscription_id = {0} WHERE user_id = {1} AND class_id = {2}",
+                                    activeSub.Id, userId, id);
+                            }
+                            if (isCounter)
+                            {
+                                await db.Database.ExecuteSqlRawAsync(
+                                    "UPDATE class_bookings SET status = 'pending' WHERE user_id = {0} AND class_id = {1}",
+                                    userId, id);
+                            }
+                        }
                     }
+                    catch { }
 
                     var invoice = new Invoice
                     {
@@ -191,7 +213,8 @@ public static partial class ClassEndpoints
                             : "Thanh toán với giá gốc và đặt lịch thành công!",
                         invoiceId = invoice.Id,
                         amount = amount,
-                        classInfo = classDetail
+                        classInfo = classDetail,
+                        newBalance = updatedWalletBalance
                     });
                 }
                 catch (Exception ex)
@@ -256,57 +279,49 @@ public static partial class ClassEndpoints
                     return Results.BadRequest(new { message = errorMessage });
 
                 // Phân loại hình thức đặt chỗ:
-                // 1. Đặt theo gói môn / gói tập (SubscriptionId != null): Suất đặt 0 đ theo gói, không có tiền mặt cần hoàn
-                var isUnderSubscription = bookingRow?.SubscriptionId.HasValue == true;
+                var bookingTime = bookingRow?.CreatedAt ?? DateTime.UtcNow;
+
+                // Tìm hóa đơn liên quan trực tiếp tới lượt đặt lớp này (trong vòng +-5 phút khi đặt)
+                Invoice? bookingInvoice = null;
+                try
+                {
+                    bookingInvoice = await db.Invoices
+                        .Where(i => i.UserId == userId 
+                                 && i.CreatedAt >= bookingTime.AddMinutes(-5)
+                                 && i.CreatedAt <= bookingTime.AddMinutes(5))
+                        .OrderByDescending(i => i.CreatedAt)
+                        .FirstOrDefaultAsync();
+                }
+                catch { }
+
+                // 1. Đặt theo gói môn / miễn phí:
+                // - bookingRow.SubscriptionId có giá trị
+                // - hoặc hóa đơn ghi nhận số tiền thanh toán = 0 đ (TotalAmount <= 0)
+                // - hoặc không có hóa đơn thanh toán nào trong hệ thống
+                var isFreeBooking = (bookingRow?.SubscriptionId.HasValue == true)
+                    || (bookingInvoice != null && bookingInvoice.TotalAmount <= 0)
+                    || bookingInvoice == null;
 
                 // 2. Đặt vé lẻ trả sau tại quầy (pending): Chưa thanh toán tiền
-                var wasCounterPending = bookingRow != null &&
-                    string.Equals(bookingRow.Status, "pending", StringComparison.OrdinalIgnoreCase);
+                var wasCounterPending = (bookingRow != null &&
+                    string.Equals(bookingRow.Status, "pending", StringComparison.OrdinalIgnoreCase))
+                    || (bookingInvoice != null && bookingInvoice.PaymentMethod == PaymentMethod.CashAtCounter && bookingInvoice.Status == PaymentStatus.Pending);
 
                 decimal refundAmount = 0m;
                 bool isRefunded = false;
                 decimal updatedBalance = 0m;
 
                 // Hoàn tiền vào ví CHỈ KHI:
-                // - Đặt vé lẻ ngoài gói (không phải theo gói môn)
-                // - Đã thanh toán tiền (không phải trả sau tại quầy)
-                // - Hủy hợp lệ trước giờ học từ 2 tiếng trở lên (!isLate)
-                bool shouldRefund = !isUnderSubscription && !wasCounterPending && !isLate;
+                // - ĐÃ THANH TOÁN TIỀN THỰC TẾ: bookingInvoice != null && bookingInvoice.TotalAmount > 0 && bookingInvoice.Status == PaymentStatus.Completed
+                // - KHÔNG PHẢI MIỄN PHÍ: !isFreeBooking
+                // - KHÔNG PHẢI TRẢ SAU TẠI QUẦY: !wasCounterPending
+                // - HỦY TRƯỚC GIỜ HỌC TRÊN 2 TIẾNG: !isLate
+                bool shouldRefund = !isFreeBooking && !wasCounterPending && !isLate 
+                    && bookingInvoice != null && bookingInvoice.TotalAmount > 0 && bookingInvoice.Status == PaymentStatus.Completed;
 
-                if (shouldRefund)
+                if (shouldRefund && bookingInvoice != null)
                 {
-                    refundAmount = 150000m;
-                    try
-                    {
-                        var bookingTime = bookingRow?.CreatedAt ?? DateTime.UtcNow;
-                        // Tìm hóa đơn vé lẻ tương ứng (chỉ lấy hóa đơn <= 150.000 đ tạo cùng thời điểm đặt, TUYỆT ĐỐI không lấy nhầm hóa đơn gói tập lớn)
-                        var paidInvoice = await db.Invoices
-                            .Where(i => i.UserId == userId 
-                                     && i.Status == PaymentStatus.Completed
-                                     && i.TotalAmount <= 150000m
-                                     && i.CreatedAt >= bookingTime.AddMinutes(-10) 
-                                     && i.CreatedAt <= bookingTime.AddMinutes(10))
-                            .OrderByDescending(i => i.CreatedAt)
-                            .FirstOrDefaultAsync();
-
-                        if (paidInvoice != null && paidInvoice.TotalAmount > 0)
-                        {
-                            refundAmount = paidInvoice.TotalAmount;
-                        }
-                        else
-                        {
-                            // Nếu không tìm thấy hóa đơn rời, kiểm tra xem có được hưởng giảm giá hạng thành viên không
-                            var activeSub = await db.Subscriptions
-                                .Where(s => s.UserId == userId && s.PaymentStatus == PaymentStatus.Completed && s.StartDate <= bookingTime && s.EndDate >= bookingTime)
-                                .ToListAsync();
-                            if (activeSub.Any(s => (s.PackageSnapshotJson ?? "").Contains("premium", StringComparison.OrdinalIgnoreCase)))
-                                refundAmount = 127500m;
-                            else if (activeSub.Any(s => (s.PackageSnapshotJson ?? "").Contains("plus", StringComparison.OrdinalIgnoreCase)))
-                                refundAmount = 138000m;
-                        }
-                    }
-                    catch { }
-
+                    refundAmount = bookingInvoice.TotalAmount;
                     if (refundAmount > 0)
                     {
                         var className = classDetail?.ClassName ?? "lớp học";
@@ -320,19 +335,21 @@ public static partial class ClassEndpoints
                         {
                             isRefunded = true;
                             updatedBalance = newBal;
+                            bookingInvoice.Status = PaymentStatus.Refunded;
+                            await db.SaveChangesAsync();
                         }
                     }
                 }
 
                 var targetClassName = classDetail?.ClassName ?? "lớp học";
                 string message;
-                if (isUnderSubscription)
-                {
-                    message = $"Đã hủy đặt lớp \"{targetClassName}\" thành công. Suất tập thuộc gói môn của bạn đã được giải phóng để bạn có thể đặt lịch tập khác!";
-                }
-                else if (isRefunded)
+                if (isRefunded)
                 {
                     message = $"Đã hủy đặt lớp \"{targetClassName}\" thành công. Số tiền {refundAmount:N0} đ đã được hoàn lại vào Ví hội viên của bạn!";
+                }
+                else if (isFreeBooking || bookingInvoice == null || bookingInvoice.TotalAmount <= 0)
+                {
+                    message = $"Đã hủy đặt lớp \"{targetClassName}\" thành công. Suất tập thuộc gói môn của bạn đã được giải phóng để bạn có thể đặt lịch tập khác!";
                 }
                 else if (isLate && !wasCounterPending)
                 {

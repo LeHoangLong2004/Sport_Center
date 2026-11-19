@@ -118,14 +118,10 @@ public sealed partial class ClassService
                 (s.Package != null && !string.IsNullOrWhiteSpace(targetClass.ClassName) && s.Package.Name.Contains(targetClass.ClassName, StringComparison.OrdinalIgnoreCase)) ||
                 (!string.IsNullOrWhiteSpace(s.PackageId) && !string.IsNullOrWhiteSpace(targetClass.ClassName) && targetClass.ClassName.Contains(s.PackageId, StringComparison.OrdinalIgnoreCase))
             )
-        ) ?? userSubs.FirstOrDefault(s =>
-            s.PaymentStatus == SmartGym.Domain.Enums.PaymentStatus.Completed
-            && s.StartDate <= targetClass.ScheduleTime
-            && targetClass.ScheduleTime <= s.EndDate
         );
 
         // Thành viên ở mọi hạng (kể cả Basic / chưa mua gói tháng) đều được đặt lớp:
-        // Nếu có gói tháng hợp lệ thì gắn với subscriptionId, nếu là Basic thì đặt theo vé giá gốc (subscriptionId = null).
+        // Nếu có gói tháng hợp lệ theo đúng môn thì gắn với subscriptionId, nếu không có gói thì đặt theo vé giá gốc (subscriptionId = null).
         Guid? subscriptionIdToUse = validSub?.Id;
 
         var targetStart = targetClass.ScheduleTime;

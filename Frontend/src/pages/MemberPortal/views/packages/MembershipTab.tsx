@@ -157,9 +157,9 @@ export default function MembershipTab({
                       <CheckCircle2 className={`w-4 h-4 shrink-0 ${isPremium ? "text-amber-500" : isPlus ? "text-emerald-500" : "text-slate-400"}`} />
                       <span className="text-slate-700 dark:text-slate-300">
                         {isPremium ? (
-                          <strong className="text-amber-600 dark:text-amber-400 font-bold">Giảm {pkg.groupDiscountPct || 15}% Gói môn & Lịch lẻ / {pkg.coachDiscountPct || 5}% PT 1-1</strong>
+                          <strong className="text-amber-600 dark:text-amber-400 font-bold">Giảm {pkg.groupDiscountPct || 15}% Gói môn & Lịch lẻ / {pkg.coachDiscountPct || 8}% PT 1-1</strong>
                         ) : isPlus ? (
-                          <strong className="text-emerald-600 dark:text-emerald-400 font-bold">Giảm {pkg.groupDiscountPct || 8}% Gói môn & Lịch lẻ / {pkg.coachDiscountPct || 2}% PT 1-1</strong>
+                          <strong className="text-emerald-600 dark:text-emerald-400 font-bold">Giảm {pkg.groupDiscountPct || 8}% Gói môn & Lịch lẻ / {pkg.coachDiscountPct || 5}% PT 1-1</strong>
                         ) : (
                           "Áp dụng giá gốc (không giảm gói môn & lịch lẻ)"
                         )}
