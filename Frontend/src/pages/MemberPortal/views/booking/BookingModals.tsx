@@ -27,7 +27,7 @@ interface BookingModalsProps {
 
   cancelTarget: CancelBookingTarget | null;
   onCloseCancelModal: () => void;
-  onConfirmCancel: (classId: string) => void;
+  onConfirmCancel: (classId: string, type?: "class" | "pt") => void;
   isCancelling?: boolean;
 
   bookingPtSlot: any | null;
@@ -36,7 +36,12 @@ interface BookingModalsProps {
   setPtGoal: (goal: string) => void;
   ptNote: string;
   setPtNote: (note: string) => void;
-  onConfirmPtBooking: (e: React.FormEvent) => void;
+  membership?: any | null;
+  activeOrders?: any[];
+  mySessions?: any[];
+  ptBookingError?: string | null;
+  isProcessingPtBooking?: boolean;
+  onConfirmPtBooking: (e: React.FormEvent, paymentData?: any) => void;
 }
 
 export function BookingModals({
@@ -65,6 +70,11 @@ export function BookingModals({
   setPtGoal,
   ptNote,
   setPtNote,
+  membership,
+  activeOrders,
+  mySessions,
+  ptBookingError,
+  isProcessingPtBooking,
   onConfirmPtBooking,
 }: BookingModalsProps) {
   return (
@@ -75,6 +85,7 @@ export function BookingModals({
         isBooked={isBooked}
         onInitiateBook={onInitiateBook}
         onStartChatWithCoach={onStartChatWithCoach}
+        mySessions={mySessions}
       />
 
       <PayAndBookModal
@@ -85,6 +96,7 @@ export function BookingModals({
         isProcessingPayment={isProcessingPayment}
         paymentError={paymentError}
         onConfirmPayment={onConfirmPayment}
+        mySessions={mySessions}
       />
 
       <BookingSuccessModal
@@ -99,6 +111,8 @@ export function BookingModals({
         onClose={onCloseCancelModal}
         onConfirmCancel={onConfirmCancel}
         isCancelling={isCancelling}
+        membership={membership}
+        activeOrders={activeOrders}
       />
 
       <PtBookingModal
@@ -108,6 +122,11 @@ export function BookingModals({
         setPtGoal={setPtGoal}
         ptNote={ptNote}
         setPtNote={setPtNote}
+        membership={membership}
+        activeOrders={activeOrders}
+        mySessions={mySessions}
+        ptBookingError={ptBookingError}
+        isProcessingPtBooking={isProcessingPtBooking}
         onConfirmPtBooking={onConfirmPtBooking}
       />
     </>

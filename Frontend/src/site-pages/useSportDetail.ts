@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { imgHero } from "./sportsDetailData"
+import { getClassImage } from "../utils/classImageHelper"
 
 type ApiSport = {
   id: string
@@ -90,16 +91,7 @@ function formatSessionTime(value: string, durationMinutes: number) {
 }
 
 function getSportFallbackImage(sportName: string): string {
-  const norm = (sportName || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-  if (norm.includes("boi") || norm.includes("swim")) return "/assets/cfb22.png";
-  if (norm.includes("yoga")) return "/assets/88bba.png";
-  if (norm.includes("gym") || norm.includes("the hinh") || norm.includes("hiit")) return "/assets/e865e.png";
-  if (norm.includes("box")) return "/assets/252a5.png";
-  if (norm.includes("bong ro") || norm.includes("basket")) return "/assets/3c386.png";
-  return imgHero;
+  return getClassImage(sportName);
 }
 
 export function useSportDetail() {

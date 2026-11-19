@@ -111,6 +111,7 @@ public sealed partial class PackageCatalogService
             var booking = await db.Database.SqlQueryRaw<ClassBookingOrderRaw>(
                 """
                 SELECT cb.id AS "BookingId", cb.user_id AS "UserId", cb.class_id AS "ClassId",
+                       cb.subscription_id AS "SubscriptionId",
                        COALESCE(cb.status, 'pending') AS "Status",
                        COALESCE(cb.created_at, now()) AS "CreatedAt",
                        COALESCE(c.class_name, 'Lớp học') AS "ClassName",
@@ -173,7 +174,9 @@ public sealed partial class PackageCatalogService
                 },
                 DurationMonths = 1,
                 Subtotal = 150000m,
-                Total = 150000m,
+                DiscountPct = classInvoice != null && classInvoice.TotalAmount < 150000m ? decimal.Round((150000m - classInvoice.TotalAmount) / 150000m * 100m, 0) : 0,
+                DiscountAmount = classInvoice != null ? Math.Max(0, 150000m - classInvoice.TotalAmount) : 0,
+                Total = classInvoice?.TotalAmount ?? 150000m,
                 PaymentMethod = paymentMethod ?? "counter",
                 Status = "paid",
                 CreatedAt = booking.CreatedAt,
@@ -246,6 +249,7 @@ public sealed partial class PackageCatalogService
             var booking = await db.Database.SqlQueryRaw<ClassBookingOrderRaw>(
                 """
                 SELECT cb.id AS "BookingId", cb.user_id AS "UserId", cb.class_id AS "ClassId",
+                       cb.subscription_id AS "SubscriptionId",
                        COALESCE(cb.status, 'pending') AS "Status",
                        COALESCE(cb.created_at, now()) AS "CreatedAt",
                        COALESCE(c.class_name, 'Lớp học') AS "ClassName",

@@ -142,11 +142,38 @@ namespace SmartGym.Api.Endpoints
             {
                 try
                 {
+                    var cleanContentDigits = new string(content.Where(char.IsDigit).ToArray());
                     var users = await db.Users.AsNoTracking().Where(u => u.Status).ToListAsync();
                     var found = users.FirstOrDefault(u => 
-                        (!string.IsNullOrWhiteSpace(u.MemberCode) && content.Contains(u.MemberCode, StringComparison.OrdinalIgnoreCase)) ||
-                        (!string.IsNullOrWhiteSpace(u.PhoneNumber) && content.Contains(u.PhoneNumber, StringComparison.OrdinalIgnoreCase)) ||
-                        (!string.IsNullOrWhiteSpace(u.Email) && content.Contains(u.Email.Split('@')[0], StringComparison.OrdinalIgnoreCase)));
+                    {
+                        if (!string.IsNullOrWhiteSpace(u.MemberCode) && content.Contains(u.MemberCode, StringComparison.OrdinalIgnoreCase))
+                            return true;
+
+                        if (!string.IsNullOrWhiteSpace(u.PhoneNumber))
+                        {
+                            var cleanPhone = new string(u.PhoneNumber.Where(char.IsDigit).ToArray());
+                            if (cleanPhone.Length >= 8)
+                            {
+                                if (content.Contains(cleanPhone, StringComparison.OrdinalIgnoreCase) || cleanContentDigits.Contains(cleanPhone))
+                                    return true;
+                                if (cleanPhone.StartsWith("0") && cleanPhone.Length > 8)
+                                {
+                                    var withoutZero = cleanPhone.Substring(1);
+                                    if (content.Contains(withoutZero, StringComparison.OrdinalIgnoreCase) || cleanContentDigits.Contains(withoutZero))
+                                        return true;
+                                }
+                            }
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(u.Email))
+                        {
+                            var emailPrefix = u.Email.Split('@')[0];
+                            if (emailPrefix.Length >= 4 && content.Contains(emailPrefix, StringComparison.OrdinalIgnoreCase))
+                                return true;
+                        }
+
+                        return false;
+                    });
 
                     if (found != null)
                     {
@@ -175,13 +202,12 @@ namespace SmartGym.Api.Endpoints
                 }
             }
 
-            if (string.IsNullOrWhiteSpace(matchedUserId))
+            if (string.IsNullOrWhiteSpace(matchedUserId) && !matchedUserGuid.HasValue)
             {
-                matchedUserId = _memberWallets.Keys.FirstOrDefault(k => k != "m-default" && Guid.TryParse(k, out _)) 
-                             ?? _memberWallets.Keys.FirstOrDefault(k => k != "m-default") 
-                             ?? "m-default";
-
-                if (Guid.TryParse(matchedUserId, out var g)) matchedUserGuid = g;
+                // Tuyệt đối không tự ý gán vào user ngẫu nhiên trong bộ nhớ!
+                // Trả về false để SePay ghi nhận log unmatched, phía frontend có thể poll sepay-check-memo để cộng đúng vào ví user đang đăng nhập.
+                Console.WriteLine($"[SePay Webhook] ⚠️ Giao dịch nạp ví #{txId} {amount:N0}đ với nội dung \"{content}\" chưa khớp được User. Đưa vào log chờ đối soát.");
+                return (false, 0, "", null);
             }
 
             decimal newBalance;
@@ -207,14 +233,15 @@ namespace SmartGym.Api.Endpoints
             }
             else
             {
+                var effectiveUid = matchedUserId ?? matchedUserGuid?.ToString() ?? "m-default";
                 newBalance = _memberWallets.AddOrUpdate(
-                    matchedUserId,
+                    effectiveUid,
                     amount,
                     (_, current) => current + amount
                 );
             }
 
-            _memberWallets[matchedUserId] = newBalance;
+            if (!string.IsNullOrWhiteSpace(matchedUserId)) _memberWallets[matchedUserId] = newBalance;
             if (matchedUserGuid.HasValue) _memberWallets[matchedUserGuid.Value.ToString()] = newBalance;
 
             var tx = new WalletTransactionDto(

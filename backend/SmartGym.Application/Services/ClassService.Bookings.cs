@@ -45,10 +45,10 @@ public sealed partial class ClassService
         var now = DateTime.UtcNow;
         var timeUntilClass = classStartTimeUtc - now;
 
-        // 3. RÀNG BUỘC THỜI GIAN ĐẶT CHỖ TỐI THIỂU: Tối thiểu 30 phút trước giờ học
-        if (timeUntilClass.TotalMinutes < 30)
+        // 3. RÀNG BUỘC THỜI GIAN ĐẶT CHỖ TỐI THIỂU: Chỉ cần trước giờ bắt đầu lớp học
+        if (timeUntilClass.TotalSeconds <= 0)
         {
-            return (false, "Không thể đặt chỗ. Lớp học sẽ bắt đầu trong vòng chưa đầy 30 phút hoặc đã diễn ra.");
+            return (false, "Không thể đặt chỗ. Lớp học đã bắt đầu hoặc đã diễn ra.");
         }
 
         // 4. Lấy danh sách subscription của User và kiểm tra còn hạn tại thời điểm diễn ra lớp học
@@ -118,14 +118,10 @@ public sealed partial class ClassService
                 (s.Package != null && !string.IsNullOrWhiteSpace(targetClass.ClassName) && s.Package.Name.Contains(targetClass.ClassName, StringComparison.OrdinalIgnoreCase)) ||
                 (!string.IsNullOrWhiteSpace(s.PackageId) && !string.IsNullOrWhiteSpace(targetClass.ClassName) && targetClass.ClassName.Contains(s.PackageId, StringComparison.OrdinalIgnoreCase))
             )
-        ) ?? userSubs.FirstOrDefault(s =>
-            s.PaymentStatus == SmartGym.Domain.Enums.PaymentStatus.Completed
-            && s.StartDate <= targetClass.ScheduleTime
-            && targetClass.ScheduleTime <= s.EndDate
         );
 
         // Thành viên ở mọi hạng (kể cả Basic / chưa mua gói tháng) đều được đặt lớp:
-        // Nếu có gói tháng hợp lệ thì gắn với subscriptionId, nếu là Basic thì đặt theo vé giá gốc (subscriptionId = null).
+        // Nếu có gói tháng hợp lệ theo đúng môn thì gắn với subscriptionId, nếu không có gói thì đặt theo vé giá gốc (subscriptionId = null).
         Guid? subscriptionIdToUse = validSub?.Id;
 
         var targetStart = targetClass.ScheduleTime;

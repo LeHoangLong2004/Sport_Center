@@ -92,14 +92,25 @@ export default function MemberDashboard({ onNavigate }: Props) {
     if (orders.length > 0) {
       const now = new Date();
       return orders
-        .filter((o) => o.status === "paid" && o.packageSnapshot)
+        .filter((o) => {
+          if (o.status !== "paid" || !o.packageSnapshot) return false;
+          // Phân biệt gói tập / thẻ hội viên với lượt đặt chỗ lớp học:
+          // Bỏ qua các đơn vé lớp học lẻ (category === "class")
+          if (o.packageSnapshot.category === "class") return false;
+          // Chỉ lấy các gói còn hạn sử dụng (endDate >= now)
+          if (o.endDate) {
+            const end = new Date(o.endDate);
+            if (end.getTime() < now.getTime()) return false;
+          }
+          return true;
+        })
         .map((o) => {
           const end = o.endDate ? new Date(o.endDate) : new Date();
           const daysRemaining = Math.max(0, Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
           return {
             id: o.id,
             name: o.packageSnapshot.name,
-            sport: o.packageSnapshot.sport || (o.packageSnapshot.category === "membership" ? "Thành viên" : "Gym"),
+            sport: o.packageSnapshot.sport || (o.packageSnapshot.category === "membership" ? "Thành viên" : "Gói môn"),
             endDate: o.endDate ? o.endDate.split("T")[0] : "--",
             daysRemaining,
           };
@@ -116,7 +127,7 @@ export default function MemberDashboard({ onNavigate }: Props) {
   const completedSessions = useMemo(() => sessions.filter((s) => s.status === "hoàn thành"), [sessions]);
   const attendanceRate = completedSessions.length > 0
     ? `${Math.round((completedSessions.filter((s) => s.attendanceStatus === "có mặt").length / completedSessions.length) * 100)}%`
-    : "--%";
+    : "0%";
 
   const handleToggleTask = (taskId: string) => {
     const updated = tasks.map((t) => (t.id === taskId ? { ...t, completed: !t.completed } : t));
@@ -137,8 +148,13 @@ export default function MemberDashboard({ onNavigate }: Props) {
     })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (!cancelled && data?.summary?.attendanceRate !== undefined) {
-          setRealAttendanceRate(`${data.summary.attendanceRate}%`);
+        if (!cancelled) {
+          const rate = data?.summary?.attendanceRate;
+          if (typeof rate === "number" && !isNaN(rate)) {
+            setRealAttendanceRate(`${rate}%`);
+          } else {
+            setRealAttendanceRate("0%");
+          }
         }
       })
       .catch(() => {});
@@ -168,7 +184,9 @@ export default function MemberDashboard({ onNavigate }: Props) {
     },
     {
       label: "Tỷ lệ tham dự",
-      val: realAttendanceRate || attendanceRate,
+      val: (realAttendanceRate && realAttendanceRate !== "null%" && realAttendanceRate !== "--%")
+        ? realAttendanceRate
+        : (attendanceRate && attendanceRate !== "null%" && attendanceRate !== "--%" ? attendanceRate : "0%"),
       sub: "Xem chi tiết điểm danh →",
       onClick: () => onNavigate("attendance"),
     },

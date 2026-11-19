@@ -6,7 +6,7 @@ public sealed record AuthResponse(string AccessToken, UserProfile User);
 
 public sealed record ForgotPasswordRequest(string Email);
 
-public sealed record ResetPasswordRequest(string Email, string Token, string NewPassword);
+public sealed record ResetPasswordRequest(string Email, string? Token = null, string NewPassword = "");
 
 public sealed record RequestEmailVerificationRequest(string Email);
 

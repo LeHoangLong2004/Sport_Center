@@ -34,7 +34,14 @@ export function useMemberBookingActions({
   const [bookingSuccessInfo, setBookingSuccessInfo] = useState<any | null>(null);
   const [cancelTarget, setCancelTarget] = useState<CancelBookingTarget | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
-  const [bookingPtSlot, setBookingPtSlot] = useState<any | null>(null);
+  const [bookingPtSlot, setBookingPtSlotState] = useState<any | null>(null);
+  const [ptBookingError, setPtBookingError] = useState<string | null>(null);
+  const [isProcessingPtBooking, setIsProcessingPtBooking] = useState(false);
+
+  const setBookingPtSlot = (slot: any | null) => {
+    setPtBookingError(null);
+    setBookingPtSlotState(slot);
+  };
   const [ptGoal, setPtGoal] = useState(() => {
     try {
       const userStr = typeof window !== "undefined" ? localStorage.getItem("user") : null;
@@ -48,6 +55,7 @@ export function useMemberBookingActions({
   const [ptNote, setPtNote] = useState("");
   const [feedback, setFeedback] = useState<BookingFeedback | null>(null);
   const [membership, setMembership] = useState<MembershipStatus | null>(null);
+  const [activeOrders, setActiveOrders] = useState<PackageOrder[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,6 +65,7 @@ export function useMemberBookingActions({
     ]).then(([orders, catalog]) => {
       if (!cancelled) {
         setMembership(getMembershipStatus(orders, catalog));
+        setActiveOrders(orders || []);
       }
     });
     return () => {
@@ -94,9 +103,9 @@ export function useMemberBookingActions({
     }
 
     if (classStartMs !== null) {
-      // 1. Ràng buộc thời gian tối thiểu: Phải trước giờ học ít nhất 30 phút
-      if (classStartMs - now < 30 * 60 * 1000) {
-        const msg = "Không thể đặt chỗ. Lớp học sẽ bắt đầu trong vòng chưa đầy 30 phút hoặc đã kết thúc.";
+      // 1. Ràng buộc thời gian: Chỉ cần trước giờ học (chưa bắt đầu)
+      if (classStartMs <= now) {
+        const msg = "Không thể đặt chỗ. Lớp học đã bắt đầu hoặc đã kết thúc.";
         showFeedback(msg, "error");
         toast.error(msg);
         return;
@@ -135,30 +144,70 @@ export function useMemberBookingActions({
     setIsProcessingPayment(true);
     setPaymentError(null);
 
-    const paidAmount = customAmount ?? classToBook.price ?? 150000;
+    const paidAmount = customAmount ?? (classToBook.price ?? 150000);
+    const effectivePaymentMethod = paidAmount === 0 ? "package" : paymentMethod;
 
     try {
       const response = await MemberAPI.payAndBookClass(
         classToBook.id,
-        paymentMethod,
+        effectivePaymentMethod,
         paidAmount
       );
 
-      if (paymentMethod === "counter") addCounterPendingId(classToBook.id);
+      if (effectivePaymentMethod === "counter") addCounterPendingId(classToBook.id);
 
       setBookingSuccessInfo({
         classItem: classToBook,
         paidAmount,
-        paymentMethod,
+        paymentMethod: effectivePaymentMethod,
         invoiceId: response?.invoiceId || `INV-${Date.now().toString().slice(-6)}`,
-        bookingStatus: paymentMethod === "counter" ? "pending" : "confirmed",
+        bookingStatus: effectivePaymentMethod === "counter" ? "pending" : "confirmed",
       });
 
       // Bắn sự kiện cập nhật ví khi thanh toán thành công
-      try {
-        window.dispatchEvent(new Event("wallet_updated"));
-        window.dispatchEvent(new Event(MEMBER_WALLET_UPDATED_EVENT));
-      } catch { }
+      if (effectivePaymentMethod === "wallet" && paidAmount > 0) {
+        try {
+          const currentWallet = WalletService.getLocalWallet();
+          const nextBalance = typeof (response as any)?.newBalance === "number"
+            ? (response as any).newBalance
+            : Math.max(0, currentWallet.balance - paidAmount);
+
+          WalletService.saveLocalWallet({
+            ...currentWallet,
+            balance: nextBalance,
+            transactions: [
+              {
+                id: `PAY-CLASS-${Date.now()}`,
+                type: "payment",
+                amount: paidAmount,
+                method: "Ví điện tử",
+                note: `Thanh toán lớp ${classToBook.name}`,
+                createdAt: new Date().toISOString(),
+                status: "completed",
+              },
+              ...(currentWallet.transactions || []),
+            ],
+          });
+
+          window.dispatchEvent(
+            new CustomEvent(MEMBER_WALLET_UPDATED_EVENT, { detail: { balance: nextBalance } })
+          );
+          window.dispatchEvent(new Event("wallet_updated"));
+
+          void WalletService.getWallet(undefined, true).then((w) => {
+            if (typeof w?.balance === "number") {
+              window.dispatchEvent(
+                new CustomEvent(MEMBER_WALLET_UPDATED_EVENT, { detail: { balance: w.balance } })
+              );
+            }
+          });
+        } catch { }
+      } else {
+        try {
+          window.dispatchEvent(new Event("wallet_updated"));
+          window.dispatchEvent(new Event(MEMBER_WALLET_UPDATED_EVENT));
+        } catch { }
+      }
 
       if (classToBook.coachName) {
         try {
@@ -198,21 +247,31 @@ export function useMemberBookingActions({
     }
   };
 
-  const handleCancelBooking = async (classId: string) => {
+  const handleCancelBooking = async (classId: string, targetType?: "class" | "pt") => {
     setIsCancelling(true);
+    const isPt = targetType === "pt" || cancelTarget?.type === "pt";
     try {
-      const res: any = await MemberAPI.cancelClassBooking(classId);
+      let res: any;
+      if (isPt) {
+        res = await MemberAPI.cancelPtBooking(classId);
+      } else {
+        res = await MemberAPI.cancelClassBooking(classId);
+      }
       removeCounterPendingId(classId);
-      setGroupClasses((classes) =>
-        classes.map((c) =>
-          c.id === classId
-            ? { ...c, registeredCount: Math.max(0, c.registeredCount - 1), availableSpots: Math.min(c.capacity, c.availableSpots + 1) }
-            : c
-        )
-      );
+      if (!isPt) {
+        setGroupClasses((classes) =>
+          classes.map((c) =>
+            c.id === classId
+              ? { ...c, registeredCount: Math.max(0, c.registeredCount - 1), availableSpots: Math.min(c.capacity, c.availableSpots + 1) }
+              : c
+          )
+        );
+      }
       setMySessions((sessions) =>
         sessions.map((s) => {
-          const matches = String((s as any).classId ?? s.id).toLowerCase() === String(classId).toLowerCase();
+          const matches =
+            String((s as any).classId ?? s.id).toLowerCase() === String(classId).toLowerCase() ||
+            String((s as any).sessionId ?? "").toLowerCase() === String(classId).toLowerCase();
           return matches ? { ...s, status: "đã hủy" as any, bookingStatus: "cancelled" } : s;
         })
       );
@@ -228,10 +287,28 @@ export function useMemberBookingActions({
       } catch { }
 
       // Cập nhật và phát event số dư ví hội viên được hoàn tiền tức thì
-      if (res?.refunded && typeof res?.newBalance === "number") {
+      if (res?.refunded && typeof res?.newBalance === "number" && res.newBalance > 0) {
+        const currentWallet = WalletService.getLocalWallet();
+        WalletService.saveLocalWallet({
+          ...currentWallet,
+          balance: res.newBalance,
+          transactions: [
+            {
+              id: `REFUND-${Date.now()}`,
+              type: "refund",
+              amount: res.refundAmount || 0,
+              method: "Ví điện tử",
+              note: `Hoàn tiền hủy đặt lớp`,
+              createdAt: new Date().toISOString(),
+              status: "completed",
+            },
+            ...(currentWallet.transactions || []),
+          ],
+        });
         window.dispatchEvent(
           new CustomEvent(MEMBER_WALLET_UPDATED_EVENT, { detail: { balance: res.newBalance } })
         );
+        window.dispatchEvent(new Event("wallet_updated"));
       } else {
         void WalletService.getWallet(undefined, true).then((w) => {
           if (typeof w?.balance === "number") {
@@ -242,13 +319,13 @@ export function useMemberBookingActions({
         });
       }
 
-      const successMsg = res?.message || "Đã hủy đặt lớp thành công.";
+      const successMsg = res?.message || (isPt ? "Đã hủy ca tập kèm riêng 1–1 thành công." : "Đã hủy đặt lớp thành công.");
       showFeedback(successMsg);
       toast.success(successMsg);
     } catch (error: any) {
       setCancelTarget(null);
       void loadGroupClasses(true);
-      const errorMsg = error?.message || "Không thể hủy đặt lớp.";
+      const errorMsg = error?.message || (isPt ? "Không thể hủy ca tập kèm riêng." : "Không thể hủy đặt lớp.");
       showFeedback(errorMsg, "error");
       toast.error(errorMsg);
     } finally {
@@ -256,12 +333,21 @@ export function useMemberBookingActions({
     }
   };
 
-  const handleConfirmPtBooking = async (event: React.FormEvent) => {
+  const handleConfirmPtBooking = async (
+    event: React.FormEvent,
+    paymentData?: { paymentMethod?: "qr" | "counter" | "wallet" | "package"; amount?: number }
+  ) => {
     event.preventDefault();
     if (!bookingPtSlot) return;
 
+    setPtBookingError(null);
+    setIsProcessingPtBooking(true);
+
+    const method = paymentData?.paymentMethod || "counter";
+    const amount = paymentData?.amount ?? 0;
+
     try {
-      await MemberAPI.bookPtSlot({
+      const res = await MemberAPI.bookPtSlot({
         slotId: bookingPtSlot.id,
         sport: bookingPtSlot.sport,
         date: bookingPtSlot.date,
@@ -272,7 +358,48 @@ export function useMemberBookingActions({
         coachName: bookingPtSlot.coachName,
         goal: ptGoal,
         coachNote: ptNote,
+        paymentMethod: method,
+        amount: amount,
       });
+
+      if (method === "wallet" && amount > 0) {
+        try {
+          const currentWallet = WalletService.getLocalWallet();
+          const nextBalance = typeof (res as any)?.newBalance === "number"
+            ? (res as any).newBalance
+            : Math.max(0, currentWallet.balance - amount);
+
+          WalletService.saveLocalWallet({
+            ...currentWallet,
+            balance: nextBalance,
+            transactions: [
+              {
+                id: `PAY-PT-${Date.now()}`,
+                type: "payment",
+                amount: amount,
+                method: "Ví điện tử",
+                note: `Thanh toán ca tập kèm 1-1 với ${bookingPtSlot.coachName || "HLV"} (${bookingPtSlot.sport})`,
+                createdAt: new Date().toISOString(),
+                status: "completed",
+              },
+              ...(currentWallet.transactions || []),
+            ],
+          });
+
+          window.dispatchEvent(
+            new CustomEvent(MEMBER_WALLET_UPDATED_EVENT, { detail: { balance: nextBalance } })
+          );
+          window.dispatchEvent(new Event("wallet_updated"));
+
+          void WalletService.getWallet(undefined, true).then((w) => {
+            if (typeof w?.balance === "number") {
+              window.dispatchEvent(
+                new CustomEvent(MEMBER_WALLET_UPDATED_EVENT, { detail: { balance: w.balance } })
+              );
+            }
+          });
+        } catch { }
+      }
 
       if (bookingPtSlot.coachName) {
         try {
@@ -296,10 +423,20 @@ export function useMemberBookingActions({
       setPtSlots((slots) => slots.filter((s) => s.id !== bookingPtSlot.id));
       setBookingPtSlot(null);
       setPtNote("");
-      showFeedback("Đã đặt lịch kèm riêng 1–1 thành công.");
+      const successMsg =
+        method === "counter" && amount > 0
+          ? "Đã đặt giữ chỗ ca PT 1–1 thành công! Vui lòng thanh toán tại quầy lễ tân trước giờ tập."
+          : "Đã đặt lịch kèm riêng 1–1 thành công.";
+      showFeedback(successMsg);
+      toast.success(successMsg);
       void loadGroupClasses(true);
     } catch (error: any) {
-      showFeedback(error?.message || "Không thể đặt lịch kèm riêng 1–1.", "error");
+      const errorMsg = error?.message || "Không thể đặt lịch kèm riêng 1–1.";
+      setPtBookingError(errorMsg);
+      showFeedback(errorMsg, "error");
+      toast.error(errorMsg);
+    } finally {
+      setIsProcessingPtBooking(false);
     }
   };
 
@@ -319,11 +456,15 @@ export function useMemberBookingActions({
     isCancelling,
     bookingPtSlot,
     setBookingPtSlot,
+    ptBookingError,
+    setPtBookingError,
+    isProcessingPtBooking,
     ptGoal,
     setPtGoal,
     ptNote,
     setPtNote,
     membership,
+    activeOrders,
     feedback,
     setFeedback,
     showFeedback,

@@ -74,12 +74,15 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({
   const discountAmount = item.discountAmount ?? Math.max(0, originalPrice - finalPrice);
   const discountPct = item.discountPct ?? (originalPrice > 0 ? Math.round((discountAmount / originalPrice) * 100) : 0);
 
+  // Generate unique attempt code per modal instance to guarantee uniqueness
+  const [attemptCode] = useState(() => Math.floor(1000 + Math.random() * 9000).toString());
+
   // Generate transfer memo
   const userStr = typeof window !== "undefined" ? localStorage.getItem("user") : null;
   const user = userStr ? JSON.parse(userStr) : null;
   const phoneDigits = user?.phoneNumber || user?.phone ? String(user.phoneNumber || user.phone).replace(/\D/g, "").slice(-4) : "8888";
   const rawCode = (item.id || item.memoPrefix || "SC").replace(/[^a-zA-Z0-9]/g, "").slice(0, 6).toUpperCase();
-  const paymentMemo = `SC ${phoneDigits} ${rawCode}`;
+  const paymentMemo = `SC ${phoneDigits} ${rawCode} ${attemptCode}`;
 
   const bankConfig = BankConfigService.getConfig();
   const vietQrUrl = BankConfigService.getVietQrUrl(finalPrice, paymentMemo, bankConfig);

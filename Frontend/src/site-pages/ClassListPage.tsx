@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { FadeUp, FadeIn } from "../components/Motion";
 import { ClassCard } from "./ClassListComponents";
 import type { ClassItem, ClassStatus } from "./ClassListComponents";
+import { getClassImage } from "../utils/classImageHelper";
 
 const A = "/assets";
 
@@ -82,21 +83,28 @@ export default function ClassListPage() {
           fetch("/api/sports"),
         ]);
 
+        const sportImageMap = new Map<string, string>();
         if (resSports.ok) {
           const sportsData = await resSports.json();
           if (Array.isArray(sportsData)) {
             setSports(
-              sportsData.map((s: any) => ({
-                id: String(s.id),
-                name: s.name,
-              })),
+              sportsData.map((s: any) => {
+                if (s.imageUrl) {
+                  sportImageMap.set(String(s.id), s.imageUrl);
+                  if (s.name) sportImageMap.set(s.name.toLowerCase(), s.imageUrl);
+                }
+                return {
+                  id: String(s.id),
+                  name: s.name,
+                };
+              }),
             );
           }
         }
 
         if (resClasses.ok) {
           const data = await resClasses.json();
-          const mapped: ClassItem[] = data.map((d: any, index: number) => {
+          const mapped: ClassItem[] = data.map((d: any) => {
             // /api/classes/available returns ClassResponse fields. Keep the
             // legacy aliases as a fallback for older seeded data.
             const scheduleTime = d.scheduleTime ?? d.startTime;
@@ -123,6 +131,11 @@ export default function ClassListPage() {
               statusLabel = "Sắp đầy";
             }
 
+            const customOrSportImg =
+              d.imageUrl ||
+              (d.sportId ? sportImageMap.get(String(d.sportId)) : undefined) ||
+              (sportName ? sportImageMap.get(sportName.toLowerCase()) : undefined);
+
             return {
               id: d.id,
               sportId: d.sportId ? String(d.sportId) : "",
@@ -135,7 +148,7 @@ export default function ClassListPage() {
               schedule: formatSchedule(scheduleTime),
               location: d.facilityName || d.roomName || "Đang cập nhật",
               spots,
-              img: classImages[index % classImages.length],
+              img: getClassImage(sportName, title, customOrSportImg),
             };
           });
           setClasses(mapped);

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { FadeIn, FadeUp } from "../components/Motion";
+import { getClassImage } from "../utils/classImageHelper";
 
 const A = "/assets";
 const imgHeroDefault = `${A}/dff04.png`;
@@ -59,21 +60,7 @@ function getClassHeroImage(
   sportName?: string,
   imageUrl?: string | null,
 ): string {
-  if (imageUrl && !imageUrl.includes("undefined")) return imageUrl;
-  const text = `${className || ""} ${sportName || ""}`
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-  if (text.includes("boi") || text.includes("swim")) return "/assets/cfb22.png";
-  if (text.includes("yoga")) return "/assets/88bba.png";
-  if (text.includes("gym") || text.includes("the hinh") || text.includes("hiit"))
-    return "/assets/e865e.png";
-  if (text.includes("box")) return "/assets/252a5.png";
-  if (text.includes("bong ro") || text.includes("basket"))
-    return "/assets/3c386.png";
-  if (text.includes("cau long") || text.includes("badminton"))
-    return "/assets/images/hero_bg.jpg";
-  return imgHeroDefault;
+  return getClassImage(sportName, className, imageUrl);
 }
 
 export default function ClassDetailPage() {

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { toast as sonnerToast } from "sonner";
+import { getClassImage } from "../../../utils/classImageHelper";
 import {
   ClassesFilters,
   ClassesGrid,
@@ -26,18 +27,25 @@ export function ClassesPage() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const fetchClasses = () => {
-    fetch("/api/classes/available")
-      .then((r) => r.json())
-      .then((data) => {
-        const images = [
-          "60eeb.png",
-          "340d3.png",
-          "b0a09.png",
-          "25c0c.png",
-          "5709f.png",
-          "8b5dc.png",
-        ];
+  const fetchClasses = (sportsListInput?: any[]) => {
+    Promise.all([
+      fetch("/api/classes/available").then((r) => r.json()),
+      sportsListInput
+        ? Promise.resolve(sportsListInput)
+        : fetch("/api/sports").then((r) => r.json()).catch(() => []),
+    ])
+      .then(([data, sportsList]) => {
+        const sportImageMap = new Map<string, string>();
+        if (Array.isArray(sportsList)) {
+          setSports(sportsList);
+          sportsList.forEach((s: any) => {
+            if (s.imageUrl) {
+              sportImageMap.set(String(s.id), s.imageUrl);
+              if (s.name) sportImageMap.set(s.name.toLowerCase().trim(), s.imageUrl);
+            }
+          });
+        }
+
         const dayNames = [
           "Chủ Nhật",
           "Thứ Hai",
@@ -48,7 +56,7 @@ export function ClassesPage() {
           "Thứ Bảy",
         ];
 
-        const mapped = (Array.isArray(data) ? data : []).map((d: any, i: number) => {
+        const mapped = (Array.isArray(data) ? data : []).map((d: any) => {
           const rawTime = d.scheduleTime;
           const normalizedTime =
             typeof rawTime === "string" &&
@@ -64,6 +72,11 @@ export function ClassesPage() {
           const hh = String(date.getHours()).padStart(2, "0");
           const min = String(date.getMinutes()).padStart(2, "0");
 
+          const customOrSportImg =
+            d.imageUrl ||
+            (d.sportId ? sportImageMap.get(String(d.sportId)) : undefined) ||
+            (d.sportName ? sportImageMap.get(d.sportName.toLowerCase().trim()) : undefined);
+
           return {
             id: d.id,
             sportName: d.sportName,
@@ -75,7 +88,7 @@ export function ClassesPage() {
             spaces:
               d.availableSpots ??
               d.capacity - (d.currentEnrolled || d.currentBookings || 0),
-            image: images[i % images.length],
+            image: getClassImage(d.sportName, d.className || d.name, customOrSportImg),
             startHour: date.getHours(),
             date: date.getDate(),
             rawDate: d.scheduleTime,
@@ -88,11 +101,6 @@ export function ClassesPage() {
 
   useEffect(() => {
     fetchClasses();
-
-    fetch("/api/sports")
-      .then((r) => r.json())
-      .then((data) => setSports(Array.isArray(data) ? data : []))
-      .catch((e) => console.error(e));
 
     const token = localStorage.getItem("token");
     if (token) {

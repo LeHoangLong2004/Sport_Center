@@ -61,6 +61,9 @@ export function ClassCard({ item }: { item: ClassItem }) {
           src={item.img}
           alt={item.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          onError={(e) => {
+            e.currentTarget.src = "/assets/images/hero_bg.jpg";
+          }}
         />
         <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>

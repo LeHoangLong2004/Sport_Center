@@ -14,6 +14,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { WalletService } from "../services/walletService";
+import { getStoredUser } from "../services/walletUtils";
 import { BankConfigService, BankConfig } from "../services/bankConfig";
 import { TopUpSuccessView } from "./walletTopUp/TopUpSuccessView";
 import { TopUpBalanceBanner } from "./walletTopUp/TopUpBalanceBanner";
@@ -73,7 +74,15 @@ export default function WalletTopUpModal({
 
   const [sessionCode, setSessionCode] = useState(() => Math.floor(1000 + Math.random() * 9000).toString());
   const actualAmount = customAmount ? Number(customAmount.replace(/\D/g, "")) : selectedAmount;
-  const transferMemo = `NAPVI ${sessionCode}`.toUpperCase();
+  
+  const storedUser = getStoredUser();
+  const effectivePhone = (phone && phone !== "0901234567" ? phone : "") || storedUser?.phoneNumber || storedUser?.phone || "";
+  const cleanPhone = effectivePhone.replace(/\D/g, "");
+  const memberCode = (storedUser?.memberCode || "").trim().toUpperCase();
+  const userIdentifier = cleanPhone || memberCode;
+  const transferMemo = userIdentifier
+    ? `NAPVI ${userIdentifier} ${sessionCode}`.toUpperCase()
+    : `NAPVI ${sessionCode}`.toUpperCase();
 
   useEffect(() => {
     if (isOpen) {
@@ -91,10 +100,24 @@ export default function WalletTopUpModal({
     const interval = setInterval(async () => {
       try {
         const res = await WalletService.checkTransfer(transferMemo, actualAmount);
-        if (!isCancelled && res.received && typeof res.newBalance === "number") {
+        if (!isCancelled && res.received) {
           clearInterval(interval);
-          setSuccessResult({ amount: actualAmount, newBalance: res.newBalance });
-          onSuccess?.(res.newBalance);
+          const freshWallet = await WalletService.getWallet(undefined, true);
+          const resolvedBal = typeof res.newBalance === "number" && res.newBalance > currentBalance
+            ? res.newBalance
+            : (freshWallet.balance > currentBalance ? freshWallet.balance : currentBalance + actualAmount);
+          setSuccessResult({ amount: actualAmount, newBalance: resolvedBal });
+          onSuccess?.(resolvedBal);
+          return;
+        }
+
+        // Tự động kiểm tra số dư ví nếu webhook đã tự cộng trực tiếp vào Database
+        const freshWallet = await WalletService.getWallet(undefined, true);
+        if (!isCancelled && freshWallet.balance > currentBalance) {
+          clearInterval(interval);
+          const added = freshWallet.balance - currentBalance;
+          setSuccessResult({ amount: added, newBalance: freshWallet.balance });
+          onSuccess?.(freshWallet.balance);
         }
       } catch {}
     }, 2500);
@@ -103,7 +126,7 @@ export default function WalletTopUpModal({
       isCancelled = true;
       clearInterval(interval);
     };
-  }, [isOpen, method, transferMemo, actualAmount, successResult, onSuccess]);
+  }, [isOpen, method, transferMemo, actualAmount, successResult, currentBalance, onSuccess]);
 
   if (!isOpen) return null;
 
@@ -134,15 +157,29 @@ export default function WalletTopUpModal({
     setCheckStatusText("Đang kiểm tra biến động số dư...");
     try {
       const res = await WalletService.checkTransfer(transferMemo, actualAmount, undefined, false);
-      if (res.received && typeof res.newBalance === "number") {
-        setSuccessResult({ amount: actualAmount, newBalance: res.newBalance });
-        onSuccess?.(res.newBalance);
-      } else {
-        setCheckStatusText(
-          res.message ||
-            `Chưa phát hiện giao dịch ${actualAmount.toLocaleString("vi-VN")} đ với nội dung "${transferMemo}". Vui lòng quét mã QR và hoàn tất chuyển tiền trước khi bấm kiểm tra!`
-        );
+      if (res.received) {
+        const freshWallet = await WalletService.getWallet(undefined, true);
+        const resolvedBal = typeof res.newBalance === "number" && res.newBalance > currentBalance
+          ? res.newBalance
+          : (freshWallet.balance > currentBalance ? freshWallet.balance : currentBalance + actualAmount);
+        setSuccessResult({ amount: actualAmount, newBalance: resolvedBal });
+        onSuccess?.(resolvedBal);
+        return;
       }
+
+      // Kiểm tra trực tiếp số dư ví mới nhất từ database
+      const freshWallet = await WalletService.getWallet(undefined, true);
+      if (freshWallet.balance > currentBalance) {
+        const added = freshWallet.balance - currentBalance;
+        setSuccessResult({ amount: added, newBalance: freshWallet.balance });
+        onSuccess?.(freshWallet.balance);
+        return;
+      }
+
+      setCheckStatusText(
+        res.message ||
+          `Chưa phát hiện giao dịch ${actualAmount.toLocaleString("vi-VN")} đ với nội dung "${transferMemo}". Vui lòng quét mã QR và hoàn tất chuyển tiền trước khi bấm kiểm tra!`
+      );
     } finally {
       setLoading(false);
     }

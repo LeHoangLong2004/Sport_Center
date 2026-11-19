@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
-import { iSearch2, iDownload, iMore } from '../shared';
+import { iSearch2 } from '../shared';
 import { UserAvatar } from '../../../components/UserAvatar';
-import { LockKeyhole, UnlockKeyhole, Dumbbell, X, Check, Loader2 } from 'lucide-react';
+import { LockKeyhole, UnlockKeyhole, Dumbbell } from 'lucide-react';
+import { AddStaffModal } from './staff/AddStaffModal';
+import { StatusConfirmationModal } from './staff/StatusConfirmationModal';
+import { AssignCoachSportsModal } from './staff/AssignCoachSportsModal';
 
 export function StaffPage() {
   const [query, setQuery] = useState("")
@@ -286,257 +288,32 @@ export function StaffPage() {
         </div>
       </div>
 
-      {showAddModal &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overscroll-contain animate-in fade-in duration-150"
-            role="dialog"
-            aria-modal="true"
-          >
-            <div
-              className="fixed inset-0 -z-10"
-              onClick={() => setShowAddModal(false)}
-            />
-            <div className="relative z-10 bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
-              <h2 className="text-xl font-bold text-[#0f172a] mb-6">Thêm nhân sự mới</h2>
-              <form onSubmit={handleAddStaff} className="flex flex-col gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-[#475569] mb-1">Họ và tên</label>
-                  <input required type="text" className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-slate-500" value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} placeholder="Nguyễn Văn A" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-[#475569] mb-1">Email</label>
-                  <input required type="email" className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-slate-500" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="example@smartgym.com" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-[#475569] mb-1">Số điện thoại</label>
-                  <input required type="text" className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-slate-500" value={formData.phoneNumber} onChange={e => setFormData({...formData, phoneNumber: e.target.value})} placeholder="0987654321" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-[#475569] mb-1">Mật khẩu</label>
-                  <input required type="password" minLength={6} className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-slate-500" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder="Ít nhất 6 ký tự" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-[#475569] mb-1">Vai trò (Role)</label>
-                  <select className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none focus:border-slate-500" value={formData.roleName} onChange={e => setFormData({...formData, roleName: e.target.value, sportIds: []})}>
-                    <option value="receptionist">Lễ tân (receptionist)</option>
-                    <option value="coach">Huấn luyện viên (coach)</option>
-                    <option value="manager">Quản lý trung tâm (manager)</option>
-                  </select>
-                </div>
-                {formData.roleName === "coach" && (
-                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Bộ môn phụ trách (Bắt buộc)</label>
-                      <span className="text-[11px] text-emerald-600 font-medium">Đã chọn: {formData.sportIds.length}</span>
-                    </div>
-                    <p className="text-xs text-slate-500">Tick chọn các bộ môn mà HLV này có chứng chỉ và được phép đứng lớp:</p>
-                    <div className="grid grid-cols-2 gap-2 mt-1">
-                      {availableSports.map(s => {
-                        const checked = formData.sportIds.includes(s.id);
-                        return (
-                          <label key={s.id} className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-colors ${checked ? 'border-emerald-300 bg-emerald-50/70 text-emerald-700 font-semibold' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>
-                            <input
-                              type="checkbox"
-                              className="accent-emerald-600 rounded"
-                              checked={checked}
-                              onChange={e => {
-                                if (e.target.checked) {
-                                  setFormData({ ...formData, sportIds: [...formData.sportIds, s.id] });
-                                } else {
-                                  setFormData({ ...formData, sportIds: formData.sportIds.filter(id => id !== s.id) });
-                                }
-                              }}
-                            />
-                            <span className="truncate">{s.name}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-                <div className="flex gap-3 mt-4">
-                  <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 bg-white border border-[#cbd5e1] font-semibold text-[#475569] py-2.5 rounded-xl hover:bg-slate-50 transition-colors">Hủy</button>
-                  <button type="submit" className="flex-1 bg-emerald-600 font-semibold text-white py-2.5 rounded-xl hover:bg-emerald-700 transition-colors shadow-md shadow-emerald-600/20">Lưu nhân sự</button>
-                </div>
-              </form>
-            </div>
-          </div>,
-          document.body,
-        )}
+      {/* Modals extracted into dedicated components */}
+      <AddStaffModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSubmit={handleAddStaff}
+        formData={formData}
+        setFormData={setFormData}
+        availableSports={availableSports}
+      />
 
-      {statusConfirmation &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 backdrop-blur-xs p-4 overscroll-contain animate-in fade-in duration-150"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="status-confirmation-title"
-          >
-            <div
-              className="fixed inset-0 -z-10"
-              onClick={() => setStatusConfirmation(null)}
-            />
-            <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150">
-              <div className="flex items-start gap-4">
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600">
-                  <span className="text-xl font-bold">!</span>
-                </div>
-                <div>
-                  <h2 id="status-confirmation-title" className="text-lg font-bold text-slate-900">Xác nhận thay đổi trạng thái</h2>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Bạn có chắc muốn {statusConfirmation.currentStatus ? "khóa" : "mở khóa"} tài khoản này không?
-                  </p>
-                </div>
-              </div>
-              <div className="mt-6 flex justify-end gap-3">
-                <button type="button" onClick={() => setStatusConfirmation(null)} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">Hủy</button>
-                <button type="button" onClick={confirmToggleStatus} className="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 shadow-md shadow-emerald-600/20">Xác nhận</button>
-              </div>
-            </div>
-          </div>,
-          document.body,
-        )}
+      <StatusConfirmationModal
+        confirmation={statusConfirmation}
+        onClose={() => setStatusConfirmation(null)}
+        onConfirm={confirmToggleStatus}
+      />
 
-      {assigningCoach &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4 overscroll-contain animate-in fade-in duration-150"
-            role="dialog"
-            aria-modal="true"
-          >
-            <div
-              className="fixed inset-0 -z-10"
-              onClick={() => !savingCoachSports && setAssigningCoach(null)}
-            />
-            <div className="relative z-10 w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
-              {/* Header */}
-              <div className="flex items-start justify-between pb-4 border-b border-slate-100">
-                <div className="flex items-center gap-3">
-                  <div className="size-11 rounded-xl bg-gradient-to-tr from-emerald-500 to-emerald-500 flex items-center justify-center text-white shadow-sm shadow-emerald-500/20">
-                    <Dumbbell className="size-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-slate-900">Phân công chuyên môn</h2>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Huấn luyện viên: <strong className="text-slate-800 font-semibold">{assigningCoach.name}</strong>
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  disabled={savingCoachSports}
-                  onClick={() => setAssigningCoach(null)}
-                  className="size-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              {/* Subtitle / Instructions */}
-              <div className="py-4">
-                <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 mb-4 text-xs text-slate-600 leading-relaxed flex items-start gap-2.5">
-                  <span className="font-bold text-emerald-600 shrink-0">Lưu ý:</span>
-                  <span>Chỉ các bộ môn được <strong>bật trạng thái phụ trách</strong> dưới đây thì HLV mới có quyền mở lớp và được Quản lý xếp lịch dạy.</span>
-                </div>
-
-                {loadingCoachSports ? (
-                  <div className="flex flex-col items-center justify-center py-16 gap-3">
-                    <Loader2 className="size-7 animate-spin" />
-                    <span className="text-xs text-slate-500 font-medium">Đang đồng bộ danh mục bộ môn...</span>
-                  </div>
-                ) : availableSports.length === 0 ? (
-                  <p className="text-xs text-slate-400 text-center py-8">Chưa có bộ môn nào trong hệ thống.</p>
-                ) : (
-                  <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
-                    {availableSports.map(s => {
-                      const isAssigned = coachSelectedSportIds.includes(s.id);
-                      return (
-                        <div
-                          key={s.id}
-                          className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${
-                            isAssigned
-                              ? 'border-emerald-300 bg-emerald-50/40 shadow-xs ring-1 ring-emerald-200/60'
-                              : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/60'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3 min-w-0 pr-3">
-                            <div className={`size-9 rounded-lg flex items-center justify-center shrink-0 font-bold text-xs ${
-                              isAssigned ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
-                            }`}>
-                              {s.name.substring(0, 2).toUpperCase()}
-                            </div>
-                            <div className="min-w-0">
-                              <p className={`text-sm font-semibold truncate ${isAssigned ? 'text-emerald-950' : 'text-slate-800'}`}>
-                                {s.name}
-                              </p>
-                              <p className="text-[11px] text-slate-500 truncate">
-                                {isAssigned ? 'Đang được phép đứng lớp bộ môn này' : 'Chưa được phân công phụ trách'}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Interactive Toggle Button / Pill */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (isAssigned) {
-                                setCoachSelectedSportIds(prev => prev.filter(id => id !== s.id));
-                              } else {
-                                setCoachSelectedSportIds(prev => [...prev, s.id]);
-                              }
-                            }}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer active:scale-95 shrink-0 ${
-                              isAssigned
-                                ? 'bg-emerald-600 text-white shadow-xs shadow-emerald-600/30 hover:bg-emerald-700'
-                                : 'border border-slate-300 bg-white text-slate-700 hover:border-emerald-400 hover:text-emerald-700 hover:bg-emerald-50/50'
-                            }`}
-                          >
-                            {isAssigned ? (
-                              <>
-                                <Check size={14} strokeWidth={2.5} />
-                                <span>Đang phụ trách</span>
-                              </>
-                            ) : (
-                              <span>+ Phân công môn</span>
-                            )}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Footer */}
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-between mt-auto">
-                <span className="text-xs text-slate-600">
-                  Số bộ môn phụ trách: <strong className="text-emerald-700 font-bold text-sm ml-1">{coachSelectedSportIds.length}</strong> / {availableSports.length}
-                </span>
-                <div className="flex gap-2.5">
-                  <button
-                    type="button"
-                    disabled={savingCoachSports}
-                    onClick={() => setAssigningCoach(null)}
-                    className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="button"
-                    disabled={savingCoachSports || loadingCoachSports}
-                    onClick={handleSaveCoachSports}
-                    className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-emerald-600 text-xs font-semibold text-white hover:bg-emerald-700 shadow-md shadow-emerald-600/20 disabled:opacity-50 transition-all cursor-pointer active:scale-95"
-                  >
-                    {savingCoachSports && <Loader2 size={13} className="animate-spin" />}
-                    <span>Lưu phân công</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>,
-          document.body,
-        )}
+      <AssignCoachSportsModal
+        assigningCoach={assigningCoach}
+        onClose={() => setAssigningCoach(null)}
+        onSave={handleSaveCoachSports}
+        availableSports={availableSports}
+        coachSelectedSportIds={coachSelectedSportIds}
+        setCoachSelectedSportIds={setCoachSelectedSportIds}
+        loadingCoachSports={loadingCoachSports}
+        savingCoachSports={savingCoachSports}
+      />
 
       {/* filters */}
       <div className="flex gap-3 items-center mt-2">

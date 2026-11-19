@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using SmartGym.Application.DTOs;
 using SmartGym.Application.Interfaces;
+using SmartGym.Domain.Enums;
 using SmartGym.Infrastructure.Persistence.EF;
 
 namespace SmartGym.Api.Endpoints;
@@ -77,6 +78,86 @@ public static class SubscriptionEndpoints
         };
 
         group.MapPost("", handleSubscription);
+
+        // ── Member: Hủy gói thành viên cá nhân và đưa tài khoản về Hạng Cơ Bản ──
+        group.MapPost("/cancel-membership", async (
+            HttpContext context,
+            SmartGymDbContext db,
+            CancellationToken ct) =>
+        {
+            var userIdString = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                return Results.Unauthorized();
+
+            var now = DateTime.UtcNow;
+
+            // 1. Tìm các gói thành viên đang có hiệu lực của người dùng
+            var subs = await db.Subscriptions
+                .Include(s => s.Package)
+                .Where(s => s.UserId == userId && s.PaymentStatus == PaymentStatus.Completed && s.EndDate >= now)
+                .ToListAsync(ct);
+
+            var cancelledCount = 0;
+            foreach (var sub in subs)
+            {
+                bool isMembership = false;
+                if (!string.IsNullOrEmpty(sub.PackageSnapshotJson))
+                {
+                    try
+                    {
+                        using var doc = System.Text.Json.JsonDocument.Parse(sub.PackageSnapshotJson);
+                        if (doc.RootElement.TryGetProperty("category", out var cat) && cat.GetString() == "membership")
+                        {
+                            isMembership = true;
+                        }
+                    }
+                    catch {}
+                }
+
+                if (isMembership 
+                    || (sub.Package != null && sub.Package.PackageType == "membership")
+                    || (sub.PackageId != null && (sub.PackageId.Contains("membership", StringComparison.OrdinalIgnoreCase) 
+                                               || sub.PackageId.Contains("plus", StringComparison.OrdinalIgnoreCase) 
+                                               || sub.PackageId.Contains("premium", StringComparison.OrdinalIgnoreCase))))
+                {
+                    sub.PaymentStatus = PaymentStatus.Failed;
+                    sub.EndDate = now.AddSeconds(-1);
+                    cancelledCount++;
+                }
+            }
+
+            // 2. Hủy các subscription pending của gói thành viên nếu có
+            var pendingSubs = await db.Subscriptions
+                .Where(s => s.UserId == userId && s.PaymentStatus == PaymentStatus.Pending)
+                .ToListAsync(ct);
+
+            foreach (var pSub in pendingSubs)
+            {
+                bool isMembership = false;
+                if (!string.IsNullOrEmpty(pSub.PackageSnapshotJson) && pSub.PackageSnapshotJson.Contains("\"membership\""))
+                {
+                    isMembership = true;
+                }
+                if (isMembership || (pSub.PackageId != null && pSub.PackageId.Contains("membership", StringComparison.OrdinalIgnoreCase)))
+                {
+                    pSub.PaymentStatus = PaymentStatus.Failed;
+                    pSub.EndDate = now.AddSeconds(-1);
+                    cancelledCount++;
+                }
+            }
+
+            if (cancelledCount > 0)
+            {
+                await db.SaveChangesAsync(ct);
+            }
+
+            return Results.Ok(new
+            {
+                success = true,
+                message = "Đã hủy gói thành viên thành công! Tài khoản của bạn đã quay về Hạng Cơ bản (Miễn phí).",
+                cancelledCount
+            });
+        });
 
         // ── Receptionist: Gia hạn & Nâng cấp gói tập cho hội viên tại quầy ──
         app.MapPost("/api/receptionist/members/{memberId:guid}/renew-package", async (
@@ -154,6 +235,7 @@ public static class SubscriptionEndpoints
 
             // Ghi nhận hóa đơn tại quầy
             var invoiceId = Guid.NewGuid();
+            var dbMethod = PaymentMethodExtensions.ParseDbValue(request.PaymentMethod).ToDbValue();
             try
             {
                 await db.Database.ExecuteSqlInterpolatedAsync($@"
@@ -161,7 +243,7 @@ public static class SubscriptionEndpoints
                         id, user_id, total_amount, payment_method, payment_status, paid_at, created_at, fulfillment_status
                     )
                     VALUES (
-                        {invoiceId}, {memberId}, {request.Amount}, {request.PaymentMethod}, 'completed', now(), now(), 'completed'
+                        {invoiceId}, {memberId}, {request.Amount}, {dbMethod}, 'completed', now(), now(), 'completed'
                     );
                 ");
             }

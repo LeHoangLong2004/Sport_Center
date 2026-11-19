@@ -33,7 +33,7 @@ export function blankPackage(category: Category): PackageDraft {
     description: "",
     isActive: true,
     prices: { 1: 0, 3: 0, 6: 0, 12: 0 },
-    benefits: [],
+    benefits: ["Miễn phí 100% phí đặt ca / vào sân (0đ/buổi)"],
     terms: [],
     groupDiscountPct: 0,
     coachDiscountPct: 0,

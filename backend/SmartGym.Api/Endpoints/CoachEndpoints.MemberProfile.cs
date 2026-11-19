@@ -58,11 +58,6 @@ public static partial class CoachEndpoints
                 ? (decimal?)null
                 : Math.Round(attendedSessions * 100m / totalSessions, 0);
 
-            var bodyMetric = await db.BodyMetrics.AsNoTracking()
-                .Where(x => x.UserId == memberId)
-                .OrderByDescending(x => x.RecordedAt)
-                .FirstOrDefaultAsync();
-
             var assessments = await db.Database.SqlQueryRaw<MemberProfileAssessmentRow>(
                 @"SELECT id AS ""Id"", session_id AS ""SessionId"", completion AS ""Completion"",
                          metrics_json::text AS ""MetricsJson"", comment AS ""Comment"",
@@ -205,11 +200,11 @@ public static partial class CoachEndpoints
                     attendanceRate,
                     attendedSessions,
                     totalSessions,
-                    weight = bodyMetric?.Weight,
-                    height = bodyMetric?.Height,
-                    bodyFat = bodyMetric?.BodyFat,
-                    muscleMass = bodyMetric?.MuscleMass,
-                    bmi = bodyMetric?.Bmi,
+                    weight = (decimal?)null,
+                    height = (decimal?)null,
+                    bodyFat = (decimal?)null,
+                    muscleMass = (decimal?)null,
+                    bmi = (decimal?)null,
                     latestSession = attendance.FirstOrDefault() is { } latest
                         ? new
                         {

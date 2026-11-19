@@ -9,6 +9,7 @@
 [Oo]bj/
 [Oo]ut/
 artifacts/
+.api-build-check/
 [Ll]og/
 [Ll]ogs/
 *.log
@@ -85,6 +86,14 @@ secrets.json
 **/*.cer
 **/*.crt
 **/*.pem
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+local.db
 
 # -------------------------------------------------------
 # 7. Test Results & Coverage

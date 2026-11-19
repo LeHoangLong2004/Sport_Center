@@ -5,9 +5,18 @@ const BASE_URL = configuredApiUrl
 
 async function fetchApi(endpoint: string, options: RequestInit = {}) {
     const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+    const user = (() => {
+        try {
+            return JSON.parse(localStorage.getItem('user') || '{}');
+        } catch {
+            return {};
+        }
+    })();
+    const uid = user?.id || user?.userId || user?.memberId || user?.email;
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        ...(options.headers as Record<string, string> || {})
+        ...(options.headers as Record<string, string> || {}),
+        ...(uid ? { 'X-User-Id': String(uid) } : {})
     };
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -131,6 +140,8 @@ export const MemberAPI = {
         coachName?: string;
         goal?: string;
         coachNote?: string;
+        paymentMethod?: "qr" | "counter" | "wallet" | "package";
+        amount?: number;
     }) => {
         return fetchApi('/member/bookings', {
             method: 'POST',
@@ -212,14 +223,30 @@ export const MemberAPI = {
         return fetchApi('/member/gamification');
     },
 
-    // 10. Chỉ số cơ thể InBody & Tiến độ
+    // 10. Chỉ số cơ thể InBody & Tiến độ (Lưu trữ cục bộ, không phụ thuộc database body_metrics)
     getBodyMetrics: async () => {
-        return fetchApi('/body-metrics/me');
+        try {
+            return JSON.parse(localStorage.getItem("member_local_body_metrics") || "[]");
+        } catch {
+            return [];
+        }
     },
     createBodyMetric: async (data: { weight: number; height: number; bodyFat?: number; muscleMass?: number; recordedAt?: string }) => {
-        return fetchApi('/body-metrics', {
-            method: 'POST',
-            body: JSON.stringify(data)
-        });
+        try {
+            const current = JSON.parse(localStorage.getItem("member_local_body_metrics") || "[]");
+            const heightInMeters = data.height / 100;
+            const bmi = parseFloat((data.weight / (heightInMeters * heightInMeters)).toFixed(1));
+            const newItem = {
+                id: (typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()),
+                ...data,
+                bmi,
+                recordedAt: data.recordedAt || new Date().toISOString()
+            };
+            const updated = [newItem, ...current];
+            localStorage.setItem("member_local_body_metrics", JSON.stringify(updated));
+            return newItem;
+        } catch {
+            return null;
+        }
     }
 };

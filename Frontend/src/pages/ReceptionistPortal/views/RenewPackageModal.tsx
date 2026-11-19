@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import { PackageAPI, CatalogPackage, PackagePeriod } from "../../../services/packageApi";
 import { WalletService } from "../../MemberPortal/services/walletService";
+import { BankConfigService } from "../../MemberPortal/services/bankConfig";
 
 interface Props {
   isOpen: boolean;
@@ -156,16 +157,17 @@ export function RenewPackageModal({ isOpen, onClose, member, onSuccess }: Props)
     return targetDate.toLocaleDateString("vi-VN");
   }, [mode, rawCurrentExpiry, durationMonths]);
 
+  const [attemptCode] = useState(() => Math.floor(1000 + Math.random() * 9000).toString());
+
   // Cú pháp chuyển khoản SePay
   const transferMemo = useMemo(() => {
-    return `GIA HAN ${member?.memberCode || "MEM"} ${durationMonths}THANG`.toUpperCase();
-  }, [member?.memberCode, durationMonths]);
+    return `GIA HAN ${member?.memberCode || "MEM"} ${durationMonths}THANG ${attemptCode}`.toUpperCase();
+  }, [member?.memberCode, durationMonths, attemptCode]);
 
+  const bankConfig = useMemo(() => BankConfigService.getConfig(), []);
   const vietQrUrl = useMemo(() => {
-    return `https://img.vietqr.io/image/MB-0335889765-compact2.png?amount=${currentPrice}&addInfo=${encodeURIComponent(
-      transferMemo
-    )}&accountName=SPORT%20CENTER`;
-  }, [currentPrice, transferMemo]);
+    return BankConfigService.getVietQrUrl(currentPrice, transferMemo, bankConfig);
+  }, [currentPrice, transferMemo, bankConfig]);
 
   // Hàm gọi API thực hiện gia hạn
   const executeRenewal = async () => {

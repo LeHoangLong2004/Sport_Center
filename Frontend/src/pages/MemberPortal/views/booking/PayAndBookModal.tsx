@@ -15,12 +15,14 @@ import {
 } from "lucide-react";
 import { BankConfigService } from "../../services/bankConfig";
 import { WalletService, MEMBER_WALLET_UPDATED_EVENT } from "../../services/walletService";
-import { PackageAPI, getMembershipStatus, type MembershipStatus } from "../../../../services/packageApi";
+import { PackageAPI, getMembershipStatus, type MembershipStatus, type PackageOrder } from "../../../../services/packageApi";
 import WalletTopUpModal from "../../components/WalletTopUpModal";
 import { BookingClassHeader } from "./payAndBook/BookingClassHeader";
 import { CardPaymentPanel } from "./payAndBook/CardPaymentPanel";
 import { CounterPaymentPanel } from "./payAndBook/CounterPaymentPanel";
 import { WalletPaymentPanel } from "./payAndBook/WalletPaymentPanel";
+import { findConflictingSession } from "./bookingTypes";
+import { toast } from "sonner";
 
 interface PayAndBookModalProps {
   classToBook: any | null;
@@ -30,6 +32,7 @@ interface PayAndBookModalProps {
   isProcessingPayment: boolean;
   paymentError: string | null;
   onConfirmPayment: (finalAmount?: number) => void;
+  mySessions?: any[];
 }
 
 export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
@@ -40,12 +43,18 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
   isProcessingPayment,
   paymentError,
   onConfirmPayment,
+  mySessions = [],
 }) => {
   if (!classToBook) return null;
 
-  const [membership, setMembership] = useState<MembershipStatus | null>(null);
+  const conflictingSession = React.useMemo(() => {
+    return findConflictingSession(classToBook, mySessions);
+  }, [classToBook, mySessions]);
 
-  // Tự động nhận diện hạng thành viên của hội viên để áp dụng ưu đãi giảm giá
+  const [membership, setMembership] = useState<MembershipStatus | null>(null);
+  const [activeSportOrders, setActiveSportOrders] = useState<PackageOrder[]>([]);
+
+  // Tự động nhận diện hạng thành viên & các gói môn đang sở hữu
   useEffect(() => {
     let isCancelled = false;
     Promise.all([
@@ -55,6 +64,16 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
       if (!isCancelled) {
         const mem = getMembershipStatus(orders, catalog);
         setMembership(mem);
+
+        const now = new Date();
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+        const activeSports = (orders as PackageOrder[]).filter(
+          (o) =>
+            o.status === "paid" &&
+            o.packageSnapshot?.category === "sport" &&
+            (!o.endDate || o.endDate.slice(0, 10) >= todayStr)
+        );
+        setActiveSportOrders(activeSports);
       }
     });
     return () => {
@@ -62,18 +81,95 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
     };
   }, []);
 
+  // Kiểm tra xem hội viên có gói môn tương ứng bao trọn lớp học này không
+  const coveringSportOrder = React.useMemo(() => {
+    if (!classToBook || activeSportOrders.length === 0) return null;
+    const classSport = (classToBook.sport || "").toLowerCase();
+    const classRoom = (classToBook.room || "").toLowerCase();
+    const className = (classToBook.name || "").toLowerCase();
+
+    return (
+      activeSportOrders.find((order) => {
+        const pkgSport = (order.packageSnapshot?.sport || "").toLowerCase();
+        const pkgName = (order.packageSnapshot?.name || "").toLowerCase();
+
+        // 1. Khớp theo tên môn trực tiếp (Gym, Yoga, Bơi lội...)
+        if (pkgSport && (classSport.includes(pkgSport) || pkgSport.includes(classSport))) {
+          return true;
+        }
+
+        // 2. Gym / Thể lực / Cardio / Kháng lực
+        const isGymPackage = pkgSport.includes("gym") || pkgName.includes("gym");
+        const isGymClass =
+          classSport.includes("gym") ||
+          classSport.includes("thể lực") ||
+          classRoom.includes("gym") ||
+          className.includes("kháng lực") ||
+          className.includes("cardio") ||
+          className.includes("gym");
+        if (isGymPackage && isGymClass) return true;
+
+        // 3. Yoga / Pilates
+        const isYogaPackage = pkgSport.includes("yoga") || pkgName.includes("yoga");
+        const isYogaClass =
+          classSport.includes("yoga") ||
+          classSport.includes("pilates") ||
+          classRoom.includes("yoga") ||
+          className.includes("yoga") ||
+          className.includes("pilates");
+        if (isYogaPackage && isYogaClass) return true;
+
+        // 4. Bơi lội
+        const isSwimPackage = pkgSport.includes("bơi") || pkgName.includes("bơi") || pkgSport.includes("swim");
+        const isSwimClass =
+          classSport.includes("bơi") ||
+          classRoom.includes("bơi") ||
+          classRoom.includes("aquafit") ||
+          className.includes("bơi");
+        if (isSwimPackage && isSwimClass) return true;
+
+        // 5. Boxing / Võ
+        const isBoxPackage = pkgSport.includes("box") || pkgName.includes("box");
+        const isBoxClass =
+          classSport.includes("box") ||
+          classRoom.includes("box") ||
+          className.includes("box");
+        if (isBoxPackage && isBoxClass) return true;
+
+        // 6. Cầu lông
+        const isBadmintonPackage = pkgSport.includes("cầu lông") || pkgName.includes("cầu lông");
+        const isBadmintonClass =
+          classSport.includes("cầu lông") ||
+          classRoom.includes("cầu lông") ||
+          className.includes("cầu lông");
+        if (isBadmintonPackage && isBadmintonClass) return true;
+
+        return false;
+      }) || null
+    );
+  }, [classToBook, activeSportOrders]);
+
+  const isCoveredByPackage = Boolean(coveringSportOrder);
   const originalPrice = classToBook.price || 150000;
-  const discountPct = membership?.tier === "premium"
-    ? (membership.groupDiscountPct || 10)
+
+  const discountPct = isCoveredByPackage
+    ? 100
+    : membership?.tier === "premium"
+    ? (membership.groupDiscountPct || 15)
     : membership?.tier === "plus"
-    ? (membership.groupDiscountPct || 5)
+    ? (membership.groupDiscountPct || 8)
     : 0;
 
-  const discountAmount = Math.round(originalPrice * (discountPct / 100));
+  const discountAmount = isCoveredByPackage
+    ? originalPrice
+    : Math.round(originalPrice * (discountPct / 100));
+
   const classPrice = Math.max(0, originalPrice - discountAmount);
 
+  // Generate unique attempt code per modal instance to guarantee uniqueness
+  const [attemptCode] = useState(() => Math.floor(1000 + Math.random() * 9000).toString());
   const bankConfig = BankConfigService.getConfig();
-  const bookingMemo = `DATLOP ${classToBook.id ? String(classToBook.id).slice(0, 8).toUpperCase() : "CLASS"}`;
+  const bookingMemo = `DATLOP ${classToBook.id ? String(classToBook.id).slice(0, 8).toUpperCase() : "CLASS"} ${attemptCode}`;
   const vietQrUrl = BankConfigService.getVietQrUrl(classPrice, bookingMemo, bankConfig);
 
   const [checkStatusText, setCheckStatusText] = useState<string | null>(null);
@@ -146,7 +242,27 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
+  const notifyConflictIfAny = () => {
+    if (conflictingSession) {
+      const msg = `Phát hiện xung đột lịch học! Bạn đã có lịch "${conflictingSession.name}" vào khung giờ ${conflictingSession.startTime} - ${conflictingSession.endTime} (Ngày ${conflictingSession.date}).`;
+      toast.error(msg);
+      return true;
+    }
+    return false;
+  };
+
+  const handleConfirmCovered = () => {
+    if (notifyConflictIfAny()) return;
+    onConfirmPayment(0);
+  };
+
+  const handleConfirmCounter = () => {
+    if (notifyConflictIfAny()) return;
+    onConfirmPayment(classPrice);
+  };
+
   const handleCheckPayment = async () => {
+    if (notifyConflictIfAny()) return;
     if (isPaid) {
       onConfirmPayment(classPrice);
       return;
@@ -177,6 +293,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
   };
 
   const handlePayWithWallet = () => {
+    if (notifyConflictIfAny()) return;
     if (walletBalance < classPrice) {
       setShowTopUpModal(true);
       return;
@@ -220,7 +337,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
 
           {/* Body */}
           <div className="p-6 overflow-y-auto space-y-4 text-xs">
-            {/* Lớp & Chi tiết hóa đơn kèm ưu đãi thành viên */}
+            {/* Lớp & Chi tiết hóa đơn kèm ưu đãi thành viên hoặc gói môn */}
             <BookingClassHeader 
               classToBook={classToBook} 
               originalPrice={originalPrice}
@@ -228,13 +345,30 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
               discountAmount={discountAmount}
               finalPrice={classPrice}
               membership={membership}
+              coveringPackageName={coveringSportOrder?.packageSnapshot?.name}
             />
 
-            {/* CHỌN PHƯƠNG THỨC THANH TOÁN (4 PHƯƠNG THỨC) */}
-            <div>
-              <label className="font-extrabold text-xs text-slate-800 dark:text-slate-200 mb-2 block">
-                Chọn phương thức thanh toán:
-              </label>
+            {isCoveredByPackage ? (
+              <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-start gap-3">
+                <div className="size-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0 mt-0.5">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-emerald-900 dark:text-emerald-200 text-xs">
+                    Đặc quyền gói môn: Miễn phí 100% (0 đ)
+                  </h4>
+                  <p className="text-[11px] text-emerald-700 dark:text-emerald-300 mt-0.5 leading-relaxed">
+                    Bạn đang sở hữu gói <strong>{coveringSportOrder?.packageSnapshot?.name}</strong> còn hiệu lực. Buổi tập này được áp dụng miễn phí hoàn toàn theo quyền lợi gói tập của bạn!
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* CHỌN PHƯƠNG THỨC THANH TOÁN (3 PHƯƠNG THỨC) */}
+                <div>
+                  <label className="font-extrabold text-xs text-slate-800 dark:text-slate-200 mb-2 block">
+                    Chọn phương thức thanh toán:
+                  </label>
               <div className="grid grid-cols-3 gap-2">
                 {/* 1. VÍ HỘI VIÊN */}
                 <button
@@ -438,11 +572,34 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
             )}
 
             {paymentMethod === "counter" && <CounterPaymentPanel />}
+              </>
+            )}
           </div>
 
           {/* Footer */}
           <div className="p-4 border-t border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50/50 dark:bg-slate-850 space-y-3">
-            {paymentError && (
+            {conflictingSession && (
+              <div
+                role="alert"
+                className="flex items-start gap-2.5 rounded-2xl border-2 border-rose-300 dark:border-rose-700 bg-rose-50/95 dark:bg-rose-950/70 p-3.5 text-rose-800 dark:text-rose-200 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-200"
+              >
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400 animate-pulse" />
+                <div className="text-left flex-1 min-w-0">
+                  <p className="font-black text-xs text-rose-700 dark:text-rose-300 uppercase tracking-wider">
+                    Phát hiện xung đột lịch học (Trùng giờ)
+                  </p>
+                  <p className="mt-1 leading-relaxed text-[11px] font-semibold text-rose-800 dark:text-rose-200">
+                    Bạn đã có lịch <strong>"{conflictingSession.name}"</strong> vào khung giờ{" "}
+                    <strong>{conflictingSession.startTime} - {conflictingSession.endTime}</strong> (Ngày {conflictingSession.date}).
+                  </p>
+                  <p className="mt-0.5 text-[10px] text-rose-600 dark:text-rose-400 font-medium italic">
+                    Vui lòng chọn khung giờ khác hoặc hủy lịch cũ trước khi đặt lớp này.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {paymentError && !conflictingSession && (
               <div
                 role="alert"
                 className="flex items-start gap-2.5 rounded-2xl border-2 border-rose-300 dark:border-rose-700 bg-rose-50/95 dark:bg-rose-950/70 p-3 text-rose-800 dark:text-rose-200 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-200"
@@ -455,7 +612,36 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
               </div>
             )}
 
-            {paymentMethod === "wallet" ? (
+            {isCoveredByPackage ? (
+              <div className="flex justify-end gap-3 w-full">
+                <button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={onClose}
+                  className="px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs disabled:opacity-50 cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={handleConfirmCovered}
+                  className="px-6 py-2.5 font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 text-white bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20 active:scale-95 cursor-pointer"
+                >
+                  {isProcessingPayment ? (
+                    <>
+                      <LoaderCircle className="w-4 h-4 animate-spin" />
+                      <span>Đang xác nhận đặt chỗ...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Xác nhận đặt chỗ (Miễn phí 0 đ)</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            ) : paymentMethod === "wallet" ? (
               <div className="flex items-center justify-end gap-2.5 w-full">
                 <button
                   type="button"
@@ -510,10 +696,10 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                   type="button"
                   disabled={isBusy || isPaid}
                   onClick={handleCheckPayment}
-                  className={`px-5 py-2.5 font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer ${
+                  className={`px-5 py-2.5 font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 ${
                     isPaid
                       ? "bg-emerald-600 text-white shadow-emerald-600/30 cursor-wait"
-                      : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 active:scale-95 disabled:opacity-50"
+                      : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 active:scale-95 disabled:opacity-50 cursor-pointer"
                   }`}
                 >
                   {isPaid ? (
@@ -547,8 +733,8 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                 <button
                   type="button"
                   disabled={isBusy}
-                  onClick={() => onConfirmPayment(classPrice)}
-                  className="px-6 py-2.5 font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 text-white bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                  onClick={handleConfirmCounter}
+                  className="px-6 py-2.5 font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 shadow-emerald-600/20 text-white bg-emerald-600 hover:bg-emerald-500 active:scale-95 disabled:opacity-50 cursor-pointer"
                 >
                   {isProcessingPayment ? (
                     <>

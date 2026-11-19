@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import type { MemberSessionItem } from "../../types";
 import { MemberAPI } from "../../services/api";
 import { getRealCoachAvatar } from "../../utils/coachAvatar";
-import { getCounterPendingIds } from "./bookingTypes";
+import { getCounterPendingIds, removeCounterPendingId } from "./bookingTypes";
 import { parseScheduleTime } from "../../../../utils/scheduleTimeHelper";
 
 export function useMemberBookingData() {
@@ -38,7 +38,8 @@ export function useMemberBookingData() {
 
       const mappedClasses = (Array.isArray(availableClasses) ? availableClasses : []).map((item: any) => {
         const start = parseScheduleTime(item.scheduleTime);
-        const end = new Date(start.getTime() + Number(item.durationMinutes || 60) * 60000);
+        const durationMinutes = Number(item.durationMinutes || 60);
+        const end = new Date(start.getTime() + durationMinutes * 60000);
         const dateStr = [
           start.getFullYear(),
           String(start.getMonth() + 1).padStart(2, "0"),
@@ -59,6 +60,9 @@ export function useMemberBookingData() {
           level: item.level || "Mọi cấp độ",
           startTime: time(start),
           endTime: time(end),
+          startMs: start.getTime(),
+          endMs: end.getTime(),
+          durationMinutes,
           room: item.facilityName || "Studio Thể thao",
           coachId: item.coachId || "",
           coachName,
@@ -82,7 +86,15 @@ export function useMemberBookingData() {
       });
       setGroupClasses(mappedClasses);
 
-      const counterPendingIds = getCounterPendingIds();
+      // 1. Đồng bộ và làm sạch counterPendingIds nếu lớp đã được Lễ tân xác nhận hoặc đã có trong dbBookings
+      const rawCounterPendingIds = getCounterPendingIds();
+      (memberSchedule?.classBookings || []).forEach((b: any) => {
+        if (b.status === "confirmed" || b.status === "approved" || b.status === "completed") {
+          removeCounterPendingId(b.classId);
+        }
+      });
+      const activeCounterPendingIds = getCounterPendingIds();
+
       const dbBookings = (memberSchedule?.classBookings || []).map((booking: any) => {
         const start = parseScheduleTime(booking.scheduleTime);
         const end = new Date(start.getTime() + Number(booking.durationMinutes || 60) * 60000);
@@ -95,7 +107,7 @@ export function useMemberBookingData() {
         const coachName = booking.coachName || coachAccount?.fullName || "Huấn luyện viên phụ trách";
         const coachAvatar = getRealCoachAvatar(coachName, booking.coachAvatar || coachAccount?.avatarUrl, booking.coachId);
 
-        const isCounterPending = counterPendingIds.includes(String(booking.classId));
+        const isCounterPending = activeCounterPendingIds.includes(String(booking.classId));
         const effectiveStatus = isCounterPending ? "pending" : booking.status || "confirmed";
 
         return {
@@ -127,6 +139,44 @@ export function useMemberBookingData() {
           bookingStatus: effectiveStatus,
         };
       });
+
+      // Tạo session giả lập trạng thái chờ thanh toán tại quầy để hiển thị trên thẻ lớp học (nhưng không vào lịch)
+      const existingBookingClassIds = new Set(dbBookings.map((b: any) => String(b.classId)));
+      const pendingCounterSessions = activeCounterPendingIds
+        .filter((cid) => !existingBookingClassIds.has(String(cid)))
+        .map((cid) => {
+          const targetCls = mappedClasses.find((c) => String(c.id) === String(cid));
+          if (!targetCls) return null;
+          return {
+            id: targetCls.id,
+            bookingId: `pending-${targetCls.id}`,
+            classId: targetCls.id,
+            name: targetCls.name,
+            sport: targetCls.sport || "Lớp nhóm",
+            level: "Lớp nhóm",
+            type: "group",
+            date: targetCls.dateStr || "",
+            startTime: targetCls.startTime,
+            endTime: targetCls.endTime,
+            room: targetCls.room || "Studio Thể thao",
+            coachId: targetCls.coachId || "",
+            coachName: targetCls.coachName,
+            coachAvatar: targetCls.coachAvatar,
+            coachSpecialty: targetCls.coachSpecialty || "Huấn luyện viên",
+            coachPhone: "0901 234 567",
+            coachBio: targetCls.description,
+            coachRating: targetCls.coachRating ?? null,
+            coachExperienceYears: null,
+            price: targetCls.price ?? 0,
+            capacity: targetCls.capacity,
+            registeredCount: targetCls.registeredCount,
+            scheduleTime: targetCls.scheduleTime,
+            durationMinutes: 60,
+            status: "pending",
+            bookingStatus: "pending",
+          };
+        })
+        .filter(Boolean) as MemberSessionItem[];
 
       const dbPtBookings = (memberSchedule?.ptSessions || []).map((session: any) => {
         const start = new Date(session.scheduleTime);
@@ -160,10 +210,11 @@ export function useMemberBookingData() {
           scheduleTime: session.scheduleTime,
           durationMinutes: Number(session.durationMinutes || 60),
           status: session.status || "confirmed",
+          price: session.price,
         };
       });
 
-      setMySessions([...dbBookings, ...dbPtBookings]);
+      setMySessions([...dbBookings, ...dbPtBookings, ...pendingCounterSessions]);
       setPtSlots(Array.isArray(availablePtSlots) ? availablePtSlots : []);
     } catch (error: any) {
       console.error("Không thể tải dữ liệu đặt lịch từ database:", error);
@@ -223,7 +274,7 @@ export function useMemberBookingData() {
         rawStatus.includes("cancel") ||
         rawStatus.includes("huy") ||
         rawStatus === "rejected";
-      if (isCancelled) return false;
+      if (isCancelled || rawStatus === "pending") return false;
       try {
         if ((s as any).scheduleTime) {
           const start = new Date((s as any).scheduleTime);
@@ -245,7 +296,7 @@ export function useMemberBookingData() {
   }, [mySessions, getBookingStatus]);
 
   const myActiveClasses = useMemo(
-    () => mySessions.filter((s) => !isInactiveBookingStatus(getBookingStatus(s))),
+    () => mySessions.filter((s) => !isInactiveBookingStatus(getBookingStatus(s)) && String(getBookingStatus(s)).toLowerCase() !== "pending"),
     [mySessions, isInactiveBookingStatus, getBookingStatus]
   );
 

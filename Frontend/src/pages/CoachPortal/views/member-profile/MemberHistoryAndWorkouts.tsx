@@ -1,7 +1,8 @@
 import React from "react";
-import { Calendar, CheckCircle2, AlertCircle, Clock, Dumbbell, Sparkles } from "lucide-react";
+import { Calendar, CheckCircle2, AlertCircle, Clock, Dumbbell, Sparkles, XCircle } from "lucide-react";
 import type { CoachScreen } from "../../types";
 import type { MemberAttendanceHistoryItem, MemberWorkoutItem } from "./types";
+import { getAttendanceStatusInfo } from "./attendanceHelper";
 
 interface MemberHistoryAndWorkoutsProps {
   memberId?: string | null;
@@ -88,24 +89,19 @@ export const MemberHistoryAndWorkouts: React.FC<MemberHistoryAndWorkoutsProps> =
               </div>
 
               <div className="shrink-0">
-                {item.status === "attended" && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Có mặt
-                  </span>
-                )}
-                {item.status === "excused" && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-50 text-slate-700 dark:bg-slate-950/40 dark:text-slate-300 border border-slate-200 dark:border-slate-800/40">
-                    <AlertCircle className="w-3 h-3 text-slate-600" />
-                    Có phép
-                  </span>
-                )}
-                {item.status === "late" && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-50 text-slate-700 dark:bg-slate-950/40 dark:text-slate-300 border border-slate-200 dark:border-slate-800/40">
-                    <Clock className="w-3 h-3 text-slate-600" />
-                    Đi trễ
-                  </span>
-                )}
+                {(() => {
+                  const info = getAttendanceStatusInfo(item.status);
+                  return (
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border ${info.badgeClass}`}>
+                      {info.label === "Có mặt" && <CheckCircle2 className="w-3 h-3" />}
+                      {info.label === "Đi trễ" && <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400" />}
+                      {info.label === "Có phép" && <AlertCircle className="w-3 h-3 text-sky-600 dark:text-sky-400" />}
+                      {info.label === "Vắng mặt" && <XCircle className="w-3 h-3 text-rose-600 dark:text-rose-400" />}
+                      {info.label === "Chưa điểm danh" && <Clock className="w-3 h-3 text-slate-400" />}
+                      {info.label}
+                    </span>
+                  );
+                })()}
               </div>
             </div>
           ))}

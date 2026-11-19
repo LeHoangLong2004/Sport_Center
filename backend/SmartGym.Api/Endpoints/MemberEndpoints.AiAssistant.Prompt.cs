@@ -37,16 +37,16 @@ namespace SmartGym.Api.Endpoints
             sb.AppendLine("• Tiện ích chung: Tủ đồ locker riêng có khóa, mượn khăn tập miễn phí tại quầy, phòng tắm nóng lạnh, nước uống nóng lạnh miễn phí, gửi xe miễn phí tại hầm.");
             sb.AppendLine("• Tiện ích đặc biệt: Phòng xông hơi khô Sauna và bể bơi áp dụng theo các gói Plus / Premium / VIP hoặc gói chuyên biệt.");
             sb.AppendLine("• BẢNG GÓI THÀNH VIÊN (Nền tảng đặc quyền & chiết khấu):");
-            sb.AppendLine("  1. Hạng Cơ bản (Basic): Miễn phí trọn đời, sử dụng tủ đồ tiêu chuẩn trong ca tập, đặt lịch trước 24 giờ.");
-            sb.AppendLine("  2. Hạng Plus (149.000đ/tháng): Tự động giảm 5% gói lớp nhóm & 2% PT 1-1, 1 vé mời bạn bè/tháng, 1 lần đo InBody/tháng, đặt lịch trước 72 giờ.");
-            sb.AppendLine("  3. Hạng Premium VIP (299.000đ/tháng): Tự động giảm 10% gói lớp nhóm & 5% PT 1-1, MIỄN PHÍ phòng xông hơi khô Sauna & Bồn sục Jacuzzi đá muối, 2 vé mời bạn bè/tháng, InBody & Trợ lý AI không giới hạn, tủ riêng VIP + khăn cao cấp, đặt lịch trước 120 giờ (5 ngày).");
+            sb.AppendLine("  1. Hạng Cơ bản (Basic): Miễn phí trọn đời, sử dụng tủ đồ tiêu chuẩn trong ca tập, đặt lịch trước 24 giờ, 1 vé mời bạn bè/tháng.");
+            sb.AppendLine("  2. Hạng Plus (149.000đ/tháng): Tự động giảm 8% gói lớp nhóm & 5% PT 1-1, 3 vé mời bạn bè/tháng, mượn 1 khăn tập miễn phí mỗi buổi, đặt lịch trước 72 giờ.");
+            sb.AppendLine("  3. Hạng Premium VIP (299.000đ/tháng): Tự động giảm 15% gói lớp nhóm & 8% PT 1-1, MIỄN PHÍ phòng xông hơi khô Sauna & Bồn sục Jacuzzi đá muối, 5 vé mời bạn bè/tháng, tủ riêng VIP + khăn cao cấp, đặt lịch trước 120 giờ (5 ngày).");
             sb.AppendLine("• BẢNG GÓI MÔN TẬP (Quyền vào sàn tập theo từng môn):");
             sb.AppendLine("  1. Gym Fitness: Sàn gym hiện đại, máy cardio & dàn tạ cao cấp (350.000đ/tháng).");
             sb.AppendLine("  2. Bể bơi bốn mùa: Bể chuẩn thi đấu, điện phân muối khoáng, nước ấm quanh năm (450.000đ/tháng).");
             sb.AppendLine("  3. Yoga & Pilates: Studio thảm & Yoga võng bay thư giãn, HLV chuyên nghiệp (400.000đ/tháng).");
             sb.AppendLine("  4. Boxing & Kickfit: Sàn đấu boxing, bao cát, rèn phản xạ & đốt mỡ cực nhanh (450.000đ/tháng).");
             sb.AppendLine("  5. Huấn luyện viên cá nhân PT 1-1: Kèm riêng từng buổi theo mục tiêu (từ 500.000đ/buổi).");
-            sb.AppendLine("• Đặt lớp: tối đa 7 ngày trước, tối thiểu 30 phút trước giờ học; lớp đủ người sẽ khóa đặt chỗ.");
+            sb.AppendLine("• Đặt lớp: đặt trước giờ học bắt đầu; lớp đủ người sẽ khóa đặt chỗ.");
             sb.AppendLine("• Hủy lớp hợp lệ: trước giờ học ít nhất 2 tiếng; hủy muộn hoặc vắng không báo bị tính 1 buổi đã dùng.");
             sb.AppendLine("• Bảo lưu: mỗi gói tối đa 1 lần, tổng không quá 60 ngày (liên hệ Lễ tân).");
             sb.AppendLine("• Hoàn tiền: trong 7 ngày kể từ ngày kích hoạt và chưa dùng buổi nào, cần Quản lý duyệt (gửi phiếu hỗ trợ).");
@@ -79,7 +79,13 @@ namespace SmartGym.Api.Endpoints
                 sb.AppendLine("• Các cơ sở phòng tập:\n  - " + string.Join("\n  - ", ctx.CenterFacilities));
             sb.AppendLine("• Chi tiết tiện nghi các phòng: Studio 1 (Yoga/Pilates chuyên sâu, thảm tập, bóng tập), Studio 2 (Dance & Zumba sàn gỗ giảm chấn, âm thanh hiện đại), Studio 3 (Sân cầu lông thảm cao su chống trượt), Studio 4 (Khu Boxing Ring sàn đấu tiêu chuẩn và bao cát), Gym Area (Khu tập Gym máy Smith, giàn tạ LifeFitness, tạ đơn 2-50kg, khu cardio Technogym), Hồ Bơi AquaFit (Bể bơi 4 mùa nước ấm muối khoáng), Sân bóng Futsal & sân bóng đá mini 5 người cỏ nhân tạo.");
             sb.AppendLine("Hướng dẫn cơ sở vật chất: Trả lời rõ vị trí, máy móc, trang thiết bị của phòng tập tương ứng và điều hướng tới Đặt lịch (action = \"booking\").");
-            sb.AppendLine("• QUY TẮC ĐIỀU HƯỚNG MÀN HÌNH:");
+            sb.AppendLine();
+            sb.AppendLine("[LỊCH CÁC LỚP HỌC ĐANG MỞ TẠI TRUNG TÂM (CENTER SCHEDULED CLASSES)]");
+            if (ctx.CenterClasses.Count > 0)
+                sb.AppendLine("• Danh sách các lớp học sắp diễn ra tại trung tâm:\n  - " + string.Join("\n  - ", ctx.CenterClasses));
+            sb.AppendLine();
+            sb.AppendLine("• QUY TẮC HIỂU Ý ĐỊNH & ĐIỀU HƯỚNG MÀN HÌNH:");
+            sb.AppendLine("  - Khi hội viên hỏi về HLV phụ trách lớp/buổi tập (ví dụ: 'Gói/lớp Gym Cơ Bản sắp tới sẽ có HLV nào phụ trách', 'ai dạy lớp Yoga', 'lớp Gym Cơ Bản ai phụ trách'): Hội viên có thể quen gọi 'Gói' thay cho 'Lớp'. Hãy tra cứu Lịch sắp tới của hội viên hoặc Lịch lớp của trung tâm để trả lời chính xác tên HLV, thời gian, phòng học và điều hướng tới Tin nhắn HLV (action = 'chat') hoặc Đặt lịch (action = 'booking'). Tuyệt đối KHÔNG trả về danh sách gói tập active!");
             sb.AppendLine("  - Hội viên hỏi tư vấn gói môn tập (Gym, Bơi, Yoga, Boxing, PT...) → dùng action = \"packages_sport\".");
             sb.AppendLine("  - Hội viên hỏi tư vấn gói thành viên VIP, nâng cấp hạng thẻ → dùng action = \"packages_membership\".");
             sb.AppendLine("  - Hội viên hỏi xem gói tập chung chung → dùng action = \"packages\".");
@@ -187,6 +193,54 @@ namespace SmartGym.Api.Endpoints
             timestamp = ToVn(DateTime.UtcNow).ToString("HH:mm")
         };
 
+        private static string NormalizeVn(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+            var normalized = text.Normalize(NormalizationForm.FormD);
+            var sb = new StringBuilder();
+            foreach (var c in normalized)
+            {
+                var category = CharUnicodeInfo.GetUnicodeCategory(c);
+                if (category != UnicodeCategory.NonSpacingMark)
+                    sb.Append(c);
+            }
+            return sb.ToString().Normalize(NormalizationForm.FormC).ToLowerInvariant()
+                .Replace('đ', 'd')
+                .Replace('Đ', 'd')
+                .Trim();
+        }
+
+        private static bool MatchesClassName(string query, string className)
+        {
+            if (string.IsNullOrWhiteSpace(query) || string.IsNullOrWhiteSpace(className)) return false;
+            var q = query.ToLowerInvariant();
+            var c = className.ToLowerInvariant();
+            if (q.Contains(c)) return true;
+
+            var normQ = NormalizeVn(query);
+            var normC = NormalizeVn(className);
+            if (normQ.Contains(normC)) return true;
+
+            var words = normC.Split(new[] { ' ', '-', '–', '/', '(', ')' }, StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length >= 2 && normQ.Contains(string.Join(" ", words)))
+                return true;
+
+            return false;
+        }
+
+        private static string ExtractCoachName(string sessionText)
+        {
+            if (string.IsNullOrWhiteSpace(sessionText)) return "Huấn luyện viên phụ trách";
+            var idx = sessionText.LastIndexOf("HLV ");
+            if (idx >= 0)
+            {
+                var candidate = sessionText[(idx + 4)..].Trim();
+                var cleaned = Regex.Replace(candidate, @"\s*\(.*?\)$", "").Trim();
+                if (!string.IsNullOrWhiteSpace(cleaned)) return cleaned;
+            }
+            return "Huấn luyện viên phụ trách";
+        }
+
         private static (string Answer, string Action) BuildFallbackAnswer(string question, MemberAiContext ctx)
         {
             var q = question.ToLowerInvariant();
@@ -218,6 +272,110 @@ namespace SmartGym.Api.Endpoints
                 return ($"💳 Thông tin Ví thành viên SportCenter của bạn:\n• Số dư hiện tại: {balStr}{txInfo}\n💡 Bạn có thể nạp tiền tự động 24/7 bằng cách quét mã VietQR/SePay tại mục Thanh toán & Lịch sử giao dịch.", "payments");
             }
 
+            // ── CÂU HỎI VỀ HLV PHỤ TRÁCH LỚP / BUỔI TẬP SẮP TỚI ──
+            var isCoachInquiry = Has("hlv nào", "hlv nao", "ai phụ trách", "ai phu trach", "ai dạy", "ai day",
+                                     "ai hướng dẫn", "ai huong dan", "hlv phụ trách", "hlv phu trach",
+                                     "thầy nào", "thay nao", "cô nào", "co nao", "ai đứng lớp", "ai dung lop",
+                                     "hlv lớp", "hlv goi", "hlv gói", "huấn luyện viên nào", "huan luyen vien nao");
+
+            if (isCoachInquiry)
+            {
+                // 1. Kiểm tra xem câu hỏi có nhắc đích danh tên lớp nào trong lịch sắp tới của hội viên không
+                foreach (var s in ctx.UpcomingSessionItems)
+                {
+                    var matchName = Regex.Match(s.Text, "\"(.*?)\"");
+                    var className = matchName.Success ? matchName.Groups[1].Value : "";
+
+                    if (!string.IsNullOrEmpty(className) && MatchesClassName(question, className))
+                    {
+                        var coachName = ExtractCoachName(s.Text);
+                        return ($"🏋️ Lớp \"{className}\" sắp tới của {ctx.FullName} sẽ do HLV {coachName} phụ trách hướng dẫn nhé!\n\n" +
+                                $"📅 Chi tiết lịch học của bạn:\n• {s.Text}\n\n" +
+                                $"💡 Bạn có thể nhắn tin trao đổi bài tập với HLV trước giờ học tại mục Tin nhắn HLV nhé!", "chat");
+                    }
+                }
+
+                // 2. Tìm trong danh sách các lớp đang mở của trung tâm (ctx.CenterClasses)
+                foreach (var cText in ctx.CenterClasses)
+                {
+                    var matchName = Regex.Match(cText, "\"(.*?)\"");
+                    var className = matchName.Success ? matchName.Groups[1].Value : "";
+
+                    if (!string.IsNullOrEmpty(className) && MatchesClassName(question, className))
+                    {
+                        var coachName = ExtractCoachName(cText);
+                        return ($"🏋️ Lớp \"{className}\" sắp tới tại trung tâm sẽ do HLV {coachName} phụ trách hướng dẫn nhé!\n\n" +
+                                $"📅 Chi tiết lịch lớp:\n• {cText}\n\n" +
+                                $"👉 Bạn có thể vào mục Khám phá & Đặt lịch để giữ chỗ ngay nhé!", "booking");
+                    }
+                }
+
+                // 3. Kiểm tra theo tên bộ môn trong lịch sắp tới của hội viên (Gym, Bơi, Yoga, Boxing, Zumba...)
+                foreach (var s in ctx.UpcomingSessionItems)
+                {
+                    var matchSport = Regex.Match(s.Text, @"\((.*?)\)");
+                    var sportName = matchSport.Success ? matchSport.Groups[1].Value : "";
+                    if (!string.IsNullOrEmpty(sportName) && MatchesClassName(question, sportName))
+                    {
+                        var coachName = ExtractCoachName(s.Text);
+                        return ($"🏋️ Buổi tập môn {sportName} sắp tới của bạn sẽ do HLV {coachName} phụ trách hướng dẫn:\n• {s.Text}\n\n💡 Bạn có thể nhắn tin trao đổi bài tập với HLV tại mục Tin nhắn HLV nhé!", "chat");
+                    }
+                }
+
+                // 4. Kiểm tra theo tên bộ môn trong các lớp của trung tâm
+                foreach (var cText in ctx.CenterClasses)
+                {
+                    var matchSport = Regex.Match(cText, @"\((.*?)\)");
+                    var sportName = matchSport.Success ? matchSport.Groups[1].Value : "";
+                    if (!string.IsNullOrEmpty(sportName) && MatchesClassName(question, sportName))
+                    {
+                        var coachName = ExtractCoachName(cText);
+                        return ($"🏋️ Lớp môn {sportName} sắp tới tại trung tâm sẽ do HLV {coachName} phụ trách hướng dẫn:\n• {cText}\n\n👉 Bạn có thể vào mục Khám phá & Đặt lịch để tham gia nhé!", "booking");
+                    }
+                }
+
+                // 5. Nếu hỏi chung "buổi sắp tới có HLV nào phụ trách"
+                if (ctx.UpcomingSessionItems.Count > 0)
+                {
+                    var next = ctx.UpcomingSessionItems.First();
+                    var coachName = ExtractCoachName(next.Text);
+                    return ($"🏋️ Buổi tập sắp tới gần nhất của bạn sẽ do HLV {coachName} phụ trách:\n• {next.Text}\n\n💡 Bạn có thể vào mục Lịch của tôi để xem chi tiết hoặc nhắn tin với HLV tại mục Tin nhắn HLV.", "schedule");
+                }
+
+                // 6. Nếu hỏi về HLV cá nhân
+                if (!string.IsNullOrWhiteSpace(ctx.AssignedCoachInfo))
+                {
+                    return ($"🏋️ Huấn luyện viên cá nhân phụ trách của bạn là: {ctx.AssignedCoachInfo}\nBạn có thể nhắn tin trực tiếp với HLV tại mục Tin nhắn HLV nhé!", "chat");
+                }
+
+                return ("🏋️ Bạn có thể vào mục Khám phá & Đặt lịch để xem danh sách lớp học và Huấn luyện viên phụ trách từng ca tập nhé!", "booking");
+            }
+
+            // ── CÂU HỎI VỀ THỜI GIAN / ĐỊA ĐIỂM CỦA MỘT LỚP CỤ THỂ TRONG LỊCH ──
+            foreach (var s in ctx.UpcomingSessionItems)
+            {
+                var matchName = Regex.Match(s.Text, "\"(.*?)\"");
+                var className = matchName.Success ? matchName.Groups[1].Value : "";
+
+                if (!string.IsNullOrEmpty(className) && MatchesClassName(question, className) &&
+                    Has("mấy giờ", "may gio", "khi nào", "khi nao", "ngày nào", "ngay nao", "ở đâu", "o dau", "phòng nào", "phong nao", "lịch", "lich"))
+                {
+                    return ($"📅 Thông tin buổi học \"{className}\" sắp tới của bạn:\n• {s.Text}\n\n💡 Bạn nhớ đến trước giờ tập 10-15 phút để khởi động và chuẩn bị trang phục nhé!", "schedule");
+                }
+            }
+
+            foreach (var cText in ctx.CenterClasses)
+            {
+                var matchName = Regex.Match(cText, "\"(.*?)\"");
+                var className = matchName.Success ? matchName.Groups[1].Value : "";
+
+                if (!string.IsNullOrEmpty(className) && MatchesClassName(question, className) &&
+                    Has("mấy giờ", "may gio", "khi nào", "khi nao", "ngày nào", "ngay nao", "ở đâu", "o dau", "phòng nào", "phong nao", "lịch", "lich"))
+                {
+                    return ($"📅 Thông tin lớp \"{className}\" sắp tới tại trung tâm:\n• {cText}\n\n👉 Bạn có thể vào mục Khám phá & Đặt lịch để đăng ký giữ chỗ nhé!", "booking");
+                }
+            }
+
             if (Has("tư vấn gói", "tu van goi", "bảng giá", "bang gia", "báo giá", "bao gia", "giá gói", "gia goi",
                     "người mới", "nguoi moi", "nên mua", "nen mua", "gói nào", "goi nao", "quyền lợi gói",
                     "bao nhiêu một tháng", "bao nhieu mot thang", "so sánh gói", "các gói", "cac goi", "danh mục gói",
@@ -229,14 +387,87 @@ namespace SmartGym.Api.Endpoints
                 return ($"📋 Bảng giá & Danh mục gói tập tại SportCenter:\n{pkgsText}\n💡 Gợi ý: Người mới bắt đầu nên chọn gói Basic hoặc Plus để làm quen nền tảng. Nếu muốn tập đa dạng môn (Bơi, Boxing, Yoga) và trải nghiệm Sauna thư giãn, bạn nên chọn gói VIP Toàn diện!\nBạn có thể xem chi tiết và đăng ký tại mục Gói tập.", "packages");
             }
 
-            if (Has("gói của tôi", "gói đã mua", "hạn gói", "hết hạn", "gia hạn", "gói đang dùng", "gói"))
+            // ── CÂU HỎI VỀ GÓI TẬP / HẠNG THÀNH VIÊN CỦA CHÍNH HỘI VIÊN ──
+            var isPersonalPackageQuery =
+                Has("gói của tôi", "goi cua toi", "gói tập của tôi", "goi tap cua toi",
+                    "gói của mình", "goi cua minh", "gói tập của mình", "goi tap cua minh",
+                    "gói đã mua", "goi da mua", "gói tập đã mua", "goi tap da mua",
+                    "gói đang dùng", "goi dang dung", "gói tập đang dùng", "goi tap dang dung",
+                    "gói đang có", "goi dang co", "gói tập đang có", "goi tap dang co",
+                    "gói đang tập", "goi dang tap", "gói tập đang tập", "goi tap dang tap",
+                    "đang có gói", "dang co goi", "đang dùng gói", "dang dung goi", "đã mua gói", "da mua goi",
+                    "có gói nào", "co goi nao", "có gói gì", "co goi gi", "tôi đang có", "toi dang co",
+                    "tôi có gói", "toi co goi", "mình có gói", "minh co goi", "gói tôi có", "goi toi co",
+                    "hạng của tôi", "hang cua toi", "hạng của mình", "hang cua minh",
+                    "hạng thành viên của tôi", "hang thanh vien cua toi", "hạng thành viên của mình", "hang thanh vien cua minh",
+                    "gói thành viên của tôi", "goi thanh vien cua toi", "gói thành viên của mình", "goi thanh vien cua minh",
+                    "tôi đang ở hạng", "toi dang o hang", "tôi là hạng", "toi la hang",
+                    "tôi hạng gì", "toi hang gi", "hạng thẻ của tôi", "hang the cua toi",
+                    "hạn gói", "han goi", "hết hạn", "het han", "gia hạn", "gia han",
+                    "còn hạn bao lâu", "con han bao lau", "còn hạn trong bao lâu", "con han trong bao lau",
+                    "còn bao nhiêu ngày", "con bao nhieu ngay", "còn bao lâu", "con bao lau",
+                    "khi nào hết hạn", "khi nao het han", "bao giờ hết hạn", "bao gio het han",
+                    "hết hạn khi nào", "het han khi nao", "hết hạn ngày nào", "het han ngay nao",
+                    "ngày hết hạn", "ngay het han", "hạn dùng", "han dung", "hạn sử dụng", "han su dung",
+                    "thời hạn gói", "thoi han goi", "gói còn hạn", "goi con han", "gói tập còn hạn", "goi tap con han",
+                    "còn hạn không", "con han khong", "thời hạn", "thoi han")
+                || ((Has("gói", "goi", "hạng", "hang", "thành viên", "thanh vien") || Has("tôi", "toi", "mình", "minh"))
+                    && Has("còn hạn", "con han", "hết hạn", "het han", "bao lâu", "bao lau", "bao nhiêu ngày", "bao nhieu ngay", "khi nào", "khi nao", "thời hạn", "thoi han", "ngày nào", "ngay nao", "trong bao lâu", "trong bao lau"));
+
+            if (isPersonalPackageQuery)
             {
                 if (ctx.ActivePackages.Count > 0)
                 {
-                    return ("💳 Gói tập đang có hiệu lực của bạn:\n• " + string.Join("\n• ", ctx.ActivePackages) +
-                            "\nBạn có thể gia hạn hoặc nâng cấp gói tại mục Gói tập.", "packages");
+                    var membershipPkgs = ctx.ActivePackages.Where(p =>
+                        p.Contains("plus", StringComparison.OrdinalIgnoreCase) ||
+                        p.Contains("basic", StringComparison.OrdinalIgnoreCase) ||
+                        p.Contains("premium", StringComparison.OrdinalIgnoreCase) ||
+                        p.Contains("hạng", StringComparison.OrdinalIgnoreCase) ||
+                        p.Contains("thành viên", StringComparison.OrdinalIgnoreCase)).ToList();
+
+                    var sportPkgs = ctx.ActivePackages.Except(membershipPkgs).ToList();
+
+                    var sbPkg = new StringBuilder();
+                    sbPkg.AppendLine($"💳 Thông tin Gói & Hạng thành viên hiện tại của {ctx.FullName}:");
+
+                    if (membershipPkgs.Count > 0)
+                    {
+                        sbPkg.AppendLine("👑 Hạng thành viên đang áp dụng:");
+                        foreach (var m in membershipPkgs) sbPkg.AppendLine($"• {m}");
+                    }
+
+                    if (sportPkgs.Count > 0)
+                    {
+                        sbPkg.AppendLine("🥋 Gói môn tập đang kích hoạt:");
+                        foreach (var s in sportPkgs) sbPkg.AppendLine($"• {s}");
+                    }
+
+                    if (membershipPkgs.Count == 0 && sportPkgs.Count == 0)
+                    {
+                        foreach (var p in ctx.ActivePackages) sbPkg.AppendLine($"• {p}");
+                    }
+
+                    if (ctx.PackageBenefits.Count > 0)
+                    {
+                        sbPkg.AppendLine("\n✨ Tiện ích & đặc quyền của bạn:");
+                        foreach (var b in ctx.PackageBenefits.Take(3)) sbPkg.AppendLine($"• {b}");
+                    }
+
+                    sbPkg.Append("\n💡 Bạn có thể gia hạn hoặc nâng cấp gói thành viên tại mục Gói tập nhé!");
+                    return (sbPkg.ToString().Trim(), "packages");
                 }
-                return ("💳 Hiện bạn chưa có gói tập nào còn hiệu lực. Hãy xem các gói Gym, Yoga, Bơi, Boxing đang mở bán tại mục Gói tập để đăng ký nhé!", "packages");
+
+                return ("💳 Hiện bạn chưa có gói tập hoặc hạng thành viên nào còn hiệu lực. Hãy xem các gói Thành viên VIP và Gói môn tập đang mở bán tại mục Gói tập để đăng ký nhé!", "packages");
+            }
+
+            if (Has("nhận xét", "nhan xet", "đánh giá", "danh gia", "hlv nói gì", "hlv noi gi", "tiến độ", "tien do"))
+            {
+                if (ctx.RecentCoachAssessments.Count > 0)
+                {
+                    return ($"⭐ Đánh giá & nhận xét gần đây từ HLV dành cho {ctx.FullName}:\n• " + string.Join("\n• ", ctx.RecentCoachAssessments.Take(3)) +
+                            "\n\n💡 Bạn có thể vào mục Điểm danh > Đánh giá từ HLV để xem chi tiết các chỉ số thể lực nhé!", "attendance");
+                }
+                return ($"📝 Hiện tại chưa có đánh giá mới từ HLV. Sau mỗi buổi tập kết thúc, Huấn luyện viên sẽ cập nhật nhận xét và đánh giá thể lực cho bạn tại mục Điểm danh nhé!", "attendance");
             }
 
             if (Has("hlv", "huấn luyện viên", "huan luyen vien", "coach", "pt", "kèm", "kem", "danh sách hlv",
@@ -337,12 +568,93 @@ namespace SmartGym.Api.Endpoints
                 return ("📅 Hiện hệ thống chưa ghi nhận buổi tập nào đã hoàn thành trong quá khứ của bạn. Khi bạn tham gia các lớp học hoặc buổi tập PT, lịch sử sẽ được cập nhật tại đây và mục Điểm danh nhé!", "schedule");
             }
 
-            if (Has("lịch", "buổi", "hôm nay", "ngày mai", "mấy giờ", "học gì", "tập gì"))
+            var nowVn = ToVn(DateTime.UtcNow);
+
+            // 1. CÂU HỎI VỀ LỊCH HÔM NAY (TODAY)
+            if (Has("hôm nay", "hom nay", "tối nay", "toi nay", "chiều nay", "chieu nay", "sáng nay", "sang nay", "trưa nay", "trua nay"))
+            {
+                var todaySessions = ctx.UpcomingSessionItems
+                    .Where(s => s.Start.Date == nowVn.Date)
+                    .Select(s => s.Text)
+                    .ToList();
+
+                if (todaySessions.Count > 0)
+                {
+                    return ($"🗓️ Lịch tập HÔM NAY ({nowVn:dd/MM}) của {ctx.FullName}:\n• " + string.Join("\n• ", todaySessions) +
+                            "\n\n💡 Bạn nhớ có mặt trước giờ bắt đầu khoảng 10-15 phút để chuẩn bị và khởi động nhé!", "schedule");
+                }
+
+                var nextUpcoming = ctx.UpcomingSessionItems
+                    .Where(s => s.Start > nowVn)
+                    .OrderBy(s => s.Start)
+                    .Select(s => s.Text)
+                    .FirstOrDefault();
+
+                if (!string.IsNullOrEmpty(nextUpcoming))
+                {
+                    return ($"🗓️ Hôm nay ({nowVn:dd/MM}), {ctx.FullName} KHÔNG có lịch tập nào cả. Bạn có thể dành thời gian nghỉ ngơi thư giãn!\n\n📅 Buổi tập tiếp theo sắp tới của bạn là:\n• {nextUpcoming}\nBạn có thể kiểm tra chi tiết tại mục Lịch của tôi.", "schedule");
+                }
+
+                return ($"🗓️ Hôm nay ({nowVn:dd/MM}), {ctx.FullName} không có lịch tập nào. Bạn có thể vào mục Khám phá & Đặt lịch để đăng ký thêm lớp học nhé!", "booking");
+            }
+
+            // 2. CÂU HỎI VỀ LỊCH NGÀY MAI (TOMORROW)
+            if (Has("ngày mai", "ngay mai", "mai", "sáng mai", "sang mai", "tối mai", "toi mai", "chiều mai", "chieu mai"))
+            {
+                var tomorrow = nowVn.Date.AddDays(1);
+                var tomorrowSessions = ctx.UpcomingSessionItems
+                    .Where(s => s.Start.Date == tomorrow)
+                    .Select(s => s.Text)
+                    .ToList();
+
+                if (tomorrowSessions.Count > 0)
+                {
+                    return ($"🗓️ Lịch tập NGÀY MAI ({tomorrow:dd/MM}) của {ctx.FullName}:\n• " + string.Join("\n• ", tomorrowSessions) +
+                            "\n\n💡 Chúc bạn có buổi tập thật hiệu quả vào ngày mai!", "schedule");
+                }
+
+                var nextUpcoming = ctx.UpcomingSessionItems
+                    .Where(s => s.Start > nowVn)
+                    .OrderBy(s => s.Start)
+                    .Select(s => s.Text)
+                    .FirstOrDefault();
+
+                if (!string.IsNullOrEmpty(nextUpcoming))
+                {
+                    return ($"🗓️ Ngày mai ({tomorrow:dd/MM}), {ctx.FullName} chưa có lịch tập nào.\n\n📅 Buổi tập gần nhất sắp tới của bạn là:\n• {nextUpcoming}\nBạn có thể kiểm tra chi tiết tại mục Lịch của tôi.", "schedule");
+                }
+
+                return ($"🗓️ Ngày mai ({tomorrow:dd/MM}), {ctx.FullName} chưa có lịch tập nào. Bạn có thể vào mục Đặt lịch để giữ chỗ trước nhé!", "booking");
+            }
+
+            // 3. CÂU HỎI VỀ ĐÁNH GIÁ & NHẬN XÉT CỦA HLV
+            if (Has("nhận xét", "nhan xet", "đánh giá", "danh gia", "hlv nói gì", "hlv noi gi", "tiến độ", "tien do"))
+            {
+                if (ctx.RecentCoachAssessments.Count > 0)
+                {
+                    return ($"⭐ Đánh giá & nhận xét gần đây từ HLV dành cho {ctx.FullName}:\n• " + string.Join("\n• ", ctx.RecentCoachAssessments.Take(3)) +
+                            "\n\n💡 Bạn có thể vào mục Điểm danh > Đánh giá từ HLV để xem chi tiết các chỉ số thể lực nhé!", "attendance");
+                }
+                return ($"📝 Hiện tại chưa có đánh giá mới từ HLV. Sau mỗi buổi tập kết thúc, Huấn luyện viên sẽ cập nhật nhận xét và đánh giá thể lực cho bạn tại mục Điểm danh nhé!", "attendance");
+            }
+
+            // 4. CÂU HỎI VỀ DINH DƯỠNG & BỮA ĂN
+            if (Has("bữa ăn", "bua an", "dinh dưỡng", "dinh duong", "ăn gì", "an gi", "thực đơn", "thuc don", "sau tập", "sau tap", "trước tập", "truoc tap", "uống gì", "uong gi"))
+            {
+                return ("🥗 Gợi ý dinh dưỡng sau tập luyện từ SportCenter:\n" +
+                        "• Bổ sung Protein (20-30g): Giúp phục hồi và tái tạo sợi cơ nhanh chóng (Whey Protein, ức gà, trứng luộc, sữa chua Hy Lạp hoặc thanh bar Protein).\n" +
+                        "• Nạp Carb tinh bột hấp thu chậm: Bù đắp lượng Glycogen đã tiêu hao trong ca tập (khoai lang, chuối chín, bánh mì nguyên cám, yến mạch).\n" +
+                        "• Bù nước & Khoáng chất: Uống 300-500ml nước lọc hoặc nước điện giải để chống mất nước và mỏi cơ.\n" +
+                        "👉 Bạn có thể ghé mục Cửa hàng để tham khảo các loại nước bù khoáng và thanh Protein Bar nhé!", "shop");
+            }
+
+            // 5. CÂU HỎI VỀ LỊCH SẮP TỚI / LỊCH TẬP CHUNG
+            if (Has("sắp tới", "sap toi", "tuần này", "tuan nay", "các buổi", "cac buoi", "lịch", "lich", "buổi tập", "buoi tap", "lớp đã đặt", "lop da dat", "học gì", "hoc gi", "tập gì", "tap gi", "khi nào", "khi nao"))
             {
                 if (ctx.UpcomingSessions.Count > 0)
                 {
-                    return ($"📅 Lịch sắp tới của {ctx.FullName}:\n• " + string.Join("\n• ", ctx.UpcomingSessions.Take(4)) +
-                            "\nBạn có thể xem chi tiết hoặc hủy lịch (trước giờ học ít nhất 2 tiếng) tại mục Lịch của tôi.", "schedule");
+                    return ($"🗓️ Lịch sắp tới của {ctx.FullName}:\n• " + string.Join("\n• ", ctx.UpcomingSessions.Take(5)) +
+                            "\n\nBạn có thể xem chi tiết hoặc hủy lịch (trước giờ học ít nhất 2 tiếng) tại mục Lịch của tôi.", "schedule");
                 }
                 return ("📅 Hiện mình chưa thấy buổi tập nào sắp tới của bạn. Bạn có thể đặt lớp nhóm hoặc PT 1-1 tại mục Khám phá & Đặt lịch nhé!", "booking");
             }
@@ -367,23 +679,16 @@ namespace SmartGym.Api.Endpoints
                         "👉 Bạn bấm nút bên dưới để xem chi tiết và kích hoạt gói môn tập nhé!", "packages_sport");
             }
 
-            if (Has("gói vip", "goi vip", "vip", "premium", "gói thành viên", "goi thanh vien", "thành viên", "thanh vien", "nâng cấp", "nang cap", "hạng thẻ", "hang the", "hạng thành viên", "hang thanh vien", "plus", "đặc quyền", "dac quyen"))
+            if (Has("gói vip", "goi vip", "bảng hạng thành viên", "bang hang thanh vien", "hạng thành viên gồm",
+                    "các hạng thành viên", "cac hang thanh vien", "nâng cấp vip", "nang cap vip",
+                    "hạng thẻ vip", "hang the vip", "quyền lợi vip", "quyen loi vip", "đặc quyền vip",
+                    "quyền lợi thành viên", "gói thành viên", "goi thanh vien", "thành viên vip"))
             {
                 return ("👑 Bảng Hạng Thành Viên tại SportCenter gồm 3 gói đặc quyền:\n" +
-                        "• Hạng Cơ bản (Basic): Miễn phí trọn đời, sử dụng tủ đồ tiêu chuẩn trong ca tập, đặt lịch trước 24 giờ.\n" +
-                        "• Hạng Plus (149.000đ/tháng): Tự động GIẢM 5% gói lớp / 2% PT 1-1, 1 vé mời bạn bè/tháng, 1 lần đo InBody định kỳ/tháng, đặt lịch trước 72 giờ.\n" +
-                        "• Hạng Premium VIP (299.000đ/tháng): Tự động GIẢM 10% gói lớp / 5% PT 1-1, MIỄN PHÍ phòng xông hơi Sauna & Jacuzzi đá muối, 2 vé mời bạn bè/tháng, InBody không giới hạn, tủ riêng VIP + khăn cao cấp, đặt lịch trước 120 giờ.\n" +
+                        "• Hạng Cơ bản (Basic): Miễn phí trọn đời, sử dụng tủ đồ tiêu chuẩn trong ca tập, đặt lịch trước 24 giờ, 1 vé mời bạn bè/tháng.\n" +
+                        "• Hạng Plus (149.000đ/tháng): Tự động GIẢM 8% khi mua gói môn & ca tập lẻ (5% PT 1-1), 3 vé mời bạn bè/tháng, mượn 1 khăn tập miễn phí mỗi buổi, đặt lịch trước 72 giờ.\n" +
+                        "• Hạng Premium VIP (299.000đ/tháng): Tự động GIẢM 15% khi mua gói môn & ca tập lẻ (8% PT 1-1), MIỄN PHÍ phòng xông hơi Sauna & Jacuzzi đá muối, 5 vé mời bạn bè/tháng, tủ riêng VIP + khăn cao cấp, đặt lịch trước 120 giờ.\n" +
                         "👉 Bạn bấm nút bên dưới để xem chi tiết và nâng cấp hạng VIP nhé!", "packages_membership");
-            }
-
-            if (Has("hạn", "hết hạn", "gia hạn", "còn hạn", "con han", "gói của tôi", "goi cua toi", "gói đang tập", "đang có gói"))
-            {
-                if (ctx.ActivePackages.Count > 0)
-                {
-                    return ("💳 Gói tập đang có hiệu lực của bạn:\n• " + string.Join("\n• ", ctx.ActivePackages) +
-                            "\nBạn có thể gia hạn hoặc mua thêm gói tại mục Gói tập.", "packages");
-                }
-                return ("💳 Hiện bạn chưa có gói môn tập nào còn hiệu lực. SportCenter đang mở bán các gói Gym, Yoga, Bơi, Boxing và Gói thành viên VIP với nhiều ưu đãi. Bạn xem tại mục Gói tập nhé!", "packages_sport");
             }
 
             if (Has("giờ mở cửa", "mở cửa", "đóng cửa"))
@@ -401,7 +706,28 @@ namespace SmartGym.Api.Endpoints
                 return ("🏋️ Giáo án và bài tập về nhà HLV giao cho bạn nằm ở mục Giáo án & Bài tập. Nếu cần hướng dẫn kỹ thuật cụ thể, bạn có thể nhắn trực tiếp cho HLV.", "workouts");
             }
 
-            return ("⚠️ Hiện tại hệ thống không thể kết nối tới mô hình AI để trả lời câu hỏi này. Bạn vui lòng kiểm tra lại cấu hình API key của AI hoặc gửi Phiếu hỗ trợ để được đội ngũ HLV & Lễ tân tư vấn trực tiếp nhé!", "support_ticket");
+            if (Has("chào", "chao", "hello", "hi ", "hey", "alo", "bắt đầu", "bat dau", "giúp gì", "giup gi", "hướng dẫn", "huong dan"))
+            {
+                return ($"👋 Xin chào {ctx.FullName}! Tôi là Trợ lý AI của SportCenter. Tôi có thể hỗ trợ bạn:\n" +
+                        "• Tra cứu lịch tập hôm nay, ngày mai hoặc buổi sắp tới\n" +
+                        "• Kiểm tra thời hạn gói tập & hạng thành viên\n" +
+                        "• Kiểm tra số dư ví hội viên & hướng dẫn nạp tiền\n" +
+                        "• Tra cứu thông tin HLV phụ trách & lớp học\n" +
+                        "• Hướng dẫn tiện ích (khăn, tủ đồ, gửi xe, InBody)\n\n" +
+                        "👉 Bạn hãy nhập câu hỏi bên dưới để được giải đáp ngay nhé!", "none");
+            }
+
+            if (Has("liên hệ", "lien he", "hotline", "sđt", "sdt", "số điện thoại", "so dien thoai", "địa chỉ", "dia chi"))
+            {
+                return ("🏢 Trung tâm Thể thao SportCenter:\n• Địa chỉ: Tòa nhà SportCenter, Khu Đô thị mới, TP. Hồ Chí Minh\n• Giờ hoạt động: 06:00 - 22:00 hàng ngày (kể cả Thứ 7, Chủ Nhật & ngày Lễ)\n• Hotline hỗ trợ: 1900 6868 hoặc gửi Phiếu hỗ trợ ngay trên ứng dụng.", "support_ticket");
+            }
+
+            return ($"🤖 Tôi là Trợ lý SportCenter! Bạn có thể hỏi tôi về:\n" +
+                    "• 📅 Lịch tập: \"Hôm nay có lịch gì?\", \"Lịch ngày mai\", \"Buổi tập sắp tới\"\n" +
+                    "• 💳 Gói tập: \"Gói tập của tôi còn hạn trong bao lâu?\", \"Hạng thành viên của tôi\"\n" +
+                    "• 💰 Ví tiền: \"Số dư ví của tôi\", \"Cách nạp tiền\"\n" +
+                    "• 🏋️ HLV & Lớp học: \"Ai phụ trách buổi tới?\", \"Lớp yoga mấy giờ?\"\n\n" +
+                    "Nếu cần hỗ trợ kỹ thuật hoặc khiếu nại, bạn hãy gửi Phiếu hỗ trợ bên dưới để đội ngũ Lễ tân & HLV tư vấn trực tiếp nhé!", "support_ticket");
         }
     }
 }

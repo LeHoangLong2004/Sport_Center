@@ -9,6 +9,7 @@ import { GroupClassesTab } from "./booking/GroupClassesTab";
 import { PtSlotsTab } from "./booking/PtSlotsTab";
 import { MyClassesTab } from "./booking/MyClassesTab";
 import { BookingModals } from "./booking/BookingModals";
+import { parseScheduleTime } from "../../../utils/scheduleTimeHelper";
 
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
@@ -67,11 +68,15 @@ export default function MemberBooking({ onNavigate }: Props) {
     isCancelling,
     bookingPtSlot,
     setBookingPtSlot,
+    ptBookingError,
+    setPtBookingError,
+    isProcessingPtBooking,
     ptGoal,
     setPtGoal,
     ptNote,
     setPtNote,
     membership,
+    activeOrders,
     feedback,
     setFeedback,
     handleInitiateBookClass,
@@ -116,9 +121,13 @@ export default function MemberBooking({ onNavigate }: Props) {
   const filteredGroupClasses = useMemo(() => {
     const nowTime = Date.now();
     return groupClasses.filter((c) => {
-      // Đảm bảo chỉ hiển thị lớp học diễn ra trong tương lai so với thời gian thực tế
-      const classStart = c.scheduleTime ? new Date(c.scheduleTime).getTime() : 0;
-      if (classStart && classStart <= nowTime) return false;
+      // Ẩn hoàn toàn các lớp học đã kết thúc (thời gian kết thúc <= thời gian hiện tại)
+      const endMs =
+        c.endMs ??
+        (c.scheduleTime
+          ? parseScheduleTime(c.scheduleTime).getTime() + Number(c.durationMinutes || 60) * 60000
+          : 0);
+      if (endMs > 0 && endMs <= nowTime) return false;
 
       const matchDate = !selectedDate || c.dateStr === selectedDate;
       const matchSport = selectedSport === "all" || c.sport.toLowerCase() === selectedSport.toLowerCase();
@@ -188,16 +197,13 @@ export default function MemberBooking({ onNavigate }: Props) {
         </div>
       )}
 
-      {/* Header Banner & 3-Tabs & Coach Carousel */}
+      {/* Header Banner & 3-Tabs */}
       <BookingHeader
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         groupClassesCount={filteredGroupClasses.length}
         ptSlotsCount={filteredPtSlots.length}
         myActiveClassesCount={myUpcomingClasses.length}
-        coaches={coaches}
-        selectedCoachId={selectedCoachId}
-        setSelectedCoachId={setSelectedCoachId}
       />
 
       {/* Filter Toolbar */}
@@ -224,6 +230,7 @@ export default function MemberBooking({ onNavigate }: Props) {
           classes={filteredGroupClasses}
           mySessions={mySessions}
           membership={membership}
+          activeOrders={activeOrders}
           onNavigate={onNavigate}
           onRetry={() => void loadGroupClasses()}
           onOpenDetail={setSelectedClassDetail}
@@ -236,7 +243,15 @@ export default function MemberBooking({ onNavigate }: Props) {
       )}
 
       {/* TAB 2: PT 1-1 */}
-      {activeTab === "pt" && <PtSlotsTab slots={filteredPtSlots} onBookPtSlot={setBookingPtSlot} />}
+      {activeTab === "pt" && (
+        <PtSlotsTab
+          slots={filteredPtSlots}
+          onBookPtSlot={setBookingPtSlot}
+          membership={membership}
+          activeOrders={activeOrders}
+          mySessions={mySessions}
+        />
+      )}
 
       {/* TAB 3: MY CLASSES */}
       {activeTab === "my_classes" && (
@@ -246,6 +261,8 @@ export default function MemberBooking({ onNavigate }: Props) {
           getBookingStatus={getBookingStatus}
           onStartChatWithCoach={handleStartChatWithCoach}
           onCancelBooking={setCancelTarget}
+          membership={membership}
+          activeOrders={activeOrders}
         />
       )}
 
@@ -279,6 +296,11 @@ export default function MemberBooking({ onNavigate }: Props) {
         setPtGoal={setPtGoal}
         ptNote={ptNote}
         setPtNote={setPtNote}
+        membership={membership}
+        activeOrders={activeOrders}
+        mySessions={mySessions}
+        ptBookingError={ptBookingError}
+        isProcessingPtBooking={isProcessingPtBooking}
         onConfirmPtBooking={handleConfirmPtBooking}
       />
     </div>

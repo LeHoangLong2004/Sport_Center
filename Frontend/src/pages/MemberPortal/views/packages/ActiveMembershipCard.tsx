@@ -8,6 +8,7 @@ import {
   Lock,
   Activity,
   RefreshCw,
+  XCircle,
 } from "lucide-react";
 import type { CatalogPackage, MembershipStatus } from "../../../../services/packageApi";
 
@@ -15,12 +16,14 @@ interface ActiveMembershipCardProps {
   membershipStatus: MembershipStatus;
   catalog: CatalogPackage[];
   onStartPurchase: (pkg: CatalogPackage) => void;
+  onCancelMembership?: () => void;
 }
 
 export function ActiveMembershipCard({
   membershipStatus,
   catalog,
   onStartPurchase,
+  onCancelMembership,
 }: ActiveMembershipCardProps) {
   const daysLeft = membershipStatus.endDate
     ? Math.max(0, Math.ceil((new Date(membershipStatus.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
@@ -96,7 +99,7 @@ export function ActiveMembershipCard({
             <span>Nâng cấp nhận thêm đặc quyền</span>
           </button>
         ) : (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <button
               type="button"
               onClick={() => {
@@ -108,27 +111,44 @@ export function ActiveMembershipCard({
               <RefreshCw className="w-3.5 h-3.5" />
               <span>Gia hạn thẻ</span>
             </button>
+            {onCancelMembership && (
+              <button
+                type="button"
+                onClick={onCancelMembership}
+                className="px-4 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 hover:text-rose-200 font-bold text-xs border border-rose-500/30 transition-all flex items-center gap-1.5 cursor-pointer"
+                title="Hủy gói thành viên hiện tại và quay về Hạng Cơ bản"
+              >
+                <XCircle className="w-3.5 h-3.5" />
+                <span>Hủy gói</span>
+              </button>
+            )}
           </div>
         )}
       </div>
 
-      {/* 6 Key Perks Grid */}
-      <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-6">
+      {/* 5 Key Perks Grid */}
+      <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-6">
         <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs flex flex-col justify-between">
           <div className="flex items-center gap-2 text-slate-400">
             <Flame className="w-4 h-4 text-slate-400" />
-            <span className="text-[11px] font-semibold">Ưu đãi mua môn</span>
+            <span className="text-[11px] font-semibold">Chiết khấu dịch vụ</span>
           </div>
           <div className="mt-2 text-sm font-black text-white">
             {membershipStatus.tier === "premium" ? (
-              <span className="text-emerald-400">Giảm 10% / 5%</span>
+              <span className="text-emerald-400">Giảm {membershipStatus.groupDiscountPct || 15}% / {membershipStatus.coachDiscountPct || 8}%</span>
             ) : membershipStatus.tier === "plus" ? (
-              <span className="text-emerald-400">Giảm 5% / 2%</span>
+              <span className="text-emerald-400">Giảm {membershipStatus.groupDiscountPct || 8}% / {membershipStatus.coachDiscountPct || 5}%</span>
             ) : (
               <span className="text-slate-400">Giá gốc (0%)</span>
             )}
           </div>
-          <span className="text-[10px] text-slate-400 mt-0.5">Lớp nhóm & PT 1-1</span>
+          <span className="text-[10px] text-slate-400 mt-0.5">
+            {membershipStatus.tier === "premium"
+              ? "Gói môn & Đặt lịch lẻ (8% PT)"
+              : membershipStatus.tier === "plus"
+              ? "Gói môn & Đặt lịch lẻ (5% PT)"
+              : "Không áp dụng giảm giá"}
+          </span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs flex flex-col justify-between">
@@ -151,11 +171,11 @@ export function ActiveMembershipCard({
           </div>
           <div className="mt-2 text-sm font-black text-white">
             {membershipStatus.tier === "premium" ? (
-              <span className="text-emerald-400">2 lượt / tháng</span>
+              <span className="text-emerald-400">5 lượt / tháng</span>
             ) : membershipStatus.tier === "plus" ? (
-              <span className="text-emerald-400">1 lượt / tháng</span>
+              <span className="text-emerald-400">3 lượt / tháng</span>
             ) : (
-              <span className="text-slate-400">0 lượt</span>
+              <span className="text-emerald-400">1 lượt / tháng</span>
             )}
           </div>
           <span className="text-[10px] text-slate-400 mt-0.5">1 Day-Pass trải nghiệm</span>
@@ -189,23 +209,6 @@ export function ActiveMembershipCard({
               : "Tủ đồ thường"}
           </div>
           <span className="text-[10px] text-slate-400 mt-0.5">Trong buổi tập</span>
-        </div>
-
-        <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs flex flex-col justify-between">
-          <div className="flex items-center gap-2 text-slate-400">
-            <Activity className="w-4 h-4 text-slate-400" />
-            <span className="text-[11px] font-semibold">InBody & Trợ lý AI</span>
-          </div>
-          <div className="mt-2 text-sm font-black text-white">
-            {membershipStatus.tier === "premium" ? (
-              <span className="text-emerald-300">Không giới hạn</span>
-            ) : membershipStatus.tier === "plus" ? (
-              <span className="text-emerald-300">1 lần / tháng</span>
-            ) : (
-              <span className="text-slate-400">1 lần kích hoạt</span>
-            )}
-          </div>
-          <span className="text-[10px] text-slate-400 mt-0.5">Tư vấn thực đơn & cơ</span>
         </div>
       </div>
     </div>

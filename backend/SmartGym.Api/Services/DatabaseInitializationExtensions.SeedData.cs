@@ -133,13 +133,6 @@ public static partial class DatabaseInitializationExtensions
                     yearly_price = EXCLUDED.yearly_price,
                     tagline = EXCLUDED.tagline;
 
-                INSERT INTO subscriptions (id, user_id, package_id, sport_id, total_amount, payment_status, start_date, end_date)
-                SELECT gen_random_uuid(), u.id, 'yoga_pack', '11111111-1111-1111-1111-111111111111', 500000, 'completed', CURRENT_DATE - INTERVAL '1 day', CURRENT_DATE + INTERVAL '30 days'
-                FROM users u
-                JOIN roles r ON u.role_id = r.id
-                WHERE r.name = 'member'
-                AND NOT EXISTS (SELECT 1 FROM subscriptions s WHERE s.user_id = u.id AND s.payment_status = 'completed');
-
                 INSERT INTO products (id, name, category, price, stock_quantity, image_url, status)
                 VALUES 
                     ('44444444-4444-4444-4444-444444444444', 'Nước khoáng Dasani 500ml', 'Đồ uống', 15000, 100, '/assets/cf835.png', true),

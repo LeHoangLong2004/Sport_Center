@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { CoachAvatar } from "../../utils/coachAvatar";
 import type { MemberSessionItem } from "../../types";
-import type { CancelBookingTarget } from "./bookingTypes";
+import { isClassCoveredByPackage, type CancelBookingTarget } from "./bookingTypes";
 
 interface MyClassesTabProps {
   myActiveClasses?: MemberSessionItem[];
@@ -23,6 +23,8 @@ interface MyClassesTabProps {
   getBookingStatus: (session: MemberSessionItem) => string;
   onStartChatWithCoach: (coachName: string, coachId?: string, coachAvatar?: string) => void;
   onCancelBooking: (target: CancelBookingTarget) => void;
+  membership?: any | null;
+  activeOrders?: any[];
 }
 
 export const MyClassesTab: React.FC<MyClassesTabProps> = ({
@@ -31,6 +33,8 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
   getBookingStatus,
   onStartChatWithCoach,
   onCancelBooking,
+  membership,
+  activeOrders = [],
 }) => {
   const [subTab, setSubTab] = useState<"upcoming" | "history">("upcoming");
 
@@ -95,7 +99,7 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
           rawStatus.includes("cancel") ||
           rawStatus.includes("huy") ||
           rawStatus === "rejected";
-        return !isCancelled && !isClassPast(s);
+        return !isCancelled && rawStatus !== "pending" && !isClassPast(s);
       })
       .sort((a, b) => {
         const timeA = getSessionTimes(a).start.getTime();
@@ -113,7 +117,7 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
           rawStatus.includes("cancel") ||
           rawStatus.includes("huy") ||
           rawStatus === "rejected";
-        return isCancelled || isClassPast(s);
+        return (isCancelled || isClassPast(s)) && rawStatus !== "pending";
       })
       .sort((a, b) => {
         const timeA = getSessionTimes(a).start.getTime();
@@ -233,6 +237,15 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
               rawStatus === "rejected";
             const ongoing = isClassOngoing(booking);
             const isPast = isClassPast(booking);
+            const isPt = booking.type === "pt" || booking.sport === "PT 1-1" || (booking.name || "").includes("Kèm riêng");
+            const ptDiscountRate = membership?.tier === "premium" ? 0.08 : membership?.tier === "plus" ? 0.05 : 0;
+            const classDiscountRate = membership?.tier === "premium" ? 0.15 : membership?.tier === "plus" ? 0.08 : 0;
+            const defaultPtPrice = Math.round(300000 * (1 - ptDiscountRate));
+            const defaultClassPrice = Math.round(150000 * (1 - classDiscountRate));
+            const effectivePrice = (booking.price && booking.price > 0)
+              ? booking.price
+              : (isPt ? defaultPtPrice : defaultClassPrice);
+            const displayPrice = `${effectivePrice.toLocaleString("vi-VN")} đ`;
 
             return (
               <div
@@ -305,11 +318,11 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
                         Thanh toán:{" "}
                         {isPending ? (
                           <strong className="text-slate-600 dark:text-slate-400">
-                            150.000 đ (Chưa thanh toán - Thu tại quầy lễ tân)
+                            {displayPrice} (Chưa thanh toán - Thu tại quầy lễ tân)
                           </strong>
                         ) : (
                           <strong className="text-slate-800 dark:text-slate-200">
-                            Giá gốc (150.000 đ)
+                            Đã thanh toán ({displayPrice})
                           </strong>
                         )}
                       </span>
@@ -385,15 +398,16 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
                     <button
                       type="button"
                       disabled
-                      title="Lớp học đang diễn ra, không thể hủy giữ chỗ."
+                      title={isPt ? "Ca tập đang diễn ra, không thể hủy giữ chỗ." : "Lớp học đang diễn ra, không thể hủy giữ chỗ."}
                       className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-400 font-bold text-xs cursor-not-allowed"
                     >
-                      Đang học (Khóa hủy)
+                      {isPt ? "Đang tập (Khóa hủy)" : "Đang học (Khóa hủy)"}
                     </button>
                   ) : (
                     <button
                       type="button"
-                      onClick={() =>
+                      onClick={() => {
+                        const isCovered = !isPt && isClassCoveredByPackage(booking, activeOrders);
                         onCancelBooking({
                           classId: (booking as any).classId || booking.id,
                           className: booking.name,
@@ -401,12 +415,16 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
                           startTime: booking.startTime,
                           endTime: booking.endTime,
                           dateStr: booking.date,
-                          price: booking.price,
-                        })
-                      }
+                          price: isCovered ? 0 : effectivePrice,
+                          type: isPt ? "pt" : "class",
+                          isCovered: isCovered,
+                          sport: booking.sport,
+                          room: booking.room,
+                        });
+                      }}
                       className="px-4 py-2.5 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-700 dark:text-rose-300 font-bold text-xs transition-colors cursor-pointer"
                     >
-                      Hủy lớp
+                      {isPt ? "Hủy ca tập" : "Hủy lớp"}
                     </button>
                   )}
                 </div>

@@ -29,24 +29,25 @@ export const ScheduleFilterBar: React.FC<Props> = ({
   ];
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-2xs">
-      <div className="flex items-center gap-1 w-full sm:w-auto overflow-x-auto">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 bg-white px-3.5 py-2.5 rounded-xl border border-slate-200 shadow-2xs">
+      {/* Status Filter Tabs */}
+      <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
         {tabs.map((tab) => {
           const isActive = statusFilter === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => setStatusFilter(tab.id as StatusFilterType)}
-              className={`px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
                 isActive
-                  ? "bg-slate-900 text-white"
-                  : "text-slate-600 hover:bg-slate-100"
+                  ? "bg-emerald-600 text-white shadow-xs shadow-emerald-600/25 font-bold"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80"
               }`}
             >
               <span>{tab.label}</span>
               <span
-                className={`text-[10px] px-1 py-0.2 rounded-full ${
-                  isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  isActive ? "bg-white/25 text-white" : "bg-slate-100 text-slate-600"
                 }`}
               >
                 {tab.count}
@@ -56,15 +57,15 @@ export const ScheduleFilterBar: React.FC<Props> = ({
         })}
       </div>
 
-      <div className="flex items-center gap-2 w-full sm:w-auto">
+      <div className="flex items-center gap-2.5 w-full sm:w-auto">
         {/* Quick Date Filters */}
-        <div className="flex items-center gap-0.5 bg-slate-100 p-0.5 rounded-md text-[11px] font-semibold shrink-0">
+        <div className="flex items-center gap-0.5 bg-slate-100/90 p-0.5 rounded-lg text-[11px] font-semibold shrink-0">
           <button
             type="button"
             onClick={() => setDateFilter("all")}
-            className={`px-2 py-0.5 rounded transition cursor-pointer ${
+            className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
               dateFilter === "all"
-                ? "bg-white text-slate-700 shadow-2xs font-bold"
+                ? "bg-white text-emerald-800 shadow-2xs font-bold"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -73,9 +74,9 @@ export const ScheduleFilterBar: React.FC<Props> = ({
           <button
             type="button"
             onClick={() => setDateFilter("today")}
-            className={`px-2 py-0.5 rounded transition cursor-pointer ${
+            className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
               dateFilter === "today"
-                ? "bg-white text-slate-700 shadow-2xs font-bold"
+                ? "bg-white text-emerald-800 shadow-2xs font-bold"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -84,9 +85,9 @@ export const ScheduleFilterBar: React.FC<Props> = ({
           <button
             type="button"
             onClick={() => setDateFilter("tomorrow")}
-            className={`px-2 py-0.5 rounded transition cursor-pointer ${
+            className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
               dateFilter === "tomorrow"
-                ? "bg-white text-slate-700 shadow-2xs font-bold"
+                ? "bg-white text-emerald-800 shadow-2xs font-bold"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -99,15 +100,16 @@ export const ScheduleFilterBar: React.FC<Props> = ({
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Tìm khách, SĐT, HLV..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-7 py-1 text-xs bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:border-slate-500 focus:bg-white transition"
+            placeholder="Tìm khách, SĐT, HLV..."
+            className="w-full pl-8 pr-7 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition"
           />
           {searchQuery && (
             <button
+              type="button"
               onClick={() => setSearchQuery("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
             >
               <X className="w-3 h-3" />
             </button>

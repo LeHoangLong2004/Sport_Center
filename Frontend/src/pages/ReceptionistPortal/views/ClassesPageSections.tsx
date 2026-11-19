@@ -1,4 +1,5 @@
 import { createPortal } from "react-dom";
+import { resolveClassImageUrl, DEFAULT_SPORT_IMAGES } from "../../../utils/classImageHelper";
 
 export function ClassesToast({
   toast,
@@ -228,8 +229,12 @@ export function ClassesGrid(props: {
           <div className="relative h-40 overflow-hidden bg-slate-100">
             <img
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              src={`/assets/member-booking/${item.image}`}
-              alt=""
+              src={resolveClassImageUrl(item.image, DEFAULT_SPORT_IMAGES.default)}
+              alt={item.title || "Lớp học"}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = DEFAULT_SPORT_IMAGES.default;
+              }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a]/80 to-transparent"></div>
             <div className="absolute bottom-3 left-3 right-3">

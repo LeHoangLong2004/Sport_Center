@@ -32,60 +32,29 @@ public static partial class AuthEndpoints
     {
         /// <summary>
         /// POST /api/auth/forgot-password
-        /// Yêu cầu gửi mã OTP đặt lại mật khẩu qua email người dùng.
-        /// - Áp dụng cơ chế bảo mật chống dò quét tài khoản (Account Enumeration Prevention).
-        /// - Mã OTP có thời hạn hiệu lực 15 phút.
+        /// Xác nhận email tài khoản để chuyển sang bước đặt lại mật khẩu mới.
         /// </summary>
         group.MapPost("/forgot-password", async (
             AuthForgotPasswordRequest request,
-            IUserRepository userRepository,
-            IAccountTokenRepository tokenRepository,
-            IEmailService emailService,
-            IWebHostEnvironment environment) =>
+            IUserRepository userRepository) =>
         {
             var email = request.Email?.Trim();
             if (string.IsNullOrWhiteSpace(email))
                 return Results.BadRequest(new { message = "Vui lòng nhập email đã đăng ký." });
 
             var user = await userRepository.GetByEmailAsync(email);
-            var response = new
-            {
-                message = "Nếu email tồn tại, mã đặt lại mật khẩu đã được gửi.",
-                resetToken = (string?)null
-            };
-
-            // Do not reveal whether an email exists. This also keeps the endpoint
-            // safe against account-enumeration attempts.
             if (user is null)
-                return Results.Ok(response);
-
-            var token = await tokenRepository.CreatePasswordResetTokenAsync(email);
-            var resetUrl = "http://localhost:5173/#reset-password";
-            var html = $"""
-                <h2>Đặt lại mật khẩu SmartGym</h2>
-                <p>Xin chào {WebUtility.HtmlEncode(user.FullName)},</p>
-                <p>Mã đặt lại mật khẩu của bạn là:</p>
-                <p style='font-size:28px;font-weight:bold;letter-spacing:8px'>{token}</p>
-                <p>Mã có hiệu lực trong 15 phút và chỉ được sử dụng một lần.</p>
-                <p>Nếu bạn không yêu cầu thao tác này, hãy bỏ qua email.</p>
-                <p>Truy cập: <a href='{resetUrl}'>{resetUrl}</a></p>
-                """;
-
-            var sent = await emailService.SendAsync(
-                email,
-                "Mã đặt lại mật khẩu SmartGym",
-                html);
+                return Results.BadRequest(new { message = "Email này chưa được đăng ký tài khoản trong hệ thống." });
 
             return Results.Ok(new
             {
-                message = "Nếu email tồn tại, mã đặt lại mật khẩu đã được gửi đến hộp thư của bạn."
+                message = "Xác nhận email thành công. Vui lòng nhập mật khẩu mới."
             });
         });
 
         /// <summary>
         /// POST /api/auth/reset-password
-        /// Xác nhận đổi mật khẩu mới sử dụng mã OTP đã nhận qua email.
-        /// - Kiểm tra tính hợp lệ và thời hạn của token/OTP.
+        /// Cập nhật mật khẩu mới trực tiếp sau khi xác nhận email.
         /// - Băm mật khẩu mới bằng thuật toán BCrypt trước khi lưu trữ vào CSDL.
         /// </summary>
         group.MapPost("/reset-password", async (
@@ -97,24 +66,25 @@ public static partial class AuthEndpoints
             var token = request.Token?.Trim();
             var newPassword = request.NewPassword ?? string.Empty;
 
-            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(token))
-                return Results.BadRequest(new { message = "Email và mã xác minh là bắt buộc." });
+            if (string.IsNullOrWhiteSpace(email))
+                return Results.BadRequest(new { message = "Email là bắt buộc." });
 
             if (newPassword.Length < 6)
                 return Results.BadRequest(new { message = "Mật khẩu mới phải có tối thiểu 6 ký tự." });
 
-            var tokenValid = await tokenRepository.TryConsumePasswordResetTokenAsync(email, token);
-            if (!tokenValid)
-                return Results.BadRequest(new { message = "Mã đặt lại mật khẩu không chính xác hoặc đã hết hạn." });
-
             var user = await userRepository.GetByEmailAsync(email);
             if (user is null)
-                return Results.BadRequest(new { message = "Mã đặt lại mật khẩu không chính xác hoặc đã hết hạn." });
+                return Results.BadRequest(new { message = "Tài khoản với email này không tồn tại trong hệ thống." });
+
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                await tokenRepository.TryConsumePasswordResetTokenAsync(email, token);
+            }
 
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
             await userRepository.UpdateAsync(user);
 
-            return Results.Ok(new { message = "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập lại." });
+            return Results.Ok(new { message = "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập lại với mật khẩu mới." });
         });
 
         /// <summary>

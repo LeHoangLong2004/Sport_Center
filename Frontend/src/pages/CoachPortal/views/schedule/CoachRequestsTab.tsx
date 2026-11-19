@@ -10,6 +10,7 @@ import {
 import { CoachInvitationsList } from "./coachRequests/CoachInvitationsList";
 import { CoachOwnRequestsList } from "./coachRequests/CoachOwnRequestsList";
 import { CoachClassProposalsList } from "./coachRequests/CoachClassProposalsList";
+import { ConfirmWithdrawProposalModal } from "./coachRequests/ConfirmWithdrawProposalModal";
 
 interface Props {
   requests: ScheduleChangeRequest[];
@@ -42,6 +43,7 @@ export default function CoachRequestsTab({
   const [classProposals, setClassProposals] = useState<CoachClassProposal[]>([]);
   const [loadingProposals, setLoadingProposals] = useState(false);
   const [withdrawingProposalId, setWithdrawingProposalId] = useState<string | null>(null);
+  const [proposalToWithdraw, setProposalToWithdraw] = useState<CoachClassProposal | null>(null);
 
   const loadProposals = async (silent = false) => {
     if (!silent) setLoadingProposals(true);
@@ -88,8 +90,14 @@ export default function CoachRequestsTab({
     };
   }, []);
 
-  const handleWithdrawProposal = async (id: string) => {
-    if (!window.confirm("Bạn có chắc chắn muốn thu hồi đề xuất mở lớp này không?")) return;
+  const handleOpenWithdrawModal = (id: string) => {
+    const found = classProposals.find((p) => p.id === id);
+    if (found) {
+      setProposalToWithdraw(found);
+    }
+  };
+
+  const handleConfirmWithdraw = async (id: string) => {
     setWithdrawingProposalId(id);
     try {
       await CoachAPI.withdrawClassProposal(id);
@@ -99,6 +107,7 @@ export default function CoachRequestsTab({
         localStorage.setItem("coach-proposal-timestamp", Date.now().toString());
       } catch {}
       toast.success("Đã thu hồi đề xuất mở lớp thành công!");
+      setProposalToWithdraw(null);
       await loadProposals();
     } catch (err: any) {
       toast.error(err?.message || "Không thể thu hồi đề xuất mở lớp.");
@@ -240,11 +249,20 @@ export default function CoachRequestsTab({
         <CoachClassProposalsList
           proposals={classProposals}
           loading={loadingProposals}
-          onWithdraw={handleWithdrawProposal}
+          onWithdraw={handleOpenWithdrawModal}
           withdrawingId={withdrawingProposalId}
           onOpenCreateProposal={onOpenClassProposal || (() => {})}
         />
       )}
+
+      {/* Confirmation Modal */}
+      <ConfirmWithdrawProposalModal
+        isOpen={Boolean(proposalToWithdraw)}
+        proposal={proposalToWithdraw}
+        isWithdrawing={Boolean(withdrawingProposalId)}
+        onClose={() => setProposalToWithdraw(null)}
+        onConfirm={handleConfirmWithdraw}
+      />
     </div>
   );
 }
