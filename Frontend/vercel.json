@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://sport-center-ga9j.onrender.com/api/:path*"
+      "destination": "https://sportcenter-production-b84c4dc5.up.railway.app/api/:path*"
     },
     {
       "source": "/uploads/:path*",
-      "destination": "https://sport-center-ga9j.onrender.com/uploads/:path*"
+      "destination": "https://sportcenter-production-b84c4dc5.up.railway.app/uploads/:path*"
     },
     {
       "source": "/(.*)",
