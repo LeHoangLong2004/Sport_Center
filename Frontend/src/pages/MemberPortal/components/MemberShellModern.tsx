@@ -234,6 +234,9 @@ export default function MemberShellModern({ currentScreen, onNavigate, onLogout,
         phone={profile?.phone}
         onSuccess={(newBal) => {
           setWalletBalance(newBal);
+          const uid = profile?.id;
+          const cur = WalletService.getLocalWallet(uid);
+          WalletService.saveLocalWallet({ ...cur, balance: newBal }, uid);
         }}
       />
 

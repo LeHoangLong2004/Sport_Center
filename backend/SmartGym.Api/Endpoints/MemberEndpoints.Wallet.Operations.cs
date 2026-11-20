@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using SmartGym.Domain.Entities;
 using SmartGym.Infrastructure.Persistence.EF;
 
 namespace SmartGym.Api.Endpoints
@@ -144,36 +146,51 @@ namespace SmartGym.Api.Endpoints
                 {
                     var cleanContentDigits = new string(content.Where(char.IsDigit).ToArray());
                     var users = await db.Users.AsNoTracking().Where(u => u.Status).ToListAsync();
-                    var found = users.FirstOrDefault(u => 
-                    {
-                        if (!string.IsNullOrWhiteSpace(u.MemberCode) && content.Contains(u.MemberCode, StringComparison.OrdinalIgnoreCase))
-                            return true;
 
-                        if (!string.IsNullOrWhiteSpace(u.PhoneNumber))
+                    // ƯU TIÊN 1: Trích xuất trực tiếp mã/số sau từ khóa "NAPVI"
+                    var napviMatch = Regex.Match(content, @"NAPVI\s+([A-Za-z0-9_\-]+)", RegexOptions.IgnoreCase);
+                    string? explicitTarget = napviMatch.Success ? napviMatch.Groups[1].Value.Trim() : null;
+
+                    User? found = null;
+                    if (!string.IsNullOrWhiteSpace(explicitTarget))
+                    {
+                        var cleanExplicitDigits = new string(explicitTarget.Where(char.IsDigit).ToArray());
+                        found = users.FirstOrDefault(u =>
+                            (!string.IsNullOrWhiteSpace(u.MemberCode) && string.Equals(u.MemberCode, explicitTarget, StringComparison.OrdinalIgnoreCase)) ||
+                            (!string.IsNullOrWhiteSpace(u.PhoneNumber) && (
+                                string.Equals(new string(u.PhoneNumber.Where(char.IsDigit).ToArray()), cleanExplicitDigits) ||
+                                (cleanExplicitDigits.StartsWith("0") && string.Equals(new string(u.PhoneNumber.Where(char.IsDigit).ToArray()), cleanExplicitDigits.Substring(1))) ||
+                                (u.PhoneNumber.StartsWith("0") && string.Equals(new string(u.PhoneNumber.Where(char.IsDigit).ToArray()).Substring(1), cleanExplicitDigits))
+                            )) ||
+                            (Guid.TryParse(explicitTarget, out var g) && u.Id == g)
+                        );
+                    }
+
+                    // ƯU TIÊN 2: Nếu không khớp theo NAPVI <mã>, khớp theo số điện thoại (tối thiểu 9 chữ số) hoặc MemberCode chính xác
+                    if (found == null)
+                    {
+                        found = users.FirstOrDefault(u => 
                         {
-                            var cleanPhone = new string(u.PhoneNumber.Where(char.IsDigit).ToArray());
-                            if (cleanPhone.Length >= 8)
+                            if (!string.IsNullOrWhiteSpace(u.MemberCode) && content.Contains(u.MemberCode, StringComparison.OrdinalIgnoreCase))
+                                return true;
+
+                            if (!string.IsNullOrWhiteSpace(u.PhoneNumber))
                             {
-                                if (content.Contains(cleanPhone, StringComparison.OrdinalIgnoreCase) || cleanContentDigits.Contains(cleanPhone))
-                                    return true;
-                                if (cleanPhone.StartsWith("0") && cleanPhone.Length > 8)
+                                var cleanPhone = new string(u.PhoneNumber.Where(char.IsDigit).ToArray());
+                                if (cleanPhone.Length >= 9)
                                 {
-                                    var withoutZero = cleanPhone.Substring(1);
-                                    if (content.Contains(withoutZero, StringComparison.OrdinalIgnoreCase) || cleanContentDigits.Contains(withoutZero))
+                                    if (content.Contains(cleanPhone, StringComparison.OrdinalIgnoreCase) || cleanContentDigits.Contains(cleanPhone))
                                         return true;
                                 }
                             }
-                        }
 
-                        if (!string.IsNullOrWhiteSpace(u.Email))
-                        {
-                            var emailPrefix = u.Email.Split('@')[0];
-                            if (emailPrefix.Length >= 4 && content.Contains(emailPrefix, StringComparison.OrdinalIgnoreCase))
+                            // Chỉ khớp email nếu xuất hiện toàn bộ địa chỉ email (ví dụ: abc@gmail.com), tuyệt đối không khớp substring tiền tố
+                            if (!string.IsNullOrWhiteSpace(u.Email) && content.Contains(u.Email, StringComparison.OrdinalIgnoreCase))
                                 return true;
-                        }
 
-                        return false;
-                    });
+                            return false;
+                        });
+                    }
 
                     if (found != null)
                     {
