@@ -43,7 +43,7 @@ namespace SmartGym.Api.Endpoints
                 }
                 else
                 {
-                    var u = await db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.PhoneNumber == raw || x.MemberCode == raw);
+                    var u = await db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.PhoneNumber == raw || x.MemberCode == raw || x.FullName == raw);
                     if (u != null) return u.Id;
                 }
 
