@@ -77,6 +77,25 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             })
             .ToList();
 
+        var rootId = c.ParentId ?? c.Id;
+        var relatedSessions = await _dbContext.Database
+            .SqlQueryRaw<ClassSessionRawModel>(
+                @"SELECT id, session_number, schedule_time, duration_minutes, approval_status 
+                  FROM classes 
+                  WHERE id = {0} OR parent_id = {0} 
+                  ORDER BY session_number ASC, schedule_time ASC",
+                rootId
+            )
+            .ToListAsync();
+
+        var sessionSummaries = relatedSessions.Select(s => new ClassSessionSummaryDto(
+            s.Id,
+            s.SessionNumber,
+            s.ScheduleTime,
+            s.DurationMinutes,
+            s.ApprovalStatus
+        )).ToList();
+
         return new ClassDetailResponse(
             Id: c.Id,
             SportId: c.SportId,
@@ -93,7 +112,11 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             AvailableSpots: c.Capacity - c.CurrentEnrolled,
             Status: c.Status,
             EnrolledMembers: enrolledMembers,
-            ApprovalStatus: c.ApprovalStatus
+            ApprovalStatus: c.ApprovalStatus,
+            ParentId: c.ParentId,
+            SessionNumber: c.SessionNumber,
+            TotalSessions: c.TotalSessions,
+            Sessions: sessionSummaries
         );
     }
 
@@ -231,7 +254,10 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                     CoachBio: coach?.Bio ?? "Huấn luyện viên phụ trách lớp học.",
                     CoachRating: coach?.Rating,
                     CoachExperienceYears: coach?.ExperienceYears ?? 5,
-                    Price: 150000m
+                    Price: 150000m,
+                    ParentId: c.ParentId,
+                    SessionNumber: c.SessionNumber,
+                    TotalSessions: c.TotalSessions
                 );
             })
             .OrderBy(x => x.ScheduleTime)
@@ -250,7 +276,8 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
         var classModels = classResponse.Models
             .Where(c => c.Status && 
                         string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase) &&
-                        c.ScheduleTime > nowUtc)
+                        c.ScheduleTime > nowUtc &&
+                        (c.ParentId == null || c.SessionNumber == 1))
             .ToList();
         if (!classModels.Any())
             return Enumerable.Empty<ClassResponse>();
@@ -297,7 +324,10 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                     CoachBio: coach?.Bio ?? "Huấn luyện viên phụ trách lớp học.",
                     CoachRating: coach?.Rating,
                     CoachExperienceYears: coach?.ExperienceYears ?? 5,
-                    Price: 150000m
+                    Price: c.TotalSessions > 1 ? c.TotalSessions * 150000m : 150000m,
+                    ParentId: c.ParentId,
+                    SessionNumber: c.SessionNumber,
+                    TotalSessions: c.TotalSessions
                 );
             })
             .OrderBy(x => x.ScheduleTime)

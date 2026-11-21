@@ -15,17 +15,14 @@ interface CreateClassFormFieldsProps {
   leadTimeValidation: { valid: boolean; message: string } | null;
 }
 
-const STANDARD_SHIFTS = [
-  { label: "Sáng 06:00", val: "06:00" },
-  { label: "Sáng 07:30", val: "07:30" },
-  { label: "Sáng 08:30", val: "08:30" },
-  { label: "Sáng 09:00", val: "09:00" },
-  { label: "Sáng 10:30", val: "10:30" },
-  { label: "Chiều 14:00", val: "14:00" },
-  { label: "Chiều 15:30", val: "15:30" },
-  { label: "Chiều 17:00", val: "17:00" },
-  { label: "Tối 18:30", val: "18:30" },
-  { label: "Tối 19:30", val: "19:30" },
+const WEEK_DAYS = [
+  { label: "Thứ 2", val: 1 },
+  { label: "Thứ 3", val: 2 },
+  { label: "Thứ 4", val: 3 },
+  { label: "Thứ 5", val: 4 },
+  { label: "Thứ 6", val: 5 },
+  { label: "Thứ 7", val: 6 },
+  { label: "Chủ Nhật", val: 0 },
 ];
 
 export function CreateClassFormFields({
@@ -40,8 +37,71 @@ export function CreateClassFormFields({
   isCoachMode,
   leadTimeValidation,
 }: CreateClassFormFieldsProps) {
+  const isRecurring = !!formData.isRecurring;
+  const currentDays = formData.daysOfWeek || [1, 4];
+
+  const toggleDay = (dayVal: number) => {
+    let newDays: number[];
+    if (currentDays.includes(dayVal)) {
+      if (currentDays.length <= 1) return; // giữ tối thiểu 1 ngày
+      newDays = currentDays.filter(d => d !== dayVal);
+    } else {
+      newDays = [...currentDays, dayVal].sort((a, b) => a - b);
+    }
+    const weeks = formData.weeks || 10;
+    setFormData(prev => ({
+      ...prev,
+      daysOfWeek: newDays,
+      totalSessions: newDays.length * weeks
+    }));
+  };
+
+  const handleWeeksChange = (w: number) => {
+    const safeWeeks = Math.max(1, w);
+    setFormData(prev => ({
+      ...prev,
+      weeks: safeWeeks,
+      totalSessions: (prev.daysOfWeek?.length || 2) * safeWeeks
+    }));
+  };
+
   return (
     <>
+      {/* Chọn hình thức lớp */}
+      <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-2.5">
+        <label className="block text-[11px] font-bold text-slate-700 uppercase mb-2">Hình thức lớp học</label>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setFormData(prev => ({ ...prev, isRecurring: false }))}
+            className={`py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer text-center ${
+              !isRecurring
+                ? "bg-white text-emerald-700 border border-emerald-500 shadow-xs"
+                : "bg-slate-100 text-slate-600 border border-transparent hover:bg-white"
+            }`}
+          >
+            🗓️ Lớp đơn lẻ (1 buổi)
+          </button>
+          <button
+            type="button"
+            onClick={() => setFormData(prev => ({
+              ...prev,
+              isRecurring: true,
+              daysOfWeek: prev.daysOfWeek?.length ? prev.daysOfWeek : [1, 4],
+              weeks: prev.weeks || 10,
+              totalSessions: (prev.daysOfWeek?.length || 2) * (prev.weeks || 10)
+            }))}
+            className={`py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer text-center ${
+              isRecurring
+                ? "bg-white text-emerald-700 border border-emerald-500 shadow-xs"
+                : "bg-slate-100 text-slate-600 border border-transparent hover:bg-white"
+            }`}
+          >
+            🔄 Khóa học chu kỳ (Định kỳ tuần)
+          </button>
+        </div>
+      </div>
+
       {/* Tên lớp học */}
       <div>
         <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Tên lớp học</label>
@@ -62,10 +122,73 @@ export function CreateClassFormFields({
         />
       </div>
 
+      {/* Cấu hình chu kỳ tuần khi chọn Khóa học định kỳ */}
+      {isRecurring && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-3.5 space-y-3">
+          <div>
+            <label className="block text-[11px] font-bold text-emerald-900 uppercase tracking-wide mb-1.5">
+              Chọn các ngày học trong tuần (Bấm để chọn):
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {WEEK_DAYS.map(day => {
+                const isSelected = currentDays.includes(day.val);
+                return (
+                  <button
+                    key={day.val}
+                    type="button"
+                    onClick={() => toggleDay(day.val)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                      isSelected
+                        ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                        : "bg-white text-slate-700 border-slate-200 hover:border-emerald-300"
+                    }`}
+                  >
+                    {day.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Thời lượng khóa (Tuần)</label>
+              <input
+                type="number"
+                min="1"
+                max="24"
+                value={formData.weeks || 10}
+                onChange={(e) => handleWeeksChange(Number(e.target.value))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white outline-none focus:border-emerald-500"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Tổng số buổi dự kiến</label>
+              <div className="w-full border border-emerald-200 rounded-lg px-3 py-1.5 text-sm bg-emerald-50/80 font-bold text-emerald-900">
+                {formData.totalSessions || (currentDays.length * (formData.weeks || 10))} buổi
+              </div>
+            </div>
+          </div>
+
+          {/* Lộ trình tóm tắt */}
+          <div className="p-2.5 bg-white/90 rounded-lg border border-emerald-100 text-xs text-slate-700 space-y-0.5">
+            <span className="font-bold text-emerald-800 block">📋 Tóm tắt lộ trình khóa học:</span>
+            <p>
+              • Quy mô: <strong>{formData.totalSessions || (currentDays.length * (formData.weeks || 10))} buổi</strong> ({formData.weeks || 10} tuần, mỗi tuần {currentDays.length} buổi).
+            </p>
+            <p>
+              • Lịch học: <strong>{currentDays.map(d => WEEK_DAYS.find(w => w.val === d)?.label).filter(Boolean).join(", ")}</strong> lúc <strong>{formData.scheduleTime || "--:--"}</strong>.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Ngày & Giờ học */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Ngày học</label>
+          <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">
+            {isRecurring ? "Ngày bắt đầu (Khai giảng)" : "Ngày học"}
+          </label>
           <DateInput
             required
             value={formData.scheduleDate}
@@ -95,29 +218,6 @@ export function CreateClassFormFields({
           {isCoachMode && (
             <p className="mt-1 text-[11px] text-slate-500">Cách hiện tại ≥ 24h</p>
           )}
-        </div>
-      </div>
-
-      {/* Khung ca học chuẩn đồng bộ giữa Coach & Manager */}
-      <div className="rounded-xl border border-slate-200/90 bg-slate-50/70 p-3 space-y-1.5">
-        <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wide block">
-          Khung ca học chuẩn (Bấm để chọn nhanh):
-        </span>
-        <div className="flex flex-wrap gap-1.5">
-          {STANDARD_SHIFTS.map((shift) => (
-            <button
-              key={shift.val}
-              type="button"
-              onClick={() => setFormData((prev) => ({ ...prev, scheduleTime: shift.val }))}
-              className={`text-xs px-2.5 py-1 rounded-lg font-semibold border transition-all cursor-pointer ${
-                formData.scheduleTime === shift.val
-                  ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
-                  : "bg-white text-slate-700 border-slate-200 hover:border-emerald-400 hover:text-emerald-700 hover:bg-emerald-50/50"
-              }`}
-            >
-              {shift.label}
-            </button>
-          ))}
         </div>
       </div>
 

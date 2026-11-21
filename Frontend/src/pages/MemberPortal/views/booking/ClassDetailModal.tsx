@@ -90,12 +90,46 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
               <strong>{classDetail.registeredCount}/{classDetail.capacity} người</strong>
             </div>
             <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-700">
-              <span className="text-slate-500 font-semibold">Mức phí áp dụng:</span>
+              <span className="text-slate-500 font-semibold">
+                {classDetail.totalSessions && classDetail.totalSessions > 1 ? "Học phí trọn khóa:" : "Mức phí áp dụng:"}
+              </span>
               <strong className="text-emerald-700 dark:text-emerald-300 font-black text-sm">
-                Giá gốc: {classDetail.price ? `${classDetail.price.toLocaleString("vi-VN")} đ` : "150.000 đ"}
+                {classDetail.price ? `${classDetail.price.toLocaleString("vi-VN")} đ` : "150.000 đ"}
+                {classDetail.totalSessions && classDetail.totalSessions > 1 && (
+                  <span className="text-xs font-normal text-slate-500 ml-1">({classDetail.totalSessions} buổi)</span>
+                )}
               </strong>
             </div>
           </div>
+
+          {/* Lộ trình chi tiết các buổi học nếu là lớp chu kỳ */}
+          {classDetail.totalSessions && classDetail.totalSessions > 1 && (
+            <div className="p-3.5 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-emerald-900 dark:text-emerald-300 text-xs">
+                  🎓 Lộ trình khóa học: {classDetail.totalSessions} buổi
+                </span>
+                <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">
+                  Ghi danh trọn khóa
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                Ghi danh 1 lần sẽ tự động đăng ký và giữ chỗ cho toàn bộ {classDetail.totalSessions} buổi học trong chuỗi.
+              </p>
+              {Array.isArray(classDetail.sessions) && classDetail.sessions.length > 0 && (
+                <div className="max-h-36 overflow-y-auto space-y-1 pt-1.5 border-t border-emerald-200/50">
+                  {classDetail.sessions.map((s: any) => (
+                    <div key={s.id || s.sessionNumber} className="flex justify-between items-center text-[11px] py-0.5 text-slate-700 dark:text-slate-300">
+                      <span>Buổi {s.sessionNumber}:</span>
+                      <span className="font-semibold">
+                        {new Date(s.scheduleTime).toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })} lúc {new Date(s.scheduleTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Coach Profile */}
           <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-50/50 dark:from-slate-800 dark:to-slate-850 border border-emerald-200 dark:border-emerald-800/80">

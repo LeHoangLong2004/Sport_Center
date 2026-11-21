@@ -202,11 +202,20 @@ export const CoachAPI = {
           mappedStatus = "Nháp";
         }
 
+        const rawAssigned = Array.isArray(p.assignedTo) ? p.assignedTo : [];
+        const cleanAssigned = rawAssigned
+          .filter((t: any) => t && t.name && String(t.name).trim().toLowerCase() !== String(p.planName || p.name).trim().toLowerCase())
+          .map((t: any) => ({
+            type: t.type || "class",
+            id: String(t.id || ""),
+            name: String(t.name).trim()
+          }));
+
         return {
           id: p.id,
           name: p.planName,
           sportId: p.sportId || null,
-          sport: "",
+          sport: p.sport || p.sportName || "",
           goal: p.goal || "",
           level: p.level || "",
           duration: p.durationMinutes || 60,
@@ -219,9 +228,7 @@ export const CoachAPI = {
           exercises: p.exercises?.map((e: any) => ({ 
             name: e.name, reps: e.reps, rest: e.rest, note: e.note 
           })) || [],
-          assignedTo: p.recommendationTargetId
-            ? [{ type: p.recommendationTargetType || "class", id: p.recommendationTargetId, name: p.planName || p.name }]
-            : (p.assignedTo || [])
+          assignedTo: cleanAssigned
         };
       });
     } catch {

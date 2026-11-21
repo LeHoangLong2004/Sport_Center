@@ -68,6 +68,9 @@ public sealed partial class SupabaseGroupClassRepository
             CurrentEnrolled = groupClass.CurrentEnrolled,
             Status = groupClass.Status,
             ApprovalStatus = groupClass.ApprovalStatus,
+            ParentId = groupClass.ParentId,
+            SessionNumber = groupClass.SessionNumber,
+            TotalSessions = groupClass.TotalSessions,
         };
 
         await _client.From<GroupClassModel>().Insert(model);
@@ -90,6 +93,9 @@ public sealed partial class SupabaseGroupClassRepository
             CurrentEnrolled = groupClass.CurrentEnrolled,
             Status = groupClass.Status,
             ApprovalStatus = groupClass.ApprovalStatus,
+            ParentId = groupClass.ParentId,
+            SessionNumber = groupClass.SessionNumber,
+            TotalSessions = groupClass.TotalSessions,
         };
 
         await _client.From<GroupClassModel>().Update(model);
@@ -107,7 +113,7 @@ public sealed partial class SupabaseGroupClassRepository
             return (false, "Không tìm thấy đề xuất lớp hoặc lớp không còn ở trạng thái chờ duyệt.");
 
         var affected = await _dbContext.Database.ExecuteSqlRawAsync(
-            "UPDATE classes SET approval_status = 'approved', status = true WHERE id = {0} AND approval_status = 'pending'",
+            "UPDATE classes SET approval_status = 'approved', status = true WHERE (id = {0} OR parent_id = {0}) AND approval_status = 'pending'",
             classId);
 
         if (affected == 0)
@@ -118,7 +124,7 @@ public sealed partial class SupabaseGroupClassRepository
             await NotifyCoachAsync(
                 classToApprove.CoachId.Value,
                 "Đề xuất lớp học đã được duyệt",
-                $"Lớp {classToApprove.ClassName} đã được Manager duyệt và sẽ hiển thị cho hội viên.",
+                $"Lớp {classToApprove.ClassName} (toàn bộ các buổi) đã được Manager duyệt và sẽ hiển thị cho hội viên.",
                 "class",
                 classId);
         }
@@ -138,7 +144,7 @@ public sealed partial class SupabaseGroupClassRepository
             return (false, "Không tìm thấy đề xuất lớp hoặc lớp không còn ở trạng thái chờ duyệt.");
 
         var affected = await _dbContext.Database.ExecuteSqlRawAsync(
-            "UPDATE classes SET approval_status = 'rejected' WHERE id = {0} AND approval_status = 'pending'",
+            "UPDATE classes SET approval_status = 'rejected' WHERE (id = {0} OR parent_id = {0}) AND approval_status = 'pending'",
             classId);
 
         if (affected == 0)

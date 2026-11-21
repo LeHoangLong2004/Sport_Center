@@ -9,6 +9,9 @@ public class CreateClassRequest
     public DateTime ScheduleTime { get; set; }
     public int DurationMinutes { get; set; }
     public int Capacity { get; set; }
+    public List<int>? DaysOfWeek { get; set; }
+    public int? Weeks { get; set; }
+    public int? TotalSessions { get; set; }
 }
 
 public class CreateClassProposalRequest
@@ -19,5 +22,8 @@ public class CreateClassProposalRequest
     public DateTime ScheduleTime { get; set; }
     public int DurationMinutes { get; set; }
     public int Capacity { get; set; }
+    public List<int>? DaysOfWeek { get; set; }
+    public int? Weeks { get; set; }
+    public int? TotalSessions { get; set; }
 }
 

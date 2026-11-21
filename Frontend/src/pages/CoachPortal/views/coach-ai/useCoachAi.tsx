@@ -16,6 +16,7 @@ import {
   type RoutinePreset,
 } from "./types";
 import { cleanEquipmentList, getDefaultEquipmentForSport } from "./coachAiFallbacks";
+import { getNextCloneTitle } from "../curriculum/curriculumUtils";
 
 export function useCoachAi(initialMemberId?: string | null) {
   // 1. Context Data
@@ -546,14 +547,15 @@ export function useCoachAi(initialMemberId?: string | null) {
   const handleClone = async () => {
     if (!currentPlan) return;
     try {
+      const nextPlanTitle = getNextCloneTitle(currentPlan.planName);
       const cloned = await CoachAPI.cloneFlow5Plan(
         currentPlan.id,
         currentPlan.version,
-        `${currentPlan.planName} (Bản sao)`
+        nextPlanTitle
       ).catch(() => ({
         ...currentPlan,
         id: `clone_${Date.now()}`,
-        planName: `${currentPlan.planName} (Bản sao)`,
+        planName: nextPlanTitle,
         status: "draft" as const,
         version: 1,
       }));

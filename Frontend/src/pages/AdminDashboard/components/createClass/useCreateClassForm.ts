@@ -10,6 +10,10 @@ export interface CreateClassFormData {
   scheduleTime: string;
   durationMinutes: number;
   capacity: number;
+  isRecurring?: boolean;
+  daysOfWeek?: number[];
+  weeks?: number;
+  totalSessions?: number;
 }
 
 interface UseCreateClassFormProps {
@@ -38,7 +42,11 @@ export function useCreateClassForm({ editData, mode = "manager", onSuccess, onCl
         scheduleDate: `${year}-${month}-${day}`,
         scheduleTime: `${hours}:${minutes}`,
         durationMinutes: editData.durationMinutes || 60,
-        capacity: editData.capacity || 20
+        capacity: editData.capacity || 20,
+        isRecurring: false,
+        daysOfWeek: [1, 4],
+        weeks: 10,
+        totalSessions: 20
       };
     }
     return {
@@ -49,7 +57,11 @@ export function useCreateClassForm({ editData, mode = "manager", onSuccess, onCl
       scheduleDate: '',
       scheduleTime: '',
       durationMinutes: 60,
-      capacity: 20
+      capacity: 20,
+      isRecurring: false,
+      daysOfWeek: [1, 4],
+      weeks: 10,
+      totalSessions: 20
     };
   });
 
@@ -192,7 +204,7 @@ export function useCreateClassForm({ editData, mode = "manager", onSuccess, onCl
         }
       }
 
-      const payload = {
+      const payload: any = {
         sportId: formData.sportId,
         facilityId: formData.facilityId,
         className: formData.className,
@@ -200,6 +212,12 @@ export function useCreateClassForm({ editData, mode = "manager", onSuccess, onCl
         durationMinutes: Number(formData.durationMinutes),
         capacity: Number(formData.capacity)
       };
+
+      if (formData.isRecurring && formData.daysOfWeek && formData.daysOfWeek.length > 0) {
+        payload.daysOfWeek = formData.daysOfWeek;
+        payload.weeks = Number(formData.weeks || 10);
+        payload.totalSessions = Number(formData.totalSessions || (formData.daysOfWeek.length * (formData.weeks || 10)));
+      }
 
       const requestPayload = isCoachMode
         ? payload

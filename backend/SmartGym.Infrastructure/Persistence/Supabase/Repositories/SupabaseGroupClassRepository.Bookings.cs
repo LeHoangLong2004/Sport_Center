@@ -23,9 +23,31 @@ public sealed partial class SupabaseGroupClassRepository
             using var transaction = await _dbContext.Database.BeginTransactionAsync();
             try
             {
+                // Lấy toàn bộ các buổi học thuộc khóa học (Buổi gốc + các buổi con)
+                var allTargetSessions = await _dbContext.Database
+                    .SqlQueryRaw<ClassSessionBookingTargetRawModel>(
+                        @"SELECT id, schedule_time, duration_minutes, current_enrolled, capacity 
+                          FROM classes 
+                          WHERE (id = {0} OR parent_id = {0} OR (parent_id IS NOT NULL AND parent_id = (SELECT parent_id FROM classes WHERE id = {0})))
+                            AND status = true AND approval_status = 'approved'
+                          ORDER BY schedule_time ASC",
+                        classId
+                    )
+                    .ToListAsync();
+
+                if (allTargetSessions.Count == 0)
+                {
+                    await transaction.RollbackAsync();
+                    return (false, "Lớp học không còn hoạt động hoặc chưa được phê duyệt.");
+                }
+
                 var existingBookings = await _dbContext
                     .Database.SqlQueryRaw<ClassBookingRawModel>(
-                        "SELECT id, user_id, class_id, status, created_at FROM class_bookings WHERE user_id = {0} AND class_id = {1} AND LOWER(status) IN ('confirmed', 'pending', 'approved')",
+                        @"SELECT id, user_id, class_id, status, created_at 
+                          FROM class_bookings 
+                          WHERE user_id = {0} 
+                            AND class_id IN (SELECT id FROM classes WHERE id = {1} OR parent_id = {1} OR (parent_id IS NOT NULL AND parent_id = (SELECT parent_id FROM classes WHERE id = {1})))
+                            AND LOWER(status) IN ('confirmed', 'pending', 'approved')",
                         userId,
                         classId
                     )
@@ -34,30 +56,17 @@ public sealed partial class SupabaseGroupClassRepository
                 if (existingBookings.Count > 0)
                 {
                     await transaction.RollbackAsync();
-                    return (false, "Hội viên đã đặt chỗ lớp học này trước đó rồi.");
+                    return (false, "Hội viên đã đặt chỗ khóa học này trước đó rồi.");
                 }
 
-                var targetTime = await _dbContext.Database
-                    .SqlQueryRaw<ClassTimeConflictRawModel>(
-                        "SELECT schedule_time, duration_minutes FROM classes WHERE id = {0} AND status = true AND approval_status = 'approved'",
-                        classId
-                    )
-                    .FirstOrDefaultAsync();
-
-                if (targetTime == null)
-                {
-                    await transaction.RollbackAsync();
-                    return (false, "Lớp học không còn hoạt động.");
-                }
-
-                var targetEnd = targetTime.ScheduleTime.AddMinutes(Math.Max(1, targetTime.DurationMinutes));
+                // Lấy các ca học hiện có của hội viên để đối soát xung đột (BR-13)
                 var memberClassTimes = await _dbContext.Database
                     .SqlQueryRaw<ClassTimeConflictRawModel>(
                         @"SELECT c.schedule_time, c.duration_minutes
                           FROM class_bookings b
                           INNER JOIN classes c ON c.id = b.class_id
                           WHERE b.user_id = {0}
-                            AND b.class_id <> {1}
+                            AND b.class_id NOT IN (SELECT id FROM classes WHERE id = {1} OR parent_id = {1} OR (parent_id IS NOT NULL AND parent_id = (SELECT parent_id FROM classes WHERE id = {1})))
                             AND LOWER(b.status) IN ('confirmed', 'pending', 'approved')
                             AND c.status = true
                             AND c.approval_status = 'approved'",
@@ -66,61 +75,56 @@ public sealed partial class SupabaseGroupClassRepository
                     )
                     .ToListAsync();
 
-                if (memberClassTimes.Any(x => Overlaps(targetTime.ScheduleTime, targetEnd, x.ScheduleTime, x.DurationMinutes)))
+                // Quét kiểm tra trùng lịch và kiểm tra sĩ số trên toàn bộ các buổi học của khóa
+                foreach (var s in allTargetSessions)
                 {
-                    await transaction.RollbackAsync();
-                    return (false, "Bạn đã có một lớp học khác trùng thời gian.");
+                    var sEnd = s.ScheduleTime.AddMinutes(Math.Max(1, s.DurationMinutes));
+                    if (memberClassTimes.Any(x => Overlaps(s.ScheduleTime, sEnd, x.ScheduleTime, x.DurationMinutes)))
+                    {
+                        await transaction.RollbackAsync();
+                        return (false, $"Bạn đã có một lịch học khác trùng thời gian với buổi học ngày {s.ScheduleTime:dd/MM/yyyy HH:mm}.");
+                    }
+
+                    if (s.CurrentEnrolled >= s.Capacity)
+                    {
+                        await transaction.RollbackAsync();
+                        return (false, $"Đặt lớp thất bại: Buổi học ngày {s.ScheduleTime:dd/MM/yyyy} đã hết chỗ.");
+                    }
                 }
 
-                // Hệ thống không dùng bảng pt_sessions; lịch PT được quản lý riêng qua appointments/slots
-                var memberPtTimes = new List<ClassTimeConflictRawModel>();
-
-                if (memberPtTimes.Any(x => Overlaps(targetTime.ScheduleTime, targetEnd, x.ScheduleTime, x.DurationMinutes)))
-                {
-                    await transaction.RollbackAsync();
-                    return (false, "Bạn đã có một buổi PT trùng thời gian với lớp học này.");
-                }
-
-                var affectedRows = await _dbContext.Database.ExecuteSqlRawAsync(
-                    @"UPDATE classes 
-                  SET current_enrolled = current_enrolled + 1
-                  WHERE id = {0} AND status = true 
-                    AND approval_status = 'approved'
-                    AND current_enrolled < capacity AND schedule_time > now()",
-                    classId
-                );
-
-                if (affectedRows == 0)
-                {
-                    await transaction.RollbackAsync();
-                    return (
-                        false,
-                        "Đặt lớp thất bại: Lớp học đã hết chỗ hoặc đã ngưng nhận đăng ký."
-                    );
-                }
-
-                if (subscriptionId.HasValue)
+                // Thực thi đặt chỗ nguyên tử cho toàn bộ các buổi trong chuỗi khóa học
+                foreach (var s in allTargetSessions)
                 {
                     await _dbContext.Database.ExecuteSqlRawAsync(
-                        @"INSERT INTO class_bookings (user_id, class_id, subscription_id, status)
-                      VALUES ({0}, {1}, {2}, 'confirmed')
-                      ON CONFLICT (user_id, class_id) 
-                      DO UPDATE SET status = 'confirmed', subscription_id = {2}",
-                        userId,
-                        classId,
-                        subscriptionId.Value
+                        @"UPDATE classes 
+                          SET current_enrolled = current_enrolled + 1
+                          WHERE id = {0}",
+                        s.Id
                     );
-                }
-                else
-                {
-                    await _dbContext.Database.ExecuteSqlRawAsync(
-                        @"INSERT INTO class_bookings (user_id, class_id, subscription_id, status)
-                      VALUES ({0}, {1}, NULL, 'confirmed')
-                      ON CONFLICT (user_id, class_id) 
-                      DO UPDATE SET status = 'confirmed', subscription_id = NULL",
-                        userId,
-                        classId
-                    );
+
+                    if (subscriptionId.HasValue)
+                    {
+                        await _dbContext.Database.ExecuteSqlRawAsync(
+                            @"INSERT INTO class_bookings (user_id, class_id, subscription_id, status)
+                              VALUES ({0}, {1}, {2}, 'confirmed')
+                              ON CONFLICT (user_id, class_id) 
+                              DO UPDATE SET status = 'confirmed', subscription_id = {2}",
+                            userId,
+                            s.Id,
+                            subscriptionId.Value
+                        );
+                    }
+                    else
+                    {
+                        await _dbContext.Database.ExecuteSqlRawAsync(
+                            @"INSERT INTO class_bookings (user_id, class_id, subscription_id, status)
+                              VALUES ({0}, {1}, NULL, 'confirmed')
+                              ON CONFLICT (user_id, class_id) 
+                              DO UPDATE SET status = 'confirmed', subscription_id = NULL",
+                            userId,
+                            s.Id
+                        );
+                    }
                 }
 
                 await transaction.CommitAsync();
@@ -147,8 +151,10 @@ public sealed partial class SupabaseGroupClassRepository
             {
                 var affectedBooking = await _dbContext.Database.ExecuteSqlRawAsync(
                     @"UPDATE class_bookings 
-                  SET status = 'cancelled' 
-                  WHERE user_id = {0} AND class_id = {1} AND LOWER(status) IN ('confirmed', 'pending', 'approved')",
+                      SET status = 'cancelled' 
+                      WHERE user_id = {0} 
+                        AND class_id IN (SELECT id FROM classes WHERE id = {1} OR parent_id = {1} OR (parent_id IS NOT NULL AND parent_id = (SELECT parent_id FROM classes WHERE id = {1})))
+                        AND LOWER(status) IN ('confirmed', 'pending', 'approved')",
                     userId,
                     classId
                 );
@@ -161,8 +167,8 @@ public sealed partial class SupabaseGroupClassRepository
 
                 await _dbContext.Database.ExecuteSqlRawAsync(
                     @"UPDATE classes 
-                  SET current_enrolled = current_enrolled - 1 
-                  WHERE id = {0}",
+                      SET current_enrolled = GREATEST(0, current_enrolled - 1) 
+                      WHERE id IN (SELECT id FROM classes WHERE id = {0} OR parent_id = {0} OR (parent_id IS NOT NULL AND parent_id = (SELECT parent_id FROM classes WHERE id = {0})))",
                     classId
                 );
 

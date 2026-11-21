@@ -3,6 +3,12 @@ import { CoachAPI } from "../services/api";
 import type { MockCurriculum, MockSession, MockMember, SportOption } from "../services/api";
 import { CheckCircle2, Sparkles, BookOpen } from "lucide-react";
 import { makeDraft } from "./curriculum/types";
+import {
+  resolveSportInfo,
+  normalizeLevel,
+  cleanDuplicateSuffixes,
+  getEffectiveStatus,
+} from "./curriculum/curriculumUtils";
 import { CurriculumHeader } from "./curriculum/CurriculumHeader";
 import { CurriculumGrid } from "./curriculum/CurriculumGrid";
 import { CurriculumEditorModal } from "./curriculum/CurriculumEditorModal";
@@ -35,6 +41,7 @@ export default function CoachCurriculum({
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sportFilter, setSportFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
     let cancelled = false;
@@ -212,30 +219,68 @@ export default function CoachCurriculum({
   }, [sessions]);
 
   const filteredCurricula = useMemo(() => {
-    const query = searchQuery.toLowerCase();
+    const query = searchQuery.toLowerCase().trim();
     return curricula.filter((curriculum) => {
       const matchSearch =
+        !query ||
         curriculum.name.toLowerCase().includes(query) ||
         curriculum.goal?.toLowerCase().includes(query) ||
-        curriculum.description?.toLowerCase().includes(query);
+        curriculum.sport?.toLowerCase().includes(query) ||
+        curriculum.level?.toLowerCase().includes(query) ||
+        curriculum.description?.toLowerCase().includes(query) ||
+        curriculum.exercises?.some((ex) => ex.name?.toLowerCase().includes(query));
+
       const matchSport = sportFilter === "all" || curriculum.sport === sportFilter;
-      return matchSearch && matchSport;
+
+      const effective = getEffectiveStatus(curriculum);
+      const matchStatus =
+        statusFilter === "all" ||
+        (statusFilter === "ready" && effective.key === "ready") ||
+        (statusFilter === "assigned" && effective.key === "assigned") ||
+        (statusFilter === "draft" && (effective.key === "draft" || effective.key === "empty"));
+
+      return matchSearch && matchSport && matchStatus;
     });
-  }, [curricula, searchQuery, sportFilter]);
+  }, [curricula, searchQuery, sportFilter, statusFilter]);
 
   const sportsList = useMemo(() => {
-    return ["all", ...sports.map((sport) => sport.name)];
-  }, [sports]);
+    const list = new Set<string>();
+    list.add("all");
+    sports.forEach((s) => list.add(s.name));
+    curricula.forEach((c) => {
+      if (c.sport && c.sport !== "Chưa xác định") list.add(c.sport);
+    });
+    return Array.from(list);
+  }, [sports, curricula]);
 
   function normalizeCurricula(items: MockCurriculum[], sportOptions: SportOption[]) {
     return items.map((curriculum) => {
-      const selectedSport = sportOptions.find(
-        (sport) => sport.id === curriculum.sportId || sport.name === curriculum.sport
+      const cleanName = cleanDuplicateSuffixes(curriculum.name);
+      const normLevel = normalizeLevel(curriculum.level);
+      const resolvedSport = resolveSportInfo(
+        curriculum.sport,
+        curriculum.sportId,
+        sportOptions,
+        cleanName,
+        curriculum.goal || "",
+        curriculum.description || ""
       );
+
+      // Lọc bỏ đối tượng đã giao có tên trùng với tên giáo án (lỗi lặp dữ liệu trước đây)
+      const cleanAssignedTo = (curriculum.assignedTo || []).filter(
+        (target) =>
+          target &&
+          target.name &&
+          target.name.trim().toLowerCase() !== cleanName.toLowerCase()
+      );
+
       return {
         ...curriculum,
-        sportId: selectedSport?.id || curriculum.sportId || null,
-        sport: selectedSport?.name || curriculum.sport || "Chưa xác định",
+        name: cleanName,
+        level: normLevel,
+        sportId: resolvedSport.sportId,
+        sport: resolvedSport.sport,
+        assignedTo: cleanAssignedTo,
       };
     });
   }
@@ -288,6 +333,8 @@ export default function CoachCurriculum({
             setSearchQuery={setSearchQuery}
             sportFilter={sportFilter}
             setSportFilter={setSportFilter}
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilter}
             sportsList={sportsList}
             onOpenNew={openNew}
             onOpenAiTab={() => setActiveTab("ai")}

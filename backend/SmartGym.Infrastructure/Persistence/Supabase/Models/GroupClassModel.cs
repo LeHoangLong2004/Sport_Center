@@ -40,6 +40,15 @@ public class GroupClassModel : BaseModel
     [Column("approval_status")]
     public string ApprovalStatus { get; set; } = "approved";
 
+    [Column("parent_id")]
+    public Guid? ParentId { get; set; }
+
+    [Column("session_number")]
+    public int SessionNumber { get; set; } = 1;
+
+    [Column("total_sessions")]
+    public int TotalSessions { get; set; } = 1;
+
     public GroupClass ToDomain()
     {
         return new GroupClass(
@@ -53,6 +62,9 @@ public class GroupClassModel : BaseModel
             Capacity,
             CurrentEnrolled,
             Status,
-            ApprovalStatus);
+            ApprovalStatus,
+            ParentId,
+            SessionNumber,
+            TotalSessions);
     }
 }
