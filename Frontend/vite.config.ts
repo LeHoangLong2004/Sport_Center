@@ -16,14 +16,14 @@ export default defineConfig(({ mode }) => {
   }
 
   // Mặc định chạy Localhost (http://localhost:5000) trừ khi cấu hình rõ ràng VITE_USE_LOCAL=false
-  const isDeploy = env.VITE_USE_LOCAL === 'false'
+  const isDeploy = env.VITE_USE_LOCAL === 'true'
   const activeApiUrl = isDeploy
     ? (env.VITE_DEPLOY_API_URL || 'https://sportcenter-production-b84c4dc5.up.railway.app')
     : (env.VITE_LOCAL_API_URL || 'http://localhost:5000')
 
   console.log(`\n===============================================================`)
   console.log(`>>> [Vite API Proxy] ĐANG TRỎ VỀ: ${activeApiUrl}`)
-  console.log(`>>> [Chế độ] ${isDeploy ? 'CHẠY CLOUD DEPLOY (Render online)' : 'CHẠY LOCALHOST (Cần bật backend C#)'}`)
+  console.log(`>>> [Chế độ] ${isDeploy ? 'CHẠY CLOUD DEPLOY (Railway online)' : 'CHẠY LOCALHOST (Cần bật backend C#)'}`)
   console.log(`===============================================================\n`)
 
   return {

@@ -196,7 +196,66 @@ Trước khi **Gửi đề xuất (Submit)**, **Tạo mới trực tiếp (Creat
 
 ---
 
-## 7. MA TRẬN PHÂN QUYỀN NGHIỆP VỤ (RBAC MATRIX)
+## 7. QUYẾT ĐỊNH TRIỂN KHAI BẮT BUỘC (NORMATIVE IMPLEMENTATION DECISIONS)
+
+> Phần này chuẩn hóa các điểm có thể diễn giải khác nhau trong các quy tắc phía trên. Khi có mâu thuẫn, phần này được ưu tiên áp dụng cho API, cơ sở dữ liệu, giao diện và kiểm thử.
+
+### BR-18: Mô hình dữ liệu chuẩn và nguồn dữ liệu gốc (Source of Truth)
+* Hệ thống dùng 3 thực thể tách biệt:
+  1. `ClassCourse`: lớp/khóa học tổng; lưu môn, HLV chính, phòng mặc định, quy tắc lặp, giá, sức chứa, trạng thái duyệt và phiên bản lịch.
+  2. `ClassSession`: một buổi cụ thể thuộc đúng một `ClassCourse`; lưu `start_at`, `end_at`, `actual_facility_id`, `actual_coach_id`, `session_number` và trạng thái buổi.
+  3. `CourseEnrollment`: một lần ghi danh của hội viên vào `ClassCourse`; là nguồn dữ liệu gốc duy nhất cho số chỗ đã dùng của khóa.
+* `ClassCourse.seats_taken` chỉ được cập nhật trong cùng giao dịch với `CourseEnrollment`. Không được lấy tổng `current_enrolled` của các buổi để suy ra số chỗ còn lại.
+* Khi ghi danh một khóa chu kỳ thành công, hệ thống sinh `SessionEnrollment` cho tất cả `ClassSession` của khóa. Các bản ghi này chỉ phục vụ lịch cá nhân, điểm danh và ngoại lệ từng buổi; không được dùng để tính tiền hoặc tăng số chỗ lần nữa.
+* Mọi bảng có thời điểm phải lưu UTC; API nhận/trả thêm `time_zone = "Asia/Ho_Chi_Minh"` để hiển thị. Không được suy đoán UTC từ giá trị giờ địa phương.
+
+### BR-19: Hợp đồng tạo lịch không mâu thuẫn (Schedule Contract)
+* `schedule_type` là bắt buộc và chỉ nhận `ONE_TIME` hoặc `RECURRING`.
+* Với `ONE_TIME`, backend chỉ nhận một `start_at` và một `duration_minutes`; bắt buộc sinh đúng một `ClassSession`.
+* Với `RECURRING`, request bắt buộc có `start_date`, `start_time`, `days_of_week` không rỗng và **chính xác một** cách xác định điểm kết thúc:
+  * `end_mode = BY_WEEKS` kèm `weeks` trong khoảng 1..24; hoặc
+  * `end_mode = BY_END_DATE` kèm `end_date` trong khoảng từ `start_date` đến tối đa 180 ngày sau `start_date`; hoặc
+  * `end_mode = BY_SESSION_COUNT` kèm `total_sessions` trong khoảng 2..120.
+* `start_date` là ngày diễn ra Buổi 1, vì vậy bắt buộc phải thuộc `days_of_week`. Request không hợp lệ bị từ chối, không tự âm thầm dời sang ngày khác.
+* Backend tự sinh danh sách session, tự tính `end_date`, `total_sessions` và đánh số liên tục. Client chỉ gửi tham số đầu vào, không được quyết định danh sách session cuối cùng.
+* Tất cả session phải nằm trong giờ hoạt động 06:00--22:00 theo giờ trung tâm; `duration_minutes` là số nguyên trong khoảng 30..180 và không được qua ngày tiếp theo.
+
+### BR-20: Kiểm tra xung đột, soft-lock và tính nguyên tử
+* Preview là API chỉ đọc: trả về danh sách session dự kiến và `conflicts[]` theo từng session; không ghi dữ liệu, không giữ chỗ tài nguyên.
+* Khi Coach gửi proposal `PENDING`, hệ thống có thể lưu các session ở trạng thái `planned` để phục vụ duyệt, nhưng đây chỉ là **soft-lock mang tính cảnh báo**, không chặn proposal khác và tự hết hiệu lực khi proposal bị thu hồi, từ chối hoặc hết hạn sau 72 giờ.
+* Khi Manager tạo trực tiếp hoặc duyệt proposal, backend phải kiểm tra lại toàn bộ session trong **một database transaction**. Việc ghi lịch chỉ thành công nếu tất cả session hợp lệ; nếu có một session lỗi thì rollback toàn bộ khóa.
+* Database phải có ràng buộc chống trùng tài nguyên ở mức giao dịch: khóa hàng tài nguyên phù hợp hoặc PostgreSQL range-exclusion theo khoảng `[start_at, end_at)` cho phòng không chia sẻ và HLV. Kiểm tra trên UI không được xem là biện pháp bảo vệ cuối cùng.
+* Với phòng chia sẻ, transaction phải kiểm tra đồng thời số lớp trùng giờ không vượt `max_concurrent_classes` và tổng `capacity` không vượt `total_capacity`.
+* Mọi lỗi xung đột trả về mã nghiệp vụ và `conflicts[]` gồm `session_number`, `start_at`, `resource_type`, `resource_id`, `conflicting_session_id` và thông điệp hiển thị.
+
+### BR-21: Năng lực chuyên môn và thay đổi lịch
+* Trước preview, submit và approve, backend bắt buộc xác minh HLV đang active và được phân công `sport_id`; phòng đang active, hỗ trợ `sport_id` và có sức chứa phù hợp.
+* `DRAFT` và `PENDING` được phép sửa toàn bộ quy tắc lịch. Mỗi lần sửa phải tăng `schedule_version`, sinh lại session `planned` và chạy preview xung đột mới.
+* Sau `APPROVED`, không được thay đổi quy tắc lặp của khóa. Manager chỉ được sửa một `ClassSession` chưa bắt đầu; phải kiểm tra xung đột, ghi `change_reason`, tạo audit log và gửi thông báo cho toàn bộ hội viên bị ảnh hưởng.
+* Thay đổi hàng loạt sau khi đã có ghi danh là một `schedule_revision` mới, yêu cầu Manager xác nhận ảnh hưởng và thông báo trước khi áp dụng; không được ghi đè im lặng dữ liệu cũ.
+
+### BR-22: Ghi danh, giữ chỗ, thanh toán và danh sách chờ
+* `ONE_TIME` chỉ tạo một `CourseEnrollment` cho chính buổi đó. `RECURRING` luôn là ghi danh trọn khóa; mặc định không hỗ trợ mua rời hoặc vào giữa khóa.
+* Với khóa chu kỳ, đăng ký tự phục vụ đóng tại thời điểm bắt đầu Buổi 1. Nếu cần ghi danh muộn, chỉ Manager được tạo ngoại lệ có lý do, mức phí và các session được hưởng.
+* Số tiền, ưu đãi, thuế và quyền lợi gói tập phải do backend tính từ `ClassCourse` và gói đang hiệu lực. Client chỉ gửi `course_id`, phương thức thanh toán và `idempotency_key`; không được gửi hoặc quyết định `amount`.
+* Thanh toán online chỉ xác nhận `CourseEnrollment` sau webhook đã xác thực, idempotent từ cổng thanh toán. Thanh toán tại quầy tạo `HELD` tối đa 30 phút; quá hạn phải tự hủy và giải phóng chỗ.
+* Việc xác nhận chỗ dùng một lệnh nguyên tử có điều kiện `seats_taken < capacity`. Nếu hết chỗ, không được tạo enrollment hoặc hóa đơn thành công.
+* Waitlist áp dụng ở cấp `ClassCourse`, FIFO theo `created_at`. Khi có chỗ, hệ thống gửi lời mời giữ chỗ 15 phút; hết hạn chuyển cho người kế tiếp. Waitlist không thu tiền và không trừ quyền lợi gói.
+
+### BR-23: Hủy, hoàn tiền và ngoại lệ vận hành
+* Member được tự hủy `ONE_TIME` khi còn ít nhất 2 giờ trước giờ bắt đầu. Với `RECURRING`, chỉ được tự hủy khi còn ít nhất 24 giờ trước Buổi 1. Hệ thống phải hủy toàn bộ `SessionEnrollment`, giải phóng một chỗ ở khóa và áp dụng hoàn tiền theo snapshot giá tại thời điểm ghi danh.
+* Sau các mốc trên, Member chỉ được gửi Support Ticket. Receptionist/Manager xử lý ngoại lệ với lý do, tỷ lệ hoàn tiền hoặc credit bù được lưu audit.
+* Nếu Manager hủy cả khóa, hệ thống hủy các session chưa hoàn thành, hoàn tiền/credit theo chính sách đã công bố, giải phóng chỗ và gửi thông báo khẩn. Nếu chỉ hủy một session, Manager phải chọn một trong ba phương án: dạy bù, hoàn credit theo buổi, hoặc thay thế bằng session khác; không được hủy im lặng.
+* Không được sửa hoặc hủy session đã điểm danh `completed`; mọi điều chỉnh sau đó là nghiệp vụ hỗ trợ có audit log riêng.
+
+### BR-24: Bảo mật, truy vết và tiêu chí hoàn tất
+* Các thao tác create, update, submit, approve, reject, cancel, payment confirmation và attendance phải ghi `AuditLog` gồm actor, role, thời điểm, dữ liệu trước/sau, lý do và correlation/idempotency key.
+* API tạo lịch, duyệt, ghi danh và webhook thanh toán phải có idempotency key. Một request lặp lại không được tạo thêm khóa, session, enrollment hoặc hóa đơn.
+* Bộ kiểm thử bắt buộc gồm: sinh lịch cho mọi `end_mode`, timezone, giới hạn giờ hoạt động, HLV/phòng/môn không hợp lệ, xung đột từng session, duyệt đồng thời, 100 yêu cầu tranh một chỗ, webhook lặp, hủy/hoàn tiền và toàn bộ RBAC matrix.
+
+---
+
+## 8. MA TRẬN PHÂN QUYỀN NGHIỆP VỤ (RBAC MATRIX)
 
 | Hành động nghiệp vụ | Center Manager | Coach | Member | Receptionist |
 | :--- | :---: | :---: | :---: | :---: |

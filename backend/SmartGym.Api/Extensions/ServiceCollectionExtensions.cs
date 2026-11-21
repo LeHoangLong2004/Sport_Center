@@ -97,6 +97,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IReportService, ReportService>();
         services.AddScoped<IPdfService, InvoicePdfService>();
         services.AddScoped<ClassService>();
+        services.AddSingleton<ClassSchedulePolicy>();
+        services.AddScoped<ClassCourseWorkflowService>();
         services.AddScoped<BookingService>();
         services.AddScoped<CheckInService>();
         services.AddScoped<IWorkoutPlanService, WorkoutPlanService>();
