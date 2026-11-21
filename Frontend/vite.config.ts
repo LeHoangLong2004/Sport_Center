@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
   // Mặc định chạy Localhost (http://localhost:5000) trừ khi cấu hình rõ ràng VITE_USE_LOCAL=false
   const isDeploy = env.VITE_USE_LOCAL === 'false'
   const activeApiUrl = isDeploy
-    ? (env.VITE_DEPLOY_API_URL || 'https://sport-center-ga9j.onrender.com')
+    ? (env.VITE_DEPLOY_API_URL || 'https://sportcenter-production-b84c4dc5.up.railway.app')
     : (env.VITE_LOCAL_API_URL || 'http://localhost:5000')
 
   console.log(`\n===============================================================`)

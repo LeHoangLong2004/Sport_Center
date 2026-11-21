@@ -5,8 +5,8 @@ export type CurriculumStatus = "Nháp" | "Đã duyệt" | "Đã giao" | "Lưu tr
 export const STATUS_STYLE: Record<CurriculumStatus, { label: string; bg: string; text: string }> = {
   "Nháp": { label: "Bản nháp", bg: "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700", text: "text-slate-700 dark:text-slate-300" },
   "Đã duyệt": { label: "Sẵn sàng giao", bg: "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800", text: "text-emerald-700 dark:text-emerald-400" },
-  "Đã giao": { label: "Đã giao", bg: "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800", text: "text-emerald-700 dark:text-emerald-400" },
-  "Lưu trữ": { label: "Lưu trữ", bg: "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700", text: "text-slate-600 dark:text-slate-400" },
+  "Đã giao": { label: "Đã giao", bg: "bg-sky-50 dark:bg-sky-950/40 border-sky-200 dark:border-sky-800", text: "text-sky-700 dark:text-sky-300" },
+  "Lưu trữ": { label: "Lưu trữ", bg: "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700", text: "text-slate-600 dark:text-slate-400" },
 };
 
 export const EMPTY_EXERCISE = { name: "", reps: "", rest: "", note: "" };

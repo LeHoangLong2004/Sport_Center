@@ -150,8 +150,6 @@ public sealed class Flow5WorkoutPlanService : IFlow5WorkoutPlanService
             return Failure("version_conflict", "The plan version is stale.");
 
         plan.Status = Flow5PlanStatuses.Archived;
-        plan.ArchivedAt = DateTime.UtcNow;
-        plan.ArchivedBy = coachId;
         plan.Version++;
         plan.UpdatedAt = DateTime.UtcNow;
         var archived = await _repository.UpdateAsync(plan);
@@ -235,7 +233,7 @@ public sealed class Flow5WorkoutPlanService : IFlow5WorkoutPlanService
     private static List<WorkoutPlanExercise> ToExercises(IEnumerable<Flow5ExerciseDto>? source, Guid planId) =>
         (source ?? Array.Empty<Flow5ExerciseDto>()).Select((exercise, index) => new WorkoutPlanExercise
         {
-            Id = Guid.NewGuid(),
+            Id = exercise.Id.HasValue && exercise.Id.Value != Guid.Empty ? exercise.Id.Value : Guid.NewGuid(),
             PlanId = planId,
             Name = exercise.Name.Trim(),
             Sets = exercise.Sets,

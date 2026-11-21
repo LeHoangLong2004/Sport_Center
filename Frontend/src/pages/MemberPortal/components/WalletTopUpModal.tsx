@@ -92,6 +92,15 @@ export default function WalletTopUpModal({
     }
   }, [isOpen]);
 
+  const triggerSuccess = (amount: number, newBal: number) => {
+    setSuccessResult({ amount, newBalance: newBal });
+    try {
+      const cur = WalletService.getLocalWallet();
+      WalletService.saveLocalWallet({ ...cur, balance: newBal });
+    } catch {}
+    onSuccess?.(newBal);
+  };
+
   // Auto-polling biến động số dư khi mở tab QR
   useEffect(() => {
     if (!isOpen || method !== "qr" || successResult) return;
@@ -106,8 +115,7 @@ export default function WalletTopUpModal({
           const resolvedBal = typeof res.newBalance === "number" && res.newBalance > currentBalance
             ? res.newBalance
             : (freshWallet.balance > currentBalance ? freshWallet.balance : currentBalance + actualAmount);
-          setSuccessResult({ amount: actualAmount, newBalance: resolvedBal });
-          onSuccess?.(resolvedBal);
+          triggerSuccess(actualAmount, resolvedBal);
           return;
         }
 
@@ -116,8 +124,7 @@ export default function WalletTopUpModal({
         if (!isCancelled && freshWallet.balance > currentBalance) {
           clearInterval(interval);
           const added = freshWallet.balance - currentBalance;
-          setSuccessResult({ amount: added, newBalance: freshWallet.balance });
-          onSuccess?.(freshWallet.balance);
+          triggerSuccess(added, freshWallet.balance);
         }
       } catch {}
     }, 2500);
@@ -162,8 +169,7 @@ export default function WalletTopUpModal({
         const resolvedBal = typeof res.newBalance === "number" && res.newBalance > currentBalance
           ? res.newBalance
           : (freshWallet.balance > currentBalance ? freshWallet.balance : currentBalance + actualAmount);
-        setSuccessResult({ amount: actualAmount, newBalance: resolvedBal });
-        onSuccess?.(resolvedBal);
+        triggerSuccess(actualAmount, resolvedBal);
         return;
       }
 
@@ -171,8 +177,7 @@ export default function WalletTopUpModal({
       const freshWallet = await WalletService.getWallet(undefined, true);
       if (freshWallet.balance > currentBalance) {
         const added = freshWallet.balance - currentBalance;
-        setSuccessResult({ amount: added, newBalance: freshWallet.balance });
-        onSuccess?.(freshWallet.balance);
+        triggerSuccess(added, freshWallet.balance);
         return;
       }
 
@@ -191,8 +196,7 @@ export default function WalletTopUpModal({
     try {
       const res = await WalletService.simulateWebhook(actualAmount, transferMemo);
       if (res.success) {
-        setSuccessResult({ amount: actualAmount, newBalance: res.newBalance });
-        onSuccess?.(res.newBalance);
+        triggerSuccess(actualAmount, res.newBalance);
       }
     } finally {
       setIsSimulating(false);

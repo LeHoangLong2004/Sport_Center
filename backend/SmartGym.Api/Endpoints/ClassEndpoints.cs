@@ -107,6 +107,9 @@ public static partial class ClassEndpoints
                             ScheduleTime = scheduleTimeUtc,
                             DurationMinutes = request.DurationMinutes,
                             Capacity = request.Capacity,
+                            DaysOfWeek = request.DaysOfWeek,
+                            Weeks = request.Weeks,
+                            TotalSessions = request.TotalSessions
                         };
                         var (isSuccess, errorMessage) = await service.CreateClassAsync(createRequest, "pending");
                         if (!isSuccess)
@@ -368,11 +371,6 @@ public static partial class ClassEndpoints
                     return Results.Problem(detail: ex.ToString(), statusCode: 500);
                 }
             }
-        );
-
-        classGroup.MapGet(
-            "/",
-            async (ClassService service) => Results.Ok(await service.GetAllClassesAsync())
         );
 
         // 5. Available Classes
