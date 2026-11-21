@@ -132,7 +132,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             .SqlQueryRaw<ClassSqlRawModel>(
                 @"SELECT id, sport_id, facility_id, coach_id, class_name,
                          schedule_time, duration_minutes, capacity,
-                         current_enrolled, status, approval_status
+                         current_enrolled, status, approval_status, parent_id, session_number, total_sessions
                   FROM classes
                   WHERE coach_id = {0}
                     AND schedule_time >= {1}
@@ -158,7 +158,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             .SqlQueryRaw<ClassSqlRawModel>(
                 @"SELECT id, sport_id, facility_id, coach_id, class_name,
                          schedule_time, duration_minutes, capacity,
-                         current_enrolled, status, approval_status
+                         current_enrolled, status, approval_status, parent_id, session_number, total_sessions
                   FROM classes
                   WHERE facility_id = {0}
                     AND schedule_time >= {1}
@@ -184,7 +184,10 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             model.Capacity,
             model.CurrentEnrolled,
             model.Status,
-            model.ApprovalStatus
+            model.ApprovalStatus,
+            model.ParentId,
+            model.SessionNumber,
+            model.TotalSessions
         );
 
     private static DateTime AsUtc(DateTimeOffset value)
@@ -204,7 +207,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             .SqlQueryRaw<ClassSqlRawModel>(
                 @"SELECT id, sport_id, facility_id, coach_id, class_name,
                          schedule_time, duration_minutes, capacity,
-                         current_enrolled, status, approval_status
+                         current_enrolled, status, approval_status, parent_id, session_number, total_sessions
                   FROM classes"
             )
             .ToListAsync();

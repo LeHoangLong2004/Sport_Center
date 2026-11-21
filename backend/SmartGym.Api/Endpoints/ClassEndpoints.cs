@@ -63,7 +63,8 @@ public static partial class ClassEndpoints
                     [FromBody] CreateClassProposalRequest request,
                     HttpContext context,
                     SmartGymDbContext db,
-                    ClassService service) =>
+                    ClassService service,
+                    ILoggerFactory loggerFactory) =>
                 {
                     try
                     {
@@ -119,7 +120,11 @@ public static partial class ClassEndpoints
                     }
                     catch (Exception ex)
                     {
-                        return Results.Problem(detail: ex.ToString(), statusCode: 500);
+                        loggerFactory.CreateLogger("ClassProposal").LogError(ex, "Failed to create recurring class proposal for the current coach.");
+                        return Results.Problem(
+                            title: "Không thể gửi đề xuất mở lớp.",
+                            detail: ex.InnerException?.Message ?? ex.Message,
+                            statusCode: StatusCodes.Status500InternalServerError);
                     }
                 }
             )
@@ -375,6 +380,37 @@ public static partial class ClassEndpoints
 
         // 5. Available Classes
         /// <summary>
+        /// DELETE /api/classes/by-date/{date}
+        /// Xóa tất cả các lớp học nhóm (không phải PT 1-1) theo ngày đã cho.
+        /// Định dạng ngày: yyyy-MM-dd (UTC). Không xóa các PT session vì chúng nằm trong bảng pt_sessions.
+        /// </summary>
+        classGroup
+            .MapDelete(
+                "/by-date/{date:datetime}",
+                async (DateTime date, SmartGymDbContext db, ILoggerFactory loggerFactory) =>
+                {
+                    try
+                    {
+                        var start = date.Date;
+                        var end = start.AddDays(1);
+                        var affected = await db.Database.ExecuteSqlInterpolatedAsync($"""
+                            DELETE FROM classes
+                            WHERE schedule_time >= {start} AND schedule_time < {end}
+                        """);
+                        return Results.Ok(new { success = true, deleted = affected, message = $"Đã xóa {affected} lớp vào ngày {start:yyyy-MM-dd}." });
+                    }
+                    catch (Exception ex)
+                    {
+                        var logger = loggerFactory.CreateLogger("ClassEndpoints");
+                        logger.LogError(ex, "Lỗi khi xóa lớp theo ngày {Date}", date);
+                        return Results.Problem(detail: ex.Message, statusCode: 500);
+                    }
+                }
+            )
+            .RequireAuthorization(policy => policy.RequireRole("manager", "admin", "center_manager", "centermanager"));
+
+        // 5. Available Classes
+        /// <summary>
         /// GET /api/classes/available
         /// Lấy danh sách các lớp học đang mở và khả dụng cho hội viên đăng ký.
         /// </summary>
@@ -433,4 +469,3 @@ public static partial class ClassEndpoints
         public string? facility_name { get; set; }
     }
 }
-
