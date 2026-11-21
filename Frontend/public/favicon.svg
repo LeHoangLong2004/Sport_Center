@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="scGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="60%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+    <linearGradient id="boltGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#ecfdf5" />
+    </linearGradient>
+    <filter id="subtleShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-color="#022c22" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Nền Squircle chuẩn màu xanh Emerald/Teal của SportCenter -->
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="url(#scGrad)" />
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="none" stroke="#6ee7b7" stroke-width="1.5" stroke-opacity="0.4" />
+
+  <!-- Chữ SC Monogram thể thao đậm nét & rõ ràng khi hiển thị kích thước nhỏ trên Tab trình duyệt -->
+  <g filter="url(#subtleShadow)">
+    <text 
+      x="27" 
+      y="43" 
+      font-family="system-ui, -apple-system, 'Plus Jakarta Sans', 'Inter', sans-serif" 
+      font-size="29" 
+      font-weight="900" 
+      letter-spacing="-1.5" 
+      text-anchor="middle" 
+      fill="#ffffff"
+    >SC</text>
+  </g>
+
+  <!-- Biểu tượng Tia năng lượng / Sức mạnh thể thao (Energy Bolt) ở góc trên bên phải -->
+  <g filter="url(#subtleShadow)">
+    <path 
+      d="M48 8 L39 23 L45 23 L42 34 L54 18 L47 18 Z" 
+      fill="#facc15" 
+      stroke="#047857" 
+      stroke-width="1"
+      stroke-linejoin="round"
+    />
+  </g>
+</svg>
+

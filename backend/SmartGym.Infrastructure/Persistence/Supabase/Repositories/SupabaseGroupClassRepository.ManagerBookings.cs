@@ -122,6 +122,15 @@ public class ClassSqlRawModel
 
     [Column("approval_status")]
     public string ApprovalStatus { get; set; } = "approved";
+
+    [Column("parent_id")]
+    public Guid? ParentId { get; set; }
+
+    [Column("session_number")]
+    public int SessionNumber { get; set; } = 1;
+
+    [Column("total_sessions")]
+    public int TotalSessions { get; set; } = 1;
 }
 
 public class ClassApprovalRawModel
@@ -245,4 +254,40 @@ public class PtEnrollmentRawModel
 
     [Column("coach_id")]
     public Guid? CoachId { get; set; }
+}
+
+public class ClassSessionRawModel
+{
+    [Column("id")]
+    public Guid Id { get; set; }
+
+    [Column("session_number")]
+    public int SessionNumber { get; set; }
+
+    [Column("schedule_time")]
+    public DateTime ScheduleTime { get; set; }
+
+    [Column("duration_minutes")]
+    public int DurationMinutes { get; set; }
+
+    [Column("approval_status")]
+    public string ApprovalStatus { get; set; } = string.Empty;
+}
+
+public class ClassSessionBookingTargetRawModel
+{
+    [Column("id")]
+    public Guid Id { get; set; }
+
+    [Column("schedule_time")]
+    public DateTime ScheduleTime { get; set; }
+
+    [Column("duration_minutes")]
+    public int DurationMinutes { get; set; }
+
+    [Column("current_enrolled")]
+    public int CurrentEnrolled { get; set; }
+
+    [Column("capacity")]
+    public int Capacity { get; set; }
 }
