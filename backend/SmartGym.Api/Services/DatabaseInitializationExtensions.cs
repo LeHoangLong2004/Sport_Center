@@ -58,11 +58,19 @@ public static partial class DatabaseInitializationExtensions
 
                 ALTER TABLE classes
                     ADD COLUMN IF NOT EXISTS approval_status VARCHAR(20) NOT NULL DEFAULT 'approved';
+                ALTER TABLE classes
+                    ADD COLUMN IF NOT EXISTS parent_id UUID REFERENCES classes(id) ON DELETE CASCADE;
+                ALTER TABLE classes
+                    ADD COLUMN IF NOT EXISTS session_number INTEGER NOT NULL DEFAULT 1;
+                ALTER TABLE classes
+                    ADD COLUMN IF NOT EXISTS total_sessions INTEGER NOT NULL DEFAULT 1;
                 UPDATE classes
                     SET approval_status = 'approved'
                     WHERE approval_status IS NULL OR approval_status = '';
                 CREATE INDEX IF NOT EXISTS idx_classes_approval_status
                     ON classes(approval_status);
+                CREATE INDEX IF NOT EXISTS idx_classes_parent_id
+                    ON classes(parent_id);
 
                 -- Đồng bộ trạng thái các đơn hàng đã bị hủy
                 UPDATE invoices
@@ -141,6 +149,7 @@ public static partial class DatabaseInitializationExtensions
         }
 
         InitializeFlow5WorkoutPlanSchema(app, db);
+        EnsureClassSchedulingSchema(db, app.Logger);
 
         // ── Flow 3: đồng bộ cột bảng invoices với EF Core (an toàn khi chạy lại) ──
         try
@@ -387,4 +396,3 @@ public static partial class DatabaseInitializationExtensions
         SeedInitialData(db, app);
     }
 }
-

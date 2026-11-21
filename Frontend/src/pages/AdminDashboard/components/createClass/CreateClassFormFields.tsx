@@ -16,14 +16,41 @@ interface CreateClassFormFieldsProps {
 }
 
 const WEEK_DAYS = [
-  { label: "Thứ 2", val: 1 },
-  { label: "Thứ 3", val: 2 },
-  { label: "Thứ 4", val: 3 },
-  { label: "Thứ 5", val: 4 },
-  { label: "Thứ 6", val: 5 },
-  { label: "Thứ 7", val: 6 },
-  { label: "Chủ Nhật", val: 0 },
+  { label: 'T2', val: 1 }, { label: 'T3', val: 2 }, { label: 'T4', val: 3 },
+  { label: 'T5', val: 4 }, { label: 'T6', val: 5 }, { label: 'T7', val: 6 }, { label: 'CN', val: 0 },
 ];
+
+// ── Shared style tokens đồng bộ với theme dự án ────────────────
+const inputCls =
+  'w-full border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-medium ' +
+  'bg-white dark:bg-slate-800/90 text-slate-900 dark:text-white outline-none ' +
+  'placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal ' +
+  'focus:border-emerald-500 dark:focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 ' +
+  'shadow-2xs transition-all';
+
+const selectCls = `${inputCls} cursor-pointer`;
+
+const FieldLabel = ({ children, hint }: { children: React.ReactNode; hint?: string }) => (
+  <div className="mb-1.5">
+    <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+      {children} <span className="text-red-500 font-bold">*</span>
+    </label>
+    {hint && <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{hint}</p>}
+  </div>
+);
+
+const OptionalLabel = ({ children }: { children: React.ReactNode }) => (
+  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1.5">{children}</label>
+);
+
+const Divider = ({ label }: { label: string }) => (
+  <div className="flex items-center gap-3 my-1">
+    <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
+    <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest shrink-0">{label}</span>
+    <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
+  </div>
+);
+// ──────────────────────────────────────────────────────────────
 
 export function CreateClassFormFields({
   formData,
@@ -43,310 +70,301 @@ export function CreateClassFormFields({
   const toggleDay = (dayVal: number) => {
     let newDays: number[];
     if (currentDays.includes(dayVal)) {
-      if (currentDays.length <= 1) return; // giữ tối thiểu 1 ngày
+      if (currentDays.length <= 1) return;
       newDays = currentDays.filter(d => d !== dayVal);
     } else {
       newDays = [...currentDays, dayVal].sort((a, b) => a - b);
     }
-    const weeks = formData.weeks || 10;
-    setFormData(prev => ({
-      ...prev,
-      daysOfWeek: newDays,
-      totalSessions: newDays.length * weeks
-    }));
+    setFormData(prev => ({ ...prev, daysOfWeek: newDays, totalSessions: newDays.length * (prev.weeks || 10) }));
   };
 
   const handleWeeksChange = (w: number) => {
-    const safeWeeks = Math.max(1, w);
-    setFormData(prev => ({
-      ...prev,
-      weeks: safeWeeks,
-      totalSessions: (prev.daysOfWeek?.length || 2) * safeWeeks
-    }));
+    const safeWeeks = Math.max(1, Math.min(52, w));
+    setFormData(prev => ({ ...prev, weeks: safeWeeks, totalSessions: (prev.daysOfWeek?.length || 2) * safeWeeks }));
   };
 
   return (
-    <>
-      {/* Chọn hình thức lớp */}
-      <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-2.5">
-        <label className="block text-[11px] font-bold text-slate-700 uppercase mb-2">Hình thức lớp học</label>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => setFormData(prev => ({ ...prev, isRecurring: false }))}
-            className={`py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer text-center ${
-              !isRecurring
-                ? "bg-white text-emerald-700 border border-emerald-500 shadow-xs"
-                : "bg-slate-100 text-slate-600 border border-transparent hover:bg-white"
-            }`}
-          >
-            🗓️ Lớp đơn lẻ (1 buổi)
-          </button>
-          <button
-            type="button"
-            onClick={() => setFormData(prev => ({
-              ...prev,
-              isRecurring: true,
-              daysOfWeek: prev.daysOfWeek?.length ? prev.daysOfWeek : [1, 4],
-              weeks: prev.weeks || 10,
-              totalSessions: (prev.daysOfWeek?.length || 2) * (prev.weeks || 10)
-            }))}
-            className={`py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer text-center ${
-              isRecurring
-                ? "bg-white text-emerald-700 border border-emerald-500 shadow-xs"
-                : "bg-slate-100 text-slate-600 border border-transparent hover:bg-white"
-            }`}
-          >
-            🔄 Khóa học chu kỳ (Định kỳ tuần)
-          </button>
+    <div className="space-y-6">
+
+      {/* ══ 1. HÌNH THỨC LỚP ══ */}
+      <div>
+        <Divider label="Hình thức lớp học" />
+        <div className="grid grid-cols-2 gap-3.5 mt-3">
+          {[
+            { icon: '🗓️', label: 'Lớp đơn lẻ', sub: '1 buổi tập duy nhất', val: false },
+            { icon: '🔄', label: 'Lịch định kỳ', sub: 'Lặp lại đều đặn theo tuần', val: true },
+          ].map(opt => (
+            <button
+              key={String(opt.val)}
+              type="button"
+              onClick={() =>
+                setFormData(prev => ({
+                  ...prev,
+                  isRecurring: opt.val,
+                  ...(opt.val
+                    ? {
+                        daysOfWeek: prev.daysOfWeek?.length ? prev.daysOfWeek : [1, 4],
+                        weeks: prev.weeks || 10,
+                        totalSessions: (prev.daysOfWeek?.length || 2) * (prev.weeks || 10),
+                      }
+                    : {}),
+                }))
+              }
+              className={`flex items-center gap-3.5 p-4 rounded-2xl border-2 text-left transition-all cursor-pointer select-none ${
+                isRecurring === opt.val
+                  ? 'bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-500 dark:border-emerald-500 shadow-xs ring-1 ring-emerald-500/20'
+                  : 'bg-white dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-slate-600 hover:bg-emerald-50/20 dark:hover:bg-slate-800'
+              }`}
+            >
+              <span className="text-2xl shrink-0">{opt.icon}</span>
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-bold ${isRecurring === opt.val ? 'text-emerald-900 dark:text-emerald-200' : 'text-slate-800 dark:text-slate-200'}`}>
+                  {opt.label}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{opt.sub}</p>
+              </div>
+              <div className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-all ${
+                isRecurring === opt.val
+                  ? 'border-emerald-500 bg-emerald-500'
+                  : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800'
+              }`}>
+                {isRecurring === opt.val && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                )}
+              </div>
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Tên lớp học */}
+      {/* ══ 2. THÔNG TIN LỚP ══ */}
       <div>
-        <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Tên lớp học</label>
-        <input
-          required
-          type="text"
-          name="className"
-          value={formData.className}
-          onChange={(e) => {
-            e.target.setCustomValidity("");
-            handleChange(e);
-          }}
-          onInvalid={(e) => {
-            (e.target as HTMLInputElement).setCustomValidity("Vui lòng nhập tên lớp học.");
-          }}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
-          placeholder="VD: Yoga thư giãn"
-        />
-      </div>
-
-      {/* Cấu hình chu kỳ tuần khi chọn Khóa học định kỳ */}
-      {isRecurring && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-3.5 space-y-3">
+        <Divider label="Thông tin lớp học" />
+        <div className="space-y-4 mt-3">
+          {/* Tên lớp */}
           <div>
-            <label className="block text-[11px] font-bold text-emerald-900 uppercase tracking-wide mb-1.5">
-              Chọn các ngày học trong tuần (Bấm để chọn):
-            </label>
-            <div className="flex flex-wrap gap-1.5">
-              {WEEK_DAYS.map(day => {
-                const isSelected = currentDays.includes(day.val);
-                return (
-                  <button
-                    key={day.val}
-                    type="button"
-                    onClick={() => toggleDay(day.val)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
-                      isSelected
-                        ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
-                        : "bg-white text-slate-700 border-slate-200 hover:border-emerald-300"
-                    }`}
-                  >
-                    {day.label}
-                  </button>
-                );
-              })}
-            </div>
+            <FieldLabel>Tên lớp học</FieldLabel>
+            <input
+              required type="text" name="className"
+              value={formData.className}
+              onChange={e => { e.target.setCustomValidity(''); handleChange(e); }}
+              onInvalid={e => { (e.target as HTMLInputElement).setCustomValidity('Vui lòng nhập tên lớp học.'); }}
+              className={inputCls}
+              placeholder="VD: Yoga phục hồi cột sống buổi sáng"
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-3 pt-1">
+          {/* Môn + Phòng */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Thời lượng khóa (Tuần)</label>
-              <input
-                type="number"
-                min="1"
-                max="24"
-                value={formData.weeks || 10}
-                onChange={(e) => handleWeeksChange(Number(e.target.value))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white outline-none focus:border-emerald-500"
+              <FieldLabel>Môn học</FieldLabel>
+              <select required name="sportId" value={formData.sportId} onChange={handleChange} className={selectCls}>
+                <option value="" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">— Chọn môn học —</option>
+                {sports.map(s => (
+                  <option key={s.id} value={s.id} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+              {isCoachMode && sports.length === 0 && !loadingData && (
+                <p className="mt-1.5 text-xs text-orange-600 dark:text-orange-400 font-medium">⚠ Chưa được phân công môn nào.</p>
+              )}
+              {isCoachMode && sports.length > 0 && (
+                <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">Có {sports.length} môn được phân công</p>
+              )}
+            </div>
+            <div>
+              <FieldLabel>Phòng tập</FieldLabel>
+              <select required name="facilityId" value={formData.facilityId} onChange={handleChange} className={selectCls}>
+                <option value="" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">— Chọn phòng —</option>
+                {facilities.map(f => (
+                  <option key={f.id} value={f.id} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
+                    {f.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ══ 3. LỊCH HỌC ══ */}
+      <div>
+        <Divider label="Lịch học & Quy mô" />
+        <div className="space-y-4 mt-3">
+
+          {/* Ngày + Giờ */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <FieldLabel hint={isCoachMode ? 'Tối thiểu từ ngày mai' : undefined}>
+                {isRecurring ? 'Ngày khai giảng' : 'Ngày diễn ra'}
+              </FieldLabel>
+              <DateInput
+                required
+                value={formData.scheduleDate}
+                onChange={value => setFormData(prev => ({ ...prev, scheduleDate: value }))}
+                className={inputCls}
               />
             </div>
             <div>
-              <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Tổng số buổi dự kiến</label>
-              <div className="w-full border border-emerald-200 rounded-lg px-3 py-1.5 text-sm bg-emerald-50/80 font-bold text-emerald-900">
-                {formData.totalSessions || (currentDays.length * (formData.weeks || 10))} buổi
+              <FieldLabel hint={isCoachMode ? 'Phải cách thời điểm hiện tại ≥ 24 giờ' : undefined}>
+                Giờ bắt đầu
+              </FieldLabel>
+              <input
+                required type="time" name="scheduleTime"
+                value={formData.scheduleTime}
+                onChange={e => { e.target.setCustomValidity(''); handleChange(e); }}
+                onInvalid={e => { (e.target as HTMLInputElement).setCustomValidity('Vui lòng nhập giờ học.'); }}
+                className={inputCls}
+              />
+            </div>
+          </div>
+
+          {/* Thời lượng + Sức chứa */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <FieldLabel>Thời lượng buổi tập</FieldLabel>
+              <div className="relative">
+                <input
+                  required type="number" name="durationMinutes" min="15" max="480"
+                  value={formData.durationMinutes}
+                  onChange={e => { e.target.setCustomValidity(''); handleChange(e); }}
+                  onInvalid={e => { (e.target as HTMLInputElement).setCustomValidity('Vui lòng nhập thời lượng.'); }}
+                  className={`${inputCls} pr-16`}
+                  placeholder="60"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 dark:text-slate-500 pointer-events-none">
+                  phút
+                </span>
+              </div>
+            </div>
+            <div>
+              <FieldLabel>Sức chứa tối đa</FieldLabel>
+              <div className="relative">
+                <input
+                  required type="number" name="capacity" min="1" max="500"
+                  value={formData.capacity}
+                  onChange={e => { e.target.setCustomValidity(''); handleChange(e); }}
+                  onInvalid={e => { (e.target as HTMLInputElement).setCustomValidity('Vui lòng nhập sức chứa.'); }}
+                  className={`${inputCls} pr-16`}
+                  placeholder="20"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 dark:text-slate-500 pointer-events-none">
+                  học viên
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Lộ trình tóm tắt */}
-          <div className="p-2.5 bg-white/90 rounded-lg border border-emerald-100 text-xs text-slate-700 space-y-0.5">
-            <span className="font-bold text-emerald-800 block">📋 Tóm tắt lộ trình khóa học:</span>
-            <p>
-              • Quy mô: <strong>{formData.totalSessions || (currentDays.length * (formData.weeks || 10))} buổi</strong> ({formData.weeks || 10} tuần, mỗi tuần {currentDays.length} buổi).
-            </p>
-            <p>
-              • Lịch học: <strong>{currentDays.map(d => WEEK_DAYS.find(w => w.val === d)?.label).filter(Boolean).join(", ")}</strong> lúc <strong>{formData.scheduleTime || "--:--"}</strong>.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Ngày & Giờ học */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">
-            {isRecurring ? "Ngày bắt đầu (Khai giảng)" : "Ngày học"}
-          </label>
-          <DateInput
-            required
-            value={formData.scheduleDate}
-            onChange={(value) => setFormData((prev) => ({ ...prev, scheduleDate: value }))}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-500"
-          />
-          {isCoachMode && (
-            <p className="mt-1 text-[11px] text-slate-500">Tối thiểu từ ngày mai trở đi</p>
-          )}
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Giờ học</label>
-          <input
-            required
-            type="time"
-            name="scheduleTime"
-            value={formData.scheduleTime}
-            onChange={(e) => {
-              e.target.setCustomValidity("");
-              handleChange(e);
-            }}
-            onInvalid={(e) => {
-              (e.target as HTMLInputElement).setCustomValidity("Vui lòng nhập đầy đủ giờ học và chọn buổi sáng/chiều (AM hoặc PM).");
-            }}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-500"
-          />
-          {isCoachMode && (
-            <p className="mt-1 text-[11px] text-slate-500">Cách hiện tại ≥ 24h</p>
-          )}
-        </div>
-      </div>
-
-      {/* Cảnh báo quy định thời gian */}
-      {leadTimeValidation && !leadTimeValidation.valid && (
-        <div className="flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-800">
-          <svg className="h-4 w-4 shrink-0 text-slate-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-          <span>{leadTimeValidation.message}</span>
-        </div>
-      )}
-
-      {/* Môn học & Phòng tập */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Môn học</label>
-          <select
-            required
-            name="sportId"
-            value={formData.sportId}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-500 bg-white"
-          >
-            <option value="">
-              -- {sports.length === 0 ? (isCoachMode ? "Chưa được phân công môn nào" : "Không có môn") : "Chọn môn học"} --
-            </option>
-            {sports.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-          {isCoachMode && sports.length === 0 && !loadingData && (
-            <p className="mt-1 text-[11px] text-slate-600 font-medium">Bạn chưa được Quản lý phân công môn nào để mở lớp.</p>
-          )}
-          {isCoachMode && sports.length > 0 && (
-            <p className="mt-1 text-[11px] text-slate-500">Chỉ hiển thị các môn bạn được phân công ({sports.length} môn).</p>
-          )}
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Phòng tập</label>
-          <select
-            required
-            name="facilityId"
-            value={formData.facilityId}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-500 bg-white"
-          >
-            <option value="">-- Chọn phòng tập --</option>
-            {facilities.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Huấn luyện viên */}
-      <div>
-        <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Huấn luyện viên</label>
-        {isCoachMode ? (
-          <>
-            <div className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700 font-medium">
-              {currentCoachName}
+          {/* Cảnh báo lead time (dành cho Coach) */}
+          {leadTimeValidation && !leadTimeValidation.valid && (
+            <div className="flex items-start gap-3 rounded-2xl border border-amber-200 dark:border-amber-800/80 bg-amber-50 dark:bg-amber-950/40 px-4 py-3">
+              <svg className="h-5 w-5 shrink-0 text-amber-500 dark:text-amber-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-300">{leadTimeValidation.message}</p>
             </div>
-            <p className="mt-1 text-xs text-slate-500">Đề xuất sẽ được gắn với tài khoản Coach đang đăng nhập.</p>
-          </>
-        ) : (
-          <>
-            <select
-              required
-              name="coachId"
-              value={formData.coachId}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-500 bg-white"
-            >
-              <option value="">-- Chọn HLV --</option>
-              {coaches.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.fullName || c.email}
-                </option>
-              ))}
-            </select>
-            {loadingData && <p className="text-xs text-slate-600 mt-1">Đang tải dữ liệu...</p>}
-            {!loadingData && coaches.length === 0 && <p className="text-xs text-red-600 mt-1">Chưa có HLV nào trong hệ thống.</p>}
-          </>
-        )}
+          )}
+
+          {/* Cấu hình lặp định kỳ */}
+          {isRecurring && (
+            <div className="rounded-2xl border border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/60 dark:bg-emerald-950/40 p-4 sm:p-5 space-y-4">
+              <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">Cấu hình lịch lặp định kỳ</p>
+
+              {/* Day picker buttons */}
+              <div>
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Chọn các ngày trong tuần</p>
+                <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+                  {WEEK_DAYS.map(day => {
+                    const sel = currentDays.includes(day.val);
+                    return (
+                      <button
+                        key={day.val}
+                        type="button"
+                        onClick={() => toggleDay(day.val)}
+                        className={`h-10 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer border-2 ${
+                          sel
+                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/30'
+                            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-400 dark:hover:border-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-400'
+                        }`}
+                      >
+                        {day.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Weeks + Total */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <OptionalLabel>Số tuần đào tạo</OptionalLabel>
+                  <input
+                    type="number" min="1" max="52"
+                    value={formData.weeks || 10}
+                    onChange={e => handleWeeksChange(Number(e.target.value))}
+                    className={inputCls}
+                  />
+                </div>
+                <div>
+                  <OptionalLabel>Tổng số buổi dự kiến</OptionalLabel>
+                  <div className="w-full border-2 border-emerald-300 dark:border-emerald-700/80 rounded-xl px-4 py-2.5 text-sm font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-900/30 text-center flex items-center justify-center">
+                    {formData.totalSessions || currentDays.length * (formData.weeks || 10)} buổi
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Thời lượng & Sức chứa */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Thời lượng (Phút)</label>
-          <input
-            required
-            type="number"
-            name="durationMinutes"
-            value={formData.durationMinutes}
-            onChange={(e) => {
-              e.target.setCustomValidity("");
-              handleChange(e);
-            }}
-            onInvalid={(e) => {
-              (e.target as HTMLInputElement).setCustomValidity("Vui lòng nhập thời lượng lớp học (phút).");
-            }}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-500"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase">Sức chứa (Người)</label>
-          <input
-            required
-            type="number"
-            name="capacity"
-            value={formData.capacity}
-            onChange={(e) => {
-              e.target.setCustomValidity("");
-              handleChange(e);
-            }}
-            onInvalid={(e) => {
-              (e.target as HTMLInputElement).setCustomValidity("Vui lòng nhập sức chứa tối đa của lớp học.");
-            }}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-500"
-          />
+      {/* ══ 4. HUẤN LUYỆN VIÊN ══ */}
+      <div>
+        <Divider label="Huấn luyện viên phụ trách" />
+        <div className="mt-3">
+          {isCoachMode ? (
+            <div className="flex items-center gap-4 w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-4 py-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-sm shadow-emerald-500/25">
+                {currentCoachName.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{currentCoachName}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Tài khoản Coach đang đăng nhập</p>
+              </div>
+              <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1 rounded-full shrink-0">
+                Active
+              </span>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1.5">
+                Chọn huấn luyện viên <span className="text-red-500 font-bold">*</span>
+              </label>
+              <select required name="coachId" value={formData.coachId} onChange={handleChange} className={selectCls}>
+                <option value="" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">— Chọn huấn luyện viên —</option>
+                {coaches.map(c => (
+                  <option key={c.id} value={c.id} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
+                    {c.fullName || c.email}
+                  </option>
+                ))}
+              </select>
+              {loadingData && (
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 flex items-center gap-1.5">
+                  <svg className="w-3.5 h-3.5 animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Đang tải danh sách HLV...
+                </p>
+              )}
+              {!loadingData && coaches.length === 0 && (
+                <p className="text-xs text-red-600 dark:text-red-400 font-medium mt-1.5">⚠ Chưa có HLV nào trong hệ thống.</p>
+              )}
+            </div>
+          )}
         </div>
       </div>
-    </>
+
+    </div>
   );
 }
-

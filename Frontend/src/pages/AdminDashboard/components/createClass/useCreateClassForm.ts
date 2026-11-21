@@ -247,7 +247,7 @@ export function useCreateClassForm({ editData, mode = "manager", onSuccess, onCl
         data = await res.json();
       } else if (contentType && contentType.includes("application/problem+json")) {
         const problem = await res.json();
-        data = { message: problem.title || JSON.stringify(problem.errors) };
+        data = { message: problem.detail || problem.title || JSON.stringify(problem.errors) };
       } else {
         const text = await res.text();
         data = { message: text || `HTTP Error ${res.status}` };
@@ -295,4 +295,3 @@ export function useCreateClassForm({ editData, mode = "manager", onSuccess, onCl
     handleSubmit
   };
 }
-
