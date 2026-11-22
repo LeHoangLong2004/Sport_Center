@@ -102,6 +102,11 @@ export function CoachClassProposalsList({
                 <h4 className="font-bold text-slate-900 dark:text-white text-base">
                   {item.className}
                 </h4>
+                {item.totalSessions && item.totalSessions > 1 && (
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                    Khóa {item.totalSessions} buổi
+                  </span>
+                )}
                 {item.sportName && (
                   <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                     {item.sportName}
@@ -127,10 +132,13 @@ export function CoachClassProposalsList({
                     <span>Sĩ số dự kiến: <strong className="text-slate-700 dark:text-slate-300">{item.maxCapacity} học viên</strong></span>
                   </span>
                 )}
-                {item.defaultPrice > 0 && (
+                {item.defaultPrice !== null && item.defaultPrice !== undefined ? (
                   <span>
                     Học phí: <strong className="text-emerald-600 dark:text-emerald-400">{item.defaultPrice.toLocaleString("vi-VN")} đ</strong>
+                    {item.totalSessions && item.totalSessions > 1 ? ` (${item.totalSessions} buổi)` : ""}
                   </span>
+                ) : (
+                  <span>Chưa có giá áp dụng</span>
                 )}
               </div>
 

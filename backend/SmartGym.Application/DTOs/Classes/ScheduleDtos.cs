@@ -22,6 +22,9 @@ public class MemberClassBookingDto
     public DateTime ScheduleTime { get; set; }
     public int DurationMinutes { get; set; }
     public string Status { get; set; } = string.Empty;
+    public Guid? ParentId { get; set; }
+    public int SessionNumber { get; set; } = 1;
+    public int TotalSessions { get; set; } = 1;
 }
 
 public class MemberPtSessionDto
@@ -37,6 +40,9 @@ public class MemberPtSessionDto
     public DateTime ScheduleTime { get; set; }
     public int DurationMinutes { get; set; }
     public string Status { get; set; } = string.Empty;
+    public Guid? ParentId { get; set; }
+    public int SessionNumber { get; set; } = 1;
+    public int TotalSessions { get; set; } = 1;
 }
 
 public class MemberScheduleResponse

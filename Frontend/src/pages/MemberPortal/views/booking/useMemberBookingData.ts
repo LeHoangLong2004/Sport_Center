@@ -114,6 +114,7 @@ export function useMemberBookingData() {
           id: booking.classId,
           bookingId: booking.bookingId || booking.id,
           classId: booking.classId,
+          parentId: booking.parentId || undefined,
           name: booking.className,
           sport: booking.sportName || "Lớp nhóm",
           level: "Lớp nhóm",
@@ -135,6 +136,8 @@ export function useMemberBookingData() {
           registeredCount: 0,
           scheduleTime: booking.scheduleTime,
           durationMinutes: Number(booking.durationMinutes || 60),
+          sessionNumber: booking.sessionNumber ?? 1,
+          totalSessions: booking.totalSessions ?? 1,
           status: effectiveStatus,
           bookingStatus: effectiveStatus,
         };
@@ -232,6 +235,18 @@ export function useMemberBookingData() {
     void loadGroupClasses();
   }, [loadGroupClasses]);
 
+  useEffect(() => {
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void loadGroupClasses(true);
+    };
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [loadGroupClasses]);
+
   const normalizeBookingStatus = useCallback((status: unknown) =>
     String(status ?? "")
       .trim()
@@ -300,6 +315,15 @@ export function useMemberBookingData() {
     [mySessions, isInactiveBookingStatus, getBookingStatus]
   );
 
+  const myRegisteredClassesCount = useMemo(() => {
+    const registeredCourseIds = new Set(
+      myActiveClasses
+        .filter((session) => session.type === "group")
+        .map((session) => String((session as any).parentId || (session as any).classId || session.id))
+    );
+    return registeredCourseIds.size;
+  }, [myActiveClasses]);
+
   const sportOptions = useMemo(() => {
     const map = new Map<string, string>();
     // 1. Nạp các môn thể thao từ Backend API /api/sports
@@ -344,5 +368,6 @@ export function useMemberBookingData() {
     isBooked,
     myActiveClasses,
     myUpcomingClasses,
+    myRegisteredClassesCount,
   };
 }

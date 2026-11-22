@@ -1,6 +1,6 @@
 import React from "react";
 import { createPortal } from "react-dom";
-import { X, AlertCircle, Info } from "lucide-react";
+import { X, AlertCircle, Info, CalendarX } from "lucide-react";
 import type { MemberSessionItem } from "../../types";
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   onCancelReasonChange: (reason: string) => void;
   onClose: () => void;
   onConfirmCancel: (e: React.FormEvent) => void;
+  mode?: "cancel" | "absence";
 }
 
 export default function CancelSessionModal({
@@ -17,8 +18,11 @@ export default function CancelSessionModal({
   onCancelReasonChange,
   onClose,
   onConfirmCancel,
+  mode = "cancel",
 }: Props) {
   if (!session) return null;
+
+  const isAbsence = mode === "absence";
 
   return createPortal(
     <div
@@ -39,17 +43,30 @@ export default function CancelSessionModal({
           <X className="w-5 h-5" />
         </button>
 
-        <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center">
-          <AlertCircle className="w-6 h-6" />
+        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+          isAbsence
+            ? "bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400"
+            : "bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400"
+        }`}>
+          {isAbsence ? <CalendarX className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
         </div>
 
         <div>
           <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-            Xác nhận hủy đặt chỗ
+            {isAbsence ? "Báo vắng buổi học" : "Xác nhận hủy đặt chỗ"}
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Bạn có chắc chắn muốn hủy buổi tập <strong>"{session.name}"</strong> vào lúc{" "}
-            <strong>{session.startTime} ({session.date})</strong> không?
+            {isAbsence ? (
+              <>
+                Bạn có chắc chắn muốn xin nghỉ buổi học <strong>"{session.name}"</strong> vào lúc{" "}
+                <strong>{session.startTime} ({session.date})</strong> không?
+              </>
+            ) : (
+              <>
+                Bạn có chắc chắn muốn hủy buổi tập <strong>"{session.name}"</strong> vào lúc{" "}
+                <strong>{session.startTime} ({session.date})</strong> không?
+              </>
+            )}
           </p>
         </div>
 
@@ -57,17 +74,19 @@ export default function CancelSessionModal({
         <form onSubmit={onConfirmCancel} className="space-y-3">
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              Lý do hủy lịch: <span className="text-rose-500">*</span>
+              Lý do xin nghỉ / vắng: <span className="text-rose-500">*</span>
             </label>
             <div className="flex flex-wrap gap-1.5 mb-2">
-              {["Bận việc đột xuất", "Sức khỏe không tốt", "Trùng lịch cá nhân", "Đổi sang buổi khác"].map((r) => (
+              {["Bận việc đột xuất", "Sức khỏe không tốt", "Trùng lịch cá nhân", "Xin phép vắng mặt"].map((r) => (
                 <button
                   key={r}
                   type="button"
                   onClick={() => onCancelReasonChange(r)}
                   className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
                     cancelReason === r
-                      ? "bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border-rose-300 dark:border-rose-700 font-bold"
+                      ? isAbsence
+                        ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700 font-bold"
+                        : "bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border-rose-300 dark:border-rose-700 font-bold"
                       : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-300"
                   }`}
                 >
@@ -80,15 +99,25 @@ export default function CancelSessionModal({
               required
               value={cancelReason}
               onChange={(e) => onCancelReasonChange(e.target.value)}
-              placeholder="Nhập lý do hủy lịch của bạn..."
-              className="w-full text-xs p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500"
+              placeholder="Nhập lý do của bạn..."
+              className={`w-full text-xs p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 ${
+                isAbsence ? "focus:ring-amber-500" : "focus:ring-rose-500"
+              }`}
             />
           </div>
 
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-[11px] text-slate-500 dark:text-slate-400 flex items-start gap-2">
-            <Info className="w-4 h-4 shrink-0 mt-0.5" />
+            <Info className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
             <span>
-              Chính sách: Suất học sẽ được hoàn lại tự động vào gói tập của bạn và thông báo tới HLV để mở lại suất cho học viên khác.
+              {isAbsence ? (
+                <>
+                  <strong>Quy định khóa học:</strong> Khi báo vắng, Huấn luyện viên sẽ được thông báo để không chờ và ghi nhận bạn <strong>vắng có phép</strong>. Suất học này không hoàn lại tiền lẻ vào ví.
+                </>
+              ) : (
+                <>
+                  Chính sách: Suất học sẽ được hoàn lại tự động nếu hủy trước giờ học tối thiểu 2 tiếng.
+                </>
+              )}
             </span>
           </div>
 
@@ -98,13 +127,17 @@ export default function CancelSessionModal({
               onClick={onClose}
               className="px-4 py-2 text-xs font-semibold rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
             >
-              Giữ lại lịch tập
+              Quay lại
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-xs font-bold rounded-xl text-white bg-rose-600 hover:bg-rose-700 transition-colors shadow-sm cursor-pointer"
+              className={`px-4 py-2 text-xs font-bold rounded-xl text-white transition-colors shadow-sm cursor-pointer ${
+                isAbsence
+                  ? "bg-amber-600 hover:bg-amber-700"
+                  : "bg-rose-600 hover:bg-rose-700"
+              }`}
             >
-              Xác nhận hủy chỗ
+              {isAbsence ? "Xác nhận báo vắng" : "Xác nhận hủy chỗ"}
             </button>
           </div>
         </form>

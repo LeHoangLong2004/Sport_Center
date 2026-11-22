@@ -22,7 +22,7 @@ public sealed record ClassResponse(
     string? CoachBio = null,
     decimal? CoachRating = null,
     int? CoachExperienceYears = null,
-    decimal Price = 150000,
+    decimal? Price = null,
     Guid? ParentId = null,
     int SessionNumber = 1,
     int TotalSessions = 1

@@ -7,7 +7,7 @@ namespace SmartGym.Infrastructure.Persistence.Supabase.Models;
 [Table("classes")]
 public class GroupClassModel : BaseModel
 {
-    [PrimaryKey("id", false)]
+    [PrimaryKey("id", true)]
     public Guid Id { get; set; }
 
     [Column("sport_id")]
@@ -48,6 +48,18 @@ public class GroupClassModel : BaseModel
 
     [Column("total_sessions")]
     public int TotalSessions { get; set; } = 1;
+
+    [Column("pricing_version_id")]
+    public Guid? PricingVersionId { get; set; }
+
+    [Column("price_per_session_snapshot")]
+    public decimal? PricePerSessionSnapshot { get; set; }
+
+    [Column("course_fee_snapshot")]
+    public decimal? CourseFeeSnapshot { get; set; }
+
+    [Column("price_locked_at")]
+    public DateTimeOffset? PriceLockedAt { get; set; }
 
     public GroupClass ToDomain()
     {

@@ -6,7 +6,7 @@ interface BookingHeaderProps {
   setActiveTab: (tab: "group" | "pt" | "my_classes") => void;
   groupClassesCount: number;
   ptSlotsCount: number;
-  myActiveClassesCount: number;
+  myRegisteredClassesCount: number;
 }
 
 export const BookingHeader: React.FC<BookingHeaderProps> = ({
@@ -14,7 +14,7 @@ export const BookingHeader: React.FC<BookingHeaderProps> = ({
   setActiveTab,
   groupClassesCount,
   ptSlotsCount,
-  myActiveClassesCount,
+  myRegisteredClassesCount,
 }) => {
   return (
     <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -72,9 +72,9 @@ export const BookingHeader: React.FC<BookingHeaderProps> = ({
         >
           <Receipt className="w-4 h-4" />
           <span>Lớp đã đăng ký</span>
-          {myActiveClassesCount > 0 && (
+          {myRegisteredClassesCount > 0 && (
             <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-full font-black animate-pulse">
-              {myActiveClassesCount}
+              {myRegisteredClassesCount}
             </span>
           )}
         </button>

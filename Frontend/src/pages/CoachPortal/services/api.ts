@@ -475,7 +475,7 @@ export const CoachAPI = {
   // 11b. Đề xuất mở lớp
   getMyClassProposals: async (): Promise<CoachClassProposal[]> => {
     try {
-      const res = await fetchApi('/classes/proposals/my');
+      const res = await fetchApi('/classes/proposals/my', { cache: 'no-store' });
       if (!Array.isArray(res)) return [];
       return res.map((p: any) => {
         const d = parseScheduleTime(p.scheduleTime);
@@ -485,7 +485,9 @@ export const CoachAPI = {
         const dateStr = !isNaN(d.getTime())
           ? d.toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" })
           : "";
-        const slotText = `${dateStr} lúc ${timeStr} (${p.durationMinutes || 60} phút)`;
+        const totalSessions = p.totalSessions || 1;
+        const sessionInfo = totalSessions > 1 ? ` • Khóa ${totalSessions} buổi` : "";
+        const slotText = `${dateStr} lúc ${timeStr} (${p.durationMinutes || 60} phút)${sessionInfo}`;
         return {
           id: p.id,
           className: p.className,
@@ -494,11 +496,13 @@ export const CoachAPI = {
           branchName: p.facilityName || "Phòng tập",
           branchId: p.facilityId || "",
           maxCapacity: p.capacity || 20,
-          defaultPrice: p.price || 150000,
+          defaultPrice: p.price == null ? null : Number(p.price),
           requestedSlots: p.requestedSlots || slotText,
-          notes: p.notes || "",
+          notes: p.notes || (totalSessions > 1 ? `Lộ trình đào tạo trọn khóa gồm ${totalSessions} buổi` : ""),
           status: p.status || "pending",
           createdAt: p.createdAt || p.scheduleTime || new Date().toISOString(),
+          totalSessions,
+          sessionNumber: p.sessionNumber || 1,
         };
       });
     } catch {

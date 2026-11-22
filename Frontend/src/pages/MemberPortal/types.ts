@@ -40,6 +40,10 @@ export interface MemberSessionItem {
   cancelReason?: string;
   coachNote?: string;
   goal?: string;
+  parentId?: string;
+  sessionNumber?: number;
+  totalSessions?: number;
+  isAbsenceReported?: boolean;
 }
 
 export interface MemberPackageItem {

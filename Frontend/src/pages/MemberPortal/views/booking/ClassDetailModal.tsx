@@ -94,7 +94,9 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                 {classDetail.totalSessions && classDetail.totalSessions > 1 ? "Học phí trọn khóa:" : "Mức phí áp dụng:"}
               </span>
               <strong className="text-emerald-700 dark:text-emerald-300 font-black text-sm">
-                {classDetail.price ? `${classDetail.price.toLocaleString("vi-VN")} đ` : "150.000 đ"}
+                {classDetail.price !== null && classDetail.price !== undefined
+                  ? `${Number(classDetail.price).toLocaleString("vi-VN")} đ`
+                  : "Chưa có giá áp dụng"}
                 {classDetail.totalSessions && classDetail.totalSessions > 1 && (
                   <span className="text-xs font-normal text-slate-500 ml-1">({classDetail.totalSessions} buổi)</span>
                 )}

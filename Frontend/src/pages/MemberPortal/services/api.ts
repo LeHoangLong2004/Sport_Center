@@ -102,7 +102,7 @@ export const MemberAPI = {
 
     // 4. Classes
     getAvailableClasses: async () => {
-        return fetchApi('/classes/available');
+        return fetchApi('/classes/available', { cache: 'no-store' });
     },
     getClassDetail: async (classId: string) => {
         return fetchApi(`/classes/${classId}`);

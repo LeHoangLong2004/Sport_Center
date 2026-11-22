@@ -15,7 +15,7 @@ namespace SmartGym.Api.Endpoints;
 
 /// <summary>
 /// Phần mở rộng (partial) của ClassEndpoints chuyên xử lý nghiệp vụ Đặt chỗ lớp học (Class Booking).
-/// Bao gồm: Đặt chỗ bằng số buổi trong gói, thanh toán trực tiếp/tại quầy, hủy đặt lớp và nhân viên đặt hộ.
+/// Bao gồm: thanh toán trực tiếp/tại quầy, hủy đặt lớp và nhân viên đặt hộ.
 /// </summary>
 public static partial class ClassEndpoints
 {
@@ -25,50 +25,21 @@ public static partial class ClassEndpoints
     /// <param name="classGroup">Nhóm route /api/classes</param>
     private static void MapClassBookingEndpoints(RouteGroupBuilder classGroup)
     {
-        // 1. Standard Book Class (Membership slot)
+        // 1. Legacy direct booking without payment (disabled)
         /// <summary>
         /// POST /api/classes/{id}/book
-        /// Đặt chỗ tham gia lớp học bằng cách trừ số buổi trong gói tập hội viên.
+        /// Luồng đặt lớp trực tiếp không thanh toán đã ngừng sử dụng.
         /// Quyền hạn yêu cầu: Member, Admin hoặc Manager.
         /// </summary>
         classGroup.MapPost(
             "/{id:guid}/book",
-            async (Guid id, HttpContext context, ClassService service) =>
+            async (HttpContext context) =>
             {
                 var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (!Guid.TryParse(userIdClaim, out var userId))
+                if (!Guid.TryParse(userIdClaim, out _))
                     return Results.Unauthorized();
 
-                var (isSuccess, errorMessage) = await service.BookClassAsync(userId, id);
-                if (!isSuccess)
-                {
-                    if (errorMessage != null && (errorMessage.Contains("đã đặt chỗ") || errorMessage.Contains("đã đăng ký")))
-                    {
-                        ClassDetailResponse? existingDetail = null;
-                        try { existingDetail = await service.GetClassDetailAsync(id); } catch { }
-                        return Results.Ok(new
-                        {
-                            success = true,
-                            alreadyBooked = true,
-                            message = "Bạn đã hoàn tất đặt chỗ lớp học này trước đó rồi.",
-                            classInfo = existingDetail
-                        });
-                    }
-                    return Results.BadRequest(new { message = errorMessage });
-                }
-
-                ClassDetailResponse? classDetail = null;
-                try
-                {
-                    classDetail = await service.GetClassDetailAsync(id);
-                }
-                catch { }
-
-                return Results.Ok(new 
-                { 
-                    message = "Đặt lớp thành công.",
-                    classInfo = classDetail
-                });
+                return Results.BadRequest(new { message = "Vui lòng sử dụng luồng thanh toán để đăng ký lớp học." });
             }
         )
         .RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
@@ -88,7 +59,19 @@ public static partial class ClassEndpoints
                     return Results.Unauthorized();
 
                 var method = request?.PaymentMethod ?? "qr";
-                var amount = request?.Amount ?? 150000m;
+                var priceRows = await db.Database.SqlQueryRaw<ClassPriceSnapshotRaw>(
+                    """
+                    SELECT COALESCE(root.course_fee_snapshot, current_class.course_fee_snapshot) AS "CourseFeeSnapshot"
+                    FROM classes current_class
+                    LEFT JOIN classes root ON root.id = COALESCE(current_class.parent_id, current_class.id)
+                    WHERE current_class.id = {0}
+                    """, id).ToListAsync();
+                var lockedAmount = priceRows.SingleOrDefault()?.CourseFeeSnapshot;
+                if (lockedAmount == null)
+                    return Results.BadRequest(new { message = "Khóa học chưa có học phí được chốt. Vui lòng liên hệ quản lý trung tâm." });
+
+                // The server uses the approved course snapshot; the client amount is informational only.
+                var amount = lockedAmount.Value;
                 var isWallet = method.ToLower() is "wallet" or "ewallet";
                 var deductedFromWallet = false;
 
@@ -153,25 +136,11 @@ public static partial class ClassEndpoints
                                 "UPDATE class_bookings SET subscription_id = NULL" + (isCounter ? ", status = 'pending'" : "") + " WHERE user_id = {0} AND class_id = {1}",
                                 userId, id);
                         }
-                        else
+                        else if (isCounter)
                         {
-                            // Đặt miễn phí theo gói môn (0 đ): Gán subscription_id nếu có
-                            var activeSub = await db.Subscriptions
-                                .Where(s => s.UserId == userId && s.PaymentStatus == PaymentStatus.Completed)
-                                .OrderByDescending(s => s.CreatedAt)
-                                .FirstOrDefaultAsync();
-                            if (activeSub != null)
-                            {
-                                await db.Database.ExecuteSqlRawAsync(
-                                    "UPDATE class_bookings SET subscription_id = {0} WHERE user_id = {1} AND class_id = {2}",
-                                    activeSub.Id, userId, id);
-                            }
-                            if (isCounter)
-                            {
-                                await db.Database.ExecuteSqlRawAsync(
-                                    "UPDATE class_bookings SET status = 'pending' WHERE user_id = {0} AND class_id = {1}",
-                                    userId, id);
-                            }
+                            await db.Database.ExecuteSqlRawAsync(
+                                "UPDATE class_bookings SET status = 'pending' WHERE user_id = {0} AND class_id = {1}",
+                                userId, id);
                         }
                     }
                     catch { }
@@ -360,7 +329,7 @@ public static partial class ClassEndpoints
         }
         catch { }
 
-        // 1. Đặt theo gói môn / miễn phí:
+        // 1. Lượt đặt không phát sinh thanh toán:
         // - bookingRow.SubscriptionId có giá trị
         // - hoặc hóa đơn ghi nhận số tiền thanh toán = 0 đ (TotalAmount <= 0)
         // - hoặc không có hóa đơn thanh toán nào trong hệ thống
@@ -465,6 +434,11 @@ public static partial class ClassEndpoints
 
 public record CancelForMemberRequest(Guid MemberId);
 public record PayAndBookClassRequest(string? PaymentMethod = "qr", decimal Amount = 150000);
+
+public sealed class ClassPriceSnapshotRaw
+{
+    public decimal? CourseFeeSnapshot { get; set; }
+}
 
 public class CancelBookingInfoRaw
 {

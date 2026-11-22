@@ -56,6 +56,15 @@ public static partial class DatabaseInitializationExtensions
                     CONSTRAINT sport_class_pricing_effective_range CHECK (effective_to IS NULL OR effective_to >= effective_from)
                 );
 
+                ALTER TABLE classes
+                    ADD COLUMN IF NOT EXISTS pricing_version_id UUID REFERENCES sport_class_pricing(id) ON DELETE SET NULL;
+                ALTER TABLE classes
+                    ADD COLUMN IF NOT EXISTS price_per_session_snapshot NUMERIC(12,2);
+                ALTER TABLE classes
+                    ADD COLUMN IF NOT EXISTS course_fee_snapshot NUMERIC(14,2);
+                ALTER TABLE classes
+                    ADD COLUMN IF NOT EXISTS price_locked_at TIMESTAMPTZ;
+
                 CREATE TABLE IF NOT EXISTS class_sessions (
                     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                     course_id UUID NOT NULL REFERENCES class_courses(id) ON DELETE CASCADE,
@@ -172,6 +181,42 @@ public static partial class DatabaseInitializationExtensions
                     SELECT 1 FROM sport_class_pricing p
                     WHERE p.sport_id = s.id AND p.is_active AND p.effective_to IS NULL
                 );
+
+                WITH historical_prices AS (
+                    SELECT c.id AS class_id,
+                           p.id AS pricing_version_id,
+                           p.price_per_session,
+                           row_number() OVER (
+                               PARTITION BY c.id
+                               ORDER BY p.effective_from DESC, p.created_at DESC
+                           ) AS price_rank
+                    FROM classes c
+                    INNER JOIN sport_class_pricing p ON p.sport_id = c.sport_id
+                    WHERE c.parent_id IS NULL
+                      AND c.approval_status = 'approved'
+                      AND c.price_locked_at IS NULL
+                      AND p.is_active = TRUE
+                      AND p.effective_from <= COALESCE((c.created_at AT TIME ZONE 'Asia/Bangkok')::date, (c.schedule_time AT TIME ZONE 'Asia/Bangkok')::date)
+                      AND (p.effective_to IS NULL OR p.effective_to >= COALESCE((c.created_at AT TIME ZONE 'Asia/Bangkok')::date, (c.schedule_time AT TIME ZONE 'Asia/Bangkok')::date))
+                )
+                UPDATE classes c
+                SET pricing_version_id = hp.pricing_version_id,
+                    price_per_session_snapshot = hp.price_per_session,
+                    course_fee_snapshot = hp.price_per_session * GREATEST(COALESCE(c.total_sessions, 1), 1),
+                    price_locked_at = COALESCE(c.created_at, c.schedule_time)
+                FROM historical_prices hp
+                WHERE c.id = hp.class_id AND hp.price_rank = 1;
+
+                UPDATE classes child
+                SET pricing_version_id = root.pricing_version_id,
+                    price_per_session_snapshot = root.price_per_session_snapshot,
+                    course_fee_snapshot = root.course_fee_snapshot,
+                    price_locked_at = root.price_locked_at
+                FROM classes root
+                WHERE child.parent_id = root.id
+                  AND root.parent_id IS NULL
+                  AND root.price_locked_at IS NOT NULL
+                  AND child.price_locked_at IS NULL;
                 """);
 
             logger.LogInformation("Enterprise class scheduling schema is ready.");

@@ -70,6 +70,7 @@ export default function MemberSchedule({ onNavigate }: Props) {
   // Modals & Interactions
   const [selectedSession, setSelectedSession] = useState<MemberSessionItem | null>(null);
   const [cancellingSession, setCancellingSession] = useState<MemberSessionItem | null>(null);
+  const [cancelModalMode, setCancelModalMode] = useState<"cancel" | "absence">("cancel");
   const [reviewingSession, setReviewingSession] = useState<ReviewSessionTarget | null>(null);
   const [reviewedSessionIds, setReviewedSessionIds] = useState<Set<string>>(() => {
     try {
@@ -271,34 +272,56 @@ export default function MemberSchedule({ onNavigate }: Props) {
     return sorted;
   }, [filteredSessions]);
 
-  // Handle Cancel Booking
+  // Handle Cancel / Absence Booking
   const handleConfirmCancel = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cancellingSession) return;
     if (!cancelReason.trim()) {
-      toast.error("Vui lòng nhập lý do hủy lịch.");
+      toast.error(cancelModalMode === "absence" ? "Vui lòng nhập lý do xin nghỉ." : "Vui lòng nhập lý do hủy lịch.");
       return;
     }
 
     const reason = cancelReason.trim();
-    scheduleSync.cancelBooking(cancellingSession.id, reason);
-    await MemberBackendAPI.cancelBooking(cancellingSession.id, reason);
 
-    const updated = sessions.map((s) =>
-      s.id === cancellingSession.id
-        ? {
-            ...s,
-            status: "đã hủy" as const,
-            cancelReason: reason,
-          }
-        : s
-    );
-    setSessions(updated);
-    saveMemberData(storageKey, updated);
+    if (cancelModalMode === "absence") {
+      await MemberBackendAPI.reportAbsence(cancellingSession.id, reason);
+      const updated = sessions.map((s) =>
+        s.id === cancellingSession.id
+          ? {
+              ...s,
+              attendanceStatus: "vắng" as const,
+              isAbsenceReported: true,
+              cancelReason: reason,
+            }
+          : s
+      );
+      setSessions(updated);
+      saveMemberData(storageKey, updated);
 
-    const msg = `Đã hủy buổi tập "${cancellingSession.name}". Chỗ học đã được hoàn trả về tài khoản.`;
-    setFeedback(msg);
-    toast.success(msg);
+      const msg = `Đã gửi báo vắng buổi tập "${cancellingSession.name}" tới Huấn luyện viên thành công!`;
+      setFeedback(msg);
+      toast.success(msg);
+    } else {
+      scheduleSync.cancelBooking(cancellingSession.id, reason);
+      await MemberBackendAPI.cancelBooking(cancellingSession.id, reason);
+
+      const updated = sessions.map((s) =>
+        s.id === cancellingSession.id
+          ? {
+              ...s,
+              status: "đã hủy" as const,
+              cancelReason: reason,
+            }
+          : s
+      );
+      setSessions(updated);
+      saveMemberData(storageKey, updated);
+
+      const msg = `Đã hủy buổi tập "${cancellingSession.name}". Chỗ học đã được hoàn trả về tài khoản.`;
+      setFeedback(msg);
+      toast.success(msg);
+    }
+
     setCancellingSession(null);
     setCancelReason("");
     if (selectedSession?.id === cancellingSession.id) {
@@ -391,7 +414,14 @@ export default function MemberSchedule({ onNavigate }: Props) {
           byDate={byDate}
           todayStr={todayStr}
           onSelectSession={setSelectedSession}
-          onStartCancelSession={setCancellingSession}
+          onStartCancelSession={(s) => {
+            setCancelModalMode("cancel");
+            setCancellingSession(s);
+          }}
+          onReportAbsence={(s) => {
+            setCancelModalMode("absence");
+            setCancellingSession(s);
+          }}
           onNavigate={onNavigate}
           onStartReview={(s) =>
             setReviewingSession({
@@ -411,7 +441,14 @@ export default function MemberSchedule({ onNavigate }: Props) {
         session={selectedSession}
         onClose={() => setSelectedSession(null)}
         onNavigate={onNavigate}
-        onStartCancelSession={setCancellingSession}
+        onStartCancelSession={(s) => {
+          setCancelModalMode("cancel");
+          setCancellingSession(s);
+        }}
+        onReportAbsence={(s) => {
+          setCancelModalMode("absence");
+          setCancellingSession(s);
+        }}
         onStartReview={(s) =>
           setReviewingSession({
             sessionId: s.id,
@@ -424,13 +461,14 @@ export default function MemberSchedule({ onNavigate }: Props) {
         isReviewed={selectedSession ? reviewedSessionIds.has(selectedSession.id) : false}
       />
 
-      {/* 6. Cancel Session Modal */}
+      {/* 6. Cancel / Absence Session Modal */}
       <CancelSessionModal
         session={cancellingSession}
         cancelReason={cancelReason}
         onCancelReasonChange={setCancelReason}
         onClose={() => setCancellingSession(null)}
         onConfirmCancel={handleConfirmCancel}
+        mode={cancelModalMode}
       />
 
       {/* 7. Coach Review Modal */}

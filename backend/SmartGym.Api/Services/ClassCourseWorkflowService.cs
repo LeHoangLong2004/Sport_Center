@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SmartGym.Application.Common;
 using SmartGym.Application.DTOs.ClassScheduling;
 using SmartGym.Application.Services;
 using SmartGym.Infrastructure.Persistence.EF;
@@ -26,7 +27,8 @@ public sealed class ClassCourseWorkflowService(SmartGymDbContext db, ClassSchedu
         if (!preview.IsValid)
             return (null, string.Join(" ", preview.Errors));
 
-        var price = await FindActivePriceAsync(request.SportId, DateOnly.FromDateTime(DateTime.UtcNow));
+        var today = DateOnly.FromDateTime(CenterTime.ToLocal(DateTime.UtcNow));
+        var price = await FindActivePriceAsync(request.SportId, today);
         if (price == null)
             return (null, "Bộ môn chưa có bảng giá hiệu lực. Vui lòng yêu cầu Manager cấu hình giá trước khi tạo lớp.");
         var courseFee = price.PricePerSession * preview.TotalSessions;
@@ -98,10 +100,15 @@ public sealed class ClassCourseWorkflowService(SmartGymDbContext db, ClassSchedu
         try
         {
             var courseRows = await db.Database.SqlQueryRaw<CourseRow>(
-                @"SELECT id, coach_id, facility_id, approval_status FROM class_courses WHERE id = {0} FOR UPDATE", courseId).ToListAsync();
+                @"SELECT id, sport_id AS ""SportId"", total_sessions AS ""TotalSessions"", coach_id, facility_id, approval_status FROM class_courses WHERE id = {0} FOR UPDATE", courseId).ToListAsync();
             var course = courseRows.SingleOrDefault();
             if (course == null || !string.Equals(course.ApprovalStatus, "pending", StringComparison.OrdinalIgnoreCase))
                 return (false, "Đề xuất không tồn tại hoặc không còn ở trạng thái chờ duyệt.");
+
+            var effectiveDate = DateOnly.FromDateTime(CenterTime.ToLocal(DateTime.UtcNow));
+            var effectivePrice = await FindActivePriceAsync(course.SportId, effectiveDate);
+            if (effectivePrice == null)
+                return (false, "Bộ môn chưa có bảng giá hiệu lực. Vui lòng cấu hình giá trước khi duyệt khóa học.");
 
             var sessions = await db.Database.SqlQueryRaw<SessionRow>(
                 @"SELECT id, session_number, start_at, end_at FROM class_sessions WHERE course_id = {0} ORDER BY session_number", courseId).ToListAsync();
@@ -116,7 +123,8 @@ public sealed class ClassCourseWorkflowService(SmartGymDbContext db, ClassSchedu
                 return (false, conflict);
             }
 
-            await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE class_courses SET approval_status = 'approved', updated_at = now() WHERE id = {courseId}");
+            var lockedFee = effectivePrice.PricePerSession * Math.Max(1, course.TotalSessions);
+            await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE class_courses SET fee = {lockedFee}, approval_status = 'approved', updated_at = now() WHERE id = {courseId}");
             await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE class_sessions SET status = 'scheduled', updated_at = now() WHERE course_id = {courseId}");
             await db.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO class_audit_logs (course_id, actor_id, action) VALUES ({courseId}, {actorId}, 'course_approved')");
             await transaction.CommitAsync();
@@ -155,8 +163,10 @@ public sealed class ClassCourseWorkflowService(SmartGymDbContext db, ClassSchedu
             var course = courseRows.SingleOrDefault();
             if (course == null || !string.Equals(course.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase))
                 return (null, "Khóa học không tồn tại hoặc chưa sẵn sàng để đăng ký.");
-            if (course.StartDate < DateOnly.FromDateTime(DateTime.UtcNow))
+            var today = DateOnly.FromDateTime(CenterTime.ToLocal(DateTime.UtcNow));
+            if (course.StartDate < today)
                 return (null, "Khóa học đã bắt đầu hoặc đã kết thúc, không thể đăng ký.");
+
 
             var activeEnrollmentRows = await db.Database.SqlQueryRaw<EnrollmentRow>(
                 "SELECT id, course_id, status, quoted_amount, held_until FROM course_enrollments WHERE course_id = {0} AND user_id = {1} AND status IN ('held', 'confirmed') FOR UPDATE",
@@ -244,7 +254,7 @@ public sealed class ClassCourseWorkflowService(SmartGymDbContext db, ClassSchedu
         return rows.SingleOrDefault();
     }
 
-    private sealed class CourseRow { public Guid Id { get; set; } public Guid CoachId { get; set; } public Guid FacilityId { get; set; } public string ApprovalStatus { get; set; } = ""; }
+    private sealed class CourseRow { public Guid Id { get; set; } public Guid SportId { get; set; } public int TotalSessions { get; set; } public Guid CoachId { get; set; } public Guid FacilityId { get; set; } public string ApprovalStatus { get; set; } = ""; }
     private sealed class SessionRow { public Guid Id { get; set; } public int SessionNumber { get; set; } public DateTime StartAt { get; set; } public DateTime EndAt { get; set; } }
     private sealed class ConflictRow { public int SessionNumber { get; set; } public string ClassName { get; set; } = ""; }
     private sealed class EnrollmentRow { public Guid Id { get; set; } public Guid CourseId { get; set; } public string Status { get; set; } = ""; public decimal QuotedAmount { get; set; } public DateTimeOffset? HeldUntil { get; set; } }

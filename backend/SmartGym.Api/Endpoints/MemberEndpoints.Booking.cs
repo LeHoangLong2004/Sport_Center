@@ -479,6 +479,62 @@ namespace SmartGym.Api.Endpoints
             .WithTags("Member Portal")
             .WithSummary("Cancel a booked session with reason");
 
+            // 3b. POST /api/member/bookings/{id}/absence - Báo vắng buổi học (cho lớp học trong khóa định kỳ)
+            group.MapPost("/bookings/{id}/absence", async (string id, [FromBody] ReportAbsenceRequest? request, HttpContext context, SmartGymDbContext db) =>
+            {
+                var userIdClaim = GetUserId(context);
+                if (!Guid.TryParse(userIdClaim, out var memberId) || !Guid.TryParse(id, out var inputId))
+                    return Results.Unauthorized();
+
+                var reason = request?.Reason?.Trim();
+                if (string.IsNullOrWhiteSpace(reason))
+                {
+                    reason = "Bận việc cá nhân (học viên báo vắng trước)";
+                }
+
+                // Tìm classId nếu inputId là bookingId
+                var classId = inputId;
+                var foundClassId = await db.Database.SqlQueryRaw<Guid>(
+                    "SELECT class_id AS \"Value\" FROM class_bookings WHERE id = {0}", inputId
+                ).FirstOrDefaultAsync();
+                if (foundClassId != Guid.Empty) classId = foundClassId;
+
+                var cls = await db.Database.SqlQueryRaw<ClassAbsenceInfoRaw>(
+                    "SELECT id, coach_id, class_name, schedule_time FROM classes WHERE id = {0}", classId
+                ).FirstOrDefaultAsync();
+
+                if (cls == null) return Results.NotFound(new { message = "Không tìm thấy buổi học." });
+
+                // Ghi nhận vào class_attendance_records: status = 'absent', note = reason
+                await db.Database.ExecuteSqlInterpolatedAsync($@"
+                    INSERT INTO class_attendance_records (session_id, member_id, status, note)
+                    VALUES ({classId}, {memberId}, 'absent', {reason})
+                    ON CONFLICT (session_id, member_id) DO UPDATE SET status = 'absent', note = {reason}
+                ");
+
+                // Cập nhật booking status sang 'absent'
+                await db.Database.ExecuteSqlInterpolatedAsync($@"
+                    UPDATE class_bookings
+                    SET status = 'absent'
+                    WHERE user_id = {memberId} AND class_id = {classId}
+                ");
+
+                // Thông báo cho HLV biết học viên xin phép vắng mặt
+                if (cls.coach_id.HasValue)
+                {
+                    var localTime = CenterTime.ToLocal(cls.schedule_time);
+                    var msg = $"Học viên đã báo vắng buổi học '{cls.class_name}' ({localTime:dd/MM/yyyy HH:mm}). Lý do: {reason}";
+                    await db.Database.ExecuteSqlInterpolatedAsync($@"
+                        INSERT INTO notifications (user_id, title, message, type, target_type, target_id)
+                        VALUES ({cls.coach_id.Value}, 'Học viên báo vắng buổi học', {msg}, 'attendance', 'class', {classId})
+                    ");
+                }
+
+                return Results.Ok(new { success = true, message = "Đã gửi thông báo báo vắng buổi học tới Huấn luyện viên thành công." });
+            })
+            .WithTags("Member Portal")
+            .WithSummary("Report absence for a specific session of a recurring course");
+
             // 4. GET /api/member/cancelled-bookings
             group.MapGet("/cancelled-bookings", (HttpContext context) =>
             {
@@ -512,5 +568,15 @@ namespace SmartGym.Api.Endpoints
 
         private static bool IsBlockingMemberStatus(string? status)
             => status?.Trim().ToLowerInvariant() is "pending" or "confirmed" or "approved";
+    }
+
+    public record ReportAbsenceRequest(string? Reason);
+
+    public class ClassAbsenceInfoRaw
+    {
+        public Guid id { get; set; }
+        public Guid? coach_id { get; set; }
+        public string? class_name { get; set; }
+        public DateTime schedule_time { get; set; }
     }
 }

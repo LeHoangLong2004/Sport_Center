@@ -111,6 +111,9 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
             rawStart: start,
             isCancelled: c.status === false,
             approvalStatus: c.approvalStatus || "approved",
+            parentId: c.parentId,
+            sessionNumber: c.sessionNumber,
+            totalSessions: c.totalSessions,
           };
         });
         setClasses(formattedClasses);
@@ -303,7 +306,9 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
       return false;
     }
   };
-  const pendingClassProposals = classes.filter((item) => item.approvalStatus === "pending");
+  const pendingClassProposals = classes.filter(
+    (item) => item.approvalStatus === "pending" && (!item.parentId || item.sessionNumber === 1)
+  );
   return (
     <div className="flex flex-col gap-6 p-8 flex-1 min-h-0 overflow-y-auto">
       <ScheduleHeader

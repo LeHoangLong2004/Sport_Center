@@ -150,17 +150,34 @@ public static partial class ClassEndpoints
                     if (coachId == null)
                         return Results.Ok(Array.Empty<object>());
 
+                    var effectiveDate = DateOnly.FromDateTime(CenterTime.ToLocal(DateTime.UtcNow));
                     var sql = @"
                         SELECT c.id, c.class_name, c.schedule_time, c.duration_minutes, c.capacity,
-                               c.status, c.approval_status, s.name AS sport_name, f.name AS facility_name
+                               c.status, c.approval_status, c.sport_id, s.name AS sport_name, f.name AS facility_name,
+                               COALESCE(
+                                   c.course_fee_snapshot,
+                                   current_price.price_per_session * GREATEST(COALESCE(c.total_sessions, 1), 1)
+                               ) AS price,
+                               c.parent_id, c.session_number, c.total_sessions
                         FROM classes c
                         LEFT JOIN sports s ON c.sport_id = s.id
                         LEFT JOIN facilities f ON c.facility_id = f.id
+                        LEFT JOIN LATERAL (
+                            SELECT p.price_per_session
+                            FROM sport_class_pricing p
+                            WHERE p.sport_id = c.sport_id
+                              AND p.is_active = TRUE
+                              AND p.effective_from <= {2}
+                              AND (p.effective_to IS NULL OR p.effective_to >= {2})
+                            ORDER BY p.effective_from DESC, p.created_at DESC
+                            LIMIT 1
+                        ) current_price ON TRUE
                         WHERE (c.coach_id = {0} OR c.coach_id = {1})
                           AND c.approval_status IN ('pending', 'approved', 'rejected')
+                          AND (c.parent_id IS NULL OR c.session_number = 1)
                         ORDER BY c.schedule_time DESC";
 
-                    var proposals = await db.Database.SqlQueryRaw<CoachClassProposalRow>(sql, coachId.Value, userId).ToListAsync();
+                    var proposals = await db.Database.SqlQueryRaw<CoachClassProposalRow>(sql, coachId.Value, userId, effectiveDate).ToListAsync();
                     return Results.Ok(proposals.Select(p => new
                     {
                         id = p.id,
@@ -170,9 +187,13 @@ public static partial class ClassEndpoints
                             : DateTime.SpecifyKind(p.schedule_time, DateTimeKind.Utc)).ToString("o"),
                         durationMinutes = p.duration_minutes,
                         capacity = p.capacity,
+                        sportId = p.sport_id,
                         sportName = p.sport_name ?? "Bộ môn",
                         facilityName = p.facility_name ?? "Phòng tập",
-                        status = p.approval_status ?? (p.status ? "approved" : "cancelled")
+                        price = p.price,
+                        status = p.approval_status ?? (p.status ? "approved" : "cancelled"),
+                        totalSessions = p.total_sessions ?? 1,
+                        sessionNumber = p.session_number ?? 1
                     }));
                 }
             )
@@ -204,7 +225,7 @@ public static partial class ClassEndpoints
 
                         var affected = await db.Database.ExecuteSqlInterpolatedAsync($@"
                             DELETE FROM classes
-                            WHERE id = {id} 
+                            WHERE (id = {id} OR parent_id = {id})
                               AND (coach_id = {coachId.Value} OR coach_id = {userId}) 
                               AND approval_status = 'pending'");
 
@@ -465,7 +486,12 @@ public static partial class ClassEndpoints
         public int capacity { get; set; }
         public bool status { get; set; }
         public string? approval_status { get; set; }
+        public Guid sport_id { get; set; }
         public string? sport_name { get; set; }
         public string? facility_name { get; set; }
+        public decimal? price { get; set; }
+        public Guid? parent_id { get; set; }
+        public int? session_number { get; set; }
+        public int? total_sessions { get; set; }
     }
 }

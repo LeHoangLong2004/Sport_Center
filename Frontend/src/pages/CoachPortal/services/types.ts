@@ -278,9 +278,11 @@ export interface CoachClassProposal {
   branchName: string;
   branchId: string;
   maxCapacity: number;
-  defaultPrice: number;
+  defaultPrice: number | null;
   requestedSlots: string;
   notes?: string;
   status: string;
   createdAt: string;
+  totalSessions?: number;
+  sessionNumber?: number;
 }

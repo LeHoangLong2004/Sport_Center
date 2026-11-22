@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { CoachAvatar } from "../../utils/coachAvatar";
 import type { MemberSessionItem } from "../../types";
-import { isClassCoveredByPackage, type CancelBookingTarget } from "./bookingTypes";
+import { type CancelBookingTarget } from "./bookingTypes";
 
 interface MyClassesTabProps {
   myActiveClasses?: MemberSessionItem[];
@@ -24,7 +24,6 @@ interface MyClassesTabProps {
   onStartChatWithCoach: (coachName: string, coachId?: string, coachAvatar?: string) => void;
   onCancelBooking: (target: CancelBookingTarget) => void;
   membership?: any | null;
-  activeOrders?: any[];
 }
 
 export const MyClassesTab: React.FC<MyClassesTabProps> = ({
@@ -34,7 +33,6 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
   onStartChatWithCoach,
   onCancelBooking,
   membership,
-  activeOrders = [],
 }) => {
   const [subTab, setSubTab] = useState<"upcoming" | "history">("upcoming");
 
@@ -126,7 +124,33 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
       });
   }, [allSessions, getBookingStatus, now]);
 
-  const currentDisplayList = subTab === "upcoming" ? upcomingClasses : historyClasses;
+  const displayBookings = useMemo(() => {
+    if (subTab === "history") {
+      return historyClasses;
+    }
+
+    const grouped = new Map<string, MemberSessionItem[]>();
+    upcomingClasses.forEach((booking) => {
+      const isPt = booking.type === "pt" || booking.sport === "PT 1-1" || (booking.name || "").includes("Kèm riêng");
+      const classId = String((booking as any).classId || booking.id);
+      const groupId = isPt
+        ? `pt:${classId}`
+        : `class:${String((booking as any).parentId || classId)}`;
+      const sessions = grouped.get(groupId) || [];
+      sessions.push(booking);
+      grouped.set(groupId, sessions);
+    });
+
+    return Array.from(grouped.values()).map((sessions) => sessions[0]);
+  }, [historyClasses, subTab, upcomingClasses]);
+  const upcomingCourseCount = useMemo(() => {
+    const courseIds = new Set(
+      upcomingClasses
+        .filter((session) => session.type === "group")
+        .map((session) => String((session as any).parentId || (session as any).classId || session.id))
+    );
+    return courseIds.size;
+  }, [upcomingClasses]);
 
   return (
     <div className="space-y-6">
@@ -137,7 +161,7 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
             {subTab === "upcoming" ? (
               <>
                 <Calendar className="w-5 h-5 text-teal-600" />
-                <span>Lớp học sắp diễn ra ({upcomingClasses.length} lớp)</span>
+                <span>Lớp học sắp diễn ra ({upcomingCourseCount} lớp)</span>
               </>
             ) : (
               <>
@@ -173,7 +197,7 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
                   : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
               }`}
             >
-              {upcomingClasses.length}
+              {upcomingCourseCount}
             </span>
           </button>
 
@@ -202,7 +226,7 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
       </div>
 
       {/* DANH SÁCH LỚP HỌC */}
-      {currentDisplayList.length === 0 ? (
+      {displayBookings.length === 0 ? (
         <div className="bg-white dark:bg-slate-900 p-12 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 text-center">
           {subTab === "upcoming" ? (
             <>
@@ -228,7 +252,7 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {currentDisplayList.map((booking) => {
+          {displayBookings.map((booking) => {
             const rawStatus = String(getBookingStatus(booking) || "").toLowerCase();
             const isPending = rawStatus === "pending" || rawStatus === "pending_payment";
             const isCancelled =
@@ -249,7 +273,9 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
 
             return (
               <div
-                key={booking.id}
+                key={booking.type === "pt"
+                  ? `pt:${(booking as any).classId || booking.id}`
+                  : `class:${(booking as any).parentId || (booking as any).classId || booking.id}`}
                 className={`bg-white dark:bg-slate-900 rounded-3xl border p-5 shadow-sm transition-all flex flex-col justify-between ${
                   isPast || isCancelled
                     ? "border-slate-200 dark:border-slate-800 opacity-90"
@@ -407,7 +433,6 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        const isCovered = !isPt && isClassCoveredByPackage(booking, activeOrders);
                         onCancelBooking({
                           classId: (booking as any).classId || booking.id,
                           className: booking.name,
@@ -415,9 +440,8 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
                           startTime: booking.startTime,
                           endTime: booking.endTime,
                           dateStr: booking.date,
-                          price: isCovered ? 0 : effectivePrice,
+                          price: effectivePrice,
                           type: isPt ? "pt" : "class",
-                          isCovered: isCovered,
                           sport: booking.sport,
                           room: booking.room,
                         });

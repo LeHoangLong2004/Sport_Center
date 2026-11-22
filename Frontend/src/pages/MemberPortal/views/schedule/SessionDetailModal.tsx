@@ -8,6 +8,7 @@ import {
   Phone,
   MessageSquare,
   CheckCircle2,
+  CalendarX,
 } from "lucide-react";
 import type { MemberSessionItem, MemberScreen } from "../../types";
 import { CoachAvatar } from "../../utils/coachAvatar";
@@ -18,6 +19,7 @@ interface Props {
   onClose: () => void;
   onNavigate: (screen: MemberScreen) => void;
   onStartCancelSession: (session: MemberSessionItem) => void;
+  onReportAbsence?: (session: MemberSessionItem) => void;
   onStartReview?: (session: MemberSessionItem) => void;
   isReviewed?: boolean;
 }
@@ -27,6 +29,7 @@ export default function SessionDetailModal({
   onClose,
   onNavigate,
   onStartCancelSession,
+  onReportAbsence,
   onStartReview,
   isReviewed,
 }: Props) {
@@ -215,17 +218,51 @@ export default function SessionDetailModal({
             )
           )}
 
-          {(effectiveStatus === "sắp diễn ra") && (
-            <button
-              type="button"
-              onClick={() => {
-                onStartCancelSession(session);
-              }}
-              className="py-2.5 px-4 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 transition-colors cursor-pointer"
-            >
-              Hủy lịch đặt chỗ
-            </button>
-          )}
+          {effectiveStatus === "sắp diễn ra" && (() => {
+            const isRecurringCourse =
+              (session.totalSessions && session.totalSessions > 1) ||
+              (session.sessionNumber && session.sessionNumber > 1) ||
+              Boolean(session.parentId) ||
+              /\(Buổi \d+\)/i.test(session.name);
+            const isAbsenceReported = session.isAbsenceReported || session.attendanceStatus === "vắng";
+
+            if (isAbsenceReported) {
+              return (
+                <span className="py-2.5 px-4 rounded-xl text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 flex items-center gap-1.5">
+                  <CalendarX className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  Đã báo vắng buổi học này
+                </span>
+              );
+            }
+
+            if (isRecurringCourse) {
+              return (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onReportAbsence) onReportAbsence(session);
+                    else onStartCancelSession(session);
+                  }}
+                  className="py-2.5 px-4 rounded-xl text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  <CalendarX className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  Báo vắng buổi này
+                </button>
+              );
+            }
+
+            return (
+              <button
+                type="button"
+                onClick={() => {
+                  onStartCancelSession(session);
+                }}
+                className="py-2.5 px-4 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 transition-colors cursor-pointer"
+              >
+                Hủy lịch đặt chỗ
+              </button>
+            );
+          })()}
         </div>
       </div>
     </div>,

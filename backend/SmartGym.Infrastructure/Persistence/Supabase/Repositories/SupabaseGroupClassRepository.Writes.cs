@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using SmartGym.Application.Common;
 using SmartGym.Application.DTOs.Classes;
 using SmartGym.Application.Interfaces.Repositories;
 using SmartGym.Domain.Entities;
@@ -13,6 +14,84 @@ namespace SmartGym.Infrastructure.Persistence.Supabase.Repositories;
 
 public sealed partial class SupabaseGroupClassRepository
 {
+    public async Task<(bool IsSuccess, string? ErrorMessage)> LockCoursePriceAsync(
+        Guid rootClassId,
+        bool removeCourseWhenPriceMissing = false)
+    {
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync();
+        var courseRows = await _dbContext.Database.SqlQueryRaw<CoursePriceLockRow>(
+            "SELECT id, sport_id AS \"SportId\", COALESCE(total_sessions, 1) AS \"TotalSessions\", price_locked_at AS \"PriceLockedAt\" FROM classes WHERE id = {0} AND parent_id IS NULL FOR UPDATE",
+            rootClassId).ToListAsync();
+        var course = courseRows.SingleOrDefault();
+        if (course == null)
+        {
+            await transaction.RollbackAsync();
+            return (false, "Không tìm thấy lớp gốc để chốt học phí.");
+        }
+
+        if (course.PriceLockedAt.HasValue)
+        {
+            await _dbContext.Database.ExecuteSqlInterpolatedAsync($"""
+                UPDATE classes child
+                SET pricing_version_id = root.pricing_version_id,
+                    price_per_session_snapshot = root.price_per_session_snapshot,
+                    course_fee_snapshot = root.course_fee_snapshot,
+                    price_locked_at = root.price_locked_at
+                FROM classes root
+                WHERE root.id = {rootClassId}
+                  AND child.parent_id = root.id
+                  AND child.price_locked_at IS NULL
+                """);
+            await transaction.CommitAsync();
+            return (true, null);
+        }
+
+        var effectiveDate = DateOnly.FromDateTime(CenterTime.ToLocal(DateTime.UtcNow));
+        var prices = await _dbContext.Database.SqlQueryRaw<CoursePriceVersionRow>(
+            """
+            SELECT id AS "Id", price_per_session AS "PricePerSession"
+            FROM sport_class_pricing
+            WHERE sport_id = {0} AND is_active = TRUE AND effective_from <= {1}
+              AND (effective_to IS NULL OR effective_to >= {1})
+            ORDER BY effective_from DESC, created_at DESC
+            LIMIT 1
+            """, course.SportId, effectiveDate).ToListAsync();
+        var price = prices.SingleOrDefault();
+        if (price == null)
+        {
+            if (removeCourseWhenPriceMissing)
+            {
+                await _dbContext.Database.ExecuteSqlRawAsync(
+                    "DELETE FROM classes WHERE id = {0} OR parent_id = {0}", rootClassId);
+                await transaction.CommitAsync();
+            }
+            else
+            {
+                await transaction.RollbackAsync();
+            }
+            return (false, "Bộ môn chưa có bảng giá hiệu lực. Manager cần cấu hình giá trước khi duyệt/mở đăng ký khóa học.");
+        }
+
+        var fee = price.PricePerSession * Math.Max(1, course.TotalSessions);
+        var affected = await _dbContext.Database.ExecuteSqlInterpolatedAsync($"""
+            UPDATE classes
+            SET pricing_version_id = {price.Id},
+                price_per_session_snapshot = {price.PricePerSession},
+                course_fee_snapshot = {fee},
+                price_locked_at = now()
+            WHERE (id = {rootClassId} OR parent_id = {rootClassId})
+              AND price_locked_at IS NULL
+            """);
+        if (affected < 1)
+        {
+            await transaction.RollbackAsync();
+            return (false, "Không thể chốt học phí cho khóa học.");
+        }
+
+        await transaction.CommitAsync();
+        return (true, null);
+    }
+
     public async Task<bool> HasCoachAvailabilityConflictAsync(Guid coachId, DateTime startTime, DateTime endTime)
     {
         startTime = AsUtc(startTime);
@@ -34,7 +113,7 @@ public sealed partial class SupabaseGroupClassRepository
         return conflicts.Count > 0;
     }
 
-    public async Task AddAsync(GroupClass groupClass)
+    public async Task<GroupClass> AddAsync(GroupClass groupClass)
     {
         if (groupClass.CoachId.HasValue)
         {
@@ -73,7 +152,9 @@ public sealed partial class SupabaseGroupClassRepository
             TotalSessions = groupClass.TotalSessions,
         };
 
-        await _client.From<GroupClassModel>().Insert(model);
+        var response = await _client.From<GroupClassModel>().Insert(model);
+        var inserted = response.Models.FirstOrDefault();
+        return inserted != null ? inserted.ToDomain() : groupClass;
     }
 
     public async Task UpdateAsync(GroupClass groupClass)
@@ -111,6 +192,10 @@ public sealed partial class SupabaseGroupClassRepository
 
         if (classToApprove == null || !string.Equals(classToApprove.ApprovalStatus, "pending", StringComparison.OrdinalIgnoreCase))
             return (false, "Không tìm thấy đề xuất lớp hoặc lớp không còn ở trạng thái chờ duyệt.");
+
+        var priceLocked = await LockCoursePriceAsync(classId);
+        if (!priceLocked.IsSuccess)
+            return priceLocked;
 
         var affected = await _dbContext.Database.ExecuteSqlRawAsync(
             "UPDATE classes SET approval_status = 'approved', status = true WHERE (id = {0} OR parent_id = {0}) AND approval_status = 'pending'",
@@ -244,5 +329,19 @@ public sealed partial class SupabaseGroupClassRepository
             }
         });
     }
+}
+
+internal sealed class CoursePriceLockRow
+{
+    public Guid Id { get; set; }
+    public Guid SportId { get; set; }
+    public int TotalSessions { get; set; }
+    public DateTimeOffset? PriceLockedAt { get; set; }
+}
+
+internal sealed class CoursePriceVersionRow
+{
+    public Guid Id { get; set; }
+    public decimal PricePerSession { get; set; }
 }
 

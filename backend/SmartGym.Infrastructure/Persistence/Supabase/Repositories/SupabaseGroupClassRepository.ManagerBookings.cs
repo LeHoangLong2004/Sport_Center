@@ -18,7 +18,7 @@ public sealed partial class SupabaseGroupClassRepository
     {
         var allClasses = await _dbContext
             .Database.SqlQueryRaw<ClassSqlRawModel>(
-                "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status, parent_id, session_number, total_sessions FROM classes"
+                "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status, parent_id, session_number, total_sessions, price_per_session_snapshot, course_fee_snapshot FROM classes"
             )
             .ToListAsync();
         var allBookings = await _dbContext
@@ -131,6 +131,12 @@ public class ClassSqlRawModel
 
     [Column("total_sessions")]
     public int TotalSessions { get; set; } = 1;
+
+    [Column("price_per_session_snapshot")]
+    public decimal? PricePerSessionSnapshot { get; set; }
+
+    [Column("course_fee_snapshot")]
+    public decimal? CourseFeeSnapshot { get; set; }
 }
 
 public class ClassApprovalRawModel
