@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   PlusCircle,
   Star,
+  CalendarX,
 } from "lucide-react";
 import type { MemberSessionItem, MemberScreen } from "../../types";
 import { STATUS_BADGE } from "./scheduleConstants";
@@ -18,6 +19,7 @@ interface Props {
   todayStr: string;
   onSelectSession: (session: MemberSessionItem) => void;
   onStartCancelSession: (session: MemberSessionItem) => void;
+  onReportAbsence?: (session: MemberSessionItem) => void;
   onNavigate: (screen: MemberScreen) => void;
   onStartReview?: (session: MemberSessionItem) => void;
   reviewedSessionIds?: Set<string>;
@@ -28,6 +30,7 @@ export default function ScheduleListView({
   todayStr,
   onSelectSession,
   onStartCancelSession,
+  onReportAbsence,
   onNavigate,
   onStartReview,
   reviewedSessionIds,
@@ -222,13 +225,47 @@ export default function ScheduleListView({
                         </>
                       ) : s.status !== "đã hủy" ? (
                         <>
-                          <button
-                            type="button"
-                            onClick={() => onStartCancelSession(s)}
-                            className="px-3.5 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-xl transition-colors shadow-xs cursor-pointer"
-                          >
-                            Hủy đặt chỗ
-                          </button>
+                          {(() => {
+                            const isRecurringCourse =
+                              (s.totalSessions && s.totalSessions > 1) ||
+                              (s.sessionNumber && s.sessionNumber > 1) ||
+                              Boolean(s.parentId) ||
+                              /\(Buổi \d+\)/i.test(s.name);
+                            const isAbsenceReported = s.isAbsenceReported || s.attendanceStatus === "vắng";
+
+                            if (isAbsenceReported) {
+                              return (
+                                <span className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl">
+                                  <CalendarX className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                                  Đã báo vắng
+                                </span>
+                              );
+                            }
+
+                            if (isRecurringCourse) {
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => (onReportAbsence ? onReportAbsence(s) : onStartCancelSession(s))}
+                                  className="px-3.5 py-2 text-xs font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 rounded-xl transition-colors shadow-xs cursor-pointer flex items-center gap-1.5"
+                                  title="Báo vắng buổi này với Huấn luyện viên"
+                                >
+                                  <CalendarX className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                                  Báo vắng buổi này
+                                </button>
+                              );
+                            }
+
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => onStartCancelSession(s)}
+                                className="px-3.5 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-xl transition-colors shadow-xs cursor-pointer"
+                              >
+                                Hủy đặt chỗ
+                              </button>
+                            );
+                          })()}
                           <button
                             type="button"
                             onClick={() => onSelectSession(s)}

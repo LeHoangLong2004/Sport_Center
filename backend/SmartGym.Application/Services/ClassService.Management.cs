@@ -158,7 +158,8 @@ public sealed partial class ClassService
             totalSessions: sessionTimes.Count
         );
 
-        await _classRepository.AddAsync(rootClass);
+        var persistedRoot = await _classRepository.AddAsync(rootClass);
+        var actualRootId = persistedRoot?.Id ?? rootId;
 
         // Tạo các buổi học con tiếp theo trong chuỗi (Child Sessions: Session 2..N)
         for (int i = 1; i < sessionTimes.Count; i++)
@@ -175,11 +176,18 @@ public sealed partial class ClassService
                 currentEnrolled: 0,
                 status: true,
                 approvalStatus: approvalStatus,
-                parentId: rootId,
+                parentId: actualRootId,
                 sessionNumber: i + 1,
                 totalSessions: sessionTimes.Count
             );
             await _classRepository.AddAsync(childClass);
+        }
+
+        if (approvalStatus == "approved")
+        {
+            var priceLock = await _classRepository.LockCoursePriceAsync(actualRootId, removeCourseWhenPriceMissing: true);
+            if (!priceLock.IsSuccess)
+                return priceLock;
         }
 
         if (approvalStatus == "pending")
@@ -188,7 +196,7 @@ public sealed partial class ClassService
                 "Có đề xuất lớp học mới cần duyệt",
                 $"Coach vừa gửi đề xuất lớp {request.ClassName} ({sessionTimes.Count} buổi) bắt đầu từ {CenterTime.ToLocal(sessionTimes[0]):dd/MM/yyyy HH:mm}.",
                 "class",
-                rootClass.Id
+                actualRootId
             );
         }
         else
@@ -198,7 +206,7 @@ public sealed partial class ClassService
                 "Bạn được phân công lớp học mới",
                 $"Bạn vừa được phân công lớp {request.ClassName} ({sessionTimes.Count} buổi) bắt đầu từ {CenterTime.ToLocal(sessionTimes[0]):dd/MM/yyyy HH:mm}.",
                 "class",
-                rootClass.Id
+                actualRootId
             );
         }
 

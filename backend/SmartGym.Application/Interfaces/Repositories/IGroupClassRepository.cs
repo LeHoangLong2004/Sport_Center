@@ -15,8 +15,9 @@ public interface IGroupClassRepository
     Task<bool> HasCoachAvailabilityConflictAsync(Guid coachId, DateTime startTime, DateTime endTime);
     Task<IEnumerable<ClassResponse>> GetAllClassesAsync();
     Task<IEnumerable<ClassResponse>> GetAvailableClassesAsync();
-    Task AddAsync(GroupClass groupClass);
+    Task<GroupClass> AddAsync(GroupClass groupClass);
     Task UpdateAsync(GroupClass groupClass);
+    Task<(bool IsSuccess, string? ErrorMessage)> LockCoursePriceAsync(Guid rootClassId, bool removeCourseWhenPriceMissing = false);
 
     // Transactions
     Task<(bool IsSuccess, string? ErrorMessage)> BookClassTransactionAsync(

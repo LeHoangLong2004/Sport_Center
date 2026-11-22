@@ -81,7 +81,7 @@ public static partial class AppointmentEndpoints
         try
         {
             var coachClasses = await db.Database.SqlQueryRaw<ClassSqlRawModel>(
-                @"SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status
+                @"SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status, parent_id, session_number, total_sessions, price_per_session_snapshot, course_fee_snapshot
                   FROM classes
                   WHERE (coach_id = {0} OR coach_id = {1})
                     AND status = true
@@ -185,7 +185,7 @@ public static partial class AppointmentEndpoints
             try
             {
                 var memberClasses = await db.Database.SqlQueryRaw<ClassSqlRawModel>(
-                    @"SELECT c.id, c.sport_id, c.facility_id, c.coach_id, c.class_name, c.schedule_time, c.duration_minutes, c.capacity, c.current_enrolled, c.status, c.approval_status
+                    @"SELECT c.id, c.sport_id, c.facility_id, c.coach_id, c.class_name, c.schedule_time, c.duration_minutes, c.capacity, c.current_enrolled, c.status, c.approval_status, c.parent_id, c.session_number, c.total_sessions, c.price_per_session_snapshot, c.course_fee_snapshot
                       FROM class_bookings b
                       INNER JOIN classes c ON c.id = b.class_id
                       WHERE b.user_id = {0}

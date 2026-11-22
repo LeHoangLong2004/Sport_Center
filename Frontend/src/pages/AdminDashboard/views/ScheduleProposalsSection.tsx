@@ -106,7 +106,14 @@ export const ScheduleProposalsSection: React.FC<ScheduleProposalsSectionProps> =
                 className="group grid cursor-pointer gap-3 px-4 py-3.5 transition hover:bg-emerald-50/40 md:grid-cols-[minmax(0,1.8fr)_minmax(140px,1fr)_minmax(160px,1fr)_110px_130px] md:items-center md:gap-4"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">{item.name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">{item.name}</p>
+                    {item.totalSessions && item.totalSessions > 1 && (
+                      <span className="shrink-0 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 ring-1 ring-blue-200">
+                        {item.totalSessions} buổi
+                      </span>
+                    )}
+                  </div>
                   <p className="mt-0.5 text-xs text-slate-500">{item.sport} · {item.room}</p>
                 </div>
                 <div className="text-sm text-slate-700">{item.coach || "Chưa phân công"}</div>

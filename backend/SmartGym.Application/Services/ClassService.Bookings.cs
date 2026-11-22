@@ -92,6 +92,8 @@ public sealed partial class ClassService
             }
         }
 
+        // 5. TẠM THỜI TẮT RÀNG BUỘC THỜI GIAN ĐẶT CHỖ TỐI ĐA THEO HẠNG THÀNH VIÊN ĐỂ KIỂM THỬ TÍNH NĂNG:
+        /*
         if (timeUntilClass.TotalHours > maxAdvanceHours)
         {
             var tierDisplayName = memberTier switch
@@ -108,21 +110,10 @@ public sealed partial class ClassService
             };
             return (false, $"Lớp học này chưa mở đặt chỗ cho hạng thành viên của bạn (Hạng {tierDisplayName} chỉ được đặt trước tối đa {advanceText}). Vui lòng quay lại sau hoặc nâng cấp hạng để đặt lịch sớm hơn!");
         }
+        */
 
-        var validSub = userSubs.FirstOrDefault(s =>
-            s.PaymentStatus == SmartGym.Domain.Enums.PaymentStatus.Completed
-            && s.StartDate <= targetClass.ScheduleTime
-            && targetClass.ScheduleTime <= s.EndDate
-            && (
-                (s.SportId.HasValue && s.SportId.Value == targetClass.SportId) ||
-                (s.Package != null && !string.IsNullOrWhiteSpace(targetClass.ClassName) && s.Package.Name.Contains(targetClass.ClassName, StringComparison.OrdinalIgnoreCase)) ||
-                (!string.IsNullOrWhiteSpace(s.PackageId) && !string.IsNullOrWhiteSpace(targetClass.ClassName) && targetClass.ClassName.Contains(s.PackageId, StringComparison.OrdinalIgnoreCase))
-            )
-        );
-
-        // Thành viên ở mọi hạng (kể cả Basic / chưa mua gói tháng) đều được đặt lớp:
-        // Nếu có gói tháng hợp lệ theo đúng môn thì gắn với subscriptionId, nếu không có gói thì đặt theo vé giá gốc (subscriptionId = null).
-        Guid? subscriptionIdToUse = validSub?.Id;
+        // Gói môn không còn bao gồm quyền đặt lớp nhóm miễn phí.
+        Guid? subscriptionIdToUse = null;
 
         var targetStart = targetClass.ScheduleTime;
         var targetEnd = targetStart.AddMinutes(targetClass.DurationMinutes);

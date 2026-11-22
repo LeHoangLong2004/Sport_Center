@@ -132,7 +132,8 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             .SqlQueryRaw<ClassSqlRawModel>(
                 @"SELECT id, sport_id, facility_id, coach_id, class_name,
                          schedule_time, duration_minutes, capacity,
-                         current_enrolled, status, approval_status, parent_id, session_number, total_sessions
+                         current_enrolled, status, approval_status, parent_id, session_number, total_sessions,
+                         price_per_session_snapshot, course_fee_snapshot
                   FROM classes
                   WHERE coach_id = {0}
                     AND schedule_time >= {1}
@@ -158,7 +159,8 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             .SqlQueryRaw<ClassSqlRawModel>(
                 @"SELECT id, sport_id, facility_id, coach_id, class_name,
                          schedule_time, duration_minutes, capacity,
-                         current_enrolled, status, approval_status, parent_id, session_number, total_sessions
+                         current_enrolled, status, approval_status, parent_id, session_number, total_sessions,
+                         price_per_session_snapshot, course_fee_snapshot
                   FROM classes
                   WHERE facility_id = {0}
                     AND schedule_time >= {1}
@@ -207,7 +209,8 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             .SqlQueryRaw<ClassSqlRawModel>(
                 @"SELECT id, sport_id, facility_id, coach_id, class_name,
                          schedule_time, duration_minutes, capacity,
-                         current_enrolled, status, approval_status, parent_id, session_number, total_sessions
+                         current_enrolled, status, approval_status, parent_id, session_number, total_sessions,
+                         price_per_session_snapshot, course_fee_snapshot
                   FROM classes"
             )
             .ToListAsync();
@@ -227,6 +230,8 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
         var users = await _dbContext
             .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number, avatar_url FROM users")
             .ToListAsync();
+
+        var currentClassPrices = await GetCurrentClassPricesBySportAsync();
 
         return classModels
             .Select(c =>
@@ -257,7 +262,9 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                     CoachBio: coach?.Bio ?? "Huấn luyện viên phụ trách lớp học.",
                     CoachRating: coach?.Rating,
                     CoachExperienceYears: coach?.ExperienceYears ?? 5,
-                    Price: 150000m,
+                    Price: c.CourseFeeSnapshot ?? (string.Equals(c.ApprovalStatus, "pending", StringComparison.OrdinalIgnoreCase)
+                        ? CalculateCoursePrice(currentClassPrices, c.SportId, sport?.Name, c.TotalSessions)
+                        : null),
                     ParentId: c.ParentId,
                     SessionNumber: c.SessionNumber,
                     TotalSessions: c.TotalSessions
@@ -297,7 +304,6 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
         var users = await _dbContext
             .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number, avatar_url FROM users")
             .ToListAsync();
-
         return classModels
             .Select(c =>
             {
@@ -327,7 +333,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                     CoachBio: coach?.Bio ?? "Huấn luyện viên phụ trách lớp học.",
                     CoachRating: coach?.Rating,
                     CoachExperienceYears: coach?.ExperienceYears ?? 5,
-                    Price: c.TotalSessions > 1 ? c.TotalSessions * 150000m : 150000m,
+                    Price: c.CourseFeeSnapshot,
                     ParentId: c.ParentId,
                     SessionNumber: c.SessionNumber,
                     TotalSessions: c.TotalSessions
@@ -336,6 +342,61 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             .OrderBy(x => x.ScheduleTime)
             .ToList();
     }
+
+    private async Task<CurrentSportClassPriceLookup> GetCurrentClassPricesBySportAsync()
+    {
+        var today = DateOnly.FromDateTime(CenterTime.ToLocal(DateTime.UtcNow));
+        var prices = await _dbContext.Database.SqlQueryRaw<CurrentSportClassPriceRawModel>(
+            """
+            SELECT p.sport_id AS "SportId",
+                   s.name AS "SportName",
+                   p.price_per_session AS "PricePerSession",
+                   p.effective_from AS "EffectiveFrom",
+                   p.created_at AS "CreatedAt"
+            FROM sport_class_pricing p
+            INNER JOIN sports s ON s.id = p.sport_id
+            WHERE p.is_active = TRUE
+              AND p.effective_from <= {0}
+              AND (p.effective_to IS NULL OR p.effective_to >= {0})
+            ORDER BY p.effective_from DESC, p.created_at DESC
+            """,
+            today
+        ).ToListAsync();
+
+        var orderedPrices = prices
+            .OrderByDescending(price => price.EffectiveFrom)
+            .ThenByDescending(price => price.CreatedAt)
+            .ToList();
+
+        return new CurrentSportClassPriceLookup(
+            orderedPrices
+                .GroupBy(price => price.SportId)
+                .ToDictionary(group => group.Key, group => group.First().PricePerSession),
+            orderedPrices
+                .GroupBy(price => NormalizeSportName(price.SportName))
+                .Where(group => group.Key.Length > 0)
+                .ToDictionary(group => group.Key, group => group.First().PricePerSession)
+        );
+    }
+
+    private static decimal CalculateCoursePrice(
+        CurrentSportClassPriceLookup prices,
+        Guid sportId,
+        string? sportName,
+        int totalSessions)
+    {
+        if (!prices.BySportId.TryGetValue(sportId, out var pricePerSession) &&
+            !prices.BySportName.TryGetValue(NormalizeSportName(sportName), out pricePerSession))
+        {
+            throw new InvalidOperationException(
+                $"Chưa có bảng giá đang áp dụng cho bộ môn '{sportName ?? sportId.ToString()}'.");
+        }
+
+        return pricePerSession * Math.Max(1, totalSessions);
+    }
+
+    private static string NormalizeSportName(string? sportName)
+        => string.IsNullOrWhiteSpace(sportName) ? string.Empty : sportName.Trim().ToLowerInvariant();
 
     private static (CoachSqlRawModel? Coach, UserSqlRawModel? User) ResolveCoach(
         Guid? coachId,
@@ -356,3 +417,16 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
     }
 
 }
+
+internal sealed class CurrentSportClassPriceRawModel
+{
+    public Guid SportId { get; set; }
+    public string SportName { get; set; } = string.Empty;
+    public decimal PricePerSession { get; set; }
+    public DateOnly EffectiveFrom { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+internal sealed record CurrentSportClassPriceLookup(
+    Dictionary<Guid, decimal> BySportId,
+    Dictionary<string, decimal> BySportName);

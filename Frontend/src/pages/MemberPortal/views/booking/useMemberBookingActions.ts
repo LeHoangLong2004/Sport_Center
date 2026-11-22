@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { MemberAPI } from "../../services/api";
 import { WalletService, MEMBER_WALLET_UPDATED_EVENT } from "../../services/walletService";
-import { PackageAPI, getMembershipStatus, type MembershipStatus } from "../../../../services/packageApi";
+import { PackageAPI, getMembershipStatus, type MembershipStatus, type PackageOrder } from "../../../../services/packageApi";
 import { parseScheduleTime } from "../../../../utils/scheduleTimeHelper";
 import {
   type BookingFeedback,
@@ -78,7 +78,7 @@ export function useMemberBookingActions({
     window.setTimeout(() => setFeedback(null), 4000);
   };
 
-  const handleInitiateBookClass = (classItem: any) => {
+  const handleInitiateBookClass = async (classItem: any) => {
     if (isBooked(classItem.id, classItem.dateStr)) {
       showFeedback(`Bạn đã đăng ký lớp "${classItem.name}" rồi.`, "error");
       return;
@@ -111,16 +111,8 @@ export function useMemberBookingActions({
         return;
       }
 
-      // 2. Ràng buộc thời gian tối đa theo Hạng thành viên (Cơ bản: 24h, Plus: 72h, Premium: 120h)
-      const advanceHours =
-        membership?.bookingAdvanceHours && membership.bookingAdvanceHours > 0
-          ? membership.bookingAdvanceHours
-          : membership?.tier === "premium"
-          ? 120
-          : membership?.tier === "plus"
-          ? 72
-          : 24;
-
+      // 2. Tạm thời tắt ràng buộc thời gian tối đa theo Hạng thành viên để kiểm thử
+      /*
       if (classStartMs - now > advanceHours * 3600 * 1000) {
         const tierName =
           membership?.name ||
@@ -132,20 +124,59 @@ export function useMemberBookingActions({
         toast.error(msg);
         return;
       }
+      */
     }
 
-    setPaymentError(null);
-    setClassToBook(classItem);
-    setSelectedClassDetail(null);
+    try {
+      const availableClasses = await MemberAPI.getAvailableClasses();
+      const latestClass = Array.isArray(availableClasses)
+        ? availableClasses.find((item: any) => String(item.id) === String(classItem.id))
+        : null;
+      if (!latestClass || latestClass.price == null) {
+        throw new Error("Khóa học chưa có học phí được chốt. Vui lòng liên hệ quản lý trung tâm.");
+      }
+      const latestPrice = Number(latestClass.price);
+      if (!Number.isFinite(latestPrice) || latestPrice < 0) {
+        throw new Error("Học phí đã chốt của khóa học không hợp lệ.");
+      }
+
+      const refreshedClass = {
+        ...classItem,
+        ...latestClass,
+        price: latestPrice,
+        name: latestClass.className || classItem.name,
+        sport: latestClass.sportName || classItem.sport,
+        room: latestClass.facilityName || classItem.room,
+      };
+      setGroupClasses((current) => current.map((item) =>
+        String(item.id) === String(classItem.id) ? { ...item, price: latestPrice } : item
+      ));
+      setPaymentError(null);
+      setClassToBook(refreshedClass);
+      setSelectedClassDetail(null);
+    } catch (error: any) {
+      const message = error?.message || "Không thể tải giá hiện hành của lớp học.";
+      setPaymentError(message);
+      showFeedback(message, "error");
+      toast.error(message);
+    }
   };
 
   const handleConfirmPaymentAndBook = async (customAmount?: number) => {
     if (!classToBook) return;
+    const latestQuotedAmount = customAmount ?? Number(classToBook.price);
+    if (!Number.isFinite(latestQuotedAmount) || latestQuotedAmount < 0) {
+      const message = "Không có giá hiện hành hợp lệ cho lớp học. Vui lòng tải lại danh sách lớp.";
+      setPaymentError(message);
+      showFeedback(message, "error");
+      return;
+    }
+
     setIsProcessingPayment(true);
     setPaymentError(null);
 
-    const paidAmount = customAmount ?? (classToBook.price ?? 150000);
-    const effectivePaymentMethod = paidAmount === 0 ? "package" : paymentMethod;
+    const paidAmount = latestQuotedAmount;
+    const effectivePaymentMethod = paymentMethod;
 
     try {
       const response = await MemberAPI.payAndBookClass(

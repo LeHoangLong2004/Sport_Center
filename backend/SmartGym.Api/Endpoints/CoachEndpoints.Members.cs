@@ -84,7 +84,7 @@ namespace SmartGym.Api.Endpoints
             // A class can contain either the coach profile id or the authenticated
             // user id because both formats exist in older records.
             var coachClasses = await db.Database.SqlQueryRaw<ClassSqlRawModel>(
-                "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status FROM classes WHERE (coach_id = {0} OR coach_id = {1}) AND status = TRUE",
+                "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status, parent_id, session_number, total_sessions, price_per_session_snapshot, course_fee_snapshot FROM classes WHERE (coach_id = {0} OR coach_id = {1}) AND status = TRUE",
                 coachProfileKey,
                 coachUserId
             ).ToListAsync();

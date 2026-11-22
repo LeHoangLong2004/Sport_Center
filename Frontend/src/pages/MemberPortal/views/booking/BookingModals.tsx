@@ -112,7 +112,6 @@ export function BookingModals({
         onConfirmCancel={onConfirmCancel}
         isCancelling={isCancelling}
         membership={membership}
-        activeOrders={activeOrders}
       />
 
       <PtBookingModal

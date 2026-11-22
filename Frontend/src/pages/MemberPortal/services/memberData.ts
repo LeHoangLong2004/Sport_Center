@@ -237,6 +237,11 @@ export const MemberBackendAPI = {
             registeredCount: 0,
             status: getUiStatus(booking.status, booking.scheduleTime, duration),
             bookingStatus: booking.status,
+            attendanceStatus: (booking.status === "absent" ? "vắng" : undefined) as MemberSessionItem["attendanceStatus"],
+            parentId: booking.parentId || undefined,
+            sessionNumber: booking.sessionNumber || (booking.className?.match(/Buổi (\d+)/i) ? parseInt(booking.className.match(/Buổi (\d+)/i)[1], 10) : 1),
+            totalSessions: booking.totalSessions || (booking.className?.match(/Buổi \d+/i) ? 20 : 1),
+            isAbsenceReported: booking.status === "absent",
           };
         });
 
@@ -360,6 +365,23 @@ export const MemberBackendAPI = {
       if (res.ok) return true;
     } catch (e) {
       console.warn("Backend cancelBooking failed", e);
+    }
+    return false;
+  },
+
+  async reportAbsence(sessionId: string, reason: string) {
+    try {
+      const res = await fetch(`/api/member/bookings/${encodeURIComponent(sessionId)}/absence`, {
+        method: "POST",
+        headers: {
+          ...this.getAuthHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ reason }),
+      });
+      if (res.ok) return true;
+    } catch (e) {
+      console.warn("Backend reportAbsence failed", e);
     }
     return false;
   },

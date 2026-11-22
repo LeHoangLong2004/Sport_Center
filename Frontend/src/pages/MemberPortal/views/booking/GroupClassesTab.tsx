@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { CoachAvatar } from "../../utils/coachAvatar";
 import type { MemberSessionItem } from "../../types";
-import { isClassCoveredByPackage, type CancelBookingTarget } from "./bookingTypes";
+import { type CancelBookingTarget } from "./bookingTypes";
 import { parseScheduleTime } from "../../../../utils/scheduleTimeHelper";
 import { EarlyBookingModal } from "./EarlyBookingModal";
 
@@ -24,7 +24,6 @@ interface GroupClassesTabProps {
   classes: any[];
   mySessions: MemberSessionItem[];
   membership?: any;
-  activeOrders?: any[];
   onNavigate?: (screen: any) => void;
   onRetry: () => void;
   onOpenDetail: (cls: any) => void;
@@ -42,7 +41,6 @@ export const GroupClassesTab: React.FC<GroupClassesTabProps> = ({
   classes,
   mySessions,
   membership,
-  activeOrders = [],
   onNavigate,
   onRetry,
   onOpenDetail,
@@ -149,8 +147,8 @@ export const GroupClassesTab: React.FC<GroupClassesTabProps> = ({
               classEndMs !== null &&
               classStartMs <= now &&
               now < classEndMs;
-            const isTooEarly =
-              classStartMs !== null && classStartMs - now > advanceHours * 3600 * 1000;
+            // const isTooEarly = classStartMs !== null && classStartMs - now > advanceHours * 3600 * 1000;
+            const isTooEarly = false; // Tạm thời tắt ràng buộc đặt trước theo gói để phục vụ kiểm thử tính năng
 
             let opensAtDateStr = "";
             if (isTooEarly && classStartMs !== null) {
@@ -173,7 +171,9 @@ export const GroupClassesTab: React.FC<GroupClassesTabProps> = ({
                       {item.sport} • {item.level}
                     </span>
                     <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                      {item.price ? `${item.price.toLocaleString("vi-VN")} đ` : "150.000 đ"}
+                      {item.price !== null && item.price !== undefined
+                        ? `${Number(item.price).toLocaleString("vi-VN")} đ`
+                        : "Chưa có giá áp dụng"}
                     </span>
                   </div>
 
@@ -271,7 +271,6 @@ export const GroupClassesTab: React.FC<GroupClassesTabProps> = ({
                       type="button"
                       onClick={() => {
                         const targetClassId = (bookedSession as any)?.classId || item.id;
-                        const isCovered = isClassCoveredByPackage(item, activeOrders);
                         onCancelBooking({
                           classId: targetClassId,
                           className: item.name,
@@ -279,8 +278,7 @@ export const GroupClassesTab: React.FC<GroupClassesTabProps> = ({
                           startTime: item.startTime,
                           endTime: item.endTime,
                           dateStr: item.dateStr,
-                          price: isCovered ? 0 : item.price,
-                          isCovered: isCovered,
+                          price: item.price,
                           sport: item.sport,
                           room: item.room,
                         });
@@ -294,7 +292,6 @@ export const GroupClassesTab: React.FC<GroupClassesTabProps> = ({
                       type="button"
                       onClick={() => {
                         const targetClassId = (bookedSession as any)?.classId || item.id;
-                        const isCovered = isClassCoveredByPackage(item, activeOrders);
                         onCancelBooking({
                           classId: targetClassId,
                           className: item.name,
@@ -302,8 +299,7 @@ export const GroupClassesTab: React.FC<GroupClassesTabProps> = ({
                           startTime: item.startTime,
                           endTime: item.endTime,
                           dateStr: item.dateStr,
-                          price: isCovered ? 0 : item.price,
-                          isCovered: isCovered,
+                          price: item.price,
                           sport: item.sport,
                           room: item.room,
                         });

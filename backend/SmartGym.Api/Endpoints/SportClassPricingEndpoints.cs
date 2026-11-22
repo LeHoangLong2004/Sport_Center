@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using SmartGym.Application.Common;
 using SmartGym.Application.DTOs.ClassScheduling;
 using SmartGym.Infrastructure.Persistence.EF;
 
@@ -32,7 +33,8 @@ public static class SportClassPricingEndpoints
             if (totalSessions is < 1 or > 120)
                 return Results.BadRequest(new { message = "Tổng số buổi phải từ 1 đến 120." });
 
-            var price = await FindActivePriceAsync(db, sportId, DateOnly.FromDateTime(DateTime.UtcNow));
+            var today = DateOnly.FromDateTime(CenterTime.ToLocal(DateTime.UtcNow));
+            var price = await FindActivePriceAsync(db, sportId, today);
             return price == null
                 ? Results.NotFound(new { message = "Bộ môn chưa có bảng giá hiệu lực." })
                 : Results.Ok(new ClassCoursePriceQuote(sportId, price.Value, totalSessions, price.Value * totalSessions));
@@ -42,7 +44,8 @@ public static class SportClassPricingEndpoints
         {
             if (request.PricePerSession < 0)
                 return Results.BadRequest(new { message = "Đơn giá mỗi buổi không được âm." });
-            if (request.EffectiveFrom < DateOnly.FromDateTime(DateTime.UtcNow))
+            var today = DateOnly.FromDateTime(CenterTime.ToLocal(DateTime.UtcNow));
+            if (request.EffectiveFrom < today)
                 return Results.BadRequest(new { message = "Ngày hiệu lực không được ở quá khứ." });
             if (!Guid.TryParse(context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? context.User.FindFirst("sub")?.Value, out var actorId))
                 return Results.Unauthorized();
@@ -66,7 +69,7 @@ public static class SportClassPricingEndpoints
                 """);
             await transaction.CommitAsync();
 
-            return Results.Ok(new { message = "Đã cập nhật bảng giá. Lớp đã tạo vẫn giữ nguyên giá đã chốt." });
+            return Results.Ok(new { message = "Đã lưu phiên bản giá mới. Giá được chốt cho khóa học khi Manager duyệt." });
         }).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
     }
 
