@@ -104,7 +104,7 @@ export const ScheduleCalendarView: React.FC<ScheduleCalendarViewProps> = ({
                               {sport}
                             </span>
                             <span className="text-[10px] text-slate-400 ">
-                              {start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}
+                              {start.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Bangkok" })}
                             </span>
                           </div>
                           <div className={`text-xs font-semibold line-clamp-1 ${style.text}`}>

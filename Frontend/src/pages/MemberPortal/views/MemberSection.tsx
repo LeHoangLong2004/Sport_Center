@@ -2,6 +2,7 @@ import React, { useState, useMemo, FormEvent } from 'react';
 import { assetRoots, iconNames, classItems, memberSections, MemberPage, visualPage, asset } from '../shared';
 import MemberShell from '../components/MemberShell';
 import Progress from '../components/Progress';
+import { formatCenterDateTime } from '../../../utils/scheduleTimeHelper';
 
 export function MemberSection({
   page,
@@ -58,7 +59,7 @@ export function MemberSection({
           const d = new Date(b.schedule?.scheduleTime || b.bookingDate);
           return [
             b.schedule?.className || b.schedule?.sportName || "Lớp học",
-            `${d.toLocaleDateString('vi-VN')} ${d.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}`,
+            formatCenterDateTime(d),
             b.status === 0 ? "Đã đặt" : b.status === 1 ? "Hoàn thành" : b.status === 2 ? "Hủy" : "Đã Check-in"
           ];
         })

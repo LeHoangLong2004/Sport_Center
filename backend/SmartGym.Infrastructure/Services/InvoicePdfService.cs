@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using SmartGym.Application.Common;
 using SmartGym.Application.Interfaces;
 using SmartGym.Domain.Entities;
 using SmartGym.Domain.Enums;
@@ -251,7 +252,7 @@ public class InvoicePdfService(SmartGymDbContext db) : IPdfService
                     {
                         Name = $"Vé lớp học: {booking.ClassName}{sportText}",
                         Type = "Vé lớp học (Class Booking)",
-                        Validity = $"Lịch học: {booking.ScheduleTime.ToLocalTime():dd/MM/yyyy HH:mm}",
+                        Validity = $"Lịch học: {CenterTime.ToLocal(booking.ScheduleTime):dd/MM/yyyy HH:mm}",
                         PeriodOrQty = $"{booking.DurationMinutes ?? 60} phút / buổi",
                         UnitPrice = invoice.TotalAmount,
                         TotalPrice = invoice.TotalAmount
@@ -302,20 +303,20 @@ public class InvoicePdfService(SmartGymDbContext db) : IPdfService
 
     private static (string Name, string Type, string Period, string Validity) InferServiceFromAmount(decimal amount, DateTime createdAt) => amount switch
     {
-        149000m => ("Gói Hội viên Plus (1 tháng)", "Gói thành viên", "1 tháng", $"{createdAt.ToLocalTime():dd/MM/yyyy} - {createdAt.AddMonths(1).ToLocalTime():dd/MM/yyyy}"),
-        299000m => ("Gói Hội viên Premium VIP (1 tháng)", "Gói thành viên", "1 tháng", $"{createdAt.ToLocalTime():dd/MM/yyyy} - {createdAt.AddMonths(1).ToLocalTime():dd/MM/yyyy}"),
-        399000m => ("Gói Hội viên Plus (3 tháng)", "Gói thành viên", "3 tháng", $"{createdAt.ToLocalTime():dd/MM/yyyy} - {createdAt.AddMonths(3).ToLocalTime():dd/MM/yyyy}"),
-        749000m => ("Gói Hội viên Plus (6 tháng)", "Gói thành viên", "6 tháng", $"{createdAt.ToLocalTime():dd/MM/yyyy} - {createdAt.AddMonths(6).ToLocalTime():dd/MM/yyyy}"),
-        799000m => ("Gói Hội viên Premium VIP (3 tháng)", "Gói thành viên", "3 tháng", $"{createdAt.ToLocalTime():dd/MM/yyyy} - {createdAt.AddMonths(3).ToLocalTime():dd/MM/yyyy}"),
-        1399000m => ("Gói Hội viên Plus (12 tháng)", "Gói thành viên", "12 tháng", $"{createdAt.ToLocalTime():dd/MM/yyyy} - {createdAt.AddYears(1).ToLocalTime():dd/MM/yyyy}"),
-        1499000m => ("Gói Hội viên Premium VIP (6 tháng)", "Gói thành viên", "6 tháng", $"{createdAt.ToLocalTime():dd/MM/yyyy} - {createdAt.AddMonths(6).ToLocalTime():dd/MM/yyyy}"),
-        2799000m => ("Gói Hội viên Premium VIP (12 tháng)", "Gói thành viên", "12 tháng", $"{createdAt.ToLocalTime():dd/MM/yyyy} - {createdAt.AddYears(1).ToLocalTime():dd/MM/yyyy}"),
-        500000m => ("Gói Tập Yoga (1 tháng)", "Gói tập thể thao", "1 tháng", $"{createdAt.ToLocalTime():dd/MM/yyyy} - {createdAt.AddMonths(1).ToLocalTime():dd/MM/yyyy}"),
-        600000m => ("Gói Tập Bơi Lội (1 tháng)", "Gói tập thể thao", "1 tháng", $"{createdAt.ToLocalTime():dd/MM/yyyy} - {createdAt.AddMonths(1).ToLocalTime():dd/MM/yyyy}"),
-        800000m => ("Gói Premium Fitness (1 tháng)", "Gói thành viên", "1 tháng", $"{createdAt.ToLocalTime():dd/MM/yyyy} - {createdAt.AddMonths(1).ToLocalTime():dd/MM/yyyy}"),
-        1200000m => ("Thẻ VIP Toàn Diện (1 tháng)", "Gói thành viên", "1 tháng", $"{createdAt.ToLocalTime():dd/MM/yyyy} - {createdAt.AddMonths(1).ToLocalTime():dd/MM/yyyy}"),
-        150000m => ("Vé tham gia lớp học thể thao", "Vé lớp học", "1 buổi tập", $"Ngày đăng ký: {createdAt.ToLocalTime():dd/MM/yyyy}"),
-        _ => ("Gói dịch vụ Hội viên & Thể thao", "Dịch vụ SmartGym", "Theo hợp đồng", $"Ngày lập: {createdAt.ToLocalTime():dd/MM/yyyy}")
+        149000m => ("Gói Hội viên Plus (1 tháng)", "Gói thành viên", "1 tháng", $"{CenterTime.ToLocal(createdAt):dd/MM/yyyy} - {CenterTime.ToLocal(createdAt.AddMonths(1)):dd/MM/yyyy}"),
+        299000m => ("Gói Hội viên Premium VIP (1 tháng)", "Gói thành viên", "1 tháng", $"{CenterTime.ToLocal(createdAt):dd/MM/yyyy} - {CenterTime.ToLocal(createdAt.AddMonths(1)):dd/MM/yyyy}"),
+        399000m => ("Gói Hội viên Plus (3 tháng)", "Gói thành viên", "3 tháng", $"{CenterTime.ToLocal(createdAt):dd/MM/yyyy} - {CenterTime.ToLocal(createdAt.AddMonths(3)):dd/MM/yyyy}"),
+        749000m => ("Gói Hội viên Plus (6 tháng)", "Gói thành viên", "6 tháng", $"{CenterTime.ToLocal(createdAt):dd/MM/yyyy} - {CenterTime.ToLocal(createdAt.AddMonths(6)):dd/MM/yyyy}"),
+        799000m => ("Gói Hội viên Premium VIP (3 tháng)", "Gói thành viên", "3 tháng", $"{CenterTime.ToLocal(createdAt):dd/MM/yyyy} - {CenterTime.ToLocal(createdAt.AddMonths(3)):dd/MM/yyyy}"),
+        1399000m => ("Gói Hội viên Plus (12 tháng)", "Gói thành viên", "12 tháng", $"{CenterTime.ToLocal(createdAt):dd/MM/yyyy} - {CenterTime.ToLocal(createdAt.AddYears(1)):dd/MM/yyyy}"),
+        1499000m => ("Gói Hội viên Premium VIP (6 tháng)", "Gói thành viên", "6 tháng", $"{CenterTime.ToLocal(createdAt):dd/MM/yyyy} - {CenterTime.ToLocal(createdAt.AddMonths(6)):dd/MM/yyyy}"),
+        2799000m => ("Gói Hội viên Premium VIP (12 tháng)", "Gói thành viên", "12 tháng", $"{CenterTime.ToLocal(createdAt):dd/MM/yyyy} - {CenterTime.ToLocal(createdAt.AddYears(1)):dd/MM/yyyy}"),
+        500000m => ("Gói Tập Yoga (1 tháng)", "Gói tập thể thao", "1 tháng", $"{CenterTime.ToLocal(createdAt):dd/MM/yyyy} - {CenterTime.ToLocal(createdAt.AddMonths(1)):dd/MM/yyyy}"),
+        600000m => ("Gói Tập Bơi Lội (1 tháng)", "Gói tập thể thao", "1 tháng", $"{CenterTime.ToLocal(createdAt):dd/MM/yyyy} - {CenterTime.ToLocal(createdAt.AddMonths(1)):dd/MM/yyyy}"),
+        800000m => ("Gói Premium Fitness (1 tháng)", "Gói thành viên", "1 tháng", $"{CenterTime.ToLocal(createdAt):dd/MM/yyyy} - {CenterTime.ToLocal(createdAt.AddMonths(1)):dd/MM/yyyy}"),
+        1200000m => ("Thẻ VIP Toàn Diện (1 tháng)", "Gói thành viên", "1 tháng", $"{CenterTime.ToLocal(createdAt):dd/MM/yyyy} - {CenterTime.ToLocal(createdAt.AddMonths(1)):dd/MM/yyyy}"),
+        150000m => ("Vé tham gia lớp học thể thao", "Vé lớp học", "1 buổi tập", $"Ngày đăng ký: {CenterTime.ToLocal(createdAt):dd/MM/yyyy}"),
+        _ => ("Gói dịch vụ Hội viên & Thể thao", "Dịch vụ SmartGym", "Theo hợp đồng", $"Ngày lập: {CenterTime.ToLocal(createdAt):dd/MM/yyyy}")
     };
 
     // ── Header ───────────────────────────────────────────────────────────────
@@ -371,9 +372,9 @@ public class InvoicePdfService(SmartGymDbContext db) : IPdfService
                 row.RelativeItem().Column(inner =>
                 {
                     inner.Item().Text(t => { t.Span("Ma bien lai: ").SemiBold(); t.Span(invoice.InvoiceNumber).FontColor(Blue2).SemiBold(); });
-                    inner.Item().PaddingTop(2).Text(t => { t.Span("Ngay lap: ").SemiBold(); t.Span(invoice.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")); });
+                    inner.Item().PaddingTop(2).Text(t => { t.Span("Ngay lap: ").SemiBold(); t.Span(CenterTime.ToLocal(invoice.CreatedAt).ToString("dd/MM/yyyy HH:mm")); });
                     if (invoice.PaidAt.HasValue)
-                        inner.Item().PaddingTop(2).Text(t => { t.Span("Ngay thanh toan: ").SemiBold(); t.Span(invoice.PaidAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")); });
+                        inner.Item().PaddingTop(2).Text(t => { t.Span("Ngay thanh toan: ").SemiBold(); t.Span(CenterTime.ToLocal(invoice.PaidAt.Value).ToString("dd/MM/yyyy HH:mm")); });
                 });
                 row.ConstantItem(130).AlignRight().AlignMiddle()
                     .Border(1.5f).BorderColor(statusColor).Padding(6)
@@ -496,4 +497,3 @@ public class InvoicePdfService(SmartGymDbContext db) : IPdfService
         if (color != null) txt.FontColor(color);
     }
 }
-

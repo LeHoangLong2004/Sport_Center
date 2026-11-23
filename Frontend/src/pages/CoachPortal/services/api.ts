@@ -26,7 +26,7 @@ import type {
 } from "./types";
 import type { MemberProfileData } from "../views/member-profile/types";
 import { fetchApi } from "./fetchApi";
-import { parseScheduleTime } from "../../../utils/scheduleTimeHelper";
+import { formatCenterDate, formatCenterTime, parseScheduleTime } from "../../../utils/scheduleTimeHelper";
 
 export type {
   SessionStatus,
@@ -480,10 +480,10 @@ export const CoachAPI = {
       return res.map((p: any) => {
         const d = parseScheduleTime(p.scheduleTime);
         const timeStr = !isNaN(d.getTime())
-          ? d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })
+          ? formatCenterTime(d)
           : "--:--";
         const dateStr = !isNaN(d.getTime())
-          ? d.toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" })
+          ? formatCenterDate(d, { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" })
           : "";
         const totalSessions = p.totalSessions || 1;
         const sessionInfo = totalSessions > 1 ? ` • Khóa ${totalSessions} buổi` : "";

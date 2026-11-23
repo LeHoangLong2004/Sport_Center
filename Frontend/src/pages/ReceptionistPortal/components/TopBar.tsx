@@ -4,6 +4,7 @@ import { breadcrumbs, A, Page } from '../shared';
 import { UserAvatar } from '../../../components/UserAvatar';
 import { notificationApi, type ManagerNotification } from '../../../hooks/notificationApi';
 import { ThemeToggle } from '../../../components/ThemeToggle';
+import { CENTER_TIME_ZONE } from '../../../utils/scheduleTimeHelper';
 
 const DERIVED_READ_KEY = 'receptionist_read_derived_notifications';
 
@@ -180,7 +181,7 @@ export function TopBar({ breadcrumb, title, shiftLabel, onProfileClick, onNaviga
   const formatNotificationTime = (value: string) => {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '';
-    return date.toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
+    return date.toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short', timeZone: CENTER_TIME_ZONE });
   };
 
   const userStr = localStorage.getItem("user");

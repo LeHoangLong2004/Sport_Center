@@ -10,6 +10,7 @@ import { PtSlotsTab } from "./booking/PtSlotsTab";
 import { MyClassesTab } from "./booking/MyClassesTab";
 import { BookingModals } from "./booking/BookingModals";
 import { parseScheduleTime } from "../../../utils/scheduleTimeHelper";
+import { MemberAPI } from "../services/api";
 
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
@@ -91,6 +92,24 @@ export default function MemberBooking({ onNavigate }: Props) {
     setPtSlots,
     isBooked,
   });
+
+  const handleOpenClassDetail = async (classItem: any) => {
+    setSelectedClassDetail(classItem);
+    try {
+      const detail = await MemberAPI.getClassDetail(String(classItem.id));
+      if (!detail) return;
+
+      setSelectedClassDetail((current: any) => current?.id === classItem.id
+        ? {
+            ...current,
+            sessions: detail.sessions ?? detail.Sessions ?? [],
+            totalSessions: detail.totalSessions ?? detail.TotalSessions ?? current.totalSessions,
+          }
+        : current);
+    } catch (error) {
+      console.warn("Không thể tải lịch chi tiết khóa học:", error);
+    }
+  };
 
   useEffect(() => {
     const hasOpenModal = Boolean(selectedClassDetail || classToBook || bookingSuccessInfo || bookingPtSlot || cancelTarget);
@@ -233,7 +252,7 @@ export default function MemberBooking({ onNavigate }: Props) {
           membership={membership}
           onNavigate={onNavigate}
           onRetry={() => void loadGroupClasses()}
-          onOpenDetail={setSelectedClassDetail}
+          onOpenDetail={handleOpenClassDetail}
           onInitiateBook={handleInitiateBookClass}
           onCancelBooking={setCancelTarget}
           findActiveBooking={findActiveBooking}

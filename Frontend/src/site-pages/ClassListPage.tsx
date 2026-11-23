@@ -3,6 +3,7 @@ import { FadeUp, FadeIn } from "../components/Motion";
 import { ClassCard } from "./ClassListComponents";
 import type { ClassItem, ClassStatus } from "./ClassListComponents";
 import { getClassImage } from "../utils/classImageHelper";
+import { centerDateParts, formatCenterTime, parseScheduleTime } from "../utils/scheduleTimeHelper";
 
 const A = "/assets";
 
@@ -31,7 +32,7 @@ const formatSchedule = (isoString?: string) => {
   try {
     if (!isoString) return "Lịch chưa cập nhật";
 
-    const d = new Date(isoString);
+    const d = parseScheduleTime(isoString);
     if (Number.isNaN(d.getTime())) return "Lịch chưa cập nhật";
 
     const dayNames = [
@@ -43,10 +44,8 @@ const formatSchedule = (isoString?: string) => {
       "Thứ Sáu",
       "Thứ Bảy",
     ];
-    const day = dayNames[d.getDay()];
-    const hours = d.getHours().toString().padStart(2, "0");
-    const minutes = d.getMinutes().toString().padStart(2, "0");
-    return `${day} - ${hours}:${minutes}`;
+    const day = dayNames[Number(centerDateParts(d).weekday === "Sun" ? 0 : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(centerDateParts(d).weekday) + 1)];
+    return `${day} - ${formatCenterTime(d)}`;
   } catch {
     return isoString;
   }
@@ -176,16 +175,18 @@ export default function ClassListPage() {
     }
 
     if (day) {
-      const date = new Date(c.scheduleTime);
+      const date = parseScheduleTime(c.scheduleTime);
       if (Number.isNaN(date.getTime())) return false;
       const selectedDay = day === "cn" ? 0 : Number(day) - 1;
-      if (date.getDay() !== selectedDay) return false;
+      const weekDay = centerDateParts(date).weekday;
+      const centerDay = weekDay === "Sun" ? 0 : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(weekDay) + 1;
+      if (centerDay !== selectedDay) return false;
     }
 
     if (shift) {
-      const date = new Date(c.scheduleTime);
+      const date = parseScheduleTime(c.scheduleTime);
       if (Number.isNaN(date.getTime())) return false;
-      const hour = date.getHours();
+      const hour = Number(centerDateParts(date).hour);
       const matchesShift =
         (shift === "sang" && hour >= 6 && hour < 12) ||
         (shift === "chieu" && hour >= 12 && hour < 18) ||

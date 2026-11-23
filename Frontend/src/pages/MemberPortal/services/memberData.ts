@@ -59,7 +59,7 @@ import {
   AppointmentService,
   calculateAppointmentEndTime,
 } from "../../../services/appointmentService";
-import { parseScheduleTime } from "../../../utils/scheduleTimeHelper";
+import { centerDateParts, parseScheduleTime } from "../../../utils/scheduleTimeHelper";
 
 // Flow 6 — AI Assistant response
 export type MemberAiAction =
@@ -185,10 +185,8 @@ export const MemberBackendAPI = {
       if (!value) return { date: "", time: fallback };
       const date = parseScheduleTime(value);
       if (!date || Number.isNaN(date.getTime())) return { date: "", time: fallback };
-      return {
-        date: [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-"),
-        time: `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`,
-      };
+      const parts = centerDateParts(date);
+      return { date: `${parts.year}-${parts.month}-${parts.day}`, time: `${parts.hour}:${parts.minute}` };
     };
 
     let classBookings: MemberSessionItem[] = [];
@@ -221,7 +219,7 @@ export const MemberBackendAPI = {
             date: start.date,
             startTime: start.time,
             endTime: endDate && !Number.isNaN(endDate.getTime())
-              ? `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`
+              ? `${centerDateParts(endDate).hour}:${centerDateParts(endDate).minute}`
               : start.time,
             room: booking.facilityName || "N/A",
             coachId: booking.coachId ? String(booking.coachId) : "",
@@ -261,7 +259,7 @@ export const MemberBackendAPI = {
             date: start.date,
             startTime: start.time,
             endTime: endDate && !Number.isNaN(endDate.getTime())
-              ? `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`
+              ? `${centerDateParts(endDate).hour}:${centerDateParts(endDate).minute}`
               : start.time,
             room: "",
             coachId: session.coachId ? String(session.coachId) : "",

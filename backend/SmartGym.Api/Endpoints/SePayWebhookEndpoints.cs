@@ -109,6 +109,18 @@ public static class SePayWebhookEndpoints
         DateTime ReceivedAt
     );
 
+    public static bool WasMemoConsumed(string memo, decimal expectedAmount)
+    {
+        var consumedPrefix = $"CONSUMED_{(memo ?? string.Empty).Trim().Replace(" ", string.Empty)}_";
+        lock (_logLock)
+        {
+            return _transactionLogs.Any(transaction =>
+                string.Equals(transaction.Status, "consumed", StringComparison.OrdinalIgnoreCase)
+                && transaction.MatchedOrderId?.StartsWith(consumedPrefix, StringComparison.OrdinalIgnoreCase) == true
+                && Math.Abs(transaction.Amount - expectedAmount) < 1m);
+        }
+    }
+
     public static void MapSePayWebhookEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/payments").WithTags("SePay Webhook");

@@ -4,6 +4,7 @@ import { avatarTopbar, iSearch, iBell } from '../shared';
 import { UserAvatar } from '../../../components/UserAvatar';
 import { notificationApi, type ManagerNotification } from '../../../hooks/notificationApi';
 import { ThemeToggle } from '../../../components/ThemeToggle';
+import { CENTER_TIME_ZONE } from '../../../utils/scheduleTimeHelper';
 
 export function TopBar({ breadcrumb, title, onProfileClick, onNotificationClick }: { breadcrumb: string; title: string; onProfileClick?: () => void; onNotificationClick?: (notification: ManagerNotification) => void }) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -60,7 +61,7 @@ export function TopBar({ breadcrumb, title, onProfileClick, onNotificationClick 
   const formatNotificationTime = (value: string) => {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '';
-    return date.toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
+    return date.toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short', timeZone: CENTER_TIME_ZONE });
   };
 
   useEffect(() => {

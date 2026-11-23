@@ -2,6 +2,7 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle, X, Loader2, Calendar, MapPin, Dumbbell } from "lucide-react";
 import type { CoachClassProposal } from "../../services/types";
+import { formatCenterDate, formatCenterTime, parseScheduleTime } from "../../../../../utils/scheduleTimeHelper";
 
 interface Props {
   proposal: CoachClassProposal | null;
@@ -22,20 +23,11 @@ export function ConfirmWithdrawProposalModal({
 
   let formattedDate = proposal.scheduleTime;
   try {
-    const d = new Date(proposal.scheduleTime);
+    const d = parseScheduleTime(proposal.scheduleTime);
     if (!isNaN(d.getTime())) {
-      const days = [
-        "Chủ Nhật",
-        "Thứ Hai",
-        "Thứ Ba",
-        "Thứ Tư",
-        "Thứ Năm",
-        "Thứ Sáu",
-        "Thứ Bảy",
-      ];
-      const dayName = days[d.getDay()];
-      const timeStr = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-      const dateStr = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+      const dayName = new Intl.DateTimeFormat("vi-VN", { weekday: "long", timeZone: "Asia/Bangkok" }).format(d);
+      const timeStr = formatCenterTime(d);
+      const dateStr = formatCenterDate(d);
       formattedDate = `${dayName}, ${dateStr} lúc ${timeStr} (${proposal.durationMinutes} phút)`;
     }
   } catch {

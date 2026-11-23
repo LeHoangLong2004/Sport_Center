@@ -134,7 +134,7 @@ public sealed partial class ClassService
                 sessionStart
             );
             var overlappingFacilityClasses = existingFacilityClasses
-                .Where(c => c.Status && string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase))
+                .Where(FacilityConflictValidator.IsBlockingClass)
                 .Where(c => Overlaps(sessionStart, sessionEnd, c.ScheduleTime, c.DurationMinutes));
             var facilityConflict = FacilityConflictValidator.Validate(facilitySettings, request.Capacity, overlappingFacilityClasses);
             if (facilityConflict is not null)
@@ -303,7 +303,7 @@ public sealed partial class ClassService
                     scheduleTimeUtc
                 );
                 var overlappingFacilityClasses = existingFacilityClasses
-                    .Where(c => c.Id != classId && c.Status && string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase))
+                    .Where(c => c.Id != classId && FacilityConflictValidator.IsBlockingClass(c))
                     .Where(c => Overlaps(newStart, newEnd, c.ScheduleTime, c.DurationMinutes));
                 var facilityConflict = FacilityConflictValidator.Validate(facilitySettings, request.Capacity, overlappingFacilityClasses);
                 if (facilityConflict is not null)

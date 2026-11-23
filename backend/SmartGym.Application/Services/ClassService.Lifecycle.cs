@@ -55,7 +55,7 @@ public sealed partial class ClassService
         if (restoreFacilitySettings is null)
             return (false, "Không tìm thấy cấu hình phòng tập.");
         var restoreOverlaps = restoreFacilityClasses
-            .Where(c => c.Id != classId && c.Status && string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase))
+            .Where(c => c.Id != classId && FacilityConflictValidator.IsBlockingClass(c))
             .Where(c => Overlaps(restoreStart, restoreEnd, c.ScheduleTime, c.DurationMinutes));
         var restoreFacilityConflict = FacilityConflictValidator.Validate(restoreFacilitySettings, targetClass.Capacity, restoreOverlaps);
         if (restoreFacilityConflict is not null)
@@ -194,7 +194,7 @@ public sealed partial class ClassService
             var sessionEnd = sessionStart.AddMinutes(session.DurationMinutes);
             var existingFacilityClasses = await _classRepository.GetClassesByFacilityAndDateAsync(session.FacilityId, sessionStart);
             var overlappingFacilityClasses = existingFacilityClasses
-                .Where(c => !courseSessionIds.Contains(c.Id) && c.Status && string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase))
+                .Where(c => !courseSessionIds.Contains(c.Id) && FacilityConflictValidator.IsBlockingClass(c))
                 .Where(c => Overlaps(sessionStart, sessionEnd, c.ScheduleTime, c.DurationMinutes));
             var facilityConflict = FacilityConflictValidator.Validate(facilitySettings, session.Capacity, overlappingFacilityClasses);
             if (facilityConflict is not null)

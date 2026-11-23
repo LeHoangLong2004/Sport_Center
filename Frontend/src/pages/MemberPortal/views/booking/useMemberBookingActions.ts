@@ -162,7 +162,7 @@ export function useMemberBookingActions({
     }
   };
 
-  const handleConfirmPaymentAndBook = async (customAmount?: number) => {
+  const handleConfirmPaymentAndBook = async (customAmount?: number, paymentMemo?: string) => {
     if (!classToBook) return;
     const latestQuotedAmount = customAmount ?? Number(classToBook.price);
     if (!Number.isFinite(latestQuotedAmount) || latestQuotedAmount < 0) {
@@ -182,7 +182,8 @@ export function useMemberBookingActions({
       const response = await MemberAPI.payAndBookClass(
         classToBook.id,
         effectivePaymentMethod,
-        paidAmount
+        paidAmount,
+        paymentMemo
       );
 
       if (effectivePaymentMethod === "counter") addCounterPendingId(classToBook.id);

@@ -7,6 +7,7 @@ import {
   ClassesToast,
 } from "./ClassesPageSections";
 import { ReceptionistBookClassModal } from "./classes/ReceptionistBookClassModal";
+import { centerDateParts, formatCenterTime, parseScheduleTime } from "../../../utils/scheduleTimeHelper";
 
 export function ClassesPage() {
   const [category, setCategory] = useState("Tất cả lớp");
@@ -65,12 +66,12 @@ export function ClassesPage() {
             !/[+-]\d{2}:\d{2}$/.test(rawTime)
               ? rawTime + "Z"
               : rawTime;
-          const date = new Date(normalizedTime);
-          const day = dayNames[date.getDay()];
-          const dd = String(date.getDate()).padStart(2, "0");
-          const mm = String(date.getMonth() + 1).padStart(2, "0");
-          const hh = String(date.getHours()).padStart(2, "0");
-          const min = String(date.getMinutes()).padStart(2, "0");
+          const date = parseScheduleTime(normalizedTime);
+          const parts = centerDateParts(date);
+          const dayIndex = parts.weekday === "Sun" ? 0 : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(parts.weekday) + 1;
+          const day = dayNames[dayIndex];
+          const dd = parts.day;
+          const mm = parts.month;
 
           const customOrSportImg =
             d.imageUrl ||
@@ -82,7 +83,7 @@ export function ClassesPage() {
             sportName: d.sportName,
             title: d.className || d.name || "Lớp học",
             coach: d.coachName || "N/A",
-            schedule: `${day}, ${dd}/${mm} • ${hh}:${min} (${d.durationMinutes} phút)`,
+            schedule: `${day}, ${dd}/${mm} • ${formatCenterTime(date)} (${d.durationMinutes} phút)`,
             room: `Phòng: ${d.facilityName}`,
             spacesText: `Còn ${d.availableSpots ?? d.capacity - (d.currentEnrolled || d.currentBookings || 0)} chỗ`,
             spaces:

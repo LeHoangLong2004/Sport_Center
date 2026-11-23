@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { UserAvatar } from '../../../components/UserAvatar';
-import { parseScheduleTime } from '../../../utils/scheduleTimeHelper';
+import { formatCenterDate, formatCenterTime, formatCenterDateTime } from '../../../utils/scheduleTimeHelper';
 
 export function BookingRow({ 
   booking: b, 
@@ -39,12 +39,12 @@ export function BookingRow({
         <span className="font-medium text-[#64748b] text-[11px] truncate">HLV: {b.coachName}</span>
       </div>
       <div className="flex flex-col w-[160px] shrink-0">
-        <span className="font-medium text-[#0f172a] text-[13px] truncate">{parseScheduleTime(b.startTime).toLocaleDateString('vi-VN')}</span>
-        <span className="font-medium text-[#64748b] text-[11px]">{parseScheduleTime(b.startTime).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}</span>
+        <span className="font-medium text-[#0f172a] text-[13px] truncate">{formatCenterDate(b.startTime)}</span>
+        <span className="font-medium text-[#64748b] text-[11px]">{formatCenterTime(b.startTime)}</span>
       </div>
       <div className="flex flex-col w-[160px] shrink-0">
         <span className="font-medium text-[#0f172a] text-[13px] truncate">{new Date(b.bookedAt).toLocaleDateString('vi-VN')}</span>
-        <span className="font-medium text-[#64748b] text-[11px]">{new Date(b.bookedAt).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}</span>
+        <span className="font-medium text-[#64748b] text-[11px]">{formatCenterTime(b.bookedAt)}</span>
       </div>
       <div className="flex items-start w-[120px] shrink-0">
         <span className={`px-2 py-1 rounded-md text-[11px] font-bold ${statusColor}`}>
@@ -111,7 +111,7 @@ export function BookingRow({
 function formatDateTime(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Chưa có dữ liệu";
-  return `${date.toLocaleDateString('vi-VN')} ${date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
+  return formatCenterDateTime(date);
 }
 
 function Detail({ label, value }: { label: string; value?: string }) {

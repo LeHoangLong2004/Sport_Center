@@ -46,6 +46,7 @@ export default function ScheduleListView({
           weekday: "long",
           day: "2-digit",
           month: "2-digit",
+          timeZone: "Asia/Bangkok",
         });
 
         return (

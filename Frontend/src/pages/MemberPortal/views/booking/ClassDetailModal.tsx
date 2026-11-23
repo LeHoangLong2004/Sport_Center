@@ -4,6 +4,7 @@ import { X, Award, Star, MessageCircle, ShieldCheck, Check, CreditCard, AlertCir
 import { toast } from "sonner";
 import { CoachAvatar } from "../../utils/coachAvatar";
 import { findConflictingSession } from "./bookingTypes";
+import { centerDateParts, formatCenterDate, parseScheduleTime } from "../../../../utils/scheduleTimeHelper";
 
 interface ClassDetailModalProps {
   classDetail: any | null;
@@ -27,6 +28,32 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
   const conflictingSession = useMemo(() => {
     return findConflictingSession(classDetail, mySessions);
   }, [classDetail, mySessions]);
+
+  const scheduledSessions = Array.isArray(classDetail.sessions)
+    ? classDetail.sessions
+        .filter((session: any) => session.scheduleTime)
+        .map((session: any) => ({ ...session, localDate: parseScheduleTime(session.scheduleTime) }))
+        .filter((session: any) => !Number.isNaN(session.localDate.getTime()))
+        .sort((a: any, b: any) => a.localDate.getTime() - b.localDate.getTime())
+    : [];
+  const weekDays = [...new Set(scheduledSessions.map((session: any) => {
+    const weekday = centerDateParts(session.localDate).weekday;
+    return weekday === "Sun" ? 0 : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(weekday) + 1;
+  }))]
+    .sort((a, b) => (a === 0 ? 7 : a) - (b === 0 ? 7 : b))
+    .map((day) => day === 0 ? "Chủ nhật" : `Thứ ${day + 1}`);
+  const activeWeeks = new Set(scheduledSessions.map((session: any) => {
+    const parts = centerDateParts(session.localDate);
+    const date = new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day)));
+    date.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 6) % 7));
+    return date.getTime();
+  })).size;
+  const formatCourseDate = (date: Date) => formatCenterDate(date, {
+    day: "2-digit", month: "2-digit", year: "numeric",
+  });
+  const courseDateRange = scheduledSessions.length > 0
+    ? `${formatCourseDate(scheduledSessions[0].localDate)} – ${formatCourseDate(scheduledSessions[scheduledSessions.length - 1].localDate)}`
+    : null;
 
   const [conflictAlert, setConflictAlert] = useState<string | null>(null);
 
@@ -118,16 +145,22 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
               <p className="text-[11px] text-slate-600 dark:text-slate-300">
                 Ghi danh 1 lần sẽ tự động đăng ký và giữ chỗ cho toàn bộ {classDetail.totalSessions} buổi học trong chuỗi.
               </p>
-              {Array.isArray(classDetail.sessions) && classDetail.sessions.length > 0 && (
-                <div className="max-h-36 overflow-y-auto space-y-1 pt-1.5 border-t border-emerald-200/50">
-                  {classDetail.sessions.map((s: any) => (
-                    <div key={s.id || s.sessionNumber} className="flex justify-between items-center text-[11px] py-0.5 text-slate-700 dark:text-slate-300">
-                      <span>Buổi {s.sessionNumber}:</span>
-                      <span className="font-semibold">
-                        {new Date(s.scheduleTime).toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })} lúc {new Date(s.scheduleTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                      </span>
+              {scheduledSessions.length > 0 && (
+                <div className="grid gap-2 border-t border-emerald-200/50 pt-2 text-[11px] text-slate-700 dark:text-slate-300 sm:grid-cols-2">
+                  <div>
+                    <span className="text-slate-500">Thời lượng khóa học: </span>
+                    <strong>{activeWeeks} tuần</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Học hàng tuần: </span>
+                    <strong>{weekDays.join(", ")}</strong>
+                  </div>
+                  {courseDateRange && (
+                    <div className="sm:col-span-2">
+                      <span className="text-slate-500">Thời gian khóa học: </span>
+                      <strong>{courseDateRange}</strong>
                     </div>
-                  ))}
+                  )}
                 </div>
               )}
             </div>

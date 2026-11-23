@@ -1,5 +1,6 @@
 import React from "react";
 import type { ManagerNotification } from "../../../../hooks/notificationApi";
+import { CENTER_TIME_ZONE } from "../../../../utils/scheduleTimeHelper";
 
 interface Props {
   notifications: ManagerNotification[];
@@ -22,7 +23,7 @@ export default function MemberNotificationDropdown({
     const date = new Date(value);
     return Number.isNaN(date.getTime())
       ? ""
-      : date.toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" });
+      : date.toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short", timeZone: CENTER_TIME_ZONE });
   };
 
   return (

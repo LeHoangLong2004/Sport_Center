@@ -6,9 +6,10 @@ import { notificationApi, type ManagerNotification } from "../../../hooks/notifi
 import { UserAvatar } from "../../../components/UserAvatar";
 import { useUserProfile } from "../../../hooks/useUserProfile";
 import { ThemeToggle } from "../../../components/ThemeToggle";
+import { CENTER_TIME_ZONE } from "../../../utils/scheduleTimeHelper";
 
 function getShiftName() {
-  const hour = new Date().getHours();
+  const hour = Number(new Intl.DateTimeFormat("en", { timeZone: CENTER_TIME_ZONE, hour: "2-digit", hourCycle: "h23" }).format(new Date()));
   if (hour >= 5 && hour < 12) return "Ca sáng";
   if (hour >= 12 && hour < 18) return "Ca chiều";
   if (hour >= 18 && hour < 22) return "Ca tối";
@@ -94,7 +95,7 @@ export default function CoachTopbar({ screen, onProfileClick }: { screen: CoachS
 
   const formatNotificationTime = (value: string) => {
     const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? value : date.toLocaleString("vi-VN");
+    return Number.isNaN(date.getTime()) ? value : date.toLocaleString("vi-VN", { timeZone: CENTER_TIME_ZONE });
   };
 
   return (

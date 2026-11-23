@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { imgHero } from "./sportsDetailData"
 import { getClassImage } from "../utils/classImageHelper"
+import { formatCenterDate, formatCenterTime, parseScheduleTime } from "../utils/scheduleTimeHelper"
 
 type ApiSport = {
   id: string
@@ -79,14 +80,14 @@ function requestedSportKey() {
 }
 
 function formatSessionTime(value: string, durationMinutes: number) {
-  const start = new Date(value)
+  const start = parseScheduleTime(value)
   const end = new Date(start.getTime() + durationMinutes * 60_000)
-  const date = start.toLocaleDateString("vi-VN", {
+  const date = formatCenterDate(start, {
     weekday: "long",
     day: "2-digit",
     month: "2-digit",
   })
-  const time = `${start.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} - ${end.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`
+  const time = `${formatCenterTime(start)} - ${formatCenterTime(end)}`
   return `${date} • ${time}`
 }
 

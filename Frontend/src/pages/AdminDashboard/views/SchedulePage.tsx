@@ -10,7 +10,7 @@ import { ScheduleListView } from "./ScheduleListView";
 import { ScheduleProposalsSection } from "./ScheduleProposalsSection";
 import { CoachScheduleRequestsSection } from "./CoachScheduleRequestsSection";
 import { useCoachScheduleRequests } from "./useCoachScheduleRequests";
-import { parseScheduleTime } from "../../../utils/scheduleTimeHelper";
+import { centerDateParts, parseScheduleTime } from "../../../utils/scheduleTimeHelper";
 export function SchedulePage({ initialTab = "calendar" }: { initialTab?: ScheduleTab } = {}) {
   const days = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
   const hours = Array.from({ length: 17 }, (_, index) =>
@@ -72,9 +72,11 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
         const formattedClasses = data.map((c: any, i: number) => {
           const start = parseScheduleTime(c.scheduleTime);
           const end = new Date(start.getTime() + (c.durationMinutes || 60) * 60000);
-          const day = start.getDay() === 0 ? 6 : start.getDay() - 1;
-          const startHour = start.getHours() + start.getMinutes() / 60;
-          const endHour = end.getHours() + end.getMinutes() / 60;
+          const startParts = centerDateParts(start);
+          const endParts = centerDateParts(end);
+          const day = startParts.weekday === "Sun" ? 6 : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(startParts.weekday);
+          const startHour = Number(startParts.hour) + Number(startParts.minute) / 60;
+          const endHour = Number(endParts.hour) + Number(endParts.minute) / 60;
           const hourIndex = (startHour - 6) / 2;
           const durationIndex = (endHour - startHour) / 2;
           let colorBg = "";

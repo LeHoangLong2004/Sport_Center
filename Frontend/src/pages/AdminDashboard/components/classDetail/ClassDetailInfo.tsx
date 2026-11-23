@@ -1,5 +1,5 @@
 import React from 'react';
-import { parseScheduleTime } from '../../../../utils/scheduleTimeHelper';
+import { formatCenterDate, formatCenterTime, parseScheduleTime } from '../../../../utils/scheduleTimeHelper';
 
 interface ClassDetailInfoProps {
   classDetail: {
@@ -56,11 +56,11 @@ export function ClassDetailInfo({ classDetail, isPendingProposal }: ClassDetailI
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Thời gian</span>
             <p className="text-xs font-bold text-slate-800 mt-1 leading-snug">
-              {scheduleDate.toLocaleDateString('vi-VN')}
+              {formatCenterDate(scheduleDate)}
             </p>
           </div>
           <p className="text-[11px] text-slate-500 mt-1">
-            {scheduleDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} ({classDetail.durationMinutes}p)
+            {formatCenterTime(scheduleDate)} ({classDetail.durationMinutes}p)
           </p>
         </div>
 

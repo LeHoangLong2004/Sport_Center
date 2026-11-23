@@ -12,6 +12,24 @@ public static partial class DatabaseInitializationExtensions
         {
             db.Database.ExecuteSqlRaw(
                 """
+                CREATE TABLE IF NOT EXISTS class_booking_payment_holds (
+                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    class_id UUID NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+                    invoice_id UUID REFERENCES invoices(id) ON DELETE SET NULL,
+                    payment_memo VARCHAR(160) NOT NULL UNIQUE,
+                    amount NUMERIC(18,2) NOT NULL CHECK (amount >= 0),
+                    status VARCHAR(24) NOT NULL DEFAULT 'active',
+                    expires_at TIMESTAMPTZ NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    paid_at TIMESTAMPTZ,
+                    sepay_transaction_id VARCHAR(100),
+                    CONSTRAINT class_booking_payment_holds_status_check CHECK (status IN ('active', 'completed', 'cancelled', 'expired', 'refund_required'))
+                );
+                CREATE INDEX IF NOT EXISTS idx_class_booking_payment_holds_active
+                    ON class_booking_payment_holds(user_id, class_id, expires_at)
+                    WHERE status = 'active';
+
                 CREATE TABLE IF NOT EXISTS class_courses (
                     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                     sport_id UUID NOT NULL REFERENCES sports(id),

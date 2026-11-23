@@ -23,6 +23,7 @@ import { CounterPaymentPanel } from "./payAndBook/CounterPaymentPanel";
 import { WalletPaymentPanel } from "./payAndBook/WalletPaymentPanel";
 import { findConflictingSession } from "./bookingTypes";
 import { toast } from "sonner";
+import { MemberAPI } from "../../services/api";
 
 interface PayAndBookModalProps {
   classToBook: any | null;
@@ -31,7 +32,7 @@ interface PayAndBookModalProps {
   setPaymentMethod: (method: "qr" | "counter" | "wallet") => void;
   isProcessingPayment: boolean;
   paymentError: string | null;
-  onConfirmPayment: (finalAmount?: number) => void;
+  onConfirmPayment: (finalAmount?: number, paymentMemo?: string) => void;
   mySessions?: any[];
 }
 
@@ -52,6 +53,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
   }, [classToBook, mySessions]);
 
   const [membership, setMembership] = useState<MembershipStatus | null>(null);
+  const [paymentHold, setPaymentHold] = useState<{ ready: boolean; loading: boolean; error: string | null; expiresAt: number | null }>({ ready: false, loading: true, error: null, expiresAt: null });
   // Tự động nhận diện hạng thành viên để tính ưu đãi đăng ký lớp
   useEffect(() => {
     let isCancelled = false;
@@ -87,6 +89,43 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
   const bankConfig = BankConfigService.getConfig();
   const bookingMemo = `DATLOP ${classToBook.id ? String(classToBook.id).slice(0, 8).toUpperCase() : "CLASS"} ${attemptCode}`;
   const vietQrUrl = BankConfigService.getVietQrUrl(classPrice, bookingMemo, bankConfig);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (conflictingSession) {
+      setPaymentHold({ ready: false, loading: false, error: null, expiresAt: null });
+      return () => { cancelled = true; };
+    }
+    setPaymentHold({ ready: false, loading: true, error: null, expiresAt: null });
+    MemberAPI.startClassPaymentHold(String(classToBook.id), bookingMemo)
+      .then((hold: any) => {
+        if (!cancelled) setPaymentHold({ ready: true, loading: false, error: null, expiresAt: hold?.expiresAt ? new Date(hold.expiresAt).getTime() : null });
+      })
+      .catch((error: any) => {
+        if (!cancelled) setPaymentHold({ ready: false, loading: false, error: error?.message || "Không thể giữ chỗ. Vui lòng kiểm tra lại lịch học.", expiresAt: null });
+      });
+    return () => { cancelled = true; };
+  }, [classToBook.id, bookingMemo, conflictingSession]);
+
+  const closeModal = () => {
+    if (paymentHold.ready) void MemberAPI.releaseClassPaymentHold(String(classToBook.id), bookingMemo).catch(() => undefined);
+    onClose();
+  };
+
+  useEffect(() => {
+    if (!paymentHold.ready || !paymentHold.expiresAt) return;
+    const delay = paymentHold.expiresAt - Date.now();
+    if (delay <= 0) {
+      setPaymentHold({ ready: false, loading: false, error: "Lượt giữ chỗ đã hết hạn. Hãy đóng và mở lại để kiểm tra lịch trước khi thanh toán.", expiresAt: null });
+      void MemberAPI.releaseClassPaymentHold(String(classToBook.id), bookingMemo).catch(() => undefined);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setPaymentHold({ ready: false, loading: false, error: "Lượt giữ chỗ đã hết hạn. Hãy đóng và mở lại để kiểm tra lịch trước khi thanh toán.", expiresAt: null });
+      void MemberAPI.releaseClassPaymentHold(String(classToBook.id), bookingMemo).catch(() => undefined);
+    }, delay);
+    return () => window.clearTimeout(timer);
+  }, [paymentHold.ready, paymentHold.expiresAt, classToBook.id, bookingMemo]);
 
   const [checkStatusText, setCheckStatusText] = useState<string | null>(null);
   const [isCheckingPayment, setIsCheckingPayment] = useState(false);
@@ -129,7 +168,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
 
   // Auto-polling biến động số dư khi mở tab QR
   useEffect(() => {
-    if (!classToBook || paymentMethod !== "qr" || isProcessingPayment || isPaid) return;
+    if (!classToBook || !paymentHold.ready || conflictingSession || paymentMethod !== "qr" || isProcessingPayment || isPaid) return;
     let isCancelled = false;
 
     const interval = setInterval(async () => {
@@ -140,7 +179,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
           setIsPaid(true);
           setCheckStatusText(null);
           setTimeout(() => {
-            onConfirmPayment(classPrice);
+            onConfirmPayment(classPrice, bookingMemo);
           }, 1000);
         }
       } catch {}
@@ -150,7 +189,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
       isCancelled = true;
       clearInterval(interval);
     };
-  }, [classToBook, paymentMethod, bookingMemo, classPrice, isProcessingPayment, isPaid, onConfirmPayment]);
+  }, [classToBook, paymentHold.ready, conflictingSession, paymentMethod, bookingMemo, classPrice, isProcessingPayment, isPaid, onConfirmPayment]);
 
   const handleCopy = (text: string, key: string) => {
     navigator.clipboard?.writeText(text);
@@ -168,14 +207,14 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
   };
 
   const handleConfirmCounter = () => {
-    if (notifyConflictIfAny()) return;
-    onConfirmPayment(classPrice);
+    if (notifyConflictIfAny() || !paymentHold.ready) return;
+    onConfirmPayment(classPrice, bookingMemo);
   };
 
   const handleCheckPayment = async () => {
-    if (notifyConflictIfAny()) return;
+    if (notifyConflictIfAny() || !paymentHold.ready) return;
     if (isPaid) {
-      onConfirmPayment(classPrice);
+      onConfirmPayment(classPrice, bookingMemo);
       return;
     }
 
@@ -187,7 +226,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
         setIsPaid(true);
         setCheckStatusText(null);
         setTimeout(() => {
-          onConfirmPayment(classPrice);
+          onConfirmPayment(classPrice, bookingMemo);
         }, 1000);
         return;
       } else {
@@ -204,14 +243,14 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
   };
 
   const handlePayWithWallet = () => {
-    if (notifyConflictIfAny()) return;
+    if (notifyConflictIfAny() || !paymentHold.ready) return;
     if (walletBalance < classPrice) {
       setShowTopUpModal(true);
       return;
     }
 
     setCheckStatusText(null);
-    onConfirmPayment(classPrice);
+    onConfirmPayment(classPrice, bookingMemo);
   };
 
   const isBusy = isProcessingPayment || isCheckingPayment || isPayingWallet;
@@ -222,7 +261,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
         className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
         role="presentation"
         onMouseDown={(e) => {
-          if (e.target === e.currentTarget && !isBusy) onClose();
+          if (e.target === e.currentTarget && !isBusy) closeModal();
         }}
       >
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden max-h-[92vh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
@@ -239,7 +278,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
             <button
               type="button"
               disabled={isBusy}
-              onClick={onClose}
+              onClick={closeModal}
               className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:bg-slate-800 disabled:opacity-50 cursor-pointer"
             >
               <X className="w-5 h-5" />
@@ -248,6 +287,19 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
 
           {/* Body */}
           <div className="p-6 overflow-y-auto space-y-4 text-xs">
+            {(conflictingSession || paymentHold.error) && (
+              <div role="alert" className="flex items-start gap-2.5 rounded-2xl border-2 border-rose-300 dark:border-rose-700 bg-rose-50/95 dark:bg-rose-950/70 p-4 text-rose-800 dark:text-rose-200 shadow-sm">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
+                <div className="min-w-0">
+                  <p className="font-black text-xs text-rose-700 dark:text-rose-300 uppercase tracking-wider">{conflictingSession ? "Phát hiện xung đột lịch học" : "Không thể bắt đầu thanh toán"}</p>
+                  <p className="mt-1 leading-relaxed text-[11px] font-semibold">{paymentHold.error || `Bạn đã có lịch “${conflictingSession?.name}” vào ${conflictingSession?.startTime}–${conflictingSession?.endTime} ngày ${conflictingSession?.date}.`}</p>
+                  <p className="mt-1 text-[10px] italic">Hệ thống đã khóa mọi phương thức thanh toán và chưa tạo mã QR.</p>
+                </div>
+              </div>
+            )}
+            {paymentHold.loading && !conflictingSession && (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-slate-600 flex items-center gap-2"><LoaderCircle className="w-4 h-4 animate-spin" /> Đang kiểm tra lịch và giữ chỗ an toàn trước thanh toán…</div>
+            )}
             {/* Lớp & chi tiết hóa đơn kèm ưu đãi thành viên */}
             <BookingClassHeader 
               classToBook={classToBook} 
@@ -258,6 +310,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
               membership={membership}
             />
 
+            {paymentHold.ready && !conflictingSession && !paymentHold.error && <>
                 {/* CHỌN PHƯƠNG THỨC THANH TOÁN (3 PHƯƠNG THỨC) */}
                 <div>
                   <label className="font-extrabold text-xs text-slate-800 dark:text-slate-200 mb-2 block">
@@ -267,6 +320,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                 {/* 1. VÍ HỘI VIÊN */}
                 <button
                   type="button"
+                  disabled={!!conflictingSession || !paymentHold.ready}
                   onClick={() => setPaymentMethod("wallet")}
                   className={`p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center gap-1 cursor-pointer ${
                     paymentMethod === "wallet"
@@ -284,6 +338,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                 {/* 2. MÃ VIETQR */}
                 <button
                   type="button"
+                  disabled={!!conflictingSession || !paymentHold.ready}
                   onClick={() => setPaymentMethod("qr")}
                   className={`p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center gap-1 cursor-pointer ${
                     paymentMethod === "qr"
@@ -299,6 +354,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                 {/* 3. TẠI QUẦY LỄ TÂN */}
                 <button
                   type="button"
+                  disabled={!!conflictingSession || !paymentHold.ready}
                   onClick={() => setPaymentMethod("counter")}
                   className={`p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center gap-1 cursor-pointer ${
                     paymentMethod === "counter"
@@ -314,7 +370,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
             </div>
 
             {/* NỘI DUNG THANH TOÁN TƯƠNG ỨNG */}
-            {paymentMethod === "wallet" && (
+            {paymentMethod === "wallet" && paymentHold.ready && !conflictingSession && (
               <WalletPaymentPanel
                 currentBalance={walletBalance}
                 classPrice={classPrice}
@@ -323,7 +379,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
               />
             )}
 
-            {paymentMethod === "qr" && (
+            {paymentMethod === "qr" && paymentHold.ready && !conflictingSession && (
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3">
                 <div className="flex items-center justify-between pb-1.5 border-b border-slate-200 dark:border-slate-700 text-xs">
                   <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
@@ -466,31 +522,11 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
             )}
 
             {paymentMethod === "counter" && <CounterPaymentPanel />}
+            </>}
           </div>
 
           {/* Footer */}
           <div className="p-4 border-t border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50/50 dark:bg-slate-850 space-y-3">
-            {conflictingSession && (
-              <div
-                role="alert"
-                className="flex items-start gap-2.5 rounded-2xl border-2 border-rose-300 dark:border-rose-700 bg-rose-50/95 dark:bg-rose-950/70 p-3.5 text-rose-800 dark:text-rose-200 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-200"
-              >
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400 animate-pulse" />
-                <div className="text-left flex-1 min-w-0">
-                  <p className="font-black text-xs text-rose-700 dark:text-rose-300 uppercase tracking-wider">
-                    Phát hiện xung đột lịch học (Trùng giờ)
-                  </p>
-                  <p className="mt-1 leading-relaxed text-[11px] font-semibold text-rose-800 dark:text-rose-200">
-                    Bạn đã có lịch <strong>"{conflictingSession.name}"</strong> vào khung giờ{" "}
-                    <strong>{conflictingSession.startTime} - {conflictingSession.endTime}</strong> (Ngày {conflictingSession.date}).
-                  </p>
-                  <p className="mt-0.5 text-[10px] text-rose-600 dark:text-rose-400 font-medium italic">
-                    Vui lòng chọn khung giờ khác hoặc hủy lịch cũ trước khi đặt lớp này.
-                  </p>
-                </div>
-              </div>
-            )}
-
             {paymentError && !conflictingSession && (
               <div
                 role="alert"
@@ -504,12 +540,23 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
               </div>
             )}
 
-            {paymentMethod === "wallet" ? (
+            {conflictingSession || paymentHold.error || !paymentHold.ready ? (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={closeModal}
+                  className="px-5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 font-bold text-xs disabled:opacity-50 cursor-pointer"
+                >
+                  Đóng
+                </button>
+              </div>
+            ) : paymentMethod === "wallet" ? (
               <div className="flex items-center justify-end gap-2.5 w-full">
                 <button
                   type="button"
                   disabled={isBusy}
-                  onClick={onClose}
+                  onClick={closeModal}
                   className="px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs disabled:opacity-50 cursor-pointer"
                 >
                   Hủy
@@ -517,7 +564,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                 {walletBalance < classPrice ? (
                   <button
                     type="button"
-                    disabled={isBusy}
+                    disabled={isBusy || !paymentHold.ready || !!conflictingSession}
                     onClick={() => setShowTopUpModal(true)}
                     className="px-5 py-2.5 font-bold text-xs rounded-xl shadow-lg shadow-indigo-600/20 text-white bg-indigo-600 hover:bg-indigo-500 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
                   >
@@ -527,7 +574,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                 ) : (
                   <button
                     type="button"
-                    disabled={isBusy}
+                  disabled={isBusy || !paymentHold.ready || !!conflictingSession}
                     onClick={handlePayWithWallet}
                     className="px-6 py-2.5 font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white shadow-indigo-600/20 disabled:opacity-50"
                   >
@@ -550,14 +597,14 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                 <button
                   type="button"
                   disabled={isBusy}
-                  onClick={onClose}
+                  onClick={closeModal}
                   className="px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs disabled:opacity-50 cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   type="button"
-                  disabled={isBusy || isPaid}
+                  disabled={isBusy || isPaid || !paymentHold.ready || !!conflictingSession}
                   onClick={handleCheckPayment}
                   className={`px-5 py-2.5 font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 ${
                     isPaid
@@ -588,14 +635,14 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                 <button
                   type="button"
                   disabled={isBusy}
-                  onClick={onClose}
+                  onClick={closeModal}
                   className="px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs disabled:opacity-50 cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   type="button"
-                  disabled={isBusy}
+                  disabled={isBusy || !paymentHold.ready || !!conflictingSession}
                   onClick={handleConfirmCounter}
                   className="px-6 py-2.5 font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 shadow-emerald-600/20 text-white bg-emerald-600 hover:bg-emerald-500 active:scale-95 disabled:opacity-50 cursor-pointer"
                 >

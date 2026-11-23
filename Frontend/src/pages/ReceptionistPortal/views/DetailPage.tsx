@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react"
 import { Calendar, CreditCard, Clock, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react"
 import { MemberAvatar } from "./LookupPage"
 import { RenewPackageModal } from "./RenewPackageModal"
+import { formatCenterDate, formatCenterTime, parseScheduleTime } from "../../../utils/scheduleTimeHelper"
 
 export function DetailPage({
   member,
@@ -79,14 +80,14 @@ export function DetailPage({
           const attData = await attRes.json()
           if (Array.isArray(attData.sessions)) {
             attData.sessions.forEach((s: any) => {
-              const d = s.scheduleTime ? new Date(s.scheduleTime) : null
+              const d = s.scheduleTime ? parseScheduleTime(s.scheduleTime) : null
               trainings.push({
                 rawDate: s.scheduleTime || s.date,
-                date: d ? d.toLocaleDateString("vi-VN") : s.date || "N/A",
+                date: d ? formatCenterDate(d) : s.date || "N/A",
                 activity: s.className || s.sport || "Lớp tập luyện",
                 trainer: s.coachName || s.trainer || "HLV Trung tâm",
                 duration: s.durationMinutes ? `${s.durationMinutes} phút` : "60 phút",
-                checkin: d ? d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : s.time || "--:--",
+                checkin: d ? formatCenterTime(d) : s.time || "--:--",
               })
             })
           }
@@ -103,7 +104,7 @@ export function DetailPage({
                 activity: "Tập luyện tự do (Check-in cổng)",
                 trainer: "Tự do",
                 duration: c.durationMinutes ? `${c.durationMinutes} phút` : (c.duration ? `${c.duration} phút` : "Tự do"),
-                checkin: d ? d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "--:--",
+                checkin: d ? formatCenterTime(d) : "--:--",
               })
             })
           }

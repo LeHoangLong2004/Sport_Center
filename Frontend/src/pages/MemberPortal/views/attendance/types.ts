@@ -41,6 +41,9 @@ export interface CoachAssessmentData {
 
 export interface AttendanceSession {
   id: string;
+  courseId?: string;
+  sessionNumber?: number | null;
+  totalSessions?: number | null;
   className: string;
   sport: string;
   packageName?: string;

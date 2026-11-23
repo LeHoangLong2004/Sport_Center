@@ -14,6 +14,7 @@ import AttendanceClassList from "./attendance/AttendanceClassList";
 import AttendanceGateList from "./attendance/AttendanceGateList";
 import AttendanceDetailModal from "./attendance/AttendanceDetailModal";
 import AttendanceAssessmentList from "./attendance/AttendanceAssessmentList";
+import { groupAttendanceSessions } from "./attendance/groupSessions";
 
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
@@ -208,6 +209,7 @@ export default function MemberAttendance({ onNavigate }: Props) {
       return matchesSearch && matchesStatus && matchesType;
     });
   }, [sessions, searchQuery, statusFilter, typeFilter]);
+  const registeredClassCount = useMemo(() => groupAttendanceSessions(sessions).length, [sessions]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -234,9 +236,9 @@ export default function MemberAttendance({ onNavigate }: Props) {
             }`}
           >
             <UserCheck className="w-4 h-4" />
-            Điểm danh Lớp học & PT
+            Lớp đã đăng ký
             <span className="ml-1 px-2 py-0.5 rounded-full text-xs bg-slate-200/60 dark:bg-slate-700">
-              {sessions.length}
+              {registeredClassCount}
             </span>
           </button>
           <button

@@ -11,7 +11,9 @@ public sealed partial class ClassService
 {
     public async Task<(bool IsSuccess, string? ErrorMessage)> BookClassAsync(
         Guid userId,
-        Guid classId
+        Guid classId,
+        bool notify = true,
+        string bookingStatus = "confirmed"
     )
     {
         // 1. Kiểm tra tồn tại lớp học
@@ -135,8 +137,8 @@ public sealed partial class ClassService
         }
 
         // 4. Gọi hàm thực thi Transaction ở tầng Data (nguyên tử)
-        var result = await _classRepository.BookClassTransactionAsync(userId, classId, subscriptionIdToUse);
-        if (result.IsSuccess)
+        var result = await _classRepository.BookClassTransactionAsync(userId, classId, subscriptionIdToUse, bookingStatus);
+        if (result.IsSuccess && notify)
         {
             var localSchedule = CenterTime.ToLocal(targetClass.ScheduleTime);
             await _classRepository.NotifyUserAsync(
