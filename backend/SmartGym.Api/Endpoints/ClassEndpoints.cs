@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -10,6 +12,7 @@ using SmartGym.Application.DTOs.Classes;
 using SmartGym.Application.Services;
 using SmartGym.Application.Common;
 using SmartGym.Api.Services;
+using SmartGym.Domain.Enums;
 using SmartGym.Infrastructure.Persistence.EF;
 
 namespace SmartGym.Api.Endpoints;
@@ -154,10 +157,20 @@ public static partial class ClassEndpoints
                     var sql = @"
                         SELECT c.id, c.class_name, c.schedule_time, c.duration_minutes, c.capacity,
                                c.status, c.approval_status, c.sport_id, s.name AS sport_name, f.name AS facility_name,
-                               COALESCE(
-                                   c.course_fee_snapshot,
-                                   current_price.price_per_session * GREATEST(COALESCE(c.total_sessions, 1), 1)
-                               ) AS price,
+                               CASE
+                                   WHEN EXISTS (
+                                       SELECT 1
+                                       FROM class_bookings booking
+                                       INNER JOIN classes booked_class ON booked_class.id = booking.class_id
+                                       WHERE COALESCE(booked_class.parent_id, booked_class.id) = COALESCE(c.parent_id, c.id)
+                                         AND LOWER(COALESCE(booking.status, '')) NOT IN ('cancelled', 'rejected', 'class_cancelled')
+                                   )
+                                   THEN COALESCE(
+                                       c.course_fee_snapshot,
+                                       current_price.price_per_session * GREATEST(COALESCE(c.total_sessions, 1), 1)
+                                   )
+                                   ELSE current_price.price_per_session * GREATEST(COALESCE(c.total_sessions, 1), 1)
+                               END AS price,
                                c.parent_id, c.session_number, c.total_sessions
                         FROM classes c
                         LEFT JOIN sports s ON c.sport_id = s.id
@@ -321,7 +334,7 @@ public static partial class ClassEndpoints
                     try
                     {
                         var affected = await db.Database.ExecuteSqlInterpolatedAsync(
-                            $"UPDATE classes SET status = FALSE WHERE id = {id}");
+                            $"UPDATE classes SET status = FALSE, current_enrolled = 0 WHERE id = {id}");
 
                         if (affected == 0)
                             return Results.BadRequest(new { message = "Không tìm thấy lớp học để hủy." });
@@ -345,6 +358,205 @@ public static partial class ClassEndpoints
                     }
                 }
             )
+            .RequireAuthorization(policy => policy.RequireRole("manager", "admin", "center_manager", "centermanager"));
+
+        // Cancel the remaining sessions in a recurring course, preserving completed sessions.
+        classGroup.MapPost(
+            "/{id:guid}/cancel-course",
+            async (Guid id, SmartGymDbContext db, ILoggerFactory loggerFactory) =>
+            {
+                var executionStrategy = db.Database.CreateExecutionStrategy();
+                try
+                {
+                    return await executionStrategy.ExecuteAsync<IResult>(async () =>
+                    {
+                        await using var transaction = await db.Database.BeginTransactionAsync();
+                        try
+                        {
+                            var roots = await db.Database.SqlQueryRaw<CourseCancellationRootRow>(
+                                """
+                                SELECT root.id AS "RootId", root.class_name AS "ClassName",
+                                       GREATEST(COALESCE(root.total_sessions, 1), 1) AS "TotalSessions",
+                                       root.coach_id AS "CoachId"
+                                FROM classes selected
+                                INNER JOIN classes root ON root.id = COALESCE(selected.parent_id, selected.id)
+                                WHERE selected.id = {0}
+                                FOR UPDATE OF root
+                                """, id).ToListAsync();
+                            var root = roots.SingleOrDefault();
+                            if (root == null)
+                            {
+                                await transaction.RollbackAsync();
+                                return Results.NotFound(new { message = "Không tìm thấy khóa học." });
+                            }
+
+                            var now = DateTime.UtcNow;
+                            var upcomingSessions = await db.Database.SqlQueryRaw<CourseCancellationSessionRow>(
+                                """
+                                SELECT id AS "Id", class_name AS "ClassName", schedule_time AS "ScheduleTime"
+                                FROM classes
+                                WHERE (id = {0} OR parent_id = {0})
+                                  AND schedule_time > {1}
+                                  AND status = TRUE
+                                  AND COALESCE(approval_status, 'approved') = 'approved'
+                                ORDER BY schedule_time
+                                FOR UPDATE
+                                """, root.RootId, now).ToListAsync();
+                            if (upcomingSessions.Count == 0)
+                            {
+                                await transaction.RollbackAsync();
+                                return Results.BadRequest(new { message = "Khóa học không còn buổi nào sắp diễn ra để hủy." });
+                            }
+
+                            var sessionIds = upcomingSessions.Select(session => session.Id).ToArray();
+                            var bookings = await db.Database.SqlQueryRaw<CourseCancellationBookingRow>(
+                                """
+                                SELECT user_id AS "UserId", class_id AS "ClassId", subscription_id AS "SubscriptionId"
+                                FROM class_bookings
+                                WHERE class_id = ANY({0})
+                                  AND LOWER(COALESCE(status, '')) NOT IN ('cancelled', 'rejected', 'class_cancelled')
+                                """, sessionIds).ToListAsync();
+                            var memberIds = bookings.Select(booking => booking.UserId).Distinct().ToArray();
+
+                            await db.Database.ExecuteSqlInterpolatedAsync($"""
+                                UPDATE class_bookings
+                                SET status = 'class_cancelled'
+                                WHERE class_id = ANY({sessionIds})
+                                  AND LOWER(COALESCE(status, '')) NOT IN ('cancelled', 'rejected', 'class_cancelled')
+                                """);
+                            await db.Database.ExecuteSqlInterpolatedAsync($"""
+                                UPDATE classes
+                                SET status = FALSE, current_enrolled = 0
+                                WHERE id = ANY({sessionIds})
+                                """);
+
+                            decimal totalRefunded = 0m;
+                            var updatedWalletBalances = new Dictionary<Guid, decimal>();
+                            var linkedInvoices = memberIds.Length == 0
+                                ? new List<SmartGym.Domain.Entities.Invoice>()
+                                : (await db.Invoices
+                                    .Where(invoice => invoice.ClassId == root.RootId)
+                                    .ToListAsync())
+                                    .Where(invoice => memberIds.Contains(invoice.UserId))
+                                    .ToList();
+                            var linkedInvoiceUsers = linkedInvoices.Select(invoice => invoice.UserId).ToHashSet();
+                            var unlinkedBookings = bookings
+                                .Where(booking => !booking.SubscriptionId.HasValue && !linkedInvoiceUsers.Contains(booking.UserId))
+                                .Select(booking => booking.UserId)
+                                .Distinct()
+                                .Count();
+
+                            var cancelledSessionCount = upcomingSessions.Count;
+                            foreach (var invoice in linkedInvoices)
+                            {
+                                if (invoice.Status == PaymentStatus.Pending)
+                                {
+                                    invoice.Status = PaymentStatus.Expired;
+                                    continue;
+                                }
+                                if (invoice.Status != PaymentStatus.Completed || invoice.TotalAmount <= 0)
+                                    continue;
+
+                                var targetRefund = Math.Round(
+                                    invoice.TotalAmount * cancelledSessionCount / Math.Max(1m, root.TotalSessions),
+                                    2,
+                                    MidpointRounding.AwayFromZero);
+                                var refundAmount = Math.Min(
+                                    Math.Max(0m, invoice.TotalAmount - invoice.RefundedAmount),
+                                    Math.Max(0m, targetRefund - invoice.RefundedAmount));
+                                if (refundAmount <= 0)
+                                    continue;
+
+                                var referenceCode = $"COURSE-CANCEL-{root.RootId:N}-{invoice.Id:N}";
+                                var existingRefund = await db.Database.SqlQueryRaw<GuidValueRow>(
+                                    "SELECT id AS \"Value\" FROM wallet_transactions WHERE reference_code = {0} LIMIT 1",
+                                    referenceCode).ToListAsync();
+                                if (existingRefund.Count > 0)
+                                    continue;
+
+                                var balances = await db.Database.SqlQueryRaw<WalletBalanceRow>(
+                                    """
+                                    INSERT INTO member_wallet_balances (user_id, balance, last_updated_at)
+                                    VALUES ({0}, {1}, now())
+                                    ON CONFLICT (user_id) DO UPDATE
+                                    SET balance = member_wallet_balances.balance + EXCLUDED.balance,
+                                        last_updated_at = now()
+                                    RETURNING balance AS "Balance"
+                                    """, invoice.UserId, refundAmount).ToListAsync();
+                                var balance = balances.Single().Balance;
+                                var note = $"Hoàn tiền hủy khóa {root.ClassName}: {cancelledSessionCount} buổi chưa diễn ra";
+                                await db.Database.ExecuteSqlInterpolatedAsync($"""
+                                    INSERT INTO wallet_transactions
+                                        (id, user_id, type, amount, balance_after, method, status, reference_code, note, created_at)
+                                    VALUES
+                                        ({Guid.NewGuid()}, {invoice.UserId}, 'refund', {refundAmount}, {balance}, 'Ví hoàn tiền', 'completed', {referenceCode}, {note}, now())
+                                    """);
+
+                                invoice.RefundedAmount += refundAmount;
+                                if (invoice.RefundedAmount >= invoice.TotalAmount)
+                                    invoice.Status = PaymentStatus.Refunded;
+                                updatedWalletBalances[invoice.UserId] = balance;
+                                totalRefunded += refundAmount;
+                            }
+
+                            await db.SaveChangesAsync();
+                            foreach (var memberId in memberIds)
+                            {
+                                await db.Database.ExecuteSqlInterpolatedAsync($"""
+                                    INSERT INTO notifications (user_id, title, message, type, target_type, target_id)
+                                    VALUES ({memberId}, 'Khóa học đã bị hủy',
+                                            {root.ClassName + " đã hủy các buổi chưa diễn ra trong khóa học."},
+                                            'booking_event', 'class', {root.RootId})
+                                    """);
+                            }
+
+                            if (root.CoachId.HasValue)
+                            {
+                                await db.Database.ExecuteSqlInterpolatedAsync($"""
+                                    INSERT INTO notifications (user_id, title, message, type, target_type, target_id)
+                                    SELECT user_id, 'Khóa học đã bị hủy',
+                                           {root.ClassName + " đã hủy các buổi chưa diễn ra trong khóa học."},
+                                           'coach_event', 'class', {root.RootId}
+                                    FROM coaches WHERE id = {root.CoachId.Value} AND user_id IS NOT NULL
+                                    ON CONFLICT DO NOTHING
+                                    """);
+                            }
+
+                            await transaction.CommitAsync();
+                            foreach (var (memberId, balance) in updatedWalletBalances)
+                                MemberEndpoints.SetMemberWalletCache(memberId, balance);
+
+                            var message = $"Đã hủy {cancelledSessionCount} buổi chưa diễn ra trong khóa học; giữ nguyên lịch sử buổi đã diễn ra.";
+                            if (unlinkedBookings > 0)
+                                message += $" Có {unlinkedBookings} lượt đăng ký cũ chưa liên kết hóa đơn với khóa học, cần đối soát hoàn tiền thủ công.";
+
+                            return Results.Ok(new
+                            {
+                                success = true,
+                                message,
+                                cancelledSessionCount,
+                                cancelledBookingCount = bookings.Count,
+                                refundedAmount = totalRefunded,
+                                unlinkedBookingCount = unlinkedBookings
+                            });
+                        }
+                        catch
+                        {
+                            await transaction.RollbackAsync();
+                            db.ChangeTracker.Clear();
+                            throw;
+                        }
+                    });
+                }
+                catch (Exception exception)
+                {
+                    loggerFactory.CreateLogger("ClassEndpoints").LogError(exception, "Không thể hủy khóa học {ClassId}.", id);
+                    return Results.Problem(
+                        title: "Không thể hủy khóa học",
+                        detail: exception.InnerException?.Message ?? exception.Message,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
             .RequireAuthorization(policy => policy.RequireRole("manager", "admin", "center_manager", "centermanager"));
 
         // 4c. Restore Class (Manager/Admin)
@@ -494,4 +706,36 @@ public static partial class ClassEndpoints
         public int? session_number { get; set; }
         public int? total_sessions { get; set; }
     }
+
+public sealed class CourseCancellationRootRow
+{
+    public Guid RootId { get; set; }
+    public string ClassName { get; set; } = string.Empty;
+    public int TotalSessions { get; set; }
+    public Guid? CoachId { get; set; }
+}
+
+public sealed class CourseCancellationSessionRow
+{
+    public Guid Id { get; set; }
+    public string ClassName { get; set; } = string.Empty;
+    public DateTime ScheduleTime { get; set; }
+}
+
+public sealed class CourseCancellationBookingRow
+{
+    public Guid UserId { get; set; }
+    public Guid ClassId { get; set; }
+    public Guid? SubscriptionId { get; set; }
+}
+
+public sealed class GuidValueRow
+{
+    public Guid Value { get; set; }
+}
+
+public sealed class WalletBalanceRow
+{
+    public decimal Balance { get; set; }
+}
 }

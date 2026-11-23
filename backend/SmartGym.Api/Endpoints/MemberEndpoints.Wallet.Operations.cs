@@ -11,6 +11,11 @@ namespace SmartGym.Api.Endpoints
 {
     public static partial class MemberEndpoints
     {
+        public static void SetMemberWalletCache(Guid userGuid, decimal balance)
+        {
+            _memberWallets[userGuid.ToString()] = balance;
+        }
+
         /// <summary>
         /// Hoàn tiền hủy đặt lớp học hoặc dịch vụ vào Ví hội viên (ghi vào CSDL PostgreSQL & cập nhật RAM cache).
         /// </summary>

@@ -231,7 +231,9 @@ public partial class SmartGymDbContext : DbContext
             entity.Property(e => e.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
             entity.Property(e => e.BranchId).HasColumnName("facility_id");
+            entity.Property(e => e.ClassId).HasColumnName("class_id");
             entity.Property(e => e.TotalAmount).HasColumnName("total_amount").IsRequired();
+            entity.Property(e => e.RefundedAmount).HasColumnName("refunded_amount").HasDefaultValue(0m);
             entity
                 .Property(e => e.PaymentMethod)
                 .HasColumnName("payment_method")

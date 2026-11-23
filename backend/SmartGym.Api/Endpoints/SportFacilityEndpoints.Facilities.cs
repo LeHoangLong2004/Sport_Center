@@ -29,6 +29,9 @@ public static partial class SportFacilityEndpoints
                 name = f.Name,
                 imageUrl = f.ImageUrl,
                 address = f.Address,
+                allowConcurrentClasses = f.AllowConcurrentClasses,
+                maxConcurrentClasses = f.MaxConcurrentClasses,
+                totalCapacity = f.TotalCapacity,
             }));
         });
 
@@ -39,12 +42,17 @@ public static partial class SportFacilityEndpoints
         /// </summary>
         group.MapPost("", async (FacilitySaveRequest request, global::Supabase.Client client) =>
         {
+            if (request.MaxConcurrentClasses < 1 || request.TotalCapacity is <= 0)
+                return Results.BadRequest(new { message = "Giới hạn lớp và sức chứa phải là số nguyên dương." });
             var model = new FacilityModel
             {
                 Id = Guid.NewGuid(),
                 Name = request.Name?.Trim() ?? string.Empty,
                 ImageUrl = request.ImageUrl,
                 Address = string.IsNullOrWhiteSpace(request.Address) ? "Chưa cập nhật" : request.Address.Trim(),
+                AllowConcurrentClasses = request.MaxConcurrentClasses > 1,
+                MaxConcurrentClasses = request.MaxConcurrentClasses,
+                TotalCapacity = request.TotalCapacity,
             };
             var insertResponse = await client.From<FacilityModel>().Insert(model);
             var created = insertResponse.Models.FirstOrDefault() ?? model;
@@ -54,6 +62,9 @@ public static partial class SportFacilityEndpoints
                 name = created.Name,
                 imageUrl = created.ImageUrl,
                 address = created.Address,
+                allowConcurrentClasses = created.AllowConcurrentClasses,
+                maxConcurrentClasses = created.MaxConcurrentClasses,
+                totalCapacity = created.TotalCapacity,
             });
         }).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
 
@@ -64,6 +75,8 @@ public static partial class SportFacilityEndpoints
         /// </summary>
         group.MapPut("/{id:guid}", async (Guid id, FacilitySaveRequest request, global::Supabase.Client client) =>
         {
+            if (request.MaxConcurrentClasses < 1 || request.TotalCapacity is <= 0)
+                return Results.BadRequest(new { message = "Giới hạn lớp và sức chứa phải là số nguyên dương." });
             var response = await client.From<FacilityModel>().Where(f => f.Id == id).Get();
             var existing = response.Models.FirstOrDefault();
 
@@ -83,6 +96,9 @@ public static partial class SportFacilityEndpoints
                 existing.ImageUrl = request.ImageUrl;
             if (!string.IsNullOrWhiteSpace(request.Address))
                 existing.Address = request.Address.Trim();
+            existing.AllowConcurrentClasses = request.MaxConcurrentClasses > 1;
+            existing.MaxConcurrentClasses = request.MaxConcurrentClasses;
+            existing.TotalCapacity = request.TotalCapacity;
 
             await client.From<FacilityModel>().Update(existing);
             return Results.Ok(new
@@ -91,6 +107,9 @@ public static partial class SportFacilityEndpoints
                 name = existing.Name,
                 imageUrl = existing.ImageUrl,
                 address = existing.Address,
+                allowConcurrentClasses = existing.AllowConcurrentClasses,
+                maxConcurrentClasses = existing.MaxConcurrentClasses,
+                totalCapacity = existing.TotalCapacity,
             });
         }).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
 
@@ -120,5 +139,10 @@ public static partial class SportFacilityEndpoints
     }
 }
 
-public record FacilitySaveRequest(string Name, string? ImageUrl, string? Address);
+public record FacilitySaveRequest(
+    string Name,
+    string? ImageUrl,
+    string? Address,
+    int MaxConcurrentClasses = 1,
+    int? TotalCapacity = null);
 

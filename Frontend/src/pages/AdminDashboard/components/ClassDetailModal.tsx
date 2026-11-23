@@ -20,6 +20,7 @@ export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: Class
   const [isRestoring, setIsRestoring] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [showConfirmCancel, setShowConfirmCancel] = useState(false);
+  const [showConfirmCancelCourse, setShowConfirmCancelCourse] = useState(false);
   const [showConfirmRestore, setShowConfirmRestore] = useState(false);
   const [notification, setNotification] = useState<ClassNotification | null>(null);
 
@@ -92,17 +93,17 @@ export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: Class
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
-        setNotification({ type: 'success', message: 'Đã hủy lớp học thành công!' });
+        setNotification({ type: 'success', message: 'Đã hủy buổi học thành công!' });
         setTimeout(() => {
           setNotification(null);
           onClose();
         }, 2000);
       } else {
         const data = await res.json().catch(() => null);
-        setNotification({ type: 'error', message: data?.message || 'Không thể hủy lớp học lúc này.' });
+        setNotification({ type: 'error', message: data?.message || 'Không thể hủy buổi học lúc này.' });
       }
     } catch (err) {
-      setNotification({ type: 'error', message: 'Lỗi kết nối khi hủy lớp học.' });
+      setNotification({ type: 'error', message: 'Lỗi kết nối khi hủy buổi học.' });
     } finally {
       setIsCancelling(false);
     }
@@ -133,6 +134,37 @@ export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: Class
       setIsRestoring(false);
     }
   };
+
+  const handleCancelCourse = async () => {
+    setShowConfirmCancelCourse(false);
+    setIsCancelling(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/classes/${classId}/cancel-course`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok) {
+        setNotification({ type: 'success', message: data?.message || 'Đã hủy khóa học thành công.' });
+        setTimeout(() => {
+          setNotification(null);
+          onClose();
+        }, 2500);
+      } else {
+        setNotification({ type: 'error', message: data?.message || data?.detail || 'Không thể hủy khóa học lúc này.' });
+      }
+    } catch {
+      setNotification({ type: 'error', message: 'Lỗi kết nối khi hủy khóa học.' });
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  const isCourse = Boolean(classDetail && (
+    (classDetail.totalSessions ?? classDetail.total_sessions ?? 1) > 1 ||
+    (classDetail.sessions?.length ?? 0) > 1
+  ));
 
   const isPendingProposal = Boolean(
     classDetail && (
@@ -247,6 +279,15 @@ export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: Class
             >
               Sửa thông tin
             </button>
+            {classDetail.status !== false && isCourse && (
+              <button
+                onClick={() => setShowConfirmCancelCourse(true)}
+                disabled={isCancelling || isRestoring}
+                className="px-5 py-2 text-sm font-semibold text-white bg-red-800 rounded-lg hover:bg-red-900 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                Hủy khóa học
+              </button>
+            )}
             <button 
               onClick={() => classDetail.status === false ? setShowConfirmRestore(true) : setShowConfirmCancel(true)}
               disabled={isCancelling || isRestoring}
@@ -260,7 +301,7 @@ export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: Class
               )}
               {classDetail.status === false
                 ? (isRestoring ? 'Đang xử lý...' : 'Khôi phục lớp học')
-                : (isCancelling ? 'Đang xử lý...' : 'Hủy lớp học')}
+                : (isCancelling ? 'Đang xử lý...' : 'Hủy buổi này')}
             </button>
           </div>
         )}
@@ -269,10 +310,13 @@ export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: Class
         <ClassActionModals
           notification={notification}
           showConfirmCancel={showConfirmCancel}
+          showConfirmCancelCourse={showConfirmCancelCourse}
           showConfirmRestore={showConfirmRestore}
           onCloseNotification={() => setNotification(null)}
           onCloseConfirmCancel={() => setShowConfirmCancel(false)}
           onConfirmCancel={handleCancelClass}
+          onCloseConfirmCancelCourse={() => setShowConfirmCancelCourse(false)}
+          onConfirmCancelCourse={handleCancelCourse}
           onCloseConfirmRestore={() => setShowConfirmRestore(false)}
           onConfirmRestore={handleRestoreClass}
         />

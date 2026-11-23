@@ -291,7 +291,7 @@ export default function AssessmentClassSessionsList({
         </div>
       </div>
 
-      {/* 4. Class Sessions Cards Grid */}
+      {/* 4. Class sessions list */}
       {isLoading ? (
         <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-3">
           <div className="size-8 border-3 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
@@ -325,7 +325,7 @@ export default function AssessmentClassSessionsList({
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="flex flex-col gap-3">
           {filteredSessions.map((session) => {
             const evalInfo = getSessionEvalState[session.id] || {
               totalMembers: 0,
@@ -341,15 +341,15 @@ export default function AssessmentClassSessionsList({
               <div
                 key={session.id}
                 onClick={() => onSelectSession(session.id)}
-                className={`group bg-white dark:bg-slate-900 rounded-2xl border p-5 shadow-xs hover:shadow-lg transition-all cursor-pointer flex flex-col justify-between relative overflow-hidden ${
+                className={`group bg-white dark:bg-slate-900 rounded-2xl border p-4 sm:px-5 shadow-xs hover:shadow-md transition-all cursor-pointer relative overflow-hidden ${
                   isToday
-                    ? "border-emerald-300 dark:border-emerald-800/80 ring-2 ring-emerald-500/10"
+                    ? "border-emerald-300 dark:border-emerald-800/80 ring-1 ring-emerald-500/10"
                     : "border-slate-200/90 dark:border-slate-800 hover:border-emerald-500/50"
                 }`}
               >
-                {/* Accent top stripe */}
+                {/* Status accent */}
                 <div
-                  className={`absolute top-0 left-0 right-0 h-1.5 ${
+                  className={`absolute top-0 left-0 bottom-0 w-1 ${
                     isLocked24h
                       ? "bg-slate-400 dark:bg-slate-700"
                       : isCompleted
@@ -360,9 +360,9 @@ export default function AssessmentClassSessionsList({
                   }`}
                 />
 
-                <div className="space-y-3.5 pt-1">
-                  {/* Tags & Status */}
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="pl-1 sm:pl-2 flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-5">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-start gap-1.5 flex-wrap mb-1.5">
                     <div className="flex items-center gap-1.5">
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
                         <Dumbbell className="w-3 h-3" />
@@ -375,7 +375,6 @@ export default function AssessmentClassSessionsList({
                       )}
                     </div>
 
-                    {/* Evaluation State Badge */}
                     {isLocked24h ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                         <Lock className="w-3 h-3 text-slate-500" />
@@ -411,23 +410,19 @@ export default function AssessmentClassSessionsList({
                     )}
                   </div>
 
-                  {/* Class Title */}
-                  <div>
-                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                    <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
                       {session.className}
                     </h3>
-                  </div>
 
-                  {/* Meta Details */}
-                  <div className="space-y-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-50/70 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/60">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                    <div className="flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      <span className="font-semibold text-slate-700 dark:text-slate-200">
                         {session.startTime} – {session.endTime}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                       <span>{formatSessionDate(session.date)}</span>
                       {isToday && (
@@ -437,27 +432,26 @@ export default function AssessmentClassSessionsList({
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
                       <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                       <span className="truncate">{session.room || "Studio trung tâm"}</span>
                     </div>
+                    </div>
+                  </div>
 
-                    <div className="flex items-center justify-between pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
-                      <div className="flex items-center gap-1.5">
+                  <div className="flex items-center justify-between lg:justify-center gap-3 lg:min-w-52 lg:px-5 lg:border-x border-slate-100 dark:border-slate-800">
+                      <div className="flex items-center gap-1.5 text-xs">
                         <Users className="w-3.5 h-3.5 text-slate-400" />
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        <span className="font-semibold text-slate-700 dark:text-slate-200 whitespace-nowrap">
                           {evalInfo.totalMembers} học viên
                         </span>
                       </div>
-                      <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                      <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                         {evalInfo.evaluatedCount}/{evalInfo.totalMembers} đã đánh giá
                       </span>
-                    </div>
                   </div>
-                </div>
 
-                {/* Card Action Footer */}
-                <div className="pt-4 mt-2">
+                  <div className="lg:min-w-48 lg:pl-1">
                   {isLocked24h ? (
                     <button
                       type="button"
@@ -465,7 +459,7 @@ export default function AssessmentClassSessionsList({
                         e.stopPropagation();
                         onSelectSession(session.id);
                       }}
-                      className="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 group-hover:bg-slate-200"
+                      className="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
                     >
                       <Lock className="w-3.5 h-3.5 text-slate-400" />
                       <span>Xem đánh giá (Đã đóng)</span>
@@ -481,7 +475,7 @@ export default function AssessmentClassSessionsList({
                       className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                         isCompleted
                           ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 group-hover:bg-slate-200"
-                          : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 group-hover:scale-[1.02]"
+                          : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20"
                       }`}
                     >
                       {isCompleted ? (
@@ -498,6 +492,7 @@ export default function AssessmentClassSessionsList({
                       )}
                     </button>
                   )}
+                  </div>
                 </div>
               </div>
             );

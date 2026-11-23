@@ -23,6 +23,7 @@ export interface MockMember {
   phone: string;
   email: string;
   classIds: string[];
+  courseIds?: string[];
   attendanceRate?: number | null;
   attendedSessions?: number;
   totalSessions?: number;
@@ -31,6 +32,9 @@ export interface MockMember {
 
 export interface CoachClassOverview {
   id: string;
+  courseId?: string;
+  sessionIds?: string[];
+  sessionCount?: number;
   className: string;
   sport: string;
   scheduleTime: string;
@@ -50,6 +54,11 @@ export interface CoachMembersOverview {
 export interface MockSession {
   id: string;
   classId: string;
+  /** Stable id/name for the parent course; classId remains the individual session id. */
+  courseId?: string;
+  courseName?: string;
+  sessionNumber?: number;
+  totalSessions?: number;
   className: string;
   sport: string;
   level: string;

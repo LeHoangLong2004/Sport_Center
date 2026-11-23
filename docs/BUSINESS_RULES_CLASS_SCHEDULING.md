@@ -68,13 +68,8 @@ Khi chọn hình thức lịch lặp định kỳ, bắt buộc thỏa mãn 4 đ
 * **BR-05.1:** Sĩ số tối đa (`capacity`) phải là số nguyên dương (`> 0`).
 * **BR-05.2 (Phân loại phòng & Chế độ chia sẻ phòng - Shared Facility):**
   * Để hỗ trợ linh hoạt cả phòng tập kín (Studio) lẫn các khu vực thể thao rộng lớn (Sân bãi, hồ bơi), bảng Phòng tập (`facilities`/`rooms`) hỗ trợ các thuộc tính cấu hình:
-    * `allow_concurrent_classes` (Boolean, mặc định `false`):
-      * `false` (Phòng tiêu chuẩn / Studio Yoga / Boxing Ring / Phòng học kín): Chế độ 1:1 nghiêm ngặt. Chỉ cho phép duy nhất 01 lớp hoạt động tại 01 thời điểm. Chặn tuyệt đối nếu đã có lớp khác chiếm dụng.
-      * `true` (Khu tập diện tích lớn: Sân bóng, Hồ bơi nhiều làn, Sân cầu lông đa năng, Gym Area): Cho phép nhiều lớp hoạt động song song trong cùng khung giờ.
-    * `max_concurrent_classes` (Số lớp song song tối đa, ví dụ: 2 hoặc 3 lớp) và `total_capacity` (Tổng sức chứa tối đa của cả khu vực):
-      * Khi xếp thêm lớp vào phòng `allow_concurrent_classes = true`, hệ thống bắt buộc kiểm tra 2 điều kiện đồng thời:
-        1. Số lớp đang chạy cùng giờ `<= max_concurrent_classes`.
-        2. Tổng sĩ số cộng dồn của các lớp chạy cùng giờ: `(capacity_A + capacity_B + ...) <= total_capacity`.
+    * `max_concurrent_classes` (số lớp tối đa đồng thời, mặc định `1`): `1` nghĩa là chỉ một lớp tại một thời điểm; giá trị lớn hơn `1` cho phép dùng chung phòng, tối đa theo số đã cấu hình. Trường `allow_concurrent_classes` được suy ra từ giá trị này để tương thích dữ liệu.
+    * `total_capacity` (tổng sức chứa tối đa của cả khu vực) là cấu hình bổ sung, không bắt buộc. Nếu có cấu hình, hệ thống kiểm tra tổng sĩ số các lớp chồng giờ không vượt quá mức đó.
 * **BR-05.3 (Phù hợp bộ môn):** Phòng tập phải đúng công năng bộ môn (vd: Boxing tại phòng có sàn Ring/bao cát; Bơi tại Bể bơi AquaFit; Gym tại Gym Area).
 * **BR-05.4 (Chuyên môn HLV):** HLV chỉ được phép đề xuất các bộ môn mà mình được phân công trong bảng `coach_sports`.
 
@@ -225,7 +220,7 @@ Trước khi **Gửi đề xuất (Submit)**, **Tạo mới trực tiếp (Creat
 * Khi Coach gửi proposal `PENDING`, hệ thống có thể lưu các session ở trạng thái `planned` để phục vụ duyệt, nhưng đây chỉ là **soft-lock mang tính cảnh báo**, không chặn proposal khác và tự hết hiệu lực khi proposal bị thu hồi, từ chối hoặc hết hạn sau 72 giờ.
 * Khi Manager tạo trực tiếp hoặc duyệt proposal, backend phải kiểm tra lại toàn bộ session trong **một database transaction**. Việc ghi lịch chỉ thành công nếu tất cả session hợp lệ; nếu có một session lỗi thì rollback toàn bộ khóa.
 * Database phải có ràng buộc chống trùng tài nguyên ở mức giao dịch: khóa hàng tài nguyên phù hợp hoặc PostgreSQL range-exclusion theo khoảng `[start_at, end_at)` cho phòng không chia sẻ và HLV. Kiểm tra trên UI không được xem là biện pháp bảo vệ cuối cùng.
-* Với phòng chia sẻ, transaction phải kiểm tra đồng thời số lớp trùng giờ không vượt `max_concurrent_classes` và tổng `capacity` không vượt `total_capacity`.
+* Với phòng chia sẻ, transaction phải kiểm tra số lớp trùng giờ không vượt `max_concurrent_classes`; nếu phòng có cấu hình `total_capacity`, tổng `capacity` cũng không được vượt mức đó.
 * Mọi lỗi xung đột trả về mã nghiệp vụ và `conflicts[]` gồm `session_number`, `start_at`, `resource_type`, `resource_id`, `conflicting_session_id` và thông điệp hiển thị.
 
 ### BR-21: Năng lực chuyên môn và thay đổi lịch

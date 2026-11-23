@@ -13,6 +13,8 @@ export interface FacilityItem {
   name: string;
   imageUrl?: string;
   address?: string;
+  maxConcurrentClasses?: number;
+  totalCapacity?: number | null;
 }
 
 interface SportsTableCardProps {

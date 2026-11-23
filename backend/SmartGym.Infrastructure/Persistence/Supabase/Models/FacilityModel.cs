@@ -21,5 +21,14 @@ public class FacilityModel : BaseModel
 
     [Column("address")]
     public string Address { get; set; } = "Chưa cập nhật";
+
+    [Column("allow_concurrent_classes")]
+    public bool AllowConcurrentClasses { get; set; }
+
+    [Column("max_concurrent_classes")]
+    public int MaxConcurrentClasses { get; set; } = 1;
+
+    [Column("total_capacity")]
+    public int? TotalCapacity { get; set; }
 }
 

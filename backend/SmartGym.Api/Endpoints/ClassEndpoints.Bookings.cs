@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using SmartGym.Application.Common;
 using SmartGym.Application.DTOs.Classes;
 using SmartGym.Application.Services;
 using SmartGym.Domain.Entities;
@@ -59,19 +60,36 @@ public static partial class ClassEndpoints
                     return Results.Unauthorized();
 
                 var method = request?.PaymentMethod ?? "qr";
+                var today = DateOnly.FromDateTime(CenterTime.ToLocal(DateTime.UtcNow));
                 var priceRows = await db.Database.SqlQueryRaw<ClassPriceSnapshotRaw>(
                     """
-                    SELECT COALESCE(root.course_fee_snapshot, current_class.course_fee_snapshot) AS "CourseFeeSnapshot"
+                    SELECT root.id AS "RootId",
+                           root.sport_id AS "SportId",
+                           GREATEST(COALESCE(root.total_sessions, 1), 1) AS "TotalSessions",
+                           active_price.id AS "PricingVersionId",
+                           active_price.price_per_session AS "PricePerSession"
                     FROM classes current_class
                     LEFT JOIN classes root ON root.id = COALESCE(current_class.parent_id, current_class.id)
+                    LEFT JOIN LATERAL (
+                        SELECT p.id, p.price_per_session
+                        FROM sport_class_pricing p
+                        WHERE p.sport_id = root.sport_id
+                          AND p.is_active = TRUE
+                          AND p.effective_from <= {1}
+                          AND (p.effective_to IS NULL OR p.effective_to >= {1})
+                        ORDER BY p.effective_from DESC, p.created_at DESC
+                        LIMIT 1
+                    ) active_price ON TRUE
                     WHERE current_class.id = {0}
-                    """, id).ToListAsync();
-                var lockedAmount = priceRows.SingleOrDefault()?.CourseFeeSnapshot;
-                if (lockedAmount == null)
+                    """, id, today).ToListAsync();
+                var pricing = priceRows.SingleOrDefault();
+                if (pricing == null)
+                    return Results.NotFound(new { message = "Không tìm thấy lớp học." });
+                if (pricing.PricingVersionId == null || pricing.PricePerSession == null)
                     return Results.BadRequest(new { message = "Khóa học chưa có học phí được chốt. Vui lòng liên hệ quản lý trung tâm." });
 
-                // The server uses the approved course snapshot; the client amount is informational only.
-                var amount = lockedAmount.Value;
+                // Tạm thời dùng bảng giá hiệu lực hiện tại trong DB, bỏ qua course_fee_snapshot.
+                var amount = pricing.PricePerSession.Value * pricing.TotalSessions;
                 var isWallet = method.ToLower() is "wallet" or "ewallet";
                 var deductedFromWallet = false;
 
@@ -149,6 +167,7 @@ public static partial class ClassEndpoints
                     {
                         Id = Guid.NewGuid(),
                         UserId = userId,
+                        ClassId = pricing.RootId,
                         TotalAmount = amount,
                         PaymentMethod = method.ToLower() switch
                         {
@@ -437,7 +456,11 @@ public record PayAndBookClassRequest(string? PaymentMethod = "qr", decimal Amoun
 
 public sealed class ClassPriceSnapshotRaw
 {
-    public decimal? CourseFeeSnapshot { get; set; }
+    public Guid RootId { get; set; }
+    public Guid SportId { get; set; }
+    public int TotalSessions { get; set; }
+    public Guid? PricingVersionId { get; set; }
+    public decimal? PricePerSession { get; set; }
 }
 
 public class CancelBookingInfoRaw

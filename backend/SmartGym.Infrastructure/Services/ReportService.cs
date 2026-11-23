@@ -23,7 +23,7 @@ public class ReportService(SmartGymDbContext db, Supabase.Client supabase) : IRe
         var q = db.Invoices.Where(i => i.Status == PaymentStatus.Completed);
         if (startDate.HasValue) q = q.Where(i => i.CreatedAt >= startDate.Value.ToUniversalTime());
         if (endDate.HasValue)   q = q.Where(i => i.CreatedAt <= endDate.Value.ToUniversalTime());
-        return await q.SumAsync(i => i.TotalAmount);
+        return await q.SumAsync(i => i.TotalAmount - i.RefundedAmount);
     }
 
     public async Task<int> GetNewMembersCountAsync(DateTime month)
@@ -48,8 +48,8 @@ public class ReportService(SmartGymDbContext db, Supabase.Client supabase) : IRe
         var today      = DateTime.UtcNow.Date;
         var monthStart = new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        var todayRev   = await db.Invoices.Where(i => i.Status == PaymentStatus.Completed && i.CreatedAt >= today).SumAsync(i => i.TotalAmount);
-        var monthRev   = await db.Invoices.Where(i => i.Status == PaymentStatus.Completed && i.CreatedAt >= monthStart).SumAsync(i => i.TotalAmount);
+        var todayRev   = await db.Invoices.Where(i => i.Status == PaymentStatus.Completed && i.CreatedAt >= today).SumAsync(i => i.TotalAmount - i.RefundedAmount);
+        var monthRev   = await db.Invoices.Where(i => i.Status == PaymentStatus.Completed && i.CreatedAt >= monthStart).SumAsync(i => i.TotalAmount - i.RefundedAmount);
         var newMembers = await db.Users.Where(u => u.Role.Name == "member" && u.CreatedAt >= monthStart).CountAsync();
         var total      = await db.Users.Where(u => u.Role.Name == "member").CountAsync();
         var activeSubs = await db.Subscriptions.CountAsync(s => s.PaymentStatus == PaymentStatus.Completed && s.EndDate >= today);
@@ -88,7 +88,7 @@ public class ReportService(SmartGymDbContext db, Supabase.Client supabase) : IRe
         var grouped = await db.Invoices
             .Where(i => i.Status == PaymentStatus.Completed)
             .GroupBy(i => i.PaymentMethod)
-            .Select(g => new { Method = g.Key, Revenue = g.Sum(i => i.TotalAmount), Count = g.Count() })
+            .Select(g => new { Method = g.Key, Revenue = g.Sum(i => i.TotalAmount - i.RefundedAmount), Count = g.Count() })
             .ToListAsync();
 
         return grouped.OrderByDescending(g => g.Revenue)
@@ -103,12 +103,12 @@ public class ReportService(SmartGymDbContext db, Supabase.Client supabase) : IRe
 
         var invoices = await db.Invoices
             .Where(i => i.Status == PaymentStatus.Completed && i.CreatedAt >= first)
-            .Select(i => new { i.CreatedAt, i.TotalAmount })
+            .Select(i => new { i.CreatedAt, i.TotalAmount, i.RefundedAmount })
             .ToListAsync();
 
         var grouped = invoices
             .GroupBy(i => new DateTime(i.CreatedAt.Year, i.CreatedAt.Month, 1, 0, 0, 0, DateTimeKind.Utc))
-            .ToDictionary(g => g.Key, g => new { Revenue = g.Sum(x => x.TotalAmount), Count = g.Count() });
+            .ToDictionary(g => g.Key, g => new { Revenue = g.Sum(x => x.TotalAmount - x.RefundedAmount), Count = g.Count() });
 
         // Tháng không có giao dịch vẫn trả về 0 để biểu đồ không bị lệch trục.
         return Enumerable.Range(0, n)
@@ -255,7 +255,7 @@ public class ReportService(SmartGymDbContext db, Supabase.Client supabase) : IRe
         {
             ws.Cell(row, 1).Value = inv.InvoiceNumber;
             ws.Cell(row, 2).Value = inv.User?.FullName ?? inv.UserId.ToString();
-            ws.Cell(row, 3).Value = inv.TotalAmount;
+            ws.Cell(row, 3).Value = inv.TotalAmount - inv.RefundedAmount;
             ws.Cell(row, 4).Value = inv.PaymentMethod.ToDisplayName();
             ws.Cell(row, 5).Value = inv.Status.ToDisplayName();
             ws.Cell(row, 6).Value = (inv.PaidAt ?? inv.CreatedAt).ToString("yyyy-MM-dd HH:mm");
@@ -264,7 +264,7 @@ public class ReportService(SmartGymDbContext db, Supabase.Client supabase) : IRe
 
         ws.Cell(row, 2).Value = "Tổng cộng";
         ws.Cell(row, 2).Style.Font.Bold = true;
-        ws.Cell(row, 3).Value = invoices.Sum(i => i.TotalAmount);
+        ws.Cell(row, 3).Value = invoices.Sum(i => i.TotalAmount - i.RefundedAmount);
         ws.Cell(row, 3).Style.Font.Bold = true;
         ws.Cell(row, 3).Style.NumberFormat.Format = "#,##0";
         ws.Columns().AdjustToContents();
