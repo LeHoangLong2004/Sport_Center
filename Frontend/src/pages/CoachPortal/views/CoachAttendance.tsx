@@ -33,6 +33,7 @@ interface Props {
  * Cung cấp quy trình điểm danh học viên, lưu nháp, chốt sổ (finalize) và quy định khóa 24h.
  */
 export default function CoachAttendance({ initialSessionId, navigateTo }: Props) {
+  const [selectedCourseId, setSelectedCourseId] = React.useState<string | null>(null);
   const {
     activeSessions,
     isLoadingSessions,
@@ -98,6 +99,8 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
           isLoading={isLoadingSessions}
           onSelectSession={handleSessionChange}
           finalizedMap={finalizedMap}
+          selectedCourseId={selectedCourseId}
+          onSelectCourse={setSelectedCourseId}
         />
       </div>
     );

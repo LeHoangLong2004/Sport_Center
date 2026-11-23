@@ -8,10 +8,13 @@ export interface ClassNotification {
 interface ClassActionModalsProps {
   notification: ClassNotification | null;
   showConfirmCancel: boolean;
+  showConfirmCancelCourse: boolean;
   showConfirmRestore: boolean;
   onCloseNotification: () => void;
   onCloseConfirmCancel: () => void;
   onConfirmCancel: () => void;
+  onCloseConfirmCancelCourse: () => void;
+  onConfirmCancelCourse: () => void;
   onCloseConfirmRestore: () => void;
   onConfirmRestore: () => void;
 }
@@ -19,10 +22,13 @@ interface ClassActionModalsProps {
 export function ClassActionModals({
   notification,
   showConfirmCancel,
+  showConfirmCancelCourse,
   showConfirmRestore,
   onCloseNotification,
   onCloseConfirmCancel,
   onConfirmCancel,
+  onCloseConfirmCancelCourse,
+  onConfirmCancelCourse,
   onCloseConfirmRestore,
   onConfirmRestore,
 }: ClassActionModalsProps) {
@@ -71,10 +77,10 @@ export function ClassActionModals({
               <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              <h3 className="text-xl font-bold text-gray-900">Xác nhận hủy lớp học</h3>
+              <h3 className="text-xl font-bold text-gray-900">Xác nhận hủy buổi học</h3>
             </div>
             <p className="text-gray-600 text-sm">
-              Bạn có chắc chắn muốn hủy lớp học này không? Lớp học có thể được khôi phục sau đó nếu vẫn còn thời gian phù hợp.
+              Chỉ hủy buổi được chọn. Các buổi khác trong khóa học sẽ không thay đổi.
             </p>
             <div className="flex justify-end gap-3 mt-4">
               <button 
@@ -87,7 +93,37 @@ export function ClassActionModals({
                 onClick={onConfirmCancel}
                 className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
               >
-                Có, hủy lớp học
+                Có, hủy buổi này
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showConfirmCancelCourse && (
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in-up">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl flex flex-col gap-4">
+            <div className="flex items-center gap-3 text-red-700">
+              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <h3 className="text-xl font-bold text-gray-900">Xác nhận hủy khóa học</h3>
+            </div>
+            <p className="text-gray-600 text-sm">
+              Tất cả buổi chưa diễn ra trong khóa học sẽ bị hủy và học viên được thông báo. Buổi đã diễn ra vẫn được giữ trong lịch sử. Học phí phần buổi chưa diễn ra sẽ được hoàn vào ví nếu hóa đơn đã liên kết với khóa học; đăng ký cũ chưa liên kết cần được đối soát thủ công.
+            </p>
+            <div className="flex justify-end gap-3 mt-4">
+              <button
+                onClick={onCloseConfirmCancelCourse}
+                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
+              >
+                Không, quay lại
+              </button>
+              <button
+                onClick={onConfirmCancelCourse}
+                className="px-4 py-2 text-sm font-semibold text-white bg-red-700 rounded-lg hover:bg-red-800 transition-colors cursor-pointer"
+              >
+                Có, hủy khóa học
               </button>
             </div>
           </div>

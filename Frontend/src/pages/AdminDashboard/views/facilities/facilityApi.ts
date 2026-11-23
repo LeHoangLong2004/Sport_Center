@@ -104,7 +104,11 @@ export async function saveFacilityApi(
   name: string,
   imageUrl: string,
   address: string,
-  editingId?: string | null
+  editingId?: string | null,
+  scheduling: { maxConcurrentClasses: number; totalCapacity: number | null } = {
+    maxConcurrentClasses: 1,
+    totalCapacity: null,
+  }
 ): Promise<FacilityItem> {
   const token = getAuthToken();
   if (!token) throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
@@ -117,7 +121,12 @@ export async function saveFacilityApi(
   const res = await fetch(endpoint, {
     method,
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ name: name.trim(), imageUrl: savedImageUrl, address: address.trim() }),
+    body: JSON.stringify({
+      name: name.trim(),
+      imageUrl: savedImageUrl,
+      address: address.trim(),
+      ...scheduling,
+    }),
   });
 
   if (!res.ok) {

@@ -11,6 +11,10 @@ export interface FormModalProps {
   setImageUrl: (val: string) => void;
   address: string;
   setAddress: (val: string) => void;
+  maxConcurrentClasses: number;
+  setMaxConcurrentClasses: (val: number) => void;
+  totalCapacity: number | null;
+  setTotalCapacity: (val: number | null) => void;
   isSubmitting: boolean;
   isUploading: boolean;
   onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -27,6 +31,10 @@ export function FacilityFormModal({
   setImageUrl,
   address,
   setAddress,
+  maxConcurrentClasses,
+  setMaxConcurrentClasses,
+  totalCapacity,
+  setTotalCapacity,
   isSubmitting,
   isUploading,
   onFileUpload,
@@ -178,6 +186,37 @@ export function FacilityFormModal({
                 placeholder="VD: Tầng 2, Tòa nhà A"
                 className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
               />
+            </div>
+          )}
+
+          {activeType === 'facility' && (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Số lớp tối đa cùng giờ</label>
+                  <input
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={maxConcurrentClasses}
+                    onChange={(event) => setMaxConcurrentClasses(Math.max(1, Number(event.target.value) || 1))}
+                    className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Tổng sức chứa</label>
+                  <input
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={totalCapacity ?? ''}
+                    onChange={(event) => setTotalCapacity(event.target.value ? Math.max(1, Number(event.target.value)) : null)}
+                    placeholder="Ví dụ: 40 người"
+                    className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
+                  />
+                </div>
+                <p className="col-span-2 text-[11px] text-slate-500">Nhập 1 để giới hạn một lớp cùng giờ. Có thể khai báo tổng sức chứa để kiểm soát sĩ số cộng dồn khi nhiều lớp dùng chung phòng.</p>
+              </div>
             </div>
           )}
         </div>

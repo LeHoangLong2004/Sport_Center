@@ -24,6 +24,10 @@ export function FacilitiesPage() {
     setImageUrl,
     address,
     setAddress,
+    maxConcurrentClasses,
+    setMaxConcurrentClasses,
+    totalCapacity,
+    setTotalCapacity,
     isSubmitting,
     isUploading,
     deleteTarget,
@@ -108,6 +112,10 @@ export function FacilitiesPage() {
           setImageUrl={setImageUrl}
           address={address}
           setAddress={setAddress}
+          maxConcurrentClasses={maxConcurrentClasses}
+          setMaxConcurrentClasses={setMaxConcurrentClasses}
+          totalCapacity={totalCapacity}
+          setTotalCapacity={setTotalCapacity}
           isSubmitting={isSubmitting}
           isUploading={isUploading}
           onFileUpload={handleFileUpload}

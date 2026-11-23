@@ -51,7 +51,7 @@ namespace SmartGym.Api.Endpoints
                         var (coachClasses, members, classesOverview) = await LoadCoachClassesAndMembersAsync(db, coachUserId);
                         return Results.Ok(new
                         {
-                            totalClasses = coachClasses.Count,
+                            totalClasses = classesOverview.Count,
                             totalMembers = members.Count,
                             classes = classesOverview,
                             members
@@ -72,7 +72,7 @@ namespace SmartGym.Api.Endpoints
             );
         }
 
-        private static async Task<(List<ClassSqlRawModel> CoachClasses, List<object> Members, List<object> ClassesOverview)>
+        private static async Task<(List<CoachMembersClassRawModel> CoachClasses, List<object> Members, List<object> ClassesOverview)>
             LoadCoachClassesAndMembersAsync(SmartGymDbContext db, Guid coachUserId)
         {
             // The token normally contains users.id, but some legacy coach
@@ -83,8 +83,8 @@ namespace SmartGym.Api.Endpoints
 
             // A class can contain either the coach profile id or the authenticated
             // user id because both formats exist in older records.
-            var coachClasses = await db.Database.SqlQueryRaw<ClassSqlRawModel>(
-                "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status, parent_id, session_number, total_sessions, price_per_session_snapshot, course_fee_snapshot FROM classes WHERE (coach_id = {0} OR coach_id = {1}) AND status = TRUE",
+            var coachClasses = await db.Database.SqlQueryRaw<CoachMembersClassRawModel>(
+                "SELECT c.id, c.sport_id, c.facility_id, c.coach_id, c.class_name, c.schedule_time, c.duration_minutes, c.capacity, c.current_enrolled, c.status, c.approval_status, c.parent_id, c.session_number, c.total_sessions, c.price_per_session_snapshot, c.course_fee_snapshot, COALESCE(cc.class_name, root.class_name, c.class_name) AS \"CourseName\" FROM classes c LEFT JOIN class_courses cc ON cc.id = c.parent_id LEFT JOIN classes root ON root.id = c.parent_id WHERE (c.coach_id = {0} OR c.coach_id = {1}) AND c.status = TRUE AND LOWER(COALESCE(c.approval_status, '')) = 'approved'",
                 coachProfileKey,
                 coachUserId
             ).ToListAsync();
@@ -119,21 +119,33 @@ namespace SmartGym.Api.Endpoints
             var sports = await db.Database.SqlQueryRaw<SportSqlRawModel>("SELECT id, name FROM sports").ToListAsync();
             var sportNames = sports.ToDictionary(s => s.Id, s => s.Name);
 
-            var classesOverview = coachClasses.Select(c =>
+            var classesByCourse = coachClasses.GroupBy(c => c.ParentId ?? c.Id).ToList();
+            var classIdToCourseId = coachClasses.ToDictionary(c => c.Id, c => c.ParentId ?? c.Id);
+            var courseNameById = classesByCourse.ToDictionary(
+                g => g.Key,
+                g => g.Select(c => c.CourseName).FirstOrDefault(name => !string.IsNullOrWhiteSpace(name)) ?? g.First().ClassName
+            );
+
+            var classesOverview = classesByCourse.Select(course =>
             {
-                var enrolledCount = classBookings.Count(b => b.ClassId == c.Id);
-                sportNames.TryGetValue(c.SportId, out var sName);
-                var localTime = CenterTime.ToLocal(c.ScheduleTime);
+                var sessions = course.OrderBy(c => c.ScheduleTime).ToList();
+                var firstSession = sessions[0];
+                var sessionIds = sessions.Select(c => c.Id).ToHashSet();
+                var enrolledCount = classBookings.Where(b => sessionIds.Contains(b.ClassId)).Select(b => b.UserId).Distinct().Count();
+                sportNames.TryGetValue(firstSession.SportId, out var sName);
+                var localTime = CenterTime.ToLocal(firstSession.ScheduleTime);
                 return (object)new
                 {
-                    id = c.Id.ToString(),
-                    className = c.ClassName,
+                    id = course.Key.ToString(),
+                    sessionIds = sessions.Select(c => c.Id.ToString()).ToArray(),
+                    sessionCount = sessions.Count,
+                    className = courseNameById[course.Key],
                     sport = sName ?? "Thể thao",
-                    scheduleTime = localTime.ToString("dd/MM/yyyy HH:mm"),
-                    durationMinutes = c.DurationMinutes,
-                    capacity = c.Capacity,
+                    scheduleTime = $"{localTime:dd/MM/yyyy HH:mm} · {sessions.Count} buổi",
+                    durationMinutes = firstSession.DurationMinutes,
+                    capacity = firstSession.Capacity,
                     enrolledCount,
-                    status = c.Status
+                    status = sessions.Any(c => c.Status)
                 };
             }).ToList();
 
@@ -150,10 +162,13 @@ namespace SmartGym.Api.Endpoints
                 ? new List<User>()
                 : await db.Users.AsNoTracking().Where(u => memberIds.Contains(u.Id)).ToListAsync();
 
-            var classNameMap = coachClasses.ToDictionary(c => c.Id, c => c.ClassName);
+            var classNameMap = coachClasses.ToDictionary(c => c.Id, c => courseNameById[classIdToCourseId[c.Id]]);
             var classIdsByMember = classBookings
                 .GroupBy(b => b.UserId)
                 .ToDictionary(g => g.Key, g => g.Select(b => b.ClassId).Distinct().ToHashSet());
+            var courseIdsByMember = classBookings
+                .GroupBy(b => b.UserId)
+                .ToDictionary(g => g.Key, g => g.Select(b => classIdToCourseId[b.ClassId]).Distinct().ToHashSet());
 
             var classNamesByMember = classBookings
                 .GroupBy(b => b.UserId)
@@ -200,6 +215,7 @@ namespace SmartGym.Api.Endpoints
                 .Select(u =>
                 {
                     classIdsByMember.TryGetValue(u.Id, out var memberClassIds);
+                        courseIdsByMember.TryGetValue(u.Id, out var memberCourseIds);
                     classNamesByMember.TryGetValue(u.Id, out var memberClassNames);
                     sportsByMember.TryGetValue(u.Id, out var memberSports);
                     attendanceByMember.TryGetValue(u.Id, out var memberAttendance);
@@ -231,6 +247,7 @@ namespace SmartGym.Api.Endpoints
                         phone = u.PhoneNumber ?? "",
                         email = u.Email ?? "",
                         classIds = memberClassIds?.Select(id => id.ToString()).ToArray() ?? Array.Empty<string>(),
+                        courseIds = memberCourseIds?.Select(id => id.ToString()).ToArray() ?? Array.Empty<string>(),
                         attendanceRate = totalSessions == 0 ? (double?)null : Math.Round(attendedSessions * 100d / totalSessions),
                         attendedSessions,
                         totalSessions,
@@ -239,6 +256,11 @@ namespace SmartGym.Api.Endpoints
                 .ToList();
 
             return (coachClasses, members, classesOverview);
+        }
+
+        private sealed class CoachMembersClassRawModel : ClassSqlRawModel
+        {
+            public string? CourseName { get; set; }
         }
     }
 

@@ -12,6 +12,8 @@ public interface IGroupClassRepository
     Task<ClassDetailResponse?> GetClassDetailByIdAsync(Guid id);
     Task<IEnumerable<GroupClass>> GetClassesByCoachAndDateAsync(Guid coachId, DateTime date);
     Task<IEnumerable<GroupClass>> GetClassesByFacilityAndDateAsync(Guid facilityId, DateTime date);
+    Task<FacilitySchedulingSettings?> GetFacilitySchedulingSettingsAsync(Guid facilityId);
+    Task<IEnumerable<GroupClass>> GetCourseSessionsAsync(Guid classId);
     Task<bool> HasCoachAvailabilityConflictAsync(Guid coachId, DateTime startTime, DateTime endTime);
     Task<IEnumerable<ClassResponse>> GetAllClassesAsync();
     Task<IEnumerable<ClassResponse>> GetAvailableClassesAsync();

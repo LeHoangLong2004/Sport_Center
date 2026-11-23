@@ -170,6 +170,7 @@ public static class CoachScheduleRequestManagerEndpoints
                    substitute_user.full_name AS ""SubstituteCoachName"",
                    c.coach_id AS ""CurrentCoachId"", c.facility_id AS ""FacilityId"",
                    c.schedule_time AS ""ScheduleTime"", COALESCE(c.duration_minutes, 60) AS ""DurationMinutes"",
+                   COALESCE(c.capacity, 1) AS ""ClassCapacity"",
                    COALESCE(r.session_time, TO_CHAR(c.schedule_time, 'YYYY-MM-DD HH24:MI')) AS ""SessionTime""
             FROM coach_schedule_requests r
             LEFT JOIN classes c ON c.id = r.session_id
@@ -305,14 +306,33 @@ public static class CoachScheduleRequestManagerEndpoints
         // Nếu là dời lịch và có chọn phòng, kiểm tra phòng tập có bị trùng không
         if (!isSubstitute && facilityId.HasValue && facilityId.Value != Guid.Empty)
         {
-            var facilityConflict = await db.Database.SqlQueryRaw<int>(@"
-                SELECT 1 AS ""Value"" FROM classes
+            var settingsRows = await db.Database.SqlQueryRaw<FacilitySchedulingSettingsRow>(@"
+                SELECT allow_concurrent_classes AS ""AllowConcurrentClasses"",
+                       max_concurrent_classes AS ""MaxConcurrentClasses"", total_capacity AS ""TotalCapacity""
+                FROM facilities WHERE id = {0}", facilityId.Value).ToListAsync();
+            var settings = settingsRows.SingleOrDefault();
+            if (settings is null) return "Không tìm thấy cấu hình phòng tập.";
+
+            var occupancyRows = await db.Database.SqlQueryRaw<FacilityOccupancyRow>(@"
+                SELECT COUNT(*)::int AS ""ClassCount"", COALESCE(SUM(capacity), 0)::int AS ""Capacity"",
+                       MIN(class_name) AS ""FirstConflictName""
+                FROM classes
                 WHERE id <> {0} AND status = true AND COALESCE(approval_status, 'approved') <> 'rejected'
                   AND facility_id = {1}
                   AND schedule_time < {2}
-                  AND schedule_time + (COALESCE(duration_minutes, 60) * INTERVAL '1 minute') > {3}
-                LIMIT 1", sessionId, facilityId.Value, end, scheduleStart).AnyAsync();
-            if (facilityConflict) return "Phòng tập đã có lịch khác trùng thời gian.";
+                  AND schedule_time + (COALESCE(duration_minutes, 60) * INTERVAL '1 minute') > {3}",
+                sessionId, facilityId.Value, end, scheduleStart).ToListAsync();
+            var occupancy = occupancyRows.Single();
+            var facilityConflict = FacilityConflictValidator.Validate(
+                new SmartGym.Domain.Entities.FacilitySchedulingSettings(
+                    settings.AllowConcurrentClasses,
+                    Math.Max(1, settings.MaxConcurrentClasses),
+                    settings.TotalCapacity),
+                request.ClassCapacity,
+                occupancy.ClassCount,
+                occupancy.Capacity,
+                occupancy.FirstConflictName);
+            if (facilityConflict is not null) return facilityConflict;
         }
 
         return null;
@@ -412,6 +432,7 @@ public static class CoachScheduleRequestManagerEndpoints
         public DateTime? ScheduleTime { get; set; }
         public DateTime? NewDate { get; set; }
         public int DurationMinutes { get; set; }
+        public int ClassCapacity { get; set; } = 1;
         public string ClassName { get; set; } = "Lớp học";
         public string? SessionTime { get; set; }
         public string? SportName { get; set; }
@@ -424,6 +445,20 @@ public static class CoachScheduleRequestManagerEndpoints
         public string Status { get; set; } = "pending";
         public string? ManagerNote { get; set; }
         public DateTime CreatedAt { get; set; }
+    }
+
+    private sealed class FacilitySchedulingSettingsRow
+    {
+        public bool AllowConcurrentClasses { get; set; }
+        public int MaxConcurrentClasses { get; set; }
+        public int? TotalCapacity { get; set; }
+    }
+
+    private sealed class FacilityOccupancyRow
+    {
+        public int ClassCount { get; set; }
+        public int Capacity { get; set; }
+        public string? FirstConflictName { get; set; }
     }
 
     public sealed class AvailableCoachModel

@@ -69,7 +69,7 @@ public static class SportClassPricingEndpoints
                 """);
             await transaction.CommitAsync();
 
-            return Results.Ok(new { message = "Đã lưu phiên bản giá mới. Giá được chốt cho khóa học khi Manager duyệt." });
+            return Results.Ok(new { message = "Đã lưu phiên bản giá mới. Các khóa chưa có lượt đăng ký sẽ dùng giá đang hiệu lực; giá của khóa đã có lượt đăng ký được giữ nguyên." });
         }).RequireAuthorization(policy => policy.RequireRole("manager", "admin"));
     }
 

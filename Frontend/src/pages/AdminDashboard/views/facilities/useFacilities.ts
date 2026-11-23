@@ -24,6 +24,8 @@ export function useFacilities() {
   const [name, setName] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [address, setAddress] = useState('');
+  const [maxConcurrentClasses, setMaxConcurrentClasses] = useState(1);
+  const [totalCapacity, setTotalCapacity] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -58,6 +60,8 @@ export function useFacilities() {
     setName('');
     setImageUrl('');
     setAddress('');
+    setMaxConcurrentClasses(1);
+    setTotalCapacity(null);
   };
 
   const openEditModal = (type: 'sport' | 'facility', item: SportItem | FacilityItem) => {
@@ -67,6 +71,9 @@ export function useFacilities() {
     setName(item.name);
     setImageUrl((item as SportItem).imageUrl || '');
     setAddress((item as FacilityItem).address || '');
+    const facility = item as FacilityItem;
+    setMaxConcurrentClasses(Math.max(1, facility.maxConcurrentClasses ?? 1));
+    setTotalCapacity(facility.totalCapacity ?? null);
   };
 
   const closeModal = () => {
@@ -115,7 +122,10 @@ export function useFacilities() {
             : [...prev, savedItem]
         );
       } else {
-        const savedItem = await saveFacilityApi(name, imageUrl, address, editingId);
+        const savedItem = await saveFacilityApi(name, imageUrl, address, editingId, {
+          maxConcurrentClasses,
+          totalCapacity,
+        });
         setFacilities((prev) =>
           isEdit
             ? prev.map((f) => (f.id.toLowerCase() === editingId?.toLowerCase() ? { ...f, ...savedItem } : f))
@@ -166,6 +176,10 @@ export function useFacilities() {
     setImageUrl,
     address,
     setAddress,
+    maxConcurrentClasses,
+    setMaxConcurrentClasses,
+    totalCapacity,
+    setTotalCapacity,
     isSubmitting,
     isUploading,
     deleteTarget,

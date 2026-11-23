@@ -26,8 +26,42 @@ export default function CoachMembers({ navigateTo }: Props) {
       const data = await CoachAPI.getMembersOverview();
       setError(null);
       if (data) {
-        setMembers(Array.isArray(data.members) ? data.members : []);
-        setClasses(Array.isArray(data.classes) ? data.classes : []);
+        const nextMembers = Array.isArray(data.members) ? data.members : [];
+        const nextClasses = Array.isArray(data.classes) ? data.classes : [];
+        setMembers(nextMembers);
+
+        // The updated API returns one class row with its session IDs. During a
+        // local API restart, normalize legacy per-session rows by their course
+        // title so the screen never presents sessions as separate classes.
+        const alreadyGrouped = nextClasses.some((cls) => Array.isArray(cls.sessionIds));
+        if (alreadyGrouped) {
+          setClasses(nextClasses);
+        } else {
+          const groups = new Map<string, typeof nextClasses>();
+          nextClasses.forEach((cls) => {
+            const name = cls.className.replace(/\s*\(Buổi\s+\d+\)\s*$/i, "").trim();
+            const key = name.toLocaleLowerCase("vi");
+            groups.set(key, [...(groups.get(key) || []), cls]);
+          });
+          setClasses(Array.from(groups.entries()).map(([key, sessions]) => {
+            const courseName = sessions[0]?.className.replace(/\s*\(Buổi\s+\d+\)\s*$/i, "").trim() || "Lớp học";
+            const sessionIds = sessions.map((cls) => String(cls.id));
+            const sessionIdSet = new Set(sessionIds);
+            const enrolledCount = nextMembers.filter((member) => member.classIds?.some((id) => sessionIdSet.has(String(id)))).length;
+            return {
+              id: `legacy-course:${key}`,
+              sessionIds,
+              sessionCount: sessions.length,
+              className: courseName,
+              sport: sessions[0]?.sport || "Thể thao",
+              scheduleTime: `${sessions[0]?.scheduleTime || "Chưa xếp lịch"} · ${sessions.length} buổi`,
+              durationMinutes: sessions[0]?.durationMinutes || 60,
+              capacity: sessions[0]?.capacity || 0,
+              enrolledCount,
+              status: sessions.some((cls) => cls.status),
+            };
+          }));
+        }
       }
     } catch (err) {
       console.error("Lỗi tải thông tin học viên & lớp học:", err);
@@ -64,8 +98,11 @@ export default function CoachMembers({ navigateTo }: Props) {
     const q = search.toLowerCase().trim();
     return members.filter((m) => {
       if (sportFilter !== "all" && m.sport !== sportFilter) return false;
-      if (selectedClassId && selectedClassId !== "all" && !m.classIds?.some((cid) => String(cid) === String(selectedClassId))) {
-        return false;
+      if (selectedClassId && selectedClassId !== "all") {
+        const selectedSessionIds = selectedClass?.sessionIds || [selectedClassId];
+        const memberHasCourse = m.courseIds?.some((id) => String(id) === String(selectedClassId));
+        const memberHasSession = m.classIds?.some((id) => selectedSessionIds.some((sessionId) => String(sessionId) === String(id)));
+        if (!memberHasCourse && !memberHasSession) return false;
       }
 
       if (q) {
@@ -79,7 +116,7 @@ export default function CoachMembers({ navigateTo }: Props) {
 
       return true;
     });
-  }, [search, sportFilter, selectedClassId, members]);
+  }, [search, sportFilter, selectedClassId, selectedClass, members]);
 
   // View 1: When no class is selected yet, show class/session cards overview (like CoachAttendance)
   if (!selectedClassId) {

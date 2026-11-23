@@ -31,6 +31,32 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
         return response?.ToDomain();
     }
 
+    public async Task<FacilitySchedulingSettings?> GetFacilitySchedulingSettingsAsync(Guid facilityId)
+    {
+        var rows = await _dbContext.Database.SqlQueryRaw<FacilitySchedulingSettingsSqlRow>(
+            "SELECT allow_concurrent_classes AS \"AllowConcurrentClasses\", max_concurrent_classes AS \"MaxConcurrentClasses\", total_capacity AS \"TotalCapacity\" FROM facilities WHERE id = {0}",
+            facilityId).ToListAsync();
+        var row = rows.SingleOrDefault();
+        return row is null
+            ? null
+            : new FacilitySchedulingSettings(row.AllowConcurrentClasses, Math.Max(1, row.MaxConcurrentClasses), row.TotalCapacity);
+    }
+
+    public async Task<IEnumerable<GroupClass>> GetCourseSessionsAsync(Guid classId)
+    {
+        var rows = await _dbContext.Database.SqlQueryRaw<ClassSqlRawModel>(
+            """
+            SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes,
+                   capacity, current_enrolled, status, approval_status, parent_id, session_number,
+                   total_sessions, price_per_session_snapshot, course_fee_snapshot
+            FROM classes
+            WHERE id = COALESCE((SELECT parent_id FROM classes WHERE id = {0}), {0})
+               OR parent_id = COALESCE((SELECT parent_id FROM classes WHERE id = {0}), {0})
+            ORDER BY session_number, schedule_time
+            """, classId).ToListAsync();
+        return rows.Select(ToDomain).ToList();
+    }
+
     public async Task<ClassDetailResponse?> GetClassDetailByIdAsync(Guid id)
     {
         var classResponse = await _client.From<GroupClassModel>().Where(x => x.Id == id).Single();
@@ -232,7 +258,6 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             .ToListAsync();
 
         var currentClassPrices = await GetCurrentClassPricesBySportAsync();
-
         return classModels
             .Select(c =>
             {
@@ -262,9 +287,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                     CoachBio: coach?.Bio ?? "Huấn luyện viên phụ trách lớp học.",
                     CoachRating: coach?.Rating,
                     CoachExperienceYears: coach?.ExperienceYears ?? 5,
-                    Price: c.CourseFeeSnapshot ?? (string.Equals(c.ApprovalStatus, "pending", StringComparison.OrdinalIgnoreCase)
-                        ? CalculateCoursePrice(currentClassPrices, c.SportId, sport?.Name, c.TotalSessions)
-                        : null),
+                    Price: TryCalculateCoursePrice(currentClassPrices, c.SportId, sport?.Name, c.TotalSessions),
                     ParentId: c.ParentId,
                     SessionNumber: c.SessionNumber,
                     TotalSessions: c.TotalSessions
@@ -304,6 +327,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
         var users = await _dbContext
             .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number, avatar_url FROM users")
             .ToListAsync();
+        var currentClassPrices = await GetCurrentClassPricesBySportAsync();
         return classModels
             .Select(c =>
             {
@@ -333,7 +357,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                     CoachBio: coach?.Bio ?? "Huấn luyện viên phụ trách lớp học.",
                     CoachRating: coach?.Rating,
                     CoachExperienceYears: coach?.ExperienceYears ?? 5,
-                    Price: c.CourseFeeSnapshot,
+                    Price: TryCalculateCoursePrice(currentClassPrices, c.SportId, sport?.Name, c.TotalSessions),
                     ParentId: c.ParentId,
                     SessionNumber: c.SessionNumber,
                     TotalSessions: c.TotalSessions
@@ -379,7 +403,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
         );
     }
 
-    private static decimal CalculateCoursePrice(
+    private static decimal? TryCalculateCoursePrice(
         CurrentSportClassPriceLookup prices,
         Guid sportId,
         string? sportName,
@@ -387,10 +411,7 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
     {
         if (!prices.BySportId.TryGetValue(sportId, out var pricePerSession) &&
             !prices.BySportName.TryGetValue(NormalizeSportName(sportName), out pricePerSession))
-        {
-            throw new InvalidOperationException(
-                $"Chưa có bảng giá đang áp dụng cho bộ môn '{sportName ?? sportId.ToString()}'.");
-        }
+            return null;
 
         return pricePerSession * Math.Max(1, totalSessions);
     }
@@ -416,6 +437,13 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
         return (coach, user);
     }
 
+}
+
+public sealed class FacilitySchedulingSettingsSqlRow
+{
+    public bool AllowConcurrentClasses { get; set; }
+    public int MaxConcurrentClasses { get; set; }
+    public int? TotalCapacity { get; set; }
 }
 
 internal sealed class CurrentSportClassPriceRawModel

@@ -44,7 +44,7 @@ public sealed class ClassCourseWorkflowService(SmartGymDbContext db, ClassSchedu
         {
             if (approveImmediately)
             {
-                var conflict = await FindConflictAsync(coachId, request.FacilityId, preview.Sessions);
+                var conflict = await FindConflictAsync(coachId, request.FacilityId, request.Capacity, preview.Sessions);
                 if (conflict != null)
                 {
                     await transaction.RollbackAsync();
@@ -100,7 +100,7 @@ public sealed class ClassCourseWorkflowService(SmartGymDbContext db, ClassSchedu
         try
         {
             var courseRows = await db.Database.SqlQueryRaw<CourseRow>(
-                @"SELECT id, sport_id AS ""SportId"", total_sessions AS ""TotalSessions"", coach_id, facility_id, approval_status FROM class_courses WHERE id = {0} FOR UPDATE", courseId).ToListAsync();
+                @"SELECT id, sport_id AS ""SportId"", total_sessions AS ""TotalSessions"", capacity, coach_id, facility_id, approval_status FROM class_courses WHERE id = {0} FOR UPDATE", courseId).ToListAsync();
             var course = courseRows.SingleOrDefault();
             if (course == null || !string.Equals(course.ApprovalStatus, "pending", StringComparison.OrdinalIgnoreCase))
                 return (false, "Đề xuất không tồn tại hoặc không còn ở trạng thái chờ duyệt.");
@@ -116,7 +116,7 @@ public sealed class ClassCourseWorkflowService(SmartGymDbContext db, ClassSchedu
                 s.SessionNumber,
                 new DateTimeOffset(DateTime.SpecifyKind(s.StartAt, DateTimeKind.Utc)),
                 new DateTimeOffset(DateTime.SpecifyKind(s.EndAt, DateTimeKind.Utc)))).ToList();
-            var conflict = await FindConflictAsync(course.CoachId, course.FacilityId, preview, courseId);
+            var conflict = await FindConflictAsync(course.CoachId, course.FacilityId, course.Capacity, preview, courseId);
             if (conflict != null)
             {
                 await transaction.RollbackAsync();
@@ -159,13 +159,35 @@ public sealed class ClassCourseWorkflowService(SmartGymDbContext db, ClassSchedu
             }
 
             var courseRows = await db.Database.SqlQueryRaw<CourseEnrollmentRow>(
-                "SELECT id, capacity, seats_taken, fee, approval_status, start_date FROM class_courses WHERE id = {0} FOR UPDATE", courseId).ToListAsync();
+                "SELECT id, sport_id AS \"SportId\", total_sessions AS \"TotalSessions\", capacity, seats_taken, fee, approval_status, start_date FROM class_courses WHERE id = {0} FOR UPDATE", courseId).ToListAsync();
             var course = courseRows.SingleOrDefault();
             if (course == null || !string.Equals(course.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase))
                 return (null, "Khóa học không tồn tại hoặc chưa sẵn sàng để đăng ký.");
             var today = DateOnly.FromDateTime(CenterTime.ToLocal(DateTime.UtcNow));
             if (course.StartDate < today)
                 return (null, "Khóa học đã bắt đầu hoặc đã kết thúc, không thể đăng ký.");
+
+            var releasedSeats = await db.Database.SqlQueryRaw<CountRow>(
+                "UPDATE course_enrollments SET status = 'expired', updated_at = now() WHERE course_id = {0} AND status = 'held' AND held_until <= now() RETURNING 1 AS \"Value\"",
+                courseId).ToListAsync();
+            if (releasedSeats.Count > 0)
+            {
+                await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE class_courses SET seats_taken = GREATEST(0, seats_taken - {releasedSeats.Count}), updated_at = now() WHERE id = {courseId}");
+                course.SeatsTaken = Math.Max(0, course.SeatsTaken - releasedSeats.Count);
+            }
+
+            var activeEnrollmentCount = await db.Database.SqlQueryRaw<CountRow>(
+                "SELECT COUNT(*)::int AS \"Value\" FROM course_enrollments WHERE course_id = {0} AND (status = 'confirmed' OR (status = 'held' AND held_until > now()))",
+                courseId).SingleAsync();
+            if (activeEnrollmentCount.Value == 0)
+            {
+                var currentPrice = await FindActivePriceAsync(course.SportId, today);
+                if (currentPrice == null)
+                    return (null, "Bộ môn chưa có bảng giá hiệu lực. Vui lòng yêu cầu Manager cấu hình giá trước khi đăng ký.");
+
+                course.Fee = currentPrice.PricePerSession * Math.Max(1, course.TotalSessions);
+                await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE class_courses SET fee = {course.Fee}, updated_at = now() WHERE id = {courseId}");
+            }
 
 
             var activeEnrollmentRows = await db.Database.SqlQueryRaw<EnrollmentRow>(
@@ -181,15 +203,6 @@ public sealed class ClassCourseWorkflowService(SmartGymDbContext db, ClassSchedu
             var existingWaitlist = existingWaitlistRows.SingleOrDefault();
             if (existingWaitlist != null)
                 return (new EnrollClassCourseResult(courseId, null, existingWaitlist.Id, existingWaitlist.Status, course.Fee, null), null);
-
-            var releasedSeats = await db.Database.SqlQueryRaw<CountRow>(
-                "UPDATE course_enrollments SET status = 'expired', updated_at = now() WHERE course_id = {0} AND status = 'held' AND held_until <= now() RETURNING 1 AS \"Value\"",
-                courseId).ToListAsync();
-            if (releasedSeats.Count > 0)
-            {
-                await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE class_courses SET seats_taken = GREATEST(0, seats_taken - {releasedSeats.Count}), updated_at = now() WHERE id = {courseId}");
-                course.SeatsTaken = Math.Max(0, course.SeatsTaken - releasedSeats.Count);
-            }
 
             if (course.SeatsTaken >= course.Capacity)
             {
@@ -216,24 +229,47 @@ public sealed class ClassCourseWorkflowService(SmartGymDbContext db, ClassSchedu
         }
     }
 
-    private async Task<string?> FindConflictAsync(Guid coachId, Guid facilityId, IReadOnlyList<ScheduledSessionPreview> sessions, Guid? excludedCourseId = null)
+    private async Task<string?> FindConflictAsync(Guid coachId, Guid facilityId, int requestedCapacity, IReadOnlyList<ScheduledSessionPreview> sessions, Guid? excludedCourseId = null)
     {
+        var settingsRows = await db.Database.SqlQueryRaw<FacilitySettingsRow>(
+            "SELECT allow_concurrent_classes AS \"AllowConcurrentClasses\", max_concurrent_classes AS \"MaxConcurrentClasses\", total_capacity AS \"TotalCapacity\" FROM facilities WHERE id = {0}", facilityId).ToListAsync();
+        var settings = settingsRows.SingleOrDefault();
+        if (settings is null) return "Không tìm thấy cấu hình phòng tập.";
+        var facilitySettings = new SmartGym.Domain.Entities.FacilitySchedulingSettings(
+            settings.AllowConcurrentClasses, Math.Max(1, settings.MaxConcurrentClasses), settings.TotalCapacity);
+
         foreach (var session in sessions)
         {
-            var conflictRows = await db.Database.SqlQueryRaw<ConflictRow>(
+            var coachConflictRows = await db.Database.SqlQueryRaw<ConflictRow>(
                 """
                 SELECT cs.session_number AS "SessionNumber", cc.class_name AS "ClassName"
                   FROM class_sessions cs INNER JOIN class_courses cc ON cc.id = cs.course_id
                   WHERE cc.approval_status = 'approved' AND cs.status IN ('scheduled', 'rescheduled')
                     AND cs.course_id <> {0}
-                    AND (cs.actual_facility_id = {1} OR cs.actual_coach_id = {2})
-                    AND cs.start_at < {3} AND cs.end_at > {4}
+                    AND cs.actual_coach_id = {1}
+                    AND cs.start_at < {2} AND cs.end_at > {3}
                   LIMIT 1
                 """,
-                excludedCourseId ?? Guid.Empty, facilityId, coachId, session.EndAt.UtcDateTime, session.StartAt.UtcDateTime).ToListAsync();
-            var conflict = conflictRows.FirstOrDefault();
-            if (conflict != null)
-                return $"Buổi {session.SessionNumber} bị trùng phòng hoặc HLV với lớp '{conflict.ClassName}' (buổi {conflict.SessionNumber}).";
+                excludedCourseId ?? Guid.Empty, coachId, session.EndAt.UtcDateTime, session.StartAt.UtcDateTime).ToListAsync();
+            var coachConflict = coachConflictRows.FirstOrDefault();
+            if (coachConflict != null)
+                return $"Buổi {session.SessionNumber} bị trùng HLV với lớp '{coachConflict.ClassName}' (buổi {coachConflict.SessionNumber}).";
+
+            var facilityRows = await db.Database.SqlQueryRaw<FacilityOccupancyRow>(
+                """
+                SELECT COUNT(*)::int AS "ClassCount", COALESCE(SUM(cc.capacity), 0)::int AS "Capacity",
+                       MIN(cc.class_name) AS "FirstConflictName"
+                  FROM class_sessions cs INNER JOIN class_courses cc ON cc.id = cs.course_id
+                  WHERE cc.approval_status = 'approved' AND cs.status IN ('scheduled', 'rescheduled')
+                    AND cs.course_id <> {0} AND cs.actual_facility_id = {1}
+                    AND cs.start_at < {2} AND cs.end_at > {3}
+                """,
+                excludedCourseId ?? Guid.Empty, facilityId, session.EndAt.UtcDateTime, session.StartAt.UtcDateTime).ToListAsync();
+            var occupancy = facilityRows.Single();
+            var facilityConflict = FacilityConflictValidator.Validate(
+                facilitySettings, requestedCapacity, occupancy.ClassCount, occupancy.Capacity, occupancy.FirstConflictName);
+            if (facilityConflict != null)
+                return $"Buổi {session.SessionNumber}: {facilityConflict}";
         }
         return null;
     }
@@ -254,12 +290,14 @@ public sealed class ClassCourseWorkflowService(SmartGymDbContext db, ClassSchedu
         return rows.SingleOrDefault();
     }
 
-    private sealed class CourseRow { public Guid Id { get; set; } public Guid SportId { get; set; } public int TotalSessions { get; set; } public Guid CoachId { get; set; } public Guid FacilityId { get; set; } public string ApprovalStatus { get; set; } = ""; }
+    private sealed class CourseRow { public Guid Id { get; set; } public Guid SportId { get; set; } public int TotalSessions { get; set; } public int Capacity { get; set; } public Guid CoachId { get; set; } public Guid FacilityId { get; set; } public string ApprovalStatus { get; set; } = ""; }
     private sealed class SessionRow { public Guid Id { get; set; } public int SessionNumber { get; set; } public DateTime StartAt { get; set; } public DateTime EndAt { get; set; } }
     private sealed class ConflictRow { public int SessionNumber { get; set; } public string ClassName { get; set; } = ""; }
     private sealed class EnrollmentRow { public Guid Id { get; set; } public Guid CourseId { get; set; } public string Status { get; set; } = ""; public decimal QuotedAmount { get; set; } public DateTimeOffset? HeldUntil { get; set; } }
-    private sealed class CourseEnrollmentRow { public Guid Id { get; set; } public int Capacity { get; set; } public int SeatsTaken { get; set; } public decimal Fee { get; set; } public string ApprovalStatus { get; set; } = ""; public DateOnly StartDate { get; set; } }
+    private sealed class CourseEnrollmentRow { public Guid Id { get; set; } public Guid SportId { get; set; } public int TotalSessions { get; set; } public int Capacity { get; set; } public int SeatsTaken { get; set; } public decimal Fee { get; set; } public string ApprovalStatus { get; set; } = ""; public DateOnly StartDate { get; set; } }
     private sealed class WaitlistRow { public Guid Id { get; set; } public string Status { get; set; } = ""; }
     private sealed class CountRow { public int Value { get; set; } }
     private sealed class PricingRow { public decimal PricePerSession { get; set; } }
+    private sealed class FacilitySettingsRow { public bool AllowConcurrentClasses { get; set; } public int MaxConcurrentClasses { get; set; } public int? TotalCapacity { get; set; } }
+    private sealed class FacilityOccupancyRow { public int ClassCount { get; set; } public int Capacity { get; set; } public string? FirstConflictName { get; set; } }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using SmartGym.Application.Common;
 
 namespace SmartGym.Application.Services;
 
@@ -50,14 +51,15 @@ public sealed partial class ClassService
             targetClass.FacilityId,
             targetClass.ScheduleTime
         );
-        foreach (var existingClass in restoreFacilityClasses.Where(c => c.Status && c.ApprovalStatus != "rejected"))
-        {
-            if (existingClass.Id != classId
-                && Overlaps(restoreStart, restoreEnd, existingClass.ScheduleTime, existingClass.DurationMinutes))
-            {
-                return (false, $"Không thể khôi phục vì phòng tập đang được sử dụng bởi lớp '{existingClass.ClassName}'.");
-            }
-        }
+        var restoreFacilitySettings = await _classRepository.GetFacilitySchedulingSettingsAsync(targetClass.FacilityId);
+        if (restoreFacilitySettings is null)
+            return (false, "Không tìm thấy cấu hình phòng tập.");
+        var restoreOverlaps = restoreFacilityClasses
+            .Where(c => c.Id != classId && c.Status && string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase))
+            .Where(c => Overlaps(restoreStart, restoreEnd, c.ScheduleTime, c.DurationMinutes));
+        var restoreFacilityConflict = FacilityConflictValidator.Validate(restoreFacilitySettings, targetClass.Capacity, restoreOverlaps);
+        if (restoreFacilityConflict is not null)
+            return (false, "Không thể khôi phục: " + restoreFacilityConflict);
 
         if (targetClass.CoachId.HasValue)
         {
@@ -100,18 +102,6 @@ public sealed partial class ClassService
                 return (false, "Không thể khôi phục vì HLV đã đăng lịch trống 1-1 trùng thời gian.");
             }
 
-            var existingFacilityClasses = await _classRepository.GetClassesByFacilityAndDateAsync(
-                targetClass.FacilityId,
-                targetClass.ScheduleTime
-            );
-            foreach (var existingClass in existingFacilityClasses.Where(c => c.Status && c.ApprovalStatus != "rejected"))
-            {
-                if (existingClass.Id != classId
-                    && Overlaps(newStart, newEnd, existingClass.ScheduleTime, existingClass.DurationMinutes))
-                {
-                    return (false, $"Không thể khôi phục vì phòng tập đang được sử dụng bởi lớp '{existingClass.ClassName}'.");
-                }
-            }
         }
 
         var result = await _classRepository.RestoreClassTransactionAsync(classId);
@@ -188,17 +178,27 @@ public sealed partial class ClassService
             }
         }
 
-        var existingFacilityClasses = await _classRepository.GetClassesByFacilityAndDateAsync(
-            targetClass.FacilityId,
-            scheduleTimeUtc
-        );
-        if (existingFacilityClasses.Any(c =>
-            c.Id != classId &&
-            c.Status &&
-            string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase) &&
-            Overlaps(newStart, newEnd, c.ScheduleTime, c.DurationMinutes)))
+        var courseSessions = (await _classRepository.GetCourseSessionsAsync(classId)).ToList();
+        if (courseSessions.Count == 0)
+            courseSessions.Add(targetClass);
+        var courseSessionIds = courseSessions.Select(session => session.Id).ToHashSet();
+        var facilitySettings = await _classRepository.GetFacilitySchedulingSettingsAsync(targetClass.FacilityId);
+        if (facilitySettings is null)
+            return (false, "Không tìm thấy cấu hình phòng tập.");
+
+        foreach (var session in courseSessions.OrderBy(session => session.SessionNumber))
         {
-            return (false, "Không thể duyệt: phòng tập đã có lớp khác trùng thời gian.");
+            var sessionStart = session.ScheduleTime.Kind == DateTimeKind.Utc
+                ? session.ScheduleTime
+                : session.ScheduleTime.ToUniversalTime();
+            var sessionEnd = sessionStart.AddMinutes(session.DurationMinutes);
+            var existingFacilityClasses = await _classRepository.GetClassesByFacilityAndDateAsync(session.FacilityId, sessionStart);
+            var overlappingFacilityClasses = existingFacilityClasses
+                .Where(c => !courseSessionIds.Contains(c.Id) && c.Status && string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase))
+                .Where(c => Overlaps(sessionStart, sessionEnd, c.ScheduleTime, c.DurationMinutes));
+            var facilityConflict = FacilityConflictValidator.Validate(facilitySettings, session.Capacity, overlappingFacilityClasses);
+            if (facilityConflict is not null)
+                return (false, $"Không thể duyệt buổi {session.SessionNumber}: {facilityConflict}");
         }
 
         return await _classRepository.ApproveClassAsync(classId);

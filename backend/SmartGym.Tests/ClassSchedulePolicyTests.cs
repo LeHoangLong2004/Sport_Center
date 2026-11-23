@@ -30,6 +30,74 @@ public sealed class ClassSchedulePolicyTests
     }
 
     [Fact]
+    public void Recurring_by_end_date_includes_each_selected_day_through_end_date()
+    {
+        var result = _policy.Preview(new SchedulePreviewRequest
+        {
+            ScheduleType = "RECURRING",
+            StartDate = new DateOnly(2026, 11, 2),
+            StartTime = new TimeOnly(8, 0),
+            DurationMinutes = 60,
+            DaysOfWeek = [DayOfWeek.Monday, DayOfWeek.Thursday],
+            EndMode = "BY_END_DATE",
+            EndDate = new DateOnly(2026, 11, 12),
+        }, Now);
+
+        Assert.True(result.IsValid);
+        Assert.Equal(4, result.TotalSessions);
+        Assert.Equal(new DateOnly(2026, 11, 12), result.CalculatedEndDate);
+    }
+
+    [Fact]
+    public void Recurring_by_session_count_stops_after_requested_number()
+    {
+        var result = _policy.Preview(new SchedulePreviewRequest
+        {
+            ScheduleType = "RECURRING",
+            StartDate = new DateOnly(2026, 11, 2),
+            StartTime = new TimeOnly(8, 0),
+            DurationMinutes = 60,
+            DaysOfWeek = [DayOfWeek.Monday, DayOfWeek.Thursday],
+            EndMode = "BY_SESSION_COUNT",
+            TotalSessions = 5,
+        }, Now);
+
+        Assert.True(result.IsValid);
+        Assert.Equal(5, result.TotalSessions);
+        Assert.Equal(5, result.Sessions[^1].SessionNumber);
+    }
+
+    [Fact]
+    public void One_time_schedule_generates_exactly_one_session()
+    {
+        var result = _policy.Preview(new SchedulePreviewRequest
+        {
+            ScheduleType = "ONE_TIME",
+            StartDate = new DateOnly(2026, 11, 2),
+            StartTime = new TimeOnly(8, 0),
+            DurationMinutes = 60,
+        }, Now);
+
+        Assert.True(result.IsValid);
+        Assert.Single(result.Sessions);
+        Assert.Equal(1, result.TotalSessions);
+    }
+
+    [Fact]
+    public void First_session_exactly_24_hours_ahead_is_allowed()
+    {
+        var result = _policy.Preview(new SchedulePreviewRequest
+        {
+            ScheduleType = "ONE_TIME",
+            StartDate = new DateOnly(2026, 11, 2),
+            StartTime = new TimeOnly(7, 0),
+            DurationMinutes = 60,
+        }, Now);
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
     public void Recurring_rejects_multiple_end_modes()
     {
         var result = _policy.Preview(new SchedulePreviewRequest

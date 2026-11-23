@@ -85,8 +85,8 @@ namespace SmartGym.Api.Endpoints
                             coachUserId
                         ).FirstOrDefaultAsync();
 
-                        var query = db.Database.SqlQueryRaw<ClassSqlRawModel>(
-                            "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status, parent_id, session_number, total_sessions, price_per_session_snapshot, course_fee_snapshot FROM classes WHERE (coach_id = {0} OR coach_id = {1}) AND (approval_status = 'approved' OR approval_status IS NULL) AND status = TRUE",
+                        var query = db.Database.SqlQueryRaw<CoachScheduleClassRawModel>(
+                            "SELECT c.id, c.sport_id, c.facility_id, c.coach_id, c.class_name, c.schedule_time, c.duration_minutes, c.capacity, c.current_enrolled, c.status, c.approval_status, c.parent_id, c.session_number, c.total_sessions, c.price_per_session_snapshot, c.course_fee_snapshot, COALESCE(cc.class_name, root.class_name, c.class_name) AS \"CourseName\" FROM classes c LEFT JOIN class_courses cc ON cc.id = c.parent_id LEFT JOIN classes root ON root.id = c.parent_id WHERE (c.coach_id = {0} OR c.coach_id = {1}) AND (c.approval_status = 'approved' OR c.approval_status IS NULL) AND c.status = TRUE",
                             coachProfileKey,
                             coachUserId
                         );
@@ -121,6 +121,10 @@ namespace SmartGym.Api.Endpoints
                                 {
                                     id = c.Id.ToString(),
                                     classId = c.Id.ToString(),
+                                    courseId = (c.ParentId ?? c.Id).ToString(),
+                                    courseName = c.CourseName ?? c.ClassName,
+                                    sessionNumber = c.SessionNumber,
+                                    totalSessions = c.TotalSessions,
                                     className = c.ClassName,
                                     sport = sport?.Name ?? "Thể thao",
                                     level = "Cơ bản",
@@ -237,6 +241,11 @@ namespace SmartGym.Api.Endpoints
                     return Results.Ok(members);
                 }
             );
+        }
+
+        private sealed class CoachScheduleClassRawModel : ClassSqlRawModel
+        {
+            public string? CourseName { get; set; }
         }
     }
 }

@@ -12,8 +12,10 @@ public class Invoice
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid UserId { get; set; }
     public Guid? BranchId { get; set; }
+    public Guid? ClassId { get; set; }
     
     public decimal TotalAmount { get; set; }
+    public decimal RefundedAmount { get; set; }
     public PaymentMethod PaymentMethod { get; set; }
     public PaymentStatus Status { get; set; }
     

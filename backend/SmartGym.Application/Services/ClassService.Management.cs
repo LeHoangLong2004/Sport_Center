@@ -47,6 +47,9 @@ public sealed partial class ClassService
         var isRecurring = request.DaysOfWeek != null && request.DaysOfWeek.Count > 0;
         var weeks = Math.Max(1, request.Weeks.GetValueOrDefault(10));
         var totalSessions = Math.Max(1, request.TotalSessions.GetValueOrDefault(isRecurring ? request.DaysOfWeek!.Count * weeks : 1));
+        var facilitySettings = await _classRepository.GetFacilitySchedulingSettingsAsync(request.FacilityId);
+        if (facilitySettings is null)
+            return (false, "Không tìm thấy cấu hình phòng tập.");
 
         // Sinh danh sách thời gian các buổi học (Session List Generation)
         var sessionTimes = new List<DateTime>();
@@ -130,13 +133,12 @@ public sealed partial class ClassService
                 request.FacilityId,
                 sessionStart
             );
-            foreach (var c in existingFacilityClasses.Where(c => c.Status && string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase)))
-            {
-                if (Overlaps(sessionStart, sessionEnd, c.ScheduleTime, c.DurationMinutes))
-                {
-                    return (false, $"Buổi {i + 1} ({CenterTime.ToLocal(sessionStart):dd/MM/yyyy HH:mm}): Phòng tập đã được sử dụng bởi lớp '{c.ClassName}'.");
-                }
-            }
+            var overlappingFacilityClasses = existingFacilityClasses
+                .Where(c => c.Status && string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase))
+                .Where(c => Overlaps(sessionStart, sessionEnd, c.ScheduleTime, c.DurationMinutes));
+            var facilityConflict = FacilityConflictValidator.Validate(facilitySettings, request.Capacity, overlappingFacilityClasses);
+            if (facilityConflict is not null)
+                return (false, $"Buổi {i + 1} ({CenterTime.ToLocal(sessionStart):dd/MM/yyyy HH:mm}): {facilityConflict}");
         }
 
         // Tạo buổi gốc (Root Session: Session 1)
@@ -236,6 +238,10 @@ public sealed partial class ClassService
                 return (false, "Thời lượng lớp học phải lớn hơn 0 phút.");
             }
 
+            var facilitySettings = await _classRepository.GetFacilitySchedulingSettingsAsync(request.FacilityId);
+            if (facilitySettings is null)
+                return (false, "Không tìm thấy cấu hình phòng tập.");
+
             var scheduleTimeUtc = request.ScheduleTime.Kind == DateTimeKind.Utc
                 ? request.ScheduleTime
                 : request.ScheduleTime.ToUniversalTime();
@@ -250,6 +256,7 @@ public sealed partial class ClassService
                 targetClass.ScheduleTime != scheduleTimeUtc
                 || targetClass.CoachId != request.CoachId
                 || targetClass.DurationMinutes != request.DurationMinutes
+                || targetClass.Capacity != request.Capacity
                 || targetClass.FacilityId != request.FacilityId
             )
             {
@@ -295,13 +302,12 @@ public sealed partial class ClassService
                     request.FacilityId,
                     scheduleTimeUtc
                 );
-                foreach (var c in existingFacilityClasses.Where(c => c.Status && c.ApprovalStatus != "rejected"))
-                {
-                    if (c.Id != classId && Overlaps(newStart, newEnd, c.ScheduleTime, c.DurationMinutes))
-                    {
-                        return (false, $"Phòng tập đã được sử dụng bởi lớp '{c.ClassName}' vào thời gian này.");
-                    }
-                }
+                var overlappingFacilityClasses = existingFacilityClasses
+                    .Where(c => c.Id != classId && c.Status && string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase))
+                    .Where(c => Overlaps(newStart, newEnd, c.ScheduleTime, c.DurationMinutes));
+                var facilityConflict = FacilityConflictValidator.Validate(facilitySettings, request.Capacity, overlappingFacilityClasses);
+                if (facilityConflict is not null)
+                    return (false, facilityConflict);
             }
 
             var updatedClass = new GroupClass(

@@ -13,6 +13,7 @@ import {
   Lock,
   ChevronLeft,
   ChevronRight,
+  ArrowLeft,
 } from "lucide-react";
 import type { MockSession } from "../../services/api";
 import { isAttendanceLocked24h } from "../../utils/attendanceLock";
@@ -23,6 +24,8 @@ interface Props {
   isLoading: boolean;
   onSelectSession: (sessionId: string) => void;
   finalizedMap: Record<string, boolean>;
+  selectedCourseId: string | null;
+  onSelectCourse: (courseId: string | null) => void;
 }
 
 type DateTab = "all" | "today" | "tomorrow" | "this_week";
@@ -33,6 +36,8 @@ export default function AttendanceClassSessionsList({
   isLoading,
   onSelectSession,
   finalizedMap,
+  selectedCourseId,
+  onSelectCourse,
 }: Props) {
   const [dateTab, setDateTab] = useState<DateTab>(() => {
     const today = new Date().toISOString().split("T")[0];
@@ -116,7 +121,7 @@ export default function AttendanceClassSessionsList({
       // 3. Search query
       if (search.trim()) {
         const q = search.toLowerCase().trim();
-        const nameMatch = s.className?.toLowerCase().includes(q);
+        const nameMatch = `${s.courseName || ""} ${s.className || ""}`.toLowerCase().includes(q);
         const sportMatch = s.sport?.toLowerCase().includes(q);
         const roomMatch = s.room?.toLowerCase().includes(q);
         if (!nameMatch && !sportMatch && !roomMatch) return false;
@@ -125,6 +130,28 @@ export default function AttendanceClassSessionsList({
       return true;
     });
   }, [activeSessions, dateTab, statusFilter, search, todayIso, tomorrowIso, weekRange, finalizedMap]);
+
+  const courseGroups = useMemo(() => {
+    const grouped = new Map<string, MockSession[]>();
+    filteredSessions.forEach((session) => {
+      // New API data uses the stable course id. Normalize legacy session labels
+      // like "Course name (Buổi 2)" until the API is restarted with that field.
+      const legacyCourseName = (session.courseName || session.className || "Lớp học")
+        .replace(/\s*\(Buổi\s+\d+\)\s*$/i, "")
+        .trim();
+      const key = session.courseId || `legacy:${legacyCourseName.toLocaleLowerCase("vi")}`;
+      const current = grouped.get(key) || [];
+      current.push(session);
+      grouped.set(key, current);
+    });
+    return Array.from(grouped.entries()).map(([id, sessions]) => ({
+      id,
+      sessions: sessions.sort((a, b) => `${a.date} ${a.startTime}`.localeCompare(`${b.date} ${b.startTime}`)),
+      name: sessions[0]?.courseName || (sessions[0]?.className || "Lớp học").replace(/\s*\(Buổi\s+\d+\)\s*$/i, "").trim(),
+    })).sort((a, b) => `${a.sessions[0]?.date} ${a.sessions[0]?.startTime}`.localeCompare(`${b.sessions[0]?.date} ${b.sessions[0]?.startTime}`));
+  }, [filteredSessions]);
+  const selectedCourse = courseGroups.find((course) => course.id === selectedCourseId) || null;
+  const visibleSessions = selectedCourse?.sessions || [];
 
   // Statistics
   const todaySessionsCount = useMemo(
@@ -155,15 +182,16 @@ export default function AttendanceClassSessionsList({
     setCurrentPage(1);
   }, [dateTab, statusFilter, search]);
 
-  const totalPages = Math.ceil(filteredSessions.length / pageSize) || 1;
+  const currentItems = selectedCourse ? visibleSessions : courseGroups;
+  const totalPages = Math.ceil(currentItems.length / pageSize) || 1;
 
   const paginatedSessions = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
-    return filteredSessions.slice(start, start + pageSize);
-  }, [filteredSessions, currentPage, pageSize]);
+    return visibleSessions.slice(start, start + pageSize);
+  }, [visibleSessions, currentPage, pageSize]);
 
-  const startRecord = filteredSessions.length > 0 ? (currentPage - 1) * pageSize + 1 : 0;
-  const endRecord = Math.min(currentPage * pageSize, filteredSessions.length);
+  const startRecord = currentItems.length > 0 ? (currentPage - 1) * pageSize + 1 : 0;
+  const endRecord = Math.min(currentPage * pageSize, currentItems.length);
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in duration-300">
@@ -176,10 +204,10 @@ export default function AttendanceClassSessionsList({
               <span>Điểm danh ca dạy</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-              Danh sách ca dạy & Điểm danh
+              Danh sách lớp học & Điểm danh
             </h1>
             <p className="text-sm text-slate-300 max-w-xl leading-relaxed">
-              Chọn ca dạy bên dưới để mở sổ điểm danh chi tiết, xác nhận học viên có mặt và cập nhật chuyên cần.
+              Chọn lớp để xem các buổi học, sau đó mở một buổi để điểm danh và cập nhật chuyên cần.
             </p>
           </div>
 
@@ -253,7 +281,7 @@ export default function AttendanceClassSessionsList({
             <button
               key={tab.key}
               type="button"
-              onClick={() => setDateTab(tab.key as DateTab)}
+              onClick={() => { onSelectCourse(null); setDateTab(tab.key as DateTab); }}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                 dateTab === tab.key
                   ? "bg-emerald-600 text-white shadow-xs"
@@ -269,7 +297,7 @@ export default function AttendanceClassSessionsList({
         <div className="flex items-center gap-3 flex-wrap">
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+            onChange={(e) => { onSelectCourse(null); setStatusFilter(e.target.value as StatusFilter); }}
             className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none"
           >
             <option value="all">Mọi trạng thái điểm danh</option>
@@ -284,14 +312,14 @@ export default function AttendanceClassSessionsList({
               type="text"
               placeholder="Tìm lớp, môn, phòng..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { onSelectCourse(null); setSearch(e.target.value); }}
               className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:ring-1 focus:ring-emerald-500"
             />
           </div>
         </div>
       </div>
 
-      {/* 4. Class Sessions Cards Grid */}
+      {/* 4. Class list → course sessions → attendance */}
       {isLoading ? (
         <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-3">
           <div className="size-8 border-3 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
@@ -326,7 +354,47 @@ export default function AttendanceClassSessionsList({
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {selectedCourse ? (
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50/70 dark:bg-emerald-950/20 px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Các buổi trong lớp</p>
+                <h2 className="font-bold text-slate-900 dark:text-white truncate">{selectedCourse.name}</h2>
+              </div>
+                <button type="button" onClick={() => { onSelectCourse(null); setCurrentPage(1); }} className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-emerald-400">
+                <ArrowLeft className="w-3.5 h-3.5" /> Danh sách lớp
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {courseGroups.map((course) => {
+                const first = course.sessions[0];
+                const marked = course.sessions.filter((item) => getSessionAttendanceState(item) === "finalized").length;
+                const pending = course.sessions.length - marked;
+                return (
+                  <button key={course.id} type="button" onClick={() => { onSelectCourse(course.id); setCurrentPage(1); }} className="group w-full text-left bg-white dark:bg-slate-900 rounded-xl border border-slate-200/90 dark:border-slate-800 px-4 py-4 shadow-xs hover:shadow-md hover:border-emerald-400 transition-all grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(220px,0.8fr)_auto] md:items-center gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"><Dumbbell className="w-3 h-3" />{first?.sport || "Lớp nhóm"}</span>
+                        {first?.level && <span className="px-2 py-0.5 rounded-full text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">{first.level}</span>}
+                      </div>
+                      <h3 className="font-bold text-base text-slate-900 dark:text-white group-hover:text-emerald-600 truncate">{course.name}</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{first?.coachName || "HLV"} · {first?.room || "Chưa có phòng"}</p>
+                    </div>
+                    <div className="text-xs text-slate-600 dark:text-slate-300 md:border-x md:border-slate-100 md:dark:border-slate-800 md:px-5 space-y-1">
+                      <p className="font-semibold">{course.sessions.length} buổi học</p>
+                      <p>Buổi gần nhất: {first ? `${formatSessionDate(first.date)} · ${first.startTime}` : "Chưa xếp lịch"}</p>
+                    </div>
+                    <div className="flex items-center justify-between md:justify-end gap-3 text-xs">
+                      <span className="text-slate-500">{marked} đã chốt · {pending} cần xử lý</span>
+                      <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 whitespace-nowrap">Xem buổi <ArrowRight className="w-3.5 h-3.5" /></span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {selectedCourse && <div className="flex flex-col gap-3">
             {paginatedSessions.map((session) => {
               const state = getSessionAttendanceState(session);
               const isPast24h = isSessionPast24Hours(session.date, session.startTime);
@@ -337,20 +405,23 @@ export default function AttendanceClassSessionsList({
                 : (session as any).registeredCount || 0;
               const occupancy = session.capacity > 0 ? Math.round((enrolled / session.capacity) * 100) : 0;
               const isToday = session.date === todayIso;
+              const baseSessionName = session.courseName || (session.className || "Buổi học").replace(/\s*\(Buổi\s+\d+\)\s*$/i, "").trim();
+              const sessionTitle = session.sessionNumber
+                ? `${baseSessionName} (Buổi ${session.sessionNumber})`
+                : session.className;
 
               return (
                 <div
                   key={session.id}
                   onClick={() => onSelectSession(session.id)}
-                  className={`group bg-white dark:bg-slate-900 rounded-2xl border p-5 shadow-xs hover:shadow-lg transition-all cursor-pointer flex flex-col justify-between relative overflow-hidden ${
+                  className={`group bg-white dark:bg-slate-900 rounded-xl border px-4 py-3.5 shadow-xs hover:shadow-md transition-all cursor-pointer grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(240px,0.8fr)_auto] xl:items-center gap-x-6 gap-y-3 ${
                     isToday
-                      ? "border-emerald-300 dark:border-emerald-800/80 ring-2 ring-emerald-500/10"
+                      ? "border-emerald-300 dark:border-emerald-800/80 ring-1 ring-emerald-500/10"
                       : "border-slate-200/90 dark:border-slate-800 hover:border-emerald-500/50"
                   }`}
                 >
-                  <div className="space-y-3.5 pt-1">
-                    {/* Tags & Status */}
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="min-w-0">
+                    <div className="flex items-center justify-start gap-2 flex-wrap mb-1.5">
                       <div className="flex items-center gap-1.5">
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
                           <Dumbbell className="w-3 h-3" />
@@ -362,68 +433,52 @@ export default function AttendanceClassSessionsList({
                           </span>
                         )}
                       </div>
-
-                      {/* Attendance State Badge */}
                       {isPast24h ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                          <Lock className="w-3 h-3 text-slate-500" />
-                          Đã khóa (Quá 24h)
+                          <Lock className="w-3 h-3 text-slate-500" /> Đã khóa (Quá 24h)
                         </span>
                       ) : isFinalized ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                          <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                          Đã chốt sổ
+                          <ShieldCheck className="w-3 h-3 text-emerald-600" /> Đã chốt sổ
                         </span>
                       ) : isDraft ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 animate-pulse">
-                          <span className="size-1.5 rounded-full bg-amber-500" />
-                          Đang lưu nháp
+                          <span className="size-1.5 rounded-full bg-amber-500" /> Đang lưu nháp
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                          <span className="size-1.5 rounded-full bg-emerald-500" />
-                          Chưa điểm danh
+                          <span className="size-1.5 rounded-full bg-emerald-500" /> Chưa điểm danh
                         </span>
                       )}
                     </div>
-
-                    {/* Class Name & Time */}
-                    <div>
-                      <h3 className="font-bold text-base text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-1">
-                        {session.className}
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span>{session.startTime} - {session.endTime}</span>
-                        <span>•</span>
-                        <span>{formatSessionDate(session.date)}</span>
-                      </div>
-                    </div>
-
-                    {/* Location & Capacity */}
-                    <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span className="truncate max-w-[130px]">{session.room || "Studio trung tâm"}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Users className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span className="font-medium text-slate-700 dark:text-slate-300">
-                          {enrolled}/{session.capacity} HV
-                        </span>
-                        <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-                          ({occupancy}%)
-                        </span>
-                      </div>
+                    <h3 className="font-bold text-base text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
+                      {sessionTitle}
+                    </h3>
+                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span>{session.startTime} - {session.endTime}</span>
+                      <span>•</span>
+                      <span>{formatSessionDate(session.date)}</span>
                     </div>
                   </div>
 
-                  {/* Card Action footer */}
-                  <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-2 text-xs text-slate-500 dark:text-slate-400 xl:border-x xl:border-slate-100 xl:dark:border-slate-800 xl:px-5">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span className="truncate">{session.room || "Studio trung tâm"}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Users className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span className="font-medium text-slate-700 dark:text-slate-300">{enrolled}/{session.capacity} HV</span>
+                      <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">({occupancy}%)</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between xl:justify-end gap-4 text-xs">
                     <span className="text-slate-400 dark:text-slate-500 text-[11px]">
                       {isPast24h ? "Chỉ xem sổ điểm danh" : isFinalized ? "Đã lưu kết quả" : "Điểm danh học viên"}
                     </span>
-                    <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 transition-transform text-xs">
+                    <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
                       <span>{isPast24h ? "Xem chi tiết" : "Vào điểm danh"}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </span>
@@ -431,14 +486,14 @@ export default function AttendanceClassSessionsList({
                 </div>
               );
             })}
-          </div>
+          </div>}
 
-          {/* Phân trang danh sách ca dạy */}
-          {filteredSessions.length > 0 && (
+          {/* Pagination for the current level */}
+          {currentItems.length > 0 && (
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 text-xs bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
               <div className="text-slate-500 dark:text-slate-400">
                 Hiển thị <span className="font-bold text-slate-900 dark:text-white">{startRecord} - {endRecord}</span> trong tổng số{" "}
-                <span className="font-bold text-slate-900 dark:text-white">{filteredSessions.length}</span> ca dạy
+                <span className="font-bold text-slate-900 dark:text-white">{currentItems.length}</span> {selectedCourse ? "buổi học" : "lớp học"}
               </div>
 
               <div className="flex items-center gap-1.5">

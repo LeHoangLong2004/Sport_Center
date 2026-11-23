@@ -157,7 +157,13 @@ public static partial class DatabaseInitializationExtensions
             db.Database.ExecuteSqlRaw(
                 @"
                 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS facility_id UUID REFERENCES facilities(id) ON DELETE SET NULL;
+                ALTER TABLE invoices ADD COLUMN IF NOT EXISTS class_id UUID REFERENCES classes(id) ON DELETE SET NULL;
+                ALTER TABLE invoices ADD COLUMN IF NOT EXISTS refunded_amount NUMERIC(18,2) NOT NULL DEFAULT 0;
                 ALTER TABLE facilities ADD COLUMN IF NOT EXISTS image_url TEXT;
+                ALTER TABLE facilities ADD COLUMN IF NOT EXISTS allow_concurrent_classes BOOLEAN NOT NULL DEFAULT FALSE;
+                ALTER TABLE facilities ADD COLUMN IF NOT EXISTS max_concurrent_classes INTEGER NOT NULL DEFAULT 1;
+                ALTER TABLE facilities ADD COLUMN IF NOT EXISTS total_capacity INTEGER;
+                UPDATE facilities SET max_concurrent_classes = 1 WHERE max_concurrent_classes IS NULL OR max_concurrent_classes < 1;
                 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ;
                 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS fulfillment_method VARCHAR(50) NOT NULL DEFAULT 'counter_pickup';
                 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS fulfillment_status VARCHAR(50) NOT NULL DEFAULT 'pending';
@@ -175,6 +181,7 @@ public static partial class DatabaseInitializationExtensions
                     ON product_order_messages(invoice_id, created_at);
                 CREATE INDEX IF NOT EXISTS idx_invoices_payment_status_created_at ON invoices(payment_status, created_at);
                 CREATE INDEX IF NOT EXISTS idx_invoices_user_id ON invoices(user_id);
+                CREATE INDEX IF NOT EXISTS idx_invoices_class_id ON invoices(class_id);
             "
             );
             app.Logger.LogInformation("Flow 3: invoices schema is in sync with the EF Core model.");
