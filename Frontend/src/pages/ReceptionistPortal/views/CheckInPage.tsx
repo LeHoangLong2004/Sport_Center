@@ -3,6 +3,7 @@ import { A } from '../shared';
 import StatusBadge from '../components/StatusBadge';
 import { WalletService } from '../../MemberPortal/services/walletService';
 import { UserAvatar } from '../../../components/UserAvatar';
+import { CENTER_TIME_ZONE } from '../../../utils/scheduleTimeHelper';
 
 export function CheckInPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -311,7 +312,7 @@ export function CheckInPage() {
           return (
             <div key={row.id} className="border border-[#f1f5f9] border-solid flex h-[54px] items-center px-[24px] shrink-0 w-full">
               <span className="font-normal text-[#0f172a] text-[13px] w-[120px] shrink-0">
-                {new Date(row.checkInTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                {new Date(row.checkInTime).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit', timeZone: CENTER_TIME_ZONE})}
               </span>
               <div className="flex flex-1 gap-[10px] items-center min-w-0">
                 <UserAvatar name={row.memberName || "HV"} className="shrink-0 size-[28px] rounded-full object-cover text-xs" />

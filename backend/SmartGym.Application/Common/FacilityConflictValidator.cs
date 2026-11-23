@@ -6,6 +6,18 @@ namespace SmartGym.Application.Common;
 
 public static class FacilityConflictValidator
 {
+    // Older active classes may predate approval_status and have NULL/empty values.
+    // They are still live bookings and must continue occupying room capacity.
+    public static bool IsBlockingClass(GroupClass item)
+    {
+        if (!item.Status)
+            return false;
+
+        var approvalStatus = item.ApprovalStatus?.Trim();
+        return !string.Equals(approvalStatus, "pending", System.StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(approvalStatus, "rejected", System.StringComparison.OrdinalIgnoreCase);
+    }
+
     public static string? Validate(
         FacilitySchedulingSettings settings,
         int requestedCapacity,

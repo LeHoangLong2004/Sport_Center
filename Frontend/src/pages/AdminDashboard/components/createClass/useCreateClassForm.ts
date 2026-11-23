@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { parseScheduleTime } from '../../../../utils/scheduleTimeHelper';
+import { centerDateParts, parseScheduleTime } from '../../../../utils/scheduleTimeHelper';
 
 export interface CreateClassFormData {
   sportId: string;
@@ -29,11 +29,12 @@ export function useCreateClassForm({ editData, mode = "manager", onSuccess, onCl
   const [formData, setFormData] = useState<CreateClassFormData>(() => {
     if (editData) {
       const d = parseScheduleTime(editData.scheduleTime);
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      const hours = String(d.getHours()).padStart(2, "0");
-      const minutes = String(d.getMinutes()).padStart(2, "0");
+      const parts = centerDateParts(d);
+      const year = parts.year;
+      const month = parts.month;
+      const day = parts.day;
+      const hours = parts.hour;
+      const minutes = parts.minute;
       return {
         sportId: editData.sportId || '',
         facilityId: editData.facilityId || '',

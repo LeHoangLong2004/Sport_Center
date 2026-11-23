@@ -25,7 +25,8 @@ public interface IGroupClassRepository
     Task<(bool IsSuccess, string? ErrorMessage)> BookClassTransactionAsync(
         Guid userId,
         Guid classId,
-        Guid? subscriptionId = null
+        Guid? subscriptionId = null,
+        string bookingStatus = "confirmed"
     );
     Task<(bool IsSuccess, string? ErrorMessage)> CancelBookingTransactionAsync(
         Guid userId,

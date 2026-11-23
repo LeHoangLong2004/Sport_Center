@@ -114,6 +114,7 @@ export function ScheduleListView({
           weekday: "long",
           day: "2-digit",
           month: "2-digit",
+          timeZone: "Asia/Bangkok",
         });
 
         return (
@@ -146,8 +147,8 @@ export function ScheduleListView({
                 .map((item) => {
                   const start = item.rawStart instanceof Date ? item.rawStart : new Date(item.rawStart);
                   const end = new Date(start.getTime() + (item.durationMinutes || 60) * 60000);
-                  const startTime = start.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-                  const endTime = end.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+                  const startTime = start.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Bangkok" });
+                  const endTime = end.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Bangkok" });
                   const status = getSessionStatus(item);
                   const isPT = /pt|personal|1:1|cá nhân/i.test(`${item.sport || ""} ${item.name || ""}`);
 

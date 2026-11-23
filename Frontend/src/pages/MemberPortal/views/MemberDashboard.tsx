@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import type { MemberScreen, MemberSessionItem, MemberTaskItem } from "../types";
 import { useUserProfile } from "../../../hooks/useUserProfile";
 import { getSavedMemberData, saveMemberData, MemberBackendAPI } from "../services/memberData";
+import { MemberAPI } from "../services/api";
 import { PackageAPI, type PackageOrder } from "../../../services/packageApi";
 import {
   CreditCard,
@@ -31,6 +32,7 @@ export default function MemberDashboard({ onNavigate }: Props) {
   const userName = user?.fullName || user?.name || profile?.fullName || "Hội viên";
 
   const [orders, setOrders] = useState<PackageOrder[]>([]);
+  const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [sessions, setSessions] = useState<MemberSessionItem[]>(() =>
     getSavedMemberData(`member_sessions_${userId}`, [])
   );
@@ -82,42 +84,75 @@ export default function MemberDashboard({ onNavigate }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    PackageAPI.getMyOrders()
-      .then((res) => { if (!cancelled && Array.isArray(res)) setOrders(res); })
-      .catch(() => {});
+    Promise.allSettled([PackageAPI.getMyOrders(), MemberAPI.getMySubscriptions()]).then(([ordersResult, subscriptionsResult]) => {
+      if (cancelled) return;
+      if (ordersResult.status === "fulfilled" && Array.isArray(ordersResult.value)) {
+        setOrders(ordersResult.value);
+      }
+      if (subscriptionsResult.status === "fulfilled" && Array.isArray(subscriptionsResult.value)) {
+        setSubscriptions(subscriptionsResult.value);
+      }
+    });
     return () => { cancelled = true; };
   }, []);
 
   const activePackages = useMemo(() => {
-    if (orders.length > 0) {
-      const now = new Date();
-      return orders
-        .filter((o) => {
-          if (o.status !== "paid" || !o.packageSnapshot) return false;
-          // Phân biệt gói tập / thẻ hội viên với lượt đặt chỗ lớp học:
-          // Bỏ qua các đơn vé lớp học lẻ (category === "class")
-          if (o.packageSnapshot.category === "class") return false;
-          // Chỉ lấy các gói còn hạn sử dụng (endDate >= now)
-          if (o.endDate) {
-            const end = new Date(o.endDate);
-            if (end.getTime() < now.getTime()) return false;
-          }
-          return true;
-        })
-        .map((o) => {
-          const end = o.endDate ? new Date(o.endDate) : new Date();
-          const daysRemaining = Math.max(0, Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-          return {
-            id: o.id,
-            name: o.packageSnapshot.name,
-            sport: o.packageSnapshot.sport || (o.packageSnapshot.category === "membership" ? "Thành viên" : "Gói môn"),
-            endDate: o.endDate ? o.endDate.split("T")[0] : "--",
-            daysRemaining,
-          };
-        });
-    }
-    return [];
-  }, [orders]);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const activeSubscriptions = subscriptions
+      .filter((subscription) => {
+        const paymentStatus = subscription.paymentStatus;
+        const isPaid = paymentStatus === 1 || String(paymentStatus).toLowerCase() === "completed";
+        const packageType = String(subscription.packageType || "").toLowerCase();
+        if (!isPaid || !["membership", "sport"].includes(packageType)) return false;
+        const start = subscription.startDate ? new Date(subscription.startDate) : null;
+        const end = subscription.endDate ? new Date(subscription.endDate) : null;
+        if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return false;
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
+        return start <= today && end >= today;
+      })
+      .map((subscription) => {
+        const end = new Date(subscription.endDate);
+        const endOfDay = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 23, 59, 59, 999);
+        const daysRemaining = Math.max(0, Math.ceil((endOfDay.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+        return {
+          id: `subscription-${subscription.id}`,
+          packageId: subscription.packageId,
+          packageType: String(subscription.packageType || "").toLowerCase(),
+          name: subscription.packageName || "Gói tập",
+          sport: String(subscription.packageType || "").toLowerCase() === "membership" ? "Thành viên" : "Gói môn",
+          endDate: end.toLocaleDateString("sv-SE"),
+          daysRemaining,
+        };
+      });
+
+    const activeSubscriptionKeys = new Set(activeSubscriptions.map((item) =>
+      `${item.packageType}:${item.packageId || item.name.trim().toLowerCase()}`
+    ));
+    const activeOrderPackages = orders
+      .filter((order) => {
+        if (order.status !== "paid" || !order.packageSnapshot || order.packageSnapshot.category === "class") return false;
+        const end = order.endDate ? new Date(order.endDate) : null;
+        if (end && (Number.isNaN(end.getTime()) || end < today)) return false;
+        const category = order.packageSnapshot.category;
+        const key = `${category}:${order.packageSnapshot.id || order.packageSnapshot.name.trim().toLowerCase()}`;
+        return !activeSubscriptionKeys.has(key);
+      })
+      .map((order) => {
+        const end = order.endDate ? new Date(order.endDate) : now;
+        const daysRemaining = Math.max(0, Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+        return {
+          id: order.id,
+          name: order.packageSnapshot.name,
+          sport: order.packageSnapshot.sport || (order.packageSnapshot.category === "membership" ? "Thành viên" : "Gói môn"),
+          endDate: order.endDate ? order.endDate.split("T")[0] : "--",
+          daysRemaining,
+        };
+      });
+
+    return [...activeSubscriptions, ...activeOrderPackages];
+  }, [orders, subscriptions]);
 
   const upcomingSessions = useMemo(
     () => sessions.filter((s) => s.status === "sắp diễn ra" || s.status === "đang diễn ra"),

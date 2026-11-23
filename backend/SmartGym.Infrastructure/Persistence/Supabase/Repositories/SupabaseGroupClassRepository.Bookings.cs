@@ -14,7 +14,8 @@ public sealed partial class SupabaseGroupClassRepository
     public async Task<(bool IsSuccess, string? ErrorMessage)> BookClassTransactionAsync(
         Guid userId,
         Guid classId,
-        Guid? subscriptionId = null
+        Guid? subscriptionId = null,
+        string bookingStatus = "confirmed"
     )
     {
         var strategy = _dbContext.Database.CreateExecutionStrategy();
@@ -23,6 +24,13 @@ public sealed partial class SupabaseGroupClassRepository
             using var transaction = await _dbContext.Database.BeginTransactionAsync();
             try
             {
+                // Serialize booking attempts for the same member so two concurrent requests
+                // cannot both pass the overlap check before either reservation is visible.
+                await _dbContext.Database.ExecuteSqlRawAsync(
+                    "SELECT pg_advisory_xact_lock(hashtextextended({0}::text, 0))",
+                    userId
+                );
+
                 // Lấy toàn bộ các buổi học thuộc khóa học (Buổi gốc + các buổi con)
                 var allTargetSessions = await _dbContext.Database
                     .SqlQueryRaw<ClassSessionBookingTargetRawModel>(
@@ -30,7 +38,7 @@ public sealed partial class SupabaseGroupClassRepository
                           FROM classes 
                           WHERE (id = {0} OR parent_id = {0} OR (parent_id IS NOT NULL AND parent_id = (SELECT parent_id FROM classes WHERE id = {0})))
                             AND status = true AND approval_status = 'approved'
-                          ORDER BY schedule_time ASC",
+                            ORDER BY schedule_time ASC FOR UPDATE",
                         classId
                     )
                     .ToListAsync();
@@ -47,7 +55,7 @@ public sealed partial class SupabaseGroupClassRepository
                           FROM class_bookings 
                           WHERE user_id = {0} 
                             AND class_id IN (SELECT id FROM classes WHERE id = {1} OR parent_id = {1} OR (parent_id IS NOT NULL AND parent_id = (SELECT parent_id FROM classes WHERE id = {1})))
-                            AND LOWER(status) IN ('confirmed', 'pending', 'approved')",
+                            AND LOWER(status) IN ('confirmed', 'pending', 'approved', 'pending_payment')",
                         userId,
                         classId
                     )
@@ -67,7 +75,7 @@ public sealed partial class SupabaseGroupClassRepository
                           INNER JOIN classes c ON c.id = b.class_id
                           WHERE b.user_id = {0}
                             AND b.class_id NOT IN (SELECT id FROM classes WHERE id = {1} OR parent_id = {1} OR (parent_id IS NOT NULL AND parent_id = (SELECT parent_id FROM classes WHERE id = {1})))
-                            AND LOWER(b.status) IN ('confirmed', 'pending', 'approved')
+                            AND LOWER(b.status) IN ('confirmed', 'pending', 'approved', 'pending_payment')
                             AND c.status = true
                             AND c.approval_status = 'approved'",
                         userId,
@@ -106,23 +114,25 @@ public sealed partial class SupabaseGroupClassRepository
                     {
                         await _dbContext.Database.ExecuteSqlRawAsync(
                             @"INSERT INTO class_bookings (user_id, class_id, subscription_id, status)
-                              VALUES ({0}, {1}, {2}, 'confirmed')
+                              VALUES ({0}, {1}, {2}, {3})
                               ON CONFLICT (user_id, class_id) 
-                              DO UPDATE SET status = 'confirmed', subscription_id = {2}",
+                              DO UPDATE SET status = {3}, subscription_id = {2}",
                             userId,
                             s.Id,
-                            subscriptionId.Value
+                            subscriptionId.Value,
+                            bookingStatus
                         );
                     }
                     else
                     {
                         await _dbContext.Database.ExecuteSqlRawAsync(
                             @"INSERT INTO class_bookings (user_id, class_id, subscription_id, status)
-                              VALUES ({0}, {1}, NULL, 'confirmed')
+                              VALUES ({0}, {1}, NULL, {2})
                               ON CONFLICT (user_id, class_id) 
-                              DO UPDATE SET status = 'confirmed', subscription_id = NULL",
+                              DO UPDATE SET status = {2}, subscription_id = NULL",
                             userId,
-                            s.Id
+                            s.Id,
+                            bookingStatus
                         );
                     }
                 }
@@ -154,7 +164,7 @@ public sealed partial class SupabaseGroupClassRepository
                       SET status = 'cancelled' 
                       WHERE user_id = {0} 
                         AND class_id IN (SELECT id FROM classes WHERE id = {1} OR parent_id = {1} OR (parent_id IS NOT NULL AND parent_id = (SELECT parent_id FROM classes WHERE id = {1})))
-                        AND LOWER(status) IN ('confirmed', 'pending', 'approved')",
+                        AND LOWER(status) IN ('confirmed', 'pending', 'approved', 'pending_payment')",
                     userId,
                     classId
                 );

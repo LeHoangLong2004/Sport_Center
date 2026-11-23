@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { FadeIn, FadeUp } from "../components/Motion";
 import { getClassImage } from "../utils/classImageHelper";
+import { formatCenterDate, formatCenterTime, parseScheduleTime } from "../utils/scheduleTimeHelper";
 
 const A = "/assets";
 const imgHeroDefault = `${A}/dff04.png`;
@@ -27,7 +28,7 @@ function getRequestedClassId(): string {
 function formatSchedule(isoString?: string, duration = 60) {
   try {
     if (!isoString) return "Lịch chưa cập nhật";
-    const d = new Date(isoString);
+    const d = parseScheduleTime(isoString);
     if (Number.isNaN(d.getTime())) return "Lịch chưa cập nhật";
     const dayNames = [
       "Chủ Nhật",
@@ -38,18 +39,14 @@ function formatSchedule(isoString?: string, duration = 60) {
       "Thứ Sáu",
       "Thứ Bảy",
     ];
-    const day = dayNames[d.getDay()];
-    const hours = d.getHours().toString().padStart(2, "0");
-    const minutes = d.getMinutes().toString().padStart(2, "0");
+    const day = new Intl.DateTimeFormat("vi-VN", { weekday: "long", timeZone: "Asia/Bangkok" }).format(d);
     const endD = new Date(d.getTime() + duration * 60_000);
-    const endH = endD.getHours().toString().padStart(2, "0");
-    const endM = endD.getMinutes().toString().padStart(2, "0");
-    const dateFormatted = d.toLocaleDateString("vi-VN", {
+    const dateFormatted = formatCenterDate(d, {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
     });
-    return `${hours}:${minutes} - ${endH}:${endM} (${day}, ${dateFormatted})`;
+    return `${formatCenterTime(d)} - ${formatCenterTime(endD)} (${day}, ${dateFormatted})`;
   } catch {
     return isoString || "Lịch chưa cập nhật";
   }

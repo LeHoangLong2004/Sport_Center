@@ -54,6 +54,9 @@ public static partial class MemberEndpoints
             {
                 classRows = await db.Database.SqlQueryRaw<MemberClassAttendanceRow>(
                     @"SELECT c.id AS ""SessionId"",
+                             COALESCE(c.parent_id, c.id) AS ""CourseId"",
+                             c.session_number AS ""SessionNumber"",
+                             c.total_sessions AS ""TotalSessions"",
                              c.class_name AS ""ClassName"",
                              COALESCE(s.name, '') AS ""Sport"",
                              c.sport_id AS ""SportId"",
@@ -215,6 +218,9 @@ public static partial class MemberEndpoints
                 return new
                 {
                     id = r.SessionId.ToString(),
+                    courseId = (r.CourseId ?? r.SessionId).ToString(),
+                    sessionNumber = r.SessionNumber,
+                    totalSessions = r.TotalSessions,
                     className = r.ClassName,
                     sport = string.IsNullOrWhiteSpace(r.Sport) ? "Gym" : r.Sport,
                     packageName = pkgName,
@@ -255,6 +261,9 @@ public static partial class MemberEndpoints
                 return new
                 {
                     id = r.SessionId.ToString(),
+                    courseId = r.SessionId.ToString(),
+                    sessionNumber = (int?)null,
+                    totalSessions = (int?)null,
                     className = $"Kèm 1-1 ({r.Sport})",
                     sport = r.Sport,
                     packageName = ptPackageName,
@@ -463,6 +472,9 @@ public static partial class MemberEndpoints
     private sealed class MemberClassAttendanceRow
     {
         public Guid SessionId { get; set; }
+        public Guid? CourseId { get; set; }
+        public int? SessionNumber { get; set; }
+        public int? TotalSessions { get; set; }
         public string ClassName { get; set; } = string.Empty;
         public string Sport { get; set; } = string.Empty;
         public Guid? SportId { get; set; }

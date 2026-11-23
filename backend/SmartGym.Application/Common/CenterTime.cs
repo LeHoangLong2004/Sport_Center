@@ -38,7 +38,14 @@ public static class CenterTime
         }
         catch (InvalidTimeZoneException)
         {
-            return TimeZoneInfo.Utc;
+            try
+            {
+                return TimeZoneInfo.FindSystemTimeZoneById("Asia/Bangkok");
+            }
+            catch
+            {
+                return TimeZoneInfo.Utc;
+            }
         }
     }
 }

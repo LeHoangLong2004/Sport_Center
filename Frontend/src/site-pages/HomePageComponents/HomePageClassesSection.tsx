@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FadeUp } from "../../components/Motion";
 import { imgHeroBg } from "../homePageData";
 import { getClassImage } from "../../utils/classImageHelper";
+import { formatCenterTime, parseScheduleTime } from "../../utils/scheduleTimeHelper";
 
 type HomeClass = {
   id: string;
@@ -21,7 +22,7 @@ export default function HomePageClassesSection() {
       .then((response) => response.ok ? response.json() : [])
       .then((items) => {
         const mapped = (Array.isArray(items) ? items : []).slice(0, 4).map((item: any) => {
-          const start = new Date(item.scheduleTime);
+          const start = parseScheduleTime(item.scheduleTime);
           const end = new Date(start.getTime() + Number(item.durationMinutes || 60) * 60000);
           const available = Math.max(0, Number(item.capacity || 0) - Number(item.currentEnrolled || 0));
           return {
@@ -29,7 +30,7 @@ export default function HomePageClassesSection() {
             img: getClassImage(item.sportName, item.className, item.imageUrl),
             name: item.className || "Lớp học",
             coach: item.coachName || "Huấn luyện viên chưa cập nhật",
-            time: `${start.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} – ${end.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`,
+            time: `${formatCenterTime(start)} – ${formatCenterTime(end)}`,
             slots: available > 0 ? `${available} chỗ trống` : "Đã đủ chỗ",
             tag: available > 0 && available <= 3 ? "SẮP ĐẦY" : "",
           };

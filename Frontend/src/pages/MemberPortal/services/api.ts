@@ -112,12 +112,18 @@ export const MemberAPI = {
             method: 'POST'
         });
     },
-    payAndBookClass: async (classId: string, paymentMethod: string = 'qr', amount: number = 150000) => {
+    payAndBookClass: async (classId: string, paymentMethod: string = 'qr', amount: number = 150000, paymentMemo?: string) => {
         return fetchApi(`/classes/${classId}/pay-and-book`, {
             method: 'POST',
-            body: JSON.stringify({ paymentMethod, amount })
+            body: JSON.stringify({ paymentMethod, amount, paymentMemo })
         });
     },
+    startClassPaymentHold: async (classId: string, paymentMemo: string) => fetchApi(`/classes/${classId}/payment-hold`, {
+        method: 'POST', body: JSON.stringify({ paymentMemo })
+    }),
+    releaseClassPaymentHold: async (classId: string, paymentMemo: string) => fetchApi(`/classes/${classId}/payment-hold?memo=${encodeURIComponent(paymentMemo)}`, {
+        method: 'DELETE'
+    }),
     cancelClassBooking: async (classId: string) => {
         return fetchApi(`/classes/${classId}/cancel-booking`, {
             method: 'POST'

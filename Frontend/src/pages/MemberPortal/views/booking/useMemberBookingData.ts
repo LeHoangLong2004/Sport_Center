@@ -3,7 +3,7 @@ import type { MemberSessionItem } from "../../types";
 import { MemberAPI } from "../../services/api";
 import { getRealCoachAvatar } from "../../utils/coachAvatar";
 import { getCounterPendingIds, removeCounterPendingId } from "./bookingTypes";
-import { parseScheduleTime } from "../../../../utils/scheduleTimeHelper";
+import { centerDateParts, parseScheduleTime } from "../../../../utils/scheduleTimeHelper";
 
 export function useMemberBookingData() {
   const [mySessions, setMySessions] = useState<MemberSessionItem[]>([]);
@@ -40,13 +40,11 @@ export function useMemberBookingData() {
         const start = parseScheduleTime(item.scheduleTime);
         const durationMinutes = Number(item.durationMinutes || 60);
         const end = new Date(start.getTime() + durationMinutes * 60000);
-        const dateStr = [
-          start.getFullYear(),
-          String(start.getMonth() + 1).padStart(2, "0"),
-          String(start.getDate()).padStart(2, "0"),
-        ].join("-");
-        const time = (value: Date) =>
-          `${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}`;
+        const dateStr = ((p) => `${p.year}-${p.month}-${p.day}`)(centerDateParts(start));
+        const time = (value: Date) => {
+          const p = centerDateParts(value);
+          return `${p.hour}:${p.minute}`;
+        };
 
         const coachAccount = coachById.get(String(item.coachId));
         const coachName = item.coachName || coachAccount?.fullName || "HLV Chuyên Nghiệp";
@@ -98,11 +96,8 @@ export function useMemberBookingData() {
       const dbBookings = (memberSchedule?.classBookings || []).map((booking: any) => {
         const start = parseScheduleTime(booking.scheduleTime);
         const end = new Date(start.getTime() + Number(booking.durationMinutes || 60) * 60000);
-        const date = [
-          start.getFullYear(),
-          String(start.getMonth() + 1).padStart(2, "0"),
-          String(start.getDate()).padStart(2, "0"),
-        ].join("-");
+        const dateParts = centerDateParts(start);
+        const date = `${dateParts.year}-${dateParts.month}-${dateParts.day}`;
         const coachAccount = coachById.get(String(booking.coachId));
         const coachName = booking.coachName || coachAccount?.fullName || "Huấn luyện viên phụ trách";
         const coachAvatar = getRealCoachAvatar(coachName, booking.coachAvatar || coachAccount?.avatarUrl, booking.coachId);
@@ -120,8 +115,8 @@ export function useMemberBookingData() {
           level: "Lớp nhóm",
           type: "group",
           date,
-          startTime: `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`,
-          endTime: `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`,
+          startTime: `${dateParts.hour}:${dateParts.minute}`,
+          endTime: `${centerDateParts(end).hour}:${centerDateParts(end).minute}`,
           room: booking.facilityName || "Studio Thể thao",
           coachId: booking.coachId || "",
           coachName,

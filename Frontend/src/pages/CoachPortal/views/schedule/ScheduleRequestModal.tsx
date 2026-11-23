@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { centerDateParts, parseScheduleTime } from "../../../../utils/scheduleTimeHelper";
 import type { UnifiedScheduleItem } from "./types";
 import { CoachAPI } from "../../services/api";
 import { RequestSessionPicker } from "./scheduleRequestModal/RequestSessionPicker";
@@ -157,13 +158,14 @@ export default function ScheduleRequestModal({
         if (!matchCoach) return false;
 
         if (!cls.scheduleTime) return false;
-        const clsDt = new Date(cls.scheduleTime);
+        const clsDt = parseScheduleTime(cls.scheduleTime);
         if (isNaN(clsDt.getTime())) return false;
 
-        const clsDateStr = clsDt.toISOString().slice(0, 10);
+        const parts = centerDateParts(clsDt);
+        const clsDateStr = `${parts.year}-${parts.month}-${parts.day}`;
         if (clsDateStr !== sessionDate) return false;
 
-        const clsStartMin = clsDt.getHours() * 60 + clsDt.getMinutes();
+        const clsStartMin = Number(parts.hour) * 60 + Number(parts.minute);
         const clsDur = Number(cls.durationMinutes) || 60;
         const clsEndMin = clsStartMin + clsDur;
 

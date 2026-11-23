@@ -1,5 +1,6 @@
 import React from "react";
 import { Calendar, Plus, RefreshCw } from "lucide-react";
+import { CENTER_TIME_ZONE } from "../../../../utils/scheduleTimeHelper";
 
 interface Props {
   refreshing: boolean;
@@ -22,7 +23,7 @@ export const ScheduleHeader: React.FC<Props> = ({
               Lịch Hẹn Coach & Tiếp Đón
             </h1>
             <span className="text-[11px] text-slate-500 font-medium">
-              ({new Date().toLocaleDateString("vi-VN", { weekday: "short", day: "2-digit", month: "2-digit" })})
+              ({new Date().toLocaleDateString("vi-VN", { weekday: "short", day: "2-digit", month: "2-digit", timeZone: CENTER_TIME_ZONE })})
             </span>
           </div>
           <p className="text-[11px] text-slate-500 hidden sm:block">
