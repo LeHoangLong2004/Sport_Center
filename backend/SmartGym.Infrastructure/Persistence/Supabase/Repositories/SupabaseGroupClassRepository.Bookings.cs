@@ -36,7 +36,8 @@ public sealed partial class SupabaseGroupClassRepository
                     .SqlQueryRaw<ClassSessionBookingTargetRawModel>(
                         @"SELECT id, schedule_time, duration_minutes, current_enrolled, capacity 
                           FROM classes 
-                          WHERE (id = {0} OR parent_id = {0} OR (parent_id IS NOT NULL AND parent_id = (SELECT parent_id FROM classes WHERE id = {0})))
+                          WHERE (id = (SELECT COALESCE(parent_id, id) FROM classes WHERE id = {0})
+                             OR parent_id = (SELECT COALESCE(parent_id, id) FROM classes WHERE id = {0}))
                             AND status = true AND approval_status = 'approved'
                             ORDER BY schedule_time ASC FOR UPDATE",
                         classId
@@ -49,12 +50,74 @@ public sealed partial class SupabaseGroupClassRepository
                     return (false, "Lớp học không còn hoạt động hoặc chưa được phê duyệt.");
                 }
 
+                // Repair residual active rows from older cancellations. When a
+                // course invoice is already refunded, any booking row created no
+                // later than that refund is stale and must not block rebooking.
+                await _dbContext.Database.ExecuteSqlRawAsync(
+                    """
+                    WITH target_course AS (
+                        SELECT COALESCE(parent_id, id) AS root_id FROM classes WHERE id = {1}
+                    ), target_sessions AS (
+                        SELECT c.id FROM classes c, target_course t
+                        WHERE c.id = t.root_id OR c.parent_id = t.root_id
+                    ), latest_refund AS (
+                        SELECT MAX(i.created_at) AS refunded_at
+                        FROM invoices i, target_course t
+                        WHERE i.user_id = {0} AND i.class_id = t.root_id
+                          AND i.payment_status = 'refunded'
+                    ), stale_bookings AS (
+                        UPDATE class_bookings b
+                        SET status = 'cancelled'
+                        WHERE b.user_id = {0}
+                          AND b.class_id IN (SELECT id FROM target_sessions)
+                          AND LOWER(b.status) IN ('confirmed', 'pending', 'approved', 'pending_payment')
+                          AND b.created_at <= (SELECT refunded_at FROM latest_refund)
+                          AND (SELECT refunded_at FROM latest_refund) IS NOT NULL
+                        RETURNING b.class_id
+                    )
+                    UPDATE classes c
+                    SET current_enrolled = (
+                        SELECT COUNT(*) FROM class_bookings b
+                        WHERE b.class_id = c.id
+                          AND LOWER(b.status) IN ('confirmed', 'pending', 'approved', 'pending_payment')
+                    )
+                    WHERE c.id IN (SELECT id FROM target_sessions)
+                    """,
+                    userId,
+                    classId);
+
+                await _dbContext.Database.ExecuteSqlRawAsync(
+                    """
+                    WITH target_course AS (
+                        SELECT COALESCE(parent_id, id) AS root_id FROM classes WHERE id = {1}
+                    )
+                    UPDATE class_booking_payment_holds h
+                    SET status = 'cancelled'
+                    WHERE h.user_id = {0}
+                      AND h.status = 'active'
+                      AND h.class_id IN (
+                          SELECT c.id FROM classes c, target_course t
+                          WHERE c.id = t.root_id OR c.parent_id = t.root_id
+                      )
+                      AND h.invoice_id IN (
+                          SELECT i.id FROM invoices i, target_course t
+                          WHERE i.user_id = {0} AND i.class_id = t.root_id
+                            AND i.payment_status = 'refunded'
+                      )
+                    """,
+                    userId,
+                    classId);
+
                 var existingBookings = await _dbContext
                     .Database.SqlQueryRaw<ClassBookingRawModel>(
                         @"SELECT id, user_id, class_id, status, created_at 
                           FROM class_bookings 
                           WHERE user_id = {0} 
-                            AND class_id IN (SELECT id FROM classes WHERE id = {1} OR parent_id = {1} OR (parent_id IS NOT NULL AND parent_id = (SELECT parent_id FROM classes WHERE id = {1})))
+                            AND class_id IN (
+                                SELECT id FROM classes
+                                WHERE id = (SELECT COALESCE(parent_id, id) FROM classes WHERE id = {1})
+                                   OR parent_id = (SELECT COALESCE(parent_id, id) FROM classes WHERE id = {1})
+                            )
                             AND LOWER(status) IN ('confirmed', 'pending', 'approved', 'pending_payment')",
                         userId,
                         classId
@@ -74,8 +137,22 @@ public sealed partial class SupabaseGroupClassRepository
                           FROM class_bookings b
                           INNER JOIN classes c ON c.id = b.class_id
                           WHERE b.user_id = {0}
-                            AND b.class_id NOT IN (SELECT id FROM classes WHERE id = {1} OR parent_id = {1} OR (parent_id IS NOT NULL AND parent_id = (SELECT parent_id FROM classes WHERE id = {1})))
-                            AND LOWER(b.status) IN ('confirmed', 'pending', 'approved', 'pending_payment')
+                            AND b.class_id NOT IN (
+                                SELECT id FROM classes
+                                WHERE id = (SELECT COALESCE(parent_id, id) FROM classes WHERE id = {1})
+                                   OR parent_id = (SELECT COALESCE(parent_id, id) FROM classes WHERE id = {1})
+                            )
+                            AND (
+                                LOWER(b.status) IN ('confirmed', 'pending', 'approved')
+                                OR (
+                                    LOWER(b.status) = 'pending_payment'
+                                    AND EXISTS (
+                                        SELECT 1 FROM class_booking_payment_holds h
+                                        WHERE h.user_id = b.user_id AND h.class_id = b.class_id
+                                          AND h.status = 'active' AND h.expires_at > now()
+                                    )
+                                )
+                            )
                             AND c.status = true
                             AND c.approval_status = 'approved'",
                         userId,
@@ -159,28 +236,57 @@ public sealed partial class SupabaseGroupClassRepository
             using var transaction = await _dbContext.Database.BeginTransactionAsync();
             try
             {
-                var affectedBooking = await _dbContext.Database.ExecuteSqlRawAsync(
-                    @"UPDATE class_bookings 
-                      SET status = 'cancelled' 
-                      WHERE user_id = {0} 
-                        AND class_id IN (SELECT id FROM classes WHERE id = {1} OR parent_id = {1} OR (parent_id IS NOT NULL AND parent_id = (SELECT parent_id FROM classes WHERE id = {1})))
-                        AND LOWER(status) IN ('confirmed', 'pending', 'approved', 'pending_payment')",
+                var cancelledBookings = await _dbContext.Database.SqlQueryRaw<ClassBookingRawModel>(
+                    """
+                    WITH target_course AS (
+                        SELECT COALESCE(parent_id, id) AS root_id FROM classes WHERE id = {1}
+                    ), target_sessions AS (
+                        SELECT c.id FROM classes c, target_course t
+                        WHERE c.id = t.root_id OR c.parent_id = t.root_id
+                    ), cancelled_bookings AS (
+                        UPDATE class_bookings b
+                        SET status = 'cancelled'
+                        WHERE b.user_id = {0}
+                          AND b.class_id IN (SELECT id FROM target_sessions)
+                          AND LOWER(b.status) IN ('confirmed', 'pending', 'approved', 'pending_payment')
+                        RETURNING b.id, b.user_id, b.class_id, b.status, b.created_at
+                    ), session_counts AS (
+                        SELECT class_id FROM cancelled_bookings GROUP BY class_id
+                    ), adjusted_classes AS (
+                        UPDATE classes c
+                        SET current_enrolled = (
+                            SELECT COUNT(*) FROM class_bookings b
+                            WHERE b.class_id = c.id
+                              AND LOWER(b.status) IN ('confirmed', 'pending', 'approved', 'pending_payment')
+                        )
+                        FROM session_counts counts
+                        WHERE c.id = counts.class_id
+                        RETURNING c.id
+                    ), cancelled_holds AS (
+                        UPDATE class_booking_payment_holds h
+                        SET status = 'cancelled'
+                        WHERE h.user_id = {0}
+                          AND h.status = 'active'
+                          AND h.class_id IN (SELECT id FROM target_sessions)
+                        RETURNING h.invoice_id
+                    ), failed_invoices AS (
+                        UPDATE invoices i
+                        SET payment_status = 'failed'
+                        WHERE i.payment_status = 'pending'
+                          AND i.id IN (SELECT invoice_id FROM cancelled_holds WHERE invoice_id IS NOT NULL)
+                        RETURNING i.id
+                    )
+                    SELECT id, user_id, class_id, status, created_at FROM cancelled_bookings
+                    """,
                     userId,
                     classId
-                );
+                ).ToListAsync();
 
-                if (affectedBooking == 0)
+                if (cancelledBookings.Count == 0)
                 {
                     await transaction.RollbackAsync();
                     return (false, "Không tìm thấy thông tin đặt chỗ hoặc đã bị hủy.");
                 }
-
-                await _dbContext.Database.ExecuteSqlRawAsync(
-                    @"UPDATE classes 
-                      SET current_enrolled = GREATEST(0, current_enrolled - 1) 
-                      WHERE id IN (SELECT id FROM classes WHERE id = {0} OR parent_id = {0} OR (parent_id IS NOT NULL AND parent_id = (SELECT parent_id FROM classes WHERE id = {0})))",
-                    classId
-                );
 
                 await transaction.CommitAsync();
                 return (true, null);

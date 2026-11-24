@@ -57,7 +57,22 @@ public sealed partial class SupabaseGroupClassRepository
 
         var classBookings = await _dbContext
             .Database.SqlQueryRaw<ClassBookingRawModel>(
-                "SELECT id, user_id, class_id, status, created_at FROM class_bookings WHERE user_id = {0} AND LOWER(COALESCE(status, '')) IN ('confirmed', 'approved', 'pending_payment')",
+                """
+                SELECT b.id, b.user_id, b.class_id, b.status, b.created_at
+                FROM class_bookings b
+                WHERE b.user_id = {0}
+                  AND (
+                      LOWER(COALESCE(b.status, '')) IN ('confirmed', 'approved', 'pending')
+                      OR (
+                          LOWER(COALESCE(b.status, '')) = 'pending_payment'
+                          AND EXISTS (
+                              SELECT 1 FROM class_booking_payment_holds h
+                              WHERE h.user_id = b.user_id AND h.class_id = b.class_id
+                                AND h.status = 'active' AND h.expires_at > now()
+                          )
+                      )
+                  )
+                """,
                 userId
             )
             .ToListAsync();

@@ -42,6 +42,7 @@ export default function MemberBooking({ onNavigate }: Props) {
     coaches,
     sportOptions,
     loadingGroupClasses,
+    memberScheduleStatus,
     refreshingGroupClasses,
     groupClassesError,
     loadGroupClasses,
@@ -317,6 +318,7 @@ export default function MemberBooking({ onNavigate }: Props) {
         membership={membership}
         activeOrders={activeOrders}
         mySessions={mySessions}
+        memberScheduleStatus={memberScheduleStatus}
         ptBookingError={ptBookingError}
         isProcessingPtBooking={isProcessingPtBooking}
         onConfirmPtBooking={handleConfirmPtBooking}
