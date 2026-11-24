@@ -17,6 +17,12 @@ import { CoachAvatar } from "../../utils/coachAvatar";
 import type { MemberSessionItem } from "../../types";
 import { type CancelBookingTarget } from "./bookingTypes";
 
+const isLaterCourseSession = (booking: MemberSessionItem) => {
+  const sessionNumber = Number((booking as any).sessionNumber || 1);
+  const hasSessionName = /\(Buổi\s*[2-9]\d*\)\s*$/i.test(booking.name || "");
+  return sessionNumber > 1 || hasSessionName;
+};
+
 interface MyClassesTabProps {
   myActiveClasses?: MemberSessionItem[];
   mySessions?: MemberSessionItem[];
@@ -97,7 +103,8 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
           rawStatus.includes("cancel") ||
           rawStatus.includes("huy") ||
           rawStatus === "rejected";
-        return !isCancelled && rawStatus !== "pending" && !isClassPast(s);
+        const isLaterGroupSession = s.type === "group" && isLaterCourseSession(s);
+        return !isCancelled && rawStatus !== "pending" && !isClassPast(s) && !isClassOngoing(s) && !isLaterGroupSession;
       })
       .sort((a, b) => {
         const timeA = getSessionTimes(a).start.getTime();
@@ -146,7 +153,10 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
   const upcomingCourseCount = useMemo(() => {
     const courseIds = new Set(
       upcomingClasses
-        .filter((session) => session.type === "group")
+        .filter((session) => {
+          const isPt = session.type === "pt" || session.sport === "PT 1-1" || (session.name || "").includes("Kèm riêng");
+          return session.type === "group" && (isPt || !isLaterCourseSession(session));
+        })
         .map((session) => String((session as any).parentId || (session as any).classId || session.id))
     );
     return courseIds.size;
