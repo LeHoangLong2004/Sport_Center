@@ -39,6 +39,7 @@ interface BookingModalsProps {
   membership?: any | null;
   activeOrders?: any[];
   mySessions?: any[];
+  memberScheduleStatus?: "loading" | "ready" | "error";
   ptBookingError?: string | null;
   isProcessingPtBooking?: boolean;
   onConfirmPtBooking: (e: React.FormEvent, paymentData?: any) => void;
@@ -73,6 +74,7 @@ export function BookingModals({
   membership,
   activeOrders,
   mySessions,
+  memberScheduleStatus,
   ptBookingError,
   isProcessingPtBooking,
   onConfirmPtBooking,
@@ -88,16 +90,19 @@ export function BookingModals({
         mySessions={mySessions}
       />
 
-      <PayAndBookModal
-        classToBook={classToBook}
-        onClose={onCloseClassToBook}
-        paymentMethod={paymentMethod}
-        setPaymentMethod={setPaymentMethod}
-        isProcessingPayment={isProcessingPayment}
-        paymentError={paymentError}
-        onConfirmPayment={onConfirmPayment}
-        mySessions={mySessions}
-      />
+      {classToBook && (
+        <PayAndBookModal
+          classToBook={classToBook}
+          onClose={onCloseClassToBook}
+          paymentMethod={paymentMethod}
+          setPaymentMethod={setPaymentMethod}
+          isProcessingPayment={isProcessingPayment}
+          paymentError={paymentError}
+          onConfirmPayment={onConfirmPayment}
+          mySessions={mySessions}
+          memberScheduleStatus={memberScheduleStatus}
+        />
+      )}
 
       <BookingSuccessModal
         bookingSuccessInfo={bookingSuccessInfo}

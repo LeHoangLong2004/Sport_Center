@@ -71,6 +71,9 @@ public static partial class DatabaseInitializationExtensions
                     ON classes(approval_status);
                 CREATE INDEX IF NOT EXISTS idx_classes_parent_id
                     ON classes(parent_id);
+                CREATE INDEX IF NOT EXISTS idx_classes_available_schedule
+                    ON classes(schedule_time)
+                    WHERE status = TRUE AND approval_status = 'approved';
 
                 -- Đồng bộ trạng thái các đơn hàng đã bị hủy
                 UPDATE invoices

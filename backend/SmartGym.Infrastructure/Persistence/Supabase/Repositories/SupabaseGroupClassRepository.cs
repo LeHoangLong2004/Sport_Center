@@ -299,72 +299,74 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
 
     public async Task<IEnumerable<ClassResponse>> GetAvailableClassesAsync()
     {
-        var nowUtc = DateTimeOffset.UtcNow;
-        var classResponse = await _client
-            .From<GroupClassModel>()
-            .Where(x => x.Status == true)
-            .Where(x => x.ScheduleTime > nowUtc)
-            .Get();
+        var nowUtc = DateTime.UtcNow;
+        var today = DateOnly.FromDateTime(CenterTime.ToLocal(nowUtc));
+        var rows = await _dbContext.Database.SqlQueryRaw<AvailableClassSqlRawModel>(
+            """
+            SELECT c.id AS "Id", c.sport_id AS "SportId", COALESCE(s.name, 'Unknown Sport') AS "SportName",
+                   c.facility_id AS "FacilityId", COALESCE(f.name, 'Unknown Facility') AS "FacilityName",
+                   c.coach_id AS "CoachId", COALESCE(u.full_name, 'N/A') AS "CoachName",
+                   c.class_name AS "ClassName", c.schedule_time AS "ScheduleTime",
+                   c.duration_minutes AS "DurationMinutes", c.capacity AS "Capacity",
+                   c.current_enrolled AS "CurrentEnrolled", c.status AS "Status",
+                   c.approval_status AS "ApprovalStatus", u.avatar_url AS "CoachAvatar",
+                   co.specialty AS "CoachSpecialty", u.phone_number AS "CoachPhone",
+                   co.bio AS "CoachBio", co.rating AS "CoachRating", co.experience_years AS "CoachExperienceYears",
+                   price.price_per_session * GREATEST(COALESCE(c.total_sessions, 1), 1) AS "Price",
+                   c.parent_id AS "ParentId", COALESCE(c.session_number, 1) AS "SessionNumber",
+                   GREATEST(COALESCE(c.total_sessions, 1), 1) AS "TotalSessions"
+            FROM classes c
+            LEFT JOIN sports s ON s.id = c.sport_id
+            LEFT JOIN facilities f ON f.id = c.facility_id
+            LEFT JOIN LATERAL (
+                SELECT coach.id, coach.user_id, coach.specialty, coach.bio, coach.experience_years, coach.rating
+                FROM coaches coach
+                WHERE coach.id = c.coach_id OR coach.user_id = c.coach_id
+                ORDER BY CASE WHEN coach.id = c.coach_id THEN 0 ELSE 1 END
+                LIMIT 1
+            ) co ON TRUE
+            LEFT JOIN users u ON u.id = COALESCE(co.user_id, c.coach_id)
+            LEFT JOIN LATERAL (
+                SELECT p.price_per_session
+                FROM sport_class_pricing p
+                WHERE p.sport_id = c.sport_id AND p.is_active = TRUE
+                  AND p.effective_from <= {1} AND (p.effective_to IS NULL OR p.effective_to >= {1})
+                ORDER BY p.effective_from DESC, p.created_at DESC
+                LIMIT 1
+            ) price ON TRUE
+            WHERE c.status = TRUE AND LOWER(c.approval_status) = 'approved'
+              AND c.schedule_time > {0}
+              AND (c.parent_id IS NULL OR c.session_number = 1)
+            ORDER BY c.schedule_time
+            """, nowUtc, today).ToListAsync();
 
-        var classModels = classResponse.Models
-            .Where(c => c.Status && 
-                        string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase) &&
-                        c.ScheduleTime > nowUtc &&
-                        (c.ParentId == null || c.SessionNumber == 1))
-            .ToList();
-        if (!classModels.Any())
-            return Enumerable.Empty<ClassResponse>();
-
-        var sports = await _dbContext
-            .Database.SqlQueryRaw<SportSqlRawModel>("SELECT id, name FROM sports")
-            .ToListAsync();
-        var facilities = await _dbContext
-            .Database.SqlQueryRaw<FacilitySqlRawModel>("SELECT id, name FROM facilities")
-            .ToListAsync();
-        var coaches = await _dbContext
-            .Database.SqlQueryRaw<CoachSqlRawModel>("SELECT id, user_id, specialty, bio, experience_years, rating FROM coaches")
-            .ToListAsync();
-        var users = await _dbContext
-            .Database.SqlQueryRaw<UserSqlRawModel>("SELECT id, full_name, phone_number, avatar_url FROM users")
-            .ToListAsync();
-        var currentClassPrices = await GetCurrentClassPricesBySportAsync();
-        return classModels
-            .Select(c =>
-            {
-                var sport = sports.FirstOrDefault(s => s.Id == c.SportId);
-                var facility = facilities.FirstOrDefault(f => f.Id == c.FacilityId);
-                var (coach, user) = ResolveCoach(c.CoachId, coaches, users);
-
-                return new ClassResponse(
-                    Id: c.Id,
-                    SportId: c.SportId,
-                    SportName: sport?.Name ?? "Unknown Sport",
-                    FacilityId: c.FacilityId,
-                    FacilityName: facility?.Name ?? "Unknown Facility",
-                    CoachId: c.CoachId,
-                    CoachName: user?.FullName ?? "N/A",
-                    ClassName: c.ClassName,
-                    ScheduleTime: AsUtc(c.ScheduleTime),
-                    DurationMinutes: c.DurationMinutes,
-                    Capacity: c.Capacity,
-                    CurrentEnrolled: c.CurrentEnrolled,
-                    AvailableSpots: c.Capacity - c.CurrentEnrolled,
-                    Status: c.Status,
-                    ApprovalStatus: c.ApprovalStatus,
-                    CoachAvatar: SmartGym.Domain.Common.CoachAvatarHelper.GetRealCoachAvatar(user?.FullName, user?.AvatarUrl, c.CoachId),
-                    CoachSpecialty: coach?.Specialty ?? "Huấn luyện viên Thể hình",
-                    CoachPhone: user?.PhoneNumber ?? "",
-                    CoachBio: coach?.Bio ?? "Huấn luyện viên phụ trách lớp học.",
-                    CoachRating: coach?.Rating,
-                    CoachExperienceYears: coach?.ExperienceYears ?? 5,
-                    Price: TryCalculateCoursePrice(currentClassPrices, c.SportId, sport?.Name, c.TotalSessions),
-                    ParentId: c.ParentId,
-                    SessionNumber: c.SessionNumber,
-                    TotalSessions: c.TotalSessions
-                );
-            })
-            .OrderBy(x => x.ScheduleTime)
-            .ToList();
+        return rows.Select(c => new ClassResponse(
+            Id: c.Id,
+            SportId: c.SportId,
+            SportName: c.SportName,
+            FacilityId: c.FacilityId,
+            FacilityName: c.FacilityName,
+            CoachId: c.CoachId,
+            CoachName: c.CoachName,
+            ClassName: c.ClassName,
+            ScheduleTime: AsUtc(c.ScheduleTime),
+            DurationMinutes: c.DurationMinutes,
+            Capacity: c.Capacity,
+            CurrentEnrolled: c.CurrentEnrolled,
+            AvailableSpots: c.Capacity - c.CurrentEnrolled,
+            Status: c.Status,
+            ApprovalStatus: c.ApprovalStatus,
+            CoachAvatar: SmartGym.Domain.Common.CoachAvatarHelper.GetRealCoachAvatar(c.CoachName, c.CoachAvatar, c.CoachId),
+            CoachSpecialty: c.CoachSpecialty ?? "Huấn luyện viên Thể hình",
+            CoachPhone: c.CoachPhone ?? "",
+            CoachBio: c.CoachBio ?? "Huấn luyện viên phụ trách lớp học.",
+            CoachRating: c.CoachRating,
+            CoachExperienceYears: c.CoachExperienceYears ?? 5,
+            Price: c.Price,
+            ParentId: c.ParentId,
+            SessionNumber: c.SessionNumber,
+            TotalSessions: c.TotalSessions
+        )).ToList();
     }
 
     private async Task<CurrentSportClassPriceLookup> GetCurrentClassPricesBySportAsync()
@@ -453,6 +455,34 @@ internal sealed class CurrentSportClassPriceRawModel
     public decimal PricePerSession { get; set; }
     public DateOnly EffectiveFrom { get; set; }
     public DateTime CreatedAt { get; set; }
+}
+
+internal sealed class AvailableClassSqlRawModel
+{
+    public Guid Id { get; set; }
+    public Guid SportId { get; set; }
+    public string SportName { get; set; } = "Unknown Sport";
+    public Guid FacilityId { get; set; }
+    public string FacilityName { get; set; } = "Unknown Facility";
+    public Guid? CoachId { get; set; }
+    public string? CoachName { get; set; }
+    public string ClassName { get; set; } = string.Empty;
+    public DateTime ScheduleTime { get; set; }
+    public int DurationMinutes { get; set; }
+    public int Capacity { get; set; }
+    public int CurrentEnrolled { get; set; }
+    public bool Status { get; set; }
+    public string ApprovalStatus { get; set; } = "approved";
+    public string? CoachAvatar { get; set; }
+    public string? CoachSpecialty { get; set; }
+    public string? CoachPhone { get; set; }
+    public string? CoachBio { get; set; }
+    public decimal? CoachRating { get; set; }
+    public int? CoachExperienceYears { get; set; }
+    public decimal? Price { get; set; }
+    public Guid? ParentId { get; set; }
+    public int SessionNumber { get; set; }
+    public int TotalSessions { get; set; }
 }
 
 internal sealed record CurrentSportClassPriceLookup(

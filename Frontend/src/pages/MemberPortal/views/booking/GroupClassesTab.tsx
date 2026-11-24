@@ -125,7 +125,8 @@ export const GroupClassesTab: React.FC<GroupClassesTabProps> = ({
             const bookedSession = findActiveBooking(item.id, item.dateStr);
             const rawBookingStatus = bookedSession ? String(getBookingStatus(bookedSession) || "").toLowerCase() : null;
             const isCounterPending = rawBookingStatus === "pending";
-            const booked = Boolean(bookedSession) && !isCounterPending;
+            const isPaymentPending = rawBookingStatus === "pending_payment";
+            const booked = Boolean(bookedSession) && !isCounterPending && !isPaymentPending;
             const isFull = item.registeredCount >= item.capacity;
 
             const classStartMs =
@@ -307,6 +308,15 @@ export const GroupClassesTab: React.FC<GroupClassesTabProps> = ({
                       className="px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 font-bold text-xs transition-colors border border-rose-200 dark:border-rose-800 cursor-pointer"
                     >
                       Hủy đặt
+                    </button>
+                  ) : isPaymentPending ? (
+                    <button
+                      type="button"
+                      onClick={() => onInitiateBook(item)}
+                      className="px-4 py-2.5 rounded-xl font-bold text-xs transition-all shadow-sm flex items-center gap-1.5 cursor-pointer bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20 active:scale-[0.98]"
+                    >
+                      <CreditCard className="w-3.5 h-3.5" />
+                      <span>Đặt lịch &amp; Thanh toán</span>
                     </button>
                   ) : isFull ? (
                     <button

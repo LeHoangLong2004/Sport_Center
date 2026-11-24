@@ -12,31 +12,26 @@ export function useMemberBookingData() {
   const [coaches, setCoaches] = useState<any[]>([]);
   const [sports, setSports] = useState<Array<{ id: string; name: string }>>([]);
   const [loadingGroupClasses, setLoadingGroupClasses] = useState(true);
+  const [memberScheduleStatus, setMemberScheduleStatus] = useState<"loading" | "ready" | "error">("loading");
   const [refreshingGroupClasses, setRefreshingGroupClasses] = useState(false);
   const [groupClassesError, setGroupClassesError] = useState<string | null>(null);
 
   const loadGroupClasses = useCallback(async (silent = false) => {
     if (silent) setRefreshingGroupClasses(true);
     else setLoadingGroupClasses(true);
+    if (!silent) setMemberScheduleStatus("loading");
+    else setMemberScheduleStatus((current) => current === "ready" ? "ready" : "loading");
     setGroupClassesError(null);
 
     try {
-      const [availableClasses, memberSchedule, availablePtSlots, coachesList, sportsList] = await Promise.all([
-        MemberAPI.getAvailableClasses(),
-        MemberAPI.getMemberSchedule().catch(() => ({ classBookings: [], ptSessions: [] })),
-        MemberAPI.getAvailablePtSlots().catch(() => []),
-        MemberAPI.getCoaches().catch(() => []),
-        MemberAPI.getSports().catch(() => []),
-      ]);
-
-      if (Array.isArray(coachesList)) setCoaches(coachesList);
-      if (Array.isArray(sportsList)) setSports(sportsList);
-
-      const coachById = new Map(
-        (Array.isArray(coachesList) ? coachesList : []).map((coach: any) => [String(coach.id), coach])
-      );
-
-      const mappedClasses = (Array.isArray(availableClasses) ? availableClasses : []).map((item: any) => {
+      // Tải lớp trước để màn khám phá có thể hiển thị ngay khi nguồn dữ liệu chính phản hồi.
+      // Lịch cá nhân, PT, HLV và môn học không nên giữ spinner của danh sách lớp.
+      const availableClasses = await MemberAPI.getAvailableClasses();
+      const mapAvailableClasses = (coachList: any[]) => {
+        const coachById = new Map(
+          (Array.isArray(coachList) ? coachList : []).map((coach: any) => [String(coach.id), coach])
+        );
+        return (Array.isArray(availableClasses) ? availableClasses : []).map((item: any) => {
         const start = parseScheduleTime(item.scheduleTime);
         const durationMinutes = Number(item.durationMinutes || 60);
         const end = new Date(start.getTime() + durationMinutes * 60000);
@@ -81,7 +76,33 @@ export function useMemberBookingData() {
             item.description ||
             `Lớp học ${item.className} cùng ${coachName} giúp đốt mỡ, săn chắc cơ bắp và nâng cao sức bền tối ưu.`,
         };
-      });
+        });
+      };
+
+      const initialMappedClasses = mapAvailableClasses([]);
+      setGroupClasses(initialMappedClasses);
+      if (!silent) setLoadingGroupClasses(false);
+
+      let scheduleLoadFailed = false;
+      const [memberSchedule, availablePtSlots, coachesList, sportsList] = await Promise.all([
+        MemberAPI.getMemberSchedule().catch(() => {
+          scheduleLoadFailed = true;
+          return { classBookings: [], ptSessions: [] };
+        }),
+        MemberAPI.getAvailablePtSlots().catch(() => []),
+        MemberAPI.getCoaches().catch(() => []),
+        MemberAPI.getSports().catch(() => []),
+      ]);
+      setMemberScheduleStatus(scheduleLoadFailed ? "error" : "ready");
+
+      if (Array.isArray(coachesList)) setCoaches(coachesList);
+      if (Array.isArray(sportsList)) setSports(sportsList);
+
+      const coachById = new Map(
+        (Array.isArray(coachesList) ? coachesList : []).map((coach: any) => [String(coach.id), coach])
+      );
+
+      const mappedClasses = mapAvailableClasses(coachesList);
       setGroupClasses(mappedClasses);
 
       // 1. Đồng bộ và làm sạch counterPendingIds nếu lớp đã được Lễ tân xác nhận hoặc đã có trong dbBookings
@@ -274,7 +295,13 @@ export function useMemberBookingData() {
         !isInactiveBookingStatus(getBookingStatus(session))
     ), [mySessions, isInactiveBookingStatus, getBookingStatus]);
 
-  const isBooked = useCallback((classId: string, date: string) => Boolean(findActiveBooking(classId, date)), [findActiveBooking]);
+  // A payment hold reserves capacity, but it is not a completed registration.
+  // Allow the member to reopen checkout and resume that hold.
+  const isBooked = useCallback((classId: string, date: string) => {
+    const booking = findActiveBooking(classId, date);
+    const status = normalizeBookingStatus(booking ? getBookingStatus(booking) : "");
+    return Boolean(booking) && status !== "pending_payment";
+  }, [findActiveBooking, getBookingStatus, normalizeBookingStatus]);
 
   const myUpcomingClasses = useMemo(() => {
     const nowTime = Date.now();
@@ -284,7 +311,7 @@ export function useMemberBookingData() {
         rawStatus.includes("cancel") ||
         rawStatus.includes("huy") ||
         rawStatus === "rejected";
-      if (isCancelled || rawStatus === "pending") return false;
+      if (isCancelled || rawStatus === "pending" || rawStatus === "pending_payment") return false;
       try {
         if ((s as any).scheduleTime) {
           const start = new Date((s as any).scheduleTime);
@@ -306,8 +333,11 @@ export function useMemberBookingData() {
   }, [mySessions, getBookingStatus]);
 
   const myActiveClasses = useMemo(
-    () => mySessions.filter((s) => !isInactiveBookingStatus(getBookingStatus(s)) && String(getBookingStatus(s)).toLowerCase() !== "pending"),
-    [mySessions, isInactiveBookingStatus, getBookingStatus]
+    () => mySessions.filter((s) => {
+      const status = normalizeBookingStatus(getBookingStatus(s));
+      return !isInactiveBookingStatus(status) && status !== "pending" && status !== "pending_payment";
+    }),
+    [mySessions, isInactiveBookingStatus, getBookingStatus, normalizeBookingStatus]
   );
 
   const myRegisteredClassesCount = useMemo(() => {
@@ -353,6 +383,7 @@ export function useMemberBookingData() {
     sports,
     sportOptions,
     loadingGroupClasses,
+    memberScheduleStatus,
     refreshingGroupClasses,
     groupClassesError,
     loadGroupClasses,

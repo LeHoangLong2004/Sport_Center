@@ -128,29 +128,21 @@ export function useMemberBookingActions({
     }
 
     try {
-      const availableClasses = await MemberAPI.getAvailableClasses();
-      const latestClass = Array.isArray(availableClasses)
-        ? availableClasses.find((item: any) => String(item.id) === String(classItem.id))
-        : null;
-      if (!latestClass || latestClass.price == null) {
+      // The list already contains the quoted price. Do not fetch the entire
+      // catalog again for one card click; the payment-hold endpoint performs
+      // the authoritative availability/price checks before checkout proceeds.
+      if (classItem.price == null) {
         throw new Error("Khóa học chưa có học phí được chốt. Vui lòng liên hệ quản lý trung tâm.");
       }
-      const latestPrice = Number(latestClass.price);
+      const latestPrice = Number(classItem.price);
       if (!Number.isFinite(latestPrice) || latestPrice < 0) {
         throw new Error("Học phí đã chốt của khóa học không hợp lệ.");
       }
 
       const refreshedClass = {
         ...classItem,
-        ...latestClass,
         price: latestPrice,
-        name: latestClass.className || classItem.name,
-        sport: latestClass.sportName || classItem.sport,
-        room: latestClass.facilityName || classItem.room,
       };
-      setGroupClasses((current) => current.map((item) =>
-        String(item.id) === String(classItem.id) ? { ...item, price: latestPrice } : item
-      ));
       setPaymentError(null);
       setClassToBook(refreshedClass);
       setSelectedClassDetail(null);
@@ -355,7 +347,7 @@ export function useMemberBookingActions({
       showFeedback(successMsg);
       toast.success(successMsg);
     } catch (error: any) {
-      setCancelTarget(null);
+      // Keep the confirmation open so a transient refund failure can be retried.
       void loadGroupClasses(true);
       const errorMsg = error?.message || (isPt ? "Không thể hủy ca tập kèm riêng." : "Không thể hủy đặt lớp.");
       showFeedback(errorMsg, "error");

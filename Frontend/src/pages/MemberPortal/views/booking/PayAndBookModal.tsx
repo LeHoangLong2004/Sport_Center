@@ -34,6 +34,7 @@ interface PayAndBookModalProps {
   paymentError: string | null;
   onConfirmPayment: (finalAmount?: number, paymentMemo?: string) => void;
   mySessions?: any[];
+  memberScheduleStatus?: "loading" | "ready" | "error";
 }
 
 export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
@@ -45,12 +46,14 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
   paymentError,
   onConfirmPayment,
   mySessions = [],
+  memberScheduleStatus = "ready",
 }) => {
   if (!classToBook) return null;
 
   const conflictingSession = React.useMemo(() => {
+    if (memberScheduleStatus !== "ready") return null;
     return findConflictingSession(classToBook, mySessions);
-  }, [classToBook, mySessions]);
+  }, [classToBook, mySessions, memberScheduleStatus]);
 
   const [membership, setMembership] = useState<MembershipStatus | null>(null);
   const [paymentHold, setPaymentHold] = useState<{ ready: boolean; loading: boolean; error: string | null; expiresAt: number | null }>({ ready: false, loading: true, error: null, expiresAt: null });
@@ -85,27 +88,57 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
   const classPrice = Math.max(0, originalPrice - discountAmount);
 
   // Generate unique attempt code per modal instance to guarantee uniqueness
-  const [attemptCode] = useState(() => Math.floor(1000 + Math.random() * 9000).toString());
+  // A short numeric suffix can collide with a previous SePay transfer. Use a
+  // high entropy per-attempt token so old transactions cannot match a new QR.
+  const [attemptCode] = useState(() => {
+    const token = globalThis.crypto?.randomUUID?.().replace(/-/g, "").slice(0, 12);
+    return token || `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`.toUpperCase();
+  });
   const bankConfig = BankConfigService.getConfig();
-  const bookingMemo = `DATLOP ${classToBook.id ? String(classToBook.id).slice(0, 8).toUpperCase() : "CLASS"} ${attemptCode}`;
+  const generatedBookingMemo = `DATLOP ${classToBook.id ? String(classToBook.id).slice(0, 8).toUpperCase() : "CLASS"} ${attemptCode}`;
+  const [resumedMemo, setResumedMemo] = useState<{ classId: string; memo: string } | null>(null);
+  const classId = String(classToBook.id);
+  const bookingMemo = resumedMemo?.classId === classId ? resumedMemo.memo : generatedBookingMemo;
   const vietQrUrl = BankConfigService.getVietQrUrl(classPrice, bookingMemo, bankConfig);
 
   useEffect(() => {
     let cancelled = false;
+    if (memberScheduleStatus === "loading") {
+      setPaymentHold({ ready: false, loading: true, error: null, expiresAt: null });
+      return () => { cancelled = true; };
+    }
+    if (memberScheduleStatus === "error") {
+      setPaymentHold({ ready: false, loading: false, error: "Không tải được lịch cá nhân nên hệ thống chưa thể xác nhận khung giờ trống. Vui lòng thử tải lại.", expiresAt: null });
+      return () => { cancelled = true; };
+    }
     if (conflictingSession) {
       setPaymentHold({ ready: false, loading: false, error: null, expiresAt: null });
       return () => { cancelled = true; };
     }
     setPaymentHold({ ready: false, loading: true, error: null, expiresAt: null });
-    MemberAPI.startClassPaymentHold(String(classToBook.id), bookingMemo)
+    MemberAPI.startClassPaymentHold(String(classToBook.id), generatedBookingMemo)
       .then((hold: any) => {
-        if (!cancelled) setPaymentHold({ ready: true, loading: false, error: null, expiresAt: hold?.expiresAt ? new Date(hold.expiresAt).getTime() : null });
+        if (cancelled) {
+          const holdMemo = hold?.paymentMemo || generatedBookingMemo;
+          void MemberAPI.releaseClassPaymentHold(String(classToBook.id), holdMemo).catch(() => undefined);
+          return;
+        }
+        if (hold?.paymentMemo && hold.paymentMemo !== bookingMemo) {
+          setResumedMemo({ classId, memo: hold.paymentMemo });
+        }
+        setPaymentHold({ ready: true, loading: false, error: null, expiresAt: hold?.expiresAt ? new Date(hold.expiresAt).getTime() : null });
       })
       .catch((error: any) => {
         if (!cancelled) setPaymentHold({ ready: false, loading: false, error: error?.message || "Không thể giữ chỗ. Vui lòng kiểm tra lại lịch học.", expiresAt: null });
       });
     return () => { cancelled = true; };
-  }, [classToBook.id, bookingMemo, conflictingSession]);
+  }, [classId, generatedBookingMemo, conflictingSession, memberScheduleStatus]);
+
+  useEffect(() => {
+    if (!conflictingSession || !paymentHold.ready) return;
+    void MemberAPI.releaseClassPaymentHold(String(classToBook.id), bookingMemo).catch(() => undefined);
+    setPaymentHold({ ready: false, loading: false, error: null, expiresAt: null });
+  }, [conflictingSession, paymentHold.ready, classToBook.id, bookingMemo]);
 
   const closeModal = () => {
     if (paymentHold.ready) void MemberAPI.releaseClassPaymentHold(String(classToBook.id), bookingMemo).catch(() => undefined);
@@ -170,8 +203,11 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
   useEffect(() => {
     if (!classToBook || !paymentHold.ready || conflictingSession || paymentMethod !== "qr" || isProcessingPayment || isPaid) return;
     let isCancelled = false;
+    let isRequestPending = false;
 
     const interval = setInterval(async () => {
+      if (isRequestPending) return;
+      isRequestPending = true;
       try {
         const res = await WalletService.checkServicePayment(bookingMemo, classPrice);
         if (!isCancelled && res.received) {
@@ -182,7 +218,11 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
             onConfirmPayment(classPrice, bookingMemo);
           }, 1000);
         }
-      } catch {}
+      } catch {
+        // Keep the QR checkout open; the next poll can retry transient failures.
+      } finally {
+        isRequestPending = false;
+      }
     }, 2000);
 
     return () => {

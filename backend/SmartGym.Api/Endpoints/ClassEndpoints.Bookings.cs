@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SmartGym.Application.Common;
 using SmartGym.Application.DTOs.Classes;
 using SmartGym.Application.Services;
@@ -48,15 +49,18 @@ public static partial class ClassEndpoints
         // Reserve all course sessions before presenting any payment option/QR.
         classGroup.MapPost("/{id:guid}/payment-hold", async (
             Guid id, [FromBody] StartClassPaymentHoldRequest request, HttpContext context,
-            ClassService service, SmartGymDbContext db) =>
+            ClassService service, SmartGymDbContext db, ILoggerFactory loggerFactory) =>
         {
+            var logger = loggerFactory.CreateLogger("ClassPaymentHold");
             var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(userIdClaim, out var userId)) return Results.Unauthorized();
             var memo = (request.PaymentMemo ?? "").Trim();
             if (memo.Length < 12 || !memo.StartsWith("DATLOP ", StringComparison.OrdinalIgnoreCase))
                 return Results.BadRequest(new { message = "Mã thanh toán không hợp lệ." });
 
-            await ExpireOldClassPaymentHoldsAsync(db);
+            // Payment-hold schema is initialized at API startup. Avoid DDL and a
+            // global expiration sweep on every checkout attempt.
+            await ExpireMemberClassPaymentHoldsAsync(db, userId, id);
             var nowLocal = DateOnly.FromDateTime(CenterTime.ToLocal(DateTime.UtcNow));
             var prices = await db.Database.SqlQueryRaw<ClassPriceSnapshotRaw>(
                 """
@@ -83,13 +87,42 @@ public static partial class ClassEndpoints
                 userId, id).FirstOrDefaultAsync();
             if (existingHold is not null)
             {
-                if (string.Equals(existingHold.PaymentMemo, memo, StringComparison.Ordinal))
-                    return Results.Ok(new { success = true, holdId = existingHold.Id, amount = existingHold.Amount, expiresAt = existingHold.ExpiresAt });
-                return Results.Conflict(new { message = "Bạn đang có một lượt thanh toán cho lớp này. Hãy tiếp tục lượt đó hoặc đóng và mở lại." });
+                return Results.Ok(new
+                {
+                    success = true,
+                    resumed = !string.Equals(existingHold.PaymentMemo, memo, StringComparison.Ordinal),
+                    holdId = existingHold.Id,
+                    paymentMemo = existingHold.PaymentMemo,
+                    amount = existingHold.Amount,
+                    expiresAt = existingHold.ExpiresAt
+                });
             }
 
             var (reserved, conflictMessage) = await service.BookClassAsync(userId, id, notify: false, bookingStatus: "pending_payment");
-            if (!reserved) return Results.Conflict(new { message = conflictMessage ?? "Không thể giữ chỗ cho lớp học." });
+            if (!reserved)
+            {
+                // A repeated request with the same idempotency memo may arrive
+                // while the first request is between reserving seats and saving
+                // its payment hold. Reuse the first hold instead of surfacing a
+                // false "already booked" error.
+                var inFlightHold = await db.Database.SqlQueryRaw<ClassPaymentHoldRaw>(
+                    "SELECT id AS \"Id\", user_id AS \"UserId\", class_id AS \"ClassId\", payment_memo AS \"PaymentMemo\", invoice_id AS \"InvoiceId\", amount AS \"Amount\", expires_at AS \"ExpiresAt\" FROM class_booking_payment_holds WHERE user_id = {0} AND class_id = {1} AND payment_memo = {2} AND status = 'active' AND expires_at > now() ORDER BY created_at DESC LIMIT 1",
+                    userId, id, memo).FirstOrDefaultAsync();
+                if (inFlightHold is not null)
+                {
+                    return Results.Ok(new
+                    {
+                        success = true,
+                        resumed = true,
+                        holdId = inFlightHold.Id,
+                        paymentMemo = inFlightHold.PaymentMemo,
+                        amount = inFlightHold.Amount,
+                        expiresAt = inFlightHold.ExpiresAt
+                    });
+                }
+
+                return Results.Conflict(new { message = conflictMessage ?? "Không thể giữ chỗ cho lớp học." });
+            }
 
             var invoice = new Invoice
             {
@@ -102,18 +135,78 @@ public static partial class ClassEndpoints
             var expiresAt = DateTime.UtcNow.AddMinutes(10);
             try
             {
-                await db.Database.ExecuteSqlRawAsync(
-                    "INSERT INTO class_booking_payment_holds (user_id, class_id, invoice_id, payment_memo, amount, expires_at) VALUES ({0}, {1}, {2}, {3}, {4}, {5})",
+                var inserted = await db.Database.ExecuteSqlRawAsync(
+                    "INSERT INTO class_booking_payment_holds (user_id, class_id, invoice_id, payment_memo, amount, expires_at) VALUES ({0}, {1}, {2}, {3}, {4}, {5}) ON CONFLICT (payment_memo) DO NOTHING",
                     userId, id, invoice.Id, memo, amount, expiresAt);
+
+                var persistedHold = await db.Database.SqlQueryRaw<ClassPaymentHoldRaw>(
+                    "SELECT id AS \"Id\", user_id AS \"UserId\", class_id AS \"ClassId\", payment_memo AS \"PaymentMemo\", invoice_id AS \"InvoiceId\", amount AS \"Amount\", expires_at AS \"ExpiresAt\" FROM class_booking_payment_holds WHERE user_id = {0} AND class_id = {1} AND payment_memo = {2} AND status = 'active' AND expires_at > now() ORDER BY created_at DESC LIMIT 1",
+                    userId, id, memo).FirstOrDefaultAsync();
+
+                if (persistedHold is not null)
+                {
+                    if (persistedHold.InvoiceId != invoice.Id)
+                    {
+                        db.Invoices.Remove(invoice);
+                        await db.SaveChangesAsync();
+                    }
+
+                    return Results.Ok(new
+                    {
+                        success = true,
+                        resumed = inserted == 0,
+                        holdId = persistedHold.Id,
+                        paymentMemo = persistedHold.PaymentMemo,
+                        amount = persistedHold.Amount,
+                        expiresAt = persistedHold.ExpiresAt
+                    });
+                }
+
+                throw new InvalidOperationException("Payment hold insert did not create or find an active hold.");
             }
             catch (Exception ex)
             {
+                logger.LogError(ex, "Could not persist payment hold for member {MemberId}, class {ClassId}.", userId, id);
+
+                // A database/network exception can happen after PostgreSQL has
+                // committed the insert. Check for the hold before undoing the
+                // reservation, so a retry cannot destroy a valid checkout.
+                ClassPaymentHoldRaw? committedHold = null;
+                try
+                {
+                    committedHold = await db.Database.SqlQueryRaw<ClassPaymentHoldRaw>(
+                        "SELECT id AS \"Id\", user_id AS \"UserId\", class_id AS \"ClassId\", payment_memo AS \"PaymentMemo\", invoice_id AS \"InvoiceId\", amount AS \"Amount\", expires_at AS \"ExpiresAt\" FROM class_booking_payment_holds WHERE user_id = {0} AND class_id = {1} AND payment_memo = {2} AND status = 'active' AND expires_at > now() ORDER BY created_at DESC LIMIT 1",
+                        userId, id, memo).FirstOrDefaultAsync();
+                }
+                catch (Exception lookupException)
+                {
+                    logger.LogError(lookupException, "Could not verify payment hold after persistence failure for member {MemberId}, class {ClassId}.", userId, id);
+                }
+
+                if (committedHold is not null)
+                {
+                    if (committedHold.InvoiceId != invoice.Id)
+                    {
+                        db.Invoices.Remove(invoice);
+                        await db.SaveChangesAsync();
+                    }
+
+                    return Results.Ok(new
+                    {
+                        success = true,
+                        resumed = true,
+                        holdId = committedHold.Id,
+                        paymentMemo = committedHold.PaymentMemo,
+                        amount = committedHold.Amount,
+                        expiresAt = committedHold.ExpiresAt
+                    });
+                }
+
                 await service.CancelBookingAsync(userId, id);
                 db.Invoices.Remove(invoice);
                 await db.SaveChangesAsync();
                 return Results.Conflict(new { message = "Không thể tạo lượt giữ chỗ thanh toán. Vui lòng thử lại.", detail = ex.Message });
             }
-            return Results.Ok(new { success = true, holdId = invoice.Id, amount, expiresAt });
         }).RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
 
         classGroup.MapDelete("/{id:guid}/payment-hold", async (
@@ -320,37 +413,136 @@ public static partial class ClassEndpoints
         .RequireAuthorization(policy => policy.RequireRole("receptionist", "admin", "manager", "staff"));
     }
 
-    private static async Task ExpireOldClassPaymentHoldsAsync(SmartGymDbContext db)
+    private static async Task ExpireMemberClassPaymentHoldsAsync(SmartGymDbContext db, Guid userId, Guid classId)
     {
         var expired = await db.Database.SqlQueryRaw<ClassPaymentHoldRaw>(
-            "SELECT id AS \"Id\", invoice_id AS \"InvoiceId\", user_id AS \"UserId\", class_id AS \"ClassId\", payment_memo AS \"PaymentMemo\", amount AS \"Amount\", expires_at AS \"ExpiresAt\" FROM class_booking_payment_holds WHERE status = 'active' AND expires_at <= now()")
+            "SELECT id AS \"Id\", invoice_id AS \"InvoiceId\", user_id AS \"UserId\", class_id AS \"ClassId\", payment_memo AS \"PaymentMemo\", amount AS \"Amount\", expires_at AS \"ExpiresAt\" FROM class_booking_payment_holds WHERE user_id = {0} AND class_id = {1} AND status = 'active' AND expires_at <= now()",
+            userId, classId)
             .ToListAsync();
         foreach (var hold in expired)
             await ReleaseClassPaymentHoldAsync(db, hold.UserId, hold.ClassId, hold.PaymentMemo, "expired");
+
+        // Recover old pending_payment rows left behind by an interrupted checkout
+        // (for example, an API crash between reserving sessions and saving a hold).
+        await db.Database.ExecuteSqlRawAsync(
+            """
+            WITH stale AS (
+                UPDATE class_bookings b
+                SET status = 'expired'
+                WHERE b.user_id = {0}
+                  AND b.class_id IN (SELECT id FROM classes WHERE id = {1} OR parent_id = {1} OR (parent_id IS NOT NULL AND parent_id = (SELECT parent_id FROM classes WHERE id = {1})))
+                  AND LOWER(b.status) = 'pending_payment'
+                  AND b.created_at <= now() - interval '10 minutes'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM class_booking_payment_holds h
+                      WHERE h.user_id = b.user_id AND h.class_id = b.class_id
+                        AND h.status = 'active' AND h.expires_at > now()
+                  )
+                RETURNING b.class_id
+            ), counts AS (
+                SELECT class_id, COUNT(*) AS amount FROM stale GROUP BY class_id
+            )
+            UPDATE classes c
+            SET current_enrolled = GREATEST(0, c.current_enrolled - counts.amount)
+            FROM counts WHERE c.id = counts.class_id
+            """, userId, classId);
     }
 
     private static async Task ReleaseClassPaymentHoldAsync(SmartGymDbContext db, Guid userId, Guid classId, string memo, string holdStatus)
     {
-        await using var tx = await db.Database.BeginTransactionAsync();
-        var sessions = await db.Database.SqlQueryRaw<ClassBookingSessionIdRaw>(
-            "SELECT b.class_id AS \"ClassId\" FROM class_bookings b WHERE b.user_id = {0} AND b.class_id IN (SELECT id FROM classes WHERE id = {1} OR parent_id = {1} OR (parent_id IS NOT NULL AND parent_id = (SELECT parent_id FROM classes WHERE id = {1}))) AND LOWER(b.status) = 'pending_payment'",
-            userId, classId).ToListAsync();
-        foreach (var group in sessions.GroupBy(x => x.ClassId))
+        var strategy = db.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
         {
-            var count = group.Count();
+            await using var tx = await db.Database.BeginTransactionAsync();
+            var sessions = await db.Database.SqlQueryRaw<ClassBookingSessionIdRaw>(
+                "SELECT b.class_id AS \"ClassId\" FROM class_bookings b WHERE b.user_id = {0} AND b.class_id IN (SELECT id FROM classes WHERE id = {1} OR parent_id = {1} OR (parent_id IS NOT NULL AND parent_id = (SELECT parent_id FROM classes WHERE id = {1}))) AND LOWER(b.status) = 'pending_payment'",
+                userId, classId).ToListAsync();
+            foreach (var group in sessions.GroupBy(x => x.ClassId))
+            {
+                var count = group.Count();
+                await db.Database.ExecuteSqlRawAsync(
+                    "UPDATE class_bookings SET status = {2} WHERE user_id = {0} AND class_id = {1} AND LOWER(status) = 'pending_payment'",
+                    userId, group.Key, holdStatus == "expired" ? "expired" : "cancelled");
+                await db.Database.ExecuteSqlRawAsync(
+                    "UPDATE classes SET current_enrolled = GREATEST(0, current_enrolled - {1}) WHERE id = {0}", group.Key, count);
+            }
             await db.Database.ExecuteSqlRawAsync(
-                "UPDATE class_bookings SET status = {2} WHERE user_id = {0} AND class_id = {1} AND LOWER(status) = 'pending_payment'",
-                userId, group.Key, holdStatus == "expired" ? "expired" : "cancelled");
+                "UPDATE class_booking_payment_holds SET status = {2} WHERE user_id = {0} AND class_id = {1} AND payment_memo = {3} AND status = 'active'",
+                userId, classId, holdStatus, memo);
             await db.Database.ExecuteSqlRawAsync(
-                "UPDATE classes SET current_enrolled = GREATEST(0, current_enrolled - {1}) WHERE id = {0}", group.Key, count);
-        }
-        await db.Database.ExecuteSqlRawAsync(
-            "UPDATE class_booking_payment_holds SET status = {2} WHERE user_id = {0} AND class_id = {1} AND payment_memo = {3} AND status = 'active'",
-            userId, classId, holdStatus, memo);
-        await db.Database.ExecuteSqlRawAsync(
-            "UPDATE invoices SET payment_status = 'failed' WHERE id IN (SELECT invoice_id FROM class_booking_payment_holds WHERE user_id = {0} AND class_id = {1} AND payment_memo = {2}) AND payment_status = 'pending'",
-            userId, classId, memo);
-        await tx.CommitAsync();
+                "UPDATE invoices SET payment_status = 'failed' WHERE id IN (SELECT invoice_id FROM class_booking_payment_holds WHERE user_id = {0} AND class_id = {1} AND payment_memo = {2}) AND payment_status = 'pending'",
+                userId, classId, memo);
+            await tx.CommitAsync();
+        });
+    }
+
+    private static async Task<(bool Success, decimal NewBalance, bool AlreadyRefunded)> RefundClassInvoiceToWalletAsync(
+        SmartGymDbContext db,
+        Guid userId,
+        Guid invoiceId,
+        decimal amount,
+        string note)
+    {
+        if (amount <= 0) return (false, 0m, false);
+
+        // Stable reference makes retries safe: the same class invoice can only
+        // credit the member wallet once, even if the cancellation request races.
+        var referenceCode = $"CLASS-REFUND-{invoiceId:N}";
+        var strategy = db.Database.CreateExecutionStrategy();
+        var result = await strategy.ExecuteAsync(async () =>
+        {
+            await using var tx = await db.Database.BeginTransactionAsync();
+
+            await db.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT INTO member_wallet_balances (user_id, balance, last_updated_at)
+                SELECT {userId}, COALESCE(SUM(
+                    CASE
+                        WHEN status = 'completed' AND type IN ('topup', 'refund') THEN amount
+                        WHEN status = 'completed' AND type = 'payment' THEN -amount
+                        ELSE 0
+                    END
+                ), 0), now()
+                FROM wallet_transactions
+                WHERE user_id = {userId}
+                ON CONFLICT (user_id) DO NOTHING
+                """);
+
+            var balances = await db.Database.SqlQueryRaw<decimal>(
+                "SELECT balance AS \"Value\" FROM member_wallet_balances WHERE user_id = {0} FOR UPDATE", userId)
+                .ToListAsync();
+            var currentBalance = balances.FirstOrDefault();
+
+            var priorRefunds = await db.Database.SqlQueryRaw<bool>(
+                "SELECT EXISTS (SELECT 1 FROM wallet_transactions WHERE user_id = {0} AND reference_code = {1} AND type = 'refund' AND status = 'completed') AS \"Value\"",
+                userId, referenceCode).ToListAsync();
+            if (priorRefunds.FirstOrDefault())
+            {
+                await tx.CommitAsync();
+                return (true, currentBalance, true);
+            }
+
+            var newBalance = currentBalance + amount;
+            await db.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT INTO wallet_transactions (
+                    id, user_id, type, amount, balance_after, method, status, reference_code, note, created_at
+                ) VALUES (
+                    {Guid.NewGuid()}, {userId}, 'refund', {amount}, {newBalance},
+                    'Ví hoàn tiền', 'completed', {referenceCode}, {note}, now()
+                )
+                """);
+            await db.Database.ExecuteSqlInterpolatedAsync($"""
+                UPDATE member_wallet_balances
+                SET balance = {newBalance}, last_updated_at = now()
+                WHERE user_id = {userId}
+                """);
+
+            await tx.CommitAsync();
+            return (true, newBalance, false);
+        });
+
+        if (result.Item1)
+            MemberEndpoints.SetMemberWalletCache(userId, result.Item2);
+        return result;
     }
 
     private static async Task<IResult> ProcessCancelBookingInternalAsync(
@@ -387,24 +579,65 @@ public static partial class ClassEndpoints
         catch { }
 
         var (isSuccess, isLate, errorMessage) = await service.CancelBookingAsync(targetUserId, classId);
-        if (!isSuccess)
+        var alreadyCancelled = !isSuccess && string.Equals(bookingRow?.Status, "cancelled", StringComparison.OrdinalIgnoreCase);
+        var canRecoverCancelledRefund = false;
+        if (alreadyCancelled && classDetail is not null)
+        {
+            var classStartUtc = classDetail.ScheduleTime.Hour >= 6
+                ? classDetail.ScheduleTime.AddHours(-7)
+                : classDetail.ScheduleTime;
+            var classEndUtc = classStartUtc.AddMinutes(classDetail.DurationMinutes);
+            canRecoverCancelledRefund = DateTime.UtcNow < classEndUtc
+                && (isStaffAction || DateTime.UtcNow.AddHours(2) < classStartUtc);
+        }
+        if (!isSuccess && !canRecoverCancelledRefund)
             return Results.BadRequest(new { message = errorMessage });
 
-        // Phân loại hình thức đặt chỗ:
-        var bookingTime = bookingRow?.CreatedAt ?? DateTime.UtcNow;
+        // Link the payment to the class/course itself. A time window can pick an
+        // unrelated invoice (or miss the class invoice) and silently skip refunds.
+        var rootRows = await db.Database.SqlQueryRaw<ClassRootIdRaw>(
+            "SELECT COALESCE(parent_id, id) AS \"RootClassId\" FROM classes WHERE id = {0}", classId)
+            .ToListAsync();
+        var rootClassId = rootRows.FirstOrDefault()?.RootClassId ?? classId;
 
-        // Tìm hóa đơn liên quan trực tiếp tới lượt đặt lớp này (trong vòng +-5 phút khi đặt)
         Invoice? bookingInvoice = null;
         try
         {
-            bookingInvoice = await db.Invoices
-                .Where(i => i.UserId == targetUserId 
-                         && i.CreatedAt >= bookingTime.AddMinutes(-5)
-                         && i.CreatedAt <= bookingTime.AddMinutes(5))
-                .OrderByDescending(i => i.CreatedAt)
+            bookingInvoice = await db.Invoices.FromSqlInterpolated($"""
+                    SELECT i.*
+                    FROM invoices i
+                    WHERE i.user_id = {targetUserId}
+                      AND (
+                          i.class_id = {rootClassId}
+                          OR i.id IN (
+                              SELECT h.invoice_id
+                              FROM class_booking_payment_holds h
+                              WHERE h.user_id = {targetUserId}
+                                AND h.class_id IN (
+                                    SELECT id FROM classes WHERE id = {rootClassId} OR parent_id = {rootClassId}
+                                )
+                          )
+                      )
+                    ORDER BY CASE i.payment_status
+                        WHEN 'completed' THEN 0
+                        WHEN 'pending' THEN 1
+                        ELSE 2
+                    END, i.created_at DESC
+                    LIMIT 1
+                    """)
                 .FirstOrDefaultAsync();
         }
         catch { }
+
+        // Older records may predate payment-hold rows. Their invoices still
+        // carry class_id, so use that exact relation as the compatibility path.
+        if (bookingInvoice is null)
+        {
+            bookingInvoice = await db.Invoices
+                .Where(i => i.UserId == targetUserId && i.ClassId == rootClassId)
+                .OrderByDescending(i => i.CreatedAt)
+                .FirstOrDefaultAsync();
+        }
 
         // 1. Lượt đặt không phát sinh thanh toán:
         // - bookingRow.SubscriptionId có giá trị
@@ -428,7 +661,7 @@ public static partial class ClassEndpoints
         // - KHÔNG PHẢI MIỄN PHÍ: !isFreeBooking
         // - KHÔNG PHẢI TRẢ SAU TẠI QUẦY: !wasCounterPending
         // - HỦY TRƯỚC GIỜ HỌC TRÊN 2 TIẾNG HOẶC DO NHÂN VIÊN LỄ TÂN HỦY HỘ: (!isLate || isStaffAction)
-        bool shouldRefund = !isFreeBooking && !wasCounterPending && (!isLate || isStaffAction)
+        bool shouldRefund = !isFreeBooking && !wasCounterPending && (!isLate || isStaffAction || canRecoverCancelledRefund)
             && bookingInvoice != null && bookingInvoice.TotalAmount > 0 && bookingInvoice.Status == PaymentStatus.Completed;
 
         if (shouldRefund && bookingInvoice != null)
@@ -437,17 +670,17 @@ public static partial class ClassEndpoints
             if (refundAmount > 0)
             {
                 var className = classDetail?.ClassName ?? "lớp học";
-                var (refundSuccess, newBal, _) = await MemberEndpoints.RefundToWalletAsync(
-                    db,
-                    targetUserId,
-                    refundAmount,
-                    $"Hoàn tiền hủy đặt lớp: {className}" + (isStaffAction ? " (Lễ tân hủy hộ)" : "")
-                );
+                var (refundSuccess, newBal, _) = await RefundClassInvoiceToWalletAsync(
+                    db, targetUserId, bookingInvoice.Id, refundAmount,
+                    $"Hoàn tiền hủy đặt lớp: {className}" + (isStaffAction ? " (Lễ tân hủy hộ)" : ""));
                 if (refundSuccess)
                 {
                     isRefunded = true;
                     updatedBalance = newBal;
                     bookingInvoice.Status = PaymentStatus.Refunded;
+                    bookingInvoice.RefundedAmount = Math.Min(
+                        bookingInvoice.TotalAmount,
+                        Math.Max(bookingInvoice.RefundedAmount, refundAmount));
                     await db.SaveChangesAsync();
                 }
             }
@@ -546,4 +779,9 @@ public class CancelBookingInfoRaw
     public string Status { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public Guid? SubscriptionId { get; set; }
+}
+
+public sealed class ClassRootIdRaw
+{
+    public Guid RootClassId { get; set; }
 }
