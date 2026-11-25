@@ -87,18 +87,10 @@ export const GroupClassesTab: React.FC<GroupClassesTabProps> = ({
   }
 
   const now = Date.now();
-  const advanceHours =
-    membership?.bookingAdvanceHours && membership.bookingAdvanceHours > 0
-      ? membership.bookingAdvanceHours
-      : membership?.tier === "premium"
-      ? 120
-      : membership?.tier === "plus"
-      ? 72
-      : 24;
+  const advanceHours = membership?.bookingAdvanceHours ?? 24;
 
   const tierName =
-    membership?.name ||
-    (membership?.tier === "premium" ? "Premium" : membership?.tier === "plus" ? "Plus" : "Cơ bản");
+    membership?.name || "Cơ bản";
 
   return (
     <div className="space-y-4">

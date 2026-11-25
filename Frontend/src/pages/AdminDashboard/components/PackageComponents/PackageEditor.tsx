@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ShieldCheck, X, Plus, Check, AlertCircle } from "lucide-react";
-import { PackageDraft, periods, formatLabels, linesToText, textToLines } from "./utils";
+import { PackageDraft, periods, formatLabels, linesToText, textToLines, tierCodeFromName } from "./utils";
 import { PackagePricingFields } from "./PackagePricingFields";
 import { PackagePeriod, SportFormat } from "../../../../services/packageApi";
 
@@ -12,6 +12,7 @@ export function PackageEditor({
   onSave,
   saving,
   error,
+  isNew = false,
 }: {
   draft: PackageDraft;
   onChange: (draft: PackageDraft) => void;
@@ -19,6 +20,7 @@ export function PackageEditor({
   onSave: () => void;
   saving: boolean;
   error?: string;
+  isNew?: boolean;
 }) {
   const isMembership = draft.category === "membership";
 
@@ -115,13 +117,13 @@ export function PackageEditor({
         >
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600">
-              {isMembership ? "Cấu hình hạng thành viên" : "Danh mục gói môn tập"}
+              {isMembership ? (isNew ? "Tạo hạng thành viên" : "Cấu hình hạng thành viên") : "Danh mục gói môn tập"}
             </span>
             <h2
               id="package-editor-title"
               className="text-base font-bold text-slate-900"
             >
-              {draft.name || "Tạo gói môn tập"}
+              {draft.name || (isNew ? "Hạng thành viên mới" : "Cấu hình gói")}
             </h2>
           </div>
           <button
@@ -158,24 +160,27 @@ export function PackageEditor({
             {isMembership ? (
               <div className="grid gap-2.5 sm:grid-cols-2">
                 <div>
-                  <label className={labelClass}>Hạng hệ thống</label>
+                  <label className={labelClass}>{isNew ? "Mã hạng hệ thống" : "Hạng hệ thống"}</label>
                   <input
                     disabled
-                    value={
-                      draft.tier === "basic"
-                        ? "Cơ bản"
-                        : draft.tier === "plus"
-                        ? "Plus"
-                        : "Premium"
-                    }
+                    value={isNew ? draft.tier : draft.tier === "basic" ? "Cơ bản" : draft.tier === "plus" ? "Plus" : draft.tier === "premium" ? "Premium" : draft.tier}
                     className={`${fieldClass} bg-slate-50`}
                   />
+                  {isNew && <p className="mt-1 text-[11px] text-slate-500">Mã được tạo từ tên hạng; thứ tự sẽ tự xếp sau các hạng hiện có.</p>}
                 </div>
                 <div>
                   <label className={labelClass}>Tên hiển thị</label>
                   <input
                     value={draft.name}
-                    onChange={(event) => setField("name", event.target.value)}
+                    onChange={(event) => {
+                      const name = event.target.value;
+                      if (isNew) {
+                        const tier = tierCodeFromName(name) || "new";
+                        onChange({ ...draft, name, tier, id: `membership-${tier}` });
+                      } else {
+                        setField("name", name);
+                      }
+                    }}
                     className={fieldClass}
                     maxLength={60}
                     required
@@ -345,7 +350,9 @@ export function PackageEditor({
           <div className="flex gap-2.5 rounded-xl border border-blue-100 bg-blue-50/60 p-2.5 text-xs leading-relaxed text-blue-900">
             <ShieldCheck size={15} className="mt-0.5 shrink-0 text-blue-600" />
             <span>
-              Khi lưu cấu hình, gói môn sẽ được tự động liên kết với bộ môn trong CSDL để phục vụ việc kiểm tra phân quyền đặt lịch và đối soát báo cáo.
+              {isMembership
+                ? "Giá và quyền lợi mới áp dụng cho các đơn tạo sau khi lưu; đơn đã thanh toán giữ nguyên thông tin tại thời điểm mua."
+                : "Khi lưu cấu hình, gói môn sẽ được tự động liên kết với bộ môn trong CSDL."}
             </span>
           </div>
 
@@ -372,7 +379,7 @@ export function PackageEditor({
             className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-60 shadow-sm transition-colors"
           >
             <Check size={14} />
-            {saving ? "Đang lưu..." : "Lưu cấu hình"}
+            {saving ? "Đang lưu..." : isNew ? "Tạo hạng" : "Lưu cấu hình"}
           </button>
         </footer>
       </div>

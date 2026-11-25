@@ -104,7 +104,7 @@ export default function MemberDashboard({ onNavigate }: Props) {
         const paymentStatus = subscription.paymentStatus;
         const isPaid = paymentStatus === 1 || String(paymentStatus).toLowerCase() === "completed";
         const packageType = String(subscription.packageType || "").toLowerCase();
-        if (!isPaid || !["membership", "sport"].includes(packageType)) return false;
+        if (!isPaid || packageType !== "membership") return false;
         const start = subscription.startDate ? new Date(subscription.startDate) : null;
         const end = subscription.endDate ? new Date(subscription.endDate) : null;
         if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return false;
@@ -121,7 +121,7 @@ export default function MemberDashboard({ onNavigate }: Props) {
           packageId: subscription.packageId,
           packageType: String(subscription.packageType || "").toLowerCase(),
           name: subscription.packageName || "Gói tập",
-          sport: String(subscription.packageType || "").toLowerCase() === "membership" ? "Thành viên" : "Gói môn",
+          sport: "Thành viên",
           endDate: end.toLocaleDateString("sv-SE"),
           daysRemaining,
         };
@@ -132,7 +132,7 @@ export default function MemberDashboard({ onNavigate }: Props) {
     ));
     const activeOrderPackages = orders
       .filter((order) => {
-        if (order.status !== "paid" || !order.packageSnapshot || order.packageSnapshot.category === "class") return false;
+        if (order.status !== "paid" || !order.packageSnapshot || order.packageSnapshot.category !== "membership") return false;
         const end = order.endDate ? new Date(order.endDate) : null;
         if (end && (Number.isNaN(end.getTime()) || end < today)) return false;
         const category = order.packageSnapshot.category;
@@ -145,7 +145,7 @@ export default function MemberDashboard({ onNavigate }: Props) {
         return {
           id: order.id,
           name: order.packageSnapshot.name,
-          sport: order.packageSnapshot.sport || (order.packageSnapshot.category === "membership" ? "Thành viên" : "Gói môn"),
+          sport: "Thành viên",
           endDate: order.endDate ? order.endDate.split("T")[0] : "--",
           daysRemaining,
         };

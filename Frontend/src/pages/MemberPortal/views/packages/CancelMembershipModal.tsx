@@ -81,7 +81,7 @@ export default function CancelMembershipModal({
             <div className="flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
               <span>
-                Toàn bộ ưu đãi giảm giá (<strong>{membershipStatus.groupDiscountPct || 8}%</strong> khi mua gói môn & lịch lẻ) sẽ chấm dứt ngay lập tức.
+                Toàn bộ ưu đãi đặt lớp (<strong>{membershipStatus.groupDiscountPct || 8}%</strong>) và Coach 1-1 sẽ chấm dứt ngay lập tức.
               </span>
             </div>
             <div className="flex items-start gap-2">

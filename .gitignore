@@ -131,6 +131,7 @@ backend/**/bin/
 backend/**/obj/
 backend/**/out/
 artifacts/
+.codex-build/
 .api-build-check/
 backend/.api-build-check/
 

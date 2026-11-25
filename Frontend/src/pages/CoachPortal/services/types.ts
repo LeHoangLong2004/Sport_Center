@@ -93,7 +93,22 @@ export interface MockCurriculum {
   updatedAt: string;
   description: string;
   exercises: { name: string; reps: string; rest: string; note: string }[];
+  programOutline?: {
+    durationWeeks: number;
+    sessionsPerWeek: number;
+    sessions: TrainingPlanSession[];
+  } | null;
   assignedTo: { type: "class" | "member"; id: string; name: string }[];
+}
+
+export interface TrainingPlanSession {
+  weekNumber: number;
+  sessionNumber: number;
+  title: string;
+  goal: string;
+  activities: string;
+  coachNotes: string;
+  exercises: { name: string; reps: string; rest: string; note: string }[];
 }
 
 export interface SportOption {
@@ -254,6 +269,8 @@ export interface UpdateFlow5DraftRequest {
   target?: Flow5Target;
   exercises: Flow5Exercise[];
 }
+
+export type CreateFlow5DraftRequest = Omit<UpdateFlow5DraftRequest, "expectedVersion">;
 
 export interface AssignFlow5PlanRequest {
   target: Flow5Target;

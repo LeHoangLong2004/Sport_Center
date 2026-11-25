@@ -43,7 +43,8 @@ public class SubscriptionService : ISubscriptionService
     public async Task<SubscriptionResponse> SubscribeToPackageAsync(Guid userId, CreateSubscriptionRequest request)
     {
         var package = await _packageRepository.GetByIdAsync(request.PackageId);
-        if (package == null) throw new Exception("Package not found");
+        if (package == null || !package.Status || !string.Equals(package.PackageType, "membership", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Trung tâm hiện chỉ cho phép đăng ký gói thành viên đang mở bán.");
 
         decimal amount = request.BillingPeriod == "yearly" 
             ? (package.YearlyPrice ?? 0) 

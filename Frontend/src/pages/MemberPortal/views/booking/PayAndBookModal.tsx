@@ -77,11 +77,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
 
   const originalPrice = Number(classToBook.price);
 
-  const discountPct = membership?.tier === "premium"
-    ? (membership.groupDiscountPct || 15)
-    : membership?.tier === "plus"
-    ? (membership.groupDiscountPct || 8)
-    : 0;
+  const discountPct = membership?.groupDiscountPct ?? 0;
 
   const discountAmount = Math.round(originalPrice * (discountPct / 100));
 

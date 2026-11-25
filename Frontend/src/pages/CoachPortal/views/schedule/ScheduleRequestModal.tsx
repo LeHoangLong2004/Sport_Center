@@ -19,7 +19,6 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   sessions: UnifiedScheduleItem[];
-  initialSessionId?: string;
   onSubmit: (data: {
     sessionId: string;
     className: string;
@@ -45,10 +44,10 @@ export default function ScheduleRequestModal({
   isOpen,
   onClose,
   sessions,
-  initialSessionId,
   onSubmit,
 }: Props) {
   const [selectedSessionId, setSelectedSessionId] = useState("");
+  const [selectedCourseKey, setSelectedCourseKey] = useState("");
   const [requestType, setRequestType] = useState<ScheduleRequestType>("dời lịch");
   const [substituteCoachId, setSubstituteCoachId] = useState("");
   const [substituteCoachName, setSubstituteCoachName] = useState("");
@@ -73,16 +72,17 @@ export default function ScheduleRequestModal({
   }, [sessions]);
 
   useEffect(() => {
-    if (initialSessionId && upcomingSessions.some((s) => s.id === initialSessionId)) {
-      setSelectedSessionId(initialSessionId);
-    } else if (upcomingSessions.length > 0) {
-      if (!selectedSessionId || !upcomingSessions.some((s) => s.id === selectedSessionId)) {
-        setSelectedSessionId(upcomingSessions[0].id);
-      }
-    } else {
+    if (isOpen) {
+      setSelectedCourseKey("");
       setSelectedSessionId("");
+      setRequestType("dời lịch");
+      setNewDate("");
+      setNewTime("");
+      setReason("");
+      setSubstituteCoachId("");
+      setSubstituteCoachName("");
     }
-  }, [initialSessionId, upcomingSessions, selectedSessionId]);
+  }, [isOpen]);
 
   // Load coaches & schedule from database to check real-time availability
   useEffect(() => {
@@ -256,7 +256,12 @@ export default function ScheduleRequestModal({
             {/* 1. Session Picker */}
             <RequestSessionPicker
               sessions={upcomingSessions}
+              selectedCourseKey={selectedCourseKey}
               selectedSessionId={selectedSessionId}
+              onSelectCourse={(key) => {
+                setSelectedCourseKey(key);
+                setSelectedSessionId("");
+              }}
               onSelectSessionId={setSelectedSessionId}
             />
 
@@ -265,6 +270,13 @@ export default function ScheduleRequestModal({
               requestType={requestType}
               onRequestTypeChange={setRequestType}
             />
+
+            {currentSession && (
+              <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 py-2.5 text-slate-600 dark:text-slate-300">
+                Bạn đang tạo yêu cầu <span className="font-semibold text-slate-900 dark:text-white">{requestType}</span> cho
+                <span className="font-semibold text-slate-900 dark:text-white"> {currentSession.className}</span> · {currentSession.date} · {currentSession.startTime}–{currentSession.endTime}.
+              </div>
+            )}
 
             {/* 3. Adjustment Fields (Date/Time, Conflict Warning, Substitute Coach, Reason) */}
             <RequestAdjustmentFields
@@ -296,7 +308,7 @@ export default function ScheduleRequestModal({
             </button>
             <button
               type="submit"
-              disabled={submitting || upcomingSessions.length === 0 || conflictResult.hasConflict}
+              disabled={submitting || upcomingSessions.length === 0 || !selectedSessionId || conflictResult.hasConflict}
               title={conflictResult.hasConflict ? "Vui lòng chọn khung giờ không bị trùng lịch trước khi gửi" : undefined}
               className="px-5 py-2 font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 rounded-lg shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer"
             >

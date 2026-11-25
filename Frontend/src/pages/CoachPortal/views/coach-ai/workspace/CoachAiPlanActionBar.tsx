@@ -92,7 +92,7 @@ export function CoachAiPlanActionBar({
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 text-white transition-all shadow-md cursor-pointer active:scale-95"
             >
               <BookOpen className="w-4 h-4" />
-              <span>Đi đến Thư viện Giáo án & Bài tập</span>
+              <span>Đi đến thư viện Kế hoạch tập luyện</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
 
@@ -133,7 +133,7 @@ export function CoachAiPlanActionBar({
             type="button"
             onClick={onClone}
             className="p-2 rounded-xl text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            title="Nhân bản giáo án"
+            title="Nhân bản kế hoạch"
           >
             <Copy className="w-4 h-4" />
           </button>
@@ -144,7 +144,7 @@ export function CoachAiPlanActionBar({
             type="button"
             onClick={onArchive}
             className="p-2 rounded-xl text-slate-500 hover:text-rose-600 border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            title="Lưu trữ giáo án"
+            title="Lưu trữ kế hoạch"
           >
             <Archive className="w-4 h-4" />
           </button>

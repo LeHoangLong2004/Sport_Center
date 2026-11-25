@@ -4,7 +4,7 @@ export type MemberScreen =
   | "schedule"    // 3. Lịch của tôi (Sắp tới, Lịch sử, Đã hủy)
   | "packages"    // 4. Gói tập & Mua gói
   | "payments"    // 5. Thanh toán & Hóa đơn
-  | "workouts"    // 6. Giáo án & Bài tập
+  | "workouts"    // 6. Kế hoạch tập luyện
   | "attendance"  // 7. Điểm danh & Lịch sử chuyên cần
   | "reviews"     // 8. Đánh giá HLV
   | "chat"        // 9. Tin nhắn trao đổi với HLV

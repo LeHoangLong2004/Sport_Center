@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { ClassDetailInfo } from './classDetail/ClassDetailInfo';
 import { ClassEnrolledMembersTable } from './classDetail/ClassEnrolledMembersTable';
 import { ClassActionModals, type ClassNotification } from './classDetail/ClassActionModals';
+import { ManagerSessionAdjustmentModal } from './ManagerSessionAdjustmentModal';
 
 interface ClassDetailModalProps {
   classId: string;
@@ -23,6 +24,7 @@ export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: Class
   const [showConfirmCancelCourse, setShowConfirmCancelCourse] = useState(false);
   const [showConfirmRestore, setShowConfirmRestore] = useState(false);
   const [notification, setNotification] = useState<ClassNotification | null>(null);
+  const [showManagerAdjustment, setShowManagerAdjustment] = useState(false);
 
   // Lock background UI scrolling while modal is open, and restore when closed
   useEffect(() => {
@@ -172,6 +174,9 @@ export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: Class
       classDetail.approval_status?.toLowerCase() === 'pending'
     )
   );
+  const canManagerAdjustSession = Boolean(
+    classDetail && classDetail.status !== false && new Date(classDetail.scheduleTime).getTime() > Date.now(),
+  );
 
   const modalContent = (
     <div
@@ -273,6 +278,15 @@ export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: Class
           </div>
         ) : classDetail && (
           <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 shrink-0">
+            {canManagerAdjustSession && (
+              <button
+                type="button"
+                onClick={() => setShowManagerAdjustment(true)}
+                className="px-4 py-2 text-sm font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors cursor-pointer"
+              >
+                Dời lịch / Dạy thay
+              </button>
+            )}
             <button 
               onClick={() => onEdit(classDetail)} 
               className="px-5 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
@@ -320,6 +334,13 @@ export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: Class
           onCloseConfirmRestore={() => setShowConfirmRestore(false)}
           onConfirmRestore={handleRestoreClass}
         />
+        {showManagerAdjustment && classDetail && (
+          <ManagerSessionAdjustmentModal
+            classDetail={classDetail}
+            onClose={() => setShowManagerAdjustment(false)}
+            onSuccess={onClose}
+          />
+        )}
       </div>
     </div>
   );

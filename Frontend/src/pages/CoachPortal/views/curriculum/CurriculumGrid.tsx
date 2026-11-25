@@ -10,6 +10,7 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronUp,
+  Trash2,
 } from "lucide-react";
 import type { MockCurriculum } from "../../services/api";
 import {
@@ -25,6 +26,8 @@ interface CurriculumGridProps {
   onAssign: (c: MockCurriculum) => void;
   onApprove?: (c: MockCurriculum) => void;
   approvingId?: string | null;
+  onDelete: (c: MockCurriculum) => void;
+  deletingId?: string | null;
 }
 
 interface CurriculumCardProps {
@@ -33,6 +36,8 @@ interface CurriculumCardProps {
   onAssign: (c: MockCurriculum) => void;
   onApprove?: (c: MockCurriculum) => void;
   approvingId?: string | null;
+  onDelete: (c: MockCurriculum) => void;
+  deletingId?: string | null;
 }
 
 const CurriculumCard: React.FC<CurriculumCardProps> = ({
@@ -41,6 +46,8 @@ const CurriculumCard: React.FC<CurriculumCardProps> = ({
   onAssign,
   onApprove,
   approvingId,
+  onDelete,
+  deletingId,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const effectiveStatus = getEffectiveStatus(c);
@@ -48,6 +55,9 @@ const CurriculumCard: React.FC<CurriculumCardProps> = ({
   const isAiPlan = c.source === "ai_recommendation" || c.source === "ai";
   const displayTitle = cleanDuplicateSuffixes(c.name);
   const exerciseCount = Array.isArray(c.exercises) ? c.exercises.length : 0;
+  const sessions = c.programOutline?.sessions || [];
+  const sessionsToShow = isExpanded ? sessions : sessions.slice(0, 3);
+  const hasMoreSessions = sessions.length > 3;
   const exercisesToShow = isExpanded ? c.exercises : c.exercises.slice(0, 3);
   const hasMoreExercises = exerciseCount > 3;
 
@@ -99,13 +109,14 @@ const CurriculumCard: React.FC<CurriculumCardProps> = ({
           <span className="text-xs font-medium px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/70 dark:border-slate-700">
             {c.level || "Cơ bản"}
           </span>
-          <span className="text-xs font-medium px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/70 dark:border-slate-700 flex items-center gap-1.5">
+            <span className="text-xs font-medium px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/70 dark:border-slate-700 flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
-            <span className="text-slate-900 dark:text-slate-100 font-semibold">{c.duration || 60}</span> phút
+            <span className="text-slate-900 dark:text-slate-100 font-semibold">{c.duration || 60}</span> phút/buổi
           </span>
+          {c.programOutline && <span className="text-xs font-medium px-2.5 py-1 rounded-lg bg-violet-50 dark:bg-violet-950/30 text-violet-800 dark:text-violet-300 border border-violet-200 dark:border-violet-800">{c.programOutline.durationWeeks} tuần · {sessions.length} buổi</span>}
         </div>
 
-        {/* TẦNG 3: Mục tiêu giáo án (độ tương phản cao) */}
+        {/* TẦNG 3: Mục tiêu kế hoạch (độ tương phản cao) */}
         {c.goal && (
           <div className="mb-3.5 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
             <span className="font-bold text-slate-900 dark:text-slate-100 mr-1.5">Mục tiêu:</span>
@@ -113,14 +124,14 @@ const CurriculumCard: React.FC<CurriculumCardProps> = ({
           </div>
         )}
 
-        {/* TẦNG 4: Danh sách bài tập (có expand/collapse) */}
+        {/* TẦNG 4: Lộ trình các buổi trong kế hoạch */}
         <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
               <Dumbbell className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              Danh sách bài tập ({exerciseCount} bài)
+              {sessions.length > 0 ? `Lộ trình (${sessions.length} buổi)` : `Bài tập chính (${exerciseCount} bài)`}
             </span>
-            {hasMoreExercises && (
+            {(sessions.length > 0 ? hasMoreSessions : hasMoreExercises) && (
               <button
                 type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
@@ -132,19 +143,30 @@ const CurriculumCard: React.FC<CurriculumCardProps> = ({
                   </>
                 ) : (
                   <>
-                    Xem tất cả {exerciseCount} bài <ChevronDown className="w-3.5 h-3.5 ml-0.5" />
+                    Xem toàn bộ <ChevronDown className="w-3.5 h-3.5 ml-0.5" />
                   </>
                 )}
               </button>
             )}
           </div>
 
-          {exerciseCount === 0 ? (
+          {sessions.length > 0 ? (
+            <div className="space-y-1.5">
+              {sessionsToShow.map((session) => (
+                <div key={`${session.sessionNumber}-${session.weekNumber}`} className="px-2.5 py-2 rounded-lg bg-slate-50/90 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/80 text-xs">
+                  <div className="font-semibold text-slate-800 dark:text-slate-200">Buổi {session.sessionNumber} · Tuần {session.weekNumber}: {session.title || "Chưa đặt chủ đề"}</div>
+                  {session.goal && <div className="mt-0.5 text-slate-600 dark:text-slate-400">{session.goal}</div>}
+                  <div className="mt-1 text-[11px] text-slate-500">{session.exercises.length} bài tập</div>
+                </div>
+              ))}
+              {hasMoreSessions && !isExpanded && <button type="button" onClick={() => setIsExpanded(true)} className="w-full py-1 text-center text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg">+ Xem thêm {sessions.length - 3} buổi</button>}
+            </div>
+          ) : exerciseCount === 0 ? (
             <div className="p-3 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/60 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
               <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <div>
                 <p className="font-semibold text-amber-900 dark:text-amber-200">
-                  Chưa có bài tập nào trong giáo án.
+                  Chưa có bài tập nào trong kế hoạch.
                 </p>
                 <p className="text-amber-700 dark:text-amber-400 mt-0.5 text-[11px] leading-relaxed">
                   Vui lòng bấm nút <span className="font-bold underline">"Thêm bài tập"</span> bên dưới để bổ sung nội dung trước khi giao cho học viên.
@@ -222,6 +244,17 @@ const CurriculumCard: React.FC<CurriculumCardProps> = ({
         </span>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            disabled={deletingId === c.id}
+            onClick={() => onDelete(c)}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-950/60 rounded-lg border border-rose-200 dark:border-rose-900/60 transition-colors disabled:opacity-50"
+            title="Xóa kế hoạch"
+            aria-label={`Xóa kế hoạch ${c.name}`}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>{deletingId === c.id ? "Đang xóa..." : "Xóa"}</span>
+          </button>
           {/* Nút Duyệt sẵn sàng nếu là bản nháp và đã có bài */}
           {onApprove && c.status === "Nháp" && exerciseCount > 0 && (
             <button
@@ -229,7 +262,7 @@ const CurriculumCard: React.FC<CurriculumCardProps> = ({
               disabled={approvingId === c.id}
               onClick={() => onApprove(c)}
               className="px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors flex items-center gap-1.5 shadow-xs whitespace-nowrap cursor-pointer"
-              title="Đánh dấu giáo án này là sẵn sàng giao cho học viên"
+              title="Đánh dấu kế hoạch này là sẵn sàng giao cho học viên"
             >
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>{approvingId === c.id ? "Đang xử lý..." : "Duyệt sẵn sàng"}</span>
@@ -280,12 +313,14 @@ export const CurriculumGrid: React.FC<CurriculumGridProps> = ({
   onAssign,
   onApprove,
   approvingId,
+  onDelete,
+  deletingId,
 }) => {
   if (loading) {
     return (
       <div className="p-12 text-center text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs">
         <div className="inline-block animate-spin rounded-full h-6 w-6 border-2 border-emerald-600 border-t-transparent mb-3" />
-        <p className="font-medium text-sm">Đang tải danh sách giáo án...</p>
+        <p className="font-medium text-sm">Đang tải danh sách kế hoạch...</p>
       </div>
     );
   }
@@ -295,7 +330,7 @@ export const CurriculumGrid: React.FC<CurriculumGridProps> = ({
       <div className="p-12 text-center text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 border-dashed rounded-2xl">
         <Dumbbell className="w-8 h-8 text-slate-400 dark:text-slate-500 mx-auto mb-2 opacity-60" />
         <p className="font-semibold text-slate-700 dark:text-slate-300 text-sm">
-          Không tìm thấy giáo án nào phù hợp.
+          Không tìm thấy kế hoạch nào phù hợp.
         </p>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
           Thử thay đổi từ khóa tìm kiếm hoặc bỏ chọn các bộ lọc trạng thái / bộ môn.
@@ -314,6 +349,8 @@ export const CurriculumGrid: React.FC<CurriculumGridProps> = ({
           onAssign={onAssign}
           onApprove={onApprove}
           approvingId={approvingId}
+          onDelete={onDelete}
+          deletingId={deletingId}
         />
       ))}
     </div>

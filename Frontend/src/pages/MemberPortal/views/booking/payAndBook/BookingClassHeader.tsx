@@ -20,8 +20,7 @@ export const BookingClassHeader: React.FC<Props> = ({
   finalPrice,
   membership,
 }) => {
-  const isPremium = membership?.tier === "premium";
-  const isPlus = membership?.tier === "plus";
+  const hasDiscount = discountPct > 0;
 
   return (
     <>
@@ -54,17 +53,14 @@ export const BookingClassHeader: React.FC<Props> = ({
         </h4>
         <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
           <span>Hạng thành viên của bạn:</span>
-          {isPremium ? (
-            <span className="font-black text-amber-600 dark:text-amber-400 flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5" /> 👑 Premium VIP (-{discountPct}%)
-            </span>
-          ) : isPlus ? (
+          {hasDiscount ? (
             <span className="font-black text-teal-600 dark:text-teal-400 flex items-center gap-1">
-              🥈 Plus Member (-{discountPct}%)
+              {membership?.tier === "premium" && <Sparkles className="w-3.5 h-3.5" />}
+              {membership?.name || "Hạng thành viên"} (-{discountPct}%)
             </span>
           ) : (
             <span className="font-bold text-slate-800 dark:text-slate-200">
-              🥉 Cơ bản (Basic Member)
+              {membership?.name || "Cơ bản"}
             </span>
           )}
         </div>
@@ -79,7 +75,7 @@ export const BookingClassHeader: React.FC<Props> = ({
           <span>Ưu đãi áp dụng:</span>
           {discountAmount > 0 ? (
             <span className="font-bold text-emerald-600 dark:text-emerald-400">
-              - {discountAmount.toLocaleString("vi-VN")} đ ({isPremium ? `Giảm ${discountPct}% Hạng Premium` : `Giảm ${discountPct}% Hạng Plus`})
+              - {discountAmount.toLocaleString("vi-VN")} đ (Giảm {discountPct}% hạng {membership?.name || "thành viên"})
             </span>
           ) : (
             <span className="font-bold text-slate-500">

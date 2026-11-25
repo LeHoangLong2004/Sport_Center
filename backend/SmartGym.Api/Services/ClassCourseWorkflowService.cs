@@ -61,7 +61,7 @@ public sealed class ClassCourseWorkflowService(SmartGymDbContext db, ClassSchedu
                 VALUES
                     ({courseId}, {request.SportId}, {coachId}, {request.FacilityId}, {request.ClassName.Trim()},
                      {request.Schedule.ScheduleType.Trim().ToUpperInvariant()}, {request.Schedule.StartDate}, {request.Schedule.StartTime},
-                     {request.Schedule.EndMode ?? "ONE_TIME"}, {endDate}, {request.Schedule.Weeks}, {preview.TotalSessions},
+                     {(request.Schedule.ScheduleType.Trim().ToUpperInvariant() == "RECURRING" ? "BY_WEEKS" : "ONE_TIME")}, {endDate}, {request.Schedule.Weeks}, {preview.TotalSessions},
                      {request.Schedule.DurationMinutes}, {request.Capacity}, {courseFee}, {status}, {actorId})
                 """);
 

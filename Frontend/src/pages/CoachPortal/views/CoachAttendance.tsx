@@ -1,7 +1,6 @@
 import React from "react";
 import type { CoachScreen } from "../types";
 import {
-  Edit3,
   X,
   Clock,
   Search,
@@ -19,7 +18,6 @@ import AttendanceAuditReasonModal from "./attendance/AttendanceAuditReasonModal"
 import AttendanceStatsGrid from "./attendance/AttendanceStatsGrid";
 import AttendanceLockAlertBanner from "./attendance/AttendanceLockAlertBanner";
 import AttendanceHistoryTableView from "./attendance/AttendanceHistoryTableView";
-import AttendanceSessionSidebarCard from "./attendance/AttendanceSessionSidebarCard";
 import { useCoachAttendanceData } from "./attendance/useCoachAttendanceData";
 import { useCoachAttendanceActions } from "./attendance/useCoachAttendanceActions";
 
@@ -74,7 +72,6 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
     handleNoteChange,
     handleMarkAllPresent,
     handleResetAll,
-    handleSaveDraft,
     handleSave,
     stats,
     filteredMembers,
@@ -138,14 +135,6 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
 
         {/* Top Header Actions */}
         <div className="flex items-center gap-2.5 shrink-0">
-          <button
-            onClick={() => navigateTo("assessment", { sessionId: selectedSessionId })}
-            className="inline-flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-xl hover:bg-emerald-100/70 transition-colors shadow-xs cursor-pointer"
-          >
-            <Award className="w-4 h-4" />
-            {isExpired24h ? "Xem đánh giá buổi tập" : "Đánh giá buổi tập"}
-          </button>
-
           {isExpired24h ? (
             <div
               title="Buổi học đã bắt đầu quá 24 giờ. Buổi học đã đóng và không thể sửa đổi."
@@ -154,14 +143,6 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
               <Lock className="w-4 h-4 text-slate-400" />
               <span>Đã đóng (Quá 24 giờ)</span>
             </div>
-          ) : isFinalized && !isEditingThisSession ? (
-            <button
-              onClick={() => setEditingSessionId(selectedSessionId)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-50 transition-colors shadow-xs cursor-pointer"
-            >
-              <Edit3 className="w-4 h-4 text-slate-500" />
-              <span>Điều chỉnh điểm danh</span>
-            </button>
           ) : null}
 
           {isEditingThisSession && (
@@ -198,9 +179,6 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
       {/* Selected Session Hero Banner */}
       {session && (
         <AttendanceSessionSelector
-          selectedSessionId={selectedSessionId}
-          onSessionChange={handleSessionChange}
-          activeSessions={activeSessions}
           session={session}
           isFinalized={isFinalized}
           isDraft={isDraft}
@@ -264,27 +242,7 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
           finalizedMap={finalizedMap}
         />
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 items-start">
-          {/* CỘT TRÁI (340px): Card ca dạy & Điều khiển tổng */}
-          <AttendanceSessionSidebarCard
-            selectedSessionId={selectedSessionId}
-            onSessionChange={handleSessionChange}
-            activeSessions={activeSessions}
-            session={session}
-            isFinalized={isFinalized}
-            isDraft={isDraft}
-            isEditingThisSession={isEditingThisSession}
-            isLocked={isLocked}
-            isSaving={isSaving}
-            isPast24h={isExpired24h}
-            stats={stats}
-            onSave={handleSave}
-            onSaveDraft={handleSaveDraft}
-            onNavigateToAssessment={() => navigateTo("assessment", { sessionId: selectedSessionId })}
-            onOpenReasonModal={() => setShowReasonModal(true)}
-          />
-
-          {/* CỘT PHẢI (1fr): Danh sách học viên & Bộ lọc */}
+        <div className="w-full">
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm p-5 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
               <div>
@@ -351,35 +309,38 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
               onNoteChange={handleNoteChange}
               totalEnrolledCount={members.length}
             />
-          </div>
-        </div>
-      )}
 
-      {/* Thông báo buổi học đóng sau 24h */}
-      {isExpired24h && (
-        <div className="sticky bottom-6 z-30 bg-slate-900/95 dark:bg-slate-900/95 text-white backdrop-blur-md rounded-2xl border border-slate-700/80 p-4 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in">
-          <div className="flex items-center gap-3 text-xs sm:text-sm">
-            <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
-              <Lock className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="font-bold text-white block sm:inline">
-                Buổi học đã đóng (Không thể sửa điểm vì đã quá 24 giờ).
-              </span>
-              <span className="text-slate-300 text-xs sm:ml-2">
-                Có mặt: {stats.attended}/{stats.total} · Vắng: {stats.absent} · Chưa điểm danh: {stats.pending}
-              </span>
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 border-t border-slate-100 dark:border-slate-800 pt-4">
+              <button
+                type="button"
+                onClick={() => navigateTo("assessment", { sessionId: selectedSessionId })}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl hover:bg-emerald-100 transition-colors cursor-pointer"
+              >
+                <Award className="w-4 h-4" />
+                <span>{isExpired24h ? "Xem đánh giá buổi tập" : "Đánh giá ca tập sau giờ"}</span>
+              </button>
+
+              {isExpired24h ? (
+                <button type="button" disabled className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-400 bg-slate-100 dark:bg-slate-800 dark:text-slate-500 border border-slate-200 dark:border-slate-700 rounded-xl cursor-not-allowed">
+                  <Lock className="w-4 h-4" />
+                  <span>Đã khóa (Quá 24 giờ)</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={isSaving || (isLocked && !isEditingThisSession)}
+                  onClick={() => {
+                    if (isEditingThisSession) setShowReasonModal(true);
+                    else handleSave();
+                  }}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-slate-900 dark:bg-emerald-600 hover:bg-slate-800 dark:hover:bg-emerald-700 rounded-xl shadow-sm transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <CheckCheck className="w-4 h-4" />
+                  <span>{isEditingThisSession ? "Lưu điều chỉnh điểm danh" : isLocked ? "Sổ điểm danh đã chốt" : "Chốt sổ điểm danh"}</span>
+                </button>
+              )}
             </div>
           </div>
-
-          <button
-            type="button"
-            onClick={() => navigateTo("assessment", { sessionId: selectedSessionId })}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 text-xs sm:text-sm font-semibold text-emerald-300 bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-500/40 rounded-xl transition-colors shadow-xs cursor-pointer"
-          >
-            <Award className="w-4 h-4" />
-            <span>Xem đánh giá buổi học</span>
-          </button>
         </div>
       )}
 

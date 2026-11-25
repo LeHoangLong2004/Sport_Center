@@ -17,6 +17,7 @@ public sealed partial class PackageCatalogService
     {
         await EnsureDefaultsAsync(cancellationToken);
         var query = db.Packages.Include(p => p.Features).Include(p => p.Benefits).AsNoTracking();
+        query = query.Where(package => package.PackageType == "membership");
         if (!includeInactive)
             query = query.Where(package => package.Status);
 
@@ -71,6 +72,8 @@ public sealed partial class PackageCatalogService
                     Sport = package.PackageType == "sport" ? package.Name : null,
                 };
             })
+            .OrderBy(GetTierRank)
+            .ThenBy(package => package.Name, StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
 
@@ -81,8 +84,29 @@ public sealed partial class PackageCatalogService
         CancellationToken cancellationToken
     )
     {
+        if (!string.Equals(request.Category, "membership", StringComparison.OrdinalIgnoreCase))
+            throw new PackageCatalogException(
+                StatusCodes.Status400BadRequest,
+                "Trung tâm hiện chỉ kinh doanh gói thành viên."
+            );
+
         ValidatePackage(id, request, create);
         await EnsureDefaultsAsync(cancellationToken);
+
+        if (create)
+        {
+            var membershipSnapshots = await db.Packages
+                .Where(item => item.PackageType == "membership" && item.CatalogJson != null)
+                .Select(item => item.CatalogJson!)
+                .ToListAsync(cancellationToken);
+            var nextRank = membershipSnapshots
+                .Select(DeserializeCatalog)
+                .Where(item => item.Category == "membership")
+                .Select(GetTierRank)
+                .DefaultIfEmpty(-1)
+                .Max() + 1;
+            request.TierRank = nextRank;
+        }
 
         if (request.Category == "sport")
         {
@@ -127,10 +151,11 @@ public sealed partial class PackageCatalogService
         if (package!.CatalogJson is not null)
         {
             var current = DeserializeCatalog(package.CatalogJson);
-            if (current.Category == "membership" && current.Tier != request.Tier)
+            if (current.Category == "membership"
+                && (current.Tier != request.Tier || (current.TierRank.HasValue && current.TierRank != request.TierRank)))
                 throw new PackageCatalogException(
                     StatusCodes.Status400BadRequest,
-                    "Mã hạng thành viên không thể thay đổi."
+                    "Mã và thứ tự hạng thành viên không thể thay đổi."
                 );
             if (
                 current.Tier == "basic"

@@ -30,6 +30,11 @@ public sealed partial class PackageCatalogService
                     );
 
                 var snapshot = DeserializeSnapshot(subscription);
+                if (snapshot.Category != "membership")
+                    throw new PackageCatalogException(
+                        StatusCodes.Status409Conflict,
+                        "Đơn gói môn tập cũ không thể được xác nhận sau khi danh mục này ngừng kinh doanh."
+                    );
                 var now = DateTime.UtcNow;
                 if (snapshot.Category == "membership")
                 {

@@ -41,6 +41,11 @@ public sealed partial class PackageCatalogService
             );
 
         var snapshot = DeserializeCatalog(package.CatalogJson);
+        if (snapshot.Category != "membership")
+            throw new PackageCatalogException(
+                StatusCodes.Status410Gone,
+                "Gói môn tập đã ngừng kinh doanh. Vui lòng chọn gói thành viên."
+            );
         if (snapshot.Category == "membership" && snapshot.Tier == "basic")
             throw new PackageCatalogException(
                 StatusCodes.Status400BadRequest,
@@ -66,8 +71,8 @@ public sealed partial class PackageCatalogService
             if (activeMembershipSub != null)
             {
                 var currentSnap = DeserializeSnapshot(activeMembershipSub);
-                var currentRank = GetTierRank(currentSnap.Tier);
-                var targetRank = GetTierRank(snapshot.Tier);
+                var currentRank = GetTierRank(currentSnap);
+                var targetRank = GetTierRank(snapshot);
 
                 if (targetRank > currentRank || snapshot.Prices.GetValueOrDefault(1) > currentSnap.Prices.GetValueOrDefault(1))
                 {

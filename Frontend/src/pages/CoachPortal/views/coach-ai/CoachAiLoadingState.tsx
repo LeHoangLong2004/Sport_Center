@@ -74,7 +74,7 @@ export const CoachAiLoadingState: React.FC<CoachAiLoadingStateProps> = ({
       )}
 
       <h3 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-white mb-1.5">
-        Gemini AI đang sinh giáo án cá nhân hóa...
+        Gemini AI đang tạo kế hoạch tập luyện cá nhân hóa...
       </h3>
       <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md leading-relaxed mb-6">
         {goal ? `Mục tiêu: "${goal}". ` : ""}Hệ thống đang xử lý và phản hồi dưới dạng Structured JSON chuẩn an toàn thể thao.

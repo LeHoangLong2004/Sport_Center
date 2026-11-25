@@ -19,6 +19,7 @@ public partial class SmartGymDbContext
             entity.Property(e => e.Goal).HasColumnName("goal");
             entity.Property(e => e.Level).HasColumnName("level");
             entity.Property(e => e.DurationMinutes).HasColumnName("duration_minutes");
+            entity.Property(e => e.ProgramOutlineJson).HasColumnName("program_outline_json");
             entity.Property(e => e.Status).HasColumnName("status").HasDefaultValue("draft");
             entity.Property(e => e.Source).HasColumnName("source").HasDefaultValue("manual");
             entity.Property(e => e.Version).HasColumnName("version").HasDefaultValue(1);

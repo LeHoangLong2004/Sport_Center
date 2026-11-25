@@ -272,8 +272,8 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
             const ongoing = isClassOngoing(booking);
             const isPast = isClassPast(booking);
             const isPt = booking.type === "pt" || booking.sport === "PT 1-1" || (booking.name || "").includes("Kèm riêng");
-            const ptDiscountRate = membership?.tier === "premium" ? 0.08 : membership?.tier === "plus" ? 0.05 : 0;
-            const classDiscountRate = membership?.tier === "premium" ? 0.15 : membership?.tier === "plus" ? 0.08 : 0;
+            const ptDiscountRate = (membership?.coachDiscountPct ?? 0) / 100;
+            const classDiscountRate = (membership?.groupDiscountPct ?? 0) / 100;
             const defaultPtPrice = Math.round(300000 * (1 - ptDiscountRate));
             const defaultClassPrice = Math.round(150000 * (1 - classDiscountRate));
             const effectivePrice = (booking.price && booking.price > 0)

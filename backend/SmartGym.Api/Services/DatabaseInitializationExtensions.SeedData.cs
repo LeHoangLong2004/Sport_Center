@@ -123,8 +123,6 @@ public static partial class DatabaseInitializationExtensions
                 ON CONFLICT (id) DO NOTHING;
 
                 INSERT INTO packages (id, name, package_type, monthly_price, yearly_price, tagline) VALUES 
-                ('yoga_pack', 'Gói Tập Yoga', 'sport', 500000, 5000000, 'Thư giãn tâm trí, rèn luyện cơ thể'),
-                ('swim_pack', 'Gói Tập Bơi Lội', 'sport', 600000, 6000000, 'Tăng cường sức khỏe tim mạch'),
                 ('premium_fit', 'Premium Fitness', 'membership', 800000, 8000000, 'Truy cập toàn bộ thiết bị phòng gym'),
                 ('vip_combo', 'Thẻ VIP Toàn Diện', 'membership', 1200000, 12000000, 'Đặc quyền VIP, tủ đồ, khăn tắm riêng')
                 ON CONFLICT (id) DO UPDATE SET 

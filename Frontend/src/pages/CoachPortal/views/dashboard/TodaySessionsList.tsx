@@ -191,7 +191,7 @@ export const TodaySessionsList: React.FC<TodaySessionsListProps> = ({
           <div className="p-10 text-center text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 border-dashed rounded-2xl text-xs">
             {appointments.length > 0
               ? "Bạn không có ca dạy lớp nhóm nào hôm nay, chỉ có lịch hẹn tiếp đón khách ở phía trên."
-              : "Hôm nay bạn không có ca dạy nào. Hãy tận hưởng thời gian nghỉ hoặc soạn giáo án mới!"}
+              : "Hôm nay bạn không có ca dạy nào. Hãy tận hưởng thời gian nghỉ hoặc tạo kế hoạch tập luyện mới!"}
           </div>
         ) : (
           <div className="flex flex-col gap-3">

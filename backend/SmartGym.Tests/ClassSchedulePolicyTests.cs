@@ -30,7 +30,24 @@ public sealed class ClassSchedulePolicyTests
     }
 
     [Fact]
-    public void Recurring_by_end_date_includes_each_selected_day_through_end_date()
+    public void Recurring_missing_weeks_is_rejected()
+    {
+        var result = _policy.Preview(new SchedulePreviewRequest
+        {
+            ScheduleType = "RECURRING",
+            StartDate = new DateOnly(2026, 11, 2),
+            StartTime = new TimeOnly(8, 0),
+            DurationMinutes = 60,
+            DaysOfWeek = [DayOfWeek.Monday, DayOfWeek.Thursday],
+            EndMode = "BY_WEEKS",
+        }, Now);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, error => error.Contains("weeks là bắt buộc"));
+    }
+
+    [Fact]
+    public void Recurring_rejects_unsupported_end_mode()
     {
         var result = _policy.Preview(new SchedulePreviewRequest
         {
@@ -40,31 +57,11 @@ public sealed class ClassSchedulePolicyTests
             DurationMinutes = 60,
             DaysOfWeek = [DayOfWeek.Monday, DayOfWeek.Thursday],
             EndMode = "BY_END_DATE",
-            EndDate = new DateOnly(2026, 11, 12),
+            Weeks = 4,
         }, Now);
 
-        Assert.True(result.IsValid);
-        Assert.Equal(4, result.TotalSessions);
-        Assert.Equal(new DateOnly(2026, 11, 12), result.CalculatedEndDate);
-    }
-
-    [Fact]
-    public void Recurring_by_session_count_stops_after_requested_number()
-    {
-        var result = _policy.Preview(new SchedulePreviewRequest
-        {
-            ScheduleType = "RECURRING",
-            StartDate = new DateOnly(2026, 11, 2),
-            StartTime = new TimeOnly(8, 0),
-            DurationMinutes = 60,
-            DaysOfWeek = [DayOfWeek.Monday, DayOfWeek.Thursday],
-            EndMode = "BY_SESSION_COUNT",
-            TotalSessions = 5,
-        }, Now);
-
-        Assert.True(result.IsValid);
-        Assert.Equal(5, result.TotalSessions);
-        Assert.Equal(5, result.Sessions[^1].SessionNumber);
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, error => error.Contains("chỉ hỗ trợ sinh lịch theo tuần"));
     }
 
     [Fact]
@@ -97,8 +94,10 @@ public sealed class ClassSchedulePolicyTests
         Assert.True(result.IsValid);
     }
 
-    [Fact]
-    public void Recurring_rejects_multiple_end_modes()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(25)]
+    public void Recurring_rejects_weeks_out_of_range(int invalidWeeks)
     {
         var result = _policy.Preview(new SchedulePreviewRequest
         {
@@ -108,12 +107,11 @@ public sealed class ClassSchedulePolicyTests
             DurationMinutes = 60,
             DaysOfWeek = [DayOfWeek.Monday],
             EndMode = "BY_WEEKS",
-            Weeks = 2,
-            TotalSessions = 2,
+            Weeks = invalidWeeks,
         }, Now);
 
         Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, error => error.Contains("đúng một end_mode"));
+        Assert.Contains(result.Errors, error => error.Contains("weeks phải trong khoảng 1 đến 24"));
     }
 
     [Fact]
@@ -126,8 +124,8 @@ public sealed class ClassSchedulePolicyTests
             StartTime = new TimeOnly(8, 0),
             DurationMinutes = 60,
             DaysOfWeek = [DayOfWeek.Monday],
-            EndMode = "BY_SESSION_COUNT",
-            TotalSessions = 2,
+            EndMode = "BY_WEEKS",
+            Weeks = 2,
         }, Now);
 
         Assert.False(result.IsValid);

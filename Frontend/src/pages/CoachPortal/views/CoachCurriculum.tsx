@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { CoachAPI } from "../services/api";
 import type { MockCurriculum, MockSession, MockMember, SportOption } from "../services/api";
 import { CheckCircle2, Sparkles, BookOpen } from "lucide-react";
-import { makeDraft } from "./curriculum/types";
+import { makeDraft, makePlanSession } from "./curriculum/types";
 import {
   resolveSportInfo,
   normalizeLevel,
@@ -13,6 +13,7 @@ import { CurriculumHeader } from "./curriculum/CurriculumHeader";
 import { CurriculumGrid } from "./curriculum/CurriculumGrid";
 import { CurriculumEditorModal } from "./curriculum/CurriculumEditorModal";
 import { CurriculumAssignModal } from "./curriculum/CurriculumAssignModal";
+import { CurriculumDeleteConfirmModal } from "./curriculum/CurriculumDeleteConfirmModal";
 import CoachAI from "./CoachAI";
 
 interface CoachCurriculumProps {
@@ -32,6 +33,8 @@ export default function CoachCurriculum({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<MockCurriculum | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<MockCurriculum | null>(null);
   const [isAssigning, setIsAssigning] = useState(false);
   const [assignTarget, setAssignTarget] = useState<{ curricId: string; curricName: string; sport?: string; level?: string } | null>(null);
   const [assignDeadline, setAssignDeadline] = useState("");
@@ -61,7 +64,7 @@ export default function CoachCurriculum({
         console.error("Failed to load coach curricula", error);
         if (!cancelled) {
           setCurricula([]);
-          setFeedback({ type: "error", msg: "Không thể tải danh sách giáo án từ hệ thống." });
+          setFeedback({ type: "error", msg: "Không thể tải danh sách kế hoạch tập luyện từ hệ thống." });
         }
       })
       .finally(() => {
@@ -96,6 +99,25 @@ export default function CoachCurriculum({
       sportId: selectedSport?.id || curriculum.sportId || null,
       sport: selectedSport?.name || curriculum.sport,
       exercises: curriculum.exercises.map((exercise) => ({ ...exercise })),
+      programOutline: curriculum.programOutline
+        ? {
+            ...curriculum.programOutline,
+            sessions: curriculum.programOutline.sessions.map((session) => ({
+              ...session,
+              exercises: session.exercises.map((exercise) => ({ ...exercise })),
+            })),
+          }
+        : {
+            durationWeeks: 1,
+            sessionsPerWeek: 2,
+            sessions: [
+              {
+                ...makePlanSession(1),
+                title: "Buổi tập hiện có",
+                exercises: curriculum.exercises.map((exercise) => ({ ...exercise })),
+              },
+            ],
+          },
     });
     setEditingId(curriculum.id);
   };
@@ -111,19 +133,32 @@ export default function CoachCurriculum({
     setModalError(null);
 
     if (!draft.name.trim()) {
-      setModalError("Tên giáo án không được để trống.");
+      setModalError("Tên kế hoạch không được để trống.");
       return;
     }
 
-    // Lọc bỏ bài tập trống hoàn toàn hoặc kiểm tra bài tập chưa điền tên
-    const validExercises = draft.exercises.filter(
-      (e) => e.name.trim() || e.reps?.trim() || e.rest?.trim() || e.note?.trim()
+    const outline = draft.programOutline || { durationWeeks: 1, sessionsPerWeek: 1, sessions: [] };
+    const usedSessions = outline.sessions.filter((session) =>
+      session.title.trim() || session.goal.trim() || session.activities.trim() || session.coachNotes.trim() ||
+      session.exercises.some((exercise) => exercise.name.trim() || exercise.reps.trim() || exercise.rest.trim() || exercise.note.trim())
     );
-
-    if (validExercises.length === 0) {
-      setModalError("Giáo án phải có ít nhất một bài tập.");
+    if (usedSessions.length === 0) {
+      setModalError("Thêm ít nhất một buổi vào lộ trình kế hoạch.");
       return;
     }
+    if (usedSessions.some((session) => !session.title.trim())) {
+      setModalError("Vui lòng đặt chủ đề cho từng buổi đã nhập nội dung.");
+      return;
+    }
+
+    const normalizedSessions = usedSessions.map((session, index) => ({
+      ...session,
+      sessionNumber: index + 1,
+      exercises: session.exercises.filter((exercise) =>
+        exercise.name.trim() || exercise.reps?.trim() || exercise.rest?.trim() || exercise.note?.trim()
+      ),
+    }));
+    const validExercises = normalizedSessions.flatMap((session) => session.exercises);
 
     const hasEmptyName = validExercises.some((e) => !e.name.trim());
     if (hasEmptyName) {
@@ -133,7 +168,9 @@ export default function CoachCurriculum({
 
     const cleanedDraft = {
       ...draft,
+      status: validExercises.length === 0 ? "Nháp" as const : draft.status,
       exercises: validExercises,
+      programOutline: { ...outline, sessions: normalizedSessions },
     };
 
     setIsSaving(true);
@@ -146,12 +183,17 @@ export default function CoachCurriculum({
       }
 
       await reloadCurricula();
-      setFeedback({ type: "success", msg: "Đã lưu giáo án thành công!" });
+      setFeedback({
+        type: "success",
+        msg: validExercises.length === 0
+          ? "Đã xóa toàn bộ bài tập và lưu kế hoạch ở trạng thái Nháp."
+          : "Đã lưu kế hoạch tập luyện thành công!",
+      });
       closeEdit();
       setTimeout(() => setFeedback(null), 3500);
     } catch (error: any) {
       console.error("Failed to save coach curriculum", error);
-      const errorMsg = error?.message || "Không thể lưu giáo án. Vui lòng thử lại.";
+      const errorMsg = error?.message || "Không thể lưu kế hoạch. Vui lòng thử lại.";
       setModalError(errorMsg);
     } finally {
       setIsSaving(false);
@@ -172,11 +214,11 @@ export default function CoachCurriculum({
       });
       await reloadCurricula();
       setAssignTarget(null);
-      setFeedback({ type: "success", msg: `Đã giao giáo án "${assignTarget.curricName}" cho ${name} thành công!` });
+      setFeedback({ type: "success", msg: `Đã giao kế hoạch "${assignTarget.curricName}" cho ${name} thành công!` });
       setTimeout(() => setFeedback(null), 3500);
     } catch (error: any) {
       console.error("Failed to assign coach curriculum", error);
-      const errMsg = error?.message || "Không thể giao giáo án. Vui lòng thử lại.";
+      const errMsg = error?.message || "Không thể giao kế hoạch. Vui lòng thử lại.";
       setFeedback({ type: "error", msg: errMsg });
       setTimeout(() => setFeedback(null), 4000);
     } finally {
@@ -193,18 +235,37 @@ export default function CoachCurriculum({
       await reloadCurricula();
       setFeedback({
         type: "success",
-        msg: `Giáo án "${curriculum.name}" đã được đánh dấu là Sẵn sàng giao!`
+        msg: `Kế hoạch "${curriculum.name}" đã được đánh dấu là Sẵn sàng giao!`
       });
       setTimeout(() => setFeedback(null), 3500);
     } catch (error: any) {
       console.error("Failed to approve curriculum", error);
       setFeedback({
         type: "error",
-        msg: error?.message || "Không thể phê duyệt giáo án. Vui lòng thử lại."
+        msg: error?.message || "Không thể duyệt kế hoạch. Vui lòng thử lại."
       });
       setTimeout(() => setFeedback(null), 3500);
     } finally {
       setApprovingId(null);
+    }
+  };
+
+  const handleDelete = async (curriculum: MockCurriculum) => {
+    setDeletingId(curriculum.id);
+    try {
+      await CoachAPI.deleteCurriculum(curriculum.id);
+      await reloadCurricula();
+      setFeedback({ type: "success", msg: `Đã xóa kế hoạch “${curriculum.name}”.` });
+      setDeleteTarget(null);
+      setTimeout(() => setFeedback(null), 3500);
+    } catch (error: any) {
+      setFeedback({
+        type: "error",
+        msg: error?.message || "Không thể xóa kế hoạch. Kế hoạch có thể đã được giao hoặc đang được sử dụng.",
+      });
+      setTimeout(() => setFeedback(null), 5000);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -266,7 +327,7 @@ export default function CoachCurriculum({
         curriculum.description || ""
       );
 
-      // Lọc bỏ đối tượng đã giao có tên trùng với tên giáo án (lỗi lặp dữ liệu trước đây)
+      // Lọc bỏ đối tượng đã giao có tên trùng với tên kế hoạch (lỗi lặp dữ liệu trước đây)
       const cleanAssignedTo = (curriculum.assignedTo || []).filter(
         (target) =>
           target &&
@@ -300,7 +361,7 @@ export default function CoachCurriculum({
             }`}
           >
             <BookOpen className="w-4 h-4" />
-            <span>Thư viện giáo án ({curricula.length})</span>
+            <span>Kế hoạch tập luyện ({curricula.length})</span>
           </button>
           <button
             type="button"
@@ -359,6 +420,7 @@ export default function CoachCurriculum({
             onEdit={openEdit}
             onApprove={handleApprove}
             approvingId={approvingId}
+            deletingId={deletingId}
             onAssign={(curriculum) =>
               setAssignTarget({
                 curricId: curriculum.id,
@@ -367,6 +429,7 @@ export default function CoachCurriculum({
                 level: curriculum.level,
               })
             }
+            onDelete={(curriculum) => setDeleteTarget(curriculum)}
           />
 
           <CurriculumEditorModal
@@ -392,6 +455,17 @@ export default function CoachCurriculum({
             onAssign={handleAssign}
             isSubmitting={isAssigning}
           />
+
+          {deleteTarget && (
+            <CurriculumDeleteConfirmModal
+              planName={deleteTarget.name}
+              isDeleting={deletingId === deleteTarget.id}
+              onCancel={() => {
+                if (deletingId !== deleteTarget.id) setDeleteTarget(null);
+              }}
+              onConfirm={() => void handleDelete(deleteTarget)}
+            />
+          )}
         </>
       )}
     </div>

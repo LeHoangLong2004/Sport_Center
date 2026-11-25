@@ -3,10 +3,7 @@ import {
   Sparkles,
   Clock,
   Flame,
-  Ticket,
-  Droplets,
   Lock,
-  Activity,
   RefreshCw,
   XCircle,
 } from "lucide-react";
@@ -28,6 +25,10 @@ export function ActiveMembershipCard({
   const daysLeft = membershipStatus.endDate
     ? Math.max(0, Math.ceil((new Date(membershipStatus.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
     : null;
+  const benefits = membershipStatus.benefits?.filter(Boolean) ?? [];
+  const firstUpgrade = catalog
+    .filter((pkg) => pkg.tier !== "basic" && pkg.isActive)
+    .sort((a, b) => (a.tierRank ?? 0) - (b.tierRank ?? 0))[0];
   return (
     <div className="relative overflow-hidden rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 text-white p-7 shadow-xl">
       <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 rounded-full bg-gradient-to-br from-emerald-500/15 via-emerald-500/10 to-transparent blur-3xl pointer-events-none" />
@@ -66,9 +67,11 @@ export function ActiveMembershipCard({
             <h3 className="text-2xl font-black tracking-tight mt-1">
               {membershipStatus.tier === "premium"
                 ? "Hạng Premium VIP"
-                : membershipStatus.tier === "plus"
-                ? "Hạng Plus Member"
-                : "Hạng Cơ Bản (Basic)"}
+              : membershipStatus.tier === "plus"
+              ? "Hạng Plus Member"
+              : membershipStatus.tier === "basic"
+              ? "Hạng Cơ Bản (Basic)"
+              : membershipStatus.name}
             </h3>
             <div className="flex flex-wrap items-center gap-2 mt-1">
               <p className="text-xs text-slate-300">
@@ -90,8 +93,7 @@ export function ActiveMembershipCard({
           <button
             type="button"
             onClick={() => {
-              const plusPkg = catalog.find((p) => p.tier === "plus");
-              if (plusPkg) onStartPurchase(plusPkg);
+              if (firstUpgrade) onStartPurchase(firstUpgrade);
             }}
             className="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-500 hover:from-emerald-400 hover:to-emerald-400 text-white font-extrabold text-xs shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
           >
@@ -134,20 +136,12 @@ export function ActiveMembershipCard({
             <span className="text-[11px] font-semibold">Chiết khấu dịch vụ</span>
           </div>
           <div className="mt-2 text-sm font-black text-white">
-            {membershipStatus.tier === "premium" ? (
-              <span className="text-emerald-400">Giảm {membershipStatus.groupDiscountPct || 15}% / {membershipStatus.coachDiscountPct || 8}%</span>
-            ) : membershipStatus.tier === "plus" ? (
-              <span className="text-emerald-400">Giảm {membershipStatus.groupDiscountPct || 8}% / {membershipStatus.coachDiscountPct || 5}%</span>
-            ) : (
-              <span className="text-slate-400">Giá gốc (0%)</span>
-            )}
+            {(membershipStatus.groupDiscountPct ?? 0) > 0 || (membershipStatus.coachDiscountPct ?? 0) > 0
+              ? <span className="text-emerald-400">Lớp {membershipStatus.groupDiscountPct ?? 0}% / Coach {membershipStatus.coachDiscountPct ?? 0}%</span>
+              : <span className="text-slate-400">Giá gốc (0%)</span>}
           </div>
           <span className="text-[10px] text-slate-400 mt-0.5">
-            {membershipStatus.tier === "premium"
-              ? "Gói môn & Đặt lịch lẻ (8% PT)"
-              : membershipStatus.tier === "plus"
-              ? "Gói môn & Đặt lịch lẻ (5% PT)"
-              : "Không áp dụng giảm giá"}
+            {(membershipStatus.groupDiscountPct ?? 0) > 0 || (membershipStatus.coachDiscountPct ?? 0) > 0 ? "Đặt lớp nhóm & Coach 1-1" : "Không áp dụng giảm giá"}
           </span>
         </div>
 
@@ -157,43 +151,11 @@ export function ActiveMembershipCard({
             <span className="text-[11px] font-semibold">Đặt lịch trước</span>
           </div>
           <div className="mt-2 text-sm font-black text-white">
-            {membershipStatus.bookingAdvanceHours || 24} giờ
+            {membershipStatus.bookingAdvanceHours ?? 24} giờ
           </div>
           <span className="text-[10px] text-slate-400 mt-0.5">
-            {membershipStatus.tier === "premium" ? "Trước 5 ngày (VIP)" : membershipStatus.tier === "plus" ? "Trước 3 ngày" : "Trước 24 giờ"}
+            Thời gian đặt trước tối đa
           </span>
-        </div>
-
-        <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs flex flex-col justify-between">
-          <div className="flex items-center gap-2 text-slate-400">
-            <Ticket className="w-4 h-4 text-slate-400" />
-            <span className="text-[11px] font-semibold">Vé mời bạn bè</span>
-          </div>
-          <div className="mt-2 text-sm font-black text-white">
-            {membershipStatus.tier === "premium" ? (
-              <span className="text-emerald-400">5 lượt / tháng</span>
-            ) : membershipStatus.tier === "plus" ? (
-              <span className="text-emerald-400">3 lượt / tháng</span>
-            ) : (
-              <span className="text-emerald-400">1 lượt / tháng</span>
-            )}
-          </div>
-          <span className="text-[10px] text-slate-400 mt-0.5">1 Day-Pass trải nghiệm</span>
-        </div>
-
-        <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs flex flex-col justify-between">
-          <div className="flex items-center gap-2 text-slate-400">
-            <Droplets className="w-4 h-4 text-slate-400" />
-            <span className="text-[11px] font-semibold">Xông hơi & Bồn sục</span>
-          </div>
-          <div className="mt-2 text-sm font-black text-white">
-            {membershipStatus.tier === "premium" ? (
-              <span className="text-emerald-300">Miễn phí Sauna</span>
-            ) : (
-              <span className="text-slate-500">Chưa hỗ trợ</span>
-            )}
-          </div>
-          <span className="text-[10px] text-slate-400 mt-0.5">Đá muối & Jacuzzi</span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs flex flex-col justify-between">
@@ -202,14 +164,17 @@ export function ActiveMembershipCard({
             <span className="text-[11px] font-semibold">Tủ đồ & Khăn tập</span>
           </div>
           <div className="mt-2 text-sm font-black text-white truncate">
-            {membershipStatus.tier === "premium"
-              ? "Tủ riêng + Khăn VIP"
-              : membershipStatus.tier === "plus"
-              ? "Tủ thường + 1 khăn"
-              : "Tủ đồ thường"}
+            {membershipStatus.lockerTerms || "Theo quy định trung tâm"}
           </div>
-          <span className="text-[10px] text-slate-400 mt-0.5">Trong buổi tập</span>
+          <span className="text-[10px] text-slate-400 mt-0.5">Quy định sử dụng</span>
         </div>
+        {benefits.slice(0, 2).map((benefit, index) => (
+          <div key={`membership-benefit-${index}`} className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs flex flex-col justify-between">
+            <div className="flex items-center gap-2 text-slate-400"><Sparkles className="w-4 h-4 text-emerald-300" /><span className="text-[11px] font-semibold">Quyền lợi</span></div>
+            <div className="mt-2 text-sm font-black text-white">{benefit}</div>
+            <span className="text-[10px] text-slate-400 mt-0.5">Theo gói thành viên</span>
+          </div>
+        ))}
       </div>
     </div>
   );

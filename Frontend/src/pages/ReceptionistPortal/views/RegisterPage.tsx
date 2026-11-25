@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react"
-import { Crown, Dumbbell, Check } from "lucide-react"
+import { Crown, Check } from "lucide-react"
 import { DateInput } from "../../../components/DateInput"
 import { PackageAPI, CatalogPackage } from "../../../services/packageApi"
 
@@ -28,7 +28,6 @@ const initialForm: FormState = {
 export function RegisterPage() {
   const [form, setForm] = useState<FormState>(initialForm)
   const [packages, setPackages] = useState<CatalogPackage[]>([])
-  const [activeCategory, setActiveCategory] = useState<"membership" | "sport">("membership")
   const [selectedPlan, setSelectedPlan] = useState<string>("membership-basic")
   const [loadingPackages, setLoadingPackages] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -43,10 +42,7 @@ export function RegisterPage() {
         const activePackages = Array.isArray(data) ? data.filter((p) => p.isActive) : []
         setPackages(activePackages)
         const defaultPkg = activePackages.find((p) => p.id === "membership-basic") || activePackages[0]
-        if (defaultPkg) {
-          setSelectedPlan(defaultPkg.id)
-          setActiveCategory(defaultPkg.category === "sport" ? "sport" : "membership")
-        }
+        if (defaultPkg) setSelectedPlan(defaultPkg.id)
       })
       .catch((reason: Error) => {
         if (!cancelled) setError(reason.message)
@@ -63,22 +59,9 @@ export function RegisterPage() {
     () => packages.filter((pkg) => pkg.category === "membership"),
     [packages]
   )
-  const sportPackages = useMemo(
-    () => packages.filter((pkg) => pkg.category === "sport"),
-    [packages]
-  )
-
-  const displayedPackages = activeCategory === "membership" ? membershipPackages : sportPackages
+  const displayedPackages = membershipPackages
   const selectedPackage = packages.find((p) => p.id === selectedPlan)
   const selectedPrice = selectedPackage?.prices?.[1] ?? 0
-
-  const handleSelectTab = (category: "membership" | "sport") => {
-    setActiveCategory(category)
-    const list = category === "membership" ? membershipPackages : sportPackages
-    if (list.length > 0 && !list.some((p) => p.id === selectedPlan)) {
-      setSelectedPlan(list[0].id)
-    }
-  }
 
   const updateField = (field: keyof FormState, value: string) => {
     setForm((current) => ({ ...current, [field]: value }))
@@ -148,7 +131,6 @@ export function RegisterPage() {
       const defaultPkg = packages.find((p) => p.id === "membership-basic") || packages[0]
       if (defaultPkg) {
         setSelectedPlan(defaultPkg.id)
-        setActiveCategory(defaultPkg.category === "sport" ? "sport" : "membership")
       }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Đăng ký thất bại.")
@@ -224,40 +206,6 @@ export function RegisterPage() {
             <span className="text-[12px] text-[#64748b]">Đồng bộ hệ thống</span>
           </div>
 
-          {/* Phân loại Tab: Hạng hội viên vs Gói bộ môn */}
-          <div className="flex bg-[#f1f5f9] p-1 rounded-[10px] w-full gap-1">
-            <button
-              type="button"
-              onClick={() => handleSelectTab("membership")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-[8px] font-bold text-[13px] transition-all cursor-pointer ${
-                activeCategory === "membership"
-                  ? "bg-white text-[#0f172a] shadow-xs"
-                  : "text-[#64748b] hover:text-[#0f172a]"
-              }`}
-            >
-              <Crown className="w-4 h-4 text-amber-500" />
-              <span>Hạng hội viên</span>
-              <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600 font-semibold">
-                {membershipPackages.length}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSelectTab("sport")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-[8px] font-bold text-[13px] transition-all cursor-pointer ${
-                activeCategory === "sport"
-                  ? "bg-white text-[#0f172a] shadow-xs"
-                  : "text-[#64748b] hover:text-[#0f172a]"
-              }`}
-            >
-              <Dumbbell className="w-4 h-4 text-emerald-600" />
-              <span>Gói bộ môn</span>
-              <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600 font-semibold">
-                {sportPackages.length}
-              </span>
-            </button>
-          </div>
-
           {loadingPackages && <p className="text-[#64748b] text-[14px]">Đang tải danh mục gói tập...</p>}
           {!loadingPackages && displayedPackages.length === 0 && (
             <p className="text-[#dc2626] text-[14px]">Chưa có gói tập nào đang hoạt động trong danh mục này.</p>
@@ -294,12 +242,7 @@ export function RegisterPage() {
                               : "bg-slate-100 text-slate-600 border border-slate-300"
                           }`}
                         >
-                          {pkg.tier === "premium" ? "VIP" : pkg.tier === "plus" ? "Plus" : "Cơ bản"}
-                        </span>
-                      )}
-                      {pkg.category === "sport" && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-                          {pkg.format === "coach" ? "Coach 1-1" : pkg.format === "group" ? "Lớp nhóm" : "Tự tập"}
+                          {pkg.tier === "premium" ? "VIP" : pkg.tier === "plus" ? "Plus" : pkg.tier === "basic" ? "Cơ bản" : pkg.name}
                         </span>
                       )}
                     </div>
@@ -343,7 +286,7 @@ export function RegisterPage() {
                   Gói đăng ký đã chọn
                 </span>
                 <span className="font-bold text-[#0f172a] text-[14px]">
-                  {selectedPackage.name} ({selectedPackage.category === "membership" ? "Hạng hội viên" : "Gói bộ môn"})
+                  {selectedPackage.name} (Gói thành viên)
                 </span>
               </div>
               <div className="text-right">

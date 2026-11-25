@@ -18,6 +18,7 @@ public class WorkoutPlan
     public string? Goal { get; set; }
     public string? Level { get; set; }
     public int? DurationMinutes { get; set; }
+    public string? ProgramOutlineJson { get; set; }
     public string Status { get; set; } = "draft";
     public string Source { get; set; } = "manual";
     public int Version { get; set; } = 1;

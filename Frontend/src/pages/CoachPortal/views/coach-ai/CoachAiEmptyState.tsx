@@ -32,7 +32,7 @@ export const CoachAiEmptyState: React.FC<CoachAiEmptyStateProps> = ({ onQuickDem
       {/* Interactive Quick Presets Section */}
       <div className="w-full max-w-xl mb-6 text-left">
         <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center justify-between">
-          <span>Khám phá các mẫu giáo án được đề xuất:</span>
+          <span>Khám phá các mẫu kế hoạch tập luyện được đề xuất:</span>
           <span className="text-[11px] text-emerald-600 dark:text-emerald-400 normal-case font-semibold">
             Bấm để nạp thông số ngay
           </span>

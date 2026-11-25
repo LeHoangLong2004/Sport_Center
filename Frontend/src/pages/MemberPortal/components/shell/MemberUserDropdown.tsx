@@ -149,7 +149,7 @@ export default function MemberUserDropdown({
           className="group w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer"
         >
           <FileText className="w-4 h-4 text-slate-400 transition-colors shrink-0" />
-          <span className="flex-1">Giáo án & Bài tập HLV giao</span>
+          <span className="flex-1">Kế hoạch tập luyện HLV giao</span>
         </button>
 
         <button

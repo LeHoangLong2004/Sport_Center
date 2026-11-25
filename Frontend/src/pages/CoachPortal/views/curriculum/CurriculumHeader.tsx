@@ -44,10 +44,10 @@ export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
             <BookOpen className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-            Giáo án & Bài tập
+            Kế hoạch tập luyện
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
-            Thiết kế giáo án tập luyện theo bộ môn và giao bài cho học viên / lớp phụ trách.
+            Xây dựng kế hoạch theo mục tiêu, bộ môn và trình độ; sau đó giao cho học viên hoặc lớp phụ trách.
           </p>
         </div>
 
@@ -57,7 +57,7 @@ export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
               type="button"
               onClick={onOpenAiTab}
               className="flex items-center gap-2 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-emerald-600 to-emerald-600 hover:from-emerald-700 hover:to-emerald-700 rounded-xl transition-all shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer"
-              title="Sử dụng AI gợi ý và tạo nhanh giáo án bài tập"
+              title="Dùng AI gợi ý kế hoạch tập luyện"
             >
               <Sparkles className="w-4 h-4 text-amber-300" />
               <span>Soạn với Coach AI</span>
@@ -69,7 +69,7 @@ export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
             className="flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Tạo giáo án mới</span>
+            <span>Tạo kế hoạch mới</span>
           </button>
         </div>
       </div>
@@ -88,7 +88,7 @@ export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-              Tổng số giáo án
+              Tổng số kế hoạch
             </span>
             <BookOpen className="w-4 h-4 text-slate-400" />
           </div>
@@ -96,7 +96,7 @@ export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
             {totalCount}
           </div>
           <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
-            Tất cả giáo án hiện có
+            Tất cả kế hoạch tập luyện hiện có
           </div>
         </button>
 
@@ -184,7 +184,7 @@ export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
           <Search className="w-4 h-4 text-slate-400 shrink-0" />
           <input
             type="text"
-            placeholder="Tìm theo tên giáo án, mục tiêu, bộ môn, bài tập..."
+            placeholder="Tìm theo tên kế hoạch, mục tiêu, bộ môn, bài tập..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full text-xs sm:text-sm bg-transparent text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none"

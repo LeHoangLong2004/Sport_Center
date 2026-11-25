@@ -27,7 +27,7 @@ export function CoachAiPresetCards({ onApplyPreset }: Props) {
       <div className="flex items-center justify-between">
         <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
           <Sparkles className="w-4 h-4" />
-          <span>Mẫu giáo án 1-Click (Gợi ý nhanh theo mục tiêu phổ biến)</span>
+          <span>Mẫu kế hoạch nhanh (gợi ý theo mục tiêu phổ biến)</span>
         </label>
         <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
           Bấm chọn để nạp nhanh toàn bộ thông số

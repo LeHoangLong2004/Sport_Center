@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SmartGym.Application.DTOs.Classes;
+using SmartGym.Application.Interfaces.Repositories;
 using SmartGym.Application.Services;
 using SmartGym.Application.Common;
 using SmartGym.Api.Services;
@@ -329,15 +330,25 @@ public static partial class ClassEndpoints
         classGroup
             .MapPost(
                 "/{id:guid}/cancel",
-                async (Guid id, SmartGymDbContext db, ILoggerFactory loggerFactory) =>
+                async (Guid id, SmartGymDbContext db, IGroupClassRepository repository, ILoggerFactory loggerFactory) =>
                 {
                     try
                     {
+                        var targetClass = await repository.GetByIdAsync(id);
+                        if (targetClass == null)
+                            return Results.BadRequest(new { message = "Không tìm thấy buổi học để hủy." });
+
                         var affected = await db.Database.ExecuteSqlInterpolatedAsync(
                             $"UPDATE classes SET status = FALSE, current_enrolled = 0 WHERE id = {id}");
 
                         if (affected == 0)
                             return Results.BadRequest(new { message = "Không tìm thấy lớp học để hủy." });
+
+                        await repository.NotifyAffectedMembersAsync(
+                            id,
+                            "Buổi học đã bị hủy",
+                            $"Buổi {targetClass.ClassName} ngày {CenterTime.ToLocal(targetClass.ScheduleTime):dd/MM/yyyy HH:mm} đã bị hủy bởi trung tâm. Vui lòng kiểm tra lịch học để biết thông tin cập nhật."
+                        );
 
                         try
                         {
@@ -358,6 +369,84 @@ public static partial class ClassEndpoints
                     }
                 }
             )
+            .RequireAuthorization(policy => policy.RequireRole("manager", "admin", "center_manager", "centermanager"));
+
+        // Manager can directly adjust one session without modifying the rest of its course.
+        classGroup.MapPost(
+            "/{id:guid}/manager-adjustment",
+            async (
+                Guid id,
+                ManagerClassAdjustmentRequest adjustment,
+                SmartGymDbContext db,
+                IGroupClassRepository repository,
+                ClassService service) =>
+            {
+                var target = await repository.GetByIdAsync(id);
+                if (target == null)
+                    return Results.NotFound(new { message = "Không tìm thấy buổi học." });
+                if (!target.Status || target.ScheduleTime <= DateTime.UtcNow)
+                    return Results.BadRequest(new { message = "Chỉ có thể điều chỉnh buổi học đang hoạt động và chưa bắt đầu." });
+                if (target.CoachId == null)
+                    return Results.BadRequest(new { message = "Buổi học chưa được phân công HLV nên không thể điều chỉnh." });
+                if (string.IsNullOrWhiteSpace(adjustment.Reason))
+                    return Results.BadRequest(new { message = "Vui lòng nhập lý do điều chỉnh." });
+
+                var action = (adjustment.Action ?? string.Empty).Trim().ToLowerInvariant();
+                var coachId = target.CoachId.Value;
+                if (action == "substitute")
+                {
+                    if (!adjustment.SubstituteCoachId.HasValue)
+                        return Results.BadRequest(new { message = "Vui lòng chọn HLV dạy thay." });
+                    coachId = adjustment.SubstituteCoachId.Value;
+                    if (coachId == target.CoachId.Value)
+                        return Results.BadRequest(new { message = "HLV dạy thay phải khác HLV đang phụ trách." });
+                    var coachRows = await db.Database.SqlQueryRaw<ManagerCoachSpecialtyRow>(
+                        "SELECT specialty AS \"Specialty\" FROM coaches WHERE id = {0} LIMIT 1", coachId).ToListAsync();
+                    if (coachRows.Count == 0)
+                        return Results.BadRequest(new { message = "Không tìm thấy HLV dạy thay." });
+                    var classDetail = await service.GetClassDetailAsync(id);
+                    if (!IsCoachQualifiedForSport(coachRows[0].Specialty, classDetail?.SportName, target.ClassName))
+                        return Results.BadRequest(new { message = $"HLV được chọn không phụ trách bộ môn {classDetail?.SportName ?? "của buổi học này"}." });
+                }
+                else if (action != "reschedule")
+                {
+                    return Results.BadRequest(new { message = "Loại điều chỉnh không hợp lệ." });
+                }
+
+                var newScheduleTime = target.ScheduleTime;
+                if (action == "reschedule")
+                {
+                    if (!adjustment.NewScheduleTime.HasValue)
+                        return Results.BadRequest(new { message = "Vui lòng chọn ngày và giờ mới." });
+                    newScheduleTime = adjustment.NewScheduleTime.Value;
+                    if (newScheduleTime.Kind == DateTimeKind.Unspecified)
+                        newScheduleTime = DateTime.SpecifyKind(newScheduleTime, DateTimeKind.Utc);
+                    else if (newScheduleTime.Kind == DateTimeKind.Local)
+                        newScheduleTime = newScheduleTime.ToUniversalTime();
+                    if (newScheduleTime == target.ScheduleTime)
+                        return Results.BadRequest(new { message = "Ngày giờ mới phải khác lịch hiện tại." });
+                }
+
+                var update = await service.UpdateClassAsync(id, new CreateClassRequest
+                {
+                    SportId = target.SportId,
+                    FacilityId = target.FacilityId,
+                    CoachId = coachId,
+                    ClassName = target.ClassName,
+                    ScheduleTime = newScheduleTime,
+                    DurationMinutes = target.DurationMinutes,
+                    Capacity = target.Capacity,
+                    Reason = adjustment.Reason.Trim(),
+                });
+                if (!update.IsSuccess)
+                    return Results.BadRequest(new { message = update.ErrorMessage });
+
+                return Results.Ok(new
+                {
+                    success = true,
+                    message = action == "reschedule" ? "Đã dời buổi học và thông báo cho học viên." : "Đã phân công HLV dạy thay và thông báo cho học viên.",
+                });
+            })
             .RequireAuthorization(policy => policy.RequireRole("manager", "admin", "center_manager", "centermanager"));
 
         // Cancel the remaining sessions in a recurring course, preserving completed sessions.
@@ -689,6 +778,26 @@ public static partial class ClassEndpoints
         MapClassBookingEndpoints(classGroup);
     }
 
+    private static bool IsCoachQualifiedForSport(string? specialty, string? sportName, string? className)
+    {
+        var spec = (specialty ?? string.Empty).Trim().ToLowerInvariant();
+        if (spec.Length == 0) return false;
+        var sport = (sportName ?? string.Empty).Trim().ToLowerInvariant();
+        var target = $"{sport} {(className ?? string.Empty).ToLowerInvariant()}";
+        if (sport.Length == 0 && className is null) return false;
+        if (target.Contains("yoga") && spec.Contains("yoga")) return true;
+        if (target.Contains("pilates") && (spec.Contains("pilates") || spec.Contains("yoga"))) return true;
+        if ((target.Contains("gym") || target.Contains("fitness") || target.Contains("thể lực") || target.Contains("thể hình"))
+            && (spec.Contains("gym") || spec.Contains("fitness") || spec.Contains("thể hình") || spec.Contains("body"))) return true;
+        if ((target.Contains("bóng đá") || target.Contains("futsal")) && (spec.Contains("bóng đá") || spec.Contains("futsal"))) return true;
+        if (target.Contains("cầu lông") && (spec.Contains("cầu lông") || spec.Contains("badminton"))) return true;
+        if ((target.Contains("bơi") || target.Contains("swim")) && (spec.Contains("bơi") || spec.Contains("swim"))) return true;
+        if ((target.Contains("boxing") || target.Contains("võ") || target.Contains("combat"))
+            && (spec.Contains("boxing") || spec.Contains("võ") || spec.Contains("combat"))) return true;
+        if ((target.Contains("dance") || target.Contains("zumba")) && (spec.Contains("dance") || spec.Contains("zumba"))) return true;
+        return sport.Length > 0 && spec.Contains(sport);
+    }
+
     public class CoachClassProposalRow
     {
         public Guid id { get; set; }
@@ -737,5 +846,18 @@ public sealed class GuidValueRow
 public sealed class WalletBalanceRow
 {
     public decimal Balance { get; set; }
+}
+
+public sealed class ManagerClassAdjustmentRequest
+{
+    public string? Action { get; set; }
+    public DateTime? NewScheduleTime { get; set; }
+    public Guid? SubstituteCoachId { get; set; }
+    public string? Reason { get; set; }
+}
+
+public sealed class ManagerCoachSpecialtyRow
+{
+    public string? Specialty { get; set; }
 }
 }

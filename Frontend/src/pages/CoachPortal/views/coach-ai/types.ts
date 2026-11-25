@@ -55,7 +55,7 @@ export const ROUTINE_PRESETS: RoutinePreset[] = [
     exerciseCount: 5,
     badge: "Sức mạnh",
     icon: "Dumbbell",
-    description: "Giáo án tập trung phát triển thân trên an toàn cho người mới.",
+    description: "Kế hoạch tập trung phát triển thân trên an toàn cho người mới.",
   },
   {
     id: "yoga-recovery",

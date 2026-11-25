@@ -16,7 +16,7 @@ export function HomeworkDetailModal({ homework, onClose }: HomeworkDetailModalPr
         <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <div>
             <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
-              Giáo án tập luyện tại trung tâm
+              Kế hoạch tập luyện tại trung tâm
             </span>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">
               {homework.plan.planName}
@@ -80,7 +80,7 @@ export function HomeworkDetailModal({ homework, onClose }: HomeworkDetailModalPr
             onClick={onClose}
             className="px-4 py-2 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-semibold text-xs cursor-pointer"
           >
-            Đóng giáo án
+            Đóng kế hoạch
           </button>
         </div>
       </div>

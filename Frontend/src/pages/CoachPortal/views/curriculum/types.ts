@@ -11,6 +11,16 @@ export const STATUS_STYLE: Record<CurriculumStatus, { label: string; bg: string;
 
 export const EMPTY_EXERCISE = { name: "", reps: "", rest: "", note: "" };
 
+export const makePlanSession = (sessionNumber: number, weekNumber = 1) => ({
+  weekNumber,
+  sessionNumber,
+  title: "",
+  goal: "",
+  activities: "",
+  coachNotes: "",
+  exercises: [{ ...EMPTY_EXERCISE }],
+});
+
 export function makeDraft(sports: SportOption[] = []): MockCurriculum {
   const firstSport = sports[0];
 
@@ -28,6 +38,11 @@ export function makeDraft(sports: SportOption[] = []): MockCurriculum {
     exercises: [
       { ...EMPTY_EXERCISE },
     ],
+    programOutline: {
+      durationWeeks: 1,
+      sessionsPerWeek: 2,
+      sessions: [makePlanSession(1)],
+    },
     assignedTo: [],
   };
 }

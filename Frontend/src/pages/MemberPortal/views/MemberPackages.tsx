@@ -5,15 +5,13 @@ import {
   CatalogPackage,
   PackageOrder,
   PackagePeriod,
-  SportFormat,
   getMembershipStatus,
   MembershipStatus,
   calculateMembershipUpgrade,
 } from "../../../services/packageApi";
-import { Crown, Dumbbell, CheckCircle2, AlertCircle, X } from "lucide-react";
+import { CheckCircle2, AlertCircle, X } from "lucide-react";
 import { toast } from "sonner";
 import MembershipTab from "./packages/MembershipTab";
-import SportTab from "./packages/SportTab";
 import CancelMembershipModal from "./packages/CancelMembershipModal";
 import UniversalPaymentModal, { UniversalPaymentItem } from "../components/UniversalPaymentModal";
 
@@ -37,13 +35,10 @@ interface Props {
  * @param onCheckout Callback khi bắt đầu thanh toán gói
  */
 export default function MemberPackages({ onNavigate, onCheckout }: Props) {
-  const [activeTab, setActiveTab] = useState<"membership" | "sport">("membership");
   const [catalog, setCatalog] = useState<CatalogPackage[]>([]);
   const [orders, setOrders] = useState<PackageOrder[]>([]);
   const [, setLoading] = useState(true);
   const [selectedDuration, setSelectedDuration] = useState<PackagePeriod>(1);
-  const [sportFilter, setSportFilter] = useState("all");
-  const [formatFilter, setFormatFilter] = useState<"all" | SportFormat>("all");
 
   // Quick checkout modal state
   const [selectedPackage, setSelectedPackage] = useState<CatalogPackage | null>(null);
@@ -76,17 +71,6 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
     void loadData();
   }, [loadData]);
 
-  useEffect(() => {
-    const handleSwitchTab = (e: Event) => {
-      const customEvent = e as CustomEvent<string>;
-      if (customEvent.detail === "sport" || customEvent.detail === "membership") {
-        setActiveTab(customEvent.detail);
-      }
-    };
-    window.addEventListener("switch-packages-tab", handleSwitchTab);
-    return () => window.removeEventListener("switch-packages-tab", handleSwitchTab);
-  }, []);
-
   // Compute active membership status
   const membershipStatus = useMemo<MembershipStatus>(() => {
     const status = getMembershipStatus(orders, catalog);
@@ -96,7 +80,7 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
       name: "Hội viên Cơ bản",
       benefits: [
         "Hạng mặc định miễn phí trọn đời",
-        "Có thể mua riêng từng gói môn tập",
+        "Có thể nâng cấp lên hạng thành viên trả phí",
         "Tủ đồ tiêu chuẩn trong ca tập",
         "1 lần đo InBody khi kích hoạt",
       ],
@@ -110,37 +94,6 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
   // Filter membership packages
   const membershipPackages = useMemo(() => {
     return catalog.filter((pkg) => pkg.category === "membership" && pkg.isActive);
-  }, [catalog]);
-
-  // Active sport orders
-  const activeSportOrders = useMemo(() => {
-    const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    return orders.filter(
-      (order) =>
-        order.status === "paid" &&
-        order.packageSnapshot.category === "sport" &&
-        (!order.endDate || order.endDate.slice(0, 10) >= todayStr)
-    );
-  }, [orders]);
-
-  // Available sport packages for browsing
-  const availableSportPackages = useMemo(() => {
-    return catalog.filter((pkg) => {
-      if (pkg.category !== "sport" || !pkg.isActive) return false;
-      if (sportFilter !== "all" && pkg.sport !== sportFilter) return false;
-      if (formatFilter !== "all" && pkg.format !== formatFilter) return false;
-      return true;
-    });
-  }, [catalog, sportFilter, formatFilter]);
-
-  // Sport options for filter dropdown
-  const sportOptions = useMemo(() => {
-    const set = new Set<string>();
-    catalog
-      .filter((p) => p.category === "sport" && p.sport)
-      .forEach((p) => set.add(p.sport!));
-    return Array.from(set);
   }, [catalog]);
 
   // Calculate discount for a package based on active membership tier
@@ -329,87 +282,21 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
             Gói tập & Dịch vụ của tôi
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
-            Hệ thống phân tách rõ ràng giữa <strong>Gói Thành Viên</strong> (nền tảng đặc quyền, chiết khấu, tiện ích thư giãn) và <strong>Gói Môn Tập</strong> (quyền vào sàn tập riêng từng môn: Gym, Bơi, Yoga, Boxing...).
+            Quản lý hạng thành viên, quyền lợi và thời hạn gói của bạn tại trung tâm.
           </p>
         </div>
 
-        {/* Tab switchers */}
-        <div className="flex p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700 shrink-0">
-          <button
-            type="button"
-            onClick={() => setActiveTab("membership")}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === "membership"
-                ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm ring-1 ring-slate-200/60 dark:ring-slate-700"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <Crown className="w-4 h-4 text-amber-500" />
-            <span>1. Gói Thành Viên</span>
-            <span
-              className={`px-1.5 py-0.2 rounded-full text-[9px] font-extrabold uppercase ${
-                membershipStatus.tier === "premium"
-                  ? "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300"
-                  : membershipStatus.tier === "plus"
-                  ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300"
-                  : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-              }`}
-            >
-              {membershipStatus.tier.toUpperCase()}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("sport")}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === "sport"
-                ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm ring-1 ring-slate-200/60 dark:ring-slate-700"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <Dumbbell className="w-4 h-4" />
-            <span>2. Gói Môn Tập</span>
-            {activeSportOrders.length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                {activeSportOrders.length} đang có
-              </span>
-            )}
-          </button>
-        </div>
       </div>
 
-      {/* TAB 1: GÓI THÀNH VIÊN */}
-      {activeTab === "membership" && (
-        <MembershipTab
-          membershipStatus={membershipStatus}
-          membershipPackages={membershipPackages}
-          selectedDuration={selectedDuration}
-          onSelectDuration={setSelectedDuration}
-          onStartPurchase={handleStartPurchase}
-          onCancelMembership={() => setShowCancelModal(true)}
-          catalog={catalog}
-        />
-      )}
-
-      {/* TAB 2: GÓI MÔN TẬP */}
-      {activeTab === "sport" && (
-        <SportTab
-          activeSportOrders={activeSportOrders}
-          availableSportPackages={availableSportPackages}
-          membershipStatus={membershipStatus}
-          selectedDuration={selectedDuration}
-          onSelectDuration={setSelectedDuration}
-          sportFilter={sportFilter}
-          onSportFilterChange={setSportFilter}
-          formatFilter={formatFilter}
-          onFormatFilterChange={setFormatFilter}
-          sportOptions={sportOptions}
-          calculateDiscount={calculateDiscount}
-          onStartPurchase={handleStartPurchase}
-          onNavigate={onNavigate}
-        />
-      )}
+      <MembershipTab
+        membershipStatus={membershipStatus}
+        membershipPackages={membershipPackages}
+        selectedDuration={selectedDuration}
+        onSelectDuration={setSelectedDuration}
+        onStartPurchase={handleStartPurchase}
+        onCancelMembership={() => setShowCancelModal(true)}
+        catalog={catalog}
+      />
 
       {/* UNIVERSAL PAYMENT MODAL */}
       <UniversalPaymentModal

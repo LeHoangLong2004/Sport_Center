@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import type { MockSession } from "../../services/api";
 import { isSessionPast24Hours } from "../../utils/attendanceTimeUtils";
+import { getCompactPageItems } from "./paginationUtils";
 
 interface Props {
   activeSessions: MockSession[];
@@ -396,7 +397,10 @@ export default function AttendanceHistoryTableView({
 
               {/* Danh sách trang */}
               <div className="flex items-center gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                {getCompactPageItems(currentPage, totalPages).map((pageNum, index) => {
+                  if (pageNum === "ellipsis") {
+                    return <span key={`ellipsis-${index}`} className="px-1 text-slate-400 select-none">…</span>;
+                  }
                   const isActive = pageNum === currentPage;
                   return (
                     <button

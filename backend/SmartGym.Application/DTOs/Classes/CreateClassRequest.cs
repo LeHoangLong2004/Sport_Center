@@ -12,6 +12,7 @@ public class CreateClassRequest
     public List<int>? DaysOfWeek { get; set; }
     public int? Weeks { get; set; }
     public int? TotalSessions { get; set; }
+    public string? Reason { get; set; }
 }
 
 public class CreateClassProposalRequest
