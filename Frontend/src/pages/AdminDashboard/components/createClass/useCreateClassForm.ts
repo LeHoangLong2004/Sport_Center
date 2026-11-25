@@ -10,6 +10,7 @@ export interface CreateClassFormData {
   scheduleTime: string;
   durationMinutes: number;
   capacity: number;
+  trainingMode?: 'GROUP' | 'PT_ONE_TO_ONE';
   isRecurring?: boolean;
   daysOfWeek?: number[];
   weeks?: number;
@@ -44,6 +45,7 @@ export function useCreateClassForm({ editData, mode = "manager", onSuccess, onCl
         scheduleTime: `${hours}:${minutes}`,
         durationMinutes: editData.durationMinutes || 60,
         capacity: editData.capacity || 20,
+        trainingMode: 'GROUP',
         isRecurring: false,
         daysOfWeek: [1, 4],
         weeks: 10,
@@ -59,7 +61,8 @@ export function useCreateClassForm({ editData, mode = "manager", onSuccess, onCl
       scheduleTime: '',
       durationMinutes: 60,
       capacity: 20,
-      isRecurring: false,
+      trainingMode: 'GROUP',
+      isRecurring: true,
       daysOfWeek: [1, 4],
       weeks: 10,
       totalSessions: 20
@@ -211,7 +214,7 @@ export function useCreateClassForm({ editData, mode = "manager", onSuccess, onCl
         className: formData.className,
         scheduleTime: `${scheduleDate}T${scheduleTime}:00+07:00`,
         durationMinutes: Number(formData.durationMinutes),
-        capacity: Number(formData.capacity)
+        capacity: formData.trainingMode === 'PT_ONE_TO_ONE' ? 1 : Number(formData.capacity)
       };
 
       if (formData.isRecurring && formData.daysOfWeek && formData.daysOfWeek.length > 0) {

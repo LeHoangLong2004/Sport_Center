@@ -39,6 +39,7 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = 'manager
   }, []);
 
   const isRecurring = !!formData.isRecurring;
+  const isPtOneToOne = formData.trainingMode === 'PT_ONE_TO_ONE';
   const WEEK_DAYS = [
     { label: 'T2', val: 1 }, { label: 'T3', val: 2 }, { label: 'T4', val: 3 },
     { label: 'T5', val: 4 }, { label: 'T6', val: 5 }, { label: 'T7', val: 6 }, { label: 'CN', val: 0 },
@@ -141,10 +142,10 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = 'manager
               {/* Hình thức */}
               <PreviewCard>
                 <div className="flex items-center gap-2.5">
-                  <span className="text-xl shrink-0">{isRecurring ? '🔄' : '🗓️'}</span>
+                  <span className="text-xl shrink-0">{isPtOneToOne ? '👤' : isRecurring ? '🔄' : '🗓️'}</span>
                   <PreviewRow label="Hình thức học">
                     <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                      {isRecurring ? 'Lịch lặp định kỳ' : 'Lớp đơn lẻ (1 buổi)'}
+                      {isPtOneToOne ? 'PT 1–1 · định kỳ' : isRecurring ? 'Lớp nhóm · định kỳ' : 'Một buổi'}
                     </span>
                   </PreviewRow>
                 </div>
@@ -207,7 +208,7 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = 'manager
                 <PreviewCard>
                   <PreviewRow label="Quy mô lớp">
                     <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                      {formData.capacity} <span className="text-slate-500 dark:text-slate-400 font-normal text-xs">học viên tối đa</span>
+                        {isPtOneToOne ? '1 học viên' : formData.capacity} <span className="text-slate-500 dark:text-slate-400 font-normal text-xs">{isPtOneToOne ? '· PT 1–1' : 'học viên tối đa'}</span>
                     </span>
                   </PreviewRow>
                 </PreviewCard>
@@ -277,7 +278,7 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = 'manager
                   formData={formData} setFormData={setFormData} handleChange={handleChange}
                   sports={sports} facilities={facilities} coaches={coaches}
                   currentCoachName={currentCoachName} loadingData={loadingData}
-                  isCoachMode={isCoachMode} leadTimeValidation={leadTimeValidation}
+                    isCoachMode={isCoachMode} isEditing={!!editData} leadTimeValidation={leadTimeValidation}
                 />
               </div>
 

@@ -16,16 +16,7 @@ type ProductOrder = {
   deliveryLocation?: string | null
   assignedToName?: string
   paidAt?: string | null
-  messageCount: number
   items: Array<{ name: string; quantity: number; unitPrice: number }>
-}
-
-type OrderMessage = {
-  id: string
-  senderId: string
-  senderName: string
-  message: string
-  createdAt: string
 }
 
 const money = (value: number) => `${value.toLocaleString("vi-VN")}đ`
@@ -68,9 +59,6 @@ export function ProductOrdersPage() {
   const [filter, setFilter] = useState<OrderFilter>("all")
   const [loading, setLoading] = useState(true)
   const [processingId, setProcessingId] = useState<string | null>(null)
-  const [openChatId, setOpenChatId] = useState<string | null>(null)
-  const [messages, setMessages] = useState<Record<string, OrderMessage[]>>({})
-  const [drafts, setDrafts] = useState<Record<string, string>>({})
   const [error, setError] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const ITEMS_PER_PAGE = 8
@@ -136,25 +124,6 @@ export function ProductOrdersPage() {
       window.removeEventListener("focus", refreshOnFocus)
     }
   }, [loadOrders])
-
-  const loadMessages = useCallback(async (orderId: string) => {
-    try {
-      const body = await readResponse(await fetch(`/api/product-orders/${orderId}/messages`, { headers: authHeaders() }))
-      setMessages((current) => ({ ...current, [orderId]: Array.isArray(body) ? body : [] }))
-      setError("")
-    } catch (messageError) {
-      setError(messageError instanceof Error ? messageError.message : "Không thể tải tin nhắn.")
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!openChatId) return
-    void loadMessages(openChatId)
-    const refreshTimer = window.setInterval(() => {
-      if (document.visibilityState === "visible") void loadMessages(openChatId)
-    }, 10000)
-    return () => window.clearInterval(refreshTimer)
-  }, [openChatId, loadMessages])
 
   const counts = useMemo(() => ({
     all: orders.length,
@@ -237,37 +206,13 @@ export function ProductOrdersPage() {
     }
   }
 
-  async function toggleChat(orderId: string) {
-    if (openChatId === orderId) {
-      setOpenChatId(null)
-      return
-    }
-    setOpenChatId(orderId)
-  }
-
-  async function sendMessage(orderId: string) {
-    const message = drafts[orderId]?.trim()
-    if (!message) return
-    try {
-      const body = await readResponse(await fetch(`/api/product-orders/${orderId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
-        body: JSON.stringify({ message }),
-      }))
-      setMessages((current) => ({ ...current, [orderId]: [...(current[orderId] || []), body] }))
-      setDrafts((current) => ({ ...current, [orderId]: "" }))
-    } catch (messageError) {
-      setError(messageError instanceof Error ? messageError.message : "Không thể gửi tin nhắn.")
-    }
-  }
-
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-600">Lễ tân / Đơn hàng Member</p>
           <h1 className="mt-2 text-2xl font-extrabold text-slate-900">Quản lý đơn mua hàng</h1>
-          <p className="mt-1 text-sm text-slate-500">Xác nhận thanh toán, chuẩn bị hàng và trao đổi với Member theo từng đơn. Tin nhắn nằm trong nút <strong>Xem chat</strong> của mỗi đơn.</p>
+          <p className="mt-1 text-sm text-slate-500">Xác nhận thanh toán, chuẩn bị hàng và theo dõi trạng thái từng đơn.</p>
         </div>
         <button type="button" onClick={() => void loadOrders()} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 hover:border-emerald-300 hover:text-emerald-600">Làm mới</button>
       </div>
@@ -420,38 +365,8 @@ export function ProductOrdersPage() {
                         </button>
                       )}
 
-                      <button
-                        type="button"
-                        onClick={() => void toggleChat(order.id)}
-                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-600 hover:border-emerald-300 hover:text-emerald-600 transition cursor-pointer"
-                      >
-                        {openChatId === order.id ? "Đóng chat" : order.messageCount > 0 ? `Xem chat (${order.messageCount})` : "Nhắn Member"}
-                      </button>
                     </div>
                   </div>
-                  {openChatId === order.id && (
-                    <div className="mt-4 rounded-xl bg-slate-50 p-4">
-                      <div className="max-h-48 space-y-2 overflow-y-auto">
-                        {(messages[order.id] || []).length === 0 ? (
-                          <p className="text-sm text-slate-400">Chưa có tin nhắn. Hãy chủ động thông báo tình trạng đơn cho Member.</p>
-                        ) : (
-                          messages[order.id].map((item) => (
-                            <div key={item.id} className="rounded-lg bg-white p-3 text-sm shadow-sm">
-                              <p className="font-bold text-slate-700">{item.senderName}</p>
-                              <p className="mt-1 text-slate-600">{item.message}</p>
-                              <p className="mt-1 text-xs text-slate-400">{new Date(item.createdAt).toLocaleString("vi-VN")}</p>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                      <div className="mt-3 flex gap-2">
-                        <input value={drafts[order.id] || ""} onChange={(event) => setDrafts((current) => ({ ...current, [order.id]: event.target.value }))} onKeyDown={(event) => { if (event.key === "Enter") void sendMessage(order.id) }} placeholder="Nhập tin nhắn cho Member..." className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500" />
-                        <button type="button" onClick={() => void sendMessage(order.id)} className="rounded-lg bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-sm font-bold text-white">
-                          Gửi
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </article>
               )
             })}

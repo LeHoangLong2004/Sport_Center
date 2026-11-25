@@ -12,6 +12,7 @@ interface CreateClassFormFieldsProps {
   currentCoachName: string;
   loadingData: boolean;
   isCoachMode: boolean;
+  isEditing: boolean;
   leadTimeValidation: { valid: boolean; message: string } | null;
 }
 
@@ -62,9 +63,11 @@ export function CreateClassFormFields({
   currentCoachName,
   loadingData,
   isCoachMode,
+  isEditing,
   leadTimeValidation,
 }: CreateClassFormFieldsProps) {
   const isRecurring = !!formData.isRecurring;
+  const isPtOneToOne = formData.trainingMode === 'PT_ONE_TO_ONE';
   const currentDays = formData.daysOfWeek || [1, 4];
 
   const toggleDay = (dayVal: number) => {
@@ -87,55 +90,53 @@ export function CreateClassFormFields({
     <div className="space-y-6">
 
       {/* ══ 1. HÌNH THỨC LỚP ══ */}
-      <div>
+      {!isEditing && <div>
         <Divider label="Hình thức lớp học" />
         <div className="grid grid-cols-2 gap-3.5 mt-3">
           {[
-            { icon: '🗓️', label: 'Lớp đơn lẻ', sub: '1 buổi tập duy nhất', val: false },
-            { icon: '🔄', label: 'Lịch định kỳ', sub: 'Lặp lại đều đặn theo tuần', val: true },
+            { icon: '👤', label: 'Lớp PT 1–1', sub: 'Một học viên · lịch tập định kỳ', val: 'PT_ONE_TO_ONE' as const },
+            { icon: '🔄', label: 'Lớp nhóm định kỳ', sub: 'Lặp lại theo các ngày trong tuần', val: 'GROUP' as const },
           ].map(opt => (
             <button
-              key={String(opt.val)}
+              key={opt.val}
               type="button"
               onClick={() =>
                 setFormData(prev => ({
                   ...prev,
-                  isRecurring: opt.val,
-                  ...(opt.val
-                    ? {
-                        daysOfWeek: prev.daysOfWeek?.length ? prev.daysOfWeek : [1, 4],
-                        weeks: prev.weeks || 10,
-                        totalSessions: (prev.daysOfWeek?.length || 2) * (prev.weeks || 10),
-                      }
-                    : {}),
+                  trainingMode: opt.val,
+                  isRecurring: true,
+                  capacity: opt.val === 'PT_ONE_TO_ONE' ? 1 : (prev.capacity === 1 ? 20 : prev.capacity),
+                  daysOfWeek: prev.daysOfWeek?.length ? prev.daysOfWeek : [1, 4],
+                  weeks: prev.weeks || 10,
+                  totalSessions: (prev.daysOfWeek?.length || 2) * (prev.weeks || 10),
                 }))
               }
               className={`flex items-center gap-3.5 p-4 rounded-2xl border-2 text-left transition-all cursor-pointer select-none ${
-                isRecurring === opt.val
+                (isPtOneToOne ? 'PT_ONE_TO_ONE' : 'GROUP') === opt.val
                   ? 'bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-500 dark:border-emerald-500 shadow-xs ring-1 ring-emerald-500/20'
                   : 'bg-white dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-slate-600 hover:bg-emerald-50/20 dark:hover:bg-slate-800'
               }`}
             >
               <span className="text-2xl shrink-0">{opt.icon}</span>
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-bold ${isRecurring === opt.val ? 'text-emerald-900 dark:text-emerald-200' : 'text-slate-800 dark:text-slate-200'}`}>
+                <p className={`text-sm font-bold ${(isPtOneToOne ? 'PT_ONE_TO_ONE' : 'GROUP') === opt.val ? 'text-emerald-900 dark:text-emerald-200' : 'text-slate-800 dark:text-slate-200'}`}>
                   {opt.label}
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{opt.sub}</p>
               </div>
               <div className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-all ${
-                isRecurring === opt.val
+                (isPtOneToOne ? 'PT_ONE_TO_ONE' : 'GROUP') === opt.val
                   ? 'border-emerald-500 bg-emerald-500'
                   : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800'
               }`}>
-                {isRecurring === opt.val && (
+                {(isPtOneToOne ? 'PT_ONE_TO_ONE' : 'GROUP') === opt.val && (
                   <div className="w-1.5 h-1.5 rounded-full bg-white" />
                 )}
               </div>
             </button>
           ))}
         </div>
-      </div>
+      </div>}
 
       {/* ══ 2. THÔNG TIN LỚP ══ */}
       <div>
@@ -239,20 +240,29 @@ export function CreateClassFormFields({
               </div>
             </div>
             <div>
-              <FieldLabel>Sức chứa tối đa</FieldLabel>
-              <div className="relative">
-                <input
-                  required type="number" name="capacity" min="1" max="500"
-                  value={formData.capacity}
-                  onChange={e => { e.target.setCustomValidity(''); handleChange(e); }}
-                  onInvalid={e => { (e.target as HTMLInputElement).setCustomValidity('Vui lòng nhập sức chứa.'); }}
-                  className={`${inputCls} pr-16`}
-                  placeholder="20"
-                />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 dark:text-slate-500 pointer-events-none">
-                  học viên
-                </span>
-              </div>
+              {isPtOneToOne ? (
+                <>
+                  <OptionalLabel>Sức chứa</OptionalLabel>
+                  <div className={`${inputCls} text-slate-600 dark:text-slate-300`}>1 học viên (cố định cho PT 1–1)</div>
+                </>
+              ) : (
+                <>
+                  <FieldLabel>Sức chứa tối đa</FieldLabel>
+                  <div className="relative">
+                    <input
+                      required type="number" name="capacity" min="2" max="500"
+                      value={formData.capacity}
+                      onChange={e => { e.target.setCustomValidity(''); handleChange(e); }}
+                      onInvalid={e => { (e.target as HTMLInputElement).setCustomValidity('Vui lòng nhập sức chứa.'); }}
+                      className={`${inputCls} pr-16`}
+                      placeholder="20"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 dark:text-slate-500 pointer-events-none">
+                      học viên
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 

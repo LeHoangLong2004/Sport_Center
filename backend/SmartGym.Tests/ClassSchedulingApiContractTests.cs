@@ -39,27 +39,4 @@ public sealed class ClassSchedulingApiContractTests
         Assert.NotNull(endpoint.Metadata.GetMetadata<Microsoft.AspNetCore.Authorization.IAuthorizeData>());
     }
 
-    [Theory]
-    [InlineData("/api/class-pricing/", "GET")]
-    [InlineData("/api/class-pricing/{sportId:guid}/quote", "GET")]
-    [InlineData("/api/class-pricing/{sportId:guid}", "PUT")]
-    public async Task Class_pricing_routes_are_registered(string routePattern, string method)
-    {
-        var builder = WebApplication.CreateBuilder();
-        builder.Services.AddRouting();
-        builder.Services.AddSingleton<SmartGymDbContext>(_ => null!);
-        await using var app = builder.Build();
-
-        app.MapSportClassPricingEndpoints();
-
-        var endpoint = ((IEndpointRouteBuilder)app).DataSources
-            .SelectMany(source => source.Endpoints)
-            .OfType<RouteEndpoint>()
-            .Single(item => item.RoutePattern.RawText == routePattern);
-        var methods = endpoint.Metadata.GetMetadata<HttpMethodMetadata>();
-
-        Assert.NotNull(methods);
-        Assert.Contains(method, methods!.HttpMethods);
-        Assert.NotNull(endpoint.Metadata.GetMetadata<Microsoft.AspNetCore.Authorization.IAuthorizeData>());
-    }
 }

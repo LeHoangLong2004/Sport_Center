@@ -12,7 +12,6 @@ public static class EndpointRouteExtensions
         app.MapLegacyCatalogEndpoints();
         app.MapLegacyClassEndpoints();
         app.MapClassSchedulingEndpoints();
-        app.MapSportClassPricingEndpoints();
         app.MapLegacyScheduleEndpoints();
         app.MapProductEndpoints();
         app.MapProductOrderEndpoints();

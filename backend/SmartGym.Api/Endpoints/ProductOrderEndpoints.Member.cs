@@ -63,7 +63,12 @@ public static partial class ProductOrderEndpoints
             return Results.BadRequest(new { message = "Vui lòng nhập vị trí nhận hàng trong trung tâm." });
 
         var invoiceId = Guid.NewGuid();
-        var total = lines.Sum(line => line.Quantity * line.UnitPrice);
+        var subtotal = lines.Sum(line => line.Quantity * line.UnitPrice);
+        // POS discounts are capped server-side to avoid trusting a client-supplied total.
+        var discount = IsStaff(context)
+            ? Math.Clamp(request.DiscountAmount ?? 0m, 0m, Math.Min(10_000m, subtotal))
+            : 0m;
+        var total = subtotal - discount;
 
         await using var connection = db.Database.GetDbConnection();
         await connection.OpenAsync();
@@ -107,6 +112,7 @@ public static partial class ProductOrderEndpoints
         {
             id = invoiceId,
             totalAmount = total,
+            discountAmount = discount,
             paymentMethod,
             status = "pending",
             fulfillmentMethod,

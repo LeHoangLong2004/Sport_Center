@@ -11,7 +11,6 @@ import {
   MessageSquare,
   CheckCircle2,
   XCircle,
-  AlertCircle,
   Award,
   Target,
   Dumbbell,
@@ -82,7 +81,6 @@ export default function AttendanceDetailModal({
   };
 
   const isFuture = isFutureSession(session.date, session.startTime);
-  const effectiveStatus = isFuture ? "chưa diễn ra" : session.status;
   const assessment = session.assessment;
 
   const getStatusBadge = (status: AttendanceSession["status"]) => {
@@ -99,20 +97,6 @@ export default function AttendanceDetailModal({
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
             <XCircle className="w-3.5 h-3.5" />
             Vắng mặt
-          </span>
-        );
-      case "đi muộn":
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
-            <AlertCircle className="w-3.5 h-3.5" />
-            Đi muộn
-          </span>
-        );
-      case "chưa diễn ra":
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
-            <Calendar className="w-3.5 h-3.5" />
-            Sắp diễn ra
           </span>
         );
       default:
@@ -166,7 +150,7 @@ export default function AttendanceDetailModal({
           <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
             Trạng thái điểm danh:
           </span>
-          {getStatusBadge(effectiveStatus)}
+          {getStatusBadge(session.status)}
         </div>
 
         {/* Schedule & Coach Details */}
@@ -292,7 +276,7 @@ export default function AttendanceDetailModal({
             <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-950/20 border border-slate-200/50 dark:border-slate-800/30 text-xs space-y-1">
               <p className="font-bold text-slate-800 dark:text-slate-300 flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-slate-500" />
-                Buổi học sắp diễn ra
+                Chưa điểm danh
               </p>
               <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
                 Buổi học chưa đến giờ ({session.startTime} - {session.endTime}). Huấn luyện viên sẽ điểm danh và ghi nhận xét sau giờ học.
