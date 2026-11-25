@@ -50,7 +50,7 @@ export const MemberStatsCards: React.FC<Props> = ({ stats }) => {
             <span className="text-xs text-slate-400 font-medium">Chưa có dữ liệu</span>
           )}
         </div>
-        <p className="text-[11px] text-slate-400 mt-1">{latest?.completion != null ? `Hoàn thành ${latest.completion}% giáo án` : "Chưa có đánh giá"}</p>
+        <p className="text-[11px] text-slate-400 mt-1">{latest?.completion != null ? `Hoàn thành ${latest.completion}% kế hoạch` : "Chưa có đánh giá"}</p>
       </div>
 
       {/* Tiến độ mục tiêu */}
@@ -61,7 +61,7 @@ export const MemberStatsCards: React.FC<Props> = ({ stats }) => {
         </div>
         <div className="mt-2 flex items-baseline gap-2">
           <span className="text-2xl font-bold text-slate-900 dark:text-white">{formatNumber(stats.goalProgress, "%")}</span>
-          <span className="text-xs text-emerald-600 font-medium">Theo giáo án đã giao</span>
+          <span className="text-xs text-emerald-600 font-medium">Theo kế hoạch đã giao</span>
         </div>
         <p className="text-[11px] text-slate-400 mt-1">Tiến độ trung bình từ dữ liệu bài tập</p>
       </div>

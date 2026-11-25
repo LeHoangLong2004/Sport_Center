@@ -234,6 +234,7 @@ public static partial class CoachEndpoints
             Goal = GetString(request, "goal"),
             Level = GetString(request, "level"),
             DurationMinutes = GetInt(request, "durationMinutes") ?? GetInt(request, "duration"),
+            ProgramOutlineJson = GetString(request, "programOutlineJson"),
             Status = GetString(request, "status"),
             Exercises = exercises
         };
@@ -254,6 +255,7 @@ public static partial class CoachEndpoints
             goal = plan.Goal ?? string.Empty,
             level = plan.Level ?? string.Empty,
             duration = plan.DurationMinutes ?? 60,
+            programOutlineJson = plan.ProgramOutlineJson,
             status = plan.Status,
             updatedAt = plan.UpdatedAt.ToString("yyyy-MM-dd"),
             description = plan.Description ?? string.Empty,

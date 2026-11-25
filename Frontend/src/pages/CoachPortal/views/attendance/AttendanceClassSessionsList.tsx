@@ -18,6 +18,7 @@ import {
 import type { MockSession } from "../../services/api";
 import { isAttendanceLocked24h } from "../../utils/attendanceLock";
 import { isSessionPast24Hours } from "../../utils/attendanceTimeUtils";
+import { getCompactPageItems } from "./paginationUtils";
 
 interface Props {
   activeSessions: MockSession[];
@@ -30,6 +31,13 @@ interface Props {
 
 type DateTab = "all" | "today" | "tomorrow" | "this_week";
 type StatusFilter = "all" | "pending" | "finalized" | "locked";
+
+const getCourseGroupingKey = (session: MockSession) => {
+  const legacyCourseName = (session.courseName || session.className || "Lớp học")
+    .replace(/\s*\(Buổi\s+\d+\)\s*$/i, "")
+    .trim();
+  return session.courseId || `legacy:${legacyCourseName.toLocaleLowerCase("vi")}`;
+};
 
 export default function AttendanceClassSessionsList({
   activeSessions,
@@ -136,10 +144,7 @@ export default function AttendanceClassSessionsList({
     filteredSessions.forEach((session) => {
       // New API data uses the stable course id. Normalize legacy session labels
       // like "Course name (Buổi 2)" until the API is restarted with that field.
-      const legacyCourseName = (session.courseName || session.className || "Lớp học")
-        .replace(/\s*\(Buổi\s+\d+\)\s*$/i, "")
-        .trim();
-      const key = session.courseId || `legacy:${legacyCourseName.toLocaleLowerCase("vi")}`;
+      const key = getCourseGroupingKey(session);
       const current = grouped.get(key) || [];
       current.push(session);
       grouped.set(key, current);
@@ -156,6 +161,15 @@ export default function AttendanceClassSessionsList({
   // Statistics
   const todaySessionsCount = useMemo(
     () => activeSessions.filter((s) => s.date === todayIso).length,
+    [activeSessions, todayIso]
+  );
+
+  const allCourseCount = useMemo(
+    () => new Set(activeSessions.map(getCourseGroupingKey)).size,
+    [activeSessions]
+  );
+  const todayCourseCount = useMemo(
+    () => new Set(activeSessions.filter((session) => session.date === todayIso).map(getCourseGroupingKey)).size,
     [activeSessions, todayIso]
   );
 
@@ -269,28 +283,29 @@ export default function AttendanceClassSessionsList({
       </div>
 
       {/* 3. Toolbar & Filters */}
+      {!selectedCourseId && (
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
         {/* Date Filter Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
-          {[
-            { key: "today", label: `Hôm nay (${todaySessionsCount})` },
-            { key: "tomorrow", label: "Ngày mai" },
-            { key: "this_week", label: "Tuần này" },
-            { key: "all", label: `Tất cả (${activeSessions.length})` },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => { onSelectCourse(null); setDateTab(tab.key as DateTab); }}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                dateTab === tab.key
-                  ? "bg-emerald-600 text-white shadow-xs"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+            {[
+              { key: "all", label: `Tất cả (${allCourseCount})` },
+              { key: "today", label: `Hôm nay (${todayCourseCount})` },
+              { key: "tomorrow", label: "Ngày mai" },
+              { key: "this_week", label: "Tuần này" },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => { onSelectCourse(null); setDateTab(tab.key as DateTab); }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                  dateTab === tab.key
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
         </div>
 
         {/* Status Pills & Search */}
@@ -318,6 +333,7 @@ export default function AttendanceClassSessionsList({
           </div>
         </div>
       </div>
+      )}
 
       {/* 4. Class list → course sessions → attendance */}
       {isLoading ? (
@@ -371,7 +387,7 @@ export default function AttendanceClassSessionsList({
                 const marked = course.sessions.filter((item) => getSessionAttendanceState(item) === "finalized").length;
                 const pending = course.sessions.length - marked;
                 return (
-                  <button key={course.id} type="button" onClick={() => { onSelectCourse(course.id); setCurrentPage(1); }} className="group w-full text-left bg-white dark:bg-slate-900 rounded-xl border border-slate-200/90 dark:border-slate-800 px-4 py-4 shadow-xs hover:shadow-md hover:border-emerald-400 transition-all grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(220px,0.8fr)_auto] md:items-center gap-3">
+                <button key={course.id} type="button" onClick={() => { setDateTab("all"); setStatusFilter("all"); setSearch(""); onSelectCourse(course.id); setCurrentPage(1); }} className="group w-full text-left bg-white dark:bg-slate-900 rounded-xl border border-slate-200/90 dark:border-slate-800 px-4 py-4 shadow-xs hover:shadow-md hover:border-emerald-400 transition-all grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(220px,0.8fr)_auto] md:items-center gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"><Dumbbell className="w-3 h-3" />{first?.sport || "Lớp nhóm"}</span>
@@ -508,7 +524,10 @@ export default function AttendanceClassSessionsList({
                 </button>
 
                 <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                  {getCompactPageItems(currentPage, totalPages).map((pageNum, index) => {
+                    if (pageNum === "ellipsis") {
+                      return <span key={`ellipsis-${index}`} className="px-1 text-slate-400 select-none">…</span>;
+                    }
                     const isActive = pageNum === currentPage;
                     return (
                       <button

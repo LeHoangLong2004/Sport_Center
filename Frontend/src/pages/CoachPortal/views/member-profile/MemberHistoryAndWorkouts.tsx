@@ -108,14 +108,14 @@ export const MemberHistoryAndWorkouts: React.FC<MemberHistoryAndWorkoutsProps> =
         </div>
       </div>
 
-      {/* Giáo án bài tập đã giao */}
+      {/* Kế hoạch tập luyện đã giao */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-xs">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <Dumbbell className="w-4 h-4 text-slate-500" />
-            <h2 className="font-bold text-sm text-slate-900 dark:text-white">Giáo án bài tập đã giao</h2>
+            <h2 className="font-bold text-sm text-slate-900 dark:text-white">Kế hoạch tập luyện đã giao</h2>
             <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 font-semibold text-slate-600 dark:text-slate-300">
-              {assignedWorkouts.length} giáo án
+              {assignedWorkouts.length} kế hoạch
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -140,7 +140,7 @@ export const MemberHistoryAndWorkouts: React.FC<MemberHistoryAndWorkoutsProps> =
         <div className="divide-y divide-slate-100 dark:divide-slate-800/60 p-6 space-y-6">
           {assignedWorkouts.length === 0 ? (
             <div className="p-8 text-center text-xs text-slate-400">
-              Chưa có giáo án bài tập nào được giao cho học viên này.
+              Chưa có kế hoạch tập luyện nào được giao cho học viên này.
             </div>
           ) : (
             assignedWorkouts.map((workout) => {

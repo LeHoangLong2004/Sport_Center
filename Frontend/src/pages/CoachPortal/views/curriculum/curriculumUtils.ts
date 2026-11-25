@@ -22,7 +22,7 @@ export function cleanDuplicateSuffixes(title: string): string {
  * "Giáo án Bơi (Bản sao 2)" -> "Giáo án Bơi (Bản sao 3)"
  */
 export function getNextCloneTitle(title: string): string {
-  if (!title) return "Giáo án (Bản sao)";
+  if (!title) return "Kế hoạch tập luyện (Bản sao)";
   const trimmed = title.trim();
   const matches = [...trimmed.matchAll(/\((?:Bản sao|Copy)(?:\s*(\d+))?\)/gi)];
 
@@ -203,7 +203,7 @@ export function getEffectiveStatus(curriculum: MockCurriculum): EffectiveStatusI
       label: "Lưu trữ",
       badgeClass: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700",
       canAssign: false,
-      tooltip: "Giáo án đang lưu trữ",
+      tooltip: "Kế hoạch đang lưu trữ",
     };
   }
 

@@ -171,7 +171,7 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
                     <div className="flex items-start gap-1.5">
                       <Dumbbell className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
                       <span className="leading-tight">
-                        <strong>Giáo án trước đó:</strong> {memberProfile.assignedWorkouts[0].name} (
+                        <strong>Kế hoạch trước đó:</strong> {memberProfile.assignedWorkouts[0].name} (
                         {memberProfile.assignedWorkouts[0].duration}p) ·{" "}
                         <span className="text-emerald-600 dark:text-emerald-400 font-medium">
                           {memberProfile.assignedWorkouts[0].status}
@@ -184,7 +184,7 @@ export const CoachAiTargetSelector: React.FC<CoachAiTargetSelectorProps> = ({
                     <div className="flex items-center gap-1.5 pt-0.5">
                       <TrendingUp className="w-3.5 h-3.5 shrink-0" />
                       <span>
-                        <strong>Tiến độ mục tiêu:</strong> {memberProfile.stats.goalProgress}% theo giáo án đã giao
+                        <strong>Tiến độ mục tiêu:</strong> {memberProfile.stats.goalProgress}% theo kế hoạch đã giao
                       </span>
                     </div>
                   )}

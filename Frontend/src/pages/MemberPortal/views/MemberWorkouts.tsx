@@ -1,40 +1,24 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { MemberScreen } from "../types";
 import { MemberAPI } from "../services/api";
 import {
   Dumbbell,
   Eye,
-  Flame,
   MessageSquare,
   RefreshCw,
   Clock,
   Sparkles,
 } from "lucide-react";
-import type { MemberHomework, HomeworkExercise, HomeworkTask } from "./workouts/workoutTypes";
+import type { MemberHomework } from "./workouts/workoutTypes";
 import { HomeworkDetailModal } from "./workouts/HomeworkDetailModal";
 
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
 }
 
-const formatDate = (value?: string | null) => {
-  if (!value) return "";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("vi-VN");
-};
-
-const getExerciseDescription = (exercise: HomeworkExercise) =>
-  [
-    exercise.reps ? `Số lượng: ${exercise.reps}` : "",
-    exercise.rest ? `Nghỉ: ${exercise.rest}` : "",
-    exercise.note || "",
-  ]
-    .filter(Boolean)
-    .join(". ");
-
 /**
- * Màn hình Giáo án & Bài tập được giao của Hội viên (Member Workouts View).
- * Hiển thị các bài tập về nhà (homework), giáo án chi tiết từ HLV phụ trách (sets, reps, thời gian nghỉ)
+ * Màn hình Kế hoạch tập luyện được giao của Hội viên (Member Workouts View).
+ * Hiển thị kế hoạch bài tập và các bài tập về nhà do HLV phụ trách giao.
  * và cho phép hội viên đánh dấu hoàn thành bài tập.
  * 
  * @param onNavigate Hàm điều hướng màn hình
@@ -63,7 +47,7 @@ export default function MemberWorkouts({ onNavigate }: Props) {
       console.error("Failed to load assigned workouts", loadError);
       if (!silent) {
         setHomeworks([]);
-        setError("Không thể tải giáo án được giao. Vui lòng thử lại.");
+        setError("Không thể tải kế hoạch tập luyện được giao. Vui lòng thử lại.");
       }
     } finally {
       if (!silent) setLoading(false);
@@ -91,24 +75,6 @@ export default function MemberWorkouts({ onNavigate }: Props) {
     };
   }, []);
 
-  const assignedTasks = useMemo<HomeworkTask[]>(
-    () =>
-      homeworks.flatMap((homework) => {
-        const exercises = homework.plan?.exercises || [];
-        return exercises.map((exercise, exerciseIndex) => ({
-          id: `${homework.id}-${exerciseIndex}`,
-          homeworkId: homework.id,
-          exerciseIndex,
-          title: exercise.name || `Bài tập #${exerciseIndex + 1}`,
-          description: getExerciseDescription(exercise),
-          dueDate: homework.dueDate,
-          assignedDate: homework.assignedDate,
-          completed: false,
-        }));
-      }),
-    [homeworks],
-  );
-
   return (
     <div className="space-y-6">
       {/* Header Bar */}
@@ -116,7 +82,7 @@ export default function MemberWorkouts({ onNavigate }: Props) {
         <div>
           <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Sparkles className="w-4 h-4" />
-            <span>Giáo án tập luyện cá nhân</span>
+            <span>Kế hoạch tập luyện cá nhân</span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Xem hướng dẫn chi tiết các bài tập do Huấn luyện viên giao để tự tin rèn luyện tại trung tâm
@@ -147,22 +113,22 @@ export default function MemberWorkouts({ onNavigate }: Props) {
         <div className="flex items-center gap-2">
           <Dumbbell className="w-4 h-4" />
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-            Giáo án được giao cho bạn ({homeworks.length})
+            Kế hoạch được giao cho bạn ({homeworks.length})
           </h3>
         </div>
 
         {loading ? (
           <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 text-center text-xs text-slate-400">
-            Đang tải giáo án...
+            Đang tải kế hoạch...
           </div>
         ) : homeworks.length === 0 ? (
           <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center">
             <Dumbbell className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
             <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
-              Chưa có giáo án nào được giao
+              Chưa có kế hoạch nào được giao
             </h4>
             <p className="text-[11px] text-slate-400 mt-1 max-w-sm mx-auto">
-              Giáo án sẽ xuất hiện tại đây ngay khi huấn luyện viên phụ trách phân công cho bạn.
+              Kế hoạch sẽ xuất hiện tại đây khi huấn luyện viên phụ trách giao cho bạn.
             </p>
           </div>
         ) : (
@@ -235,62 +201,6 @@ export default function MemberWorkouts({ onNavigate }: Props) {
                 </div>
               );
             })}
-          </div>
-        )}
-      </div>
-
-      {/* Exercises Detail Cards */}
-      <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Flame className="w-4 h-4 text-slate-500" />
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-              Chi tiết các bài tập rèn luyện ({assignedTasks.length} bài)
-            </h3>
-          </div>
-          <span className="text-xs text-slate-500 dark:text-slate-400">
-            Xem kỹ thuật & liều lượng để tập luyện
-          </span>
-        </div>
-
-        {loading ? (
-          <div className="p-6 text-center text-xs text-slate-400">Đang tải bài tập...</div>
-        ) : assignedTasks.length === 0 ? (
-          <div className="p-6 text-center text-xs text-slate-400">
-            Chưa có bài tập rèn luyện nào được giao.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {assignedTasks.map((task, index) => (
-              <div
-                key={task.id}
-                className="p-4 rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-800 hover:border-emerald-500/40 shadow-xs transition-all flex items-start gap-3.5"
-              >
-                <div className="size-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 font-bold text-xs flex items-center justify-center shrink-0 border border-emerald-200/60 dark:border-emerald-800">
-                  {index + 1}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                      {task.title}
-                    </h4>
-                    {task.dueDate && (
-                      <span className="text-[10px] text-slate-400 font-medium">
-                        Buổi: {formatDate(task.dueDate)}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
-                    {task.description || "Thực hiện theo hướng dẫn của huấn luyện viên."}
-                  </p>
-                  <div className="flex items-center gap-3 mt-2 text-[10px] text-slate-400">
-                    <span>Hướng dẫn: <strong className="text-emerald-600 dark:text-emerald-400">HLV phụ trách</strong></span>
-                    <span>Ngày áp dụng: {formatDate(task.assignedDate)}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
         )}
       </div>

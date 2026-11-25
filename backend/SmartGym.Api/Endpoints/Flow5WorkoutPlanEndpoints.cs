@@ -54,9 +54,9 @@ public static class Flow5WorkoutPlanEndpoints
                 request,
                 contextResult.Context,
                 http.RequestAborted);
-            return ToResult(result, StatusCodes.Status201Created);
+            return ToResult(result, StatusCodes.Status200OK);
         }).WithTags("Flow 5 - Workout Plans")
-          .WithSummary("Generate and save an AI workout-plan recommendation as a draft");
+          .WithSummary("Generate an AI workout-plan preview without saving it");
 
         group.MapPost("/drafts", async (
             HttpContext http,

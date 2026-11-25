@@ -19,6 +19,9 @@ import { cleanEquipmentList, getDefaultEquipmentForSport } from "./coachAiFallba
 import { getNextCloneTitle } from "../curriculum/curriculumUtils";
 
 export function useCoachAi(initialMemberId?: string | null) {
+  const hasSavedPlan = (plan: Flow5WorkoutPlan) =>
+    Boolean(plan.id) && plan.id !== "00000000-0000-0000-0000-000000000000";
+
   // 1. Context Data
   const [loading, setLoading] = useState(true);
   const [members, setMembers] = useState<MockMember[]>([]);
@@ -281,8 +284,8 @@ export function useCoachAi(initialMemberId?: string | null) {
       toast.success("✨ Gemini AI đã sinh bài tập thành công! Hãy kiểm tra và tinh chỉnh bên dưới.");
       setFeedback({
         type: "success",
-        title: "✨ Giáo án đề xuất bởi Gemini AI",
-        msg: "Giáo án đã được tối ưu hóa dựa trên Mục tiêu, Trình độ và Lịch sử tập luyện của học viên. HLV có thể điều chỉnh số hiệp, lần tập hoặc thêm bài trước khi duyệt.",
+        title: "✨ Kế hoạch tập luyện do Gemini AI gợi ý",
+        msg: "Kế hoạch đã được cá nhân hóa theo mục tiêu, trình độ và lịch sử tập luyện của học viên. HLV có thể chỉnh sửa bài tập trước khi duyệt.",
       });
       refreshHistory();
     } catch (err: any) {
@@ -298,7 +301,7 @@ export function useCoachAi(initialMemberId?: string | null) {
     }
   };
 
-  // Save Draft (PATCH)
+  // Save an explicitly requested draft to the library.
   const handleSaveDraft = async () => {
     if (!currentPlan) return;
     setIsSaving(true);
@@ -314,7 +317,7 @@ export function useCoachAi(initialMemberId?: string | null) {
         order: idx + 1,
       }));
 
-      const updated = await CoachAPI.updateFlow5Draft(currentPlan.id, {
+      const draftData = {
         planName: currentPlan.planName,
         sportId: currentPlan.sportId,
         description: currentPlan.description,
@@ -322,18 +325,15 @@ export function useCoachAi(initialMemberId?: string | null) {
         level: currentPlan.level,
         durationMinutes: currentPlan.durationMinutes,
         source: currentPlan.source,
-        expectedVersion: currentPlan.version,
         target: currentPlan.recommendationTarget || { type: targetType, id: targetId },
         exercises: sanitizedExercises,
-      }).catch(() => ({
-        ...currentPlan,
-        exercises: sanitizedExercises,
-        version: currentPlan.version + 1,
-        updatedAt: new Date().toISOString(),
-      }));
+      };
+      const updated = hasSavedPlan(currentPlan)
+        ? await CoachAPI.updateFlow5Draft(currentPlan.id, { ...draftData, expectedVersion: currentPlan.version })
+        : await CoachAPI.createFlow5Draft(draftData);
 
       setCurrentPlan(updated);
-      toast.success("Đã lưu các thay đổi vào bản nháp giáo án.");
+      toast.success("Đã lưu các thay đổi vào bản nháp kế hoạch.");
       setFeedback({ type: "success", msg: "Đã cập nhật bản nháp thành công." });
       refreshHistory();
     } catch (err: any) {
@@ -346,8 +346,8 @@ export function useCoachAi(initialMemberId?: string | null) {
   };
 
   // Approve Plan & Save to Curriculum Library (POST approve)
-  const handleApprove = async () => {
-    if (!currentPlan) return;
+  const handleApprove = async (): Promise<boolean> => {
+    if (!currentPlan) return false;
     setIsApproving(true);
     try {
       let activePlan = currentPlan;
@@ -362,9 +362,8 @@ export function useCoachAi(initialMemberId?: string | null) {
         order: idx + 1,
       }));
 
-      // 1. First persist any edits made by Coach in the UI
-      try {
-        const saved = await CoachAPI.updateFlow5Draft(currentPlan.id, {
+      // Persist the preview only when the coach explicitly saves it to the library.
+      const draftData = {
           planName: currentPlan.planName,
           sportId: currentPlan.sportId,
           description: currentPlan.description,
@@ -372,19 +371,13 @@ export function useCoachAi(initialMemberId?: string | null) {
           level: currentPlan.level,
           durationMinutes: currentPlan.durationMinutes,
           source: currentPlan.source,
-          expectedVersion: currentPlan.version,
           target: currentPlan.recommendationTarget || { type: targetType, id: targetId },
           exercises: sanitizedExercises,
-        });
-        if (saved && typeof saved.version === "number") {
-          activePlan = {
-            ...saved,
-            exercises: saved.exercises?.length ? saved.exercises : sanitizedExercises,
-          };
-        }
-      } catch (saveErr) {
-        console.warn("Notice: auto-save before approval warning:", saveErr);
-      }
+      };
+      activePlan = hasSavedPlan(currentPlan)
+        ? await CoachAPI.updateFlow5Draft(currentPlan.id, { ...draftData, expectedVersion: currentPlan.version })
+        : await CoachAPI.createFlow5Draft(draftData);
+      if (!activePlan.exercises?.length) activePlan = { ...activePlan, exercises: sanitizedExercises };
 
       // 2. Approve and transition into Curriculum Library
       let approved: Flow5WorkoutPlan;
@@ -392,7 +385,7 @@ export function useCoachAi(initialMemberId?: string | null) {
         approved = await CoachAPI.approveFlow5Plan(
           activePlan.id,
           activePlan.version,
-          "Đã duyệt và lưu vào Thư viện giáo án bởi HLV"
+          "Đã duyệt và lưu vào thư viện kế hoạch bởi HLV"
         );
         // Ensure exercises are never lost in frontend state
         if (!approved.exercises || approved.exercises.length === 0) {
@@ -402,28 +395,7 @@ export function useCoachAi(initialMemberId?: string | null) {
           };
         }
       } catch (approveErr) {
-        // If the draft was generated client-side or not yet in database, persist directly via saveCurriculum!
-        console.info("Plan draft not found on server, persisting directly as new curriculum:", approveErr);
-        const savedPlan: any = await CoachAPI.saveCurriculum({
-          name: activePlan.planName,
-          sportId: activePlan.sportId || null,
-          description: activePlan.description,
-          goal: activePlan.goal,
-          level: activePlan.level,
-          duration: activePlan.durationMinutes,
-          exercises: activePlan.exercises,
-        }).catch(() => null);
-
-        const realId = savedPlan?.data?.id || savedPlan?.id || activePlan.id;
-
-        approved = {
-          ...activePlan,
-          id: realId,
-          status: "approved" as const,
-          version: activePlan.version + 1,
-          approvedAt: new Date().toISOString(),
-          exercises: activePlan.exercises?.length ? activePlan.exercises : sanitizedExercises,
-        };
+        throw approveErr;
       }
 
       setCurrentPlan(approved);
@@ -438,7 +410,7 @@ export function useCoachAi(initialMemberId?: string | null) {
                 <span>Đã lưu vào Thư viện thành công!</span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
-                Giáo án đã được chuyển sang tab Giáo án & Bài tập
+                Kế hoạch đã được chuyển sang thư viện Kế hoạch tập luyện
               </p>
             </div>
             <button
@@ -459,14 +431,16 @@ export function useCoachAi(initialMemberId?: string | null) {
       setFeedback({
         type: "success",
         title: "Lưu vào Thư viện thành công!",
-        msg: "Giáo án AI đã được chấp nhận và lưu thành công vào Thư viện. Bạn có thể bấm 'Xem Thư viện' ở bên phải hoặc giao bài ngay.",
+        msg: "Kế hoạch AI đã được chấp nhận và lưu vào thư viện. Bạn có thể xem lại hoặc giao cho học viên/lớp ngay.",
         showLibraryLink: true,
       });
       refreshHistory();
+      return true;
     } catch (err: any) {
-      const msg = err instanceof Error ? err.message : "Không thể lưu giáo án vào thư viện.";
+      const msg = err instanceof Error ? err.message : "Không thể lưu kế hoạch vào thư viện.";
       toast.error(msg);
       setFeedback({ type: "error", msg });
+      return false;
     } finally {
       setIsApproving(false);
     }
@@ -474,8 +448,7 @@ export function useCoachAi(initialMemberId?: string | null) {
 
   // Direct 1-Click Workflow: Approve & Immediately Open Assignment Modal
   const handleApproveAndAssign = async () => {
-    await handleApprove();
-    setShowAssignModal(true);
+    if (await handleApprove()) setShowAssignModal(true);
   };
 
   // Assign Plan (POST assign)
@@ -537,7 +510,7 @@ export function useCoachAi(initialMemberId?: string | null) {
       window.dispatchEvent(new Event("local-storage-update"));
       refreshHistory();
     } catch (err: any) {
-      const msg = err instanceof Error ? err.message : "Lỗi khi giao giáo án.";
+      const msg = err instanceof Error ? err.message : "Lỗi khi giao kế hoạch.";
       toast.error(msg);
       throw err;
     }
@@ -561,10 +534,10 @@ export function useCoachAi(initialMemberId?: string | null) {
       }));
 
       setCurrentPlan(cloned);
-      toast.success("Đã tạo bản sao giáo án thành công.");
+      toast.success("Đã tạo bản sao kế hoạch thành công.");
       refreshHistory();
     } catch (err: any) {
-      toast.error(err instanceof Error ? err.message : "Không thể nhân bản giáo án.");
+      toast.error(err instanceof Error ? err.message : "Không thể nhân bản kế hoạch.");
     }
   };
 
@@ -583,10 +556,10 @@ export function useCoachAi(initialMemberId?: string | null) {
       }));
 
       setCurrentPlan(archived);
-      toast.success("Đã chuyển giáo án sang trạng thái Lưu trữ.");
+      toast.success("Đã chuyển kế hoạch sang trạng thái Lưu trữ.");
       refreshHistory();
     } catch (err: any) {
-      toast.error(err instanceof Error ? err.message : "Không thể lưu trữ giáo án.");
+      toast.error(err instanceof Error ? err.message : "Không thể lưu trữ kế hoạch.");
     }
   };
 
@@ -595,7 +568,7 @@ export function useCoachAi(initialMemberId?: string | null) {
     try {
       const loaded = await CoachAPI.getFlow5Plan(planId);
       setCurrentPlan(loaded);
-      toast.info(`Đã nạp giáo án: ${loaded.planName}`);
+      toast.info(`Đã nạp kế hoạch: ${loaded.planName}`);
     } catch {
       const found = historyPlans.find((p) => p.id === planId);
       if (found) {
@@ -623,7 +596,7 @@ export function useCoachAi(initialMemberId?: string | null) {
           })),
         };
         setCurrentPlan(converted);
-        toast.info(`Đã nạp giáo án: ${found.name}`);
+        toast.info(`Đã nạp kế hoạch: ${found.name}`);
       }
     }
   };
@@ -676,7 +649,7 @@ export function useCoachAi(initialMemberId?: string | null) {
         ...ex,
         order: idx + 1,
       }));
-      notePrefix = "⏱️ Gemini AI Copilot: Đã cô đọng giáo án còn 30 phút (tập trung 3 bài tập compound cốt lõi).";
+      notePrefix = "⏱️ Gemini AI Copilot: Đã rút gọn kế hoạch còn 30 phút (tập trung vào 3 bài tập chính).";
     } else if (action === "bodyweight") {
       const bodyweightEquivalents = [
         { name: "Hít đất kiểm soát (Push-up)", sets: "3", reps: "12-15 lần", rest: "45s", note: "Gồng chắc cơ lõi, không võng lưng" },

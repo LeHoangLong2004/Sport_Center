@@ -44,7 +44,7 @@ export function CoachAiPlanHeader({
             className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:text-emerald-600 hover:border-emerald-300 dark:hover:border-emerald-700 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all cursor-pointer shadow-2xs active:scale-95"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>← Quay lại thiết lập tiêu chí / Tạo giáo án mới</span>
+            <span>← Quay lại thiết lập tiêu chí / Tạo kế hoạch mới</span>
           </button>
 
           <div className="flex items-center gap-2 text-xs">
@@ -58,7 +58,7 @@ export function CoachAiPlanHeader({
             )}
             {isApproved && (
               <span className="font-bold text-emerald-700 dark:text-emerald-300 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-400/30">
-                ✓ Đã lưu vào Thư viện giáo án
+                ✓ Đã lưu vào thư viện kế hoạch
               </span>
             )}
             {isAssigned && (
@@ -161,7 +161,7 @@ export function CoachAiPlanHeader({
         {/* Plan Name */}
         <div className="flex flex-col gap-1.5">
           <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Tên giáo án
+            Tên kế hoạch
           </label>
           <input
             type="text"

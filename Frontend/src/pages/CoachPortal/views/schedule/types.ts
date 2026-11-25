@@ -10,6 +10,10 @@ export interface UnifiedScheduleItem {
   id: string;
   type: "group" | "pt" | "open_pt";
   classId?: string;
+  courseId?: string;
+  courseName?: string;
+  sessionNumber?: number;
+  totalSessions?: number;
   className: string;
   sport: string;
   level: string;

@@ -35,7 +35,6 @@ export default function CoachSchedule({ navigateTo }: Props) {
   const [weekOffset, setWeekOffset] = useState(0);
 
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
-  const [selectedSessionForRequest, setSelectedSessionForRequest] = useState<string>("");
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
 
   const [isOpenSlotModalOpen, setIsOpenSlotModalOpen] = useState(false);
@@ -257,8 +256,7 @@ export default function CoachSchedule({ navigateTo }: Props) {
               loading={loading}
               onSelectOpenSlot={setSelectedOpenSlot}
               onSelectPtSession={setSelectedPtSession}
-              onOpenRequestModal={(sessionId) => {
-                setSelectedSessionForRequest(sessionId || allUnifiedSessions[0]?.id || "");
+              onOpenRequestModal={() => {
                 setIsRequestModalOpen(true);
               }}
               navigateTo={navigateTo}
@@ -280,7 +278,6 @@ export default function CoachSchedule({ navigateTo }: Props) {
           invitations={invitations}
           onRespondInvitation={respondInvitation}
           onOpenCreateRequest={() => {
-            setSelectedSessionForRequest(allUnifiedSessions[0]?.id || "");
             setIsRequestModalOpen(true);
           }}
           onOpenClassProposal={() => setIsClassProposalModalOpen(true)}
@@ -296,8 +293,6 @@ export default function CoachSchedule({ navigateTo }: Props) {
         initialOpenSlotStartTime={initialOpenSlotStartTime}
         isClassProposalModalOpen={isClassProposalModalOpen}
         setIsClassProposalModalOpen={setIsClassProposalModalOpen}
-        selectedSessionForRequest={selectedSessionForRequest}
-        setSelectedSessionForRequest={setSelectedSessionForRequest}
         selectedOpenSlot={selectedOpenSlot}
         setSelectedOpenSlot={setSelectedOpenSlot}
         selectedPtSession={selectedPtSession}

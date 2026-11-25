@@ -103,7 +103,7 @@ export const CurriculumAssignModal: React.FC<CurriculumAssignModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-slate-900 dark:text-white text-base">
-                Giao giáo án tập luyện
+                Giao kế hoạch tập luyện
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Áp dụng cho buổi tập trực tiếp tại trung tâm dưới sự giám sát của HLV
@@ -127,7 +127,7 @@ export const CurriculumAssignModal: React.FC<CurriculumAssignModalProps> = ({
           {/* Target Type Selector */}
           <div>
             <label className="font-bold text-xs text-slate-800 dark:text-slate-200 block mb-2">
-              Đối tượng giao giáo án:
+              Đối tượng áp dụng kế hoạch:
             </label>
             <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700/60">
               <button
@@ -191,7 +191,7 @@ export const CurriculumAssignModal: React.FC<CurriculumAssignModalProps> = ({
               className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs focus:border-emerald-500 outline-none"
             />
             <p className="text-[11px] text-slate-400 mt-1">
-              Thời điểm học viên/lớp thực hiện giáo án này dưới sự giám sát của HLV.
+              Thời điểm học viên/lớp bắt đầu thực hiện kế hoạch dưới sự theo dõi của HLV.
             </p>
           </div>
 
@@ -234,7 +234,7 @@ export const CurriculumAssignModal: React.FC<CurriculumAssignModalProps> = ({
             }`}
           >
             <Send className="w-3.5 h-3.5" />
-            <span>{isSubmitting ? "Đang giao giáo án..." : "Xác nhận giao giáo án"}</span>
+            <span>{isSubmitting ? "Đang giao kế hoạch..." : "Xác nhận giao kế hoạch"}</span>
           </button>
         </div>
       </div>

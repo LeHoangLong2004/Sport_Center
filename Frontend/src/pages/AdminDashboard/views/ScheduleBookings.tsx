@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { BookingRow } from "../components/BookingRow";
+import React, { useMemo, useState, useEffect } from "react";
+import { BookingCourseRow } from "../components/BookingCourseRow";
 
 interface ScheduleBookingsProps {
   bookings: any[];
@@ -15,12 +15,31 @@ export function ScheduleBookings({
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
 
+  const bookingCourses = useMemo(() => {
+    const groups = new Map<string, any[]>();
+    bookings.forEach((booking) => {
+      const memberKey = booking.memberId || booking.memberCode || booking.memberName;
+      const courseKey = booking.courseId || String(booking.className || "Lớp học").replace(/\s*\(Buổi\s+\d+\)\s*$/i, "").trim();
+      const key = `${memberKey}:${courseKey}`;
+      const group = groups.get(key);
+      if (group) group.push(booking);
+      else groups.set(key, [booking]);
+    });
+    return [...groups.entries()]
+      .map(([key, courseBookings]) => ({ key, bookings: courseBookings }))
+      .sort((a, b) => {
+        const aBookedAt = Math.max(...a.bookings.map((booking) => new Date(booking.bookedAt).getTime() || 0));
+        const bBookedAt = Math.max(...b.bookings.map((booking) => new Date(booking.bookedAt).getTime() || 0));
+        return bBookedAt - aBookedAt;
+      });
+  }, [bookings]);
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [bookings.length]);
+  }, [bookingCourses.length]);
 
-  const totalPages = Math.ceil(bookings.length / rowsPerPage) || 1;
-  const paginatedBookings = bookings.slice(
+  const totalPages = Math.ceil(bookingCourses.length / rowsPerPage) || 1;
+  const paginatedBookings = bookingCourses.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage
   );
@@ -46,15 +65,15 @@ export function ScheduleBookings({
               <span className="w-[80px] shrink-0 text-right">THAO TÁC</span>
             </div>
             <div className="flex flex-col w-full">
-              {paginatedBookings.map((booking) => (
-                <BookingRow
-                  key={booking.id}
-                  booking={booking}
+              {paginatedBookings.map((group) => (
+                <BookingCourseRow
+                  key={group.key}
+                  bookings={group.bookings}
                   handleApprove={onApprove}
                   handleReject={onReject}
                 />
               ))}
-              {bookings.length === 0 && (
+              {bookingCourses.length === 0 && (
                 <div className="p-12 text-center text-gray-500 text-sm">
                   Chưa có dữ liệu đặt chỗ
                 </div>
@@ -66,7 +85,7 @@ export function ScheduleBookings({
         {/* Pagination Footer */}
         <div className="flex h-14 items-center justify-between px-6 border-t border-[#e2e8f0] w-full shrink-0 bg-white">
           <span className="text-[#64748b] text-sm">
-            Hiển thị {bookings.length === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1}-{Math.min(currentPage * rowsPerPage, bookings.length)} trong tổng số {bookings.length} lượt đặt chỗ
+            Hiển thị {bookingCourses.length === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1}-{Math.min(currentPage * rowsPerPage, bookingCourses.length)} trong tổng số {bookingCourses.length} khóa đặt chỗ ({bookings.length} lượt đặt)
           </span>
           <div className="flex gap-2">
             <button 

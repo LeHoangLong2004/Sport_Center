@@ -35,8 +35,15 @@ public class PaymentService(
         if (await userRepo.GetByIdAsync(userId) == null)
             return new PaymentCreationResult(Guid.Empty, false, "Không tìm thấy hội viên.");
 
-        if (!string.IsNullOrWhiteSpace(packageId) && await packageRepo.GetByIdAsync(packageId) == null)
-            return new PaymentCreationResult(Guid.Empty, false, $"Không tìm thấy gói tập '{packageId}'.");
+        Package? package = null;
+        if (!string.IsNullOrWhiteSpace(packageId))
+        {
+            package = await packageRepo.GetByIdAsync(packageId);
+            if (package == null)
+                return new PaymentCreationResult(Guid.Empty, false, $"Không tìm thấy gói tập '{packageId}'.");
+            if (!package.Status || !string.Equals(package.PackageType, "membership", StringComparison.OrdinalIgnoreCase))
+                return new PaymentCreationResult(Guid.Empty, false, "Trung tâm hiện chỉ nhận thanh toán gói thành viên.");
+        }
 
         // Bấm thanh toán nhiều lần không tạo thêm hóa đơn chờ trùng.
         var existing = await invoiceRepo.GetByUserIdAsync(userId);

@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using SmartGym.Application.DTOs.WorkoutPlans;
 using SmartGym.Application.Interfaces;
+using SmartGym.Application.Services;
 using SmartGym.Infrastructure.Persistence.EF;
 
 namespace SmartGym.Api.Endpoints;
@@ -66,8 +67,11 @@ public static class WorkoutPlanEndpoints
                     if (string.IsNullOrWhiteSpace(request.PlanName))
                         return Results.BadRequest(new { message = "Tên giáo án không được để trống." });
 
-                    if (request.Exercises == null || request.Exercises.Count == 0 || request.Exercises.Any(e => string.IsNullOrWhiteSpace(e.Name)))
-                        return Results.BadRequest(new { message = "Giáo án phải có ít nhất một bài tập hợp lệ." });
+                    var isDraft = Flow5PlanStatus.IsDraft(request.Status);
+                    if ((request.Exercises == null || request.Exercises.Count == 0) && !isDraft)
+                        return Results.BadRequest(new { message = "Kế hoạch chưa có bài tập phải được lưu ở trạng thái Nháp." });
+                    if (request.Exercises?.Any(e => string.IsNullOrWhiteSpace(e.Name)) == true)
+                        return Results.BadRequest(new { message = "Vui lòng nhập tên cho tất cả bài tập hoặc xóa bài chưa dùng." });
 
                     try
                     {
@@ -154,6 +158,62 @@ public static class WorkoutPlanEndpoints
             )
             .WithTags("Workout Plans")
             .WithSummary("Update a workout plan owned by the logged-in coach");
+
+        group.MapDelete("/{id:guid}", async (
+            Guid id,
+            HttpContext context,
+            SmartGymDbContext db) =>
+        {
+            var role = context.User.FindFirst(ClaimTypes.Role)?.Value;
+            if (role != "coach" && role != "manager")
+                return Results.Forbid();
+
+            var query = db.WorkoutPlans.Where(plan => plan.Id == id);
+            if (role == "coach")
+            {
+                var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!Guid.TryParse(userIdClaim, out var userId))
+                    return Results.Unauthorized();
+
+                var coachId = await ResolveCoachIdAsync(db, userId);
+                if (coachId == null)
+                    return Results.BadRequest(new { message = "Không tìm thấy hồ sơ HLV." });
+                query = query.Where(plan => plan.CoachId == coachId.Value);
+            }
+
+            var executionStrategy = db.Database.CreateExecutionStrategy();
+            return await executionStrategy.ExecuteAsync(async () =>
+            {
+                await using var transaction = await db.Database.BeginTransactionAsync(
+                    System.Data.IsolationLevel.Serializable,
+                    context.RequestAborted);
+
+                var planToDelete = await query.FirstOrDefaultAsync(context.RequestAborted);
+                if (planToDelete == null)
+                    return Results.NotFound(new { message = "Không tìm thấy kế hoạch hoặc bạn không có quyền xóa." });
+
+                var hasHomeworkHistory = await db.HomeworkProgresses.AnyAsync(
+                    progress => progress.PlanId == id,
+                    context.RequestAborted);
+                var hasClonedPlans = await db.WorkoutPlans.AnyAsync(
+                    plan => plan.ParentPlanId == id,
+                    context.RequestAborted);
+                if (hasHomeworkHistory || hasClonedPlans || Flow5PlanStatus.Is(planToDelete.Status, Flow5PlanStatuses.Assigned))
+                {
+                    return Results.Conflict(new
+                    {
+                        message = "Kế hoạch đã được giao hoặc đang được kế hoạch khác sử dụng nên không thể xóa. Hãy lưu trữ kế hoạch để giữ lịch sử."
+                    });
+                }
+
+                db.WorkoutPlans.Remove(planToDelete);
+                await db.SaveChangesAsync(context.RequestAborted);
+                await transaction.CommitAsync(context.RequestAborted);
+                return Results.Ok(new { success = true, message = "Đã xóa kế hoạch." });
+            });
+        })
+        .WithTags("Workout Plans")
+        .WithSummary("Delete an unused workout plan");
 
         /// <summary>
         /// GET /api/workout-plans/{id}

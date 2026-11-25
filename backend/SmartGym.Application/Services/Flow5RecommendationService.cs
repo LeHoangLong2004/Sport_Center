@@ -17,20 +17,17 @@ public sealed class Flow5RecommendationService : IFlow5RecommendationService
     private readonly IFlow5PromptBuilder _promptBuilder;
     private readonly IAiRecommendationProvider _provider;
     private readonly IFlow5RecommendationJsonParser _parser;
-    private readonly IFlow5WorkoutPlanService _planService;
 
     public Flow5RecommendationService(
         IFlow5WorkoutPlanValidator validator,
         IFlow5PromptBuilder promptBuilder,
         IAiRecommendationProvider provider,
-        IFlow5RecommendationJsonParser parser,
-        IFlow5WorkoutPlanService planService)
+        IFlow5RecommendationJsonParser parser)
     {
         _validator = validator;
         _promptBuilder = promptBuilder;
         _provider = provider;
         _parser = parser;
-        _planService = planService;
     }
 
     public async Task<Flow5PlanServiceResult<Flow5WorkoutPlanResponse>> GenerateDraftAsync(
@@ -102,7 +99,28 @@ public sealed class Flow5RecommendationService : IFlow5RecommendationService
             Exercises = recommendation.Exercises
         };
 
-        return await _planService.CreateDraftAsync(coachId, draftRequest, cancellationToken);
+        // Generation is a preview operation. Persist only after the coach explicitly
+        // saves the draft or approves it into the library.
+        var now = DateTimeOffset.UtcNow;
+        return Flow5PlanServiceResult<Flow5WorkoutPlanResponse>.Success(new Flow5WorkoutPlanResponse
+        {
+            Id = Guid.Empty,
+            CoachId = coachId,
+            SportId = draftRequest.SportId,
+            PlanName = draftRequest.PlanName,
+            Description = draftRequest.Description,
+            Goal = draftRequest.Goal,
+            Level = draftRequest.Level,
+            DurationMinutes = draftRequest.DurationMinutes,
+            Status = Flow5PlanStatuses.Draft,
+            Source = draftRequest.Source,
+            Version = 0,
+            RecommendationTarget = draftRequest.Target,
+            AiMetadata = draftRequest.AiMetadata,
+            CreatedAt = now,
+            UpdatedAt = now,
+            Exercises = draftRequest.Exercises
+        });
     }
 
 private static int[] AllocateDurations(int totalMinutes, int count)

@@ -96,6 +96,9 @@ public static partial class DatabaseInitializationExtensions
         {
             db.Database.ExecuteSqlRaw(
                 @"
+                ALTER TABLE workout_plans
+                    ADD COLUMN IF NOT EXISTS program_outline_json TEXT;
+
                 DO $$
                 BEGIN
                     IF EXISTS (

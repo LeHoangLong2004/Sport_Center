@@ -19,6 +19,7 @@ import type {
   Flow5AiMetadata,
   Flow5WorkoutPlan,
   GenerateFlow5RecommendationRequest,
+  CreateFlow5DraftRequest,
   UpdateFlow5DraftRequest,
   AssignFlow5PlanRequest,
   AssignFlow5PlanResponse,
@@ -54,6 +55,36 @@ export type {
   AssignFlow5PlanResponse,
   CoachClassProposal,
 };
+
+function parseTrainingPlanOutline(raw: unknown): MockCurriculum["programOutline"] {
+  if (!raw) return null;
+  try {
+    const value = typeof raw === "string" ? JSON.parse(raw) : raw as any;
+    if (!value || !Array.isArray(value.sessions)) return null;
+    return {
+      durationWeeks: Math.max(1, Number(value.durationWeeks) || 1),
+      sessionsPerWeek: Math.max(1, Number(value.sessionsPerWeek) || 1),
+      sessions: value.sessions.map((session: any, index: number) => ({
+        weekNumber: Math.max(1, Number(session.weekNumber) || 1),
+        sessionNumber: Math.max(1, Number(session.sessionNumber) || index + 1),
+        title: String(session.title || ""),
+        goal: String(session.goal || ""),
+        activities: String(session.activities || ""),
+        coachNotes: String(session.coachNotes || ""),
+        exercises: Array.isArray(session.exercises)
+          ? session.exercises.map((exercise: any) => ({
+              name: String(exercise.name || ""),
+              reps: String(exercise.reps || ""),
+              rest: String(exercise.rest || ""),
+              note: String(exercise.note || ""),
+            }))
+          : [],
+      })),
+    };
+  } catch {
+    return null;
+  }
+}
 
 export const CoachAPI = {
   // 1. Dashboard
@@ -228,6 +259,7 @@ export const CoachAPI = {
           exercises: p.exercises?.map((e: any) => ({ 
             name: e.name, reps: e.reps, rest: e.rest, note: e.note 
           })) || [],
+          programOutline: parseTrainingPlanOutline(p.programOutlineJson),
           assignedTo: cleanAssigned
         };
       });
@@ -267,6 +299,7 @@ export const CoachAPI = {
       goal: curriculum.goal,
       level: curriculum.level,
       durationMinutes: curriculum.duration,
+      programOutlineJson: curriculum.programOutline ? JSON.stringify(curriculum.programOutline) : null,
       status: curriculum.status === "Nháp" ? "draft" : "approved",
       exercises: curriculum.exercises.map((e: any) => ({
         name: e.name,
@@ -288,6 +321,7 @@ export const CoachAPI = {
       goal: curriculum.goal,
       level: curriculum.level,
       durationMinutes: curriculum.duration,
+      programOutlineJson: curriculum.programOutline ? JSON.stringify(curriculum.programOutline) : null,
       status: curriculum.status === "Nháp" ? "draft" : "approved",
       exercises: curriculum.exercises.map((e: any) => ({
         name: e.name,
@@ -299,6 +333,11 @@ export const CoachAPI = {
     return fetchApi(`/workout-plans/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload)
+    });
+  },
+  deleteCurriculum: async (id: string) => {
+    return fetchApi(`/workout-plans/${encodeURIComponent(id)}`, {
+      method: "DELETE",
     });
   },
   approveCurriculum: async (id: string) => {
@@ -552,6 +591,12 @@ export const CoachAPI = {
   // 13. Flow 5 - AI Workout Plan Recommendation
   generateFlow5Recommendation: async (data: GenerateFlow5RecommendationRequest): Promise<Flow5WorkoutPlan> => {
     return fetchApi('/workout-plans/ai-recommendation', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+  createFlow5Draft: async (data: CreateFlow5DraftRequest): Promise<Flow5WorkoutPlan> => {
+    return fetchApi('/workout-plans/drafts', {
       method: 'POST',
       body: JSON.stringify(data)
     });

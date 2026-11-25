@@ -30,13 +30,14 @@ public class WorkoutPlanService : IWorkoutPlanService
             Goal = request.Goal,
             Level = request.Level,
             DurationMinutes = request.DurationMinutes,
+            ProgramOutlineJson = request.ProgramOutlineJson,
             Status = string.IsNullOrWhiteSpace(request.Status)
                 ? Flow5PlanStatuses.Approved
                 : Flow5PlanStatus.Normalize(request.Status),
             Version = 1,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
-            Exercises = request.Exercises.Select(e => new WorkoutPlanExercise
+            Exercises = (request.Exercises ?? new List<ExerciseDto>()).Select(e => new WorkoutPlanExercise
             {
                 Name = e.Name,
                 Reps = e.Reps,
@@ -65,6 +66,7 @@ public class WorkoutPlanService : IWorkoutPlanService
         plan.Goal = request.Goal;
         plan.Level = request.Level;
         plan.DurationMinutes = request.DurationMinutes;
+        plan.ProgramOutlineJson = request.ProgramOutlineJson;
         if (!string.IsNullOrWhiteSpace(request.Status))
         {
             var normalized = Flow5PlanStatus.Normalize(request.Status);
@@ -76,7 +78,7 @@ public class WorkoutPlanService : IWorkoutPlanService
             }
         }
         plan.UpdatedAt = DateTime.UtcNow;
-        plan.Exercises = request.Exercises.Select(e => new WorkoutPlanExercise
+        plan.Exercises = (request.Exercises ?? new List<ExerciseDto>()).Select(e => new WorkoutPlanExercise
         {
             PlanId = plan.Id,
             Name = e.Name,
@@ -114,6 +116,7 @@ public class WorkoutPlanService : IWorkoutPlanService
             Goal = p.Goal,
             Level = p.Level,
             DurationMinutes = p.DurationMinutes,
+            ProgramOutlineJson = p.ProgramOutlineJson,
             Status = p.Status,
             Version = p.Version,
             RecommendationTargetType = p.RecommendationTargetType,

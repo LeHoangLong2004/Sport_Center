@@ -51,10 +51,10 @@ export const CoachAiHistoryDrawer: React.FC<CoachAiHistoryDrawerProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-slate-900 dark:text-white text-base">
-                Lịch sử giáo án AI
+                Lịch sử kế hoạch AI
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Các bản nháp & giáo án đã sinh bởi Gemini
+                Các bản nháp và kế hoạch do Gemini gợi ý
               </p>
             </div>
           </div>
@@ -94,7 +94,7 @@ export const CoachAiHistoryDrawer: React.FC<CoachAiHistoryDrawerProps> = ({
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2.5">
           {filtered.length === 0 ? (
             <div className="py-16 text-center text-slate-400 dark:text-slate-500 text-xs">
-              Chưa có giáo án nào trong mục này.
+              Chưa có kế hoạch nào trong mục này.
             </div>
           ) : (
             filtered.map((plan) => {

@@ -11,7 +11,7 @@ namespace SmartGym.Tests;
 public sealed class Flow5RecommendationServiceTests
 {
     [Fact]
-    public async Task Generate_draft_runs_provider_pipeline_and_persists_ai_draft()
+    public async Task Generate_preview_runs_provider_pipeline_without_persisting_a_draft()
     {
         var sportId = Guid.NewGuid();
         var memberId = Guid.NewGuid();
@@ -39,18 +39,21 @@ public sealed class Flow5RecommendationServiceTests
             new Flow5WorkoutPlanValidator(),
             new Flow5PromptBuilder(),
             provider,
-            new Flow5RecommendationJsonParser(),
-            plans);
+            new Flow5RecommendationJsonParser());
 
-        var result = await service.GenerateDraftAsync(Guid.NewGuid(), request, context);
+        var coachId = Guid.NewGuid();
+        var result = await service.GenerateDraftAsync(coachId, request, context);
 
         Assert.True(result.IsSuccess);
         Assert.True(provider.WasCalled);
-        Assert.NotNull(plans.Request);
-        Assert.Equal(Flow5PlanSources.AiRecommendation, plans.Request!.Source);
-        Assert.Equal(request.Target.Id, plans.Request.Target!.Id);
-        Assert.Equal("Strength draft", plans.Request.PlanName);
-        Assert.Equal("gemini", plans.Request.AiMetadata!.Provider);
+        Assert.Null(plans.Request);
+        Assert.NotNull(result.Data);
+        Assert.Equal(Guid.Empty, result.Data!.Id);
+        Assert.Equal(coachId, result.Data.CoachId);
+        Assert.Equal(Flow5PlanSources.AiRecommendation, result.Data.Source);
+        Assert.Equal(request.Target.Id, result.Data.RecommendationTarget!.Id);
+        Assert.Equal("Strength draft", result.Data.PlanName);
+        Assert.Equal("gemini", result.Data.AiMetadata!.Provider);
     }
 
     private sealed class FakeProvider : IAiRecommendationProvider

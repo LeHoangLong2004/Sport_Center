@@ -16,8 +16,6 @@ interface Props {
   initialOpenSlotStartTime?: string;
   isClassProposalModalOpen: boolean;
   setIsClassProposalModalOpen: (open: boolean) => void;
-  selectedSessionForRequest: string;
-  setSelectedSessionForRequest: (id: string) => void;
   selectedOpenSlot: UnifiedScheduleItem | null;
   setSelectedOpenSlot: (slot: UnifiedScheduleItem | null) => void;
   selectedPtSession: UnifiedScheduleItem | null;
@@ -41,8 +39,6 @@ export function CoachScheduleModals({
   initialOpenSlotStartTime,
   isClassProposalModalOpen,
   setIsClassProposalModalOpen,
-  selectedSessionForRequest,
-  setSelectedSessionForRequest,
   selectedOpenSlot,
   setSelectedOpenSlot,
   selectedPtSession,
@@ -70,7 +66,6 @@ export function CoachScheduleModals({
         isOpen={isRequestModalOpen}
         onClose={() => setIsRequestModalOpen(false)}
         sessions={allUnifiedSessions}
-        initialSessionId={selectedSessionForRequest}
         onSubmit={onSubmitRequest}
       />
 
@@ -94,8 +89,7 @@ export function CoachScheduleModals({
       <PtSessionDetailModal
         session={selectedPtSession}
         onClose={() => setSelectedPtSession(null)}
-        onRequestReschedule={(sid) => {
-          setSelectedSessionForRequest(sid);
+        onRequestReschedule={() => {
           setIsRequestModalOpen(true);
         }}
         navigateTo={navigateTo}

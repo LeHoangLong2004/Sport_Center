@@ -20,6 +20,7 @@ public class CreateWorkoutPlanRequest
     public string? Goal { get; set; }
     public string? Level { get; set; }
     public int? DurationMinutes { get; set; }
+    public string? ProgramOutlineJson { get; set; }
     public string? Status { get; set; }
     
     public List<ExerciseDto> Exercises { get; set; } = new();
@@ -35,6 +36,7 @@ public class WorkoutPlanResponse
     public string? Goal { get; set; }
     public string? Level { get; set; }
     public int? DurationMinutes { get; set; }
+    public string? ProgramOutlineJson { get; set; }
     public string Status { get; set; } = string.Empty;
     public int Version { get; set; }
     public string? RecommendationTargetType { get; set; }

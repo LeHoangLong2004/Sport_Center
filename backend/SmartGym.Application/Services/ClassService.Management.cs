@@ -245,6 +245,9 @@ public sealed partial class ClassService
             var scheduleTimeUtc = request.ScheduleTime.Kind == DateTimeKind.Utc
                 ? request.ScheduleTime
                 : request.ScheduleTime.ToUniversalTime();
+            var scheduleChanged = targetClass.ScheduleTime != scheduleTimeUtc
+                || targetClass.DurationMinutes != request.DurationMinutes;
+            var coachChanged = targetClass.CoachId != request.CoachId;
 
             if (scheduleTimeUtc <= DateTime.UtcNow)
             {
@@ -320,7 +323,11 @@ public sealed partial class ClassService
                 durationMinutes: request.DurationMinutes,
                 capacity: request.Capacity,
                 currentEnrolled: targetClass.CurrentEnrolled,
-                status: targetClass.Status
+                status: targetClass.Status,
+                approvalStatus: targetClass.ApprovalStatus,
+                parentId: targetClass.ParentId,
+                sessionNumber: targetClass.SessionNumber,
+                totalSessions: targetClass.TotalSessions
             );
 
             await _classRepository.UpdateAsync(updatedClass);
@@ -344,11 +351,17 @@ public sealed partial class ClassService
                 classId
             );
 
-            await _classRepository.NotifyAffectedMembersAsync(
-                classId,
-                "Thông tin lớp học thay đổi",
-                $"Lớp học {targetClass.ClassName} đã được cập nhật thông tin."
-            );
+            var memberTitle = scheduleChanged
+                ? "Lịch một buổi học đã thay đổi"
+                : coachChanged
+                    ? "Huấn luyện viên buổi học đã thay đổi"
+                    : "Thông tin lớp học thay đổi";
+            var memberMessage = scheduleChanged
+                ? $"Buổi học {targetClass.ClassName} được dời từ {CenterTime.ToLocal(targetClass.ScheduleTime):dd/MM/yyyy HH:mm} sang {CenterTime.ToLocal(scheduleTimeUtc):dd/MM/yyyy HH:mm}.{FormatAdjustmentReason(request.Reason)}"
+                : coachChanged
+                    ? $"Huấn luyện viên phụ trách buổi {targetClass.ClassName} đã được thay đổi. Vui lòng xem lịch học để cập nhật thông tin.{FormatAdjustmentReason(request.Reason)}"
+                    : $"Lớp học {targetClass.ClassName} đã được cập nhật thông tin.";
+            await _classRepository.NotifyAffectedMembersAsync(classId, memberTitle, memberMessage);
 
             return (true, null);
         }
@@ -362,4 +375,7 @@ public sealed partial class ClassService
             );
         }
     }
+
+    private static string FormatAdjustmentReason(string? reason) =>
+        string.IsNullOrWhiteSpace(reason) ? string.Empty : $" Lý do: {reason.Trim()}";
 }

@@ -1,11 +1,7 @@
-import { Calendar, Clock, MapPin, Users, Award, ShieldCheck, ChevronDown, Dumbbell, Lock, CheckCircle2, RotateCcw } from "lucide-react";
+import { Calendar, Clock, MapPin, Users, Dumbbell, Lock, ShieldCheck } from "lucide-react";
 import type { MockSession } from "../../services/api";
-import type { AttendanceDeadlineInfo } from "../../utils/attendanceLock";
 
 interface Props {
-  selectedSessionId?: string | null;
-  onSessionChange: (id: string) => void;
-  activeSessions: MockSession[];
   session: MockSession;
   isFinalized: boolean;
   isDraft?: boolean;
@@ -16,9 +12,6 @@ interface Props {
 }
 
 export default function AttendanceSessionSelector({
-  selectedSessionId,
-  onSessionChange,
-  activeSessions,
   session,
   isFinalized,
   isDraft,
@@ -107,23 +100,6 @@ export default function AttendanceSessionSelector({
           )}
         </div>
 
-        {/* Dropdown Ca dạy */}
-        <div className="w-full md:w-80">
-          <div className="relative">
-            <select
-              value={selectedSessionId || ""}
-              onChange={(e) => onSessionChange(e.target.value)}
-              className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl pl-3 pr-9 py-2 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-xs"
-            >
-              {activeSessions.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.className} — {s.date} ({s.startTime} - {s.endTime})
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
-        </div>
       </div>
     </div>
 

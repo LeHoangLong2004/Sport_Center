@@ -25,7 +25,7 @@ export default function WalletBanner({ balance, onOpenTopUp }: Props) {
             </div>
           </div>
           <p className="text-xs text-slate-400 max-w-md">
-            Sử dụng số dư ví để đăng ký nhanh các gói môn thể thao, mua vật phẩm thể thao hoặc dịch vụ tập luyện trực tiếp.
+            Sử dụng số dư ví để thanh toán dịch vụ tập luyện, mua vật phẩm thể thao hoặc các dịch vụ trực tiếp.
           </p>
         </div>
 
