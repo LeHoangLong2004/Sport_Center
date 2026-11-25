@@ -1,18 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { ArrowLeft, Check, Dumbbell, PackageCheck, Plus, ShieldCheck, Sparkles } from "lucide-react"
-import { CatalogPackage, PackageOrder, PackageAPI, SportFormat } from "../../../services/packageApi"
+import { Check, PackageCheck, Plus, ShieldCheck } from "lucide-react"
+import { CatalogPackage, PackageOrder, PackageAPI } from "../../../services/packageApi"
 import {
-  blankPackage, formatLabels, MembershipCard, PackageDraft, PackageEditor, periods, SportCard, Category, money,
+  blankMembershipPackage, MembershipCard, PackageDraft, PackageEditor, periods, money,
 } from "../components/PackageComponents"
 export function PackagesWorkspace() {
   const [catalog, setCatalog] = useState<CatalogPackage[]>([])
   const [orders, setOrders] = useState<PackageOrder[]>([])
-  const [category, setCategory] = useState<Category | null>(null)
   const [activeTab, setActiveTab] = useState<"catalog" | "orders">("catalog")
   const [draft, setDraft] = useState<PackageDraft | null>(null)
-  const [sportFilter, setSportFilter] = useState("all")
-  const [formatFilter, setFormatFilter] = useState<"all" | SportFormat>("all")
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all")
   const [orderSearch, setOrderSearch] = useState("")
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -32,16 +28,10 @@ export function PackagesWorkspace() {
   }, [])
   useEffect(() => { void loadData() }, [loadData])
 
-  const membership = useMemo(() => catalog.filter((item) => item.category === "membership"), [catalog])
-
-  const sportPackages = useMemo(
-    () => catalog.filter((item) =>
-      item.category === "sport" &&
-      (sportFilter === "all" || item.sport === sportFilter) &&
-      (formatFilter === "all" || item.format === formatFilter) &&
-      (statusFilter === "all" || (statusFilter === "active" ? item.isActive : !item.isActive))
-    ),
-    [catalog, sportFilter, formatFilter, statusFilter],
+  const membership = useMemo(
+    () => catalog.filter((item) => item.category === "membership")
+      .sort((a, b) => (a.tierRank ?? 0) - (b.tierRank ?? 0)),
+    [catalog],
   )
 
   const pendingOrders = orders.filter((order) => order.status === "pending")
@@ -72,12 +62,22 @@ export function PackagesWorkspace() {
     setDraft({ ...item, prices: { ...item.prices }, benefits: [...item.benefits], terms: [...item.terms] })
   }
 
+  const createMembershipTier = () => {
+    setError("")
+    setNotice("")
+    setActiveTab("catalog")
+    setDraft(blankMembershipPackage(membership))
+  }
+
   const save = async () => {
     if (!draft) return
     setError("")
 
     if (!draft.name.trim() || !draft.description.trim() || !draft.benefits.length) {
       setError("Vui lòng nhập tên, mô tả và ít nhất một quyền lợi."); return
+    }
+    if (!draft.benefits.some((benefit) => benefit.trim())) {
+      setError("Hạng thành viên cần ít nhất một quyền lợi."); return
     }
     if (periods.some((p) => !Number.isFinite(draft.prices[p]) || draft.prices[p] < 0) ||
       (draft.tier !== "basic" && periods.some((p) => draft.prices[p] <= 0))) {
@@ -86,49 +86,16 @@ export function PackagesWorkspace() {
     if ([draft.groupDiscountPct, draft.coachDiscountPct].some((v) => !Number.isFinite(v) || v < 0 || v > 100)) {
       setError("Tỷ lệ ưu đãi phải nằm trong khoảng 0–100%."); return
     }
-    if (draft.category === "sport" && (!draft.sport?.trim() || !draft.format)) {
-      setError("Gói môn tập cần có bộ môn và hình thức."); return
-    }
-    if (draft.category === "sport" && draft.format !== "self" && (!draft.sessionsPerMonth || !draft.minutesPerSession)) {
-      setError("Gói có Coach cần có số buổi và thời lượng mỗi buổi."); return
-    }
-    if (draft.category === "sport" && !draft.terms.length) {
-      setError("Gói môn tập cần có ít nhất một điều kiện sử dụng."); return
-    }
-
     try {
       setSaving(true)
 
       const finalBenefits = [...draft.benefits.map((b) => b.trim()).filter(Boolean)]
-      if (draft.category === "sport") {
-        const hasCore = finalBenefits.some((b) => {
-          const l = b.toLowerCase()
-          return (
-            l.includes("miễn phí") &&
-            (l.includes("đặt") ||
-              l.includes("vào sân") ||
-              l.includes("0đ") ||
-              l.includes("ca tập") ||
-              l.includes("lớp"))
-          )
-        })
-        if (!hasCore) {
-          const coreText =
-            draft.format === "coach"
-              ? `Miễn phí đặt lịch ca tập kèm riêng theo số buổi (${draft.sessionsPerMonth || 8} buổi/tháng)`
-              : draft.format === "group"
-                ? `Miễn phí đặt chỗ lớp nhóm theo số buổi (${draft.sessionsPerMonth || 12} buổi/tháng)`
-                : `Miễn phí 100% phí đặt ca / vào sân môn ${draft.sport?.trim() || "tập"} (0đ/buổi)`
-          finalBenefits.unshift(coreText)
-        }
-      }
 
       await PackageAPI.savePackage(
         {
           ...draft,
           name: draft.name.trim(),
           description: draft.description.trim(),
-          sport: draft.sport?.trim(),
           area: (draft.area || "").trim(),
           benefits: finalBenefits,
         },
@@ -175,34 +142,28 @@ export function PackagesWorkspace() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <span className="text-xs font-bold uppercase tracking-[0.16em] text-slate-700">CENTER MANAGER · GÓI TẬP</span>
+          <span className="text-xs font-bold uppercase tracking-[0.16em] text-slate-700">CENTER MANAGER · GÓI THÀNH VIÊN</span>
           <h1 className="mt-1 text-2xl font-extrabold text-slate-900 sm:text-3xl">
-            {category ? (category === "membership" ? "Quản lý gói thành viên" : "Quản lý gói môn tập") : "Quản lí gói"}
+            Quản lý gói thành viên
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            {category ? "Cập nhật danh mục, giá và quyền lợi cho các lần mua mới." : "Quản lý hạng thành viên, sản phẩm môn tập và đơn chờ thanh toán."}
+            Quản lý hạng thành viên, giá và quyền lợi áp dụng cho đơn mới.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {category && (
-            <button type="button" onClick={() => { setCategory(null); setActiveTab("catalog") }}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 hover:border-slate-300">
-              <ArrowLeft size={16} /> Chọn loại gói
+          {activeTab === "catalog" && (
+            <button type="button" onClick={createMembershipTier}
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800">
+              <Plus size={16} /> Tạo hạng thành viên
             </button>
           )}
-          <button type="button" onClick={() => { setActiveTab("orders"); setCategory(null) }}
+          <button type="button" onClick={() => setActiveTab("orders")}
             className={`inline-flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold ${activeTab === "orders" ? "bg-slate-900 text-white" : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}>
             <PackageCheck size={16} /> Đơn thanh toán{" "}
             {pendingOrders.length > 0 && (
               <span className="rounded-full bg-slate-400 px-2 py-0.5 text-xs text-slate-950">{pendingOrders.length}</span>
             )}
           </button>
-          {category === "sport" && (
-            <button type="button" onClick={() => setDraft(blankPackage("sport"))}
-              className="inline-flex items-center gap-2 rounded-lg bg-slate-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-800">
-              <Plus size={17} /> Tạo gói môn
-            </button>
-          )}
         </div>
       </div>
 
@@ -250,11 +211,16 @@ export function PackagesWorkspace() {
                         <strong className="text-lg text-slate-900">{money(order.total)}</strong>
                         {order.discountPct > 0 && <p className="text-xs text-emerald-700">Đã giảm {order.discountPct}%</p>}
                       </div>
-                      {order.status === "pending" && (
+                      {order.status === "pending" && order.packageSnapshot.category === "membership" && (
                         <button type="button" onClick={() => void confirmPayment(order)}
                           className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-3 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800">
                           <Check size={16} /> Xác nhận đã thu
                         </button>
+                      )}
+                      {order.status === "pending" && order.packageSnapshot.category === "sport" && (
+                        <span className="max-w-48 text-right text-xs text-slate-500">
+                          Gói môn đã ngừng kinh doanh; đơn cũ được giữ trong lịch sử.
+                        </span>
                       )}
                     </div>
                   </article>
@@ -299,31 +265,11 @@ export function PackagesWorkspace() {
             </>
           )}
         </section>
-      ) : !category ? (
-        <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <button type="button" onClick={() => setCategory("membership")}
-            className="rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition hover:border-slate-300 hover:shadow-lg">
-            <span className="inline-flex rounded-xl bg-slate-50 p-3 text-slate-700"><Sparkles size={22} /></span>
-            <h2 className="mt-4 text-xl font-bold text-slate-900">Gói thành viên</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-500">Cấu hình Cơ bản, Plus, Premium, giá theo kỳ hạn và ưu đãi.</p>
-            <span className="mt-4 inline-flex text-sm font-semibold text-slate-700">Quản lý hạng thành viên →</span>
-          </button>
-          <button type="button" onClick={() => setCategory("sport")}
-            className="rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition hover:border-emerald-300 hover:shadow-lg">
-            <span className="inline-flex rounded-xl bg-emerald-50 p-3 text-emerald-700"><Dumbbell size={22} /></span>
-            <h2 className="mt-4 text-xl font-bold text-slate-900">Gói môn tập</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-500">Quản lý môn, khu tập, hình thức, hạn mức, giá và quyền lợi.</p>
-            <span className="mt-4 inline-flex text-sm font-semibold text-emerald-700">Quản lý danh mục môn →</span>
-          </button>
-          <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm leading-6 text-slate-950 md:col-span-2">
-            <strong>Danh mục dùng chung:</strong> thay đổi cấu hình sẽ hiển thị ngay cho Member khi mua gói mới. Đơn đã tạo giữ nguyên snapshot về giá, quyền lợi và điều kiện.
-          </div>
-        </section>
-      ) : category === "membership" ? (
+      ) : (
         <section>
           <div className="mb-4 flex gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-950">
             <ShieldCheck size={17} className="mt-0.5 shrink-0" />
-            <span>Chỉ có ba mã hạng ổn định. Cơ bản miễn phí và không thể ngừng bán; thay đổi chỉ ảnh hưởng đơn mới.</span>
+            <span>Hạng Cơ bản luôn miễn phí và được giữ làm hạng mặc định. Hạng mới được xếp sau các hạng hiện có; thay đổi chỉ ảnh hưởng đơn mới.</span>
           </div>
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
             {membership.map((item) => (
@@ -331,56 +277,10 @@ export function PackagesWorkspace() {
             ))}
           </div>
         </section>
-      ) : (
-        <section>
-          {/* Sport filters */}
-          <div className="mb-4 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-3">
-            <label className="text-xs font-bold uppercase tracking-wide text-slate-500">
-              Bộ môn
-              <select value={sportFilter} onChange={(e) => setSportFilter(e.target.value)}
-                className="mt-1.5 block w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-normal text-slate-800">
-                <option value="all">Tất cả bộ môn</option>
-                {[...new Set(catalog.filter((i) => i.category === "sport").map((i) => i.sport).filter(Boolean))].map((sport) => (
-                  <option key={sport}>{sport}</option>
-                ))}
-              </select>
-            </label>
-            <label className="text-xs font-bold uppercase tracking-wide text-slate-500">
-              Hình thức
-              <select value={formatFilter} onChange={(e) => setFormatFilter(e.target.value as "all" | SportFormat)}
-                className="mt-1.5 block w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-normal text-slate-800">
-                <option value="all">Tất cả hình thức</option>
-                {Object.entries(formatLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-              </select>
-            </label>
-            <label className="text-xs font-bold uppercase tracking-wide text-slate-500">
-              Trạng thái
-              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
-                className="mt-1.5 block w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-normal text-slate-800">
-                <option value="all">Tất cả</option>
-                <option value="active">Đang bán</option>
-                <option value="inactive">Ngừng bán</option>
-              </select>
-            </label>
-          </div>
-          {sportPackages.length ? (
-            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-              {sportPackages.map((item) => (
-                <SportCard key={item.id} item={item} onEdit={() => edit(item)} onToggle={() => void toggle(item)} />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
-              <Dumbbell className="mx-auto text-slate-400" size={28} />
-              <h2 className="mt-3 font-bold text-slate-800">Chưa có gói môn phù hợp</h2>
-              <p className="mt-1 text-sm text-slate-500">Điều chỉnh bộ lọc hoặc tạo gói môn mới.</p>
-            </div>
-          )}
-        </section>
       )}
 
       {draft && (
-        <PackageEditor draft={draft} onChange={setDraft} onClose={() => { setDraft(null); setError(""); }} onSave={() => void save()} saving={saving} error={error} />
+        <PackageEditor draft={draft} isNew={!catalog.some((item) => item.id === draft.id)} onChange={setDraft} onClose={() => { setDraft(null); setError(""); }} onSave={() => void save()} saving={saving} error={error} />
       )}
     </div>
   )

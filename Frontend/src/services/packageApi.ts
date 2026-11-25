@@ -1,6 +1,6 @@
 export type PackageCategory = "membership" | "sport" | "class"
 
-export type MembershipTier = "basic" | "plus" | "premium"
+export type MembershipTier = string
 
 export type SportFormat = "self" | "group" | "coach"
 
@@ -14,6 +14,7 @@ export interface CatalogPackage {
   id: string
   category: PackageCategory
   tier?: MembershipTier
+  tierRank?: number
   name: string
   description: string
   isActive: boolean
@@ -61,6 +62,7 @@ export interface PackageCheckout {
 
 export interface MembershipStatus {
   tier: MembershipTier
+  tierRank?: number
   name: string
   startDate?: string
   endDate?: string
@@ -148,6 +150,7 @@ export function getMembershipStatus(
     const membership = active.packageSnapshot
     return {
       tier: membership.tier || "basic",
+      tierRank: membership.tierRank,
       name: membership.name,
       startDate: active.startDate,
       endDate: active.endDate,
@@ -165,6 +168,7 @@ export function getMembershipStatus(
   if (!basic) return null
   return {
     tier: "basic",
+    tierRank: basic.tierRank ?? 0,
     name: basic.name,
     benefits: basic.benefits,
     groupDiscountPct: 0,
@@ -212,9 +216,9 @@ export function calculateMembershipUpgrade(
     }
   }
 
-  const tierRank: Record<string, number> = { basic: 0, plus: 1, premium: 2 }
-  const currentRank = tierRank[membershipStatus.tier] ?? 0
-  const targetRank = tierRank[targetPackage.tier || ""] ?? (targetPrice > (membershipStatus.pricePaid || 0) ? 99 : 0)
+  const tierRank: Record<string, number> = { basic: 0, plus: 1, premium: 2, vip: 3, diamond: 4 }
+  const currentRank = membershipStatus.tierRank ?? tierRank[membershipStatus.tier] ?? 0
+  const targetRank = targetPackage.tierRank ?? tierRank[targetPackage.tier || ""] ?? 0
 
   // Chỉ áp dụng tính năng nâng cấp nếu gói mục tiêu có thứ hạng cao hơn hoặc giá cao hơn
   if (targetRank <= currentRank) {

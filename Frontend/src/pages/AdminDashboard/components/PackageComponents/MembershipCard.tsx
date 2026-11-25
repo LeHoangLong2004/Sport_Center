@@ -17,7 +17,9 @@ export function MembershipCard({
       ? "from-amber-500 to-orange-500"
       : item.tier === "plus"
         ? "from-emerald-600 to-teal-500"
-        : "from-slate-700 to-slate-600"
+        : item.tier === "basic"
+          ? "from-slate-700 to-slate-600"
+          : "from-blue-700 to-indigo-600"
 
   return (
     <article className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -25,7 +27,7 @@ export function MembershipCard({
         <div className="flex items-start justify-between gap-3">
           <div>
             <span className="text-xs font-semibold uppercase tracking-widest text-white/75">
-              {item.tier === "basic" ? "MẶC ĐỊNH" : item.tier}
+              {item.tier === "basic" ? "MẶC ĐỊNH" : item.tier === "plus" || item.tier === "premium" ? item.tier.toUpperCase() : `HẠNG ${item.tier || "MỚI"}`}
             </span>
             <h3 className="mt-1 text-2xl font-extrabold">{item.name}</h3>
           </div>

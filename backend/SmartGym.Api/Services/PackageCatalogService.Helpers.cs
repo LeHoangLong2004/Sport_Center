@@ -12,9 +12,11 @@ public sealed partial class PackageCatalogService
 {
     private async Task EnsureDefaultsAsync(CancellationToken cancellationToken)
     {
-        var defaultIds = Defaults.Select(item => item.Id).ToList();
         var existingPackages = await db
-            .Packages.Where(package => defaultIds.Contains(package.Id))
+            .Packages.Where(package =>
+                package.Id == "membership-basic"
+                || package.Id == "membership-plus"
+                || package.Id == "membership-premium")
             .ToListAsync(cancellationToken);
         var existingIds = existingPackages.Select(p => p.Id).ToHashSet();
         var missing = Defaults.Where(item => !existingIds.Contains(item.Id)).ToArray();
@@ -28,10 +30,12 @@ public sealed partial class PackageCatalogService
                 var cur = DeserializeCatalog(existing.CatalogJson);
                 if (cur.GroupDiscountPct != def.GroupDiscountPct 
                     || cur.CoachDiscountPct != def.CoachDiscountPct
+                    || cur.TierRank != def.TierRank
                     || string.Join("|", cur.Benefits) != string.Join("|", def.Benefits))
                 {
                     cur.GroupDiscountPct = def.GroupDiscountPct;
                     cur.CoachDiscountPct = def.CoachDiscountPct;
+                    cur.TierRank = def.TierRank;
                     cur.Benefits = def.Benefits;
                     existing.CatalogJson = JsonSerializer.Serialize(cur, JsonOptions);
                     updated = true;
@@ -43,6 +47,7 @@ public sealed partial class PackageCatalogService
         {
             if (updated)
                 await db.SaveChangesAsync(cancellationToken);
+            await RemoveLegacySportPackagesAsync(cancellationToken);
             return;
         }
 
@@ -79,6 +84,70 @@ public sealed partial class PackageCatalogService
             );
         }
         await db.SaveChangesAsync(cancellationToken);
+        await RemoveLegacySportPackagesAsync(cancellationToken);
+    }
+
+    private async Task RemoveLegacySportPackagesAsync(CancellationToken cancellationToken)
+    {
+        var legacyPackages = await db.Packages
+            .Include(package => package.Features)
+            .Include(package => package.Benefits)
+            .Where(package => package.PackageType == "sport")
+            .ToListAsync(cancellationToken);
+        if (legacyPackages.Count == 0) return;
+
+        var subscriptions = await db.Subscriptions
+            .Join(
+                db.Packages.Where(package => package.PackageType == "sport"),
+                subscription => subscription.PackageId,
+                package => package.Id,
+                (subscription, _) => subscription
+            )
+            .ToListAsync(cancellationToken);
+
+        var referencedPackageIds = subscriptions
+            .Select(subscription => subscription.PackageId!)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var subscription in subscriptions)
+        {
+            var package = legacyPackages.First(item => item.Id == subscription.PackageId);
+            // Keep a snapshot for receipts and payment history before removing the catalog row.
+            if (string.IsNullOrWhiteSpace(subscription.PackageSnapshotJson))
+            {
+                subscription.PackageSnapshotJson = !string.IsNullOrWhiteSpace(package.CatalogJson)
+                    ? package.CatalogJson
+                    : JsonSerializer.Serialize(new CatalogPackageDto
+                    {
+                        Id = package.Id,
+                        Category = "sport",
+                        Name = package.Name,
+                        Description = package.Description ?? package.Name,
+                        IsActive = false,
+                        Prices = new Dictionary<int, decimal>
+                        {
+                            [1] = package.MonthlyPrice ?? 0,
+                            [3] = (package.MonthlyPrice ?? 0) * 3,
+                            [6] = (package.MonthlyPrice ?? 0) * 6,
+                            [12] = package.YearlyPrice ?? (package.MonthlyPrice ?? 0) * 12,
+                        },
+                        Benefits = package.Features.Select(feature => feature.FeatureText)
+                            .Concat(package.Benefits.Select(benefit => benefit.Description))
+                            .Distinct()
+                            .ToList(),
+                        Terms = new List<string> { "Sản phẩm lưu trữ cho lịch sử giao dịch cũ." },
+                    }, JsonOptions);
+            }
+
+        }
+
+        // Keep packages still referenced by subscriptions (including active entitlements and invoices),
+        // but retire them from sale. Orphan catalog rows and their dependent features/benefits can be removed.
+        foreach (var package in legacyPackages.Where(package => referencedPackageIds.Contains(package.Id)))
+            package.Status = false;
+
+        db.Packages.RemoveRange(legacyPackages.Where(package => !referencedPackageIds.Contains(package.Id)));
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     private async Task<CatalogPackageDto?> GetActiveMembershipAsync(
@@ -102,7 +171,9 @@ public sealed partial class PackageCatalogService
         return subscriptions
             .Select(DeserializeSnapshot)
             .FirstOrDefault(package =>
-                package.Category == "membership" && package.Tier is "plus" or "premium"
+                package.Category == "membership"
+                && !string.IsNullOrWhiteSpace(package.Tier)
+                && package.Tier != "basic"
             );
     }
 
@@ -115,6 +186,9 @@ public sealed partial class PackageCatalogService
         "diamond" => 4,
         _ => 1
     };
+
+    public static int GetTierRank(CatalogPackageDto package) =>
+        package.TierRank ?? GetTierRank(package.Tier);
 
     public async Task<Subscription?> GetActiveMembershipSubscriptionAsync(
         Guid userId,
@@ -138,7 +212,9 @@ public sealed partial class PackageCatalogService
         return subscriptions.FirstOrDefault(s =>
         {
             var pkg = DeserializeSnapshot(s);
-            return pkg.Category == "membership" && pkg.Tier is "plus" or "premium";
+            return pkg.Category == "membership"
+                && !string.IsNullOrWhiteSpace(pkg.Tier)
+                && pkg.Tier != "basic";
         });
     }
 
@@ -256,11 +332,14 @@ public sealed partial class PackageCatalogService
             );
         if (package.Category == "membership")
         {
-            if (create || package.Tier is not ("basic" or "plus" or "premium"))
-                throw new PackageCatalogException(
-                    StatusCodes.Status400BadRequest,
-                    "Chỉ được cấu hình ba hạng Cơ bản, Plus và Premium."
-                );
+            if (string.IsNullOrWhiteSpace(package.Tier)
+                || package.Tier.Length > 48
+                || !System.Text.RegularExpressions.Regex.IsMatch(package.Tier, "^[a-z0-9]+(?:-[a-z0-9]+)*$"))
+                throw new PackageCatalogException(StatusCodes.Status400BadRequest, "Mã hạng thành viên không hợp lệ.");
+            if (!string.Equals(id, $"membership-{package.Tier}", StringComparison.Ordinal))
+                throw new PackageCatalogException(StatusCodes.Status400BadRequest, "Mã gói phải tương ứng với mã hạng thành viên.");
+            if (create && (package.Tier is "basic" or "plus" or "premium" || package.TierRank is null or < 3))
+                throw new PackageCatalogException(StatusCodes.Status400BadRequest, "Hạng mới cần mã riêng và thứ tự xếp hạng hợp lệ.");
             if (
                 package.Tier == "basic"
                 && (package.Prices.Values.Any(price => price != 0) || !package.IsActive)

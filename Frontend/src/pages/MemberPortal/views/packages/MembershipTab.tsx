@@ -3,8 +3,6 @@ import {
   CheckCircle2,
   Clock,
   ArrowRight,
-  Ticket,
-  Droplets,
   Lock,
   Activity,
   RefreshCw,
@@ -47,10 +45,10 @@ export default function MembershipTab({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="min-w-0 flex-1">
             <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-              Bảng Hạng Thành Viên Chuẩn
+              Các hạng thành viên
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Nâng cấp gói thành viên để tự động giảm giá khi mua trọn gói môn tập & đặt lịch từng buổi lẻ, cùng đặc quyền đặt trước giờ vàng
+              Nâng cấp gói thành viên để nhận ưu đãi khi đặt lớp nhóm hoặc Coach 1-1, cùng đặc quyền đặt lớp trước giờ vàng
             </p>
           </div>
 
@@ -72,7 +70,7 @@ export default function MembershipTab({
           </div>
         </div>
 
-        {/* 3 Tier Cards */}
+        {/* Membership tier cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {membershipPackages.map((pkg) => {
             const isCurrentTier = membershipStatus.tier === pkg.tier;
@@ -157,52 +155,34 @@ export default function MembershipTab({
                       Đặc quyền bao gồm
                     </span>
 
-                    <div className="flex items-center gap-2 text-xs">
-                      <CheckCircle2 className={`w-4 h-4 shrink-0 ${isPremium ? "text-amber-500" : isPlus ? "text-emerald-500" : "text-slate-400"}`} />
-                      <span className="text-slate-700 dark:text-slate-300">
-                        {isPremium ? (
-                          <strong className="text-amber-600 dark:text-amber-400 font-bold">Giảm {pkg.groupDiscountPct || 15}% Gói môn & Lịch lẻ / {pkg.coachDiscountPct || 8}% PT 1-1</strong>
-                        ) : isPlus ? (
-                          <strong className="text-emerald-600 dark:text-emerald-400 font-bold">Giảm {pkg.groupDiscountPct || 8}% Gói môn & Lịch lẻ / {pkg.coachDiscountPct || 5}% PT 1-1</strong>
-                        ) : (
-                          "Áp dụng giá gốc (không giảm gói môn & lịch lẻ)"
-                        )}
-                      </span>
-                    </div>
+                    {(pkg.groupDiscountPct > 0 || pkg.coachDiscountPct > 0) && (
+                      <div className="flex items-center gap-2 text-xs">
+                        <CheckCircle2 className={`w-4 h-4 shrink-0 ${isPremium ? "text-amber-500" : isPlus ? "text-emerald-500" : "text-slate-400"}`} />
+                        <span className="text-slate-700 dark:text-slate-300">
+                          Ưu đãi đặt lớp <strong>{pkg.groupDiscountPct}%</strong> / Coach 1–1 <strong>{pkg.coachDiscountPct}%</strong>
+                        </span>
+                      </div>
+                    )}
 
                     <div className="flex items-center gap-2 text-xs">
                       <Clock className="w-4 h-4 text-blue-500 shrink-0" />
                       <span className="text-slate-700 dark:text-slate-300">
-                        Đặt lịch trước: <strong>{pkg.bookingAdvanceHours || 24} giờ</strong>
+                        Đặt lịch trước: <strong>{pkg.bookingAdvanceHours ?? 24} giờ</strong>
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 text-xs">
-                      <Ticket className="w-4 h-4 text-emerald-500 shrink-0" />
-                      <span className="text-slate-700 dark:text-slate-300">
-                        {isPremium ? (
-                          <>Vé mời bạn bè: <strong>5 lượt/tháng</strong></>
-                        ) : isPlus ? (
-                          <>Vé mời bạn bè: <strong>3 lượt/tháng</strong></>
-                        ) : (
-                          <>Vé mời bạn bè: <strong>1 lượt/tháng</strong></>
-                        )}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-xs">
-                      <Droplets className="w-4 h-4 text-cyan-500 shrink-0" />
-                      <span className="text-slate-700 dark:text-slate-300">
-                        Xông hơi (Sauna): {isPremium ? <strong>Miễn phí</strong> : "Chưa hỗ trợ"}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-xs">
+                    {pkg.lockerTerms && <div className="flex items-center gap-2 text-xs">
                       <Lock className="w-4 h-4 text-purple-500 shrink-0" />
                       <span className="text-slate-700 dark:text-slate-300">
-                        Tủ đồ: <strong>{pkg.lockerTerms || (isPremium ? "Tủ riêng VIP" : "Tủ chung")}</strong>
+                        Tủ đồ: <strong>{pkg.lockerTerms}</strong>
                       </span>
-                    </div>
+                    </div>}
+                    {pkg.benefits.filter(Boolean).map((benefit, index) => (
+                      <div key={`${pkg.id}-benefit-${index}`} className="flex items-center gap-2 text-xs">
+                        <CheckCircle2 className={`w-4 h-4 shrink-0 ${isPremium ? "text-amber-500" : isPlus ? "text-emerald-500" : "text-slate-400"}`} />
+                        <span className="text-slate-700 dark:text-slate-300">{benefit}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 

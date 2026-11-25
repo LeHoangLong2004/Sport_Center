@@ -19,9 +19,8 @@ export const PtSlotsTab: React.FC<PtSlotsTabProps> = ({
   mySessions = [],
 }) => {
   const isPremium = membership?.tier === "premium";
-  const isPlus = membership?.tier === "plus";
-  const discountPct = isPremium ? 8 : isPlus ? 5 : 0;
-  const tierName = isPremium ? "Hạng Premium" : isPlus ? "Hạng Plus" : "";
+  const discountPct = membership?.coachDiscountPct ?? 0;
+  const tierName = discountPct > 0 ? `Hạng ${membership?.name || "thành viên"}` : "";
   const basePrice = 300000;
   const discountedPrice = Math.round(basePrice * (1 - discountPct / 100));
 

@@ -57,11 +57,8 @@ export const PtBookingModal: React.FC<PtBookingModalProps> = ({
 
   // 1. Phân tích gói PT và mức ưu đãi hạng thành viên
   const basePrice = 300000;
-  const isPremium = membership?.tier === "premium";
-  const isPlus = membership?.tier === "plus";
-  // Hạng Plus: giảm 5% PT 1-1 | Hạng Premium: giảm 8% PT 1-1
-  const discountPct = isPremium ? 8 : isPlus ? 5 : 0;
-  const tierName = isPremium ? "Hạng Premium (-8%)" : isPlus ? "Hạng Plus (-5%)" : "";
+  const discountPct = membership?.coachDiscountPct ?? 0;
+  const tierName = discountPct > 0 ? `${membership?.name || "Hạng thành viên"} (-${discountPct}%)` : "";
 
   const coveringPkg = useMemo(() => {
     if (!bookingPtSlot || !activeOrders || activeOrders.length === 0) return null;
