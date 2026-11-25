@@ -141,8 +141,8 @@ export function groupAttendanceSessions(sessions: AttendanceSession[]): Attendan
       return group;
     })
     .sort((a, b) => {
-      const aNext = a.sessions.find((session) => session.status === "chưa diễn ra") ?? a.sessions.at(-1)!;
-      const bNext = b.sessions.find((session) => session.status === "chưa diễn ra") ?? b.sessions.at(-1)!;
+      const aNext = a.sessions.find((session) => session.status === "chưa điểm danh") ?? a.sessions.at(-1)!;
+      const bNext = b.sessions.find((session) => session.status === "chưa điểm danh") ?? b.sessions.at(-1)!;
       return `${aNext.date}T${aNext.startTime}`.localeCompare(`${bNext.date}T${bNext.startTime}`);
     });
 }

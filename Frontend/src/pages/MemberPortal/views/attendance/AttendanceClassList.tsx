@@ -35,8 +35,6 @@ interface AttendanceClassListProps {
 const statusStyles: Record<AttendanceSession["status"], string> = {
   "có mặt": "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300",
   "vắng": "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300",
-  "đi muộn": "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300",
-  "chưa diễn ra": "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-300",
   "chưa điểm danh": "border-slate-200 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300",
 };
 
@@ -49,7 +47,7 @@ function formatDate(date: string) {
 
 function SessionStatus({ status }: { status: AttendanceSession["status"] }) {
   const Icon = status === "có mặt" ? CheckCircle2 : status === "vắng" ? XCircle : Clock;
-  const label = status === "chưa diễn ra" ? "Sắp diễn ra" : status === "chưa điểm danh" ? "Chưa điểm danh" : status === "vắng" ? "Vắng mặt" : status === "đi muộn" ? "Đi muộn" : "Có mặt";
+  const label = status === "chưa điểm danh" ? "Chưa điểm danh" : status === "vắng" ? "Vắng mặt" : "Có mặt";
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold ${statusStyles[status]}`}>
       <Icon className="h-3.5 w-3.5" />{label}
@@ -84,10 +82,7 @@ export default function AttendanceClassList({
     : null;
 
   const renderCourseCard = (group: (typeof allGroups)[number]) => {
-    const nextSession = group.sessions.find((session) => session.status === "chưa diễn ra") ?? group.sessions[0];
-    const attended = group.sessions.filter((session) => session.status === "có mặt").length;
-    const absent = group.sessions.filter((session) => session.status === "vắng").length;
-    const evaluated = group.sessions.filter((session) => ["có mặt", "vắng", "đi muộn"].includes(session.status)).length;
+    const nextSession = group.sessions[0];
 
     return (
       <button
@@ -113,13 +108,9 @@ export default function AttendanceClassList({
                 <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{nextSession.room}</span>
                 <span className="inline-flex items-center gap-1.5"><User className="h-3.5 w-3.5" />HLV {nextSession.coachName}</span>
               </div>
-              <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                {evaluated > 0 ? `Đã điểm danh ${evaluated}/${group.totalSessions} buổi · Có mặt ${attended}${absent ? ` · Vắng ${absent}` : ""}` : `${group.sessions.length} buổi đang hiển thị trong lịch của bạn`}
-              </p>
             </div>
           </div>
           <div className="flex shrink-0 items-center justify-between gap-3 border-t border-slate-100 pt-3 sm:justify-end sm:border-0 sm:pt-0">
-            <SessionStatus status={nextSession.status} />
             <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-300">Chi tiết <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" /></span>
           </div>
         </div>
@@ -136,7 +127,7 @@ export default function AttendanceClassList({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <select value={statusFilter} onChange={(event) => onStatusFilterChange(event.target.value)} className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-200 sm:text-sm">
-            <option value="all">Tất cả trạng thái</option><option value="có mặt">Có mặt</option><option value="vắng">Vắng mặt</option><option value="đi muộn">Đi muộn</option><option value="chưa điểm danh">Chưa điểm danh</option><option value="chưa diễn ra">Sắp diễn ra</option>
+            <option value="all">Tất cả trạng thái</option><option value="chưa điểm danh">Chưa điểm danh</option><option value="có mặt">Có mặt</option><option value="vắng">Vắng mặt</option>
           </select>
           <select value={typeFilter} onChange={(event) => onTypeFilterChange(event.target.value)} className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-200 sm:text-sm">
             <option value="all">Mọi hình thức</option><option value="group">Lớp nhóm</option><option value="pt">Kèm 1-1 PT</option>
@@ -154,13 +145,16 @@ export default function AttendanceClassList({
         <section className="space-y-4">
           <div className="flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 dark:border-emerald-900 dark:bg-emerald-950/25 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <button type="button" onClick={() => setSelectedCourseKey(null)} className="mb-1 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-900 dark:text-emerald-300 dark:hover:text-emerald-100"><ArrowLeft className="h-3.5 w-3.5" /> Danh sách lớp đã đăng ký</button>
+              <button
+                type="button"
+                onClick={() => setSelectedCourseKey(null)}
+                aria-label="Quay lại danh sách lớp đã đăng ký"
+                className="mb-2 inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs font-bold text-emerald-800 shadow-xs transition hover:border-emerald-400 hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-emerald-800 dark:bg-slate-900 dark:text-emerald-300 dark:hover:bg-emerald-950/50"
+              >
+                <ArrowLeft className="h-4 w-4" /> Quay lại danh sách lớp
+              </button>
               <h2 className="truncate text-lg font-extrabold text-slate-900 dark:text-white">{selectedGroup.name}</h2>
               <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{selectedGroup.sessions[0]?.sport} · {selectedGroup.sessions.length} buổi trong lịch · HLV {selectedGroup.sessions[0]?.coachName}</p>
-            </div>
-            <div className="flex gap-2 text-xs font-bold">
-              <span className="rounded-lg bg-white px-3 py-2 text-emerald-700 dark:bg-slate-900 dark:text-emerald-300">{selectedGroup.sessions.filter((session) => ["có mặt", "vắng", "đi muộn"].includes(session.status)).length} đã điểm danh</span>
-              <span className="rounded-lg bg-white px-3 py-2 text-sky-700 dark:bg-slate-900 dark:text-sky-300">{selectedGroup.sessions.filter((session) => session.status === "chưa diễn ra").length} sắp tới</span>
             </div>
           </div>
 

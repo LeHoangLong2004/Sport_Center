@@ -53,7 +53,7 @@ export interface AttendanceSession {
   date: string;
   startTime: string;
   endTime: string;
-  status: "có mặt" | "vắng" | "đi muộn" | "chưa điểm danh" | "chưa diễn ra";
+  status: "có mặt" | "vắng" | "chưa điểm danh";
   coachNote?: string;
   assessment?: CoachAssessmentData | null;
   type: "group" | "pt";

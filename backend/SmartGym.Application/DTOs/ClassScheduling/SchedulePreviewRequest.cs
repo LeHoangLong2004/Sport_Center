@@ -43,26 +43,6 @@ public sealed record CreateClassCourseResult(
     decimal PricePerSession,
     decimal CourseFee);
 
-public sealed class UpsertSportClassPricingRequest
-{
-    public decimal PricePerSession { get; init; }
-    public DateOnly EffectiveFrom { get; init; }
-}
-
-public sealed record SportClassPricingResponse(
-    Guid SportId,
-    string SportName,
-    decimal PricePerSession,
-    DateOnly EffectiveFrom,
-    DateOnly? EffectiveTo,
-    bool IsActive);
-
-public sealed record ClassCoursePriceQuote(
-    Guid SportId,
-    decimal PricePerSession,
-    int TotalSessions,
-    decimal CourseFee);
-
 public sealed class EnrollClassCourseRequest
 {
     public string IdempotencyKey { get; init; } = string.Empty;

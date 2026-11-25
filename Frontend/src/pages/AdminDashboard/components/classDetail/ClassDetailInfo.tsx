@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatCenterDate, formatCenterTime, parseScheduleTime } from '../../../../utils/scheduleTimeHelper';
+import { centerDateParts, formatCenterDate, formatCenterTime, parseScheduleTime } from '../../../../utils/scheduleTimeHelper';
 
 interface ClassDetailInfoProps {
   classDetail: {
@@ -11,12 +11,30 @@ interface ClassDetailInfoProps {
     durationMinutes: number;
     currentEnrolled: number;
     capacity: number;
+    totalSessions?: number;
+    sessions?: Array<{
+      sessionNumber?: number;
+      scheduleTime: string;
+    }> | null;
   };
   isPendingProposal: boolean;
 }
 
 export function ClassDetailInfo({ classDetail, isPendingProposal }: ClassDetailInfoProps) {
   const scheduleDate = parseScheduleTime(classDetail.scheduleTime);
+  const sessions = [...(classDetail.sessions ?? [])].sort(
+    (left, right) => (left.sessionNumber ?? 0) - (right.sessionNumber ?? 0),
+  );
+  const totalSessions = classDetail.totalSessions ?? sessions.length;
+  const weekdayOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const weekdayLabels: Record<string, string> = {
+    Mon: 'Thứ 2', Tue: 'Thứ 3', Wed: 'Thứ 4', Thu: 'Thứ 5',
+    Fri: 'Thứ 6', Sat: 'Thứ 7', Sun: 'Chủ nhật',
+  };
+  const weekdays = [...new Set(sessions.map((session) => centerDateParts(parseScheduleTime(session.scheduleTime)).weekday))]
+    .sort((left, right) => weekdayOrder.indexOf(left) - weekdayOrder.indexOf(right));
+  const weeks = weekdays.length > 0 ? Math.ceil(totalSessions / weekdays.length) : null;
+  const isRecurring = totalSessions > 1 || sessions.length > 1;
 
   return (
     <>
@@ -104,6 +122,43 @@ export function ClassDetailInfo({ classDetail, isPendingProposal }: ClassDetailI
           </p>
         </div>
       </div>
+
+      {isRecurring && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-bold text-emerald-900">Lịch tập định kỳ</p>
+              <p className="mt-0.5 text-xs text-emerald-800/80">Tóm tắt lộ trình được Coach đề xuất</p>
+            </div>
+            <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-emerald-800 ring-1 ring-emerald-200">
+              {sessions.length || totalSessions} buổi
+            </span>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg bg-white/80 px-3 py-2.5">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Thời lượng</p>
+              <p className="mt-1 text-sm font-bold text-slate-900">{weeks ? `${weeks} tuần` : 'Đang cập nhật'}</p>
+            </div>
+            <div className="rounded-lg bg-white/80 px-3 py-2.5">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Tần suất</p>
+              <p className="mt-1 text-sm font-bold text-slate-900">
+                {weekdays.length > 0 ? `${weekdays.length} buổi/tuần` : 'Đang cập nhật'}
+              </p>
+            </div>
+            <div className="rounded-lg bg-white/80 px-3 py-2.5 sm:col-span-1">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Ngày tập trong tuần</p>
+              <p className="mt-1 text-sm font-bold text-slate-900">
+                {weekdays.length > 0 ? weekdays.map((day) => weekdayLabels[day] ?? day).join(' · ') : 'Đang cập nhật'}
+              </p>
+            </div>
+          </div>
+          {sessions.length > 0 && (
+            <p className="mt-3 text-xs text-slate-600">
+              Từ {formatCenterDate(parseScheduleTime(sessions[0].scheduleTime))} đến {formatCenterDate(parseScheduleTime(sessions[sessions.length - 1].scheduleTime))}
+            </p>
+          )}
+        </div>
+      )}
     </>
   );
 }

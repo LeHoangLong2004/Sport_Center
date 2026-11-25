@@ -16,6 +16,17 @@ import AttendanceDetailModal from "./attendance/AttendanceDetailModal";
 import AttendanceAssessmentList from "./attendance/AttendanceAssessmentList";
 import { groupAttendanceSessions } from "./attendance/groupSessions";
 
+function normalizeAttendanceStatus(value: unknown): AttendanceSession["status"] {
+  const status = String(value ?? "").trim().toLowerCase();
+  if (["có mặt", "present", "attended", "đi muộn", "late", "hoàn thành", "completed"].includes(status)) {
+    return "có mặt";
+  }
+  if (["vắng", "vắng mặt", "absent", "missed", "no_show", "no-show"].includes(status)) {
+    return "vắng";
+  }
+  return "chưa điểm danh";
+}
+
 interface Props {
   onNavigate: (screen: MemberScreen) => void;
 }
@@ -78,7 +89,10 @@ export default function MemberAttendance({ onNavigate }: Props) {
         if (res.ok) {
           const data = await res.json();
           if (data && (Array.isArray(data.sessions) || Array.isArray(data.gateCheckIns))) {
-            setSessions(data.sessions || []);
+            setSessions((data.sessions || []).map((session: any) => ({
+              ...session,
+              status: normalizeAttendanceStatus(session.status ?? session.attendanceStatus),
+            })));
             setGateCheckIns(data.gateCheckIns || []);
             if (data.summary) {
               setSummary(data.summary);
@@ -133,17 +147,7 @@ export default function MemberAttendance({ onNavigate }: Props) {
             }
           } catch {}
 
-          let attStatus: AttendanceSession["status"] = isFuture ? "chưa diễn ra" : "chưa điểm danh";
-          if (!isFuture) {
-            if (b.attendanceStatus) {
-              const raw = b.attendanceStatus.toLowerCase();
-              if (raw.includes("có mặt") || raw.includes("present") || raw.includes("attended")) attStatus = "có mặt";
-              else if (raw.includes("vắng") || raw.includes("absent")) attStatus = "vắng";
-              else if (raw.includes("muộn") || raw.includes("late")) attStatus = "đi muộn";
-            } else if (b.status === "hoàn thành") {
-              attStatus = "có mặt";
-            }
-          }
+          const attStatus = normalizeAttendanceStatus(b.attendanceStatus);
 
           return {
             id: b.id,
@@ -166,8 +170,8 @@ export default function MemberAttendance({ onNavigate }: Props) {
 
         const attended = fallbackSessions.filter((s) => s.status === "có mặt").length;
         const absent = fallbackSessions.filter((s) => s.status === "vắng").length;
-        const late = fallbackSessions.filter((s) => s.status === "đi muộn").length;
-        const evaluated = attended + absent + late;
+        const late = 0;
+        const evaluated = attended + absent;
         const rate = evaluated > 0 ? Math.round((attended / evaluated) * 100) : null;
 
         setSummary({

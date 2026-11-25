@@ -207,6 +207,9 @@ public static class SePayWebhookEndpoints
             {
                 var result = await TryConfirmSubscriptionOrder(db, orderId, webhook, ct);
                 if (result != null) return result;
+
+                result = await TryConfirmInvoiceOrder(db, orderId, webhook, ct);
+                if (result != null) return result;
             }
 
             // Thử khớp nạp ví: NAPVI <mã>
@@ -324,17 +327,29 @@ public static class SePayWebhookEndpoints
                 .AsNoTracking()
                 .FirstOrDefaultAsync(s => s.Id == orderId, ct);
 
-            if (subscription == null)
+            if (subscription != null)
             {
-                return Results.NotFound(new { message = "Không tìm thấy đơn hàng." });
+                return Results.Ok(new
+                {
+                    orderId = subscription.Id,
+                    status = subscription.PaymentStatus.ToString().ToLowerInvariant(),
+                    isPaid = subscription.PaymentStatus == PaymentStatus.Completed,
+                    paidAt = subscription.PaidAt
+                });
             }
+
+            var invoice = await db.Invoices
+                .AsNoTracking()
+                .FirstOrDefaultAsync(i => i.Id == orderId, ct);
+            if (invoice == null)
+                return Results.NotFound(new { message = "Không tìm thấy đơn hàng." });
 
             return Results.Ok(new
             {
-                orderId = subscription.Id,
-                status = subscription.PaymentStatus.ToString().ToLowerInvariant(),
-                isPaid = subscription.PaymentStatus == PaymentStatus.Completed,
-                paidAt = subscription.PaidAt
+                orderId = invoice.Id,
+                status = invoice.Status.ToString().ToLowerInvariant(),
+                isPaid = invoice.Status == PaymentStatus.Completed,
+                paidAt = invoice.PaidAt
             });
         })
         .WithTags("SePay Webhook")
@@ -585,6 +600,54 @@ public static class SePayWebhookEndpoints
             orderId,
             amount = webhook.EffectiveAmount,
             paidAt = now
+        });
+    }
+
+    /// <summary>
+    /// Xác nhận hóa đơn POS khi SePay gửi giao dịch có mã đơn GYM + GUID.
+    /// Stock fulfillment vẫn được thực hiện qua ProductOrder confirm sau khi POS poll thấy đã thu tiền.
+    /// </summary>
+    private static async Task<IResult?> TryConfirmInvoiceOrder(
+        SmartGymDbContext db,
+        Guid orderId,
+        SePayTransactionDto webhook,
+        CancellationToken ct)
+    {
+        var invoice = await db.Invoices.FirstOrDefaultAsync(i => i.Id == orderId, ct);
+        if (invoice == null) return null;
+
+        if (invoice.Status == PaymentStatus.Completed)
+        {
+            LogTransaction(webhook, orderId.ToString(), "already_paid");
+            return Results.Ok(new { success = true, message = "Hóa đơn đã được thanh toán trước đó.", orderId });
+        }
+
+        if (webhook.EffectiveAmount < invoice.TotalAmount)
+        {
+            LogTransaction(webhook, orderId.ToString(), "insufficient_amount");
+            return Results.Ok(new
+            {
+                success = false,
+                message = $"Số tiền chuyển ({webhook.EffectiveAmount:N0}đ) nhỏ hơn giá trị đơn hàng ({invoice.TotalAmount:N0}đ).",
+                orderId,
+                transactionId = webhook.Id
+            });
+        }
+
+        invoice.Status = PaymentStatus.Completed;
+        invoice.PaymentMethod = PaymentMethod.BankTransfer;
+        invoice.PaidAt = DateTime.UtcNow;
+        await db.SaveChangesAsync(ct);
+
+        LogTransaction(webhook, orderId.ToString(), "confirmed");
+        Console.WriteLine($"[SePay Webhook] ✅ POS invoice {orderId} đã nhận {webhook.EffectiveAmount:N0}đ");
+        return Results.Ok(new
+        {
+            success = true,
+            message = "Thanh toán đơn POS thành công.",
+            orderId,
+            amount = webhook.EffectiveAmount,
+            paidAt = invoice.PaidAt
         });
     }
 

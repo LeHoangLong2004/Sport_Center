@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   QrCode,
   Banknote,
-  Wallet,
   Sparkles,
   RefreshCw,
   Calendar,
@@ -28,12 +27,8 @@ export function RenewPackageModal({ isOpen, onClose, member, onSuccess }: Props)
   const [loadingPackages, setLoadingPackages] = useState(false);
   const [selectedPackageId, setSelectedPackageId] = useState<string>("");
   const [durationMonths, setDurationMonths] = useState<PackagePeriod>(1);
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "vietqr" | "wallet">("cash");
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "vietqr">("cash");
   const [submitting, setSubmitting] = useState(false);
-
-  // States ví hội viên
-  const [memberWallet, setMemberWallet] = useState<{ balance: number } | null>(null);
-  const [loadingWallet, setLoadingWallet] = useState(false);
 
   // States kiểm tra biến động số dư VietQR
   const [isCheckingPayment, setIsCheckingPayment] = useState(false);
@@ -102,16 +97,6 @@ export function RenewPackageModal({ isOpen, onClose, member, onSuccess }: Props)
       .finally(() => setLoadingPackages(false));
   }, [isOpen, member?.packageName]);
 
-  // Load số dư ví hội viên
-  useEffect(() => {
-    if (!isOpen || !member?.id) return;
-    setLoadingWallet(true);
-    WalletService.getWallet(member.id, true)
-      .then((w) => setMemberWallet(w))
-      .catch(() => setMemberWallet({ balance: 0 }))
-      .finally(() => setLoadingWallet(false));
-  }, [isOpen, member?.id, paymentMethod]);
-
   const activePackage = useMemo(() => {
     return packages.find((p) => p.id === selectedPackageId) || null;
   }, [packages, selectedPackageId]);
@@ -127,11 +112,6 @@ export function RenewPackageModal({ isOpen, onClose, member, onSuccess }: Props)
     }
     return activePackage.prices?.[durationMonths] || 500000;
   }, [activePackage, durationMonths, member?.totalAmount]);
-
-  // Tính toán số dư ví và mức chênh lệch
-  const walletBalance = memberWallet?.balance ?? 0;
-  const isWalletSufficient = walletBalance >= currentPrice;
-  const walletDeficit = Math.max(0, currentPrice - walletBalance);
 
   // Calculate new expiry date
   const rawCurrentExpiry = member?.expiryDate || member?.endDate;
@@ -250,39 +230,7 @@ export function RenewPackageModal({ isOpen, onClose, member, onSuccess }: Props)
       return;
     }
 
-    // 2. Ví điện tử: Kiểm tra số dư ví hội viên và thực hiện trừ ví
-    if (paymentMethod === "wallet") {
-      if (!isWalletSufficient) {
-        toast.error(`Số dư ví của hội viên không đủ (còn thiếu ${walletDeficit.toLocaleString("vi-VN")} đ)!`);
-        return;
-      }
-      try {
-        setSubmitting(true);
-        const payRes = await WalletService.pay(
-          {
-            amount: currentPrice,
-            description: `Gia hạn gói ${activePackage?.name || "gói tập"} (${durationMonths} tháng)`,
-            serviceType: "package",
-          },
-          member.id
-        );
-        if (!payRes.success) {
-          toast.error(payRes.message || "Không thể trừ tiền trong ví hội viên.");
-          setSubmitting(false);
-          return;
-        }
-        // Cập nhật lại state ví cục bộ
-        setMemberWallet((prev) => (prev ? { ...prev, balance: Math.max(0, prev.balance - currentPrice) } : prev));
-      } catch {
-        toast.error("Lỗi khi xử lý khấu trừ ví hội viên.");
-        setSubmitting(false);
-        return;
-      }
-      executeRenewal();
-      return;
-    }
-
-    // 3. Quét VietQR: BẮT BUỘC kiểm tra biến động số dư trước khi báo thành công
+    // 2. Quét VietQR: BẮT BUỘC kiểm tra biến động số dư trước khi báo thành công
     if (paymentMethod === "vietqr") {
       if (isPaid) {
         executeRenewal();
@@ -477,7 +425,7 @@ export function RenewPackageModal({ isOpen, onClose, member, onSuccess }: Props)
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
               Phương thức thu tiền tại quầy:
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setPaymentMethod("cash")}
@@ -504,18 +452,6 @@ export function RenewPackageModal({ isOpen, onClose, member, onSuccess }: Props)
                 <span className="text-xs">Quét VietQR</span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => setPaymentMethod("wallet")}
-                className={`py-2 px-2 rounded-xl border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                  paymentMethod === "wallet"
-                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 font-bold"
-                    : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-                }`}
-              >
-                <Wallet className="w-4 h-4 text-amber-600 shrink-0" />
-                <span className="text-xs">Ví điện tử</span>
-              </button>
             </div>
           </div>
 
@@ -580,105 +516,6 @@ export function RenewPackageModal({ isOpen, onClose, member, onSuccess }: Props)
             </div>
           )}
 
-          {/* 2. Panel nếu chọn Ví điện tử (Ví hội viên) */}
-          {paymentMethod === "wallet" && (
-            <div className="space-y-2 shrink-0 animate-in fade-in duration-150">
-              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-2.5">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400">
-                      <Wallet className="w-4 h-4" />
-                    </span>
-                    <div>
-                      <span className="font-extrabold text-slate-900 dark:text-white block">
-                        Ví hội viên SportCenter
-                      </span>
-                      <span className="text-[10px] text-slate-500">
-                        Hội viên: {member?.fullName} ({member?.memberCode})
-                      </span>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800">
-                    Khấu trừ 1-chạm
-                  </span>
-                </div>
-
-                {loadingWallet ? (
-                  <div className="py-4 text-center text-xs text-slate-500">
-                    Đang kiểm tra số dư ví hội viên...
-                  </div>
-                ) : (
-                  <div className="space-y-1.5 text-xs">
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-500 text-[11px]">Số dư ví hiện tại:</span>
-                      <strong className="text-slate-900 dark:text-white font-black text-sm">
-                        {walletBalance.toLocaleString("vi-VN")} đ
-                      </strong>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-500 text-[11px]">Cước phí cần trừ:</span>
-                      <span className="text-rose-600 dark:text-rose-400 font-bold">
-                        - {Number(currentPrice).toLocaleString("vi-VN")} đ
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center pt-1.5 border-t border-slate-200/60 dark:border-slate-700/60">
-                      <span className="text-slate-600 dark:text-slate-300 font-bold text-[11px]">
-                        {isWalletSufficient ? "Số dư còn lại sau khi trừ:" : "Số tiền còn thiếu:"}
-                      </span>
-                      <strong
-                        className={`font-black ${
-                          isWalletSufficient
-                            ? "text-emerald-600 dark:text-emerald-400 text-sm"
-                            : "text-rose-600 dark:text-rose-400 text-sm"
-                        }`}
-                      >
-                        {isWalletSufficient
-                          ? `${(walletBalance - currentPrice).toLocaleString("vi-VN")} đ`
-                          : `Thiếu ${walletDeficit.toLocaleString("vi-VN")} đ`}
-                      </strong>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Thông báo trạng thái ví */}
-              {!loadingWallet && (
-                isWalletSufficient ? (
-                  <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span className="text-[11px] font-semibold">
-                      Số dư ví khả dụng đủ điều kiện thanh toán. Lễ tân có thể xác nhận trừ ví bên dưới.
-                    </span>
-                  </div>
-                ) : (
-                  <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 flex items-start gap-2 text-xs text-rose-800 dark:text-rose-300">
-                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                    <div className="text-[11px] leading-relaxed">
-                      <strong className="block">Số dư ví của học viên không đủ để thanh toán!</strong>
-                      <span>Lễ tân vui lòng chọn </span>
-                      <button
-                        type="button"
-                        onClick={() => setPaymentMethod("cash")}
-                        className="underline font-bold text-rose-700 dark:text-rose-200 hover:text-rose-900 cursor-pointer"
-                      >
-                        Tiền mặt
-                      </button>
-                      <span> hoặc </span>
-                      <button
-                        type="button"
-                        onClick={() => setPaymentMethod("vietqr")}
-                        className="underline font-bold text-rose-700 dark:text-rose-200 hover:text-rose-900 cursor-pointer"
-                      >
-                        Quét VietQR
-                      </button>
-                      <span> để thu phí.</span>
-                    </div>
-                  </div>
-                )
-              )}
-            </div>
-          )}
-
           {/* Footer tổng tiền & Buttons */}
           <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-3 shrink-0">
             <div>
@@ -700,8 +537,7 @@ export function RenewPackageModal({ isOpen, onClose, member, onSuccess }: Props)
                 type="submit"
                 disabled={
                   submitting ||
-                  isCheckingPayment ||
-                  (paymentMethod === "wallet" && !isWalletSufficient)
+                  isCheckingPayment
                 }
                 className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold shadow-md shadow-emerald-500/20 transition-all cursor-pointer flex items-center gap-1.5"
               >
@@ -715,18 +551,6 @@ export function RenewPackageModal({ isOpen, onClose, member, onSuccess }: Props)
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                     <span>Đang kiểm tra biến động số dư...</span>
                   </>
-                ) : paymentMethod === "wallet" ? (
-                  !isWalletSufficient ? (
-                    <>
-                      <AlertCircle className="w-3.5 h-3.5" />
-                      <span>Số dư ví không đủ ({walletBalance.toLocaleString("vi-VN")} đ)</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Xác nhận trừ ví & Kích hoạt gói</span>
-                    </>
-                  )
                 ) : isPaid ? (
                   <>
                     <CheckCircle2 className="w-3.5 h-3.5" />

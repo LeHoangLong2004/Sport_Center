@@ -194,7 +194,8 @@ public static partial class ProductOrderEndpoints
         List<ProductOrderItemRequest> Items,
         string? PaymentMethod,
         string? FulfillmentMethod,
-        string? DeliveryLocation);
+        string? DeliveryLocation,
+        decimal? DiscountAmount = null);
 
     public sealed record UpdateFulfillmentRequest(string Status, string? DeliveryLocation);
 

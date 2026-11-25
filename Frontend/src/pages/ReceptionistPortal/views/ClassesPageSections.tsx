@@ -70,26 +70,34 @@ export function ClassesFilters(props: {
     shift,
     setShift,
   } = props;
+  const subjectNames = Array.from(
+    new Set(
+      sports
+        .map((sport) => String(sport?.name || "").trim())
+        .filter(Boolean)
+    )
+  ).sort((a, b) => a.localeCompare(b, "vi"));
+
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-6">
-      <div className="flex flex-col lg:flex-row gap-4 justify-between lg:items-center">
-        <div className="flex flex-wrap gap-2">
-          {["Tất cả lớp", ...sports.map((s) => s.name)].map((item) => (
-            <button
-              className={`px-4 py-2 rounded-full font-bold text-sm transition-all duration-200 ${
-                category === item
-                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/20"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
-              key={item}
-              onClick={() => setCategory(item)}
-              type="button"
-            >
-              {item}
-            </button>
-          ))}
-        </div>
-        <div className="relative w-full lg:w-64">
+      <div className="grid grid-cols-1 md:grid-cols-[minmax(220px,1fr)_minmax(220px,256px)] gap-4 items-end">
+        <label className="flex flex-col gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">
+          Bộ môn
+          <select
+            aria-label="Lọc lớp theo bộ môn"
+            value={category}
+            onChange={(event) => setCategory(event.target.value)}
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium normal-case tracking-normal text-slate-800 outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
+          >
+            <option value="Tất cả lớp">Tất cả lớp</option>
+            {subjectNames.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">
+          Huấn luyện viên
+          <div className="relative w-full">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg
               width="16"
@@ -113,7 +121,8 @@ export function ClassesFilters(props: {
             value={coachQuery}
             className="pl-10 pr-3 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all outline-none text-slate-800 bg-slate-50 focus:bg-white w-full text-sm font-medium"
           />
-        </div>
+          </div>
+        </label>
       </div>
 
       <div>

@@ -61,14 +61,15 @@ public static partial class ProductOrderEndpoints
             var changed = await ExecuteAsync(connection, transaction, """
                 UPDATE invoices
                 SET payment_status = 'completed',
-                    paid_at = NOW(),
+                    paid_at = COALESCE(paid_at, NOW()),
                     created_by = @actorId,
                     fulfillment_status = CASE
                         WHEN fulfillment_status = 'pending' THEN 'preparing'
                         ELSE fulfillment_status
                     END
                 WHERE id = @invoiceId
-                  AND payment_status = 'pending';
+                  AND (payment_status = 'pending'
+                       OR (payment_status = 'completed' AND fulfillment_status = 'pending'));
                 """, ("invoiceId", invoiceId), ("actorId", actorId.Value));
 
             if (changed == 0)
@@ -478,7 +479,8 @@ public static partial class ProductOrderEndpoints
             INNER JOIN products p ON p.id = ii.product_id
             INNER JOIN invoices i ON i.id = ii.invoice_id
             WHERE ii.invoice_id = @invoiceId
-              AND i.payment_status = 'pending';
+              AND (i.payment_status = 'pending'
+                   OR (i.payment_status = 'completed' AND i.fulfillment_status = 'pending'));
             """;
         AddParameter(command, "invoiceId", invoiceId);
 

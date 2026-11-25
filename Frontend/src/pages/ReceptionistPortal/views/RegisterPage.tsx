@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react"
-import { Crown, Check } from "lucide-react"
+import { Check, Clock3, Crown, QrCode } from "lucide-react"
 import { DateInput } from "../../../components/DateInput"
 import { PackageAPI, CatalogPackage } from "../../../services/packageApi"
 
@@ -12,6 +12,16 @@ type FormState = {
   identityNumber: string
   healthNote: string
   paymentMethod: string
+}
+
+type PendingQrPayment = {
+  orderId: string
+  qrUrl: string
+  amount: number
+  bankName: string
+  accountNumber: string
+  accountName: string
+  transferContent: string
 }
 
 const initialForm: FormState = {
@@ -33,6 +43,7 @@ export function RegisterPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState("")
+  const [pendingQrPayment, setPendingQrPayment] = useState<PendingQrPayment | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -62,6 +73,37 @@ export function RegisterPage() {
   const displayedPackages = membershipPackages
   const selectedPackage = packages.find((p) => p.id === selectedPlan)
   const selectedPrice = selectedPackage?.prices?.[1] ?? 0
+
+  useEffect(() => {
+    if (!pendingQrPayment) return
+
+    let cancelled = false
+    const checkPayment = async () => {
+      try {
+        const response = await fetch(`/api/payments/sepay-check/${encodeURIComponent(pendingQrPayment.orderId)}`, {
+          cache: "no-store",
+        })
+        if (!response.ok) return
+        const result = await response.json()
+        if (!cancelled && result.isPaid) {
+          setPendingQrPayment(null)
+          setSubmitted(true)
+          setForm(initialForm)
+          const defaultPkg = packages.find((pkg) => pkg.id === "membership-basic") || packages[0]
+          if (defaultPkg) setSelectedPlan(defaultPkg.id)
+        }
+      } catch {
+        // Giữ trạng thái chờ và tiếp tục kiểm tra ở lần kế tiếp.
+      }
+    }
+
+    void checkPayment()
+    const interval = window.setInterval(checkPayment, 2500)
+    return () => {
+      cancelled = true
+      window.clearInterval(interval)
+    }
+  }, [pendingQrPayment, packages])
 
   const updateField = (field: keyof FormState, value: string) => {
     setForm((current) => ({ ...current, [field]: value }))
@@ -126,12 +168,36 @@ export function RegisterPage() {
         throw new Error(subscriptionData?.message ?? "Tạo gói đăng ký thất bại.")
       }
 
+      if (selectedPrice > 0 && form.paymentMethod === "bank_transfer") {
+        const orderId = subscriptionData?.id
+        if (!orderId) {
+          throw new Error("Đã tạo đơn đăng ký nhưng không nhận được mã đơn để tạo QR. Vui lòng kiểm tra đơn trước khi thử lại.")
+        }
+
+        const qrResponse = await fetch(
+          `/api/payments/sepay-qr?orderId=${encodeURIComponent(orderId)}&amount=${encodeURIComponent(selectedPrice)}`
+        )
+        const qrData = await qrResponse.json().catch(() => null)
+        if (!qrResponse.ok || !qrData?.qrUrl) {
+          throw new Error(qrData?.message || `Đã tạo đơn đăng ký ${orderId}, nhưng chưa tạo được mã QR. Vui lòng kiểm tra đơn hàng.`)
+        }
+
+        setPendingQrPayment({
+          orderId,
+          qrUrl: qrData.qrUrl,
+          amount: selectedPrice,
+          bankName: qrData.bankCode || "Ngân hàng",
+          accountNumber: qrData.accountNumber || "",
+          accountName: qrData.accountName || "",
+          transferContent: qrData.transferContent || "",
+        })
+        return
+      }
+
       setSubmitted(true)
       setForm(initialForm)
-      const defaultPkg = packages.find((p) => p.id === "membership-basic") || packages[0]
-      if (defaultPkg) {
-        setSelectedPlan(defaultPkg.id)
-      }
+      const defaultPkg = packages.find((pkg) => pkg.id === "membership-basic") || packages[0]
+      if (defaultPkg) setSelectedPlan(defaultPkg.id)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Đăng ký thất bại.")
     } finally {
@@ -314,21 +380,47 @@ export function RegisterPage() {
               <select value={form.paymentMethod} onChange={(e) => updateField("paymentMethod", e.target.value)}>
                 <option value="counter">Tiền mặt tại quầy</option>
                 <option value="bank_transfer">Chuyển khoản ngân hàng (QR)</option>
-                <option value="wallet">Ví điện tử</option>
               </select>
             )}
           </Field>
 
           {error && <p className="text-[#dc2626] text-[14px]">{error}</p>}
-          {submitted && <p className="text-emerald-600 text-[14px]">Đã tạo tài khoản và kích hoạt gói đăng ký thành công!</p>}
+          {submitted && <p className="text-emerald-600 text-[14px]">Đăng ký hội viên thành công!</p>}
+          {pendingQrPayment && (
+            <div className="w-full rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-slate-700">
+              <div className="mb-3 flex items-center gap-2 font-bold text-emerald-800">
+                <QrCode className="h-5 w-5" />
+                Khách dùng ứng dụng ngân hàng để quét mã QR này
+              </div>
+              <div className="flex flex-col items-center gap-4 sm:flex-row">
+                <img src={pendingQrPayment.qrUrl} alt="Mã QR thanh toán" className="h-48 w-48 rounded-lg border border-slate-200 bg-white object-contain p-2" />
+                <div className="space-y-2 text-sm">
+                  <p><strong>Số tiền:</strong> {pendingQrPayment.amount.toLocaleString("vi-VN")} đ</p>
+                  <p><strong>Ngân hàng:</strong> {pendingQrPayment.bankName}</p>
+                  <p><strong>Số tài khoản:</strong> {pendingQrPayment.accountNumber}</p>
+                  <p><strong>Chủ tài khoản:</strong> {pendingQrPayment.accountName}</p>
+                  <p><strong>Nội dung chuyển khoản:</strong> <span className="font-mono">{pendingQrPayment.transferContent}</span></p>
+                  <p className="flex items-center gap-1.5 pt-1 font-medium text-amber-700"><Clock3 className="h-4 w-4" /> Đang chờ ngân hàng xác nhận thanh toán…</p>
+                </div>
+              </div>
+            </div>
+          )}
           <button
             type="button"
-            disabled={submitting || loadingPackages || packages.length === 0}
+            disabled={submitting || loadingPackages || packages.length === 0 || !!pendingQrPayment}
             onClick={submitRegistration}
             className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 flex items-center justify-center p-[14px] rounded-[8px] w-full transition-all cursor-pointer shadow-sm"
           >
             <span className="font-bold text-[15px] text-white">
-              {submitting ? "ĐANG XỬ LÝ..." : submitted ? "ĐÃ ĐĂNG KÝ THÀNH CÔNG" : "HOÀN TẤT ĐĂNG KÝ HỘI VIÊN"}
+              {submitting
+                ? "ĐANG XỬ LÝ..."
+                : pendingQrPayment
+                ? "ĐANG CHỜ THANH TOÁN QR"
+                : submitted
+                ? "ĐÃ ĐĂNG KÝ THÀNH CÔNG"
+                : form.paymentMethod === "bank_transfer" && selectedPrice > 0
+                ? "TẠO ĐƠN VÀ HIỂN THỊ QR"
+                : "HOÀN TẤT ĐĂNG KÝ HỘI VIÊN"}
             </span>
           </button>
         </div>
