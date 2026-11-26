@@ -157,7 +157,7 @@ public static partial class ClassEndpoints
                     var effectiveDate = DateOnly.FromDateTime(CenterTime.ToLocal(DateTime.UtcNow));
                     var sql = @"
                         SELECT c.id, c.class_name, c.schedule_time, c.duration_minutes, c.capacity,
-                               c.status, c.approval_status, c.rejection_reason, c.sport_id, s.name AS sport_name, f.name AS facility_name,
+                               c.status, c.approval_status, c.rejection_reason AS "RejectionReason", c.sport_id, s.name AS sport_name, f.name AS facility_name,
                                CASE
                                    WHEN EXISTS (
                                        SELECT 1
@@ -206,7 +206,7 @@ public static partial class ClassEndpoints
                         facilityName = p.facility_name ?? "Phòng tập",
                         price = p.price,
                         status = p.approval_status ?? (p.status ? "approved" : "cancelled"),
-                        rejectionReason = p.rejection_reason,
+                        rejectionReason = p.RejectionReason,
                         totalSessions = p.total_sessions ?? 1,
                         sessionNumber = p.session_number ?? 1
                     }));
@@ -811,7 +811,7 @@ public static partial class ClassEndpoints
         public int capacity { get; set; }
         public bool status { get; set; }
         public string? approval_status { get; set; }
-        public string? rejection_reason { get; set; }
+        public string? RejectionReason { get; set; }
         public Guid sport_id { get; set; }
         public string? sport_name { get; set; }
         public string? facility_name { get; set; }

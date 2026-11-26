@@ -159,9 +159,9 @@ export function CoachClassProposalsList({
                   Ghi chú: {item.notes}
                 </div>
               )}
-              {rawStatus === "rejected" && item.rejectionReason && (
+              {rawStatus === "rejected" && (
                 <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-300">
-                  <span className="font-semibold">Lý do từ chối:</span> {item.rejectionReason}
+                  <span className="font-semibold">Lý do từ chối:</span> {item.rejectionReason || "Chưa có lý do được lưu cho lần từ chối này."}
                 </div>
               )}
             </div>
