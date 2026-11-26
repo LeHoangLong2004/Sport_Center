@@ -554,7 +554,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                           }`}
                         >
                           {isPaid
-                            ? `Tài khoản đã ghi nhận ${classPrice.toLocaleString("vi-VN")} đ. Hệ thống đang tự động kích hoạt đặt chỗ...`
+                            ? `Ngân hàng đã xác nhận ${classPrice.toLocaleString("vi-VN")} đ. Hệ thống đang hoàn tất đăng ký lớp...`
                             : "Hệ thống tự động quét biến động số dư liên tục mỗi 2 giây. Bạn chỉ cần quét mã chuyển tiền, hệ thống sẽ tự cập nhật!"}
                         </div>
                       </div>
@@ -666,7 +666,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                 </button>
                 <button
                   type="button"
-                  disabled={isBusy || isPaid || !paymentHold.ready || !!conflictingSession}
+                  disabled={isBusy || (isPaid && !paymentError) || !paymentHold.ready || !!conflictingSession}
                   onClick={handleCheckPayment}
                   className={`px-5 py-2.5 font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 ${
                     isPaid
@@ -674,10 +674,15 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
                       : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 active:scale-95 disabled:opacity-50 cursor-pointer"
                   }`}
                 >
-                  {isPaid ? (
+                  {isPaid && !paymentError ? (
                     <>
                       <CheckCircle2 className="w-4 h-4" />
                       <span>✓ Đã nhận thanh toán • Đang đặt chỗ...</span>
+                    </>
+                  ) : paymentError ? (
+                    <>
+                      <RefreshCw className="w-4 h-4" />
+                      <span>Thử hoàn tất đặt chỗ lại</span>
                     </>
                   ) : isCheckingPayment || isProcessingPayment ? (
                     <>

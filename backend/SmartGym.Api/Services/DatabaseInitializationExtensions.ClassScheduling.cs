@@ -31,6 +31,11 @@ public static partial class DatabaseInitializationExtensions
                 CREATE INDEX IF NOT EXISTS idx_class_booking_payment_holds_active
                     ON class_booking_payment_holds(user_id, class_id, expires_at)
                     WHERE status = 'active';
+                ALTER TABLE class_booking_payment_holds
+                    ADD COLUMN IF NOT EXISTS sepay_transaction_id VARCHAR(100);
+                CREATE UNIQUE INDEX IF NOT EXISTS ux_class_booking_payment_holds_sepay_transaction
+                    ON class_booking_payment_holds(sepay_transaction_id)
+                    WHERE sepay_transaction_id IS NOT NULL;
                 """);
             logger.LogInformation("Class booking payment-hold schema is ready.");
         }
