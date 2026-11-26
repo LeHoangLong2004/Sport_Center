@@ -19,7 +19,7 @@ interface SupportTicketsProps {
 
 export const SupportTickets: React.FC<SupportTicketsProps> = ({ tickets, onCreateTicket }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [ticketCategory, setTicketCategory] = useState("Tư vấn dịch vụ & Gia hạn gói");
+  const [ticketCategory, setTicketCategory] = useState("Tư vấn dịch vụ");
   const [ticketSubject, setTicketSubject] = useState("");
   const [ticketContent, setTicketContent] = useState("");
 
@@ -75,7 +75,7 @@ export const SupportTickets: React.FC<SupportTicketsProps> = ({ tickets, onCreat
           <MessageSquare className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
           <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300">Chưa có yêu cầu hỗ trợ nào</h4>
           <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-            Nếu bạn cần hỗ trợ về hợp đồng, chuyển nhượng gói, đổi huấn luyện viên hoặc báo cáo sự cố cơ sở vật chất, hãy bấm "Gửi yêu cầu mới".
+            Nếu bạn cần tư vấn dịch vụ, hỗ trợ thanh toán, hoặc báo cáo sự cố cơ sở vật chất, hãy bấm "Gửi yêu cầu mới".
           </p>
         </div>
       ) : (
@@ -153,12 +153,12 @@ export const SupportTickets: React.FC<SupportTicketsProps> = ({ tickets, onCreat
                     required
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-medium cursor-pointer"
                   >
-                    <option value="Tư vấn dịch vụ & Gia hạn gói">📋 Tư vấn dịch vụ & Gia hạn gói tập</option>
-                    <option value="Thắc mắc Lịch tập & Đổi Huấn luyện viên">🏋️ Đổi Huấn luyện viên (PT) & Lịch tập</option>
-                    <option value="Thanh toán, Hóa đơn & Đối soát">💳 Thanh toán, Hóa đơn & Nạp ví</option>
-                    <option value="Góp ý Cơ sở vật chất & Thiết bị">🛠️ Phản ánh Cơ sở vật chất & Thiết bị</option>
-                    <option value="Hỗ trợ kỹ thuật ứng dụng">📱 Hỗ trợ kỹ thuật tài khoản & Ứng dụng</option>
-                    <option value="Yêu cầu hỗ trợ khác">❓ Yêu cầu hỗ trợ khác</option>
+                    <option value="Tư vấn dịch vụ">Tư vấn dịch vụ</option>
+                    <option value="Đặt lịch hẹn với HLV">Đặt lịch hẹn với HLV</option>
+                    <option value="Thanh toán, Hóa đơn & Đối soát">Thanh toán, Hóa đơn & Nạp ví</option>
+                    <option value="Góp ý Cơ sở vật chất & Thiết bị">Phản ánh Cơ sở vật chất & Thiết bị</option>
+                    <option value="Hỗ trợ kỹ thuật ứng dụng">Hỗ trợ kỹ thuật tài khoản & Ứng dụng</option>
+                    <option value="Yêu cầu hỗ trợ khác">Yêu cầu hỗ trợ khác</option>
                   </select>
                 </div>
 

@@ -12,12 +12,15 @@ public interface IGroupClassRepository
     Task<ClassDetailResponse?> GetClassDetailByIdAsync(Guid id);
     Task<IEnumerable<GroupClass>> GetClassesByCoachAndDateAsync(Guid coachId, DateTime date);
     Task<IEnumerable<GroupClass>> GetClassesByFacilityAndDateAsync(Guid facilityId, DateTime date);
+    Task<IEnumerable<GroupClass>> GetClassesForScheduleConflictsAsync(Guid coachId, Guid facilityId, DateTime from, DateTime to);
+    Task<IReadOnlyCollection<(DateTime StartTime, DateTime EndTime)>> GetCoachAvailabilitySlotsInRangeAsync(Guid coachId, DateTime from, DateTime to);
     Task<FacilitySchedulingSettings?> GetFacilitySchedulingSettingsAsync(Guid facilityId);
     Task<IEnumerable<GroupClass>> GetCourseSessionsAsync(Guid classId);
     Task<bool> HasCoachAvailabilityConflictAsync(Guid coachId, DateTime startTime, DateTime endTime);
     Task<IEnumerable<ClassResponse>> GetAllClassesAsync();
     Task<IEnumerable<ClassResponse>> GetAvailableClassesAsync();
     Task<GroupClass> AddAsync(GroupClass groupClass);
+    Task AddRangeAsync(IReadOnlyCollection<GroupClass> groupClasses);
     Task UpdateAsync(GroupClass groupClass);
     Task<(bool IsSuccess, string? ErrorMessage)> LockCoursePriceAsync(Guid rootClassId, bool removeCourseWhenPriceMissing = false);
 

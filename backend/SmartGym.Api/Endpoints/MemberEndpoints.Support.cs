@@ -110,7 +110,7 @@ namespace SmartGym.Api.Endpoints
                     return Results.Unauthorized();
                 }
 
-                var category = body.TryGetProperty("category", out var c) ? c.GetString() : "Tư vấn dịch vụ & Gia hạn gói";
+                var category = body.TryGetProperty("category", out var c) ? c.GetString() : "Tư vấn dịch vụ";
                 var subject = body.TryGetProperty("subject", out var s) ? s.GetString() : "Yêu cầu từ hội viên";
                 var content = body.TryGetProperty("content", out var ct) ? ct.GetString() : "";
 
@@ -120,7 +120,7 @@ namespace SmartGym.Api.Endpoints
                 {
                     await db.Database.ExecuteSqlInterpolatedAsync($@"
                         INSERT INTO support_tickets (id, user_id, category, subject, content, status, created_at)
-                        VALUES ({newId}, {memberGuid.Value}, {category ?? "Tư vấn dịch vụ & Gia hạn gói"}, {subject ?? "Yêu cầu từ hội viên"}, {content ?? ""}, 'open', now());
+                        VALUES ({newId}, {memberGuid.Value}, {category ?? "Tư vấn dịch vụ"}, {subject ?? "Yêu cầu từ hội viên"}, {content ?? ""}, 'open', now());
                     ");
 
                     var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == memberGuid.Value);
@@ -131,7 +131,7 @@ namespace SmartGym.Api.Endpoints
                         userId = memberGuid.Value.ToString(),
                         memberName = user?.FullName ?? "Hội viên",
                         memberPhone = user?.PhoneNumber ?? "",
-                        category = category ?? "Tư vấn dịch vụ & Gia hạn gói",
+                        category = category ?? "Tư vấn dịch vụ",
                         subject = subject ?? "Yêu cầu từ hội viên",
                         content = content ?? "",
                         status = "open",

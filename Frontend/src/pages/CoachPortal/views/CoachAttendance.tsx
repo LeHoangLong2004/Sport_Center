@@ -64,6 +64,7 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
     isFinalized,
     isDraft,
     isExpired24h,
+    isNotStarted,
     deadlineInfo,
     isLocked,
     isEditingThisSession,
@@ -165,6 +166,7 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
       <AttendanceLockAlertBanner
         session={session}
         isExpired24h={isExpired24h}
+        isNotStarted={isNotStarted}
         isLocked={isLocked}
         isEditingThisSession={isEditingThisSession}
         deadlineInfo={deadlineInfo}
@@ -183,6 +185,7 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
           isFinalized={isFinalized}
           isDraft={isDraft}
           isExpired24h={isExpired24h}
+          isNotStarted={isNotStarted}
           deadlineInfo={deadlineInfo}
           enrolledCount={members.length}
           stats={stats}
@@ -324,6 +327,11 @@ export default function CoachAttendance({ initialSessionId, navigateTo }: Props)
                 <button type="button" disabled className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-400 bg-slate-100 dark:bg-slate-800 dark:text-slate-500 border border-slate-200 dark:border-slate-700 rounded-xl cursor-not-allowed">
                   <Lock className="w-4 h-4" />
                   <span>Đã khóa (Quá 24 giờ)</span>
+                </button>
+              ) : isNotStarted ? (
+                <button type="button" disabled className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-400 bg-slate-100 dark:bg-slate-800 dark:text-slate-500 border border-slate-200 dark:border-slate-700 rounded-xl cursor-not-allowed">
+                  <Lock className="w-4 h-4" />
+                  <span>Chưa đến giờ điểm danh</span>
                 </button>
               ) : (
                 <button

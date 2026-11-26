@@ -17,7 +17,8 @@ export interface AttendanceDeadlineInfo {
 }
 
 /**
- * Phân tích ngày (YYYY-MM-DD) và giờ bắt đầu (HH:mm) của buổi học thành đối tượng Date.
+ * Phân tích ngày (YYYY-MM-DD) và giờ bắt đầu (HH:mm) theo múi giờ trung tâm (Asia/Bangkok)
+ * thành một thời điểm tuyệt đối để việc khóa không phụ thuộc múi giờ của trình duyệt.
  */
 export function getSessionStartDateTime(dateStr?: string, timeStr?: string): Date | null {
   if (!dateStr) return null;
@@ -36,8 +37,28 @@ export function getSessionStartDateTime(dateStr?: string, timeStr?: string): Dat
     if (timeParts.length > 1 && !isNaN(timeParts[1])) minutes = timeParts[1];
   }
 
-  const start = new Date(year, month - 1, day, hours, minutes, 0, 0);
+  const start = new Date(Date.UTC(year, month - 1, day, hours - 7, minutes, 0, 0));
   return isNaN(start.getTime()) ? null : start;
+}
+
+/** True until the scheduled local start time of this session. */
+export function isAttendanceNotStarted(dateStr?: string, timeStr?: string): boolean {
+  const start = getSessionStartDateTime(dateStr, timeStr);
+  // Fail closed if the schedule is missing or malformed: do not allow marking
+  // attendance when the session start time cannot be verified.
+  return !start || Date.now() < start.getTime();
+}
+
+function formatCenterDateTime(value: Date): string {
+  return new Intl.DateTimeFormat("vi-VN", {
+    timeZone: "Asia/Bangkok",
+    hour: "2-digit",
+    minute: "2-digit",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hourCycle: "h23",
+  }).format(value).replace(",", "");
 }
 
 /**
@@ -73,13 +94,8 @@ export function getAttendanceLockDeadlineInfo(dateStr?: string, timeStr?: string
   const diffMs = deadline.getTime() - now;
   const isLocked = diffMs <= 0;
 
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const formattedStart = `${pad(start.getHours())}:${pad(start.getMinutes())} ngày ${pad(start.getDate())}/${pad(
-    start.getMonth() + 1
-  )}/${start.getFullYear()}`;
-  const formattedDeadline = `${pad(deadline.getHours())}:${pad(deadline.getMinutes())} ngày ${pad(
-    deadline.getDate()
-  )}/${pad(deadline.getMonth() + 1)}/${deadline.getFullYear()}`;
+  const formattedStart = formatCenterDateTime(start);
+  const formattedDeadline = formatCenterDateTime(deadline);
 
   let remainingText = "";
   if (!isLocked) {

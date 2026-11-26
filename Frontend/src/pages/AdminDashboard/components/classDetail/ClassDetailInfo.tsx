@@ -35,6 +35,10 @@ export function ClassDetailInfo({ classDetail, isPendingProposal }: ClassDetailI
     .sort((left, right) => weekdayOrder.indexOf(left) - weekdayOrder.indexOf(right));
   const weeks = weekdays.length > 0 ? Math.ceil(totalSessions / weekdays.length) : null;
   const isRecurring = totalSessions > 1 || sessions.length > 1;
+  const lastSession = sessions[sessions.length - 1];
+  const courseEnd = lastSession
+    ? new Date(parseScheduleTime(lastSession.scheduleTime).getTime() + classDetail.durationMinutes * 60_000)
+    : new Date(scheduleDate.getTime() + classDetail.durationMinutes * 60_000);
 
   return (
     <>
@@ -72,14 +76,23 @@ export function ClassDetailInfo({ classDetail, isPendingProposal }: ClassDetailI
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-xs flex flex-col justify-between">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Thời gian</span>
-            <p className="text-xs font-bold text-slate-800 mt-1 leading-snug">
-              {formatCenterDate(scheduleDate)}
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              {isRecurring ? 'Thời gian khóa học' : 'Thời gian'}
+            </span>
+            <p className="text-[11px] font-bold text-slate-800 mt-1 leading-snug">
+              {isRecurring
+                ? `Bắt đầu: ${formatCenterDate(scheduleDate)}`
+                : formatCenterDate(scheduleDate)}
             </p>
+            {isRecurring && (
+              <p className="text-[11px] font-bold text-slate-800 mt-1 leading-snug">
+                Kết thúc: {formatCenterDate(courseEnd)}
+              </p>
+            )}
           </div>
-          <p className="text-[11px] text-slate-500 mt-1">
+          {!isRecurring && <p className="text-[11px] text-slate-500 mt-1">
             {formatCenterTime(scheduleDate)} ({classDetail.durationMinutes}p)
-          </p>
+          </p>}
         </div>
 
         <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-xs flex flex-col justify-between">
@@ -152,11 +165,6 @@ export function ClassDetailInfo({ classDetail, isPendingProposal }: ClassDetailI
               </p>
             </div>
           </div>
-          {sessions.length > 0 && (
-            <p className="mt-3 text-xs text-slate-600">
-              Từ {formatCenterDate(parseScheduleTime(sessions[0].scheduleTime))} đến {formatCenterDate(parseScheduleTime(sessions[sessions.length - 1].scheduleTime))}
-            </p>
-          )}
         </div>
       )}
     </>

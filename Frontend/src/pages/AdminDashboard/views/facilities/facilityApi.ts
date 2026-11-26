@@ -97,6 +97,28 @@ export async function saveSportApi(name: string, imageUrl: string, editingId?: s
   return res.json();
 }
 
+export async function fetchSportPriceApi(sportId: string): Promise<number | null> {
+  const token = getAuthToken();
+  const response = await fetch(`/api/sports/${sportId}/pricing`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(data?.message || 'Không thể tải giá bộ môn.');
+  return typeof data?.pricePerSession === 'number' ? data.pricePerSession : null;
+}
+
+export async function saveSportPriceApi(sportId: string, pricePerSession: number): Promise<void> {
+  const token = getAuthToken();
+  if (!token) throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+  const response = await fetch(`/api/sports/${sportId}/pricing`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ pricePerSession }),
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(data?.message || 'Không thể lưu giá bộ môn.');
+}
+
 /**
  * Thêm mới hoặc cập nhật phòng tập
  */
