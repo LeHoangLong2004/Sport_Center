@@ -9,7 +9,7 @@ interface ClassDetailModalProps {
   classId: string;
   onClose: () => void;
   onEdit: (data: any) => void;
-  onApproval?: (action: 'approve' | 'reject') => Promise<boolean>;
+  onApproval?: (action: 'approve' | 'reject', reason?: string) => Promise<boolean>;
 }
 
 export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: ClassDetailModalProps) {
@@ -25,6 +25,8 @@ export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: Class
   const [showConfirmRestore, setShowConfirmRestore] = useState(false);
   const [notification, setNotification] = useState<ClassNotification | null>(null);
   const [showManagerAdjustment, setShowManagerAdjustment] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
 
   // Lock background UI scrolling while modal is open, and restore when closed
   useEffect(() => {
@@ -58,12 +60,15 @@ export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: Class
     };
   }, []);
 
-  const handleApproval = async (action: 'approve' | 'reject') => {
+  const handleApproval = async (action: 'approve' | 'reject', reason?: string) => {
     if (!onApproval) return;
     setIsApproving(true);
-    const success = await onApproval(action);
+    const success = await onApproval(action, reason);
     setIsApproving(false);
-    if (success) onClose();
+    if (success) {
+      setShowRejectDialog(false);
+      onClose();
+    }
   };
 
   useEffect(() => {
@@ -243,7 +248,7 @@ export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: Class
           <div className="flex shrink-0 items-center justify-end gap-2.5 border-t border-slate-100 bg-slate-50/80 px-6 py-3.5">
             <button
               type="button"
-              onClick={() => void handleApproval('reject')}
+              onClick={() => setShowRejectDialog(true)}
               disabled={isApproving}
               className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-rose-200 bg-white px-4 py-2 text-xs font-bold text-rose-600 shadow-xs transition hover:bg-rose-50 hover:border-rose-300 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
             >
@@ -317,6 +322,30 @@ export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: Class
                 ? (isRestoring ? 'Đang xử lý...' : 'Khôi phục lớp học')
                 : (isCancelling ? 'Đang xử lý...' : 'Hủy buổi này')}
             </button>
+          </div>
+        )}
+
+        {showRejectDialog && (
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-950/40 p-4" onClick={(event) => event.stopPropagation()}>
+            <div role="dialog" aria-modal="true" aria-labelledby="reject-proposal-title" className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+              <h3 id="reject-proposal-title" className="text-lg font-bold text-slate-900">Từ chối đề xuất lớp học</h3>
+              <p className="mt-1 text-sm text-slate-500">Cho HLV biết lý do để họ có thể điều chỉnh đề xuất.</p>
+              <label htmlFor="proposal-rejection-reason" className="mt-4 block text-sm font-semibold text-slate-700">Lý do từ chối <span className="text-rose-500">*</span></label>
+              <textarea
+                id="proposal-rejection-reason"
+                autoFocus
+                required
+                maxLength={1000}
+                value={rejectionReason}
+                onChange={(event) => setRejectionReason(event.target.value)}
+                placeholder="Ví dụ: Phòng tập đã kín lịch vào khung giờ này."
+                className="mt-2 min-h-28 w-full resize-y rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+              />
+              <div className="mt-5 flex justify-end gap-2">
+                <button type="button" onClick={() => setShowRejectDialog(false)} disabled={isApproving} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50">Hủy</button>
+                <button type="button" onClick={() => void handleApproval('reject', rejectionReason.trim())} disabled={isApproving || !rejectionReason.trim()} className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50">{isApproving ? 'Đang xử lý...' : 'Xác nhận từ chối'}</button>
+              </div>
+            </div>
           </div>
         )}
 

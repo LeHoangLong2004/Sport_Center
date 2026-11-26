@@ -47,6 +47,15 @@ public sealed partial class ClassService
         var isRecurring = request.DaysOfWeek != null && request.DaysOfWeek.Count > 0;
         var weeks = Math.Max(1, request.Weeks.GetValueOrDefault(10));
         var totalSessions = Math.Max(1, request.TotalSessions.GetValueOrDefault(isRecurring ? request.DaysOfWeek!.Count * weeks : 1));
+
+        var targetDays = isRecurring
+            ? request.DaysOfWeek!.Select(day => day % 7).ToHashSet()
+            : null;
+        if (targetDays != null && !targetDays.Contains((int)CenterTime.ToLocal(scheduleTimeUtc).DayOfWeek))
+        {
+            return (false, "Ngày khai giảng phải trùng với một trong các thứ đã chọn để là Buổi 1. Hãy chỉnh ngày khai giảng hoặc các thứ học.");
+        }
+
         var facilitySettings = await _classRepository.GetFacilitySchedulingSettingsAsync(request.FacilityId);
         if (facilitySettings is null)
             return (false, "Không tìm thấy cấu hình phòng tập.");
@@ -55,7 +64,6 @@ public sealed partial class ClassService
         var sessionTimes = new List<DateTime>();
         if (isRecurring)
         {
-            var targetDays = request.DaysOfWeek!.Select(d => d % 7).ToHashSet();
             var curDate = scheduleTimeUtc.Date;
             var timeOfDay = scheduleTimeUtc.TimeOfDay;
             var maxLoopDays = 180;
@@ -64,9 +72,7 @@ public sealed partial class ClassService
             while (sessionTimes.Count < totalSessions && loopCount < maxLoopDays)
             {
                 var dayNum = (int)curDate.DayOfWeek;
-                var matches = targetDays.Contains(dayNum) 
-                    || (dayNum == 0 && targetDays.Contains(7)) 
-                    || targetDays.Contains(dayNum == 0 ? 7 : dayNum);
+                var matches = targetDays!.Contains(dayNum);
 
                 if (matches)
                 {

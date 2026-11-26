@@ -59,6 +59,8 @@ public static partial class DatabaseInitializationExtensions
                 ALTER TABLE classes
                     ADD COLUMN IF NOT EXISTS approval_status VARCHAR(20) NOT NULL DEFAULT 'approved';
                 ALTER TABLE classes
+                    ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
+                ALTER TABLE classes
                     ADD COLUMN IF NOT EXISTS parent_id UUID REFERENCES classes(id) ON DELETE CASCADE;
                 ALTER TABLE classes
                     ADD COLUMN IF NOT EXISTS session_number INTEGER NOT NULL DEFAULT 1;

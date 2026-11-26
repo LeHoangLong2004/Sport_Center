@@ -204,8 +204,8 @@ public sealed partial class ClassService
         return await _classRepository.ApproveClassAsync(classId);
     }
 
-    public async Task<(bool IsSuccess, string? ErrorMessage)> RejectClassAsync(Guid classId)
+    public async Task<(bool IsSuccess, string? ErrorMessage)> RejectClassAsync(Guid classId, string reason)
     {
-        return await _classRepository.RejectClassAsync(classId);
+        return await _classRepository.RejectClassAsync(classId, reason);
     }
 }
