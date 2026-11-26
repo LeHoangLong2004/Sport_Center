@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   X,
@@ -56,6 +56,9 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
   }, [classToBook, mySessions, memberScheduleStatus]);
 
   const [membership, setMembership] = useState<MembershipStatus | null>(null);
+  const membershipFromHold = useRef(false);
+  const holdRequestGeneration = useRef(0);
+  const [serverClassPrice, setServerClassPrice] = useState<number | null>(null);
   const [paymentHold, setPaymentHold] = useState<{ ready: boolean; loading: boolean; error: string | null; expiresAt: number | null }>({ ready: false, loading: true, error: null, expiresAt: null });
   // Tự động nhận diện hạng thành viên để tính ưu đãi đăng ký lớp
   useEffect(() => {
@@ -66,7 +69,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
     ]).then(([orders, catalog]) => {
       if (!isCancelled) {
         const mem = getMembershipStatus(orders, catalog);
-        setMembership(mem);
+        if (!membershipFromHold.current) setMembership(mem);
 
       }
     });
@@ -81,7 +84,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
 
   const discountAmount = Math.round(originalPrice * (discountPct / 100));
 
-  const classPrice = Math.max(0, originalPrice - discountAmount);
+  const classPrice = serverClassPrice ?? Math.max(0, originalPrice - discountAmount);
 
   // Generate unique attempt code per modal instance to guarantee uniqueness
   // A short numeric suffix can collide with a previous SePay transfer. Use a
@@ -99,6 +102,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
 
   useEffect(() => {
     let cancelled = false;
+    const requestGeneration = ++holdRequestGeneration.current;
     if (memberScheduleStatus === "loading") {
       setPaymentHold({ ready: false, loading: true, error: null, expiresAt: null });
       return () => { cancelled = true; };
@@ -111,21 +115,43 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
       setPaymentHold({ ready: false, loading: false, error: null, expiresAt: null });
       return () => { cancelled = true; };
     }
+    membershipFromHold.current = false;
+    setServerClassPrice(null);
     setPaymentHold({ ready: false, loading: true, error: null, expiresAt: null });
     MemberAPI.startClassPaymentHold(String(classToBook.id), generatedBookingMemo)
       .then((hold: any) => {
         if (cancelled) {
-          const holdMemo = hold?.paymentMemo || generatedBookingMemo;
-          void MemberAPI.releaseClassPaymentHold(String(classToBook.id), holdMemo).catch(() => undefined);
+          if (requestGeneration === holdRequestGeneration.current) {
+            const holdMemo = hold?.paymentMemo || generatedBookingMemo;
+            void MemberAPI.releaseClassPaymentHold(String(classToBook.id), holdMemo).catch(() => undefined);
+          }
           return;
         }
         if (hold?.paymentMemo && hold.paymentMemo !== bookingMemo) {
           setResumedMemo({ classId, memo: hold.paymentMemo });
         }
+        if (typeof hold?.amount === "number") setServerClassPrice(hold.amount);
+        if (typeof hold?.discountPctApplied === "number") {
+          membershipFromHold.current = true;
+          setMembership((previous) => ({
+            tier: hold.membershipTier || "basic",
+            tierRank: previous?.tierRank,
+            name: hold.membershipName || "Hội viên Cơ bản",
+            startDate: previous?.startDate,
+            endDate: previous?.endDate,
+            benefits: previous?.benefits ?? [],
+            groupDiscountPct: hold.discountPctApplied,
+            coachDiscountPct: previous?.coachDiscountPct ?? 0,
+            bookingAdvanceHours: previous?.bookingAdvanceHours ?? 0,
+            lockerTerms: previous?.lockerTerms ?? "",
+            pricePaid: previous?.pricePaid,
+            packageId: previous?.packageId,
+          }));
+        }
         setPaymentHold({ ready: true, loading: false, error: null, expiresAt: hold?.expiresAt ? new Date(hold.expiresAt).getTime() : null });
       })
       .catch((error: any) => {
-        if (!cancelled) setPaymentHold({ ready: false, loading: false, error: error?.message || "Không thể giữ chỗ. Vui lòng kiểm tra lại lịch học.", expiresAt: null });
+        if (!cancelled) setPaymentHold({ ready: false, loading: false, error: error?.message || "Không thể xác nhận lịch trống. Vui lòng kiểm tra lại lịch học.", expiresAt: null });
       });
     return () => { cancelled = true; };
   }, [classId, generatedBookingMemo, conflictingSession, memberScheduleStatus]);
@@ -145,12 +171,12 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
     if (!paymentHold.ready || !paymentHold.expiresAt) return;
     const delay = paymentHold.expiresAt - Date.now();
     if (delay <= 0) {
-      setPaymentHold({ ready: false, loading: false, error: "Lượt giữ chỗ đã hết hạn. Hãy đóng và mở lại để kiểm tra lịch trước khi thanh toán.", expiresAt: null });
+      setPaymentHold({ ready: false, loading: false, error: "Phiên thanh toán đã hết hạn. Hãy đóng và mở lại để kiểm tra lịch trước khi thanh toán.", expiresAt: null });
       void MemberAPI.releaseClassPaymentHold(String(classToBook.id), bookingMemo).catch(() => undefined);
       return;
     }
     const timer = window.setTimeout(() => {
-      setPaymentHold({ ready: false, loading: false, error: "Lượt giữ chỗ đã hết hạn. Hãy đóng và mở lại để kiểm tra lịch trước khi thanh toán.", expiresAt: null });
+      setPaymentHold({ ready: false, loading: false, error: "Phiên thanh toán đã hết hạn. Hãy đóng và mở lại để kiểm tra lịch trước khi thanh toán.", expiresAt: null });
       void MemberAPI.releaseClassPaymentHold(String(classToBook.id), bookingMemo).catch(() => undefined);
     }, delay);
     return () => window.clearTimeout(timer);
@@ -334,7 +360,7 @@ export const PayAndBookModal: React.FC<PayAndBookModalProps> = ({
               </div>
             )}
             {paymentHold.loading && !conflictingSession && (
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-slate-600 flex items-center gap-2"><LoaderCircle className="w-4 h-4 animate-spin" /> Đang kiểm tra lịch và giữ chỗ an toàn trước thanh toán…</div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-slate-600 flex items-center gap-2"><LoaderCircle className="w-4 h-4 animate-spin" /> Đang kiểm tra lịch trùng và chỗ trống trước thanh toán…</div>
             )}
             {/* Lớp & chi tiết hóa đơn kèm ưu đãi thành viên */}
             <BookingClassHeader 

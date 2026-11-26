@@ -159,9 +159,9 @@ export function CoachClassProposalsList({
                   Ghi chú: {item.notes}
                 </div>
               )}
-              {rawStatus === "rejected" && item.rejectionReason && (
-                <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-300">
-                  <span className="font-semibold">Lý do từ chối:</span> {item.rejectionReason}
+              {rawStatus === "rejected" && item.rejectionReason?.trim() && (
+                <div className="whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300">
+                  <span className="font-semibold">Lý do:</span> {item.rejectionReason}
                 </div>
               )}
             </div>

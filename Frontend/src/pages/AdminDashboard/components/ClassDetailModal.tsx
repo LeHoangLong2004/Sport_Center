@@ -343,7 +343,7 @@ export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: Class
               />
               <div className="mt-5 flex justify-end gap-2">
                 <button type="button" onClick={() => setShowRejectDialog(false)} disabled={isApproving} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50">Hủy</button>
-                <button type="button" onClick={() => void handleApproval('reject', rejectionReason.trim())} disabled={isApproving || !rejectionReason.trim()} className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50">{isApproving ? 'Đang xử lý...' : 'Xác nhận từ chối'}</button>
+                <button type="button" onClick={() => void handleApproval('reject', rejectionReason)} disabled={isApproving || !rejectionReason.trim()} className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50">{isApproving ? 'Đang xử lý...' : 'Xác nhận từ chối'}</button>
               </div>
             </div>
           </div>

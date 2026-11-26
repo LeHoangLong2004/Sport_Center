@@ -382,6 +382,20 @@ namespace SmartGym.Api.Endpoints
                         }
                         updateNote = "Coach thay thế đã xác nhận nhận lớp đã được Manager duyệt.";
                     }
+                    else if (string.Equals(req.Status, "waiting_substitute", StringComparison.OrdinalIgnoreCase)
+                        && req.SessionId != null)
+                    {
+                        var assigned = await db.Database.ExecuteSqlInterpolatedAsync($@"
+                            UPDATE classes SET coach_id = {coachId.Value}
+                            WHERE id = {req.SessionId.Value}
+                              AND coach_id = {req.CoachId}
+                              AND status = true
+                              AND schedule_time > now()");
+                        if (assigned == 0)
+                            return Results.Conflict(new { message = "Buổi học đã thay đổi hoặc đã bắt đầu, không thể xác nhận lời mời này." });
+
+                        updateNote = "HLV thay thế đã xác nhận; lịch dạy đã được cập nhật.";
+                    }
 
                     await db.Database.ExecuteSqlInterpolatedAsync($@"
                         UPDATE coach_schedule_requests
@@ -396,9 +410,21 @@ namespace SmartGym.Api.Endpoints
                         "schedule_request",
                         id);
 
+                    if (string.Equals(req.Status, "waiting_substitute", StringComparison.OrdinalIgnoreCase)
+                        && req.SessionId != null)
+                    {
+                        await classRepository.NotifyAffectedMembersAsync(
+                            req.SessionId.Value,
+                            "HLV dạy thay đã xác nhận",
+                            $"{req.SubstituteCoachName ?? "HLV được phân công"} đã xác nhận dạy thay lớp {req.ClassName}.");
+                    }
+
+                    var managerMessage = string.Equals(req.Status, "waiting_substitute", StringComparison.OrdinalIgnoreCase)
+                        ? $"{req.SubstituteCoachName ?? "HLV"} đã đồng ý nhận dạy thay lớp {req.ClassName}. Lịch dạy đã được cập nhật."
+                        : $"{req.SubstituteCoachName ?? "HLV"} đã đồng ý nhận dạy thay lớp {req.ClassName}. Đang chờ quản lý phê duyệt cuối cùng.";
                     await classRepository.NotifyManagersAsync(
                         "HLV đã đồng ý dạy thay",
-                        $"{req.SubstituteCoachName ?? "HLV"} đã đồng ý nhận dạy thay lớp {req.ClassName}. Đang chờ quản lý phê duyệt cuối cùng.",
+                        managerMessage,
                         "schedule_request",
                         id);
 

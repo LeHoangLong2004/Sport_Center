@@ -148,6 +148,7 @@ export const MemberAPI = {
         coachNote?: string;
         paymentMethod?: "qr" | "counter" | "wallet" | "package";
         amount?: number;
+        baseAmount?: number;
     }) => {
         return fetchApi('/member/bookings', {
             method: 'POST',

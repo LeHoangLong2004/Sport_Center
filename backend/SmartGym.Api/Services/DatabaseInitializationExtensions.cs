@@ -59,8 +59,6 @@ public static partial class DatabaseInitializationExtensions
                 ALTER TABLE classes
                     ADD COLUMN IF NOT EXISTS approval_status VARCHAR(20) NOT NULL DEFAULT 'approved';
                 ALTER TABLE classes
-                    ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
-                ALTER TABLE classes
                     ADD COLUMN IF NOT EXISTS parent_id UUID REFERENCES classes(id) ON DELETE CASCADE;
                 ALTER TABLE classes
                     ADD COLUMN IF NOT EXISTS session_number INTEGER NOT NULL DEFAULT 1;
@@ -91,6 +89,19 @@ public static partial class DatabaseInitializationExtensions
         catch (Exception ex)
         {
             Console.WriteLine($"Class approval schema sync error: {ex.Message}");
+        }
+
+        // Persist manager feedback for coach-submitted class proposals.
+        try
+        {
+            db.Database.ExecuteSqlRaw(
+                "ALTER TABLE classes ADD COLUMN IF NOT EXISTS rejection_reason TEXT;"
+            );
+            app.Logger.LogInformation("classes rejection reason column is ready.");
+        }
+        catch (Exception ex)
+        {
+            app.Logger.LogError(ex, "Could not ensure classes.rejection_reason exists.");
         }
 
         // Sync the homework table with the database-backed workout-plan flow.

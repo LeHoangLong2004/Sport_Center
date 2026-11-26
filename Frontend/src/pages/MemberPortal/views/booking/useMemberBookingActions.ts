@@ -359,7 +359,7 @@ export function useMemberBookingActions({
 
   const handleConfirmPtBooking = async (
     event: React.FormEvent,
-    paymentData?: { paymentMethod?: "qr" | "counter" | "wallet" | "package"; amount?: number }
+    paymentData?: { paymentMethod?: "qr" | "counter" | "wallet" | "package"; amount?: number; baseAmount?: number }
   ) => {
     event.preventDefault();
     if (!bookingPtSlot) return;
@@ -384,6 +384,7 @@ export function useMemberBookingActions({
         coachNote: ptNote,
         paymentMethod: method,
         amount: amount,
+        baseAmount: paymentData?.baseAmount,
       });
 
       if (method === "wallet" && amount > 0) {

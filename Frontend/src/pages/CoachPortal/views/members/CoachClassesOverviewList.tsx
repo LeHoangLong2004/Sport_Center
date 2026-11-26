@@ -2,16 +2,11 @@ import { useState, useMemo } from "react";
 import {
   Calendar,
   Clock,
-  MapPin,
   Users,
   Search,
-  CheckCircle2,
-  AlertCircle,
   Dumbbell,
   ArrowRight,
-  Sparkles,
   ShieldCheck,
-  Filter,
 } from "lucide-react";
 import type { CoachClassOverview, MockMember } from "../../services/api";
 
@@ -247,7 +242,7 @@ export default function CoachClassesOverviewList({
         </div>
       </div>
 
-      {/* 4. Classes Cards Grid */}
+      {/* 4. Classes List */}
       {isLoading ? (
         <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-3">
           <div className="size-8 border-3 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
@@ -279,7 +274,13 @@ export default function CoachClassesOverviewList({
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
+          <div className="hidden grid-cols-[minmax(0,1.5fr)_minmax(190px,1fr)_minmax(150px,0.8fr)_210px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400 md:grid">
+            <span>Lớp học</span>
+            <span>Lịch học</span>
+            <span>Sĩ số</span>
+            <span className="text-right">Thao tác</span>
+          </div>
           {filteredClasses.map((cls) => {
             const isPt =
               cls.capacity === 1 ||
@@ -291,105 +292,52 @@ export default function CoachClassesOverviewList({
             return (
               <div
                 key={cls.id}
-                onClick={() => onSelectClass(cls.id)}
-                className="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 hover:border-emerald-500/50 p-5 shadow-xs hover:shadow-lg transition-all cursor-pointer flex flex-col justify-between relative overflow-hidden"
+                className="grid grid-cols-1 gap-3 border-b border-slate-100 px-4 py-4 transition-colors last:border-b-0 hover:bg-slate-50/70 dark:border-slate-800 dark:hover:bg-slate-800/40 md:grid-cols-[minmax(0,1.5fr)_minmax(190px,1fr)_minmax(150px,0.8fr)_210px] md:items-center md:gap-5 md:px-5"
               >
-                {/* Accent top stripe */}
-                <div
-                  className={`absolute top-0 left-0 right-0 h-1.5 ${
-                    isPt ? "bg-cyan-500" : "bg-emerald-500"
-                  }`}
-                />
-
-                <div className="space-y-3.5 pt-1">
-                  {/* Tags & Status */}
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex items-center gap-1.5">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                        <Dumbbell className="w-3 h-3" />
-                        {cls.sport || "Thể thao"}
-                      </span>
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${
-                          isPt
-                            ? "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300"
-                            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                        }`}
-                      >
-                        {isPt ? "Kèm 1-1 PT" : "Lớp nhóm"}
-                      </span>
-                    </div>
-
-                    <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                        cls.status
-                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
-                          : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                      }`}
-                    >
-                      <span
-                        className={`size-1.5 rounded-full ${cls.status ? "bg-emerald-500" : "bg-slate-400"}`}
-                      />
+                <div className="min-w-0">
+                  <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                      <Dumbbell className="h-3 w-3" />
+                      {cls.sport || "Thể thao"}
+                    </span>
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${isPt ? "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"}`}>
+                      {isPt ? "Kèm 1-1 PT" : "Lớp nhóm"}
+                    </span>
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${cls.status ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"}`}>
+                      <span className={`size-1.5 rounded-full ${cls.status ? "bg-emerald-500" : "bg-slate-400"}`} />
                       {cls.status ? "Đang mở lớp" : "Tạm ngưng"}
                     </span>
                   </div>
+                  <h3 className="truncate text-sm font-bold text-slate-900 dark:text-white" title={cls.className}>{cls.className}</h3>
+                </div>
 
-                  {/* Class Title */}
-                  <div>
-                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                      {cls.className}
-                    </h3>
+                <div className="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300">
+                  <Clock className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <span className="font-semibold">{cls.scheduleTime}</span>
+                  <span className="text-slate-400">· {cls.durationMinutes} phút</span>
+                </div>
+
+                <div>
+                  <div className="mb-1.5 flex items-center justify-between gap-2 text-xs">
+                    <span className="inline-flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
+                      <Users className="h-3.5 w-3.5 text-slate-400" />
+                      {cls.enrolledCount}/{cls.capacity} học viên
+                    </span>
+                    <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">{fillPct}%</span>
                   </div>
-
-                  {/* Meta Details */}
-                  <div className="space-y-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-50/70 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/60">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        {cls.scheduleTime} ({cls.durationMinutes} phút)
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
-                      <div className="flex items-center gap-1.5">
-                        <Users className="w-3.5 h-3.5 text-slate-400" />
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
-                          {cls.enrolledCount}/{cls.capacity} Học viên
-                        </span>
-                      </div>
-                      <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-                        {fillPct}% lấp đầy
-                      </span>
-                    </div>
-
-                    {/* Fill rate progress bar */}
-                    <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden mt-1">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          fillPct >= 90
-                            ? "bg-amber-500"
-                            : fillPct > 0
-                            ? "bg-emerald-500"
-                            : "bg-slate-400"
-                        }`}
-                        style={{ width: `${fillPct}%` }}
-                      />
-                    </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                    <div className={`h-full rounded-full transition-all ${fillPct >= 90 ? "bg-amber-500" : fillPct > 0 ? "bg-emerald-500" : "bg-slate-400"}`} style={{ width: `${fillPct}%` }} />
                   </div>
                 </div>
 
-                {/* Card Action Footer */}
-                <div className="pt-4 mt-2">
+                <div className="flex justify-start md:justify-end">
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectClass(cls.id);
-                    }}
-                    className="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 group-hover:scale-[1.02]"
+                    onClick={() => onSelectClass(cls.id)}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-emerald-700"
                   >
-                    <span>Xem danh sách học viên ({cls.enrolledCount})</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <span>Xem học viên ({cls.enrolledCount})</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </div>

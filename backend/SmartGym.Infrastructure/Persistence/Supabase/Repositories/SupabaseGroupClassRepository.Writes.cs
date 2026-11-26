@@ -234,7 +234,7 @@ public sealed partial class SupabaseGroupClassRepository
 
         var affected = await _dbContext.Database.ExecuteSqlRawAsync(
             "UPDATE classes SET approval_status = 'rejected', rejection_reason = {1} WHERE (id = {0} OR parent_id = {0}) AND approval_status = 'pending'",
-            classId, reason.Trim());
+            classId, reason);
 
         if (affected == 0)
             return (false, "Đề xuất lớp đã được xử lý trước đó.");
@@ -244,7 +244,7 @@ public sealed partial class SupabaseGroupClassRepository
             await NotifyCoachAsync(
                 classToReject.CoachId.Value,
                 "Đề xuất lớp học bị từ chối",
-                $"Đề xuất lớp {classToReject.ClassName} đã bị Manager từ chối. Lý do: {reason.Trim()}",
+                $"Đề xuất lớp {classToReject.ClassName} đã bị Manager từ chối. Lý do: {reason}",
                 "class",
                 classId);
         }

@@ -8,7 +8,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SmartGym.Application.Common;
 using SmartGym.Application.DTOs.Classes;
+using SmartGym.Application.Interfaces.Repositories;
 using SmartGym.Application.Services;
+using SmartGym.Api.Services;
 using SmartGym.Domain.Entities;
 using SmartGym.Domain.Enums;
 using SmartGym.Infrastructure.Persistence.EF;
@@ -46,10 +48,11 @@ public static partial class ClassEndpoints
         )
         .RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
 
-        // Reserve all course sessions before presenting any payment option/QR.
+        // Validate the course before presenting payment. Seats are booked only after payment succeeds.
         classGroup.MapPost("/{id:guid}/payment-hold", async (
             Guid id, [FromBody] StartClassPaymentHoldRequest request, HttpContext context,
-            ClassService service, SmartGymDbContext db, ILoggerFactory loggerFactory) =>
+            ClassService service, SmartGymDbContext db, PackageCatalogService packageCatalogService,
+            ILoggerFactory loggerFactory, CancellationToken cancellationToken) =>
         {
             var logger = loggerFactory.CreateLogger("ClassPaymentHold");
             var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -80,13 +83,22 @@ public static partial class ClassEndpoints
             var price = prices.SingleOrDefault();
             if (price?.PricePerSession is null || price.PricingVersionId is null)
                 return Results.BadRequest(new { message = "Lớp học chưa có học phí hợp lệ." });
-            var amount = price.PricePerSession.Value * price.TotalSessions;
+            var originalAmount = price.PricePerSession.Value * price.TotalSessions;
+            var activeMembership = await packageCatalogService.GetActiveMembershipAsync(userId, DateTime.UtcNow, cancellationToken);
+            var groupDiscountPct = activeMembership?.GroupDiscountPct ?? 0m;
+            var amount = Math.Max(0m, decimal.Round(
+                originalAmount * (100m - groupDiscountPct) / 100m,
+                0,
+                MidpointRounding.AwayFromZero));
 
             var existingHold = await db.Database.SqlQueryRaw<ClassPaymentHoldRaw>(
                 "SELECT id AS \"Id\", user_id AS \"UserId\", class_id AS \"ClassId\", payment_memo AS \"PaymentMemo\", invoice_id AS \"InvoiceId\", amount AS \"Amount\", expires_at AS \"ExpiresAt\" FROM class_booking_payment_holds WHERE user_id = {0} AND class_id = {1} AND status = 'active' AND expires_at > now() ORDER BY created_at DESC LIMIT 1",
                 userId, id).FirstOrDefaultAsync();
             if (existingHold is not null)
             {
+                var appliedDiscountPct = originalAmount > 0
+                    ? decimal.Round((originalAmount - existingHold.Amount) * 100m / originalAmount, 0, MidpointRounding.AwayFromZero)
+                    : 0m;
                 return Results.Ok(new
                 {
                     success = true,
@@ -94,6 +106,10 @@ public static partial class ClassEndpoints
                     holdId = existingHold.Id,
                     paymentMemo = existingHold.PaymentMemo,
                     amount = existingHold.Amount,
+                    originalAmount,
+                    discountPctApplied = appliedDiscountPct,
+                    membershipName = activeMembership?.Name ?? "Hội viên Cơ bản",
+                    membershipTier = activeMembership?.Tier ?? "basic",
                     expiresAt = existingHold.ExpiresAt
                 });
             }
@@ -117,6 +133,10 @@ public static partial class ClassEndpoints
                         holdId = inFlightHold.Id,
                         paymentMemo = inFlightHold.PaymentMemo,
                         amount = inFlightHold.Amount,
+                        originalAmount,
+                        discountPctApplied = originalAmount > 0 ? decimal.Round((originalAmount - inFlightHold.Amount) * 100m / originalAmount, 0, MidpointRounding.AwayFromZero) : 0m,
+                        membershipName = activeMembership?.Name ?? "Hội viên Cơ bản",
+                        membershipTier = activeMembership?.Tier ?? "basic",
                         expiresAt = inFlightHold.ExpiresAt
                     });
                 }
@@ -158,6 +178,10 @@ public static partial class ClassEndpoints
                         holdId = persistedHold.Id,
                         paymentMemo = persistedHold.PaymentMemo,
                         amount = persistedHold.Amount,
+                        originalAmount,
+                        discountPctApplied = originalAmount > 0 ? decimal.Round((originalAmount - persistedHold.Amount) * 100m / originalAmount, 0, MidpointRounding.AwayFromZero) : 0m,
+                        membershipName = activeMembership?.Name ?? "Hội viên Cơ bản",
+                        membershipTier = activeMembership?.Tier ?? "basic",
                         expiresAt = persistedHold.ExpiresAt
                     });
                 }
@@ -198,14 +222,17 @@ public static partial class ClassEndpoints
                         holdId = committedHold.Id,
                         paymentMemo = committedHold.PaymentMemo,
                         amount = committedHold.Amount,
+                        originalAmount,
+                        discountPctApplied = originalAmount > 0 ? decimal.Round((originalAmount - committedHold.Amount) * 100m / originalAmount, 0, MidpointRounding.AwayFromZero) : 0m,
+                        membershipName = activeMembership?.Name ?? "Hội viên Cơ bản",
+                        membershipTier = activeMembership?.Tier ?? "basic",
                         expiresAt = committedHold.ExpiresAt
                     });
                 }
 
-                await service.CancelBookingAsync(userId, id);
                 db.Invoices.Remove(invoice);
                 await db.SaveChangesAsync();
-                return Results.Conflict(new { message = "Không thể tạo lượt giữ chỗ thanh toán. Vui lòng thử lại.", detail = ex.Message });
+                return Results.Conflict(new { message = "Không thể khởi tạo thanh toán. Vui lòng thử lại.", detail = ex.Message });
             }
         }).RequireAuthorization(policy => policy.RequireRole("member", "admin", "manager"));
 
@@ -216,7 +243,7 @@ public static partial class ClassEndpoints
             if (!Guid.TryParse(userIdClaim, out var userId)) return Results.Unauthorized();
             var cleanMemo = (memo ?? "").Trim();
             var hold = await db.Database.SqlQueryRaw<ClassPaymentHoldRaw>(
-                "SELECT id AS \"Id\", invoice_id AS \"InvoiceId\", amount AS \"Amount\", expires_at AS \"ExpiresAt\" FROM class_booking_payment_holds WHERE user_id = {0} AND class_id = {1} AND payment_memo = {2} AND status = 'active'",
+                "SELECT id AS \"Id\", user_id AS \"UserId\", class_id AS \"ClassId\", payment_memo AS \"PaymentMemo\", invoice_id AS \"InvoiceId\", amount AS \"Amount\", expires_at AS \"ExpiresAt\" FROM class_booking_payment_holds WHERE user_id = {0} AND class_id = {1} AND payment_memo = {2} AND status = 'active'",
                 userId, id, cleanMemo).FirstOrDefaultAsync();
             if (hold is null) return Results.Ok(new { success = true });
             await ReleaseClassPaymentHoldAsync(db, userId, id, cleanMemo, "cancelled");
@@ -231,7 +258,8 @@ public static partial class ClassEndpoints
         /// </summary>
         classGroup.MapPost(
             "/{id:guid}/pay-and-book",
-            async (Guid id, [FromBody] PayAndBookClassRequest? request, HttpContext context, ClassService service, SmartGymDbContext db) =>
+            async (Guid id, [FromBody] PayAndBookClassRequest? request, HttpContext context, ClassService service,
+                SmartGymDbContext db, IGroupClassRepository repository, PackageCatalogService packageCatalogService, CancellationToken cancellationToken) =>
             {
                 var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (!Guid.TryParse(userIdClaim, out var userId))
@@ -267,7 +295,13 @@ public static partial class ClassEndpoints
                     return Results.BadRequest(new { message = "Khóa học chưa có học phí được chốt. Vui lòng liên hệ quản lý trung tâm." });
 
                 // Tạm thời dùng bảng giá hiệu lực hiện tại trong DB, bỏ qua course_fee_snapshot.
-                var amount = pricing.PricePerSession.Value * pricing.TotalSessions;
+                var originalAmount = pricing.PricePerSession.Value * pricing.TotalSessions;
+                var activeMembership = await packageCatalogService.GetActiveMembershipAsync(userId, DateTime.UtcNow, cancellationToken);
+                var groupDiscountPct = activeMembership?.GroupDiscountPct ?? 0m;
+                var amount = Math.Max(0m, decimal.Round(
+                    originalAmount * (100m - groupDiscountPct) / 100m,
+                    0,
+                    MidpointRounding.AwayFromZero));
                 var isWallet = method.ToLower() is "wallet" or "ewallet";
                 var deductedFromWallet = false;
 
@@ -292,8 +326,17 @@ public static partial class ClassEndpoints
 
                 amount = paymentHold.Amount;
                 var heldIsCounter = method.ToLower() is "counter" or "cashatcounter";
-                if (!isWallet && !heldIsCounter && !SePayWebhookEndpoints.WasMemoConsumed(paymentMemo, amount))
-                    return Results.BadRequest(new { message = "Chưa xác nhận được giao dịch QR hợp lệ cho lượt giữ chỗ này." });
+                var qrPaymentConfirmed = false;
+                if (!isWallet && !heldIsCounter)
+                {
+                    qrPaymentConfirmed = SePayWebhookEndpoints.WasMemoConsumed(paymentMemo, amount);
+                    if (!qrPaymentConfirmed)
+                        return Results.BadRequest(new { message = "Chưa xác nhận được giao dịch QR hợp lệ cho lượt thanh toán này." });
+                }
+
+                var holdInvoice = await db.Invoices.FirstOrDefaultAsync(x => x.Id == paymentHold.InvoiceId && x.UserId == userId);
+                if (holdInvoice is null)
+                    return Results.Conflict(new { message = "Không tìm thấy hóa đơn cho lượt thanh toán." });
 
                 if (isWallet)
                 {
@@ -311,21 +354,40 @@ public static partial class ClassEndpoints
                     heldBookingBalance = newBalance;
                 }
 
-                var updated = await db.Database.ExecuteSqlRawAsync(
-                    "UPDATE class_bookings SET status = {3}, subscription_id = NULL WHERE user_id = {0} AND class_id IN (SELECT id FROM classes WHERE id = {1} OR parent_id = {1} OR (parent_id IS NOT NULL AND parent_id = (SELECT parent_id FROM classes WHERE id = {1}))) AND LOWER(status) = 'pending_payment'",
-                    userId, id, paymentMemo, heldIsCounter ? "pending" : "confirmed");
-                if (updated == 0)
+                // Compatibility for payment holds created before checkout stopped writing pending_payment bookings.
+                var legacyPendingCount = await db.Database.SqlQueryRaw<int>(
+                    "SELECT COUNT(*) AS \"Value\" FROM class_bookings WHERE user_id = {0} AND class_id IN (SELECT id FROM classes WHERE id = {1} OR parent_id = {1} OR (parent_id IS NOT NULL AND parent_id = (SELECT parent_id FROM classes WHERE id = {1}))) AND LOWER(status) = 'pending_payment'",
+                    userId, id).SingleAsync();
+                var bookingResult = legacyPendingCount > 0
+                    ? (IsSuccess: await db.Database.ExecuteSqlRawAsync(
+                        "UPDATE class_bookings SET status = {2}, subscription_id = NULL WHERE user_id = {0} AND class_id IN (SELECT id FROM classes WHERE id = {1} OR parent_id = {1} OR (parent_id IS NOT NULL AND parent_id = (SELECT parent_id FROM classes WHERE id = {1}))) AND LOWER(status) = 'pending_payment'",
+                        userId, id, heldIsCounter ? "pending" : "confirmed") > 0, ErrorMessage: (string?)null)
+                    : await service.BookClassAsync(userId, id, notify: true, bookingStatus: heldIsCounter ? "pending" : "confirmed");
+
+                if (!bookingResult.IsSuccess)
                 {
                     if (deductedFromWallet) await MemberEndpoints.RefundToWalletAsync(db, userId, amount, "Hoàn tiền do lượt giữ chỗ đã mất");
-                    return Results.Conflict(new { message = "Lượt giữ chỗ không còn hiệu lực. Không thể hoàn tất đăng ký lớp." });
+                    if (qrPaymentConfirmed)
+                    {
+                        holdInvoice.PaymentMethod = PaymentMethod.QRCode;
+                        holdInvoice.Status = PaymentStatus.Completed;
+                        holdInvoice.PaidAt = DateTime.UtcNow;
+                        await db.Database.ExecuteSqlRawAsync(
+                            "UPDATE class_booking_payment_holds SET status = 'refund_required', paid_at = now() WHERE id = {0} AND user_id = {1} AND status = 'active'",
+                            paymentHold.Id, userId);
+                        await db.SaveChangesAsync();
+                        await repository.NotifyManagersAsync(
+                            "Cần đối soát thanh toán đặt lớp",
+                            $"Đã nhận thanh toán cho lớp nhưng không thể ghi nhận đăng ký: {bookingResult.ErrorMessage ?? "lịch học không còn chỗ phù hợp"}. Vui lòng kiểm tra hóa đơn {holdInvoice.Id} để xử lý hoàn tiền.",
+                            "class",
+                            id);
+                        return Results.Conflict(new { message = "Ngân hàng đã xác nhận thanh toán nhưng lịch không còn phù hợp. Hệ thống đã báo Quản lý để đối soát và hoàn tiền; lớp chưa được đăng ký." });
+                    }
+
+                    await ReleaseClassPaymentHoldAsync(db, userId, id, paymentMemo, "cancelled");
+                    return Results.Conflict(new { message = bookingResult.ErrorMessage ?? "Lịch học không còn chỗ phù hợp để đăng ký." });
                 }
 
-                var holdInvoice = await db.Invoices.FirstOrDefaultAsync(x => x.Id == paymentHold.InvoiceId && x.UserId == userId);
-                if (holdInvoice is null)
-                {
-                    if (deductedFromWallet) await MemberEndpoints.RefundToWalletAsync(db, userId, amount, "Hoàn tiền do không tìm thấy hóa đơn giữ chỗ");
-                    return Results.Conflict(new { message = "Không tìm thấy hóa đơn cho lượt giữ chỗ." });
-                }
                 holdInvoice.PaymentMethod = heldIsCounter ? PaymentMethod.CashAtCounter : isWallet ? PaymentMethod.EWallet : PaymentMethod.QRCode;
                 holdInvoice.Status = heldIsCounter ? PaymentStatus.Pending : PaymentStatus.Completed;
                 holdInvoice.PaidAt = heldIsCounter ? null : DateTime.UtcNow;

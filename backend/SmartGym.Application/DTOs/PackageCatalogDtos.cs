@@ -60,6 +60,9 @@ public sealed class PackageOrderResponse
     public DateTime? PaidAt { get; set; }
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
+    public Guid? CourseId { get; set; }
+    public string? CourseName { get; set; }
+    public int? CourseSessionCount { get; set; }
 }
 
 public sealed class ConfirmPaymentRequest

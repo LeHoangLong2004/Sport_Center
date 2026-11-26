@@ -53,6 +53,9 @@ export interface PackageOrder {
   paidAt?: string
   startDate?: string
   endDate?: string
+  courseId?: string
+  courseName?: string
+  courseSessionCount?: number
 }
 
 export interface PackageCheckout {

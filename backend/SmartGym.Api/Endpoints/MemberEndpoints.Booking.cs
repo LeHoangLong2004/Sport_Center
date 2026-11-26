@@ -84,7 +84,7 @@ namespace SmartGym.Api.Endpoints
             .WithTags("Member Portal")
             .WithSummary("Get available PT slots for booking");
 
-            group.MapPost("/bookings", async (HttpContext context, ScheduleStoreService scheduleStore, SmartGymDbContext db, IGroupClassRepository classRepository, IPtSessionRepository ptSessionRepository, [FromBody] JsonElement body) =>
+            group.MapPost("/bookings", async (HttpContext context, ScheduleStoreService scheduleStore, SmartGymDbContext db, IGroupClassRepository classRepository, IPtSessionRepository ptSessionRepository, PackageCatalogService packageCatalogService, [FromBody] JsonElement body) =>
             {
                 var userId = GetUserId(context) ?? "m-demo";
                 var bookings = _memberBookings.GetOrAdd(userId, _ => GetDefaultBookings());
@@ -176,12 +176,27 @@ namespace SmartGym.Api.Endpoints
 
                 // Xử lý thanh toán ca tập kèm PT 1-1
                 var method = body.TryGetProperty("paymentMethod", out var pm) ? pm.GetString()?.ToLowerInvariant() ?? "counter" : "counter";
-                var amount = body.TryGetProperty("amount", out var am) ? am.GetDecimal() : 0m;
+                var amount = body.TryGetProperty("baseAmount", out var baseAmountElement)
+                    ? baseAmountElement.GetDecimal()
+                    : body.TryGetProperty("amount", out var am) ? am.GetDecimal() : 0m;
                 var isWallet = method is "wallet" or "ewallet";
                 var isCounter = method is "counter" or "cashatcounter";
                 var deductedFromWallet = false;
                 var memberGuid = await ResolveMemberGuidAsync(context, db, userId);
                 decimal? updatedWalletBalance = null;
+
+                if (amount > 0 && method is not "package" && memberGuid.HasValue)
+                {
+                    var activeMembership = await packageCatalogService.GetActiveMembershipAsync(
+                        memberGuid.Value,
+                        DateTime.UtcNow,
+                        context.RequestAborted);
+                    var coachDiscountPct = activeMembership?.CoachDiscountPct ?? 0m;
+                    amount = Math.Max(0m, decimal.Round(
+                        amount * (100m - coachDiscountPct) / 100m,
+                        0,
+                        MidpointRounding.AwayFromZero));
+                }
 
                 if (amount > 0 && isWallet)
                 {
