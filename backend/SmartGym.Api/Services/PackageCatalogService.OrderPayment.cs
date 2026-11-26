@@ -121,11 +121,16 @@ public sealed partial class PackageCatalogService
                        COALESCE(cb.created_at, now()) AS "CreatedAt",
                        COALESCE(c.class_name, 'Lớp học') AS "ClassName",
                        COALESCE(c.schedule_time, now()) AS "ScheduleTime",
+                       COALESCE(c.parent_id, c.id) AS "CourseId",
+                       COALESCE(course.class_name, root.class_name, c.class_name, 'Lớp học') AS "CourseName",
+                       GREATEST(COALESCE(course.total_sessions, root.total_sessions, c.total_sessions, 1), 1) AS "CourseSessionCount",
                        COALESCE(u.full_name, 'Hội viên') AS "UserName",
                        COALESCE(u.email, '') AS "UserEmail",
                        COALESCE(u.phone_number, '') AS "UserPhone"
                 FROM class_bookings cb
                 JOIN classes c ON c.id = cb.class_id
+                LEFT JOIN class_courses course ON course.id = c.parent_id
+                LEFT JOIN classes root ON root.id = COALESCE(c.parent_id, c.id)
                 JOIN users u ON u.id = cb.user_id
                 WHERE cb.id = {0}
                 """, orderId)

@@ -44,50 +44,51 @@ public sealed partial class ClassService
             return (false, "Thời gian bắt đầu lớp học đề xuất phải cách thời điểm hiện tại ít nhất 24 giờ để Ban quản lý kịp phê duyệt và hội viên đăng ký.");
         }
 
-        var isRecurring = request.DaysOfWeek != null && request.DaysOfWeek.Count > 0;
+        if (request.DaysOfWeek == null || request.DaysOfWeek.Count == 0)
+        {
+            return (false, "Vui lòng chọn các ngày học trong tuần cho khóa học.");
+        }
+
         var weeks = Math.Max(1, request.Weeks.GetValueOrDefault(10));
-        var totalSessions = Math.Max(1, request.TotalSessions.GetValueOrDefault(isRecurring ? request.DaysOfWeek!.Count * weeks : 1));
+        var totalSessions = Math.Max(1, request.TotalSessions.GetValueOrDefault(request.DaysOfWeek.Count * weeks));
+
+        var targetDays = request.DaysOfWeek.Select(day => day % 7).ToHashSet();
+        if (!targetDays.Contains((int)CenterTime.ToLocal(scheduleTimeUtc).DayOfWeek))
+        {
+            return (false, "Ngày khai giảng phải trùng với một trong các thứ đã chọn để là Buổi 1. Hãy chỉnh ngày khai giảng hoặc các thứ học.");
+        }
+
         var facilitySettings = await _classRepository.GetFacilitySchedulingSettingsAsync(request.FacilityId);
         if (facilitySettings is null)
             return (false, "Không tìm thấy cấu hình phòng tập.");
 
         // Sinh danh sách thời gian các buổi học (Session List Generation)
         var sessionTimes = new List<DateTime>();
-        if (isRecurring)
+        var curDate = scheduleTimeUtc.Date;
+        var timeOfDay = scheduleTimeUtc.TimeOfDay;
+        var maxLoopDays = 180;
+        var loopCount = 0;
+
+        while (sessionTimes.Count < totalSessions && loopCount < maxLoopDays)
         {
-            var targetDays = request.DaysOfWeek!.Select(d => d % 7).ToHashSet();
-            var curDate = scheduleTimeUtc.Date;
-            var timeOfDay = scheduleTimeUtc.TimeOfDay;
-            var maxLoopDays = 180;
-            var loopCount = 0;
+            var dayNum = (int)curDate.DayOfWeek;
+            var matches = targetDays.Contains(dayNum);
 
-            while (sessionTimes.Count < totalSessions && loopCount < maxLoopDays)
+            if (matches)
             {
-                var dayNum = (int)curDate.DayOfWeek;
-                var matches = targetDays.Contains(dayNum) 
-                    || (dayNum == 0 && targetDays.Contains(7)) 
-                    || targetDays.Contains(dayNum == 0 ? 7 : dayNum);
-
-                if (matches)
+                var sessionTime = curDate.Add(timeOfDay);
+                if (sessionTime >= scheduleTimeUtc)
                 {
-                    var sessionTime = curDate.Add(timeOfDay);
-                    if (sessionTime >= scheduleTimeUtc)
-                    {
-                        sessionTimes.Add(sessionTime);
-                    }
+                    sessionTimes.Add(sessionTime);
                 }
-                curDate = curDate.AddDays(1);
-                loopCount++;
             }
-
-            if (sessionTimes.Count == 0)
-            {
-                return (false, "Không tìm thấy buổi học nào hợp lệ trong các thứ và khoảng thời gian đã chọn.");
-            }
+            curDate = curDate.AddDays(1);
+            loopCount++;
         }
-        else
+
+        if (sessionTimes.Count == 0)
         {
-            sessionTimes.Add(scheduleTimeUtc);
+            return (false, "Không tìm thấy buổi học nào hợp lệ trong các thứ và khoảng thời gian đã chọn.");
         }
 
         // Quét xung đột tài nguyên ma trận trên toàn bộ các buổi học dự kiến (BR-06, BR-07, BR-08)

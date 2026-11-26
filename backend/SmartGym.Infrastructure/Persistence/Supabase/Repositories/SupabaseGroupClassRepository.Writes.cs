@@ -221,7 +221,7 @@ public sealed partial class SupabaseGroupClassRepository
         return (true, null);
     }
 
-    public async Task<(bool IsSuccess, string? ErrorMessage)> RejectClassAsync(Guid classId)
+    public async Task<(bool IsSuccess, string? ErrorMessage)> RejectClassAsync(Guid classId, string reason)
     {
         var classToReject = await _dbContext.Database
             .SqlQueryRaw<ClassApprovalRawModel>(
@@ -233,8 +233,8 @@ public sealed partial class SupabaseGroupClassRepository
             return (false, "Không tìm thấy đề xuất lớp hoặc lớp không còn ở trạng thái chờ duyệt.");
 
         var affected = await _dbContext.Database.ExecuteSqlRawAsync(
-            "UPDATE classes SET approval_status = 'rejected' WHERE (id = {0} OR parent_id = {0}) AND approval_status = 'pending'",
-            classId);
+            "UPDATE classes SET approval_status = 'rejected', rejection_reason = {1} WHERE (id = {0} OR parent_id = {0}) AND approval_status = 'pending'",
+            classId, reason);
 
         if (affected == 0)
             return (false, "Đề xuất lớp đã được xử lý trước đó.");
@@ -244,7 +244,7 @@ public sealed partial class SupabaseGroupClassRepository
             await NotifyCoachAsync(
                 classToReject.CoachId.Value,
                 "Đề xuất lớp học bị từ chối",
-                $"Đề xuất lớp {classToReject.ClassName} đã bị Manager từ chối.",
+                $"Đề xuất lớp {classToReject.ClassName} đã bị Manager từ chối. Lý do: {reason}",
                 "class",
                 classId);
         }

@@ -32,31 +32,38 @@ function toDisplayDate(value?: string): string {
   return match ? `${match[3]}/${match[2]}/${match[1]}` : value;
 }
 
-function formatDraft(value: string): string {
-  const digits = value.replace(/\D/g, "").slice(0, 8);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+function normalizeDraft(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length === 8 && !value.includes("/")) {
+    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+  }
+  return value.slice(0, 10);
 }
 
 export function DateInput({ value = "", onChange, className = "", placeholder = "dd/mm/yyyy", ...props }: DateInputProps) {
   const [draft, setDraft] = useState(() => toDisplayDate(value));
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    setDraft(toDisplayDate(value));
-  }, [value]);
+    if (!isEditing) setDraft(toDisplayDate(value));
+  }, [value, isEditing]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const nextDraft = formatDraft(event.target.value);
+    // Keep the exact text/caret position while editing. Formatting on every
+    // keystroke moves slashes and makes replacing just the day/month/year hard.
+    const nextDraft = event.target.value.slice(0, 10);
     setDraft(nextDraft);
-
-    if (!nextDraft) {
-      onChange?.("");
-      return;
-    }
-
     const isoValue = toIsoDate(nextDraft);
-    if (isoValue) onChange?.(isoValue);
+    onChange?.(isoValue);
+  };
+
+  const handleBlur = (event: React.FocusEvent<HTMLInputElement>) => {
+    setIsEditing(false);
+    const normalized = normalizeDraft(draft);
+    const isoValue = toIsoDate(normalized);
+    setDraft(isoValue ? toDisplayDate(isoValue) : normalized);
+    onChange?.(isoValue);
+    props.onBlur?.(event);
   };
 
   return (
@@ -69,6 +76,11 @@ export function DateInput({ value = "", onChange, className = "", placeholder = 
         autoComplete="off"
         value={draft}
         onChange={handleChange}
+        onFocus={(event) => {
+          setIsEditing(true);
+          props.onFocus?.(event);
+        }}
+        onBlur={handleBlur}
         placeholder={placeholder}
         className={className}
         maxLength={10}

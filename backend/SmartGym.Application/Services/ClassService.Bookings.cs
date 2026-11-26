@@ -9,6 +9,61 @@ namespace SmartGym.Application.Services;
 
 public sealed partial class ClassService
 {
+    public async Task<(bool IsSuccess, string? ErrorMessage)> ValidateClassBookingAsync(Guid userId, Guid classId)
+    {
+        var targetClass = await _classRepository.GetByIdAsync(classId);
+        if (targetClass == null)
+            return (false, "Không tìm thấy lớp học.");
+        if (!targetClass.Status || !string.Equals(targetClass.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase))
+            return (false, "Lớp học chưa được Manager phê duyệt hoặc đã ngừng hoạt động.");
+
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+            return (false, "Không tìm thấy thông tin hội viên.");
+        if (!user.Status)
+            return (false, "Tài khoản hội viên đang bị tạm khóa hoặc ngưng hoạt động.");
+
+        var classStartTimeUtc = targetClass.ScheduleTime.Hour >= 6
+            ? targetClass.ScheduleTime.AddHours(-7)
+            : targetClass.ScheduleTime;
+        if (classStartTimeUtc <= DateTime.UtcNow)
+            return (false, "Không thể đặt chỗ. Lớp học đã bắt đầu hoặc đã diễn ra.");
+
+        var sessions = (await _classRepository.GetCourseSessionsAsync(classId))
+            .Where(session => session.Status && string.Equals(session.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        if (sessions.Count == 0)
+            return (false, "Lớp học không còn hoạt động hoặc chưa được phê duyệt.");
+
+        var sessionIds = sessions.Select(session => session.Id).ToHashSet();
+        var schedule = await _classRepository.GetMemberScheduleAsync(userId);
+        var blockingBookings = schedule.ClassBookings
+            .Where(booking => booking.Status?.Trim().ToLowerInvariant() is "confirmed" or "pending" or "approved")
+            .ToList();
+
+        if (blockingBookings.Any(booking => sessionIds.Contains(booking.ClassId)))
+            return (false, "Hội viên đã đặt chỗ khóa học này trước đó rồi.");
+
+        foreach (var session in sessions)
+        {
+            if (session.CurrentEnrolled >= session.Capacity)
+                return (false, $"Đặt lớp thất bại: Buổi học ngày {session.ScheduleTime:dd/MM/yyyy} đã hết chỗ.");
+
+            var sessionEnd = session.ScheduleTime.AddMinutes(Math.Max(1, session.DurationMinutes));
+            if (blockingBookings.Any(booking =>
+                    !sessionIds.Contains(booking.ClassId)
+                    && Overlaps(session.ScheduleTime, sessionEnd, booking.ScheduleTime, booking.DurationMinutes)))
+                return (false, $"Bạn đã có một lịch học khác trùng thời gian với buổi học ngày {session.ScheduleTime:dd/MM/yyyy HH:mm}.");
+
+            if (schedule.PtSessions.Any(pt =>
+                    IsBlockingPtSession(pt.Status)
+                    && Overlaps(session.ScheduleTime, sessionEnd, pt.ScheduleTime, pt.DurationMinutes)))
+                return (false, $"Bạn đã có một buổi PT trùng thời gian với buổi học ngày {session.ScheduleTime:dd/MM/yyyy HH:mm}.");
+        }
+
+        return (true, null);
+    }
+
     public async Task<(bool IsSuccess, string? ErrorMessage)> BookClassAsync(
         Guid userId,
         Guid classId,
@@ -16,6 +71,9 @@ public sealed partial class ClassService
         string bookingStatus = "confirmed"
     )
     {
+        if (string.Equals(bookingStatus, "pending_payment", StringComparison.OrdinalIgnoreCase))
+            return await ValidateClassBookingAsync(userId, classId);
+
         // 1. Kiểm tra tồn tại lớp học
         var targetClass = await _classRepository.GetByIdAsync(classId);
         if (targetClass == null)
@@ -155,16 +213,6 @@ public sealed partial class ClassService
                 targetClass.Id
             );
 
-            if (targetClass.CoachId.HasValue)
-            {
-                await _classRepository.NotifyCoachAsync(
-                    targetClass.CoachId.Value,
-                    "Có học viên vừa đặt lớp",
-                    $"Một học viên vừa đặt lớp {targetClass.ClassName} vào {CenterTime.ToLocal(targetClass.ScheduleTime):dd/MM/yyyy HH:mm}.",
-                    "class",
-                    targetClass.Id
-                );
-            }
         }
 
         return result;

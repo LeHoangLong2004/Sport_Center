@@ -157,7 +157,7 @@ public static partial class ClassEndpoints
                     var effectiveDate = DateOnly.FromDateTime(CenterTime.ToLocal(DateTime.UtcNow));
                     var sql = @"
                         SELECT c.id, c.class_name, c.schedule_time, c.duration_minutes, c.capacity,
-                               c.status, c.approval_status, c.sport_id, s.name AS sport_name, f.name AS facility_name,
+                               c.status, c.approval_status, c.rejection_reason AS ""RejectionReason"", c.sport_id, s.name AS sport_name, f.name AS facility_name,
                                CASE
                                    WHEN EXISTS (
                                        SELECT 1
@@ -206,6 +206,7 @@ public static partial class ClassEndpoints
                         facilityName = p.facility_name ?? "Phòng tập",
                         price = p.price,
                         status = p.approval_status ?? (p.status ? "approved" : "cancelled"),
+                        rejectionReason = p.RejectionReason,
                         totalSessions = p.total_sessions ?? 1,
                         sessionNumber = p.session_number ?? 1
                     }));
@@ -300,11 +301,14 @@ public static partial class ClassEndpoints
         classGroup
             .MapPut(
                 "/{id:guid}/reject",
-                async (Guid id, ClassService service, ILoggerFactory loggerFactory) =>
+                async (Guid id, RejectClassProposalRequest request, ClassService service, ILoggerFactory loggerFactory) =>
                 {
                     try
                     {
-                        var (isSuccess, errorMessage) = await service.RejectClassAsync(id);
+                        if (string.IsNullOrWhiteSpace(request.Reason))
+                            return Results.BadRequest(new { message = "Vui lòng nhập lý do từ chối đề xuất." });
+
+                        var (isSuccess, errorMessage) = await service.RejectClassAsync(id, request.Reason);
                         return isSuccess
                             ? Results.Ok(new { message = "Đã từ chối đề xuất lớp học." })
                             : Results.BadRequest(new { message = errorMessage });
@@ -425,6 +429,33 @@ public static partial class ClassEndpoints
                         newScheduleTime = newScheduleTime.ToUniversalTime();
                     if (newScheduleTime == target.ScheduleTime)
                         return Results.BadRequest(new { message = "Ngày giờ mới phải khác lịch hiện tại." });
+                }
+
+                if (action == "substitute")
+                {
+                    var invitationId = Guid.NewGuid();
+                    var reason = adjustment.Reason.Trim();
+                    const string requestType = "dạy thay";
+                    const string invitationStatus = "waiting_substitute";
+                    await db.Database.ExecuteSqlInterpolatedAsync($@"
+                        INSERT INTO coach_schedule_requests
+                            (id, coach_id, session_id, request_type, substitute_coach_id, reason, status)
+                        VALUES
+                            ({invitationId}, {target.CoachId.Value}, {id}, {requestType}, {coachId}, {reason}, {invitationStatus})");
+
+                    await repository.NotifyCoachAsync(
+                        coachId,
+                        "Lời mời dạy thay",
+                        $"Quản lý mời bạn dạy thay lớp {target.ClassName}. Vui lòng xác nhận trong mục Lời mời dạy thay.",
+                        "schedule_request",
+                        invitationId);
+
+                    return Results.Ok(new
+                    {
+                        success = true,
+                        invitationId,
+                        message = "Đã gửi lời mời dạy thay. Lịch sẽ được cập nhật sau khi HLV xác nhận."
+                    });
                 }
 
                 var update = await service.UpdateClassAsync(id, new CreateClassRequest
@@ -807,6 +838,7 @@ public static partial class ClassEndpoints
         public int capacity { get; set; }
         public bool status { get; set; }
         public string? approval_status { get; set; }
+        public string? RejectionReason { get; set; }
         public Guid sport_id { get; set; }
         public string? sport_name { get; set; }
         public string? facility_name { get; set; }
@@ -814,6 +846,11 @@ public static partial class ClassEndpoints
         public Guid? parent_id { get; set; }
         public int? session_number { get; set; }
         public int? total_sessions { get; set; }
+    }
+
+    public sealed class RejectClassProposalRequest
+    {
+        public string? Reason { get; set; }
     }
 
 public sealed class CourseCancellationRootRow

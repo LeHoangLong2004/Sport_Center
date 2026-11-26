@@ -150,7 +150,7 @@ public sealed partial class PackageCatalogService
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task<CatalogPackageDto?> GetActiveMembershipAsync(
+    public async Task<CatalogPackageDto?> GetActiveMembershipAsync(
         Guid userId,
         DateTime now,
         CancellationToken cancellationToken

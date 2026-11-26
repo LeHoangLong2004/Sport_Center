@@ -91,6 +91,19 @@ public static partial class DatabaseInitializationExtensions
             Console.WriteLine($"Class approval schema sync error: {ex.Message}");
         }
 
+        // Persist manager feedback for coach-submitted class proposals.
+        try
+        {
+            db.Database.ExecuteSqlRaw(
+                "ALTER TABLE classes ADD COLUMN IF NOT EXISTS rejection_reason TEXT;"
+            );
+            app.Logger.LogInformation("classes rejection reason column is ready.");
+        }
+        catch (Exception ex)
+        {
+            app.Logger.LogError(ex, "Could not ensure classes.rejection_reason exists.");
+        }
+
         // Sync the homework table with the database-backed workout-plan flow.
         try
         {

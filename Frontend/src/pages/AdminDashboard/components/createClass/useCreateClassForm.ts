@@ -208,6 +208,14 @@ export function useCreateClassForm({ editData, mode = "manager", onSuccess, onCl
         }
       }
 
+      if (formData.isRecurring) {
+        const [year, month, day] = scheduleDate.split('-').map(Number);
+        const startWeekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+        if (!formData.daysOfWeek?.includes(startWeekday)) {
+          throw new Error('Ngày khai giảng phải trùng với một trong các thứ đã chọn để là Buổi 1. Hãy chỉnh ngày khai giảng hoặc các thứ học.');
+        }
+      }
+
       const payload: any = {
         sportId: formData.sportId,
         facilityId: formData.facilityId,

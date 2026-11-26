@@ -159,6 +159,11 @@ export function CoachClassProposalsList({
                   Ghi chú: {item.notes}
                 </div>
               )}
+              {rawStatus === "rejected" && item.rejectionReason?.trim() && (
+                <div className="whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300">
+                  <span className="font-semibold">Lý do:</span> {item.rejectionReason}
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col items-end justify-between gap-3 shrink-0 self-stretch md:self-auto">

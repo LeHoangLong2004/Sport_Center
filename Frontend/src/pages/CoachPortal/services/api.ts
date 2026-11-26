@@ -539,6 +539,7 @@ export const CoachAPI = {
           requestedSlots: p.requestedSlots || slotText,
           notes: p.notes || (totalSessions > 1 ? `Lộ trình đào tạo trọn khóa gồm ${totalSessions} buổi` : ""),
           status: p.status || "pending",
+          rejectionReason: p.rejectionReason ?? p.RejectionReason ?? p.rejection_reason ?? null,
           createdAt: p.createdAt || p.scheduleTime || new Date().toISOString(),
           totalSessions,
           sessionNumber: p.sessionNumber || 1,

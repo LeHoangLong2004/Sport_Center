@@ -30,7 +30,7 @@ interface PtBookingModalProps {
   isProcessingPtBooking?: boolean;
   onConfirmPtBooking: (
     e: React.FormEvent,
-    paymentData?: { paymentMethod?: "qr" | "counter" | "wallet" | "package"; amount?: number }
+    paymentData?: { paymentMethod?: "qr" | "counter" | "wallet" | "package"; amount?: number; baseAmount?: number }
   ) => void;
 }
 
@@ -148,6 +148,7 @@ export const PtBookingModal: React.FC<PtBookingModalProps> = ({
     onConfirmPtBooking(e, {
       paymentMethod: effectiveMethod,
       amount: finalPrice,
+      baseAmount: isCovered ? 0 : basePrice,
     });
   };
 

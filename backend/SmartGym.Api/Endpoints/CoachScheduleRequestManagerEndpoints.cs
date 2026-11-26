@@ -392,7 +392,37 @@ public static class CoachScheduleRequestManagerEndpoints
         if (request.SubstituteCoachId is not null && request.SubstituteCoachId != request.CoachId)
             await repository.NotifyCoachAsync(request.SubstituteCoachId.Value, "Bạn được phân công dạy thay", request.ClassName, "schedule_request", request.Id);
         if (request.SessionId is not null)
-            await repository.NotifyAffectedMembersAsync(request.SessionId.Value, "Lịch lớp học đã được cập nhật", note);
+        {
+            var (title, message) = BuildMemberApprovalNotice(request);
+            await repository.NotifyAffectedMembersAsync(request.SessionId.Value, title, message);
+        }
+    }
+
+    private static (string Title, string Message) BuildMemberApprovalNotice(ManagerScheduleRequestRow request)
+    {
+        var type = (request.RequestType ?? string.Empty).Trim().ToLowerInvariant();
+        if (type is "dời lịch" or "doi lich" or "reschedule" || type.Contains("dời") || type.Contains("doi"))
+        {
+            var className = string.IsNullOrWhiteSpace(request.ClassName) ? "Buổi học" : request.ClassName;
+            var oldTime = request.ScheduleTime.HasValue
+                ? CenterTime.ToLocal(request.ScheduleTime.Value).ToString("dd/MM/yyyy HH:mm")
+                : "khung giờ cũ";
+            var newTime = request.NewDate.HasValue
+                && TryBuildLocalSchedule(request.NewDate.Value, request.NewTime, request.DurationMinutes, out var newSchedule, out _)
+                ? CenterTime.ToLocal(newSchedule).ToString("dd/MM/yyyy HH:mm")
+                : "khung giờ mới";
+            return (
+                "Lịch buổi học đã được dời",
+                $"Buổi học {className} đã được dời từ {oldTime} sang {newTime}. Vui lòng xem lại lịch tập của bạn.");
+        }
+
+        if (type is "báo vắng" or "bao vang" or "leave" || type.Contains("vắng") || type.Contains("vang"))
+            return ("Buổi học đã bị hủy", $"Buổi học {request.ClassName} đã bị hủy. Vui lòng xem lịch tập để cập nhật.");
+
+        if (type is "dạy thay" or "day thay" or "substitute" || type.Contains("thay"))
+            return ("Huấn luyện viên buổi học đã thay đổi", $"{request.SubstituteCoachName ?? "Huấn luyện viên mới"} sẽ phụ trách thay buổi học {request.ClassName}. Vui lòng xem lại lịch tập của bạn.");
+
+        return ("Lịch lớp học đã được cập nhật", $"Thông tin buổi học {request.ClassName} đã được cập nhật. Vui lòng xem lại lịch tập của bạn.");
     }
 
     private static object ToResponse(ManagerScheduleRequestRow row) => new

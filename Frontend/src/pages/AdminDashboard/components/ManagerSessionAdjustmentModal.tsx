@@ -143,11 +143,21 @@ export function ManagerSessionAdjustmentModal({ classDetail, onClose, onSuccess 
             </label>
           )}
 
+          {action === "substitute" && (
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              HLV được chọn sẽ nhận lời mời và cần xác nhận. Lịch chỉ đổi sau khi HLV chấp nhận.
+            </p>
+          )}
+
           <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
             Lý do <span className="text-rose-500">*</span>
             <textarea required rows={3} maxLength={500} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Nhập lý do để học viên nắm được thay đổi..." className="mt-1.5 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
           </label>
-          <p className="text-xs leading-5 text-slate-500">Sau khi lưu, học viên đã đặt buổi này sẽ nhận được thông báo. Hệ thống sẽ kiểm tra trùng lịch trước khi cập nhật.</p>
+          <p className="text-xs leading-5 text-slate-500">
+            {action === "substitute"
+              ? "HLV dạy thay cần xác nhận trước khi lịch được cập nhật; hệ thống sẽ kiểm tra trùng lịch khi HLV phản hồi."
+              : "Sau khi lưu, học viên đã đặt buổi này sẽ nhận được thông báo. Hệ thống sẽ kiểm tra trùng lịch trước khi cập nhật."}
+          </p>
         </div>
 
         <div className="flex justify-end gap-2 border-t border-slate-100 bg-slate-50 px-5 py-3 dark:border-slate-800 dark:bg-slate-850">

@@ -308,6 +308,7 @@ export interface CoachClassProposal {
   requestedSlots: string;
   notes?: string;
   status: string;
+  rejectionReason?: string | null;
   createdAt: string;
   totalSessions?: number;
   sessionNumber?: number;

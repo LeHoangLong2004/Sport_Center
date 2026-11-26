@@ -275,12 +275,16 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
     }
   };
 
-  const handleClassApproval = async (id: string, action: "approve" | "reject"): Promise<boolean> => {
+  const handleClassApproval = async (id: string, action: "approve" | "reject", reason?: string): Promise<boolean> => {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`/api/classes/${id}/${action}`, {
         method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          ...(action === "reject" ? { "Content-Type": "application/json" } : {}),
+        },
+        ...(action === "reject" ? { body: JSON.stringify({ reason }) } : {}),
       });
       if (!res.ok) {
         const contentType = res.headers.get("content-type") || "";
@@ -349,7 +353,7 @@ export function SchedulePage({ initialTab = "calendar" }: { initialTab?: Schedul
             setEditClassData(data);
             setSelectedClassId(null);
           }}
-          onApproval={(action) => handleClassApproval(selectedClassId, action)}
+          onApproval={(action, reason) => handleClassApproval(selectedClassId, action, reason)}
         />
       )}
 

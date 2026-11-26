@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Check, PackageCheck, Plus, ShieldCheck } from "lucide-react"
+import { PackageCheck, Plus, ShieldCheck } from "lucide-react"
 import { CatalogPackage, PackageOrder, PackageAPI } from "../../../services/packageApi"
 import {
   blankMembershipPackage, MembershipCard, PackageDraft, PackageEditor, periods, money,
@@ -34,8 +34,61 @@ export function PackagesWorkspace() {
     [catalog],
   )
 
-  const pendingOrders = orders.filter((order) => order.status === "pending")
-  const visibleOrders = orders.filter((order) =>
+  const displayOrders = useMemo(() => {
+    const courseGroups = new Map<string, PackageOrder[]>()
+    const standaloneOrders: PackageOrder[] = []
+
+    for (const order of orders) {
+      if (order.packageSnapshot.category !== "class" || !order.courseId) {
+        standaloneOrders.push(order)
+        continue
+      }
+      const key = `${order.userId}:${order.courseId}`
+      const group = courseGroups.get(key) ?? []
+      group.push(order)
+      courseGroups.set(key, group)
+    }
+
+    const courseOrders = Array.from(courseGroups.values()).map((sessions) => {
+      const first = sessions[0]
+      const subtotal = sessions.reduce((sum, session) => sum + session.subtotal, 0)
+      const discountAmount = sessions.reduce((sum, session) => sum + session.discountAmount, 0)
+      const sessionDates = sessions
+        .map((session) => session.startDate)
+        .filter((date): date is string => Boolean(date))
+        .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
+
+      return {
+        ...first,
+        id: `course:${first.userId}:${first.courseId}`,
+        packageSnapshot: {
+          ...first.packageSnapshot,
+          name: `Lớp: ${first.courseName || first.packageSnapshot.name.replace(/^Lớp:\s*/, "")}`,
+        },
+        durationMonths: 0,
+        subtotal,
+        discountAmount,
+        discountPct: subtotal > 0 ? Math.round((discountAmount / subtotal) * 100) : 0,
+        total: sessions.reduce((sum, session) => sum + session.total, 0),
+        status: sessions.every((session) => session.status === "paid") ? "paid" as const : "pending" as const,
+        createdAt: sessions.reduce((earliest, session) =>
+          new Date(session.createdAt) < new Date(earliest) ? session.createdAt : earliest, first.createdAt),
+        startDate: sessionDates[0],
+        endDate: sessionDates[sessionDates.length - 1],
+        courseSessionCount: Math.max(
+          ...sessions.map((session) => session.courseSessionCount ?? 0),
+          sessions.length,
+        ),
+      }
+    })
+
+    return [...standaloneOrders, ...courseOrders].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    )
+  }, [orders])
+
+  const pendingOrders = displayOrders.filter((order) => order.status === "pending")
+  const visibleOrders = displayOrders.filter((order) =>
     `${order.userName} ${order.userEmail} ${order.packageSnapshot.name} ${order.id}`
       .toLowerCase().includes(orderSearch.toLowerCase()),
   )
@@ -123,18 +176,6 @@ export function PackagesWorkspace() {
     }
   }
 
-  const confirmPayment = async (order: PackageOrder) => {
-    if (!window.confirm(`Xác nhận đã nhận ${money(order.total)} cho đơn ${order.id}? Giao dịch này chỉ được xác nhận một lần.`)) return
-    try {
-      setError("")
-      await PackageAPI.confirmPayment(order.id)
-      setNotice(`Đã xác nhận thanh toán đơn ${order.id}; quyền lợi được kích hoạt hoặc xếp lịch theo thời hạn gói.`)
-      await loadData()
-    } catch (paymentError) {
-      setError(paymentError instanceof Error ? paymentError.message : "Không thể xác nhận thanh toán.")
-    }
-  }
-
   if (loading) return <div className="p-8 text-sm text-slate-500">Đang tải danh mục gói...</div>
 
   return (
@@ -176,8 +217,8 @@ export function PackagesWorkspace() {
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Đơn mua và xác nhận thanh toán</h2>
-              <p className="mt-1 text-sm text-slate-500">Chỉ xác nhận khi đã nhận tiền; thao tác xác nhận chỉ thực hiện một lần.</p>
+              <h2 className="text-lg font-bold text-slate-900">Đơn mua và trạng thái thanh toán</h2>
+              <p className="mt-1 text-sm text-slate-500">Theo dõi thông tin đơn hàng và trạng thái thanh toán.</p>
             </div>
             <input value={orderSearch} onChange={(e) => setOrderSearch(e.target.value)}
               placeholder="Tìm tên, mã đơn, gói..."
@@ -194,29 +235,27 @@ export function PackagesWorkspace() {
                       <div className="flex flex-wrap items-center gap-2">
                         <strong className="text-sm text-slate-900">{order.packageSnapshot.name}</strong>
                         <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${order.status === "pending" ? "bg-slate-50 text-slate-800" : order.status === "paid" ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-800"}`}>
-                          {order.status === "pending" ? "Chờ thanh toán" : order.status === "paid" ? (order.startDate && new Date(order.startDate) > new Date() ? "Đã thanh toán · Chờ hiệu lực" : "Đã thanh toán") : "Thất bại"}
+                          {order.status === "pending" ? "Chờ thanh toán" : order.status === "paid" ? "Đã thanh toán" : "Thất bại"}
                         </span>
                       </div>
                       <p className="mt-1 text-sm text-slate-600">{order.userName}{order.userEmail && ` · ${order.userEmail}`}</p>
-                      <p className="mt-1 text-xs text-slate-500">{order.id} · {order.durationMonths} tháng · Tạo {new Date(order.createdAt).toLocaleString("vi-VN")}</p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {order.packageSnapshot.category === "class"
+                          ? `Khóa học · ${order.courseSessionCount ?? 1} buổi`
+                          : `${order.id} · ${order.durationMonths} tháng`} · Tạo {new Date(order.createdAt).toLocaleString("vi-VN")}
+                      </p>
                       {order.startDate && (
                         <p className="mt-1 text-xs text-slate-500">
-                          Hiệu lực {new Date(order.startDate).toLocaleDateString("vi-VN")} – {new Date(order.endDate!).toLocaleDateString("vi-VN")}
+                          {order.packageSnapshot.category === "class" ? "Lịch khóa học" : "Hiệu lực"} {new Date(order.startDate).toLocaleDateString("vi-VN")} – {new Date(order.endDate!).toLocaleDateString("vi-VN")}
                         </p>
                       )}
                     </div>
                     <div className="flex items-center justify-between gap-4 lg:justify-end">
                       <div className="text-right">
-                        <p className="text-xs text-slate-500">Cần thanh toán</p>
+                        <p className="text-xs text-slate-500">{order.packageSnapshot.category === "class" ? "Học phí khóa học" : "Cần thanh toán"}</p>
                         <strong className="text-lg text-slate-900">{money(order.total)}</strong>
                         {order.discountPct > 0 && <p className="text-xs text-emerald-700">Đã giảm {order.discountPct}%</p>}
                       </div>
-                      {order.status === "pending" && order.packageSnapshot.category === "membership" && (
-                        <button type="button" onClick={() => void confirmPayment(order)}
-                          className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-3 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800">
-                          <Check size={16} /> Xác nhận đã thu
-                        </button>
-                      )}
                       {order.status === "pending" && order.packageSnapshot.category === "sport" && (
                         <span className="max-w-48 text-right text-xs text-slate-500">
                           Gói môn đã ngừng kinh doanh; đơn cũ được giữ trong lịch sử.
