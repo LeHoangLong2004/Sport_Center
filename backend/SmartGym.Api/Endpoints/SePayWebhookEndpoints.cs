@@ -1,4 +1,6 @@
 using System.Text.RegularExpressions;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartGym.Domain.Enums;
@@ -121,6 +123,57 @@ public static class SePayWebhookEndpoints
         }
     }
 
+    private static async Task<ClassBookingPaymentReceiptRaw?> PersistClassBookingPaymentAsync(
+        SmartGymDbContext db, string content, decimal amount, long sePayTransactionId)
+    {
+        if (amount <= 0 || !content.Contains("DATLOP", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        var candidates = await db.Database.SqlQueryRaw<ClassBookingPaymentReceiptRaw>(@"
+            SELECT id AS ""Id"", payment_memo AS ""PaymentMemo"", amount AS ""Amount"",
+                   sepay_transaction_id AS ""SePayTransactionId""
+            FROM class_booking_payment_holds
+            WHERE payment_memo ILIKE 'DATLOP %'
+              AND ABS(amount - {0}) < 1
+              AND created_at >= now() - INTERVAL '24 hours'
+            ORDER BY created_at DESC", amount).ToListAsync();
+
+        var candidate = candidates.FirstOrDefault(row => IsMemoMatched(content, row.PaymentMemo, row.Amount, amount));
+        if (candidate is null) return null;
+
+        var transactionKey = sePayTransactionId > 0
+            ? $"SEPAY-{sePayTransactionId}"
+            : $"SEPAY-{Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes($"{candidate.PaymentMemo}|{amount}|{content.ToUpperInvariant()}")))[..32]}";
+
+        try
+        {
+            var updated = await db.Database.ExecuteSqlRawAsync(@"
+                UPDATE class_booking_payment_holds
+                SET sepay_transaction_id = COALESCE(sepay_transaction_id, {1}),
+                    paid_at = COALESCE(paid_at, now())
+                WHERE id = {0}
+                  AND (sepay_transaction_id IS NULL OR sepay_transaction_id = {1})",
+                candidate.Id, transactionKey);
+
+            if (updated == 0) return null;
+            candidate.SePayTransactionId = transactionKey;
+            return candidate;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[SePay Class Payment] Could not persist transaction for hold {candidate.Id}: {ex.Message}");
+            return null;
+        }
+    }
+
+    private sealed class ClassBookingPaymentReceiptRaw
+    {
+        public Guid Id { get; set; }
+        public string PaymentMemo { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public string? SePayTransactionId { get; set; }
+    }
+
     public static void MapSePayWebhookEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/payments").WithTags("SePay Webhook");
@@ -234,6 +287,23 @@ public static class SePayWebhookEndpoints
                         transactionId = webhook.Id
                     });
                 }
+            }
+
+            // Persist class payments immediately so a later booking request can
+            // confirm the same bank transaction across API instances/restarts.
+            var classPaymentReceipt = await PersistClassBookingPaymentAsync(db, content, amount, webhook.Id);
+            if (classPaymentReceipt is not null)
+            {
+                LogTransaction(webhook, $"CLASS_HOLD:{classPaymentReceipt.Id}", "class_booking_payment_received");
+                return Results.Ok(new
+                {
+                    success = true,
+                    paymentReceived = true,
+                    message = "Đã ghi nhận thanh toán đặt lớp thành công. Hệ thống đang hoàn tất đăng ký.",
+                    transactionId = webhook.Id,
+                    amount,
+                    paymentMemo = classPaymentReceipt.PaymentMemo
+                });
             }
 
             // Thử khớp số ngắn: GYM<số> (ví dụ: GYM102, GYM2026)
@@ -360,16 +430,50 @@ public static class SePayWebhookEndpoints
         // ═══════════════════════════════════════════════════════════════
         group.MapGet("/sepay-check-memo", async (
             IConfiguration config,
+            SmartGymDbContext db,
             [FromQuery] string? memo,
             [FromQuery] decimal? amount) =>
         {
             var cleanMemo = (memo ?? "").Trim();
             var recentCutoff = DateTime.UtcNow.AddMinutes(-30);
 
+            // A prior poll/webhook may already have consumed this transaction.
+            // Its durable receipt on the class payment hold remains authoritative.
+            if (cleanMemo.StartsWith("DATLOP ", StringComparison.OrdinalIgnoreCase) && amount.GetValueOrDefault() > 0)
+            {
+                var persistedReceipt = await db.Database.SqlQueryRaw<ClassBookingPaymentReceiptRaw>(@"
+                    SELECT id AS ""Id"", payment_memo AS ""PaymentMemo"", amount AS ""Amount"",
+                           sepay_transaction_id AS ""SePayTransactionId""
+                    FROM class_booking_payment_holds
+                    WHERE payment_memo = {0}
+                      AND ABS(amount - {1}) < 1
+                      AND sepay_transaction_id IS NOT NULL
+                    LIMIT 1", cleanMemo, amount.GetValueOrDefault()).FirstOrDefaultAsync();
+                if (persistedReceipt is not null)
+                    return Results.Ok(new { received = true, amount = persistedReceipt.Amount, paymentMemo = persistedReceipt.PaymentMemo, transactionId = persistedReceipt.SePayTransactionId, message = "Đã xác nhận khoản thanh toán đặt lớp." });
+
+                SePayTransactionLog? consumedClassTransaction;
+                lock (_logLock)
+                {
+                    consumedClassTransaction = _transactionLogs.FirstOrDefault(t =>
+                        t.ReceivedAt >= recentCutoff
+                        && string.Equals(t.Status, "consumed", StringComparison.OrdinalIgnoreCase)
+                        && IsMemoMatched(t.Content, cleanMemo, amount, t.Amount));
+                }
+                if (consumedClassTransaction is not null)
+                {
+                    var recoveredReceipt = await PersistClassBookingPaymentAsync(
+                        db, consumedClassTransaction.Content, consumedClassTransaction.Amount, consumedClassTransaction.SePayId);
+                    if (recoveredReceipt is not null)
+                        return Results.Ok(new { received = true, amount = recoveredReceipt.Amount, paymentMemo = recoveredReceipt.PaymentMemo, transactionId = recoveredReceipt.SePayTransactionId, message = "Đã khôi phục xác nhận khoản thanh toán đặt lớp." });
+                }
+            }
+
             // 1. Kiểm tra trong in-memory transaction logs (từ SePay Webhook)
+            SePayTransactionLog? matchedTransaction;
             lock (_logLock)
             {
-                var matched = _transactionLogs.FirstOrDefault(t =>
+                matchedTransaction = _transactionLogs.FirstOrDefault(t =>
                     t.ReceivedAt >= recentCutoff &&
                     !string.IsNullOrWhiteSpace(cleanMemo) &&
                     t.Status != "consumed" &&
@@ -379,28 +483,36 @@ public static class SePayWebhookEndpoints
                     IsMemoMatched(t.Content, cleanMemo, amount, t.Amount)
                 );
 
-                if (matched != null)
+            }
+
+            if (matchedTransaction is not null)
+            {
+                if (cleanMemo.StartsWith("DATLOP ", StringComparison.OrdinalIgnoreCase))
                 {
-                    // Đánh dấu ngay lập tức là đã tiêu thụ (consumed) để không bao giờ bị khớp lại lần 2
-                    var idx = _transactionLogs.IndexOf(matched);
+                    var receipt = await PersistClassBookingPaymentAsync(db, matchedTransaction.Content, matchedTransaction.Amount, matchedTransaction.SePayId);
+                    if (receipt is null)
+                        return Results.Ok(new { received = false, message = "Đã thấy giao dịch nhưng chưa đối chiếu được với lượt thanh toán lớp." });
+                }
+
+                lock (_logLock)
+                {
+                    var idx = _transactionLogs.FindIndex(t => t.SePayId == matchedTransaction.SePayId && t.Status == matchedTransaction.Status);
                     if (idx >= 0)
-                    {
-                        _transactionLogs[idx] = matched with
+                        _transactionLogs[idx] = _transactionLogs[idx] with
                         {
                             Status = "consumed",
                             MatchedOrderId = $"CONSUMED_{cleanMemo.Replace(" ", "")}_{DateTime.UtcNow.Ticks}"
                         };
-                    }
-
-                    return Results.Ok(new
-                    {
-                        received = true,
-                        transactionId = matched.SePayId,
-                        amount = matched.Amount,
-                        content = matched.Content,
-                        message = "Đã nhận được tiền chuyển khoản thành công từ Sacombank qua SePay!"
-                    });
                 }
+
+                return Results.Ok(new
+                {
+                    received = true,
+                    transactionId = matchedTransaction.SePayId,
+                    amount = matchedTransaction.Amount,
+                    content = matchedTransaction.Content,
+                    message = "Đã nhận được tiền chuyển khoản thành công từ Sacombank qua SePay!"
+                });
             }
 
             // 2. Nếu chưa có trong log webhook, truy vấn trực tiếp SePay API nếu có ApiToken
@@ -463,6 +575,12 @@ public static class SePayWebhookEndpoints
 
                                 if (IsMemoMatched(content, cleanMemo, amount, txAmount))
                                 {
+                                    if (cleanMemo.StartsWith("DATLOP ", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        var receipt = await PersistClassBookingPaymentAsync(db, content, txAmount, sePayId);
+                                        if (receipt is null) continue;
+                                    }
+
                                     // Ghi nhận ngay vào log với trạng thái consumed
                                     lock (_logLock)
                                     {

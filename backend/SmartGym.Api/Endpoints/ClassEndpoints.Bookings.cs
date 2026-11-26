@@ -307,8 +307,8 @@ public static partial class ClassEndpoints
 
                 var paymentMemo = (request?.PaymentMemo ?? "").Trim();
                 var paymentHold = string.IsNullOrWhiteSpace(paymentMemo) ? null : await db.Database
-                    .SqlQueryRaw<ClassPaymentHoldRaw>(
-                        "SELECT id AS \"Id\", invoice_id AS \"InvoiceId\", user_id AS \"UserId\", class_id AS \"ClassId\", payment_memo AS \"PaymentMemo\", amount AS \"Amount\", expires_at AS \"ExpiresAt\" FROM class_booking_payment_holds WHERE user_id = {0} AND class_id = {1} AND payment_memo = {2} AND status = 'active' AND expires_at > now()",
+                    .SqlQueryRaw<ClassPaymentAttemptRaw>(
+                        "SELECT id AS \"Id\", invoice_id AS \"InvoiceId\", user_id AS \"UserId\", class_id AS \"ClassId\", payment_memo AS \"PaymentMemo\", amount AS \"Amount\", expires_at AS \"ExpiresAt\", status AS \"Status\", sepay_transaction_id AS \"SePayTransactionId\" FROM class_booking_payment_holds WHERE user_id = {0} AND class_id = {1} AND payment_memo = {2} AND ((status = 'active' AND expires_at > now()) OR sepay_transaction_id IS NOT NULL OR status = 'completed') ORDER BY created_at DESC LIMIT 1",
                         userId, id, paymentMemo).FirstOrDefaultAsync();
 
                 if (paymentHold is null)
@@ -329,7 +329,8 @@ public static partial class ClassEndpoints
                 var qrPaymentConfirmed = false;
                 if (!isWallet && !heldIsCounter)
                 {
-                    qrPaymentConfirmed = SePayWebhookEndpoints.WasMemoConsumed(paymentMemo, amount);
+                    qrPaymentConfirmed = !string.IsNullOrWhiteSpace(paymentHold.SePayTransactionId)
+                        || SePayWebhookEndpoints.WasMemoConsumed(paymentMemo, amount);
                     if (!qrPaymentConfirmed)
                         return Results.BadRequest(new { message = "Chưa xác nhận được giao dịch QR hợp lệ cho lượt thanh toán này." });
                 }
@@ -337,6 +338,27 @@ public static partial class ClassEndpoints
                 var holdInvoice = await db.Invoices.FirstOrDefaultAsync(x => x.Id == paymentHold.InvoiceId && x.UserId == userId);
                 if (holdInvoice is null)
                     return Results.Conflict(new { message = "Không tìm thấy hóa đơn cho lượt thanh toán." });
+
+                if (string.Equals(paymentHold.Status, "completed", StringComparison.OrdinalIgnoreCase))
+                {
+                    var existingBookings = await db.Database.SqlQueryRaw<int>(
+                        "SELECT COUNT(*) AS \"Value\" FROM class_bookings WHERE user_id = {0} AND class_id IN (SELECT id FROM classes WHERE id = {1} OR parent_id = {1} OR (parent_id IS NOT NULL AND parent_id = (SELECT parent_id FROM classes WHERE id = {1}))) AND LOWER(status) IN ('confirmed', 'pending', 'approved')",
+                        userId, id).SingleAsync();
+                    if (existingBookings > 0)
+                    {
+                        var isCompleted = holdInvoice.Status == PaymentStatus.Completed;
+                        return Results.Ok(new
+                        {
+                            success = true,
+                            isCounter = holdInvoice.PaymentMethod == PaymentMethod.CashAtCounter,
+                            paymentStatus = isCompleted ? "completed" : "pending",
+                            message = "Thanh toán và đăng ký lớp đã được ghi nhận trước đó.",
+                            invoiceId = holdInvoice.Id,
+                            amount = paymentHold.Amount,
+                            classInfo = await service.GetClassDetailAsync(id)
+                        });
+                    }
+                }
 
                 if (isWallet)
                 {
@@ -373,7 +395,7 @@ public static partial class ClassEndpoints
                         holdInvoice.Status = PaymentStatus.Completed;
                         holdInvoice.PaidAt = DateTime.UtcNow;
                         await db.Database.ExecuteSqlRawAsync(
-                            "UPDATE class_booking_payment_holds SET status = 'refund_required', paid_at = now() WHERE id = {0} AND user_id = {1} AND status = 'active'",
+                            "UPDATE class_booking_payment_holds SET status = 'refund_required', paid_at = COALESCE(paid_at, now()) WHERE id = {0} AND user_id = {1} AND status IN ('active', 'expired', 'cancelled', 'refund_required')",
                             paymentHold.Id, userId);
                         await db.SaveChangesAsync();
                         await repository.NotifyManagersAsync(
@@ -392,7 +414,7 @@ public static partial class ClassEndpoints
                 holdInvoice.Status = heldIsCounter ? PaymentStatus.Pending : PaymentStatus.Completed;
                 holdInvoice.PaidAt = heldIsCounter ? null : DateTime.UtcNow;
                 await db.Database.ExecuteSqlRawAsync(
-                    "UPDATE class_booking_payment_holds SET status = 'completed', paid_at = CASE WHEN {2} THEN NULL ELSE now() END WHERE id = {0} AND user_id = {1} AND status = 'active'",
+                    "UPDATE class_booking_payment_holds SET status = 'completed', paid_at = CASE WHEN {2} THEN NULL ELSE COALESCE(paid_at, now()) END WHERE id = {0} AND user_id = {1} AND status IN ('active', 'expired', 'cancelled', 'refund_required')",
                     paymentHold.Id, userId, heldIsCounter);
                 await db.SaveChangesAsync();
                 var heldClassDetail = await service.GetClassDetailAsync(id);
@@ -817,6 +839,19 @@ public sealed class ClassPaymentHoldRaw
     public string PaymentMemo { get; set; } = "";
     public decimal Amount { get; set; }
     public DateTime ExpiresAt { get; set; }
+}
+
+public sealed class ClassPaymentAttemptRaw
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public Guid ClassId { get; set; }
+    public Guid? InvoiceId { get; set; }
+    public string PaymentMemo { get; set; } = "";
+    public decimal Amount { get; set; }
+    public DateTime ExpiresAt { get; set; }
+    public string Status { get; set; } = "active";
+    public string? SePayTransactionId { get; set; }
 }
 
 public sealed class ClassBookingSessionIdRaw
