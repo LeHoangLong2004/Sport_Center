@@ -22,6 +22,9 @@ export function FacilitiesPage() {
     setName,
     imageUrl,
     setImageUrl,
+    pricePerSession,
+    setPricePerSession,
+    isLoadingSportPrice,
     address,
     setAddress,
     maxConcurrentClasses,
@@ -110,6 +113,9 @@ export function FacilitiesPage() {
           setName={setName}
           imageUrl={imageUrl}
           setImageUrl={setImageUrl}
+          pricePerSession={pricePerSession}
+          setPricePerSession={setPricePerSession}
+          isLoadingSportPrice={isLoadingSportPrice}
           address={address}
           setAddress={setAddress}
           maxConcurrentClasses={maxConcurrentClasses}

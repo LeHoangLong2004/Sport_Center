@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { X, Banknote, CreditCard, QrCode, ShieldCheck, RefreshCw, Check } from "lucide-react";
 import type { PackageOrder } from "../../../../services/packageApi";
 import { BankConfigService } from "../../../MemberPortal/services/bankConfig";
@@ -40,7 +41,7 @@ export default function CounterConfirmModal({
 
   if (!confirmOrder) return null;
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 backdrop-blur-sm p-4 animate-in fade-in duration-200"
       onClick={(e) => {
@@ -48,7 +49,7 @@ export default function CounterConfirmModal({
       }}
     >
       <div
-        className="bg-white dark:bg-slate-800 rounded-3xl p-6 sm:p-7 max-w-lg w-full border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col gap-5"
+        className="bg-white dark:bg-slate-800 rounded-3xl p-6 sm:p-7 max-w-lg w-full max-h-[calc(100dvh-2rem)] overflow-y-auto border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col gap-5"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
@@ -201,6 +202,7 @@ export default function CounterConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

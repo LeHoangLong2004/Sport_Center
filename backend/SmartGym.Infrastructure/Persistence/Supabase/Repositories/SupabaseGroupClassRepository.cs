@@ -200,6 +200,33 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
         return models.Select(ToDomain);
     }
 
+    public async Task<IEnumerable<GroupClass>> GetClassesForScheduleConflictsAsync(
+        Guid coachId,
+        Guid facilityId,
+        DateTime from,
+        DateTime to)
+    {
+        var start = AsUtc(from);
+        var end = AsUtc(to);
+        var models = await _dbContext.Database
+            .SqlQueryRaw<ClassSqlRawModel>(
+                @"SELECT id, sport_id, facility_id, coach_id, class_name,
+                         schedule_time, duration_minutes, capacity,
+                         current_enrolled, status, approval_status, parent_id, session_number, total_sessions,
+                         price_per_session_snapshot, course_fee_snapshot
+                  FROM classes
+                  WHERE (coach_id = {0} OR facility_id = {1})
+                    AND schedule_time >= {2}
+                    AND schedule_time < {3}",
+                coachId,
+                facilityId,
+                start,
+                end)
+            .ToListAsync();
+
+        return models.Select(ToDomain).ToList();
+    }
+
     private static GroupClass ToDomain(ClassSqlRawModel model)
         => new(
             model.Id,

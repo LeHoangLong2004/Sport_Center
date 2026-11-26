@@ -6,6 +6,7 @@ interface Props {
   isFinalized: boolean;
   isDraft?: boolean;
   isExpired24h?: boolean;
+  isNotStarted?: boolean;
   deadlineInfo?: any;
   enrolledCount: number;
   stats?: any;
@@ -16,6 +17,7 @@ export default function AttendanceSessionSelector({
   isFinalized,
   isDraft,
   isExpired24h,
+  isNotStarted,
   deadlineInfo,
   enrolledCount,
   stats = { total: 0, attended: 0, absent: 0, late: 0, pending: 0, attendanceRate: 0 },
@@ -50,7 +52,12 @@ export default function AttendanceSessionSelector({
                 <Dumbbell className="w-3.5 h-3.5" />
                 {session.sport || "Lớp nhóm"}
               </span>
-            {isExpired24h ? (
+            {isNotStarted ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                <Lock className="w-3.5 h-3.5" />
+                Chưa đến giờ điểm danh
+              </span>
+            ) : isExpired24h ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                 <Lock className="w-3.5 h-3.5 text-slate-500" />
                 Đã đóng (Quá 24 giờ)
@@ -92,9 +99,13 @@ export default function AttendanceSessionSelector({
             <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-slate-400" />
               <span>
-                Thời hạn điểm danh: {isExpired24h ? "Đã hết hạn lúc " : "Hết hạn lúc "}
-                <strong>{deadlineInfo.formattedDeadline}</strong> (
-                {isExpired24h ? "Không thể sửa điểm vì đã quá 24 giờ" : deadlineInfo.remainingText})
+                {isNotStarted ? (
+                  <>Điểm danh mở lúc <strong>{session.startTime} ngày {session.date}</strong></>
+                ) : (
+                  <>Thời hạn điểm danh: {isExpired24h ? "Đã hết hạn lúc " : "Hết hạn lúc "}
+                    <strong>{deadlineInfo.formattedDeadline}</strong> (
+                    {isExpired24h ? "Không thể sửa điểm vì đã quá 24 giờ" : deadlineInfo.remainingText})</>
+                )}
               </span>
             </p>
           )}

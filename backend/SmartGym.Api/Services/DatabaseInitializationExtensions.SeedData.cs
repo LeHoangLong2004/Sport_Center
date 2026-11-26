@@ -139,13 +139,6 @@ public static partial class DatabaseInitializationExtensions
                     ('77777777-7777-7777-7777-777777777777', 'Găng tay tập gym', 'Phụ kiện', 150000, 15, '/assets/235a3.png', true)
                 ON CONFLICT (id) DO UPDATE SET image_url = EXCLUDED.image_url;
 
-                INSERT INTO appointments (id, time, title, customer_name, coach_name, status)
-                VALUES
-                    ('88888888-8888-8888-8888-888888888888', '08:00', 'Lớp Yoga mở màn (Tư vấn hội viên)', 'Đặng Hồng Liên', 'Minh Tuyết', 'Đã hoàn tất'),
-                    ('99999999-9999-9999-9999-999999999999', '10:00', 'Tập thử buổi 1 - PT kèm riêng 1:1', 'Trần Trung Kiên', 'Trần Khoa', 'Đang chờ khách'),
-                    ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '14:00', 'Tư vấn gia hạn gói tập vàng', 'Vũ Phương Thảo', 'Lễ tân', 'Đã hủy')
-                ON CONFLICT (id) DO NOTHING;
-
                 INSERT INTO users (id, role_id, full_name, email, phone_number, password_hash, status)
                 VALUES 
                     ('25f50fba-506a-4edf-9db7-43f77f6741a4', (SELECT id FROM roles WHERE LOWER(name) = 'coach' LIMIT 1), 'Ho Xuan Anh Nam', 'hoxuananhnam1@gmail.com', '0989123789', '$2a$11$e/r08VbM70tWp6Z97lC4wO9Fh0Zz7XhO3aW8u8/r08VbM70tWp6Z9', true),

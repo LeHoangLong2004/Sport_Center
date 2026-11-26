@@ -16,6 +16,14 @@ interface Props {
   onNavigate: (screen: MemberScreen) => void;
 }
 
+const isPtCourse = (item: any) => {
+  const labels = [item.name, item.className, item.level, item.sport, item.sportName]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return /pt\s*1\s*[-:]\s*1|1\s*[-:]\s*1\s*pt|personal\s*training|kèm\s*(riêng|1\s*[-:]\s*1)/i.test(labels);
+};
+
 /**
  * Màn hình Đặt lịch lớp học & Huấn luyện viên cá nhân (Member Booking View).
  * Cung cấp giao diện lọc theo ngày, bộ môn, HLV và đặt chỗ:
@@ -139,7 +147,7 @@ export default function MemberBooking({ onNavigate }: Props) {
     onNavigate("chat");
   };
 
-  const filteredGroupClasses = useMemo(() => {
+  const filteredAvailableClasses = useMemo(() => {
     const nowTime = Date.now();
     return groupClasses.filter((c) => {
       // Ẩn hoàn toàn các lớp học đã kết thúc (thời gian kết thúc <= thời gian hiện tại)
@@ -164,6 +172,17 @@ export default function MemberBooking({ onNavigate }: Props) {
       return matchDate && matchSport && matchCoach && matchQuery;
     });
   }, [groupClasses, selectedDate, selectedSport, selectedCoachId, searchQuery]);
+
+  // PT 1–1 được tạo như một khóa học định kỳ trong bảng classes, khác với
+  // các ca PT lẻ được HLV mở trong coach_availability_slots.
+  const filteredPtCourses = useMemo(
+    () => filteredAvailableClasses.filter(isPtCourse),
+    [filteredAvailableClasses]
+  );
+  const filteredGroupClasses = useMemo(
+    () => filteredAvailableClasses.filter((item) => !isPtCourse(item)),
+    [filteredAvailableClasses]
+  );
 
   const filteredPtSlots = useMemo(() => {
     const nowTime = Date.now();
@@ -223,7 +242,7 @@ export default function MemberBooking({ onNavigate }: Props) {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         groupClassesCount={filteredGroupClasses.length}
-        ptSlotsCount={filteredPtSlots.length}
+        ptSlotsCount={filteredPtSlots.length + filteredPtCourses.length}
         myRegisteredClassesCount={myRegisteredClassesCount}
       />
 
@@ -264,13 +283,47 @@ export default function MemberBooking({ onNavigate }: Props) {
 
       {/* TAB 2: PT 1-1 */}
       {activeTab === "pt" && (
-        <PtSlotsTab
-          slots={filteredPtSlots}
-          onBookPtSlot={setBookingPtSlot}
-          membership={membership}
-          activeOrders={activeOrders}
-          mySessions={mySessions}
-        />
+        <div className="space-y-8">
+          {filteredPtCourses.length > 0 && (
+            <section className="space-y-3">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Khóa PT 1–1 theo chu kỳ</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Các buổi tập định kỳ hàng tuần do HLV hoặc quản lý mở đăng ký.</p>
+              </div>
+              <GroupClassesTab
+                loading={loadingGroupClasses}
+                error={groupClassesError}
+                refreshing={refreshingGroupClasses}
+                classes={filteredPtCourses}
+                mySessions={mySessions}
+                membership={membership}
+                onNavigate={onNavigate}
+                onRetry={() => void loadGroupClasses()}
+                onOpenDetail={handleOpenClassDetail}
+                onInitiateBook={handleInitiateBookClass}
+                onCancelBooking={setCancelTarget}
+                findActiveBooking={findActiveBooking}
+                getBookingStatus={getBookingStatus}
+                isInactiveBookingStatus={isInactiveBookingStatus}
+              />
+            </section>
+          )}
+          <section className="space-y-3">
+            {filteredPtCourses.length > 0 && (
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Ca PT 1–1 linh hoạt</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Các khung giờ trống lẻ do HLV đăng ký.</p>
+              </div>
+            )}
+            <PtSlotsTab
+              slots={filteredPtSlots}
+              onBookPtSlot={setBookingPtSlot}
+              membership={membership}
+              activeOrders={activeOrders}
+              mySessions={mySessions}
+            />
+          </section>
+        </div>
       )}
 
       {/* TAB 3: MY CLASSES */}

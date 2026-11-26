@@ -34,7 +34,7 @@ public class SupportTicketModel
     public string? userId { get; set; } = "m-demo";
     public string memberName { get; set; } = "Lê Quang Vinh";
     public string memberPhone { get; set; } = "0987654321";
-    public string category { get; set; } = "Tư vấn dịch vụ & Gia hạn gói";
+    public string category { get; set; } = "Tư vấn dịch vụ";
     public string subject { get; set; } = "";
     public string content { get; set; } = "";
     public string status { get; set; } = "open"; // "open" | "resolved"

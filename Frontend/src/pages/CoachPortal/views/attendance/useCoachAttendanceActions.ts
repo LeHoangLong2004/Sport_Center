@@ -1,7 +1,7 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { CoachAPI, type AttendanceRecord, type AttendanceStatus, type MockSession, type MockMember } from "../../services/api";
-import { isAttendanceLocked24h, getAttendanceLockDeadlineInfo } from "../../utils/attendanceLock";
+import { isAttendanceLocked24h, isAttendanceNotStarted, getAttendanceLockDeadlineInfo } from "../../utils/attendanceLock";
 
 export type FilterStatus = "all" | "attended" | "late" | "no_show" | "pending";
 export type TopTab = "active" | "history";
@@ -35,6 +35,12 @@ export function useCoachAttendanceActions({
   const [isSaving, setIsSaving] = useState(false);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
+  const [clockTick, setClockTick] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClockTick((value) => value + 1), 15_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const [finalizedMap, setFinalizedMap] = useState<Record<string, boolean>>(() => {
     try {
@@ -64,17 +70,22 @@ export function useCoachAttendanceActions({
 
   const isExpired24h = useMemo(
     () => isAttendanceLocked24h(session?.date, session?.startTime),
-    [session?.date, session?.startTime]
+    [session?.date, session?.startTime, clockTick]
+  );
+
+  const isNotStarted = useMemo(
+    () => isAttendanceNotStarted(session?.date, session?.startTime),
+    [session?.date, session?.startTime, clockTick]
   );
 
   const deadlineInfo = useMemo(
     () => getAttendanceLockDeadlineInfo(session?.date, session?.startTime),
-    [session?.date, session?.startTime]
+    [session?.date, session?.startTime, clockTick]
   );
 
   const isOver24h = isExpired24h;
-  const isEditingThisSession = !isOver24h && editingSessionId === selectedSessionId;
-  const isLocked = isOver24h || (isFinalized && !isEditingThisSession);
+  const isEditingThisSession = !isNotStarted && !isOver24h && editingSessionId === selectedSessionId;
+  const isLocked = isNotStarted || isOver24h || (isFinalized && !isEditingThisSession);
 
   const handleSessionChange = useCallback(
     (newId: string) => {
@@ -152,6 +163,10 @@ export function useCoachAttendanceActions({
 
   const handleSaveDraft = async () => {
     if (!selectedSessionId || isSaving) return;
+    if (isNotStarted) {
+      toast.error("Buổi học chưa bắt đầu. HLV chỉ có thể điểm danh từ giờ bắt đầu trở đi.");
+      return;
+    }
     if (isExpired24h) {
       toast.error("Ca dạy này đã bắt đầu quá 24 giờ. Theo quy định, không thể lưu nháp điểm danh.");
       return;
@@ -172,6 +187,10 @@ export function useCoachAttendanceActions({
 
   const handleSave = async () => {
     if (!selectedSessionId || isSaving) return;
+    if (isNotStarted) {
+      toast.error("Buổi học chưa bắt đầu. HLV chỉ có thể điểm danh từ giờ bắt đầu trở đi.");
+      return;
+    }
     if (isExpired24h) {
       toast.error("Buổi học này đã bắt đầu quá 24 giờ. Sổ điểm danh đã bị khóa vĩnh viễn và không thể điều chỉnh.");
       return;
@@ -257,6 +276,7 @@ export function useCoachAttendanceActions({
     isFinalized,
     isDraft,
     isExpired24h,
+    isNotStarted,
     deadlineInfo,
     isLocked,
     isEditingThisSession,

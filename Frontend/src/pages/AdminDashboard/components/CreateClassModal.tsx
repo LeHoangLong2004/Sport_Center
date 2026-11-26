@@ -81,7 +81,7 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = 'manager
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-150 transition-colors"
+        className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-150 transition-colors"
         onClick={e => e.stopPropagation()}
       >
         {/* ══ HEADER ══ */}
@@ -120,8 +120,8 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = 'manager
         {/* ══ BODY 2 CỘT NGANG ══ */}
         <div className="flex flex-1 min-h-0 overflow-hidden">
 
-          {/* ── LEFT PANEL: Preview tổng quan lớp ── */}
-          <div className="w-64 sm:w-72 shrink-0 bg-slate-50/70 dark:bg-slate-900/50 border-r border-slate-200 dark:border-slate-800 flex flex-col overflow-y-auto">
+          {/* Preview panel is intentionally hidden to keep the proposal form focused. */}
+          <div className="hidden">
             <div className="p-4 sm:p-5 flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
@@ -192,7 +192,7 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = 'manager
               {/* Thời gian */}
               {formData.scheduleDate && (
                 <PreviewCard>
-                  <PreviewRow label={isRecurring ? 'Ngày khai giảng' : 'Ngày diễn ra'}>
+                  <PreviewRow label={isRecurring ? 'Ngày bắt đầu khóa học' : 'Ngày diễn ra'}>
                     <span className="text-sm font-bold text-slate-800 dark:text-slate-100">{formData.scheduleDate}</span>
                     {formData.scheduleTime && (
                       <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-1 block">

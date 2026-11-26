@@ -53,20 +53,16 @@ public sealed partial class ClassService
         var totalSessions = Math.Max(1, request.TotalSessions.GetValueOrDefault(request.DaysOfWeek.Count * weeks));
 
         var targetDays = request.DaysOfWeek.Select(day => day % 7).ToHashSet();
-        if (!targetDays.Contains((int)CenterTime.ToLocal(scheduleTimeUtc).DayOfWeek))
-        {
-            return (false, "Ngày khai giảng phải trùng với một trong các thứ đã chọn để là Buổi 1. Hãy chỉnh ngày khai giảng hoặc các thứ học.");
-        }
-
         var facilitySettings = await _classRepository.GetFacilitySchedulingSettingsAsync(request.FacilityId);
         if (facilitySettings is null)
             return (false, "Không tìm thấy cấu hình phòng tập.");
 
         // Sinh danh sách thời gian các buổi học (Session List Generation)
         var sessionTimes = new List<DateTime>();
-        var curDate = scheduleTimeUtc.Date;
-        var timeOfDay = scheduleTimeUtc.TimeOfDay;
-        var maxLoopDays = 180;
+        var localScheduleTime = CenterTime.ToLocal(scheduleTimeUtc);
+        var curDate = localScheduleTime.Date;
+        var timeOfDay = localScheduleTime.TimeOfDay;
+        var maxLoopDays = weeks * 7 + 7;
         var loopCount = 0;
 
         while (sessionTimes.Count < totalSessions && loopCount < maxLoopDays)
@@ -76,7 +72,8 @@ public sealed partial class ClassService
 
             if (matches)
             {
-                var sessionTime = curDate.Add(timeOfDay);
+                var localSessionStart = DateTime.SpecifyKind(curDate.Add(timeOfDay), DateTimeKind.Unspecified);
+                var sessionTime = new DateTimeOffset(localSessionStart, TimeSpan.FromHours(7)).UtcDateTime;
                 if (sessionTime >= scheduleTimeUtc)
                 {
                     sessionTimes.Add(sessionTime);
@@ -91,22 +88,36 @@ public sealed partial class ClassService
             return (false, "Không tìm thấy buổi học nào hợp lệ trong các thứ và khoảng thời gian đã chọn.");
         }
 
-        // Quét xung đột tài nguyên ma trận trên toàn bộ các buổi học dự kiến (BR-06, BR-07, BR-08)
+        // Load all existing events in a single range query instead of issuing several
+        // remote database requests for every generated session.
+        var conflictRangeStart = sessionTimes[0].AddDays(-1);
+        var conflictRangeEnd = sessionTimes[^1].AddMinutes(request.DurationMinutes);
+        var existingClassesTask = _classRepository.GetClassesForScheduleConflictsAsync(
+            request.CoachId,
+            request.FacilityId,
+            conflictRangeStart,
+            conflictRangeEnd);
+        var existingPtSessionsTask = _ptSessionRepository.GetSessionsByCoachInRangeAsync(
+            request.CoachId,
+            conflictRangeStart,
+            conflictRangeEnd);
+        await Task.WhenAll(existingClassesTask, existingPtSessionsTask);
+        var existingClasses = await existingClassesTask;
+        var existingPtSessions = await existingPtSessionsTask;
+        var availabilitySlots = request.CoachId == Guid.Empty
+            ? Array.Empty<(DateTime StartTime, DateTime EndTime)>()
+            : await _classRepository.GetCoachAvailabilitySlotsInRangeAsync(
+                request.CoachId,
+                conflictRangeStart,
+                conflictRangeEnd);
+
+        // Check overlaps in memory after the batched reads.
         for (int i = 0; i < sessionTimes.Count; i++)
         {
             var sessionStart = sessionTimes[i];
             var sessionEnd = sessionStart.AddMinutes(request.DurationMinutes);
 
-            var existingClasses = await _classRepository.GetClassesByCoachAndDateAsync(
-                request.CoachId,
-                sessionStart
-            );
-            var existingPtSessions = await _ptSessionRepository.GetSessionsByCoachAndDateAsync(
-                request.CoachId,
-                sessionStart
-            );
-
-            foreach (var c in existingClasses.Where(c => c.Status && string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase)))
+            foreach (var c in existingClasses.Where(c => c.CoachId == request.CoachId && c.Status && string.Equals(c.ApprovalStatus, "approved", StringComparison.OrdinalIgnoreCase)))
             {
                 if (Overlaps(sessionStart, sessionEnd, c.ScheduleTime, c.DurationMinutes))
                 {
@@ -125,16 +136,13 @@ public sealed partial class ClassService
                 }
             }
 
-            if (request.CoachId != Guid.Empty && await _classRepository.HasCoachAvailabilityConflictAsync(request.CoachId, sessionStart, sessionEnd))
+            if (availabilitySlots.Any(slot => sessionStart < slot.EndTime && slot.StartTime < sessionEnd))
             {
                 return (false, $"Buổi {i + 1} ({CenterTime.ToLocal(sessionStart):dd/MM/yyyy HH:mm}): HLV đã đăng lịch trống 1-1 trùng thời gian này.");
             }
 
-            var existingFacilityClasses = await _classRepository.GetClassesByFacilityAndDateAsync(
-                request.FacilityId,
-                sessionStart
-            );
-            var overlappingFacilityClasses = existingFacilityClasses
+            var overlappingFacilityClasses = existingClasses
+                .Where(c => c.FacilityId == request.FacilityId)
                 .Where(FacilityConflictValidator.IsBlockingClass)
                 .Where(c => Overlaps(sessionStart, sessionEnd, c.ScheduleTime, c.DurationMinutes));
             var facilityConflict = FacilityConflictValidator.Validate(facilitySettings, request.Capacity, overlappingFacilityClasses);
@@ -144,6 +152,7 @@ public sealed partial class ClassService
 
         // Tạo buổi gốc (Root Session: Session 1)
         var rootId = Guid.NewGuid();
+        var actualRootId = rootId;
         var rootClass = new GroupClass(
             id: rootId,
             sportId: request.SportId,
@@ -161,13 +170,12 @@ public sealed partial class ClassService
             totalSessions: sessionTimes.Count
         );
 
-        var persistedRoot = await _classRepository.AddAsync(rootClass);
-        var actualRootId = persistedRoot?.Id ?? rootId;
+        var classSessions = new List<GroupClass>(sessionTimes.Count) { rootClass };
 
         // Tạo các buổi học con tiếp theo trong chuỗi (Child Sessions: Session 2..N)
         for (int i = 1; i < sessionTimes.Count; i++)
         {
-            var childClass = new GroupClass(
+            classSessions.Add(new GroupClass(
                 id: Guid.NewGuid(),
                 sportId: request.SportId,
                 coachId: request.CoachId,
@@ -182,9 +190,10 @@ public sealed partial class ClassService
                 parentId: actualRootId,
                 sessionNumber: i + 1,
                 totalSessions: sessionTimes.Count
-            );
-            await _classRepository.AddAsync(childClass);
+            ));
         }
+
+        await _classRepository.AddRangeAsync(classSessions);
 
         if (approvalStatus == "approved")
         {

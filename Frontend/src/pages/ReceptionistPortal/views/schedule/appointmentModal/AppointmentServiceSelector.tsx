@@ -43,18 +43,29 @@ export const AppointmentServiceSelector: React.FC<AppointmentServiceSelectorProp
         </div>
 
         {isCustomService ? (
-          <input
-            type="text"
-            required
-            placeholder="Nhập tên dịch vụ lịch hẹn..."
-            value={customTitle}
-            onChange={(e) => setCustomTitle(e.target.value)}
-            className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-emerald-500"
-          />
+          <div className="space-y-1">
+            <input
+              type="text"
+              required
+              autoFocus
+              placeholder="Nhập tên dịch vụ hoặc buổi hẹn..."
+              value={customTitle}
+              onChange={(e) => setCustomTitle(e.target.value)}
+              className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-emerald-500"
+            />
+            <p className="text-[10px] text-slate-500">Dùng cho yêu cầu chưa có trong danh sách dịch vụ.</p>
+          </div>
         ) : (
           <select
-            value={selectedServiceIndex}
-            onChange={(e) => setSelectedServiceIndex(Number(e.target.value))}
+            value={String(selectedServiceIndex)}
+            onChange={(e) => {
+              if (e.target.value === "other") {
+                setCustomTitle("");
+                setIsCustomService(true);
+                return;
+              }
+              setSelectedServiceIndex(Number(e.target.value));
+            }}
             className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-emerald-500 bg-white cursor-pointer"
           >
             {PRESET_SERVICES.map((s, idx) => (
@@ -62,6 +73,7 @@ export const AppointmentServiceSelector: React.FC<AppointmentServiceSelectorProp
                 {s.title}
               </option>
             ))}
+            <option value="other">Khác (nhập tên buổi hẹn)</option>
           </select>
         )}
       </div>

@@ -121,22 +121,29 @@ public static partial class CoachEndpoints
             || recordsElement.ValueKind != System.Text.Json.JsonValueKind.Array)
             return Results.BadRequest(new { message = "Thiếu danh sách điểm danh." });
 
-        // Kiểm tra quy định khóa 24h: Nếu ca học đã bắt đầu quá 24 giờ, khóa vĩnh viễn không cho điểm danh hay điều chỉnh
-        try
-        {
-            var scheduleTime = await db.Database
-                .SqlQueryRaw<DateTime?>("SELECT schedule_time AS \"Value\" FROM classes WHERE id = {0}", sessionGuid)
-                .FirstOrDefaultAsync();
+        // Enforce start-time and 24-hour rules on the server as well as in the UI.
+        var scheduleTime = await db.Database
+            .SqlQueryRaw<DateTime?>("SELECT schedule_time AS \"Value\" FROM classes WHERE id = {0}", sessionGuid)
+            .FirstOrDefaultAsync();
 
-            if (scheduleTime.HasValue && DateTime.UtcNow - scheduleTime.Value.ToUniversalTime() > TimeSpan.FromHours(24))
+        if (!scheduleTime.HasValue)
+            return Results.BadRequest(new { message = "Không tìm thấy thời gian bắt đầu của buổi học nên không thể điểm danh." });
+
+        var scheduledStartUtc = scheduleTime.Value.Kind switch
+        {
+            DateTimeKind.Utc => scheduleTime.Value,
+            DateTimeKind.Local => scheduleTime.Value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(scheduleTime.Value, DateTimeKind.Utc),
+        };
+
+        if (DateTime.UtcNow < scheduledStartUtc)
+            return Results.BadRequest(new { message = "Buổi học chưa bắt đầu. HLV chỉ có thể điểm danh từ giờ bắt đầu trở đi." });
+
+        if (DateTime.UtcNow - scheduledStartUtc > TimeSpan.FromHours(24))
+            return Results.BadRequest(new
             {
-                return Results.BadRequest(new
-                {
-                    message = "Buổi học này đã bắt đầu quá 24 giờ. Theo quy định, sổ điểm danh đã bị khóa vĩnh viễn và không thể điểm danh hoặc điều chỉnh."
-                });
-            }
-        }
-        catch {}
+                message = "Buổi học này đã bắt đầu quá 24 giờ. Theo quy định, sổ điểm danh đã bị khóa vĩnh viễn và không thể điểm danh hoặc điều chỉnh."
+            });
 
         await using var transaction = await db.Database.BeginTransactionAsync();
         foreach (var record in recordsElement.EnumerateArray())

@@ -56,6 +56,40 @@ public sealed class SupabasePtSessionRepository : IPtSessionRepository
         }
     }
 
+    public async Task<IEnumerable<PtSession>> GetSessionsByCoachInRangeAsync(
+        Guid coachId,
+        DateTime from,
+        DateTime to)
+    {
+        try
+        {
+            var start = AsUtc(from);
+            var end = AsUtc(to);
+            var enrollmentsResponse = await _client
+                .From<PtEnrollmentModel>()
+                .Where(x => x.CoachId == coachId)
+                .Get();
+
+            var enrollmentIds = enrollmentsResponse.Models.Select(e => e.Id).ToList();
+            if (enrollmentIds.Count == 0)
+                return Enumerable.Empty<PtSession>();
+
+            var sessionsResponse = await _client
+                .From<PtSessionModel>()
+                .Filter(x => x.EnrollmentId, Postgrest.Constants.Operator.In, enrollmentIds)
+                .Where(x => x.ScheduleTime >= start)
+                .Where(x => x.ScheduleTime < end)
+                .Where(x => x.Status == "scheduled")
+                .Get();
+
+            return sessionsResponse.Models.Select(x => x.ToDomain(coachId)).ToList();
+        }
+        catch
+        {
+            return Enumerable.Empty<PtSession>();
+        }
+    }
+
     private static DateTime AsUtc(DateTime value)
         => value.Kind switch
         {

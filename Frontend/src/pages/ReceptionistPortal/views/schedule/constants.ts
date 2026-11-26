@@ -1,24 +1,12 @@
 import type { Member, ParsedCustomerInfo, ServicePreset } from "./types";
 
 export const PRESET_SERVICES: ServicePreset[] = [
-  { title: "Tập thử PT kèm riêng 1:1 - Kickfit & Thể lực", category: "Kickfit" },
-  { title: "Tập PT kèm riêng 1:1 - Thể hình chuyên sâu", category: "Gym PT" },
-  { title: "Đo chỉ số InBody & Đánh giá thể lực", category: "InBody" },
-  { title: "Tư vấn kế hoạch giảm mỡ & Dinh dưỡng", category: "Dinh dưỡng" },
-  { title: "Tập thử PT kèm riêng 1:1 - Pilates phục hồi", category: "Pilates" },
-  { title: "Tư vấn gia hạn & Nâng cấp thẻ hội viên", category: "Tư vấn thẻ" },
-];
-
-export const TIME_SLOTS: string[] = [
-  "08:00",
-  "09:00",
-  "10:00",
-  "11:00",
-  "14:00",
-  "15:30",
-  "17:00",
-  "18:30",
-  "19:30",
+  { title: "Tập thử PT 1:1 - Kickfit & Thể lực", category: "Kickfit" },
+  { title: "PT 1:1 - Thể hình chuyên sâu", category: "Gym PT" },
+  { title: "Đo InBody & Đánh giá thể lực", category: "InBody" },
+  { title: "Tư vấn Dinh dưỡng", category: "Dinh dưỡng" },
+  { title: "Tập thử PT 1:1 - Pilates phục hồi", category: "Pilates" },
+  { title: "Tư vấn gói hội viên", category: "Tư vấn thẻ" },
 ];
 
 export const getTodayIso = (): string => {
@@ -30,18 +18,6 @@ export const getTomorrowIso = (): string => {
   const d = new Date();
   d.setDate(d.getDate() + 1);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
-
-export const isSlotInPast = (slotTime: string, selectedDate: string): boolean => {
-  if (selectedDate !== getTodayIso()) return false;
-  const now = new Date();
-  const parts = slotTime.split(":");
-  if (parts.length < 2) return false;
-  const h = parseInt(parts[0], 10);
-  const m = parseInt(parts[1], 10);
-  const slotDate = new Date();
-  slotDate.setHours(h, m, 0, 0);
-  return slotDate < now;
 };
 
 export const parseCustomerInfo = (raw: string, members: Member[] = []): ParsedCustomerInfo => {

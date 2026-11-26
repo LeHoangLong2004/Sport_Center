@@ -48,4 +48,3 @@ export interface ScheduleStats {
 export type StatusFilterType = "all" | "Đang chờ khách" | "Đã hoàn tất" | "Đã hủy";
 export type DateFilterType = "all" | "today" | "tomorrow";
 export type CustomerModeType = "member" | "guest";
-export type DateQuickChoiceType = "today" | "tomorrow" | "custom";

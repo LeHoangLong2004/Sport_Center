@@ -7,6 +7,7 @@ interface AttendanceLockAlertBannerProps {
     date: string;
   };
   isExpired24h: boolean;
+  isNotStarted: boolean;
   isLocked: boolean;
   isEditingThisSession: boolean;
   deadlineInfo: {
@@ -20,12 +21,32 @@ interface AttendanceLockAlertBannerProps {
 export const AttendanceLockAlertBanner: React.FC<AttendanceLockAlertBannerProps> = ({
   session,
   isExpired24h,
+  isNotStarted,
   isLocked,
   isEditingThisSession,
   deadlineInfo,
   onEditClick,
   onCancelEditClick,
 }) => {
+  if (isNotStarted) {
+    return (
+      <div className="flex items-start gap-3 p-4 rounded-2xl bg-blue-50/90 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-800/50 text-blue-950 dark:text-blue-200 text-xs sm:text-sm animate-in fade-in">
+        <Lock className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+        <div className="flex-1 space-y-1">
+          <p className="font-bold text-sm">Chưa đến giờ điểm danh</p>
+          <p className="text-xs text-blue-800 dark:text-blue-300">
+            {session.startTime && session.date ? (
+              <>Buổi học bắt đầu lúc <strong>{session.startTime} ngày {session.date}</strong>. HLV có thể điểm danh khi buổi học bắt đầu.</>
+            ) : (
+              <>Chưa xác minh được thời gian bắt đầu của buổi học. Vui lòng liên hệ quản lý để kiểm tra lịch trước khi điểm danh.</>
+            )}
+          </p>
+          <p className="text-[11px] text-blue-700 dark:text-blue-400 font-semibold">Các thao tác điểm danh đang bị khóa.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (isExpired24h) {
     return (
       <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-50/90 dark:bg-amber-950/30 border border-amber-300/80 dark:border-amber-800/50 text-amber-950 dark:text-amber-200 text-xs sm:text-sm animate-in fade-in">

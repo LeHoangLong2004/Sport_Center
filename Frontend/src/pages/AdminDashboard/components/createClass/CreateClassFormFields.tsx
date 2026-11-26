@@ -1,5 +1,6 @@
 import React from 'react';
 import { DateInput } from '../../../../components/DateInput';
+import { centerDateParts } from '../../../../utils/scheduleTimeHelper';
 import type { CreateClassFormData } from './useCreateClassForm';
 
 interface CreateClassFormFieldsProps {
@@ -69,6 +70,42 @@ export function CreateClassFormFields({
   const isRecurring = !!formData.isRecurring;
   const isPtOneToOne = formData.trainingMode === 'PT_ONE_TO_ONE';
   const currentDays = formData.daysOfWeek || [1, 4];
+  const durationMinutes = Number(formData.durationMinutes);
+  const startDateTime = formData.scheduleDate && formData.scheduleTime
+    ? new Date(`${formData.scheduleDate}T${formData.scheduleTime}:00+07:00`)
+    : null;
+  const validStartDateTime = startDateTime && !Number.isNaN(startDateTime.getTime()) ? startDateTime : null;
+  const endDateTime = validStartDateTime && Number.isFinite(durationMinutes) && durationMinutes > 0
+    ? new Date(validStartDateTime.getTime() + durationMinutes * 60_000)
+    : null;
+  const endTimeParts = endDateTime ? centerDateParts(endDateTime) : null;
+  const sessionEndTime = endTimeParts ? `${endTimeParts.hour}:${endTimeParts.minute}` : null;
+  const sessionEndsNextDay = Boolean(
+    endDateTime && validStartDateTime &&
+    centerDateParts(endDateTime).day !== centerDateParts(validStartDateTime).day
+  );
+
+  let courseEndDate: string | null = null;
+  const weeks = Number(formData.weeks);
+  const totalSessions = Number(formData.totalSessions);
+  if (isRecurring && formData.scheduleDate && currentDays.length > 0 && weeks > 0 &&
+      totalSessions === weeks * currentDays.length) {
+    const [year, month, day] = formData.scheduleDate.split('-').map(Number);
+    const startDate = new Date(Date.UTC(year, month - 1, day));
+    if (!Number.isNaN(startDate.getTime())) {
+      const scheduledDates: Date[] = [];
+      for (let dayOffset = 0; dayOffset < weeks * 7; dayOffset += 1) {
+        const weekday = new Date(Date.UTC(year, month - 1, day + dayOffset)).getUTCDay();
+        if (currentDays.includes(weekday)) {
+          scheduledDates.push(new Date(Date.UTC(year, month - 1, day + dayOffset)));
+        }
+      }
+      if (scheduledDates.length === totalSessions) {
+        const lastDate = scheduledDates[scheduledDates.length - 1];
+        courseEndDate = `${String(lastDate.getUTCDate()).padStart(2, '0')}/${String(lastDate.getUTCMonth() + 1).padStart(2, '0')}/${lastDate.getUTCFullYear()}`;
+      }
+    }
+  }
 
   const toggleDay = (dayVal: number) => {
     let newDays: number[];
@@ -198,7 +235,7 @@ export function CreateClassFormFields({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <FieldLabel hint={isCoachMode ? 'Tối thiểu từ ngày mai' : undefined}>
-                {isRecurring ? 'Ngày khai giảng' : 'Ngày diễn ra'}
+                {isRecurring ? 'Ngày bắt đầu khóa học' : 'Ngày diễn ra'}
               </FieldLabel>
               <DateInput
                 required
@@ -322,6 +359,28 @@ export function CreateClassFormFields({
                     {formData.totalSessions || currentDays.length * (formData.weeks || 10)} buổi
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {(courseEndDate || sessionEndTime) && (
+            <div className="rounded-2xl border border-sky-200 dark:border-sky-800/80 bg-sky-50/70 dark:bg-sky-950/30 p-4 sm:p-5">
+              <p className="text-sm font-bold text-sky-900 dark:text-sky-200 mb-3">Thời điểm kết thúc dự kiến</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {courseEndDate && (
+                  <div className="rounded-xl bg-white/80 dark:bg-slate-900/60 px-3.5 py-3">
+                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Ngày kết thúc khóa học</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white mt-1">{courseEndDate}</p>
+                  </div>
+                )}
+                {sessionEndTime && (
+                  <div className="rounded-xl bg-white/80 dark:bg-slate-900/60 px-3.5 py-3">
+                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Giờ kết thúc mỗi buổi</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white mt-1">
+                      {sessionEndTime}{sessionEndsNextDay ? ' (sang ngày hôm sau)' : ''}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}

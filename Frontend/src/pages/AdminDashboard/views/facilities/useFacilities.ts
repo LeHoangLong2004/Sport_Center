@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { SportItem, FacilityItem } from '../FacilitiesCards';
 import {
@@ -9,6 +9,8 @@ import {
   saveFacilityApi,
   deleteSportApi,
   deleteFacilityApi,
+  fetchSportPriceApi,
+  saveSportPriceApi,
 } from './facilityApi';
 
 export function useFacilities() {
@@ -23,6 +25,9 @@ export function useFacilities() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [pricePerSession, setPricePerSession] = useState('');
+  const [isLoadingSportPrice, setIsLoadingSportPrice] = useState(false);
+  const sportPriceRequest = useRef(0);
   const [address, setAddress] = useState('');
   const [maxConcurrentClasses, setMaxConcurrentClasses] = useState(1);
   const [totalCapacity, setTotalCapacity] = useState<number | null>(null);
@@ -54,29 +59,52 @@ export function useFacilities() {
   }, [loadData]);
 
   const openCreateModal = (type: 'sport' | 'facility') => {
+    sportPriceRequest.current += 1;
     setActiveType(type);
     setModalMode('create');
     setEditingId(null);
     setName('');
     setImageUrl('');
+    setPricePerSession('');
+    setIsLoadingSportPrice(false);
     setAddress('');
     setMaxConcurrentClasses(1);
     setTotalCapacity(null);
   };
 
   const openEditModal = (type: 'sport' | 'facility', item: SportItem | FacilityItem) => {
+    const requestId = ++sportPriceRequest.current;
     setActiveType(type);
     setModalMode('edit');
     setEditingId(item.id);
     setName(item.name);
     setImageUrl((item as SportItem).imageUrl || '');
+    setPricePerSession('');
+    setIsLoadingSportPrice(type === 'sport');
     setAddress((item as FacilityItem).address || '');
     const facility = item as FacilityItem;
     setMaxConcurrentClasses(Math.max(1, facility.maxConcurrentClasses ?? 1));
     setTotalCapacity(facility.totalCapacity ?? null);
+
+    if (type === 'sport') {
+      void fetchSportPriceApi(item.id)
+        .then((price) => {
+          if (sportPriceRequest.current === requestId) setPricePerSession(price?.toString() ?? '');
+        })
+        .catch((error) => {
+          if (sportPriceRequest.current === requestId) {
+            toast.error(error instanceof Error ? error.message : 'Không thể tải giá bộ môn.');
+          }
+        })
+        .finally(() => {
+          if (sportPriceRequest.current === requestId) setIsLoadingSportPrice(false);
+        });
+    }
   };
 
   const closeModal = () => {
+    sportPriceRequest.current += 1;
+    setIsLoadingSportPrice(false);
     setActiveType(null);
   };
 
@@ -109,6 +137,11 @@ export function useFacilities() {
 
   const handleSave = async () => {
     if (!name.trim() || !activeType) return;
+    const parsedSportPrice = pricePerSession.trim() ? Number(pricePerSession) : null;
+    if (parsedSportPrice !== null && (!Number.isFinite(parsedSportPrice) || parsedSportPrice <= 0)) {
+      toast.error('Giá mỗi buổi phải lớn hơn 0.');
+      return;
+    }
     setIsSubmitting(true);
     try {
       const isSport = activeType === 'sport';
@@ -116,6 +149,9 @@ export function useFacilities() {
 
       if (isSport) {
         const savedItem = await saveSportApi(name, imageUrl, editingId);
+        if (parsedSportPrice !== null) {
+          await saveSportPriceApi(savedItem.id, parsedSportPrice);
+        }
         setSports((prev) =>
           isEdit
             ? prev.map((s) => (s.id.toLowerCase() === editingId?.toLowerCase() ? { ...s, ...savedItem } : s))
@@ -174,6 +210,9 @@ export function useFacilities() {
     setName,
     imageUrl,
     setImageUrl,
+    pricePerSession,
+    setPricePerSession,
+    isLoadingSportPrice,
     address,
     setAddress,
     maxConcurrentClasses,

@@ -897,4 +897,5 @@ public sealed class ManagerCoachSpecialtyRow
 {
     public string? Specialty { get; set; }
 }
+
 }

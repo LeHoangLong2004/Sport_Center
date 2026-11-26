@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using SmartGym.Application.Common;
 using SmartGym.Application.DTOs.Classes;
 using SmartGym.Application.Interfaces.Repositories;
@@ -117,6 +119,26 @@ public sealed partial class SupabaseGroupClassRepository
         return conflicts.Count > 0;
     }
 
+    public async Task<IReadOnlyCollection<(DateTime StartTime, DateTime EndTime)>> GetCoachAvailabilitySlotsInRangeAsync(
+        Guid coachId,
+        DateTime from,
+        DateTime to)
+    {
+        var slots = await _dbContext.Database.SqlQueryRaw<CoachAvailabilityRangeRawModel>(
+            @"SELECT start_time AS ""StartTime"", end_time AS ""EndTime""
+              FROM coach_availability_slots
+              WHERE coach_id = {0}
+                AND status IN ('open', 'booked')
+                AND start_time < {1}
+                AND end_time > {2}",
+            coachId,
+            AsUtc(to),
+            AsUtc(from))
+            .ToListAsync();
+
+        return slots.Select(slot => (slot.StartTime, slot.EndTime)).ToList();
+    }
+
     public async Task<GroupClass> AddAsync(GroupClass groupClass)
     {
         if (groupClass.CoachId.HasValue)
@@ -160,6 +182,79 @@ public sealed partial class SupabaseGroupClassRepository
         var inserted = response.Models.FirstOrDefault();
         return inserted != null ? inserted.ToDomain() : groupClass;
     }
+
+    public async Task AddRangeAsync(IReadOnlyCollection<GroupClass> groupClasses)
+    {
+        if (groupClasses.Count == 0)
+            return;
+
+        var coachId = groupClasses.Select(c => c.CoachId).FirstOrDefault(id => id.HasValue);
+        if (coachId.HasValue)
+        {
+            try
+            {
+                await _dbContext.Database.ExecuteSqlRawAsync(
+                    @"INSERT INTO coaches (id, user_id, specialty, experience_years)
+                      SELECT {0}, {0}, 'General Coach', 3
+                      WHERE NOT EXISTS (SELECT 1 FROM coaches WHERE id = {0})",
+                    coachId.Value);
+            }
+            catch
+            {
+                // The coach profile may already exist or be provisioned separately.
+            }
+        }
+
+        var sql = new StringBuilder(
+            "INSERT INTO classes (id, sport_id, coach_id, facility_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status, parent_id, session_number, total_sessions) VALUES ");
+        var parameters = new List<object>(groupClasses.Count * 14);
+        var rowIndex = 0;
+
+        foreach (var groupClass in groupClasses)
+        {
+            if (rowIndex > 0)
+                sql.Append(',');
+            sql.Append('(');
+
+            AppendParameter(groupClass.Id);
+            AppendParameter(groupClass.SportId);
+            AppendParameter(groupClass.CoachId);
+            AppendParameter(groupClass.FacilityId);
+            AppendParameter(groupClass.ClassName);
+            AppendParameter(ToUtc(groupClass.ScheduleTime));
+            AppendParameter(groupClass.DurationMinutes);
+            AppendParameter(groupClass.Capacity);
+            AppendParameter(groupClass.CurrentEnrolled);
+            AppendParameter(groupClass.Status);
+            AppendParameter(groupClass.ApprovalStatus);
+            AppendParameter(groupClass.ParentId);
+            AppendParameter(groupClass.SessionNumber);
+            AppendParameter(groupClass.TotalSessions);
+
+            sql.Append(')');
+            rowIndex++;
+        }
+
+        await _dbContext.Database.ExecuteSqlRawAsync(sql.ToString(), parameters.ToArray());
+
+        void AppendParameter<T>(T value)
+        {
+            if (parameters.Count % 14 > 0)
+                sql.Append(',');
+
+            var parameterName = $"p{parameters.Count}";
+            sql.Append('@').Append(parameterName);
+            parameters.Add(new NpgsqlParameter(parameterName, value ?? (object)DBNull.Value));
+        }
+    }
+
+    private static DateTime ToUtc(DateTime value)
+        => value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Local => value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Utc),
+        };
 
     public async Task UpdateAsync(GroupClass groupClass)
     {
@@ -347,5 +442,11 @@ internal sealed class CoursePriceVersionRow
 {
     public Guid Id { get; set; }
     public decimal PricePerSession { get; set; }
+}
+
+internal sealed class CoachAvailabilityRangeRawModel
+{
+    public DateTime StartTime { get; set; }
+    public DateTime EndTime { get; set; }
 }
 

@@ -18,6 +18,7 @@ public static partial class SportFacilityEndpoints
     public static void MapSportFacilityEndpoints(this IEndpointRouteBuilder app)
     {
         MapSportEndpoints(app);
+        MapSportPricingEndpoints(app);
         MapFacilityEndpoints(app);
         MapUploadEndpoints(app);
     }

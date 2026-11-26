@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Calendar, X, AlertCircle, RefreshCw, Check } from "lucide-react";
-import type { Coach, CustomerModeType, DateQuickChoiceType, Member } from "./types";
+import type { Coach, CustomerModeType, Member } from "./types";
 import {
   PRESET_SERVICES,
-  TIME_SLOTS,
   getTodayIso,
-  isSlotInPast,
 } from "./constants";
 import { AppointmentCustomerSelector } from "./appointmentModal/AppointmentCustomerSelector";
 import { AppointmentServiceSelector } from "./appointmentModal/AppointmentServiceSelector";
@@ -37,10 +35,8 @@ export const CreateAppointmentModal: React.FC<Props> = ({
   const [isCustomService, setIsCustomService] = useState(false);
   const [customTitle, setCustomTitle] = useState("");
   const [selectedCoachId, setSelectedCoachId] = useState<string>("");
-  const [selectedDate, setSelectedDate] = useState<string>(getTodayIso());
-  const [dateQuickChoice, setDateQuickChoice] = useState<DateQuickChoiceType>("today");
-  const [selectedTime, setSelectedTime] = useState("09:00");
-  const [isCustomTime, setIsCustomTime] = useState(false);
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedTime, setSelectedTime] = useState("");
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -50,16 +46,6 @@ export const CreateAppointmentModal: React.FC<Props> = ({
       setSelectedCoachId(coaches[0].id);
     }
   }, [coaches, selectedCoachId]);
-
-  // Auto-switch to next available time slot if selectedTime is in the past for today
-  useEffect(() => {
-    if (selectedDate === getTodayIso()) {
-      if (isSlotInPast(selectedTime, selectedDate)) {
-        const nextAvailable = TIME_SLOTS.find((s) => !isSlotInPast(s, selectedDate));
-        if (nextAvailable) setSelectedTime(nextAvailable);
-      }
-    }
-  }, [selectedDate, selectedTime]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,8 +142,8 @@ export const CreateAppointmentModal: React.FC<Props> = ({
       setSelectedMember(null);
       setCustomTitle("");
       setIsCustomService(false);
-      setSelectedDate(getTodayIso());
-      setDateQuickChoice("today");
+      setSelectedDate("");
+      setSelectedTime("");
       setFormError("");
       onCreated();
       onClose();
@@ -241,12 +227,8 @@ export const CreateAppointmentModal: React.FC<Props> = ({
           <AppointmentDateTimeSelector
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
-            dateQuickChoice={dateQuickChoice}
-            setDateQuickChoice={setDateQuickChoice}
             selectedTime={selectedTime}
             setSelectedTime={setSelectedTime}
-            isCustomTime={isCustomTime}
-            setIsCustomTime={setIsCustomTime}
           />
 
           {/* Compact Modal Footer */}
