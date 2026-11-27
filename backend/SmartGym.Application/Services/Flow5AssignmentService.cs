@@ -1,3 +1,4 @@
+using System;
 using SmartGym.Application.DTOs.WorkoutPlans;
 using SmartGym.Application.Interfaces;
 
@@ -61,6 +62,13 @@ public sealed class Flow5AssignmentService : IFlow5AssignmentService
         else
         {
             return Failure("target_invalid", "Target type must be member or class.");
+        }
+
+        if (!string.Equals(plan.PlanType, "homework", StringComparison.OrdinalIgnoreCase))
+        {
+            plan.PlanType = "homework";
+            plan.UpdatedAt = DateTime.UtcNow;
+            plan = await _planRepository.UpdateAsync(plan);
         }
 
         var batch = await _progressRepository.AssignMissingBatchAsync(

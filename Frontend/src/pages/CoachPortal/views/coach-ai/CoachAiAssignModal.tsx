@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, Send, Calendar, FileText, CheckCircle2 } from "lucide-react";
+import { X, Send, FileText, CheckCircle2 } from "lucide-react";
 import type { Flow5WorkoutPlan, Flow5Target, MockMember, CoachClassOverview } from "../../services/api";
 
 interface CoachAiAssignModalProps {
@@ -9,7 +9,7 @@ interface CoachAiAssignModalProps {
   classes: CoachClassOverview[];
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (dueDate: string, notes: string) => Promise<void>;
+  onConfirm: (notes: string) => Promise<void>;
 }
 
 export const CoachAiAssignModal: React.FC<CoachAiAssignModalProps> = ({
@@ -21,12 +21,6 @@ export const CoachAiAssignModal: React.FC<CoachAiAssignModalProps> = ({
   onClose,
   onConfirm,
 }) => {
-  const [dueDate, setDueDate] = useState<string>(() => {
-    // Default to 7 days from now
-    const d = new Date();
-    d.setDate(d.getDate() + 7);
-    return d.toISOString().slice(0, 10);
-  });
   const [notes, setNotes] = useState<string>("Vui lòng khởi động kỹ và hoàn thành đúng tiến độ.");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -52,7 +46,7 @@ export const CoachAiAssignModal: React.FC<CoachAiAssignModalProps> = ({
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await onConfirm(dueDate, notes);
+      await onConfirm(notes);
       onClose();
     } catch {
       // Handled by parent notification
@@ -77,10 +71,10 @@ export const CoachAiAssignModal: React.FC<CoachAiAssignModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-slate-900 dark:text-white text-base">
-                Giao bài tập cho học viên
+                Giao kế hoạch tập luyện
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Giao danh sách bài tập đã duyệt cho học viên tự luyện tập
+                Chia sẻ kế hoạch đã duyệt; kế hoạch tập luyện không có hạn hoàn thành.
               </p>
             </div>
           </div>
@@ -98,7 +92,7 @@ export const CoachAiAssignModal: React.FC<CoachAiAssignModalProps> = ({
           {/* Target Summary Card */}
           <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/80 flex flex-col gap-1.5">
             <div className="text-xs text-slate-500 dark:text-slate-400">
-              Bài tập: <strong className="text-slate-800 dark:text-slate-200">{plan.planName}</strong>
+              Kế hoạch: <strong className="text-slate-800 dark:text-slate-200">{plan.planName}</strong>
             </div>
             <div className="text-xs text-slate-500 dark:text-slate-400">
               Đối tượng nhận:{" "}
@@ -109,21 +103,6 @@ export const CoachAiAssignModal: React.FC<CoachAiAssignModalProps> = ({
             <div className="text-[11px] text-slate-400">
               {plan.exercises.length} bài tập · Thời lượng {plan.durationMinutes || 60} phút
             </div>
-          </div>
-
-          {/* Due Date Input */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5" />
-              <span>Hạn hoàn thành (Due Date)</span>
-            </label>
-            <input
-              type="date"
-              required
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-            />
           </div>
 
           {/* Notes Input */}
@@ -157,7 +136,7 @@ export const CoachAiAssignModal: React.FC<CoachAiAssignModalProps> = ({
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-emerald-600 to-emerald-600 hover:from-emerald-700 hover:to-emerald-700 text-white transition-all shadow-md shadow-emerald-600/25 cursor-pointer disabled:opacity-50 active:scale-95"
             >
               <Send className="w-4 h-4" />
-              <span>{isSubmitting ? "Đang giao bài..." : "Xác nhận giao bài tập"}</span>
+              <span>{isSubmitting ? "Đang giao kế hoạch..." : "Giao kế hoạch tập luyện"}</span>
             </button>
           </div>
         </form>

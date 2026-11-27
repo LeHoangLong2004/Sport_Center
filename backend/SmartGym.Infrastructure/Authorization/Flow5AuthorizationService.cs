@@ -108,7 +108,7 @@ public sealed class Flow5AuthorizationService : IFlow5AuthorizationService
                 @"SELECT EXISTS (
                     SELECT 1
                     FROM classes c
-                    WHERE c.id = {0}
+                    WHERE (c.id = {0} OR c.parent_id = {0})
                       AND c.status = TRUE
                       AND LOWER(COALESCE(c.approval_status, 'approved')) <> 'rejected'
                       AND (c.coach_id = {1} OR c.coach_id = {2})

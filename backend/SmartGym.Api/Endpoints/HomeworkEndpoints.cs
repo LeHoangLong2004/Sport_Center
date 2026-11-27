@@ -150,7 +150,8 @@ public static class HomeworkEndpoints
                         .AsNoTracking()
                         .Include(homework => homework.Plan)
                             .ThenInclude(plan => plan!.Exercises)
-                        .Where(homework => homework.AssignedBy == coachId.Value)
+                        .Where(homework => homework.AssignedBy == coachId.Value ||
+                            (homework.AssignedBy == null && homework.Plan != null && homework.Plan.CoachId == coachId.Value))
                         .OrderByDescending(homework => homework.CreatedAt)
                         .ToListAsync(context.RequestAborted);
 
@@ -249,6 +250,8 @@ public static class HomeworkEndpoints
                         }
 
                         var plan = await db.WorkoutPlans.FirstOrDefaultAsync(p => p.Id == request.PlanId);
+                        if (plan == null)
+                            return Results.NotFound(new { message = "Không tìm thấy kế hoạch tập luyện." });
                         if (plan != null && !Flow5PlanStatus.CanBeAssigned(plan.Status))
                         {
                             if (plan.CoachId == null || plan.CoachId == coachId.Value)

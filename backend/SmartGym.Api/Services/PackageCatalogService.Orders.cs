@@ -198,6 +198,11 @@ public sealed partial class PackageCatalogService
 
                 // Nếu là gói thành viên trả phí vừa thanh toán online thành công, đóng gói thành viên cũ chỉ khi đây là nâng cấp (kích hoạt ngay hôm nay)
                 var snap = DeserializeSnapshot(subscription);
+                await ApplyPaidMembershipRenewalToCurrentSubscriptionAsync(
+                    subscription,
+                    snap,
+                    cancellationToken
+                );
                 if (snap.Category == "membership" && subscription.StartDate.Date <= DateTime.UtcNow.Date)
                 {
                     await ClosePreviousMembershipSubscriptionsAsync(userId, subscription.Id, subscription.StartDate, cancellationToken);

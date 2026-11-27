@@ -276,7 +276,7 @@ const CurriculumCard: React.FC<CurriculumCardProps> = ({
             <span>{exerciseCount === 0 ? "Thêm bài tập" : "Sửa"}</span>
           </button>
 
-          {/* Từ kế hoạch mẫu, tạo một lượt bài tập về nhà riêng cho học viên/lớp. */}
+          {/* Chia sẻ kế hoạch tập luyện trong thư viện cho học viên/lớp. */}
           {exerciseCount === 0 ? (
             <button
               type="button"
@@ -285,7 +285,7 @@ const CurriculumCard: React.FC<CurriculumCardProps> = ({
               title="Cần thêm ít nhất 1 bài tập trước khi giao"
             >
               <Send className="w-3 h-3" />
-              <span>Giao bài tập</span>
+              <span>Giao kế hoạch</span>
             </button>
           ) : (
             <button
@@ -294,7 +294,7 @@ const CurriculumCard: React.FC<CurriculumCardProps> = ({
               className="px-3.5 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-all flex items-center gap-1.5 shadow-xs shadow-emerald-600/20 active:scale-95 cursor-pointer"
             >
               <Send className="w-3 h-3" />
-              <span>{c.assignedTo.length > 0 ? "Giao thêm bài" : "Giao bài tập về nhà"}</span>
+              <span>{c.assignedTo.length > 0 ? "Giao thêm" : "Giao kế hoạch"}</span>
             </button>
           )}
         </div>

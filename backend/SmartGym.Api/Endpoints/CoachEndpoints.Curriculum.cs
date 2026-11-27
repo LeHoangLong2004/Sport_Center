@@ -134,7 +134,7 @@ public static partial class CoachEndpoints
 
                 var isExplicitClass = string.Equals(type, "class", StringComparison.OrdinalIgnoreCase);
                 var isClassInDb = (await db.Database.SqlQueryRaw<Guid>(
-                    "SELECT id FROM classes WHERE id = {0} LIMIT 1",
+                    "SELECT id FROM classes WHERE id = {0} OR parent_id = {0} LIMIT 1",
                     targetId
                 ).ToListAsync()).Any();
                 var isClass = isExplicitClass || (!await db.Users.AnyAsync(u => u.Id == targetId) && isClassInDb);
@@ -157,8 +157,10 @@ public static partial class CoachEndpoints
                 if (isClass)
                 {
                     var studentUserIds = await db.Database.SqlQueryRaw<Guid>(
-                        @"SELECT DISTINCT user_id FROM class_bookings 
-                          WHERE class_id = {0} AND status NOT IN ('cancelled', 'rejected', 'class_cancelled')",
+                        @"SELECT DISTINCT b.user_id FROM class_bookings b
+                          INNER JOIN classes c ON c.id = b.class_id
+                          WHERE (c.id = {0} OR c.parent_id = {0})
+                            AND LOWER(COALESCE(b.status, '')) NOT IN ('cancelled', 'rejected', 'class_cancelled')",
                         targetId
                     ).ToListAsync();
 

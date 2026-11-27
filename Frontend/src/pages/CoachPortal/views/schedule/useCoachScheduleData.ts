@@ -149,28 +149,6 @@ export function useCoachScheduleData(weekDates: string[]) {
         };
       });
 
-    const openItems: UnifiedScheduleItem[] = availabilitySlots
-      .filter((slot) => slot.isOpen && !slot.bookedMemberName)
-      .map((slot) => {
-        const targetDate = slot.date || weekDates[((slot.dayOfWeek || 1) - 1) % 7] || weekDates[0];
-        return {
-          id: `open-${slot.id}`,
-          type: "open_pt" as const,
-          className: "Lịch trống 1–1 (Mở nhận HV)",
-          sport: slot.sport || "Gym",
-          level: "1-1 PT",
-          date: targetDate,
-          startTime: slot.startTime,
-          endTime: slot.endTime,
-          room: slot.room || "Khu PT 1-1",
-          coachName: slot.coachName || "HLV",
-          registeredCount: 0,
-          capacity: 1,
-          status: "sắp diễn ra" as SessionStatus,
-          note: slot.note || `Ca ${slot.period || "trống"} - Sẵn sàng nhận học viên`,
-        };
-      });
-
     const todayIso = new Date().toISOString().split("T")[0];
     const apptItems: UnifiedScheduleItem[] = appointments
       .filter((a) => !["Đã hủy", "Coach từ chối", "Đã từ chối", "cancelled", "đã hủy", "rejected"].includes(a.status))
@@ -206,7 +184,7 @@ export function useCoachScheduleData(weekDates: string[]) {
       };
     });
 
-    const combined = [...groupItems, ...ptItems, ...openItems, ...apptItems];
+    const combined = [...groupItems, ...ptItems, ...apptItems];
     const seen = new Set<string>();
     return combined.filter((item) => {
       if (seen.has(item.id)) return false;

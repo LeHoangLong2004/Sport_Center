@@ -452,7 +452,7 @@ export function useCoachAi(initialMemberId?: string | null) {
   };
 
   // Assign Plan (POST assign)
-  const handleConfirmAssign = async (dueDate: string, notes: string) => {
+  const handleConfirmAssign = async (notes: string) => {
     if (!currentPlan) return;
     const target = currentPlan.recommendationTarget || { type: targetType, id: targetId };
 
@@ -478,33 +478,28 @@ export function useCoachAi(initialMemberId?: string | null) {
         }
       }
 
-      // 2. Perform assignment: First try Flow 5 endpoint, then fallback to homework/assign
-      let assignedCount = 1;
+      // 2. Assign the training plan without a homework deadline.
       try {
         const res = await CoachAPI.assignFlow5Plan(planIdToAssign, {
           target,
           expectedVersion: currentPlan.version,
-          dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
           notes,
         });
-        assignedCount = res.assignedCount || 1;
+        const assignedCount = res.assignedCount || 1;
+        setFeedback({ type: "success", msg: `Đã giao kế hoạch tập luyện cho ${assignedCount} học viên. Học viên xem kế hoạch tại mục Kế hoạch tập luyện.` });
       } catch (flow5Err) {
-        console.warn("Flow 5 assign API returned error, trying homework/assign fallback:", flow5Err);
+        console.warn("Flow 5 assign API returned error, trying workout-plan assignment fallback:", flow5Err);
         await CoachAPI.assignCurriculum(planIdToAssign, {
           type: target.type,
           id: target.id,
-          deadline: dueDate,
           note: notes,
         });
+        setFeedback({ type: "success", msg: "Đã giao kế hoạch tập luyện. Học viên xem kế hoạch tại mục Kế hoạch tập luyện." });
       }
 
       // 3. Update state & show confirmed success
       setCurrentPlan((prev) => (prev ? { ...prev, id: planIdToAssign, status: "assigned" } : null));
-      toast.success(`Đã giao bài tập thành công cho ${assignedCount} học viên!`);
-      setFeedback({
-        type: "success",
-        msg: `Đã giao thành công cho ${assignedCount} học viên. Học viên sẽ nhìn thấy bài tập trong Member Portal.`,
-      });
+      toast.success("Đã giao kế hoạch tập luyện thành công!");
 
       // 4. Notify open tabs to refresh
       window.dispatchEvent(new Event("local-storage-update"));

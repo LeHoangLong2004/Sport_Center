@@ -151,12 +151,42 @@ export function getMembershipStatus(
 
   if (active) {
     const membership = active.packageSnapshot
+    const activeTier = (membership.tier || "").trim().toLocaleLowerCase()
+    // A renewal is stored as a separate paid subscription that starts the day
+    // after the current one ends. Keep the current tier active, but expose the
+    // end of its contiguous paid renewal chain on the membership card.
+    const membershipOrders = orders
+      .filter(
+        (order) =>
+          order.status === "paid" &&
+          order.packageSnapshot.category === "membership" &&
+          (order.packageSnapshot.tier || "").trim().toLocaleLowerCase() === activeTier &&
+          order.startDate &&
+          order.endDate,
+      )
+      .sort((a, b) => a.startDate!.slice(0, 10).localeCompare(b.startDate!.slice(0, 10)))
+    let effectiveEndDate = active.endDate!
+    let effectiveEndDay = effectiveEndDate.slice(0, 10)
+    for (const renewal of membershipOrders) {
+      const renewalStartDay = renewal.startDate!.slice(0, 10)
+      const nextDay = new Date(`${effectiveEndDay}T00:00:00`)
+      nextDay.setDate(nextDay.getDate() + 1)
+      const firstAllowedDay = `${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, "0")}-${String(nextDay.getDate()).padStart(2, "0")}`
+      if (
+        renewalStartDay >= active.startDate!.slice(0, 10) &&
+        renewalStartDay <= firstAllowedDay &&
+        renewal.endDate!.slice(0, 10) > effectiveEndDay
+      ) {
+        effectiveEndDate = renewal.endDate!
+        effectiveEndDay = effectiveEndDate.slice(0, 10)
+      }
+    }
     return {
       tier: membership.tier || "basic",
       tierRank: membership.tierRank,
       name: membership.name,
       startDate: active.startDate,
-      endDate: active.endDate,
+      endDate: effectiveEndDate,
       benefits: membership.benefits,
       groupDiscountPct: membership.groupDiscountPct,
       coachDiscountPct: membership.coachDiscountPct,
@@ -290,7 +320,9 @@ export const PackageAPI = {
 
   getOrders: () => request<PackageOrder[]>("/package-orders"),
 
-  getMyOrders: () => request<PackageOrder[]>("/package-orders/me"),
+  // Always fetch the latest paid renewal after checkout; a cached order list
+  // makes the membership card keep showing the previous expiration date.
+  getMyOrders: () => request<PackageOrder[]>(`/package-orders/me?_=${Date.now()}`, { cache: "no-store" }),
 
   hasActiveSportAccess: async (sport: string) => {
     if (!sport.trim()) return false

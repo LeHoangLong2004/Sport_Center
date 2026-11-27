@@ -6,7 +6,6 @@ interface Props {
   byDate: [string, UnifiedScheduleItem[]][];
   todayStr: string;
   loading: boolean;
-  onSelectOpenSlot: (item: UnifiedScheduleItem) => void;
   onSelectPtSession: (item: UnifiedScheduleItem) => void;
   onOpenRequestModal: (sessionId?: string) => void;
   navigateTo: (s: CoachScreen, extra?: { sessionId?: string; memberId?: string }) => void;
@@ -16,7 +15,6 @@ export default function ScheduleListView({
   byDate,
   todayStr,
   loading,
-  onSelectOpenSlot,
   onSelectPtSession,
   onOpenRequestModal,
   navigateTo,
@@ -69,7 +67,6 @@ export default function ScheduleListView({
                 <ScheduleSessionCard
                   key={s.id}
                   session={s}
-                  onSelectOpenSlot={onSelectOpenSlot}
                   onSelectPtSession={onSelectPtSession}
                   onOpenRequestModal={onOpenRequestModal}
                   navigateTo={navigateTo}

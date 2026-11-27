@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowLeft, Phone, Mail, Dumbbell, Target, MessageSquare, Plus, Sparkles } from "lucide-react";
+import { ArrowLeft, Phone, Mail, Dumbbell, Target, MessageSquare, Plus } from "lucide-react";
 import type { CoachScreen } from "../../types";
 import type { MemberProfileData } from "./types";
 import { UserAvatar } from "../../../../components/UserAvatar";
@@ -79,11 +79,11 @@ export const MemberHeroCard: React.FC<MemberHeroCardProps> = ({ member, navigate
           <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
             <button
               type="button"
-              onClick={() => navigateTo("ai", { memberId: member.id })}
+              onClick={() => navigateTo("curriculum", { memberId: member.id })}
               className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-emerald-600 to-emerald-600 hover:from-emerald-700 hover:to-emerald-700 rounded-xl transition-all shadow-sm shadow-emerald-600/25 active:scale-95 cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5 text-white animate-pulse" />
-              <span>Gợi ý bài tập AI</span>
+              <Plus className="w-3.5 h-3.5 text-white" />
+              <span>Soạn bài tập về nhà</span>
             </button>
             <button
               type="button"
@@ -99,7 +99,7 @@ export const MemberHeroCard: React.FC<MemberHeroCardProps> = ({ member, navigate
               className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 border border-slate-200 dark:border-slate-700 rounded-xl transition-colors shadow-xs cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              Giao kế hoạch mới
+              Soạn bài tập về nhà
             </button>
           </div>
         </div>

@@ -110,7 +110,6 @@ export default function ScheduleFilterBar({
             <option value="all">Tất cả hình thức</option>
             <option value="group">Lớp nhóm</option>
             <option value="pt">Dạy kèm 1–1 (PT)</option>
-            <option value="open_pt">Lịch trống 1–1</option>
           </select>
 
           <select

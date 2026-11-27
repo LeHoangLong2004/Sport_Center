@@ -30,13 +30,13 @@ export const AppointmentServiceSelector: React.FC<AppointmentServiceSelectorProp
       {/* 2. Service Selection */}
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
-          <span className="font-bold text-slate-700 text-[11px] uppercase tracking-wider">
-            2. Dịch vụ / Buổi hẹn
+          <span className="font-semibold text-slate-700 text-sm">
+            Dịch vụ / Buổi hẹn
           </span>
           <button
             type="button"
             onClick={() => setIsCustomService(!isCustomService)}
-            className="text-[11px] text-emerald-600 hover:underline cursor-pointer"
+            className="text-xs font-semibold text-emerald-600 hover:underline cursor-pointer"
           >
             {isCustomService ? "Chọn có sẵn" : "Nhập tay"}
           </button>
@@ -51,7 +51,7 @@ export const AppointmentServiceSelector: React.FC<AppointmentServiceSelectorProp
               placeholder="Nhập tên dịch vụ hoặc buổi hẹn..."
               value={customTitle}
               onChange={(e) => setCustomTitle(e.target.value)}
-              className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-emerald-500"
+              className="w-full px-3.5 py-3 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500"
             />
             <p className="text-[10px] text-slate-500">Dùng cho yêu cầu chưa có trong danh sách dịch vụ.</p>
           </div>
@@ -66,7 +66,7 @@ export const AppointmentServiceSelector: React.FC<AppointmentServiceSelectorProp
               }
               setSelectedServiceIndex(Number(e.target.value));
             }}
-            className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-emerald-500 bg-white cursor-pointer"
+            className="w-full px-3.5 py-3 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 bg-white cursor-pointer"
           >
             {PRESET_SERVICES.map((s, idx) => (
               <option key={idx} value={idx}>
@@ -80,13 +80,13 @@ export const AppointmentServiceSelector: React.FC<AppointmentServiceSelectorProp
 
       {/* 3. Coach Selection */}
       <div className="flex flex-col gap-1.5">
-        <span className="font-bold text-slate-700 text-[11px] uppercase tracking-wider">
-          3. Huấn luyện viên phụ trách *
+        <span className="font-semibold text-slate-700 text-sm">
+          Huấn luyện viên phụ trách *
         </span>
         <select
           value={selectedCoachId}
           onChange={(e) => setSelectedCoachId(e.target.value)}
-          className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-emerald-500 bg-white cursor-pointer"
+          className="w-full px-3.5 py-3 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 bg-white cursor-pointer"
         >
           {coaches.map((c) => (
             <option key={c.id} value={c.id}>

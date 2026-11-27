@@ -304,7 +304,9 @@ export const CoachAPI = {
       status: curriculum.status === "Nháp" ? "draft" : "approved",
       exercises: curriculum.exercises.map((e: any) => ({
         name: e.name,
+        sets: e.sets,
         reps: e.reps,
+        duration: e.duration,
         rest: e.rest,
         note: e.note
       }))
@@ -326,7 +328,9 @@ export const CoachAPI = {
       status: curriculum.status === "Nháp" ? "draft" : "approved",
       exercises: curriculum.exercises.map((e: any) => ({
         name: e.name,
+        sets: e.sets,
         reps: e.reps,
+        duration: e.duration,
         rest: e.rest,
         note: e.note
       }))

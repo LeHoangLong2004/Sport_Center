@@ -36,6 +36,11 @@ public sealed partial class PackageCatalogService
                         "Đơn gói môn tập cũ không thể được xác nhận sau khi danh mục này ngừng kinh doanh."
                     );
                 var now = DateTime.UtcNow;
+                await ApplyPaidMembershipRenewalToCurrentSubscriptionAsync(
+                    subscription,
+                    snapshot,
+                    cancellationToken
+                );
                 if (snapshot.Category == "membership")
                 {
                     // Nếu đơn hàng này là Gia hạn nối tiếp (StartDate đã được ấn định trong tương lai) thì giữ nguyên

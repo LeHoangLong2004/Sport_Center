@@ -310,6 +310,23 @@ public static partial class DatabaseInitializationExtensions
         // Persist Coach operational tables (attendance, assessment, schedule request)
         EnsureCoachOperationalTables(db, app);
 
+        // Treat every previously assigned workout plan as a homework assignment.
+        try
+        {
+            db.Database.ExecuteSqlRaw(
+                @"UPDATE workout_plans p
+                  SET plan_type = 'homework'
+                  WHERE COALESCE(p.plan_type, '') <> 'homework'
+                    AND EXISTS (
+                        SELECT 1 FROM homework_progress hp WHERE hp.plan_id = p.id
+                    );"
+            );
+        }
+        catch (Exception ex)
+        {
+            app.Logger.LogWarning(ex, "Could not normalize assigned workout plans to homework.");
+        }
+
         // Keep reviews table compatible
         try
         {

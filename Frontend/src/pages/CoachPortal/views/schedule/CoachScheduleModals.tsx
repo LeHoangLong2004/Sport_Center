@@ -2,30 +2,18 @@ import React from "react";
 import type { CoachScreen } from "../../types";
 import type { UnifiedScheduleItem } from "./types";
 import ScheduleRequestModal from "./ScheduleRequestModal";
-import OpenPtSlotModal from "./OpenPtSlotModal";
-import OpenPtDetailModal from "./OpenPtDetailModal";
 import PtSessionDetailModal from "./PtSessionDetailModal";
 import { CreateClassModal } from "../../../AdminDashboard/components/CreateClassModal";
 
 interface Props {
   isRequestModalOpen: boolean;
   setIsRequestModalOpen: (open: boolean) => void;
-  isOpenSlotModalOpen: boolean;
-  setIsOpenSlotModalOpen: (open: boolean) => void;
-  initialOpenSlotDate?: string;
-  initialOpenSlotStartTime?: string;
   isClassProposalModalOpen: boolean;
   setIsClassProposalModalOpen: (open: boolean) => void;
-  selectedOpenSlot: UnifiedScheduleItem | null;
-  setSelectedOpenSlot: (slot: UnifiedScheduleItem | null) => void;
   selectedPtSession: UnifiedScheduleItem | null;
   setSelectedPtSession: (session: UnifiedScheduleItem | null) => void;
   allUnifiedSessions: UnifiedScheduleItem[];
-  sportOptions: string[];
-  roomOptions: string[];
   onSubmitRequest: (data: any) => Promise<void>;
-  onCreateOpenSlotSuccess: (newItem: UnifiedScheduleItem) => Promise<void>;
-  onDeleteOpenSlot: (slotId: string) => Promise<void>;
   onRespondAppointment: (id: string, status: "Đã xác nhận" | "Coach từ chối") => void;
   onClassProposalSuccess: () => void;
   navigateTo: (s: CoachScreen, extra?: { sessionId?: string; memberId?: string }) => void;
@@ -34,22 +22,12 @@ interface Props {
 export function CoachScheduleModals({
   isRequestModalOpen,
   setIsRequestModalOpen,
-  isOpenSlotModalOpen,
-  setIsOpenSlotModalOpen,
-  initialOpenSlotDate,
-  initialOpenSlotStartTime,
   isClassProposalModalOpen,
   setIsClassProposalModalOpen,
-  selectedOpenSlot,
-  setSelectedOpenSlot,
   selectedPtSession,
   setSelectedPtSession,
   allUnifiedSessions,
-  sportOptions,
-  roomOptions,
   onSubmitRequest,
-  onCreateOpenSlotSuccess,
-  onDeleteOpenSlot,
   onRespondAppointment,
   onClassProposalSuccess,
   navigateTo,
@@ -69,23 +47,6 @@ export function CoachScheduleModals({
         onClose={() => setIsRequestModalOpen(false)}
         sessions={allUnifiedSessions}
         onSubmit={onSubmitRequest}
-      />
-
-      <OpenPtSlotModal
-        isOpen={isOpenSlotModalOpen}
-        onClose={() => setIsOpenSlotModalOpen(false)}
-        onSuccess={onCreateOpenSlotSuccess}
-        sportOptions={sportOptions}
-        roomOptions={roomOptions}
-        initialDate={initialOpenSlotDate}
-        initialStartTime={initialOpenSlotStartTime}
-        existingSessions={allUnifiedSessions}
-      />
-
-      <OpenPtDetailModal
-        slot={selectedOpenSlot}
-        onClose={() => setSelectedOpenSlot(null)}
-        onDelete={onDeleteOpenSlot}
       />
 
       <PtSessionDetailModal

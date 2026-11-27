@@ -3,6 +3,7 @@ import type { MemberScreen } from "../types";
 import { MemberAPI } from "../services/api";
 import {
   Dumbbell,
+  ClipboardList,
   Eye,
   MessageSquare,
   RefreshCw,
@@ -17,9 +18,8 @@ interface Props {
 }
 
 /**
- * Màn hình Kế hoạch tập luyện được giao của Hội viên (Member Workouts View).
- * Hiển thị kế hoạch bài tập và các bài tập về nhà do HLV phụ trách giao.
- * và cho phép hội viên đánh dấu hoàn thành bài tập.
+ * Màn hình bài tập về nhà được HLV giao cho hội viên.
+ * Hiển thị bài tập, hạn hoàn thành và tiến độ thực hiện.
  * 
  * @param onNavigate Hàm điều hướng màn hình
  */
@@ -56,6 +56,8 @@ export default function MemberWorkouts({ onNavigate }: Props) {
     }
   };
 
+  const visibleItems = homeworks;
+
   useEffect(() => {
     void loadHomeworks();
 
@@ -84,10 +86,10 @@ export default function MemberWorkouts({ onNavigate }: Props) {
         <div>
           <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Sparkles className="w-4 h-4" />
-            <span>Kế hoạch tập luyện cá nhân</span>
+            <span>Bài tập về nhà</span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Xem hướng dẫn chi tiết các bài tập do Huấn luyện viên giao để tự tin rèn luyện tại trung tâm
+            Tất cả bài tập được Huấn luyện viên giao cho bạn sẽ được theo dõi tại đây.
           </p>
         </div>
         <button
@@ -110,32 +112,30 @@ export default function MemberWorkouts({ onNavigate }: Props) {
         </div>
       )}
 
-      {/* Assigned Workout Plans Grid */}
+      {/* All assigned work is shown in one homework list. */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <Dumbbell className="w-4 h-4" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-            Kế hoạch được giao cho bạn ({homeworks.length})
-          </h3>
+          <ClipboardList className="w-4 h-4" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white">Bài tập được giao ({homeworks.length})</h3>
         </div>
 
         {loading ? (
           <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 text-center text-xs text-slate-400">
-            Đang tải kế hoạch...
+            Đang tải bài tập về nhà...
           </div>
-        ) : homeworks.length === 0 ? (
+        ) : visibleItems.length === 0 ? (
           <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center">
             <Dumbbell className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
             <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
-              Chưa có kế hoạch nào được giao
+              Chưa có bài tập về nhà nào
             </h4>
             <p className="text-[11px] text-slate-400 mt-1 max-w-sm mx-auto">
-              Kế hoạch sẽ xuất hiện tại đây khi huấn luyện viên phụ trách giao cho bạn.
+              Bài tập sẽ xuất hiện tại đây khi huấn luyện viên giao cho bạn.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {homeworks.map((homework) => {
+            {visibleItems.map((homework) => {
               const plan = homework.plan;
               const exerciseCount = plan?.exercises?.length || 0;
 
@@ -152,7 +152,7 @@ export default function MemberWorkouts({ onNavigate }: Props) {
                         </span>
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
                           <Sparkles className="w-2.5 h-2.5" />
-                          <span>Gợi ý AI & HLV duyệt</span>
+                          <span>Bài tập về nhà</span>
                         </span>
                       </div>
                       <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
@@ -167,6 +167,11 @@ export default function MemberWorkouts({ onNavigate }: Props) {
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
                       {plan?.goal || plan?.description || "Bài tập do huấn luyện viên đề xuất tại trung tâm."}
                     </p>
+                    {homework.dueDate && (
+                      <p className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+                        <Clock className="h-3.5 w-3.5" />Hạn hoàn thành: {new Intl.DateTimeFormat("vi-VN").format(new Date(homework.dueDate))}
+                      </p>
+                    )}
 
                     {homework.notes && (
                       <div className="mt-2.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400">

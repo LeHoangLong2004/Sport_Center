@@ -216,6 +216,31 @@ public sealed partial class PackageCatalogService
         });
     }
 
+    private async Task ApplyPaidMembershipRenewalToCurrentSubscriptionAsync(
+        Subscription renewal,
+        CatalogPackageDto renewalPackage,
+        CancellationToken cancellationToken
+    )
+    {
+        if (renewalPackage.Category != "membership") return;
+
+        var now = DateTime.UtcNow;
+        // A same-tier renewal is stored as its own paid subscription for the
+        // payment record, while the current subscription also carries the
+        // effective membership expiration used by the rest of the system.
+        if (renewal.StartDate.Date <= now.Date) return;
+
+        var current = await GetActiveMembershipSubscriptionAsync(renewal.UserId, now, cancellationToken);
+        if (current == null || current.Id == renewal.Id) return;
+
+        var currentPackage = DeserializeSnapshot(current);
+        if (!string.Equals(currentPackage.Tier?.Trim(), renewalPackage.Tier?.Trim(), StringComparison.OrdinalIgnoreCase))
+            return;
+
+        if (renewal.EndDate.Date > current.EndDate.Date)
+            current.EndDate = renewal.EndDate;
+    }
+
     public async Task ClosePreviousMembershipSubscriptionsAsync(
         Guid userId,
         Guid currentSubscriptionId,
