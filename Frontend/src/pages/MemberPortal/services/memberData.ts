@@ -281,7 +281,7 @@ export const MemberBackendAPI = {
       if (Array.isArray(memberAppts) && memberAppts.length > 0) {
         apptSessions = memberAppts.map((appt) => {
           const startTime = appt.time?.split("-")[0]?.trim() || appt.time || "09:00";
-          const endTime = calculateAppointmentEndTime(appt.time);
+          const endTime = calculateAppointmentEndTime(appt.time, appt.durationMinutes || 60);
 
           let uiStatus: MemberSessionItem["status"] = "sắp diễn ra";
           if (appt.status === "Đã hoàn tất") uiStatus = "hoàn thành";
@@ -307,7 +307,7 @@ export const MemberBackendAPI = {
             date: appt.date || todayIso,
             startTime,
             endTime,
-            room: "Khu PT 1-1 / Sảnh Lễ tân",
+            room: appt.location || "Chưa cập nhật địa điểm",
             coachId: "",
             coachName: appt.coachName || "HLV SmartGym",
             coachAvatar: "",

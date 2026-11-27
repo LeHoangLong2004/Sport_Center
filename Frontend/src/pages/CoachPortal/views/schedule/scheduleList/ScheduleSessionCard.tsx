@@ -26,6 +26,7 @@ export function ScheduleSessionCard({
   const isPT = s.type === "pt";
   const isOpenPT = s.type === "open_pt";
   const isPendingApproval = !isPT && !isOpenPT && s.approvalStatus === "pending";
+  const isAppointmentPending = s.appointmentStatus === "Chờ Coach xác nhận";
 
   return (
     <div
@@ -66,7 +67,7 @@ export function ScheduleSessionCard({
                 : `${badge.bg} ${badge.text}`
             }`}
           >
-            {isOpenPT ? "Mở nhận học viên" : badge.label}
+            {isAppointmentPending ? "Chờ bạn xác nhận" : isOpenPT ? "Mở nhận học viên" : badge.label}
           </span>
         </div>
 
@@ -121,7 +122,7 @@ export function ScheduleSessionCard({
                 className="px-3.5 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-lg transition-colors flex items-center gap-1.5"
               >
                 <Eye className="w-3.5 h-3.5" />
-                Chi tiết PT
+                {isAppointmentPending ? "Xem & phản hồi" : "Chi tiết PT"}
               </button>
             ) : (
               <button

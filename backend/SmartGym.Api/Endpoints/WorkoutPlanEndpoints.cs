@@ -190,30 +190,20 @@ public static class WorkoutPlanEndpoints
 
                 var planToDelete = await query.FirstOrDefaultAsync(context.RequestAborted);
                 if (planToDelete == null)
-                    return Results.NotFound(new { message = "Không tìm thấy kế hoạch hoặc bạn không có quyền xóa." });
+                    return Results.NotFound(new { message = "Không tìm thấy kế hoạch hoặc bạn không có quyền truy cập." });
 
-                var hasHomeworkHistory = await db.HomeworkProgresses.AnyAsync(
-                    progress => progress.PlanId == id,
-                    context.RequestAborted);
-                var hasClonedPlans = await db.WorkoutPlans.AnyAsync(
-                    plan => plan.ParentPlanId == id,
-                    context.RequestAborted);
-                if (hasHomeworkHistory || hasClonedPlans || Flow5PlanStatus.Is(planToDelete.Status, Flow5PlanStatuses.Assigned))
-                {
-                    return Results.Conflict(new
-                    {
-                        message = "Kế hoạch đã được giao hoặc đang được kế hoạch khác sử dụng nên không thể xóa. Hãy lưu trữ kế hoạch để giữ lịch sử."
-                    });
-                }
-
-                db.WorkoutPlans.Remove(planToDelete);
+                // Coach-side delete is a soft delete: keep the plan and homework history
+                // so members who already received it can continue viewing/completing it.
+                planToDelete.Status = Flow5PlanStatuses.Archived;
+                planToDelete.UpdatedAt = DateTime.UtcNow;
+                planToDelete.Version++;
                 await db.SaveChangesAsync(context.RequestAborted);
                 await transaction.CommitAsync(context.RequestAborted);
-                return Results.Ok(new { success = true, message = "Đã xóa kế hoạch." });
+                return Results.Ok(new { success = true, message = "Đã ẩn kế hoạch khỏi thư viện HLV. Học viên đã nhận vẫn xem được kế hoạch." });
             });
         })
         .WithTags("Workout Plans")
-        .WithSummary("Delete an unused workout plan");
+        .WithSummary("Hide a workout plan from the coach library while preserving member history");
 
         /// <summary>
         /// GET /api/workout-plans/{id}
@@ -277,7 +267,46 @@ public static class WorkoutPlanEndpoints
 
                     try
                     {
-                        var result = await service.GetPlansByCoachIdAsync(coachId.Value);
+                        var result = (await service.GetPlansByCoachIdAsync(coachId.Value))
+                            .Where(plan => !string.Equals(plan.PlanType, "homework", StringComparison.OrdinalIgnoreCase))
+                            .Where(plan => !Flow5PlanStatus.Is(plan.Status, Flow5PlanStatuses.Archived))
+                            .ToList();
+                        try
+                        {
+                            var planIds = result.Select(plan => plan.Id).ToArray();
+                            if (planIds.Length > 0)
+                            {
+                                var assignedMembers = await db.HomeworkProgresses
+                                    .Where(progress => planIds.Contains(progress.PlanId))
+                                    .Select(progress => new { progress.PlanId, progress.MemberId })
+                                    .Distinct()
+                                    .ToListAsync();
+                                var memberIds = assignedMembers.Select(assignment => assignment.MemberId).Distinct().ToArray();
+                                var memberNames = await db.Users
+                                    .Where(user => memberIds.Contains(user.Id))
+                                    .Select(user => new { user.Id, user.FullName })
+                                    .ToDictionaryAsync(user => user.Id, user => user.FullName);
+
+                                foreach (var plan in result)
+                                {
+                                    var targets = assignedMembers
+                                        .Where(assignment => assignment.PlanId == plan.Id)
+                                        .Select(assignment => new WorkoutPlanAssignedTargetDto
+                                        {
+                                            Id = assignment.MemberId.ToString(),
+                                            Name = memberNames.GetValueOrDefault(assignment.MemberId) ?? "Học viên",
+                                        })
+                                        .ToList();
+                                    plan.AssignedCount = targets.Count;
+                                    plan.AssignedTo = targets;
+                                }
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            // Assignment details are optional; a failure must not hide saved plans.
+                        }
+
                         return Results.Ok(result);
                     }
                     catch (Exception)

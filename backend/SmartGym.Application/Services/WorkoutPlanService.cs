@@ -118,6 +118,7 @@ public class WorkoutPlanService : IWorkoutPlanService
             DurationMinutes = p.DurationMinutes,
             ProgramOutlineJson = p.ProgramOutlineJson,
             Status = p.Status,
+            PlanType = p.PlanType,
             Version = p.Version,
             RecommendationTargetType = p.RecommendationTargetType,
             RecommendationTargetId = p.RecommendationTargetId,

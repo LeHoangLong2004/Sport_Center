@@ -17,6 +17,7 @@ import { ScheduleFilterBar } from "./schedule/ScheduleFilterBar";
 import { AppointmentCard } from "./schedule/AppointmentCard";
 import { ReceptionistProtocolSidebar } from "./schedule/ReceptionistProtocolSidebar";
 import { CreateAppointmentModal } from "./schedule/CreateAppointmentModal";
+import { DeleteAppointmentModal } from "./schedule/DeleteAppointmentModal";
 
 export function SchedulePage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -32,6 +33,7 @@ export function SchedulePage() {
 
   // Modal State
   const [showModal, setShowModal] = useState(false);
+  const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [copiedPhone, setCopiedPhone] = useState<string | null>(null);
@@ -96,6 +98,16 @@ export function SchedulePage() {
     loadAllData();
   }, []);
 
+  useEffect(() => {
+    const refreshAppointments = () => { void fetchAppointments(); };
+    const timer = window.setInterval(refreshAppointments, 30000);
+    window.addEventListener("focus", refreshAppointments);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshAppointments);
+    };
+  }, []);
+
   // Prevent background scroll when modal is open
   useEffect(() => {
     if (showModal) {
@@ -141,13 +153,20 @@ export function SchedulePage() {
 
   // Delete Handler
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa lịch hẹn này?")) return;
+    const appointment = appointments.find((item) => item.id === id);
+    if (appointment) setAppointmentToDelete(appointment);
+  };
+
+  const confirmDelete = async () => {
+    if (!appointmentToDelete) return;
+    const id = appointmentToDelete.id;
     setDeletingId(id);
     try {
       const res = await fetch(`/api/appointments/${id}`, { method: "DELETE" });
       if (res.ok) {
         setAppointments((prev) => prev.filter((a) => a.id !== id));
         toast.success("Đã xóa lịch hẹn");
+        setAppointmentToDelete(null);
       } else {
         toast.error("Không thể xóa");
       }
@@ -175,7 +194,11 @@ export function SchedulePage() {
 
     return appointments
       .filter((a) => {
-        if (statusFilter !== "all" && a.status !== statusFilter) return false;
+        if (statusFilter === "Đã hủy") {
+          if (!["Đã hủy", "Coach từ chối", "Đã từ chối"].includes(a.status)) return false;
+        } else if (statusFilter === "Đang chờ khách") {
+          if (!["Đã xác nhận", "Đang chờ khách"].includes(a.status)) return false;
+        } else if (statusFilter !== "all" && a.status !== statusFilter) return false;
         if (dateFilter === "today" && (a.date || todayIso) !== todayIso) return false;
         if (dateFilter === "tomorrow" && a.date !== tomorrowIso) return false;
         if (searchQuery.trim()) {
@@ -201,9 +224,10 @@ export function SchedulePage() {
   const stats: ScheduleStats = useMemo(() => {
     const total = appointments.length;
     const completed = appointments.filter((a) => a.status === "Đã hoàn tất").length;
-    const waiting = appointments.filter((a) => a.status === "Đang chờ khách").length;
-    const cancelled = appointments.filter((a) => a.status === "Đã hủy").length;
-    return { total, completed, waiting, cancelled };
+    const waiting = appointments.filter((a) => a.status === "Chờ Coach xác nhận").length;
+    const arrivalWaiting = appointments.filter((a) => ["Đã xác nhận", "Đang chờ khách"].includes(a.status)).length;
+    const cancelled = appointments.filter((a) => ["Đã hủy", "Coach từ chối", "Đã từ chối"].includes(a.status)).length;
+    return { total, completed, waiting, arrivalWaiting, cancelled };
   }, [appointments]);
 
   return (
@@ -285,6 +309,13 @@ export function SchedulePage() {
           fetchAppointments();
           toast.success("Tạo lịch hẹn thành công cho hội viên!");
         }}
+      />
+
+      <DeleteAppointmentModal
+        appointment={appointmentToDelete}
+        isDeleting={Boolean(appointmentToDelete && deletingId === appointmentToDelete.id)}
+        onClose={() => setAppointmentToDelete(null)}
+        onConfirm={confirmDelete}
       />
     </div>
   );

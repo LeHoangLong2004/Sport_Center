@@ -6,6 +6,8 @@ export interface Appointment {
   customerName: string;
   coachName: string | null;
   status: string;
+  durationMinutes?: number;
+  location?: string | null;
 }
 
 export interface Coach {
@@ -42,9 +44,10 @@ export interface ScheduleStats {
   total: number;
   completed: number;
   waiting: number;
+  arrivalWaiting: number;
   cancelled: number;
 }
 
-export type StatusFilterType = "all" | "Đang chờ khách" | "Đã hoàn tất" | "Đã hủy";
+export type StatusFilterType = "all" | "Chờ Coach xác nhận" | "Đang chờ khách" | "Đã hoàn tất" | "Đã hủy";
 export type DateFilterType = "all" | "today" | "tomorrow";
 export type CustomerModeType = "member" | "guest";

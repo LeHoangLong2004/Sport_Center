@@ -15,6 +15,17 @@ interface ReceptionistBookClassModalProps {
   onError: (msg: string) => void;
 }
 
+interface MemberBookingQuote {
+  className: string;
+  totalSessions: number;
+  membershipName: string;
+  membershipTier: string;
+  subtotal: number;
+  discountPct: number;
+  discountAmount: number;
+  totalAmount: number;
+}
+
 export function ReceptionistBookClassModal({
   selectedClass,
   membersList,
@@ -28,6 +39,9 @@ export function ReceptionistBookClassModal({
   const [memberPage, setMemberPage] = useState(1);
   const MEMBERS_PER_PAGE = 4;
   const [loadingBook, setLoadingBook] = useState(false);
+  const [bookingQuote, setBookingQuote] = useState<MemberBookingQuote | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [quoteError, setQuoteError] = useState("");
 
   // Attendees list
   const [enrolledMembers, setEnrolledMembers] = useState<any[]>([]);
@@ -114,6 +128,39 @@ export function ReceptionistBookClassModal({
     [membersList, memberId]
   );
 
+  useEffect(() => {
+    if (!selectedMember?.id || !selectedClass?.id) {
+      setBookingQuote(null);
+      setQuoteError("");
+      setQuoteLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const token = localStorage.getItem("token");
+    setQuoteLoading(true);
+    setBookingQuote(null);
+    setQuoteError("");
+
+    fetch(`/api/classes/${selectedClass.id}/member-booking-quote?memberId=${encodeURIComponent(selectedMember.id)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: controller.signal,
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(data?.message || "Không thể tính học phí cho hội viên này.");
+        setBookingQuote(data);
+      })
+      .catch((error: any) => {
+        if (error?.name !== "AbortError") setQuoteError(error?.message || "Không thể tải ưu đãi hội viên.");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setQuoteLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [selectedClass?.id, selectedMember?.id]);
+
   const handleBookForMember = async () => {
     if (!memberId || !selectedClass) return;
     setLoadingBook(true);
@@ -131,7 +178,7 @@ export function ReceptionistBookClassModal({
       if (res.ok) {
         const memberName = selectedMember?.fullName || selectedMember?.name || "hội viên";
         const className = selectedClass.title || selectedClass.sportName || "lớp học";
-        const successMsg = `Đặt lớp "${className}" thành công cho hội viên ${memberName}!`;
+        const successMsg = d?.message || `Đã tạo đơn đặt lớp "${className}" cho hội viên ${memberName}.`;
         toast.success(successMsg);
         onSuccess(successMsg);
         handleClose();
@@ -202,12 +249,12 @@ export function ReceptionistBookClassModal({
       }}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col animate-in fade-in zoom-in-95 duration-200 border border-slate-100 overflow-hidden"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[calc(100vh-2rem)] flex flex-col animate-in fade-in zoom-in-95 duration-200 border border-slate-100 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <BookClassHeader onClose={handleClose} />
 
-        <div className="p-6 flex flex-col gap-4">
+        <div className="p-6 flex min-h-0 flex-col gap-4 overflow-y-auto">
           <BookClassSummary selectedClass={classSummaryObj} />
 
           {/* Tab Navigation */}
@@ -240,28 +287,59 @@ export function ReceptionistBookClassModal({
 
           {/* Tab Content */}
           {activeTab === "book" ? (
-            <BookClassMemberList
-              selectedMember={selectedMember}
-              allFilteredMembers={allFilteredMembers}
-              pagedMembers={pagedMembers}
-              memberSearch={memberSearch}
-              memberPage={memberPage}
-              totalMemberPages={totalMemberPages}
-              onSelectMember={(id) => {
-                setMemberId(id);
-                setMemberSearch("");
-              }}
-              onClearSelectedMember={() => {
-                setMemberId("");
-                setMemberSearch("");
-                setMemberPage(1);
-              }}
-              onSearchChange={(search) => {
-                setMemberSearch(search);
-                setMemberPage(1);
-              }}
-              onPageChange={setMemberPage}
-            />
+            <>
+              <BookClassMemberList
+                selectedMember={selectedMember}
+                allFilteredMembers={allFilteredMembers}
+                pagedMembers={pagedMembers}
+                memberSearch={memberSearch}
+                memberPage={memberPage}
+                totalMemberPages={totalMemberPages}
+                onSelectMember={(id) => {
+                  setMemberId(id);
+                  setMemberSearch("");
+                }}
+                onClearSelectedMember={() => {
+                  setMemberId("");
+                  setMemberSearch("");
+                  setMemberPage(1);
+                }}
+                onSearchChange={(search) => {
+                  setMemberSearch(search);
+                  setMemberPage(1);
+                }}
+                onPageChange={setMemberPage}
+              />
+              {selectedMember && (
+                <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-3 text-xs">
+                  {quoteLoading ? (
+                    <div className="text-slate-500">Đang kiểm tra gói thành viên và ưu đãi…</div>
+                  ) : quoteError ? (
+                    <div className="text-rose-700">{quoteError}</div>
+                  ) : bookingQuote ? (
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between gap-3 text-slate-600">
+                        <span>Gói thành viên</span>
+                        <strong className="text-slate-800">{bookingQuote.membershipName}</strong>
+                      </div>
+                      <div className="flex justify-between gap-3 text-slate-600">
+                        <span>Học phí khóa ({bookingQuote.totalSessions} buổi)</span>
+                        <span>{Number(bookingQuote.subtotal).toLocaleString("vi-VN")} đ</span>
+                      </div>
+                      <div className="flex justify-between gap-3 text-emerald-700">
+                        <span>Ưu đãi thành viên ({Number(bookingQuote.discountPct)}%)</span>
+                        <span>−{Number(bookingQuote.discountAmount).toLocaleString("vi-VN")} đ</span>
+                      </div>
+                      <div className="flex justify-between gap-3 border-t border-emerald-200 pt-1.5 font-bold text-slate-900">
+                        <span>Cần thu tại quầy</span>
+                        <span>{Number(bookingQuote.totalAmount).toLocaleString("vi-VN")} đ</span>
+                      </div>
+                      <p className="pt-1 text-[11px] text-slate-500">Sau khi đặt, đơn chờ thu sẽ xuất hiện trong mục Thu tiền tại quầy.</p>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </>
           ) : (
             <BookClassAttendeesList
               enrolledMembers={enrolledMembers}
@@ -291,7 +369,7 @@ export function ReceptionistBookClassModal({
               <button
                 type="button"
                 onClick={handleBookForMember}
-                disabled={!memberId || loadingBook || currentAvailableSpots <= 0}
+                disabled={!memberId || loadingBook || quoteLoading || !bookingQuote || currentAvailableSpots <= 0}
                 className="px-5 py-2 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md shadow-emerald-600/20 flex items-center gap-1.5 cursor-pointer"
               >
                 {loadingBook ? (

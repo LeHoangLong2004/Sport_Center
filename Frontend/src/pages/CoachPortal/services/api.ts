@@ -224,7 +224,8 @@ export const CoachAPI = {
         const rawStatus = String(p.status || "").toLowerCase().trim();
         let mappedStatus: MockCurriculum["status"] = "Nháp";
         if (rawStatus === "assigned" || rawStatus === "đã giao" || rawStatus === "da giao") {
-          mappedStatus = "Đã giao";
+          // Legacy assignment state is represented in homework_progress; the plan itself stays approved.
+          mappedStatus = "Đã duyệt";
         } else if (rawStatus === "approved" || rawStatus === "đã duyệt" || rawStatus === "da duyet") {
           mappedStatus = "Đã duyệt";
         } else if (rawStatus === "archived" || rawStatus === "lưu trữ" || rawStatus === "luu tru") {
@@ -335,7 +336,7 @@ export const CoachAPI = {
       body: JSON.stringify(payload)
     });
   },
-  deleteCurriculum: async (id: string) => {
+  archiveCurriculum: async (id: string) => {
     return fetchApi(`/workout-plans/${encodeURIComponent(id)}`, {
       method: "DELETE",
     });
@@ -379,6 +380,30 @@ export const CoachAPI = {
       body: JSON.stringify(payload)
     });
   },
+  getCoachHomeworks: async (): Promise<Array<{
+    id: string; memberId: string; memberName: string; memberCode?: string | null;
+    planId: string; planName: string; status: string; progressPct?: number | null;
+    assignedDate: string; dueDate?: string | null; completedAt?: string | null;
+    notes?: string | null; exerciseCount: number;
+    exercises: Array<{ id: string; name: string; sets?: string | null; reps?: string | null; duration?: string | null; rest?: string | null; note?: string | null; order: number }>;
+  }>> => {
+    const rows = await fetchApi("/homework/coach");
+    return Array.isArray(rows) ? rows : [];
+  },
+  createManualHomework: async (payload: {
+    target: { type: "member" | "class"; id: string };
+    planName: string;
+    sportId?: string;
+    goal?: string;
+    level?: string;
+    durationMinutes?: number;
+    dueDate?: string;
+    notes?: string;
+    exercises: Array<{ name: string; sets?: string; reps?: string; duration?: string; rest?: string; note?: string; order: number }>;
+  }) => fetchApi("/homework/create", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  }),
 
   // 7. Thông báo
   getNotifications: async (): Promise<MockNotification[]> => {

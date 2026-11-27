@@ -66,6 +66,12 @@ public static partial class DatabaseInitializationExtensions
                 ALTER TABLE users ADD COLUMN IF NOT EXISTS training_goal TEXT;
                 ALTER TABLE users ADD COLUMN IF NOT EXISTS training_level VARCHAR(50);
 
+                ALTER TABLE workout_plans
+                    ADD COLUMN IF NOT EXISTS plan_type VARCHAR(30) NOT NULL DEFAULT 'training_plan';
+
+                ALTER TABLE homework_progress
+                    ADD COLUMN IF NOT EXISTS completed_exercise_ids_json TEXT NOT NULL DEFAULT '[]';
+
                 ALTER TABLE coach_schedule_requests ADD COLUMN IF NOT EXISTS class_name VARCHAR(255);
                 ALTER TABLE coach_schedule_requests ADD COLUMN IF NOT EXISTS session_time VARCHAR(100);
                 ALTER TABLE coach_schedule_requests ADD COLUMN IF NOT EXISTS sport_name VARCHAR(100);
@@ -108,6 +114,8 @@ public static partial class DatabaseInitializationExtensions
                     coach_name TEXT,
                     status VARCHAR(50) DEFAULT 'Đang chờ khách'
                 );
+                ALTER TABLE public.appointments ADD COLUMN IF NOT EXISTS duration_minutes INTEGER NOT NULL DEFAULT 60;
+                ALTER TABLE public.appointments ADD COLUMN IF NOT EXISTS location TEXT;
                 GRANT ALL ON public.appointments TO anon, authenticated;
 
                 -- Ensure legacy unused gate_checkins table is removed

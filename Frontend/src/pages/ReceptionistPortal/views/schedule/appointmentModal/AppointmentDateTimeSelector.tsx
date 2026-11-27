@@ -1,5 +1,5 @@
 import React from "react";
-import { getTodayIso } from "../constants";
+import { DateInput } from "../../../../../components/DateInput";
 
 interface AppointmentDateTimeSelectorProps {
   selectedDate: string;
@@ -19,13 +19,13 @@ export const AppointmentDateTimeSelector: React.FC<AppointmentDateTimeSelectorPr
       <label htmlFor="appointment-date" className="font-bold text-slate-700 text-[11px] uppercase tracking-wider">
         4. Ngày hẹn *
       </label>
-      <input
+      <p className="text-[10px] text-slate-400">Đặt trước ít nhất 24 giờ và tối đa 7 ngày.</p>
+      <DateInput
         id="appointment-date"
-        type="date"
         required
-        min={getTodayIso()}
         value={selectedDate}
-        onChange={(event) => setSelectedDate(event.target.value)}
+        onChange={setSelectedDate}
+        placeholder="dd/mm/yyyy"
         className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-emerald-500 bg-white"
       />
     </div>

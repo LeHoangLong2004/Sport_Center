@@ -2,8 +2,11 @@ export interface HomeworkExercise {
   id?: string;
   name: string;
   reps?: string | null;
+  sets?: string | null;
+  duration?: string | null;
   rest?: string | null;
   note?: string | null;
+  order?: number;
 }
 
 export interface HomeworkPlan {
@@ -23,6 +26,7 @@ export interface MemberHomework {
   assignedBy?: string | null;
   status: string;
   progressPct?: number | null;
+  completedExerciseIds?: string[];
   assignedDate: string;
   dueDate?: string | null;
   notes?: string | null;
@@ -38,4 +42,9 @@ export interface HomeworkTask {
   dueDate?: string | null;
   assignedDate: string;
   completed: boolean;
+}
+
+export function cleanWorkoutPlanName(name?: string | null): string {
+  const cleaned = (name || "").replace(/^giáo\s*án\s*/i, "").trim();
+  return cleaned || name || "Bài tập rèn luyện";
 }

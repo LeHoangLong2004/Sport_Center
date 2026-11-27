@@ -469,14 +469,37 @@ public static partial class ClassEndpoints
         /// </summary>
         classGroup.MapPost(
             "/{id:guid}/book-for-member",
-            async (Guid id, [FromBody] BookForMemberRequest request, ClassService service) =>
+            async (Guid id, [FromBody] BookForMemberRequest request, ClassService service,
+                SmartGymDbContext db, PackageCatalogService packageCatalogService,
+                CancellationToken cancellationToken) =>
             {
                 if (request == null || request.MemberId == Guid.Empty)
                     return Results.BadRequest(new { message = "Vui lòng chọn hội viên cần đặt lớp." });
 
-                var (isSuccess, errorMessage) = await service.BookClassAsync(request.MemberId, id);
+                var quote = await GetReceptionistClassBookingQuoteAsync(
+                    db, packageCatalogService, request.MemberId, id, cancellationToken);
+                if (quote is null)
+                    return Results.BadRequest(new { message = "Lớp học chưa có bảng giá hiệu lực nên chưa thể tạo đơn thu tiền." });
+
+                var invoice = new Invoice
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = request.MemberId,
+                    ClassId = quote.RootId,
+                    TotalAmount = quote.TotalAmount,
+                    PaymentMethod = PaymentMethod.CashAtCounter,
+                    Status = PaymentStatus.Pending,
+                    CreatedAt = DateTime.UtcNow,
+                };
+                db.Invoices.Add(invoice);
+                await db.SaveChangesAsync(cancellationToken);
+
+                var (isSuccess, errorMessage) = await service.BookClassAsync(
+                    request.MemberId, id, bookingStatus: "pending");
                 if (!isSuccess)
                 {
+                    invoice.Status = PaymentStatus.Failed;
+                    await db.SaveChangesAsync(cancellationToken);
                     return Results.BadRequest(new { message = errorMessage });
                 }
 
@@ -489,12 +512,85 @@ public static partial class ClassEndpoints
 
                 return Results.Ok(new 
                 { 
-                    message = "Đặt lớp thành công cho hội viên.",
+                    message = quote.TotalAmount > 0
+                        ? $"Đã giữ chỗ và tạo đơn chờ thu {quote.TotalAmount:N0} đ tại quầy."
+                        : "Đặt lớp thành công. Hội viên được miễn phí theo quyền lợi hiện có.",
+                    pricing = quote,
                     classInfo = classDetail
                 });
             }
         )
         .RequireAuthorization(policy => policy.RequireRole("receptionist", "admin", "manager", "staff"));
+
+        classGroup.MapGet("/{id:guid}/member-booking-quote", async (
+            Guid id, [FromQuery] Guid memberId, SmartGymDbContext db,
+            PackageCatalogService packageCatalogService, CancellationToken cancellationToken) =>
+        {
+            if (memberId == Guid.Empty)
+                return Results.BadRequest(new { message = "Vui lòng chọn hội viên." });
+
+            var quote = await GetReceptionistClassBookingQuoteAsync(
+                db, packageCatalogService, memberId, id, cancellationToken);
+            if (quote is null)
+                return Results.NotFound(new { message = "Không tìm thấy lớp hoặc lớp chưa có bảng giá hiệu lực." });
+
+            return Results.Ok(quote);
+        })
+        .RequireAuthorization(policy => policy.RequireRole("receptionist", "admin", "manager", "staff"));
+    }
+
+    private static async Task<ReceptionistClassBookingQuoteRaw?> GetReceptionistClassBookingQuoteAsync(
+        SmartGymDbContext db,
+        PackageCatalogService packageCatalogService,
+        Guid memberId,
+        Guid classId,
+        CancellationToken cancellationToken)
+    {
+        var effectiveDate = DateOnly.FromDateTime(CenterTime.ToLocal(DateTime.UtcNow));
+        var prices = await db.Database.SqlQueryRaw<ReceptionistClassBookingPriceRaw>("""
+            SELECT root.id AS "RootId",
+                   root.class_name AS "ClassName",
+                   GREATEST(COALESCE(root.total_sessions, 1), 1) AS "TotalSessions",
+                   COALESCE(root.price_per_session_snapshot, active_price.price_per_session) AS "PricePerSession",
+                   COALESCE(root.course_fee_snapshot,
+                       COALESCE(root.price_per_session_snapshot, active_price.price_per_session)
+                           * GREATEST(COALESCE(root.total_sessions, 1), 1)) AS "CourseSubtotal"
+            FROM classes current_class
+            JOIN classes root ON root.id = COALESCE(current_class.parent_id, current_class.id)
+            LEFT JOIN LATERAL (
+                SELECT p.price_per_session
+                FROM sport_class_pricing p
+                WHERE p.sport_id = root.sport_id AND p.is_active = TRUE
+                  AND p.effective_from <= {1}
+                  AND (p.effective_to IS NULL OR p.effective_to >= {1})
+                ORDER BY p.effective_from DESC, p.created_at DESC
+                LIMIT 1
+            ) active_price ON TRUE
+            WHERE current_class.id = {0}
+            """, classId, effectiveDate).FirstOrDefaultAsync(cancellationToken);
+
+        if (prices is null || (prices.CourseSubtotal is null && prices.PricePerSession is null))
+            return null;
+
+        var membership = await packageCatalogService.GetActiveMembershipAsync(
+            memberId, DateTime.UtcNow, cancellationToken);
+        var discountPct = Math.Clamp(membership?.GroupDiscountPct ?? 0m, 0m, 100m);
+        var subtotal = prices.CourseSubtotal
+            ?? prices.PricePerSession!.Value * Math.Max(1, prices.TotalSessions);
+        var discountAmount = decimal.Round(subtotal * discountPct / 100m, 0, MidpointRounding.AwayFromZero);
+
+        return new ReceptionistClassBookingQuoteRaw
+        {
+            RootId = prices.RootId,
+            ClassName = prices.ClassName,
+            TotalSessions = Math.Max(1, prices.TotalSessions),
+            MembershipName = membership?.Name ?? "Hội viên Cơ bản",
+            MembershipTier = membership?.Tier ?? "basic",
+            Subtotal = subtotal,
+            DiscountPct = discountPct,
+            DiscountAmount = discountAmount,
+            TotalAmount = Math.Max(0m, subtotal - discountAmount),
+        };
     }
 
     private static async Task ExpireMemberClassPaymentHoldsAsync(SmartGymDbContext db, Guid userId, Guid classId)
@@ -881,4 +977,26 @@ public class CancelBookingInfoRaw
 public sealed class ClassRootIdRaw
 {
     public Guid RootClassId { get; set; }
+}
+
+public sealed class ReceptionistClassBookingQuoteRaw
+{
+    public Guid RootId { get; set; }
+    public string ClassName { get; set; } = string.Empty;
+    public int TotalSessions { get; set; }
+    public string MembershipName { get; set; } = string.Empty;
+    public string MembershipTier { get; set; } = "basic";
+    public decimal Subtotal { get; set; }
+    public decimal DiscountPct { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public decimal TotalAmount { get; set; }
+}
+
+public sealed class ReceptionistClassBookingPriceRaw
+{
+    public Guid RootId { get; set; }
+    public string ClassName { get; set; } = string.Empty;
+    public int TotalSessions { get; set; }
+    public decimal? PricePerSession { get; set; }
+    public decimal? CourseSubtotal { get; set; }
 }

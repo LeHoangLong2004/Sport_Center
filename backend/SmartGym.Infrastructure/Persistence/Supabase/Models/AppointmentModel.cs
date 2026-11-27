@@ -21,6 +21,12 @@ public sealed class AppointmentModel : BaseModel
     [Column("coach_name")]
     public string? CoachName { get; set; }
 
+    [Column("duration_minutes")]
+    public int DurationMinutes { get; set; } = 60;
+
+    [Column("location")]
+    public string? Location { get; set; }
+
     [Column("status")]
     public string Status { get; set; } = "Đang chờ khách";
 

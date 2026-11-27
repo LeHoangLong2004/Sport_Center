@@ -36,7 +36,7 @@ export const BREADCRUMBS: Record<MemberScreen, string> = {
   attendance: "HỘI VIÊN / ĐIỂM DANH & CHUYÊN CẦN",
   packages: "HỘI VIÊN / GÓI TẬP & DỊCH VỤ",
   payments: "HỘI VIÊN / LỊCH SỬ THANH TOÁN & HÓA ĐƠN",
-  workouts: "HỘI VIÊN / GIÁO ÁN & BÀI TẬP",
+  workouts: "HỘI VIÊN / KẾ HOẠCH & BÀI TẬP",
   reviews: "HỘI VIÊN / ĐÁNH GIÁ HLV",
   chat: "HỘI VIÊN / TIN NHẮN TRAO ĐỔI",
   support: "HỘI VIÊN / TRỢ LÝ AI & HỖ TRỢ",

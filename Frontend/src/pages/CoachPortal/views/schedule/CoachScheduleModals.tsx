@@ -26,6 +26,7 @@ interface Props {
   onSubmitRequest: (data: any) => Promise<void>;
   onCreateOpenSlotSuccess: (newItem: UnifiedScheduleItem) => Promise<void>;
   onDeleteOpenSlot: (slotId: string) => Promise<void>;
+  onRespondAppointment: (id: string, status: "Đã xác nhận" | "Coach từ chối") => void;
   onClassProposalSuccess: () => void;
   navigateTo: (s: CoachScreen, extra?: { sessionId?: string; memberId?: string }) => void;
 }
@@ -49,6 +50,7 @@ export function CoachScheduleModals({
   onSubmitRequest,
   onCreateOpenSlotSuccess,
   onDeleteOpenSlot,
+  onRespondAppointment,
   onClassProposalSuccess,
   navigateTo,
 }: Props) {
@@ -92,6 +94,7 @@ export function CoachScheduleModals({
         onRequestReschedule={() => {
           setIsRequestModalOpen(true);
         }}
+        onRespondAppointment={onRespondAppointment}
         navigateTo={navigateTo}
       />
     </>

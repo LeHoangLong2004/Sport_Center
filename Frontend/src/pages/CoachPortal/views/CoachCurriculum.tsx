@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { CoachAPI } from "../services/api";
 import type { MockCurriculum, MockSession, MockMember, SportOption } from "../services/api";
-import { CheckCircle2, Sparkles, BookOpen } from "lucide-react";
+import { CheckCircle2, BookOpen, ClipboardList } from "lucide-react";
 import { makeDraft, makePlanSession } from "./curriculum/types";
 import {
   resolveSportInfo,
@@ -15,6 +15,7 @@ import { CurriculumEditorModal } from "./curriculum/CurriculumEditorModal";
 import { CurriculumAssignModal } from "./curriculum/CurriculumAssignModal";
 import { CurriculumDeleteConfirmModal } from "./curriculum/CurriculumDeleteConfirmModal";
 import CoachAI from "./CoachAI";
+import { CoachHomeworksTab } from "./CoachHomeworksTab";
 
 interface CoachCurriculumProps {
   initialTab?: "library" | "ai";
@@ -25,7 +26,10 @@ export default function CoachCurriculum({
   initialTab = "library",
   initialMemberId,
 }: CoachCurriculumProps = {}) {
-  const [activeTab, setActiveTab] = useState<"library" | "ai">(initialTab);
+  const [activeTab, setActiveTab] = useState<"library" | "homework">("library");
+  const [showAiComposer, setShowAiComposer] = useState(initialTab === "ai");
+  const [aiReturnTab, setAiReturnTab] = useState<"library" | "homework">("library");
+  const [assignAfterSave, setAssignAfterSave] = useState(false);
   const [curricula, setCurricula] = useState<MockCurriculum[]>([]);
   const [sessions, setSessions] = useState<MockSession[]>([]);
   const [members, setMembers] = useState<MockMember[]>([]);
@@ -83,10 +87,11 @@ export default function CoachCurriculum({
 
   const [modalError, setModalError] = useState<string | null>(null);
 
-  const openNew = () => {
+  const openNew = (assignOnSave = false) => {
     setModalError(null);
     setDraft(makeDraft(sports));
     setEditingId("new");
+    setAssignAfterSave(assignOnSave);
   };
 
   const openEdit = (curriculum: MockCurriculum) => {
@@ -126,6 +131,7 @@ export default function CoachCurriculum({
     setDraft(null);
     setEditingId(null);
     setModalError(null);
+    setAssignAfterSave(false);
   };
 
   const handleSave = async () => {
@@ -160,6 +166,11 @@ export default function CoachCurriculum({
     }));
     const validExercises = normalizedSessions.flatMap((session) => session.exercises);
 
+    if (assignAfterSave && validExercises.length === 0) {
+      setModalError("Thêm ít nhất một bài tập trước khi giao bài tập về nhà.");
+      return;
+    }
+
     const hasEmptyName = validExercises.some((e) => !e.name.trim());
     if (hasEmptyName) {
       setModalError("Vui lòng nhập tên cho tất cả các bài tập trong danh sách (hoặc xóa bài chưa dùng).");
@@ -175,11 +186,13 @@ export default function CoachCurriculum({
 
     setIsSaving(true);
     setFeedback(null);
+    const shouldAssignAfterSave = assignAfterSave && (!editingId || editingId === "new");
     try {
+      let savedPlan: any = null;
       if (editingId && editingId !== "new") {
         await CoachAPI.updateCurriculum(editingId, cleanedDraft);
       } else {
-        await CoachAPI.saveCurriculum(cleanedDraft);
+        savedPlan = await CoachAPI.saveCurriculum(cleanedDraft);
       }
 
       await reloadCurricula();
@@ -190,6 +203,15 @@ export default function CoachCurriculum({
           : "Đã lưu kế hoạch tập luyện thành công!",
       });
       closeEdit();
+      if (shouldAssignAfterSave && savedPlan?.id) {
+        setAssignTarget({
+          curricId: String(savedPlan.id),
+          curricName: cleanedDraft.name,
+          sport: cleanedDraft.sport,
+          level: cleanedDraft.level,
+        });
+        setAssignAfterSave(false);
+      }
       setTimeout(() => setFeedback(null), 3500);
     } catch (error: any) {
       console.error("Failed to save coach curriculum", error);
@@ -215,6 +237,7 @@ export default function CoachCurriculum({
       await reloadCurricula();
       setAssignTarget(null);
       setFeedback({ type: "success", msg: `Đã giao kế hoạch "${assignTarget.curricName}" cho ${name} thành công!` });
+      setActiveTab("homework");
       setTimeout(() => setFeedback(null), 3500);
     } catch (error: any) {
       console.error("Failed to assign coach curriculum", error);
@@ -250,18 +273,18 @@ export default function CoachCurriculum({
     }
   };
 
-  const handleDelete = async (curriculum: MockCurriculum) => {
+  const handleArchive = async (curriculum: MockCurriculum) => {
     setDeletingId(curriculum.id);
     try {
-      await CoachAPI.deleteCurriculum(curriculum.id);
+      await CoachAPI.archiveCurriculum(curriculum.id);
       await reloadCurricula();
-      setFeedback({ type: "success", msg: `Đã xóa kế hoạch “${curriculum.name}”.` });
+      setFeedback({ type: "success", msg: `Đã xóa kế hoạch “${curriculum.name}” khỏi thư viện HLV. Học viên đã nhận vẫn xem được bài tập và lịch sử tập luyện.` });
       setDeleteTarget(null);
       setTimeout(() => setFeedback(null), 3500);
     } catch (error: any) {
       setFeedback({
         type: "error",
-        msg: error?.message || "Không thể xóa kế hoạch. Kế hoạch có thể đã được giao hoặc đang được sử dụng.",
+        msg: error?.message || "Không thể xóa kế hoạch. Vui lòng thử lại.",
       });
       setTimeout(() => setFeedback(null), 5000);
     } finally {
@@ -297,7 +320,7 @@ export default function CoachCurriculum({
       const matchStatus =
         statusFilter === "all" ||
         (statusFilter === "ready" && effective.key === "ready") ||
-        (statusFilter === "assigned" && effective.key === "assigned") ||
+        (statusFilter === "assigned" && curriculum.assignedTo.length > 0) ||
         (statusFilter === "draft" && (effective.key === "draft" || effective.key === "empty"));
 
       return matchSearch && matchSport && matchStatus;
@@ -348,46 +371,32 @@ export default function CoachCurriculum({
 
   return (
     <div className="flex flex-col gap-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-300">
-      {/* Top Tab Bar: Library vs AI Copilot */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab("library")}
-            className={`px-4 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 ${
-              activeTab === "library"
-                ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm"
-                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <BookOpen className="w-4 h-4" />
-            <span>Kế hoạch tập luyện ({curricula.length})</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("ai")}
-            className={`px-4 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 ${
-              activeTab === "ai"
-                ? "bg-gradient-to-r from-emerald-600 to-emerald-600 text-white shadow-sm"
-                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
-            <span>Trợ lý AI gợi ý</span>
-          </button>
-        </div>
-      </div>
-
-      {activeTab === "ai" ? (
+      {showAiComposer ? (
         <CoachAI
           initialMemberId={initialMemberId}
+          backLabel={aiReturnTab === "homework" ? "Bài tập về nhà" : "Kế hoạch tập luyện"}
           onBackToLibrary={() => {
-            setActiveTab("library");
+            setShowAiComposer(false);
+            setActiveTab(aiReturnTab);
             void reloadCurricula();
           }}
         />
       ) : (
         <>
+          <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+            <button type="button" onClick={() => setActiveTab("library")} className={`px-4 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center gap-2 ${activeTab === "library" ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"}`}>
+              <BookOpen className="w-4 h-4" /><span>Kế hoạch tập luyện ({curricula.length})</span>
+            </button>
+            <button type="button" onClick={() => setActiveTab("homework")} className={`px-4 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center gap-2 ${activeTab === "homework" ? "bg-emerald-600 text-white shadow-sm" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"}`}>
+              <ClipboardList className="w-4 h-4" /><span>Bài tập về nhà</span>
+            </button>
+          </div>
+
+          {activeTab === "homework" ? (
+            <CoachHomeworksTab
+              onCreateWithAi={() => { setAiReturnTab("homework"); setShowAiComposer(true); }}
+            />
+          ) : <>
           <CurriculumHeader
             curricula={curricula}
             searchQuery={searchQuery}
@@ -398,7 +407,7 @@ export default function CoachCurriculum({
             setStatusFilter={setStatusFilter}
             sportsList={sportsList}
             onOpenNew={openNew}
-            onOpenAiTab={() => setActiveTab("ai")}
+            onOpenAiTab={() => { setAiReturnTab("library"); setShowAiComposer(true); }}
           />
 
           {feedback && (
@@ -463,9 +472,10 @@ export default function CoachCurriculum({
               onCancel={() => {
                 if (deletingId !== deleteTarget.id) setDeleteTarget(null);
               }}
-              onConfirm={() => void handleDelete(deleteTarget)}
+              onConfirm={() => void handleArchive(deleteTarget)}
             />
           )}
+          </>}
         </>
       )}
     </div>

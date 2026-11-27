@@ -88,7 +88,7 @@ export interface MockCurriculum {
   goal: string;
   level: string;
   duration: number; // phút
-  status: "Nháp" | "Đã duyệt" | "Đã giao" | "Lưu trữ";
+  status: "Nháp" | "Đã duyệt" | "Lưu trữ";
   source?: string;
   updatedAt: string;
   description: string;

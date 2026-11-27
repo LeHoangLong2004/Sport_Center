@@ -32,6 +32,8 @@ export interface UnifiedScheduleItem {
   memberPhone?: string;
   goal?: string;
   note?: string;
+  appointmentId?: string;
+  appointmentStatus?: string;
 }
 
 export const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [

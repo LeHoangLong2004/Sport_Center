@@ -10,6 +10,7 @@ import {
   X,
   Trash2,
 } from "lucide-react";
+import { calculateAppointmentEndTime } from "../../../../services/appointmentService";
 import type { Appointment, Member } from "./types";
 import {
   getServiceTag,
@@ -41,9 +42,10 @@ export const AppointmentCard: React.FC<Props> = ({
 }) => {
   const customer = parseCustomerInfo(slot.customerName, members);
   const tag = getServiceTag(slot.title);
-  const isWaiting = slot.status === "Đang chờ khách";
+  const isPendingCoach = slot.status === "Chờ Coach xác nhận";
+  const isWaiting = ["Đã xác nhận", "Đang chờ khách"].includes(slot.status);
   const isCompleted = slot.status === "Đã hoàn tất";
-  const isCancelled = slot.status === "Đã hủy";
+  const isCancelled = ["Đã hủy", "Coach từ chối", "Đã từ chối"].includes(slot.status);
 
   const getDateBadgeLabel = () => {
     const todayIso = getTodayIso();
@@ -55,12 +57,15 @@ export const AppointmentCard: React.FC<Props> = ({
   };
 
   const customerInitial = (customer.name || "K").trim().charAt(0).toUpperCase();
+  const endTime = calculateAppointmentEndTime(slot.time, slot.durationMinutes || 60);
 
   return (
     <div
       className={`bg-white rounded-xl border transition-all duration-150 hover:shadow-xs p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
         isWaiting
           ? "border-slate-200/90 hover:border-emerald-300"
+          : isPendingCoach
+          ? "border-amber-200 bg-amber-50/20"
           : isCompleted
           ? "border-emerald-200/80 bg-emerald-50/15"
           : "border-slate-200/70 bg-slate-50/40 opacity-80"
@@ -73,6 +78,8 @@ export const AppointmentCard: React.FC<Props> = ({
           className={`flex flex-col items-center justify-center w-14 py-1.5 px-1 rounded-xl text-xs font-bold shrink-0 text-center transition-colors ${
             isWaiting
               ? "bg-emerald-50 border border-emerald-200/90 text-emerald-800 shadow-2xs"
+              : isPendingCoach
+              ? "bg-amber-50 border border-amber-200 text-amber-800"
               : isCompleted
               ? "bg-slate-100 border border-slate-200 text-slate-700"
               : "bg-slate-100 border border-dashed border-slate-200 text-slate-400"
@@ -83,6 +90,8 @@ export const AppointmentCard: React.FC<Props> = ({
             className={`text-[9px] font-semibold mt-0.5 ${
               isWaiting
                 ? "text-emerald-700 font-bold"
+                : isPendingCoach
+                ? "text-amber-700 font-bold"
                 : isCompleted
                 ? "text-slate-500"
                 : "text-slate-400"
@@ -103,6 +112,21 @@ export const AppointmentCard: React.FC<Props> = ({
             >
               {tag.label}
             </span>
+            {isPendingCoach && (
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold border border-amber-200 bg-amber-50 text-amber-800">
+                Chờ Coach xác nhận
+              </span>
+            )}
+            {slot.status === "Coach từ chối" && (
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold border border-rose-200 bg-rose-50 text-rose-700">
+                Coach từ chối
+              </span>
+            )}
+          </div>
+
+          <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-500">
+            <span>{slot.time}–{endTime} · {slot.durationMinutes || 60} phút</span>
+            {slot.location && <span>Địa điểm: {slot.location}</span>}
           </div>
 
           {/* Customer & Coach row */}
@@ -148,6 +172,17 @@ export const AppointmentCard: React.FC<Props> = ({
 
       {/* Right: Status & Quick Action Buttons */}
       <div className="flex items-center gap-2 shrink-0 self-end sm:self-center border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100">
+        {isPendingCoach && (
+          <button
+            type="button"
+            disabled={updatingId === slot.id}
+            onClick={() => onUpdateStatus(slot.id, "Đã hủy")}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold text-rose-700 bg-white hover:bg-rose-50 border border-rose-200 rounded-lg transition cursor-pointer disabled:opacity-50"
+          >
+            <X className="w-3.5 h-3.5" /> Hủy yêu cầu
+          </button>
+        )}
+
         {isWaiting && (
           <>
             {customer.phone && (
@@ -202,15 +237,17 @@ export const AppointmentCard: React.FC<Props> = ({
         {isCancelled && (
           <div className="flex items-center gap-1.5">
             <span className="px-2 py-1 rounded-md text-[11px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
-              Đã hủy
+              {slot.status === "Coach từ chối" || slot.status === "Đã từ chối" ? "Coach từ chối" : "Đã hủy"}
             </span>
-            <button
-              disabled={updatingId === slot.id}
-              onClick={() => onUpdateStatus(slot.id, "Đang chờ khách")}
-              className="px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50 rounded-md border border-emerald-200 transition cursor-pointer"
-            >
-              Khôi phục
-            </button>
+            {slot.status === "Đã hủy" && (
+              <button
+                disabled={updatingId === slot.id}
+                onClick={() => onUpdateStatus(slot.id, "Đang chờ khách")}
+                className="px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50 rounded-md border border-emerald-200 transition cursor-pointer"
+              >
+                Khôi phục
+              </button>
+            )}
             <button
               disabled={deletingId === slot.id}
               onClick={() => onDelete(slot.id)}

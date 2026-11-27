@@ -71,8 +71,9 @@ export const TodaySessionsList: React.FC<TodaySessionsListProps> = ({
             {appointments.map((appt) => {
               const { name: custName, phone: custPhone } = parseAppointmentCustomer(appt.customerName);
               const isCompleted = appt.status === "Đã hoàn tất";
-              const isCancelled = appt.status === "Đã hủy";
-              const isWaiting = !isCompleted && !isCancelled;
+              const isCancelled = ["Đã hủy", "Coach từ chối", "Đã từ chối"].includes(appt.status);
+              const needsCoachResponse = appt.status === "Chờ Coach xác nhận";
+              const isWaiting = !isCompleted && !isCancelled && !needsCoachResponse;
 
               return (
                 <div
@@ -144,6 +145,24 @@ export const TodaySessionsList: React.FC<TodaySessionsListProps> = ({
                   </div>
 
                   <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                    {needsCoachResponse && onUpdateAppointmentStatus && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => onUpdateAppointmentStatus(appt.id, "Đã xác nhận")}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Đồng ý lịch
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onUpdateAppointmentStatus(appt.id, "Coach từ chối")}
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer"
+                        >
+                          Từ chối
+                        </button>
+                      </>
+                    )}
                     {isWaiting && onUpdateAppointmentStatus && (
                       <button
                         type="button"

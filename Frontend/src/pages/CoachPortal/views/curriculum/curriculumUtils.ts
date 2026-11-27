@@ -156,7 +156,7 @@ export function resolveSportInfo(
   };
 }
 
-export type EffectiveStatusKey = "ready" | "assigned" | "empty" | "draft" | "archived";
+export type EffectiveStatusKey = "ready" | "empty" | "draft" | "archived";
 
 export interface EffectiveStatusInfo {
   key: EffectiveStatusKey;
@@ -169,7 +169,7 @@ export interface EffectiveStatusInfo {
 /**
  * Tính toán trạng thái thực tế của giáo án:
  * - Nếu giáo án có 0 bài tập: Gắn nhãn "Chưa có bài tập", không để "Sẵn sàng giao", không cho giao.
- * - Nếu đã giao: Gắn nhãn "Đã giao".
+ * - Việc giao học viên được theo dõi riêng ở danh sách bài tập về nhà.
  * - Nếu đã duyệt & có >= 1 bài tập: Gắn nhãn "Sẵn sàng giao".
  * - Nếu là nháp: Gắn nhãn "Bản nháp".
  */
@@ -187,15 +187,6 @@ export function getEffectiveStatus(curriculum: MockCurriculum): EffectiveStatusI
   }
 
   const rawStatus = String(curriculum.status || "").trim();
-
-  if (rawStatus === "Đã giao" || rawStatus.toLowerCase() === "assigned") {
-    return {
-      key: "assigned",
-      label: "Đã giao",
-      badgeClass: "bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800",
-      canAssign: true,
-    };
-  }
 
   if (rawStatus === "Lưu trữ" || rawStatus.toLowerCase() === "archived") {
     return {
@@ -233,7 +224,7 @@ export function getValidAssignmentText(curriculum: MockCurriculum): {
   isAssigned: boolean;
   displayText: string;
 } {
-  const isAssigned = curriculum.status === "Đã giao";
+  const isAssigned = curriculum.assignedTo.length > 0;
   const cleanPlanName = curriculum.name.trim().toLowerCase();
 
   const validTargets = (curriculum.assignedTo || []).filter((target) => {
@@ -254,13 +245,13 @@ export function getValidAssignmentText(curriculum: MockCurriculum): {
   if (isAssigned) {
     return {
       isAssigned: true,
-      displayText: "Đã giao cho học viên / lớp phụ trách",
+      displayText: "Đã phát sinh bài tập về nhà",
     };
   }
 
   return {
     isAssigned: false,
-    displayText: "Chưa giao cho lớp/học viên nào",
+    displayText: "Chưa phát sinh bài tập về nhà",
   };
 }
 

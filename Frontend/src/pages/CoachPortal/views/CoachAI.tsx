@@ -19,9 +19,10 @@ import { useCoachAi } from "./coach-ai/useCoachAi";
 interface CoachAIProps {
   initialMemberId?: string | null;
   onBackToLibrary?: () => void;
+  backLabel?: string;
 }
 
-export default function CoachAI({ initialMemberId, onBackToLibrary }: CoachAIProps) {
+export default function CoachAI({ initialMemberId, onBackToLibrary, backLabel = "Quay lại kế hoạch tập luyện" }: CoachAIProps) {
   const {
     loading,
     members,
@@ -91,7 +92,7 @@ export default function CoachAI({ initialMemberId, onBackToLibrary }: CoachAIPro
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl transition-colors shadow-2xs cursor-pointer group"
           >
             <ArrowLeft className="w-3.5 h-3.5 text-slate-400 group-hover:-translate-x-0.5 transition-transform" />
-            <span>← Quay lại Thư viện giáo án</span>
+            <span>← {backLabel}</span>
           </button>
         </div>
       )}

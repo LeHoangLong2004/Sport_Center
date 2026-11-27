@@ -9,7 +9,7 @@ import {
   Clock,
   Sparkles,
 } from "lucide-react";
-import type { MemberHomework } from "./workouts/workoutTypes";
+import { cleanWorkoutPlanName, type MemberHomework } from "./workouts/workoutTypes";
 import { HomeworkDetailModal } from "./workouts/HomeworkDetailModal";
 
 interface Props {
@@ -42,7 +42,9 @@ export default function MemberWorkouts({ onNavigate }: Props) {
         : Array.isArray((raw as any)?.data)
         ? (raw as any).data
         : [];
-      setHomeworks(list as MemberHomework[]);
+      const normalized = list as MemberHomework[];
+      setHomeworks(normalized);
+      setSelectedHomework((current) => current ? normalized.find((item) => item.id === current.id) || current : current);
     } catch (loadError) {
       console.error("Failed to load assigned workouts", loadError);
       if (!silent) {
@@ -160,7 +162,7 @@ export default function MemberWorkouts({ onNavigate }: Props) {
                     </div>
 
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                      {plan?.planName || "Bài tập rèn luyện"}
+                      {cleanWorkoutPlanName(plan?.planName)}
                     </h4>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
                       {plan?.goal || plan?.description || "Bài tập do huấn luyện viên đề xuất tại trung tâm."}
@@ -177,6 +179,7 @@ export default function MemberWorkouts({ onNavigate }: Props) {
                       <span>HLV phụ trách: <strong>Huấn luyện viên</strong></span>
                       <span className="text-emerald-600 font-semibold">{exerciseCount} bài tập</span>
                     </div>
+                    <div className="mt-3"><div className="flex justify-between text-[11px] text-slate-500"><span>Tiến độ của bạn</span><span>{Math.round(Number(homework.progressPct || 0))}%</span></div><div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${Math.max(0, Math.min(100, Number(homework.progressPct || 0)))}%` }} /></div></div>
                   </div>
 
                   <div className="flex gap-2 mt-4">
@@ -208,6 +211,7 @@ export default function MemberWorkouts({ onNavigate }: Props) {
       <HomeworkDetailModal
         homework={selectedHomework}
         onClose={() => setSelectedHomework(null)}
+        onProgressChanged={() => void loadHomeworks(true)}
       />
     </div>
   );

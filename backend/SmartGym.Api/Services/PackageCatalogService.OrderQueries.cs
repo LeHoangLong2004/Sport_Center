@@ -49,6 +49,9 @@ public sealed partial class PackageCatalogService
                        COALESCE(c.parent_id, c.id) AS "CourseId",
                        COALESCE(course.class_name, root.class_name, c.class_name, 'Lớp học') AS "CourseName",
                        GREATEST(COALESCE(course.total_sessions, root.total_sessions, c.total_sessions, 1), 1) AS "CourseSessionCount",
+                       GREATEST(COALESCE(root.course_fee_snapshot,
+                           root.price_per_session_snapshot * GREATEST(COALESCE(root.total_sessions, 1), 1),
+                           active_price.price_per_session * GREATEST(COALESCE(root.total_sessions, 1), 1), 0), 0) AS "CourseSubtotal",
                        COALESCE(u.full_name, 'Hội viên') AS "UserName",
                        COALESCE(u.email, '') AS "UserEmail",
                        COALESCE(u.phone_number, '') AS "UserPhone"
@@ -56,8 +59,18 @@ public sealed partial class PackageCatalogService
                 JOIN classes c ON c.id = cb.class_id
                 LEFT JOIN class_courses course ON course.id = c.parent_id
                 LEFT JOIN classes root ON root.id = COALESCE(c.parent_id, c.id)
+                LEFT JOIN LATERAL (
+                    SELECT p.price_per_session
+                    FROM sport_class_pricing p
+                    WHERE p.sport_id = root.sport_id AND p.is_active = TRUE
+                      AND p.effective_from <= (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
+                      AND (p.effective_to IS NULL OR p.effective_to >= (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date)
+                    ORDER BY p.effective_from DESC, p.created_at DESC
+                    LIMIT 1
+                ) active_price ON TRUE
                 JOIN users u ON u.id = cb.user_id
                 WHERE LOWER(cb.status) IN ('pending', 'confirmed', 'approved')
+                  AND c.id = COALESCE(c.parent_id, c.id)
                 """;
             if (memberId.HasValue)
             {
@@ -74,8 +87,8 @@ public sealed partial class PackageCatalogService
                 classInvoices = await db.Invoices
                     .AsNoTracking()
                     .Where(invoice => userIds.Contains(invoice.UserId)
+                        && invoice.ClassId.HasValue
                         && (invoice.Status == PaymentStatus.Pending || invoice.Status == PaymentStatus.Completed)
-                        && invoice.TotalAmount <= 150000m
                         && invoice.CreatedAt >= earliestBooking
                         && invoice.CreatedAt <= latestBooking)
                     .ToListAsync(cancellationToken);
@@ -98,7 +111,7 @@ public sealed partial class PackageCatalogService
             foreach (var cb in classOrders)
             {
                 var isPending = cb.Status.Trim().ToLowerInvariant() == "pending";
-                var subtotal = 150000m;
+                var subtotal = cb.CourseSubtotal > 0 ? cb.CourseSubtotal : 150000m;
                 decimal total;
                 decimal discountAmount;
                 decimal discountPct;
@@ -115,13 +128,14 @@ public sealed partial class PackageCatalogService
                     // Đặt theo vé lẻ ngoài gói: tìm hóa đơn thanh toán lớp học tương ứng (tạo gần thời điểm đặt và <= 150.000 đ)
                     var classInvoice = classInvoices
                         .Where(invoice => invoice.UserId == cb.UserId
+                            && invoice.ClassId == cb.CourseId
                             && invoice.Status == (isPending ? PaymentStatus.Pending : PaymentStatus.Completed)
                             && invoice.CreatedAt >= cb.CreatedAt.AddMinutes(-10)
                             && invoice.CreatedAt <= cb.CreatedAt.AddMinutes(10))
                         .OrderByDescending(invoice => invoice.CreatedAt)
                         .FirstOrDefault();
 
-                    if (classInvoice != null && classInvoice.TotalAmount > 0)
+                    if (classInvoice != null)
                     {
                         total = classInvoice.TotalAmount;
                     }
@@ -148,7 +162,7 @@ public sealed partial class PackageCatalogService
                     UserName = cb.UserName ?? "Hội viên",
                     UserEmail = cb.UserEmail ?? "",
                     UserPhone = cb.UserPhone ?? "",
-                    PackageId = cb.ClassId.ToString(),
+                    PackageId = cb.CourseId.ToString(),
                     PackageSnapshot = new CatalogPackageDto
                     {
                         Id = cb.ClassId.ToString(),
@@ -200,6 +214,7 @@ public class ClassBookingOrderRaw
     public Guid CourseId { get; set; }
     public string? CourseName { get; set; }
     public int CourseSessionCount { get; set; }
+    public decimal CourseSubtotal { get; set; }
     public string? UserName { get; set; }
     public string? UserEmail { get; set; }
     public string? UserPhone { get; set; }

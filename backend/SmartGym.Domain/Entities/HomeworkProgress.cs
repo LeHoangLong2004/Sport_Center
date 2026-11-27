@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Collections.Generic;
 
 namespace SmartGym.Domain.Entities;
 
@@ -15,6 +16,7 @@ public class HomeworkProgress
     public DateTime? DueDate { get; set; }
     public DateTime? CompletedAt { get; set; }
     public string? Notes { get; set; }
+    public string CompletedExerciseIdsJson { get; set; } = "[]";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public User? Member { get; set; }

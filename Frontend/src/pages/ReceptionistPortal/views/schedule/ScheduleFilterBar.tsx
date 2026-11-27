@@ -23,7 +23,8 @@ export const ScheduleFilterBar: React.FC<Props> = ({
 }) => {
   const tabs = [
     { id: "all", label: "Tất cả", count: stats.total },
-    { id: "Đang chờ khách", label: "Chờ tiếp đón", count: stats.waiting },
+    { id: "Chờ Coach xác nhận", label: "Chờ Coach", count: stats.waiting },
+    { id: "Đang chờ khách", label: "Chờ tiếp đón", count: stats.arrivalWaiting },
     { id: "Đã hoàn tất", label: "Đã hoàn tất", count: stats.completed },
     { id: "Đã hủy", label: "Đã hủy", count: stats.cancelled },
   ];

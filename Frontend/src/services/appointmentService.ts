@@ -5,7 +5,9 @@ export interface Appointment {
   title: string;
   customerName: string;
   coachName: string | null;
-  status: string; // "Đang chờ khách" | "Đã hoàn tất" | "Đã hủy"
+  status: string; // Coach confirmation, reception, completion, and cancellation states
+  durationMinutes?: number;
+  location?: string | null;
 }
 
 export const APPOINTMENT_UPDATED_EVENT = "receptionist-appointment-updated";
@@ -153,17 +155,30 @@ export const AppointmentService = {
 
   async updateStatus(id: string, newStatus: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const res = await fetch(`/api/appointments/${id}/status`, {
+      const coachResponse = newStatus === "Đã xác nhận" || newStatus === "Coach từ chối";
+      const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
+      const res = await fetch(`/api/appointments/${id}/${coachResponse ? "coach-response" : "status"}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(coachResponse
+          ? { response: newStatus === "Đã xác nhận" ? "accept" : "decline" }
+          : { status: newStatus }),
       });
       if (res.ok) {
         dispatchAppointmentUpdated();
         return { success: true };
       }
       const data = await res.json().catch(() => null);
-      return { success: false, error: data?.message || "Không thể cập nhật trạng thái" };
+      const error = data?.message
+        || (res.status === 401
+          ? "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại."
+          : res.status === 403
+            ? "Bạn không có quyền thực hiện thao tác này."
+            : `Không thể cập nhật trạng thái (HTTP ${res.status})`);
+      return { success: false, error };
     } catch (e: any) {
       return { success: false, error: e?.message || "Lỗi kết nối mạng" };
     }
