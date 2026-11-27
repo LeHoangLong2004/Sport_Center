@@ -124,6 +124,9 @@ public sealed partial class PackageCatalogService
                        COALESCE(c.parent_id, c.id) AS "CourseId",
                        COALESCE(course.class_name, root.class_name, c.class_name, 'Lớp học') AS "CourseName",
                        GREATEST(COALESCE(course.total_sessions, root.total_sessions, c.total_sessions, 1), 1) AS "CourseSessionCount",
+                       GREATEST(COALESCE(root.course_fee_snapshot,
+                           root.price_per_session_snapshot * GREATEST(COALESCE(root.total_sessions, 1), 1),
+                           active_price.price_per_session * GREATEST(COALESCE(root.total_sessions, 1), 1), 0), 0) AS "CourseSubtotal",
                        COALESCE(u.full_name, 'Hội viên') AS "UserName",
                        COALESCE(u.email, '') AS "UserEmail",
                        COALESCE(u.phone_number, '') AS "UserPhone"
@@ -131,6 +134,15 @@ public sealed partial class PackageCatalogService
                 JOIN classes c ON c.id = cb.class_id
                 LEFT JOIN class_courses course ON course.id = c.parent_id
                 LEFT JOIN classes root ON root.id = COALESCE(c.parent_id, c.id)
+                LEFT JOIN LATERAL (
+                    SELECT p.price_per_session
+                    FROM sport_class_pricing p
+                    WHERE p.sport_id = root.sport_id AND p.is_active = TRUE
+                      AND p.effective_from <= (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
+                      AND (p.effective_to IS NULL OR p.effective_to >= (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date)
+                    ORDER BY p.effective_from DESC, p.created_at DESC
+                    LIMIT 1
+                ) active_price ON TRUE
                 JOIN users u ON u.id = cb.user_id
                 WHERE cb.id = {0}
                 """, orderId)
@@ -145,11 +157,11 @@ public sealed partial class PackageCatalogService
             }
 
             await db.Database.ExecuteSqlRawAsync(
-                "UPDATE class_bookings SET status = 'confirmed' WHERE id = {0}",
-                orderId);
+                "UPDATE class_bookings SET status = 'confirmed' WHERE user_id = {0} AND class_id IN (SELECT id FROM classes WHERE id = {1} OR parent_id = {1}) AND status = 'pending'",
+                booking.UserId, booking.CourseId);
 
             var classInvoice = await db.Invoices
-                .Where(i => i.UserId == booking.UserId && i.Status == PaymentStatus.Pending)
+                .Where(i => i.UserId == booking.UserId && i.ClassId == booking.CourseId && i.Status == PaymentStatus.Pending)
                 .OrderByDescending(i => i.CreatedAt)
                 .FirstOrDefaultAsync(cancellationToken);
 
@@ -183,10 +195,14 @@ public sealed partial class PackageCatalogService
                     Sport = "Lớp nhóm",
                 },
                 DurationMonths = 1,
-                Subtotal = 150000m,
-                DiscountPct = classInvoice != null && classInvoice.TotalAmount < 150000m ? decimal.Round((150000m - classInvoice.TotalAmount) / 150000m * 100m, 0) : 0,
-                DiscountAmount = classInvoice != null ? Math.Max(0, 150000m - classInvoice.TotalAmount) : 0,
-                Total = classInvoice?.TotalAmount ?? 150000m,
+                Subtotal = booking.CourseSubtotal > 0 ? booking.CourseSubtotal : 150000m,
+                DiscountPct = booking.CourseSubtotal > 0 && classInvoice != null
+                    ? decimal.Round(Math.Max(0m, booking.CourseSubtotal - classInvoice.TotalAmount) / booking.CourseSubtotal * 100m, 0)
+                    : 0m,
+                DiscountAmount = booking.CourseSubtotal > 0 && classInvoice != null
+                    ? Math.Max(0m, booking.CourseSubtotal - classInvoice.TotalAmount)
+                    : 0m,
+                Total = classInvoice?.TotalAmount ?? (booking.CourseSubtotal > 0 ? booking.CourseSubtotal : 150000m),
                 PaymentMethod = paymentMethod ?? "counter",
                 Status = "paid",
                 CreatedAt = booking.CreatedAt,
@@ -264,11 +280,27 @@ public sealed partial class PackageCatalogService
                        COALESCE(cb.created_at, now()) AS "CreatedAt",
                        COALESCE(c.class_name, 'Lớp học') AS "ClassName",
                        COALESCE(c.schedule_time, now()) AS "ScheduleTime",
+                       COALESCE(c.parent_id, c.id) AS "CourseId",
+                       COALESCE(root.class_name, c.class_name, 'Lớp học') AS "CourseName",
+                       GREATEST(COALESCE(root.total_sessions, c.total_sessions, 1), 1) AS "CourseSessionCount",
+                       GREATEST(COALESCE(root.course_fee_snapshot,
+                           root.price_per_session_snapshot * GREATEST(COALESCE(root.total_sessions, 1), 1),
+                           active_price.price_per_session * GREATEST(COALESCE(root.total_sessions, 1), 1), 0), 0) AS "CourseSubtotal",
                        COALESCE(u.full_name, 'Hội viên') AS "UserName",
                        COALESCE(u.email, '') AS "UserEmail",
                        COALESCE(u.phone_number, '') AS "UserPhone"
                 FROM class_bookings cb
                 JOIN classes c ON c.id = cb.class_id
+                LEFT JOIN classes root ON root.id = COALESCE(c.parent_id, c.id)
+                LEFT JOIN LATERAL (
+                    SELECT p.price_per_session
+                    FROM sport_class_pricing p
+                    WHERE p.sport_id = root.sport_id AND p.is_active = TRUE
+                      AND p.effective_from <= (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
+                      AND (p.effective_to IS NULL OR p.effective_to >= (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date)
+                    ORDER BY p.effective_from DESC, p.created_at DESC
+                    LIMIT 1
+                ) active_price ON TRUE
                 JOIN users u ON u.id = cb.user_id
                 WHERE cb.id = {0}
                 """, orderId)
@@ -282,16 +314,28 @@ public sealed partial class PackageCatalogService
                 );
             }
 
-            await db.Database.ExecuteSqlRawAsync(
-                "UPDATE class_bookings SET status = 'cancelled' WHERE id = {0}",
-                orderId);
-
-            await db.Database.ExecuteSqlRawAsync(
-                "UPDATE classes SET current_enrolled = GREATEST(0, current_enrolled - 1) WHERE id = {0}",
-                booking.ClassId);
+            await db.Database.ExecuteSqlRawAsync("""
+                WITH cancelled AS (
+                    UPDATE class_bookings
+                    SET status = 'cancelled'
+                    WHERE user_id = {0}
+                      AND class_id IN (SELECT id FROM classes WHERE id = {1} OR parent_id = {1})
+                      AND status = 'pending'
+                    RETURNING class_id
+                ), affected_sessions AS (
+                    SELECT DISTINCT class_id FROM cancelled
+                )
+                UPDATE classes c
+                SET current_enrolled = (
+                    SELECT COUNT(*) FROM class_bookings b
+                    WHERE b.class_id = c.id
+                      AND LOWER(b.status) IN ('confirmed', 'pending', 'approved', 'pending_payment')
+                )
+                WHERE c.id IN (SELECT class_id FROM affected_sessions)
+                """, booking.UserId, booking.CourseId);
 
             var classInvoice = await db.Invoices
-                .Where(i => i.UserId == booking.UserId && i.Status == PaymentStatus.Pending)
+                .Where(i => i.UserId == booking.UserId && i.ClassId == booking.CourseId && i.Status == PaymentStatus.Pending)
                 .OrderByDescending(i => i.CreatedAt)
                 .FirstOrDefaultAsync(cancellationToken);
 
@@ -300,6 +344,9 @@ public sealed partial class PackageCatalogService
                 classInvoice.Status = PaymentStatus.Failed;
                 await db.SaveChangesAsync(cancellationToken);
             }
+
+            var cancelledSubtotal = booking.CourseSubtotal > 0 ? booking.CourseSubtotal : 150000m;
+            var cancelledTotal = classInvoice?.TotalAmount ?? cancelledSubtotal;
 
             return new PackageOrderResponse
             {
@@ -319,8 +366,12 @@ public sealed partial class PackageCatalogService
                     Sport = "Lớp nhóm",
                 },
                 DurationMonths = 1,
-                Subtotal = 150000m,
-                Total = 150000m,
+                Subtotal = cancelledSubtotal,
+                DiscountPct = cancelledSubtotal > 0
+                    ? decimal.Round(Math.Max(0m, cancelledSubtotal - cancelledTotal) / cancelledSubtotal * 100m, 0)
+                    : 0m,
+                DiscountAmount = Math.Max(0m, cancelledSubtotal - cancelledTotal),
+                Total = cancelledTotal,
                 PaymentMethod = "counter",
                 Status = "failed",
                 CreatedAt = booking.CreatedAt,

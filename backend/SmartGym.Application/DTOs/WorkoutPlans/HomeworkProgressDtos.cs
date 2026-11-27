@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace SmartGym.Application.DTOs.WorkoutPlans;
 
@@ -12,11 +13,25 @@ public class AssignHomeworkRequest
     public string? Notes { get; set; }
 }
 
+public class CreateManualHomeworkRequest
+{
+    public Flow5TargetDto Target { get; set; } = new();
+    public string PlanName { get; set; } = string.Empty;
+    public Guid? SportId { get; set; }
+    public string? Goal { get; set; }
+    public string? Level { get; set; }
+    public int? DurationMinutes { get; set; }
+    public DateTime? DueDate { get; set; }
+    public string? Notes { get; set; }
+    public List<Flow5ExerciseDto> Exercises { get; set; } = new();
+}
+
 public class UpdateHomeworkProgressRequest
 {
     public string? Status { get; set; } // "in_progress", "pending_review", "completed"
     public decimal? ProgressPct { get; set; }
     public string? Notes { get; set; }
+    public List<Guid>? CompletedExerciseIds { get; set; }
 }
 
 public class VerifyHomeworkProgressRequest
@@ -37,6 +52,7 @@ public class HomeworkProgressResponse
     public DateTime? DueDate { get; set; }
     public DateTime? CompletedAt { get; set; }
     public string? Notes { get; set; }
+    public List<Guid> CompletedExerciseIds { get; set; } = new();
     public DateTime CreatedAt { get; set; }
     
     // We can include the plan details to make it easier for the frontend

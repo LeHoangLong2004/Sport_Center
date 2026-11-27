@@ -54,10 +54,7 @@ export const CurriculumAssignModal: React.FC<CurriculumAssignModalProps> = ({
   // Initialize or reset when modal opens or assignTarget changes
   useEffect(() => {
     if (assignTarget) {
-      if (!assignDeadline) {
-        const today = new Date().toISOString().split("T")[0];
-        setAssignDeadline(today);
-      }
+      setAssignDeadline("");
       setSelectedId("");
       setSelectedName("");
       setSearchQuery("");
@@ -103,10 +100,10 @@ export const CurriculumAssignModal: React.FC<CurriculumAssignModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-slate-900 dark:text-white text-base">
-                Giao kế hoạch tập luyện
+                Giao bài tập về nhà
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Áp dụng cho buổi tập trực tiếp tại trung tâm dưới sự giám sát của HLV
+                Tạo lượt giao riêng để theo dõi tiến độ của học viên hoặc lớp.
               </p>
             </div>
           </div>
@@ -127,7 +124,7 @@ export const CurriculumAssignModal: React.FC<CurriculumAssignModalProps> = ({
           {/* Target Type Selector */}
           <div>
             <label className="font-bold text-xs text-slate-800 dark:text-slate-200 block mb-2">
-              Đối tượng áp dụng kế hoạch:
+              Người nhận bài tập:
             </label>
             <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700/60">
               <button
@@ -176,14 +173,14 @@ export const CurriculumAssignModal: React.FC<CurriculumAssignModalProps> = ({
             }}
           />
 
-          {/* Session Date */}
+          {/* Homework due date */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span>Ngày tập áp dụng tại trung tâm:</span>
+                <span>Hạn hoàn thành (không bắt buộc):</span>
               </label>
-              <span className="text-[11px] text-slate-400">Buổi tập</span>
+              <span className="text-[11px] text-slate-400">Hạn nộp</span>
             </div>
             <DateInput
               value={assignDeadline}
@@ -191,7 +188,7 @@ export const CurriculumAssignModal: React.FC<CurriculumAssignModalProps> = ({
               className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs focus:border-emerald-500 outline-none"
             />
             <p className="text-[11px] text-slate-400 mt-1">
-              Thời điểm học viên/lớp bắt đầu thực hiện kế hoạch dưới sự theo dõi của HLV.
+              Để trống nếu không cần đặt hạn. Kế hoạch mẫu vẫn được giữ riêng trong thư viện.
             </p>
           </div>
 
@@ -200,12 +197,12 @@ export const CurriculumAssignModal: React.FC<CurriculumAssignModalProps> = ({
             <div className="flex items-center justify-between mb-1.5">
               <label className="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                 <FileText className="w-3.5 h-3.5 text-slate-400" />
-                <span>Lưu ý & Hướng dẫn của Coach cho buổi tập:</span>
+                <span>Hướng dẫn cho bài tập về nhà:</span>
               </label>
             </div>
             <textarea
               rows={3}
-              placeholder="VD: Chú ý kỹ thuật thở khi bơi sải, khởi động kỹ cơ vai, quan sát nhịp tim sau mỗi hiệp..."
+              placeholder="VD: Hoàn thành các bài tập 3 buổi trong tuần, ghi lại mức tạ đã sử dụng..."
               value={assignNote}
               onChange={(e) => setAssignNote(e.target.value)}
               className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs focus:border-emerald-500 outline-none resize-none leading-relaxed"
@@ -234,7 +231,7 @@ export const CurriculumAssignModal: React.FC<CurriculumAssignModalProps> = ({
             }`}
           >
             <Send className="w-3.5 h-3.5" />
-            <span>{isSubmitting ? "Đang giao kế hoạch..." : "Xác nhận giao kế hoạch"}</span>
+            <span>{isSubmitting ? "Đang giao bài tập..." : "Giao bài tập về nhà"}</span>
           </button>
         </div>
       </div>

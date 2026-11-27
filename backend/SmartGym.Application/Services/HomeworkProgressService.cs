@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using SmartGym.Application.DTOs.WorkoutPlans;
 using SmartGym.Application.Exceptions;
@@ -99,6 +100,20 @@ public class HomeworkProgressService : IHomeworkProgressService
             }
         }
 
+        if (request.CompletedExerciseIds != null && homework.Plan != null)
+        {
+            var validIds = homework.Plan.Exercises.Select(exercise => exercise.Id).ToHashSet();
+            var completedIds = request.CompletedExerciseIds.Where(validIds.Contains).Distinct().ToList();
+            homework.CompletedExerciseIdsJson = JsonSerializer.Serialize(completedIds);
+            homework.ProgressPct = homework.Plan.Exercises.Count == 0
+                ? 0
+                : Math.Round((decimal)completedIds.Count * 100 / homework.Plan.Exercises.Count, 0);
+            if (homework.Status != "completed")
+            {
+                homework.Status = homework.ProgressPct >= 100 ? "pending_review" : completedIds.Count > 0 ? "in_progress" : "assigned";
+            }
+        }
+
         if (request.Notes != null)
         {
             homework.Notes = request.Notes;
@@ -153,6 +168,7 @@ public class HomeworkProgressService : IHomeworkProgressService
             DueDate = p.DueDate,
             CompletedAt = p.CompletedAt,
             Notes = p.Notes,
+            CompletedExerciseIds = DeserializeCompletedIds(p.CompletedExerciseIdsJson),
             CreatedAt = p.CreatedAt,
             Plan = p.Plan == null ? null : new WorkoutPlanResponse
             {
@@ -162,15 +178,25 @@ public class HomeworkProgressService : IHomeworkProgressService
                 Goal = p.Plan.Goal,
                 Level = p.Plan.Level,
                 DurationMinutes = p.Plan.DurationMinutes,
-                Exercises = p.Plan.Exercises?.Select(e => new ExerciseDto
+                PlanType = p.Plan.PlanType,
+                Exercises = p.Plan.Exercises?.OrderBy(e => e.Order).Select(e => new ExerciseDto
                 {
                     Id = e.Id,
                     Name = e.Name,
+                    Sets = e.Sets,
                     Reps = e.Reps,
+                    Duration = e.Duration,
                     Rest = e.Rest,
-                    Note = e.Note
+                    Note = e.Note,
+                    Order = e.Order
                 }).ToList() ?? new List<ExerciseDto>()
             }
         };
+    }
+
+    private static List<Guid> DeserializeCompletedIds(string? value)
+    {
+        try { return string.IsNullOrWhiteSpace(value) ? new List<Guid>() : JsonSerializer.Deserialize<List<Guid>>(value) ?? new List<Guid>(); }
+        catch (JsonException) { return new List<Guid>(); }
     }
 }

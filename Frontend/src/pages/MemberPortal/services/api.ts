@@ -75,7 +75,7 @@ export const MemberAPI = {
     getMyHomework: async () => {
         return fetchApi('/homework/my');
     },
-    updateHomeworkProgress: async (homeworkId: string, data: { status?: string, progressPct?: number, notes?: string }) => {
+    updateHomeworkProgress: async (homeworkId: string, data: { status?: string, progressPct?: number, notes?: string, completedExerciseIds?: string[] }) => {
         return fetchApi(`/homework/${homeworkId}/progress`, {
             method: 'PUT',
             body: JSON.stringify(data)

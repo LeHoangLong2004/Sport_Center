@@ -18,6 +18,176 @@ public static class HomeworkEndpoints
     {
         var group = app.MapGroup("/api/homework").RequireAuthorization();
 
+        // Coach creates a one-off homework task without adding it to the training-plan library.
+        group
+            .MapPost(
+                "/create",
+                async (
+                    HttpContext context,
+                    [FromBody] CreateManualHomeworkRequest request,
+                    SmartGymDbContext db,
+                    IFlow5AssignmentService assignmentService,
+                    IFlow5AuthorizationService authorization
+                ) =>
+                {
+                    var role = context.User.FindFirst(ClaimTypes.Role)?.Value;
+                    if (role != "coach" && role != "manager")
+                        return Results.Forbid();
+
+                    if (!Guid.TryParse(context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var userId))
+                        return Results.Unauthorized();
+
+                    var coachId = await CoachProfileResolver.FindByUserIdAsync(db, userId);
+                    if (coachId == null)
+                        return Results.BadRequest(new { message = "Coach profile not found." });
+
+                    if (string.IsNullOrWhiteSpace(request.PlanName))
+                        return Results.BadRequest(new { message = "Vui lòng nhập tên bài tập về nhà." });
+                    if (request.Exercises == null || request.Exercises.Count == 0 || request.Exercises.Any(exercise => string.IsNullOrWhiteSpace(exercise.Name)))
+                        return Results.BadRequest(new { message = "Thêm ít nhất một bài tập và nhập tên cho từng bài." });
+                    if (request.Target == null || request.Target.Id == Guid.Empty ||
+                        (request.Target.Type != Flow5TargetTypes.Member && request.Target.Type != Flow5TargetTypes.Class))
+                        return Results.BadRequest(new { message = "Vui lòng chọn học viên hoặc lớp nhận bài tập." });
+
+                    if (string.Equals(role, "coach", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var access = await authorization.AuthorizeTargetAsync(context.User, request.Target, context.RequestAborted);
+                        if (!access.IsAllowed)
+                            return access.ErrorCode == "unauthorized" ? Results.Unauthorized() : Results.Forbid();
+                    }
+
+                    await using var transaction = await db.Database.BeginTransactionAsync(context.RequestAborted);
+                    try
+                    {
+                        var now = DateTime.UtcNow;
+                        var plan = new SmartGym.Domain.Entities.WorkoutPlan
+                        {
+                            Id = Guid.NewGuid(),
+                            CoachId = coachId.Value,
+                            SportId = request.SportId,
+                            PlanName = request.PlanName.Trim(),
+                            Goal = request.Goal?.Trim(),
+                            Level = request.Level?.Trim(),
+                            DurationMinutes = request.DurationMinutes,
+                            Status = Flow5PlanStatuses.Approved,
+                            PlanType = "homework",
+                            Source = Flow5PlanSources.Manual,
+                            Version = 1,
+                            ApprovedAt = now,
+                            ApprovedBy = coachId.Value,
+                            CreatedAt = now,
+                            UpdatedAt = now,
+                            Exercises = request.Exercises.Select((exercise, index) => new SmartGym.Domain.Entities.WorkoutPlanExercise
+                            {
+                                Id = Guid.NewGuid(),
+                                Name = exercise.Name.Trim(),
+                                Sets = exercise.Sets,
+                                Reps = exercise.Reps,
+                                Duration = exercise.Duration,
+                                Rest = exercise.Rest,
+                                Note = exercise.Note,
+                                Order = index + 1
+                            }).ToList()
+                        };
+
+                        db.WorkoutPlans.Add(plan);
+                        await db.SaveChangesAsync(context.RequestAborted);
+
+                        var result = await assignmentService.AssignAsync(
+                            coachId.Value,
+                            plan.Id,
+                            new AssignFlow5PlanRequest
+                            {
+                                Target = request.Target,
+                                DueDate = request.DueDate.HasValue ? new DateTimeOffset(request.DueDate.Value) : null,
+                                Notes = request.Notes?.Trim()
+                            },
+                            context.RequestAborted);
+
+                        if (!result.IsSuccess || result.Data == null)
+                        {
+                            await transaction.RollbackAsync(context.RequestAborted);
+                            return Results.BadRequest(new { message = result.ErrorMessage });
+                        }
+
+                        await transaction.CommitAsync(context.RequestAborted);
+                        return Results.Ok(new
+                        {
+                            planId = plan.Id,
+                            assignedCount = result.Data.AssignedCount,
+                            skippedCount = result.Data.SkippedCount
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        await transaction.RollbackAsync(context.RequestAborted);
+                        return Results.BadRequest(new { message = ex.InnerException?.Message ?? ex.Message });
+                    }
+                }
+            )
+            .WithTags("Homework")
+            .WithSummary("Create and assign a one-off manual homework task");
+
+        // Coach views homework assignments they created.
+        group
+            .MapGet(
+                "/coach",
+                async (HttpContext context, SmartGymDbContext db) =>
+                {
+                    var roleClaim = context.User.FindFirst(ClaimTypes.Role)?.Value;
+                    if (roleClaim != "coach" && roleClaim != "manager")
+                        return Results.Forbid();
+
+                    var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    if (!Guid.TryParse(userIdClaim, out var userId))
+                        return Results.Unauthorized();
+
+                    var coachId = await CoachProfileResolver.FindByUserIdAsync(db, userId);
+                    if (coachId == null)
+                        return Results.Ok(Array.Empty<object>());
+
+                    var assignments = await db.HomeworkProgresses
+                        .AsNoTracking()
+                        .Include(homework => homework.Plan)
+                            .ThenInclude(plan => plan!.Exercises)
+                        .Where(homework => homework.AssignedBy == coachId.Value)
+                        .OrderByDescending(homework => homework.CreatedAt)
+                        .ToListAsync(context.RequestAborted);
+
+                    return Results.Ok(assignments.Select(homework => new
+                        {
+                            id = homework.Id,
+                            memberId = homework.MemberId,
+                            memberName = homework.Member != null ? homework.Member.FullName : "Học viên",
+                            memberCode = homework.Member != null ? homework.Member.MemberCode : null,
+                            planId = homework.PlanId,
+                            planName = homework.Plan != null ? homework.Plan.PlanName : "Kế hoạch đã lưu trữ",
+                            status = homework.Status,
+                            progressPct = homework.ProgressPct,
+                            assignedDate = homework.AssignedDate,
+                            dueDate = homework.DueDate,
+                            completedAt = homework.CompletedAt,
+                            notes = homework.Notes,
+                            exerciseCount = homework.Plan != null ? homework.Plan.Exercises.Count : 0,
+                            exercises = homework.Plan?.Exercises
+                                .OrderBy(exercise => exercise.Order)
+                                .Select(exercise => (object)new
+                                {
+                                    id = exercise.Id,
+                                    name = exercise.Name,
+                                    sets = exercise.Sets,
+                                    reps = exercise.Reps,
+                                    duration = exercise.Duration,
+                                    rest = exercise.Rest,
+                                    note = exercise.Note,
+                                    order = exercise.Order
+                                }).ToList() ?? new List<object>()
+                        }));
+                }
+            )
+            .WithTags("Homework")
+            .WithSummary("Get homework assignments created by the logged-in coach");
+
         // Coach assigns homework to a member
         group
             .MapPost(

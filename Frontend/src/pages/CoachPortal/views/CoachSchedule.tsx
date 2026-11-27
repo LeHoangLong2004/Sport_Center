@@ -19,6 +19,7 @@ import CoachRequestsTab from "./schedule/CoachRequestsTab";
 import { CoachScheduleHeader } from "./schedule/CoachScheduleHeader";
 import { CoachScheduleModals } from "./schedule/CoachScheduleModals";
 import { useCoachScheduleData } from "./schedule/useCoachScheduleData";
+import { AppointmentService } from "../../../services/appointmentService";
 
 export type { UnifiedScheduleItem } from "./schedule/types";
 
@@ -200,6 +201,16 @@ export default function CoachSchedule({ navigateTo }: Props) {
     setTimeout(() => setFeedbackMsg(null), 4000);
   };
 
+  const handleAppointmentResponse = async (id: string, status: "Đã xác nhận" | "Coach từ chối") => {
+    const response = await AppointmentService.updateStatus(id, status);
+    if (!response.success) {
+      toast.error(response.error || "Không thể phản hồi lịch hẹn.");
+      return;
+    }
+    setSelectedPtSession(null);
+    toast.success(status === "Đã xác nhận" ? "Bạn đã xác nhận lịch hẹn." : "Bạn đã từ chối lịch hẹn.");
+  };
+
   return (
     <div className="flex flex-col gap-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-300">
       <CoachScheduleHeader
@@ -303,6 +314,7 @@ export default function CoachSchedule({ navigateTo }: Props) {
         onSubmitRequest={handleSubmitRequest}
         onCreateOpenSlotSuccess={handleCreateOpenSlotSuccess}
         onDeleteOpenSlot={handleDeleteOpenSlot}
+        onRespondAppointment={handleAppointmentResponse}
         onClassProposalSuccess={() => {
           setFeedbackMsg("Đề xuất lớp học đã được gửi để Manager duyệt.");
           setTimeout(() => setFeedbackMsg(null), 4000);

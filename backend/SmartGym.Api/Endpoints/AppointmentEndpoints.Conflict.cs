@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -13,6 +15,36 @@ namespace SmartGym.Api.Endpoints;
 
 public static partial class AppointmentEndpoints
 {
+    private static async Task<long> ExecuteConflictCountAsync(
+        SmartGymDbContext db,
+        string sql,
+        params (string Name, object Value)[] parameters)
+    {
+        var connection = db.Database.GetDbConnection();
+        var openedHere = connection.State != ConnectionState.Open;
+        if (openedHere) await connection.OpenAsync();
+
+        try
+        {
+            await using var command = connection.CreateCommand();
+            command.CommandText = sql;
+            foreach (var (name, value) in parameters)
+            {
+                var parameter = command.CreateParameter();
+                parameter.ParameterName = name;
+                parameter.Value = value;
+                command.Parameters.Add(parameter);
+            }
+
+            var result = await command.ExecuteScalarAsync();
+            return Convert.ToInt64(result, CultureInfo.InvariantCulture);
+        }
+        finally
+        {
+            if (openedHere) await connection.CloseAsync();
+        }
+    }
+
     private static async Task<string?> CheckAppointmentConflictsAsync(
         SmartGymDbContext db,
         global::Supabase.Client supabase,
@@ -22,6 +54,7 @@ public static partial class AppointmentEndpoints
         UserModel matchedCoach,
         Guid? coachKey,
         string customerRaw,
+        int durationMinutes,
         Guid? excludeAppointmentId = null)
     {
         // 1. Kiểm tra khung giờ quá khứ
@@ -54,7 +87,7 @@ public static partial class AppointmentEndpoints
         {
             // localApptStart ở múi giờ VN (UTC+7) -> đổi về UTC
             apptStartUtc = localApptStart.AddHours(-7);
-            apptEndUtc = apptStartUtc.AddMinutes(60);
+            apptEndUtc = apptStartUtc.AddMinutes(Math.Max(1, durationMinutes));
         }
         else
         {
@@ -62,17 +95,12 @@ public static partial class AppointmentEndpoints
             apptEndUtc = apptStartUtc.AddMinutes(60);
         }
 
-        var dayStartUtc = apptStartUtc.Date.AddDays(-1);
-        var dayEndUtc = apptStartUtc.Date.AddDays(2);
-
         // 2. Kiểm tra trùng lịch hẹn tiếp đón khác của Coach
         var existingAppointments = await supabase.From<AppointmentModel>().Get();
         if (existingAppointments.Models.Any(existing =>
             existing.Id != (excludeAppointmentId ?? Guid.Empty)
-            && IsActiveAppointment(existing.Status)
-            && string.Equals(existing.Time?.Trim(), normalizedTime, StringComparison.OrdinalIgnoreCase)
-            && (string.IsNullOrWhiteSpace(existing.Date) || string.Equals(existing.Date?.Trim(), normalizedDate, StringComparison.OrdinalIgnoreCase))
-            && NamesMatch(existing.CoachName, matchedCoach.FullName)))
+            && NamesMatch(existing.CoachName, matchedCoach.FullName)
+            && AppointmentOverlaps(existing, normalizedDate, apptStartUtc, apptEndUtc)))
         {
             return $"Coach '{matchedCoach.FullName}' đã có lịch hẹn tiếp đón khác vào {normalizedTime} ({normalizedDate}).";
         }
@@ -81,16 +109,9 @@ public static partial class AppointmentEndpoints
         try
         {
             var coachClasses = await db.Database.SqlQueryRaw<ClassSqlRawModel>(
-                @"SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status, parent_id, session_number, total_sessions, price_per_session_snapshot, course_fee_snapshot
-                  FROM classes
-                  WHERE (coach_id = {0} OR coach_id = {1})
-                    AND status = true
-                    AND approval_status = 'approved'
-                    AND schedule_time >= {2} AND schedule_time <= {3}",
-                matchedCoach.Id,
+                "SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes, capacity, current_enrolled, status, approval_status, parent_id, session_number, total_sessions, price_per_session_snapshot, course_fee_snapshot FROM classes WHERE (coach_id = {0} OR coach_id = {1}) AND (approval_status = 'approved' OR approval_status IS NULL) AND status = TRUE",
                 coachKey ?? matchedCoach.Id,
-                dayStartUtc,
-                dayEndUtc
+                matchedCoach.Id
             ).ToListAsync();
 
             var conflictingClass = coachClasses.FirstOrDefault(c =>
@@ -110,38 +131,33 @@ public static partial class AppointmentEndpoints
         catch (Exception ex)
         {
             Console.WriteLine($"[ConflictCheck] Coach class check warning: {ex.Message}");
+            return "Không thể kiểm tra lịch lớp của Coach nên hệ thống chưa xác nhận lịch này. Vui lòng thử lại sau.";
         }
 
         // 4. Kiểm tra Coach có ca dạy kèm PT 1-1 (availability slots đã booked)
         try
         {
-            var coachPtSlots = await db.Database.SqlQueryRaw<CoachAvailabilitySlotConflictModel>(
-                @"SELECT id, coach_id, start_time, end_time, status, booked_member_name
+            var coachPtConflictCount = await ExecuteConflictCountAsync(
+                db,
+                @"SELECT COUNT(*)
                   FROM coach_availability_slots
-                  WHERE (coach_id = {0} OR coach_id = {1})
+                  WHERE (coach_id = @coachProfileId OR coach_id = @coachUserId)
                     AND status = 'booked'
-                    AND start_time >= {2} AND start_time <= {3}",
-                matchedCoach.Id,
-                coachKey ?? matchedCoach.Id,
-                dayStartUtc,
-                dayEndUtc
-            ).ToListAsync();
+                    AND start_time < @appointmentEnd AND end_time > @appointmentStart",
+                ("@coachProfileId", coachKey ?? matchedCoach.Id),
+                ("@coachUserId", matchedCoach.Id),
+                ("@appointmentEnd", apptEndUtc),
+                ("@appointmentStart", apptStartUtc));
 
-            var conflictingPt = coachPtSlots.FirstOrDefault(s =>
-                apptStartUtc < s.EndTime && s.StartTime < apptEndUtc
-            );
-
-            if (conflictingPt != null)
+            if (coachPtConflictCount > 0)
             {
-                var localStart = CenterTime.ToLocal(conflictingPt.StartTime);
-                var localEnd = CenterTime.ToLocal(conflictingPt.EndTime);
-                var memberInfo = string.IsNullOrWhiteSpace(conflictingPt.BookedMemberName) ? "" : $" với học viên {conflictingPt.BookedMemberName}";
-                return $"Coach '{matchedCoach.FullName}' đã có ca dạy kèm PT 1-1{memberInfo} từ {localStart:HH:mm} đến {localEnd:HH:mm} ngày {normalizedDate}.";
+                return $"Coach '{matchedCoach.FullName}' đã có ca dạy kèm PT 1-1 trùng khung giờ {normalizedTime} ngày {normalizedDate}.";
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[ConflictCheck] Coach PT slot check warning: {ex.Message}");
+            return "Không thể kiểm tra ca PT của Coach nên hệ thống chưa xác nhận lịch này. Vui lòng thử lại sau.";
         }
 
         // 5. Kiểm tra trùng lịch của Hội viên / Khách hàng
@@ -152,10 +168,8 @@ public static partial class AppointmentEndpoints
         {
             var conflictAppt = existingAppointments.Models.FirstOrDefault(existing =>
                 existing.Id != (excludeAppointmentId ?? Guid.Empty)
-                && IsActiveAppointment(existing.Status)
-                && string.Equals(existing.Time?.Trim(), normalizedTime, StringComparison.OrdinalIgnoreCase)
-                && (string.IsNullOrWhiteSpace(existing.Date) || string.Equals(existing.Date?.Trim(), normalizedDate, StringComparison.OrdinalIgnoreCase))
-                && IsAppointmentForCustomer(existing.CustomerName, customerName, customerPhone));
+                && IsAppointmentForCustomer(existing.CustomerName, customerName, customerPhone)
+                && AppointmentOverlaps(existing, normalizedDate, apptStartUtc, apptEndUtc));
 
             if (conflictAppt != null)
             {
@@ -184,67 +198,55 @@ public static partial class AppointmentEndpoints
             // Kiểm tra lớp nhóm Hội viên đã đặt chỗ
             try
             {
-                var memberClasses = await db.Database.SqlQueryRaw<ClassSqlRawModel>(
-                    @"SELECT c.id, c.sport_id, c.facility_id, c.coach_id, c.class_name, c.schedule_time, c.duration_minutes, c.capacity, c.current_enrolled, c.status, c.approval_status, c.parent_id, c.session_number, c.total_sessions, c.price_per_session_snapshot, c.course_fee_snapshot
+                var memberClassConflictCount = await ExecuteConflictCountAsync(
+                    db,
+                    @"SELECT COUNT(*)
                       FROM class_bookings b
                       INNER JOIN classes c ON c.id = b.class_id
-                      WHERE b.user_id = {0}
-                        AND LOWER(b.status) IN ('confirmed', 'pending', 'approved')
+                      WHERE b.user_id = @memberId
+                        AND LOWER(COALESCE(b.status, '')) IN ('confirmed', 'pending', 'approved')
                         AND c.status = true
-                        AND c.approval_status = 'approved'
-                        AND c.schedule_time >= {1} AND c.schedule_time <= {2}",
-                    matchedMemberUserId.Value,
-                    dayStartUtc,
-                    dayEndUtc
-                ).ToListAsync();
+                        AND (c.approval_status = 'approved' OR c.approval_status IS NULL)
+                        AND c.schedule_time < @appointmentEnd
+                        AND c.schedule_time + (GREATEST(COALESCE(c.duration_minutes, 60), 1) * INTERVAL '1 minute') > @appointmentStart",
+                    ("@memberId", matchedMemberUserId.Value),
+                    ("@appointmentEnd", apptEndUtc),
+                    ("@appointmentStart", apptStartUtc));
 
-                var conflictingMemberClass = memberClasses.FirstOrDefault(c =>
+                if (memberClassConflictCount > 0)
                 {
-                    var classStart = c.ScheduleTime;
-                    var classEnd = classStart.AddMinutes(Math.Max(1, c.DurationMinutes));
-                    return apptStartUtc < classEnd && classStart < apptEndUtc;
-                });
-
-                if (conflictingMemberClass != null)
-                {
-                    var localStart = CenterTime.ToLocal(conflictingMemberClass.ScheduleTime);
-                    var localEnd = localStart.AddMinutes(conflictingMemberClass.DurationMinutes);
-                    return $"Hội viên '{customerName}' đã có lịch tham gia lớp học '{conflictingMemberClass.ClassName}' từ {localStart:HH:mm} đến {localEnd:HH:mm} ngày {normalizedDate}.";
+                    return $"Hội viên '{customerName}' đã đăng ký lớp học trùng khung giờ {normalizedTime} ngày {normalizedDate}.";
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[ConflictCheck] Member class check warning: {ex.Message}");
+                return "Không thể kiểm tra lịch lớp của học viên nên hệ thống chưa xác nhận lịch này. Vui lòng thử lại sau.";
             }
 
             // Kiểm tra ca tập PT 1-1 của Hội viên
             try
             {
-                var memberPtSlots = await db.Database.SqlQueryRaw<CoachAvailabilitySlotConflictModel>(
-                    @"SELECT id, coach_id, start_time, end_time, status, booked_member_name
+                var memberPtConflictCount = await ExecuteConflictCountAsync(
+                    db,
+                    @"SELECT COUNT(*)
                       FROM coach_availability_slots
-                      WHERE booked_member_id = {0}
+                      WHERE booked_member_id = @memberId
                         AND status = 'booked'
-                        AND start_time >= {1} AND start_time <= {2}",
-                    matchedMemberUserId.Value,
-                    dayStartUtc,
-                    dayEndUtc
-                ).ToListAsync();
+                        AND start_time < @appointmentEnd AND end_time > @appointmentStart",
+                    ("@memberId", matchedMemberUserId.Value),
+                    ("@appointmentEnd", apptEndUtc),
+                    ("@appointmentStart", apptStartUtc));
 
-                var conflictingMemberPt = memberPtSlots.FirstOrDefault(s =>
-                    apptStartUtc < s.EndTime && s.StartTime < apptEndUtc
-                );
-
-                if (conflictingMemberPt != null)
+                if (memberPtConflictCount > 0)
                 {
-                    var localStart = CenterTime.ToLocal(conflictingMemberPt.StartTime);
-                    var localEnd = CenterTime.ToLocal(conflictingMemberPt.EndTime);
-                    return $"Hội viên '{customerName}' đã có ca tập PT 1-1 từ {localStart:HH:mm} đến {localEnd:HH:mm} ngày {normalizedDate}.";
+                    return $"Hội viên '{customerName}' đã có ca tập PT 1-1 trùng khung giờ {normalizedTime} ngày {normalizedDate}.";
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[ConflictCheck] Member PT check warning: {ex.Message}");
+                return "Không thể kiểm tra ca PT của học viên nên hệ thống chưa xác nhận lịch này. Vui lòng thử lại sau.";
             }
         }
 
@@ -297,7 +299,13 @@ public static partial class AppointmentEndpoints
     private static bool IsCoachRole(string? role)
     {
         var normalized = role?.Trim().ToLowerInvariant();
-        return normalized is "coach" or "trainer" or "huấn luyện viên" or "huan_luyen_vien";
+        return normalized is "coach" or "trainer" or "pt" or "huấn luyện viên" or "huan_luyen_vien";
+    }
+
+    private static bool IsManagerRole(string? role)
+    {
+        var normalized = role?.Trim().ToLowerInvariant().Replace(" ", "").Replace("-", "");
+        return normalized is "admin" or "manager" or "center_manager" or "centermanager" or "quảnlý" or "quanly";
     }
 
     private static bool NamesMatch(string? storedName, string inputName)
@@ -327,7 +335,36 @@ public static partial class AppointmentEndpoints
     private static bool IsActiveAppointment(string? status)
     {
         var normalized = status?.Trim().ToLowerInvariant();
-        return normalized is not "đã hủy" and not "đã hoàn tất" and not "cancelled" and not "completed";
+        return normalized is not "đã hủy" and not "coach từ chối" and not "đã từ chối"
+            and not "cancelled" and not "completed" and not "rejected";
+    }
+
+    private static bool AppointmentOverlaps(
+        AppointmentModel existing,
+        string fallbackDate,
+        DateTime requestedStartUtc,
+        DateTime requestedEndUtc)
+    {
+        if (!IsActiveAppointment(existing.Status)) return false;
+        var dateText = string.IsNullOrWhiteSpace(existing.Date) ? fallbackDate : existing.Date.Trim();
+        var startText = existing.Time?.Split('-', 2)[0].Trim();
+        if (!DateOnly.TryParseExact(dateText, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
+            || !TimeOnly.TryParse(startText, CultureInfo.InvariantCulture, DateTimeStyles.None, out var startTime))
+            return false;
+
+        var localStart = date.ToDateTime(startTime);
+        var localEnd = localStart.AddMinutes(Math.Max(1, existing.DurationMinutes));
+        var rangeParts = existing.Time?.Split('-', 2, StringSplitOptions.TrimEntries);
+        if (rangeParts is { Length: 2 }
+            && TimeOnly.TryParse(rangeParts[1], CultureInfo.InvariantCulture, DateTimeStyles.None, out var explicitEnd))
+        {
+            localEnd = date.ToDateTime(explicitEnd);
+            if (localEnd <= localStart) localEnd = localEnd.AddDays(1);
+        }
+
+        var existingStartUtc = DateTime.SpecifyKind(localStart.AddHours(-7), DateTimeKind.Utc);
+        var existingEndUtc = DateTime.SpecifyKind(localEnd.AddHours(-7), DateTimeKind.Utc);
+        return requestedStartUtc < existingEndUtc && existingStartUtc < requestedEndUtc;
     }
 }
 

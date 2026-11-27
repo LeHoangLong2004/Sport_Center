@@ -129,7 +129,11 @@ export default function CoachDashboard({ navigateTo }: Props) {
         prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
       );
       toast.success(
-        newStatus === "Đã hoàn tất"
+        newStatus === "Đã xác nhận"
+          ? "Bạn đã xác nhận lịch hẹn."
+          : newStatus === "Coach từ chối"
+          ? "Bạn đã từ chối lịch hẹn."
+          : newStatus === "Đã hoàn tất"
           ? "Đã xác nhận tiếp đón khách thành công!"
           : "Đã cập nhật trạng thái lịch hẹn"
       );

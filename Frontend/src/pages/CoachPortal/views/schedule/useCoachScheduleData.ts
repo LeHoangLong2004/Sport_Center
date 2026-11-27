@@ -173,11 +173,11 @@ export function useCoachScheduleData(weekDates: string[]) {
 
     const todayIso = new Date().toISOString().split("T")[0];
     const apptItems: UnifiedScheduleItem[] = appointments
-      .filter((a) => a.status !== "Đã hủy" && a.status !== "cancelled" && a.status !== "đã hủy")
+      .filter((a) => !["Đã hủy", "Coach từ chối", "Đã từ chối", "cancelled", "đã hủy", "rejected"].includes(a.status))
       .map((a) => {
       const { name: custName, phone: custPhone } = parseAppointmentCustomer(a.customerName);
       const startTime = a.time?.split("-")[0]?.trim() || a.time || "09:00";
-      const endTime = calculateAppointmentEndTime(a.time);
+      const endTime = calculateAppointmentEndTime(a.time, a.durationMinutes || 60);
 
       let status: SessionStatus = "sắp diễn ra";
       if (a.status === "Đã hoàn tất") status = "hoàn thành";
@@ -192,7 +192,7 @@ export function useCoachScheduleData(weekDates: string[]) {
         date: a.date || todayIso,
         startTime,
         endTime,
-        room: "Khu PT 1-1 / Quầy Lễ tân",
+        room: a.location || "Chưa cập nhật địa điểm",
         coachName: a.coachName || currentCoachName || "HLV",
         registeredCount: 1,
         capacity: 1,
@@ -201,6 +201,8 @@ export function useCoachScheduleData(weekDates: string[]) {
         memberPhone: custPhone,
         goal: a.title,
         note: `Lịch do Lễ tân xếp • Trạng thái: ${a.status}`,
+        appointmentId: a.id,
+        appointmentStatus: a.status,
       };
     });
 

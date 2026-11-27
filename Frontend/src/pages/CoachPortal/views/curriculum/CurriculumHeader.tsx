@@ -31,7 +31,7 @@ export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
   // Đồng bộ số liệu KPI với logic trạng thái thực tế
   const totalCount = curricula.length;
   const readyCount = curricula.filter((c) => getEffectiveStatus(c).key === "ready").length;
-  const assignedCount = curricula.filter((c) => getEffectiveStatus(c).key === "assigned").length;
+  const assignedCount = curricula.filter((c) => c.assignedTo.length > 0).length;
   const emptyCount = curricula.filter((c) => getEffectiveStatus(c).key === "empty").length;
   const draftCount = curricula.filter(
     (c) => getEffectiveStatus(c).key === "draft" || getEffectiveStatus(c).key === "empty"
@@ -47,7 +47,7 @@ export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
             Kế hoạch tập luyện
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
-            Xây dựng kế hoạch theo mục tiêu, bộ môn và trình độ; sau đó giao cho học viên hoặc lớp phụ trách.
+            Tạo chương trình tập có cấu trúc và nội dung bài tập. Khi giao, hệ thống tạo lượt bài tập về nhà riêng để theo dõi tiến độ học viên.
           </p>
         </div>
 
@@ -136,7 +136,7 @@ export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-sky-700 dark:text-sky-400">
-              Đã giao cho học viên
+              Có bài tập đã giao
             </span>
             <span className="w-2 h-2 rounded-full bg-sky-500" />
           </div>
@@ -144,7 +144,7 @@ export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
             {assignedCount}
           </div>
           <div className="text-[11px] text-sky-600/90 dark:text-sky-400/90 mt-1 font-medium">
-            Đang áp dụng trong lớp/PT
+            Theo dõi chi tiết tại tab Bài tập về nhà
           </div>
         </button>
 
@@ -214,7 +214,7 @@ export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
             >
               <option value="all">Tất cả trạng thái ({totalCount})</option>
               <option value="ready">Sẵn sàng giao ({readyCount})</option>
-              <option value="assigned">Đã giao ({assignedCount})</option>
+              <option value="assigned">Có bài tập đã giao ({assignedCount})</option>
               <option value="draft">Bản nháp / Cần bài ({draftCount})</option>
             </select>
           </div>

@@ -21,6 +21,7 @@ public partial class SmartGymDbContext
             entity.Property(e => e.DurationMinutes).HasColumnName("duration_minutes");
             entity.Property(e => e.ProgramOutlineJson).HasColumnName("program_outline_json");
             entity.Property(e => e.Status).HasColumnName("status").HasDefaultValue("draft");
+            entity.Property(e => e.PlanType).HasColumnName("plan_type").HasDefaultValue("training_plan");
             entity.Property(e => e.Source).HasColumnName("source").HasDefaultValue("manual");
             entity.Property(e => e.Version).HasColumnName("version").HasDefaultValue(1);
             entity.Property(e => e.ParentPlanId).HasColumnName("parent_plan_id");
@@ -75,6 +76,7 @@ public partial class SmartGymDbContext
             entity.Property(e => e.DueDate).HasColumnName("due_date");
             entity.Property(e => e.CompletedAt).HasColumnName("completed_at");
             entity.Property(e => e.Notes).HasColumnName("notes");
+            entity.Property(e => e.CompletedExerciseIdsJson).HasColumnName("completed_exercise_ids_json").HasDefaultValue("[]");
             entity
                 .Property(e => e.CreatedAt)
                 .HasColumnName("created_at")

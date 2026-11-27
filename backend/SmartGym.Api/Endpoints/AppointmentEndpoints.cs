@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using System.Globalization;
+using System.Security.Claims;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -70,6 +72,8 @@ public static partial class AppointmentEndpoints
                     title = a.Title,
                     customerName = a.CustomerName,
                     coachName = a.CoachName,
+                    durationMinutes = a.DurationMinutes,
+                    location = a.Location,
                     status = a.Status,
                 });
 
@@ -119,8 +123,27 @@ public static partial class AppointmentEndpoints
 
             var normalizedTime = request.Time.Trim();
             var normalizedDate = string.IsNullOrWhiteSpace(request.Date)
-                ? DateTime.UtcNow.AddHours(7).ToString("yyyy-MM-dd")
+                ? CenterTime.ToLocal(DateTime.UtcNow).ToString("yyyy-MM-dd")
                 : request.Date.Trim();
+
+            if (!DateOnly.TryParseExact(normalizedDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var appointmentDate)
+                || !TimeOnly.TryParse(normalizedTime, CultureInfo.InvariantCulture, DateTimeStyles.None, out var appointmentTime))
+            {
+                return Results.BadRequest(new { message = "Ngày hoặc giờ hẹn không hợp lệ." });
+            }
+
+            var durationMinutes = request.DurationMinutes ?? 60;
+            if (durationMinutes is not (30 or 45 or 60 or 90 or 120))
+                return Results.BadRequest(new { message = "Thời lượng lịch hẹn không hợp lệ." });
+            if (string.IsNullOrWhiteSpace(request.Location) || request.Location.Trim().Length > 120)
+                return Results.BadRequest(new { message = "Vui lòng nhập địa điểm hẹn (tối đa 120 ký tự)." });
+
+            var nowLocal = CenterTime.ToLocal(DateTime.UtcNow);
+            var appointmentLocal = appointmentDate.ToDateTime(appointmentTime);
+            if (appointmentLocal < nowLocal.AddHours(24))
+                return Results.BadRequest(new { message = "Lịch hẹn cần được đặt trước ít nhất 24 giờ." });
+            if (appointmentLocal > nowLocal.AddDays(7))
+                return Results.BadRequest(new { message = "Chỉ có thể đặt lịch hẹn trước tối đa 7 ngày." });
 
             var coachKey = coaches.Models.FirstOrDefault(c => c.UserId == matchedCoach.Id)?.Id;
 
@@ -133,7 +156,8 @@ public static partial class AppointmentEndpoints
                 normalizedTime,
                 matchedCoach,
                 coachKey,
-                request.CustomerName);
+                request.CustomerName,
+                durationMinutes);
 
             if (!string.IsNullOrEmpty(conflictError))
             {
@@ -148,7 +172,9 @@ public static partial class AppointmentEndpoints
                 Title = request.Title.Trim(),
                 CustomerName = request.CustomerName.Trim(),
                 CoachName = matchedCoach.FullName.Trim(),
-                Status = "Đang chờ khách",
+                DurationMinutes = durationMinutes,
+                Location = request.Location.Trim(),
+                Status = "Chờ Coach xác nhận",
             };
 
             await supabase
@@ -173,9 +199,60 @@ public static partial class AppointmentEndpoints
                     title = appointment.Title,
                     customerName = appointment.CustomerName,
                     coachName = appointment.CoachName,
+                    durationMinutes = appointment.DurationMinutes,
+                    location = appointment.Location,
                     status = appointment.Status,
                 });
         });
+
+        group.MapPut("/{id:guid}/coach-response", async (
+            Guid id,
+            CoachAppointmentResponseRequest request,
+            HttpContext context,
+            global::Supabase.Client supabase,
+            SmartGymDbContext db) =>
+        {
+            var userIdClaim = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userIdClaim, out var userId)) return Results.Unauthorized();
+
+            var responseValue = request.Response?.Trim().ToLowerInvariant();
+            if (responseValue is not ("accept" or "decline"))
+                return Results.BadRequest(new { message = "Phản hồi Coach không hợp lệ." });
+
+            var appointmentResponse = await supabase.From<AppointmentModel>()
+                .Where(item => item.Id == id).Get();
+            var appointment = appointmentResponse.Models.FirstOrDefault();
+            if (appointment is null) return Results.NotFound(new { message = "Không tìm thấy lịch hẹn." });
+            if (!string.Equals(appointment.Status, "Chờ Coach xác nhận", StringComparison.OrdinalIgnoreCase))
+                return Results.Conflict(new { message = "Lịch hẹn này đã được Coach xử lý hoặc không còn chờ xác nhận." });
+
+            var userResponse = await supabase.From<UserModel>().Get();
+            var currentUser = userResponse.Models.FirstOrDefault(user => user.Id == userId && user.IsActive);
+            if (currentUser is null)
+                return Results.Json(new { message = "Tài khoản không hoạt động hoặc không được phép phản hồi lịch hẹn này." }, statusCode: StatusCodes.Status403Forbidden);
+
+            var role = context.User.FindFirstValue(ClaimTypes.Role) ?? context.User.FindFirstValue("role") ?? "";
+            var isManager = IsManagerRole(role) || IsManagerRole(currentUser.Role);
+            var isAssignedCoach = IsCoachRole(role) || IsCoachRole(currentUser.Role);
+            if (!isManager && (!isAssignedCoach || !NamesMatch(currentUser.FullName, appointment.CoachName ?? "")))
+                return Results.Json(new { message = "Bạn không có quyền phản hồi lịch hẹn này. Hãy kiểm tra Coach được phân công cho lịch." }, statusCode: StatusCodes.Status403Forbidden);
+
+            var newStatus = responseValue == "accept" ? "Đã xác nhận" : "Coach từ chối";
+            if (responseValue == "accept")
+            {
+                var coaches = await supabase.From<CoachModel>().Get();
+                var coachKey = coaches.Models.FirstOrDefault(coach => coach.UserId == currentUser.Id)?.Id;
+                var conflictError = await CheckAppointmentConflictsAsync(
+                    db, supabase, userResponse.Models, appointment.Date ?? "", appointment.Time,
+                    currentUser, coachKey, appointment.CustomerName, appointment.DurationMinutes, excludeAppointmentId: appointment.Id);
+                if (!string.IsNullOrEmpty(conflictError))
+                    return Results.Conflict(new { message = $"Không thể xác nhận lịch: {conflictError}" });
+            }
+
+            appointment.Status = newStatus;
+            await supabase.From<AppointmentModel>().Update(appointment);
+            return Results.Ok(new { id = appointment.Id, status = appointment.Status });
+        }).RequireAuthorization();
 
         /// <summary>
         /// PUT /api/appointments/{id}/status
@@ -205,41 +282,56 @@ public static partial class AppointmentEndpoints
             }
 
             var newStatus = request.Status.Trim();
+            if (string.Equals(newStatus, "Đã xác nhận", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(newStatus, "Coach từ chối", StringComparison.OrdinalIgnoreCase))
+                return Results.BadRequest(new { message = "Coach cần phản hồi qua bước xác nhận lịch hẹn." });
+            if (string.Equals(appointment.Status, "Chờ Coach xác nhận", StringComparison.OrdinalIgnoreCase)
+                && string.Equals(newStatus, "Đã hoàn tất", StringComparison.OrdinalIgnoreCase))
+                return Results.Conflict(new { message = "Lịch hẹn cần được Coach xác nhận trước khi tiếp đón." });
+            if (string.Equals(newStatus, "Đã hoàn tất", StringComparison.OrdinalIgnoreCase)
+                && appointment.Status is not ("Đã xác nhận" or "Đang chờ khách" or "Đã hoàn tất"))
+                return Results.Conflict(new { message = "Chỉ có thể tiếp đón sau khi Coach xác nhận lịch hẹn." });
+            if ((appointment.Status is "Coach từ chối" or "Đã từ chối")
+                && IsActiveAppointment(newStatus))
+                return Results.Conflict(new { message = "Lịch này đã bị từ chối. Vui lòng tạo lịch hẹn mới." });
             // Nếu khôi phục về trạng thái hoạt động -> kiểm tra xung đột lại
-            if (IsActiveAppointment(newStatus)
-                && !string.IsNullOrWhiteSpace(appointment.CoachName)
-                && !string.IsNullOrWhiteSpace(appointment.Time))
+            if (IsActiveAppointment(newStatus))
             {
+                if (string.IsNullOrWhiteSpace(appointment.CoachName)
+                    || string.IsNullOrWhiteSpace(appointment.Time))
+                    return Results.Conflict(new { message = "Lịch hẹn thiếu thông tin Coach hoặc khung giờ nên không thể xác minh xung đột." });
+
                 var users = await supabase.From<UserModel>().Get();
                 var coaches = await supabase.From<CoachModel>().Get();
                 var matchedCoach = users.Models.FirstOrDefault(user =>
                     user.IsActive && NamesMatch(user.FullName, appointment.CoachName));
 
-                if (matchedCoach != null)
+                if (matchedCoach is null)
+                    return Results.Conflict(new { message = "Không tìm thấy Coach đang hoạt động được gán cho lịch nên không thể xác minh xung đột." });
+
+                var coachKey = coaches.Models.FirstOrDefault(c => c.UserId == matchedCoach.Id)?.Id;
+                var apptDate = string.IsNullOrWhiteSpace(appointment.Date)
+                    ? DateTime.UtcNow.AddHours(7).ToString("yyyy-MM-dd")
+                    : appointment.Date.Trim();
+
+                var conflictError = await CheckAppointmentConflictsAsync(
+                    db,
+                    supabase,
+                    users.Models,
+                    apptDate,
+                    appointment.Time.Trim(),
+                    matchedCoach,
+                    coachKey,
+                    appointment.CustomerName,
+                    appointment.DurationMinutes,
+                    excludeAppointmentId: appointment.Id);
+
+                if (!string.IsNullOrEmpty(conflictError))
                 {
-                    var coachKey = coaches.Models.FirstOrDefault(c => c.UserId == matchedCoach.Id)?.Id;
-                    var apptDate = string.IsNullOrWhiteSpace(appointment.Date)
-                        ? DateTime.UtcNow.AddHours(7).ToString("yyyy-MM-dd")
-                        : appointment.Date.Trim();
-
-                    var conflictError = await CheckAppointmentConflictsAsync(
-                        db,
-                        supabase,
-                        users.Models,
-                        apptDate,
-                        appointment.Time.Trim(),
-                        matchedCoach,
-                        coachKey,
-                        appointment.CustomerName,
-                        excludeAppointmentId: appointment.Id);
-
-                    if (!string.IsNullOrEmpty(conflictError))
+                    return Results.Conflict(new
                     {
-                        return Results.Conflict(new
-                        {
-                            message = $"Không thể khôi phục lịch hẹn: {conflictError}"
-                        });
-                    }
+                        message = $"Không thể cập nhật lịch hẹn: {conflictError}"
+                    });
                 }
             }
 
@@ -256,6 +348,8 @@ public static partial class AppointmentEndpoints
                 title = appointment.Title,
                 customerName = appointment.CustomerName,
                 coachName = appointment.CoachName,
+                durationMinutes = appointment.DurationMinutes,
+                location = appointment.Location,
                 status = appointment.Status,
             });
         });

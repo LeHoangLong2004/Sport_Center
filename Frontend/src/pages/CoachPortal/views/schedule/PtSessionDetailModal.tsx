@@ -1,5 +1,5 @@
 import { createPortal } from "react-dom";
-import { User, X, MessageSquare } from "lucide-react";
+import { User, X, MessageSquare, CheckCircle2 } from "lucide-react";
 import type { CoachScreen } from "../../types";
 import type { UnifiedScheduleItem } from "./types";
 
@@ -7,6 +7,7 @@ interface Props {
   session: UnifiedScheduleItem | null;
   onClose: () => void;
   onRequestReschedule: (sessionId: string) => void;
+  onRespondAppointment: (appointmentId: string, status: "Đã xác nhận" | "Coach từ chối") => void;
   navigateTo: (s: CoachScreen, extra?: { sessionId?: string; memberId?: string }) => void;
 }
 
@@ -14,9 +15,11 @@ export default function PtSessionDetailModal({
   session,
   onClose,
   onRequestReschedule,
+  onRespondAppointment,
   navigateTo,
 }: Props) {
   if (!session) return null;
+  const needsCoachResponse = session.appointmentStatus === "Chờ Coach xác nhận" && Boolean(session.appointmentId);
 
   return createPortal(
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
@@ -132,6 +135,25 @@ export default function PtSessionDetailModal({
 
         {/* Actions */}
         <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2.5 shrink-0 bg-slate-50/50 dark:bg-slate-850">
+          {needsCoachResponse ? (
+            <div className="flex w-full items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => onRespondAppointment(session.appointmentId!, "Coach từ chối")}
+                className="px-3.5 py-2 text-xs font-semibold text-rose-700 bg-white hover:bg-rose-50 border border-rose-200 rounded-lg"
+              >
+                Từ chối lịch
+              </button>
+              <button
+                type="button"
+                onClick={() => onRespondAppointment(session.appointmentId!, "Đã xác nhận")}
+                className="px-4 py-2 font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm text-xs flex items-center gap-1.5"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" /> Đồng ý lịch
+              </button>
+            </div>
+          ) : (
+            <>
           <button
             type="button"
             onClick={() => {
@@ -175,6 +197,8 @@ export default function PtSessionDetailModal({
               Xem hồ sơ
             </button>
           </div>
+            </>
+          )}
         </div>
       </div>
     </div>,

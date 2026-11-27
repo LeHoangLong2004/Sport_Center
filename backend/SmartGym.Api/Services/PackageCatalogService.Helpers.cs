@@ -30,13 +30,11 @@ public sealed partial class PackageCatalogService
                 var cur = DeserializeCatalog(existing.CatalogJson);
                 if (cur.GroupDiscountPct != def.GroupDiscountPct 
                     || cur.CoachDiscountPct != def.CoachDiscountPct
-                    || cur.TierRank != def.TierRank
-                    || string.Join("|", cur.Benefits) != string.Join("|", def.Benefits))
+                    || cur.TierRank != def.TierRank)
                 {
                     cur.GroupDiscountPct = def.GroupDiscountPct;
                     cur.CoachDiscountPct = def.CoachDiscountPct;
                     cur.TierRank = def.TierRank;
-                    cur.Benefits = def.Benefits;
                     existing.CatalogJson = JsonSerializer.Serialize(cur, JsonOptions);
                     updated = true;
                 }

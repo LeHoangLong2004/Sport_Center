@@ -2,10 +2,7 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Calendar, X, AlertCircle, RefreshCw, Check } from "lucide-react";
 import type { Coach, CustomerModeType, Member } from "./types";
-import {
-  PRESET_SERVICES,
-  getTodayIso,
-} from "./constants";
+import { PRESET_SERVICES } from "./constants";
 import { AppointmentCustomerSelector } from "./appointmentModal/AppointmentCustomerSelector";
 import { AppointmentServiceSelector } from "./appointmentModal/AppointmentServiceSelector";
 import { AppointmentDateTimeSelector } from "./appointmentModal/AppointmentDateTimeSelector";
@@ -37,6 +34,8 @@ export const CreateAppointmentModal: React.FC<Props> = ({
   const [selectedCoachId, setSelectedCoachId] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
+  const [durationMinutes, setDurationMinutes] = useState(60);
+  const [location, setLocation] = useState("Khu PT 1-1 / Sảnh Lễ tân");
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -94,24 +93,15 @@ export const CreateAppointmentModal: React.FC<Props> = ({
       return;
     }
 
-    const todayIso = getTodayIso();
-    if (selectedDate < todayIso) {
-      setFormError("Ngày hẹn không được trước ngày hôm nay.");
+    const appointmentAt = new Date(`${selectedDate}T${selectedTime}:00`);
+    const hoursUntilAppointment = (appointmentAt.getTime() - Date.now()) / (60 * 60 * 1000);
+    if (!Number.isFinite(hoursUntilAppointment) || hoursUntilAppointment < 24) {
+      setFormError("Lịch hẹn cần được đặt trước ít nhất 24 giờ.");
       return;
     }
-
-    if (selectedDate === todayIso) {
-      const parts = selectedTime.split(":");
-      if (parts.length >= 2) {
-        const h = parseInt(parts[0], 10);
-        const m = parseInt(parts[1], 10);
-        const slotDate = new Date();
-        slotDate.setHours(h, m, 0, 0);
-        if (slotDate < new Date()) {
-          setFormError(`Khung giờ ${selectedTime} hôm nay đã trôi qua. Vui lòng chọn khung giờ khác.`);
-          return;
-        }
-      }
+    if (hoursUntilAppointment > 24 * 7) {
+      setFormError("Chỉ có thể đặt lịch hẹn trước tối đa 7 ngày.");
+      return;
     }
 
     setSubmitting(true);
@@ -125,6 +115,8 @@ export const CreateAppointmentModal: React.FC<Props> = ({
           title: finalTitle,
           customerName: finalCustomerName,
           coachName: coach.fullName,
+          durationMinutes,
+          location: location.trim(),
         }),
       });
 
@@ -144,6 +136,8 @@ export const CreateAppointmentModal: React.FC<Props> = ({
       setIsCustomService(false);
       setSelectedDate("");
       setSelectedTime("");
+      setDurationMinutes(60);
+      setLocation("Khu PT 1-1 / Sảnh Lễ tân");
       setFormError("");
       onCreated();
       onClose();
@@ -230,6 +224,19 @@ export const CreateAppointmentModal: React.FC<Props> = ({
             selectedTime={selectedTime}
             setSelectedTime={setSelectedTime}
           />
+
+          <div className="grid grid-cols-2 gap-3">
+            <label className="flex flex-col gap-1.5 font-bold text-slate-700 text-[11px] uppercase tracking-wider">
+              6. Thời lượng *
+              <select required value={durationMinutes} onChange={(event) => setDurationMinutes(Number(event.target.value))} className="w-full px-2.5 py-1.5 text-xs font-normal normal-case border border-slate-200 rounded focus:outline-none focus:border-emerald-500 bg-white">
+                {[30, 45, 60, 90, 120].map((minutes) => <option key={minutes} value={minutes}>{minutes} phút</option>)}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1.5 font-bold text-slate-700 text-[11px] uppercase tracking-wider">
+              7. Địa điểm *
+              <input required value={location} onChange={(event) => setLocation(event.target.value)} maxLength={120} placeholder="Ví dụ: Khu PT 1-1" className="w-full px-2.5 py-1.5 text-xs font-normal normal-case border border-slate-200 rounded focus:outline-none focus:border-emerald-500 bg-white" />
+            </label>
+          </div>
 
           {/* Compact Modal Footer */}
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 mt-1">

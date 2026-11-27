@@ -20,6 +20,7 @@ public class WorkoutPlan
     public int? DurationMinutes { get; set; }
     public string? ProgramOutlineJson { get; set; }
     public string Status { get; set; } = "draft";
+    public string PlanType { get; set; } = "training_plan";
     public string Source { get; set; } = "manual";
     public int Version { get; set; } = 1;
     public Guid? ParentPlanId { get; set; }

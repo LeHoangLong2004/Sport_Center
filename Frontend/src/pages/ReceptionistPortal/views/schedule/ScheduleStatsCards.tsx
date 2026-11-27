@@ -43,18 +43,18 @@ export const ScheduleStatsCards: React.FC<Props> = ({
         </div>
       </button>
 
-      {/* 2. Chờ tiếp đón */}
+      {/* 2. Chờ Coach xác nhận */}
       <button
-        onClick={() => onSelectFilter("Đang chờ khách")}
+        onClick={() => onSelectFilter("Chờ Coach xác nhận")}
         className={`flex items-center justify-between p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
-          statusFilter === "Đang chờ khách"
+          statusFilter === "Chờ Coach xác nhận"
             ? "bg-amber-50/80 border-amber-300 ring-2 ring-amber-500/20 shadow-xs"
             : "bg-white border-slate-200 hover:border-amber-200 hover:bg-amber-50/30"
         }`}
       >
         <div>
           <span className="text-[11px] font-semibold text-amber-800 block mb-0.5">
-            Chờ tiếp đón
+            Chờ Coach xác nhận
           </span>
           <span className="text-xl font-extrabold text-amber-900 leading-tight">
             {stats.waiting}
@@ -62,7 +62,7 @@ export const ScheduleStatsCards: React.FC<Props> = ({
         </div>
         <div
           className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
-            statusFilter === "Đang chờ khách"
+            statusFilter === "Chờ Coach xác nhận"
               ? "bg-amber-500 text-white shadow-xs shadow-amber-500/30"
               : "bg-amber-100/80 text-amber-700"
           }`}
