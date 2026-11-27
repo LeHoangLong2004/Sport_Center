@@ -42,7 +42,7 @@ export function CurriculumRecipientDropdown({
   return (
     <div ref={dropdownRef} className="relative">
       <label className="font-bold text-xs text-slate-800 dark:text-slate-200 block mb-1.5">
-        {targetType === "class" ? "Chọn lớp học phụ trách:" : "Chọn học viên kèm 1-1:"}
+        {targetType === "class" ? "Chọn lớp/khóa học phụ trách:" : "Chọn học viên kèm 1-1:"}
       </label>
 
       <button
@@ -62,7 +62,7 @@ export function CurriculumRecipientDropdown({
           )}
           <span className="truncate">
             {selectedName ||
-              (targetType === "class" ? "Chọn lớp học để giao..." : "Chọn học viên 1-1...")}
+              (targetType === "class" ? "Chọn lớp/khóa học để giao..." : "Chọn học viên 1-1...")}
           </span>
         </div>
         <ChevronDown
@@ -79,7 +79,7 @@ export function CurriculumRecipientDropdown({
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
             <input
               type="text"
-              placeholder={targetType === "class" ? "Tìm theo tên lớp..." : "Tìm học viên theo tên/mã..."}
+              placeholder={targetType === "class" ? "Tìm theo tên lớp/khóa học..." : "Tìm học viên theo tên/mã..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:border-emerald-500"
@@ -91,7 +91,7 @@ export function CurriculumRecipientDropdown({
             {targetType === "class" ? (
               filteredClasses.length === 0 ? (
                 <div className="p-3 text-center text-xs text-slate-400">
-                  Không tìm thấy lớp học nào
+                  Không tìm thấy lớp/khóa học nào
                 </div>
               ) : (
                 filteredClasses.map((cls) => {

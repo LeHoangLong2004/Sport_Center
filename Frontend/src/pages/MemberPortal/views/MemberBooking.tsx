@@ -180,8 +180,24 @@ export default function MemberBooking({ onNavigate }: Props) {
     [filteredAvailableClasses]
   );
   const filteredGroupClasses = useMemo(
-    () => filteredAvailableClasses.filter((item) => !isPtCourse(item)),
-    [filteredAvailableClasses]
+    () => {
+      const registeredCourseIds = new Set<string>();
+      mySessions.forEach((session) => {
+        if (session.type !== "group") return;
+        const status = String(getBookingStatus(session) || "").trim().toLowerCase();
+        // Giữ lượt đang chờ thanh toán ở Khám phá để hội viên tiếp tục checkout.
+        if (status === "pending_payment" || isInactiveBookingStatus(status)) return;
+
+        for (const id of [(session as any).parentId, (session as any).classId, session.id]) {
+          if (id) registeredCourseIds.add(String(id));
+        }
+      });
+
+      return filteredAvailableClasses.filter(
+        (item) => !isPtCourse(item) && !registeredCourseIds.has(String(item.id))
+      );
+    },
+    [filteredAvailableClasses, mySessions, getBookingStatus, isInactiveBookingStatus]
   );
 
   const filteredPtSlots = useMemo(() => {

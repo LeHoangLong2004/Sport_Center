@@ -117,7 +117,7 @@ export function HomeworkDetailModal({ homework, onClose, onProgressChanged }: Ho
           <div className="flex w-full items-center justify-end gap-2">
             <button type="button" onClick={() => setCompletedIds(savedIds)} disabled={!hasUnsavedChanges || saving} className="shrink-0 whitespace-nowrap rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 disabled:opacity-40 dark:border-slate-700 dark:text-slate-300">Hoàn tác</button>
             <button type="button" onClick={() => void saveProgress()} disabled={!hasUnsavedChanges || saving || homework.status === "completed"} className="inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50">{saving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : hasUnsavedChanges ? <Save className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}{hasUnsavedChanges ? "Cập nhật tiến độ" : "Đã cập nhật"}</button>
-            <button type="button" onClick={onClose} className="shrink-0 whitespace-nowrap rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white dark:bg-white dark:text-slate-900">Đóng bài tập</button>
+            <button type="button" onClick={onClose} className="shrink-0 whitespace-nowrap rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white dark:bg-white dark:text-slate-900">Đóng</button>
           </div>
         </div>
       </div>

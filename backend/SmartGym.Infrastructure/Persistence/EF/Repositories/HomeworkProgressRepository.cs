@@ -105,10 +105,11 @@ public class HomeworkProgressRepository : IHomeworkProgressRepository
         Guid classId,
         CancellationToken cancellationToken = default) =>
         await _context.Database.SqlQueryRaw<Guid>(
-                @"SELECT DISTINCT user_id AS ""Value""
-                  FROM class_bookings
-                  WHERE class_id = {0}
-                    AND LOWER(COALESCE(status, '')) NOT IN ('cancelled', 'rejected', 'class_cancelled')",
+                @"SELECT DISTINCT b.user_id AS ""Value""
+                  FROM class_bookings b
+                  INNER JOIN classes c ON c.id = b.class_id
+                  WHERE (c.id = {0} OR c.parent_id = {0})
+                    AND LOWER(COALESCE(b.status, '')) NOT IN ('cancelled', 'rejected', 'class_cancelled')",
                 classId)
             .ToListAsync(cancellationToken);
 

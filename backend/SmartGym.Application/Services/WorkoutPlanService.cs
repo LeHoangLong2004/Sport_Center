@@ -82,7 +82,9 @@ public class WorkoutPlanService : IWorkoutPlanService
         {
             PlanId = plan.Id,
             Name = e.Name,
+            Sets = e.Sets,
             Reps = e.Reps,
+            Duration = e.Duration,
             Rest = e.Rest,
             Note = e.Note
         }).ToList();

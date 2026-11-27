@@ -7,11 +7,10 @@ import CoachClassDetail from "./views/CoachClassDetail";
 import CoachAttendance from "./views/CoachAttendance";
 import CoachMembers from "./views/CoachMembers";
 import CoachMemberProfile from "./views/CoachMemberProfile";
-import CoachCurriculum from "./views/CoachCurriculum";
+import { CoachHomeworksTab } from "./views/CoachHomeworksTab";
 import CoachChat from "./views/CoachChat";
 import CoachReviews from "./views/CoachReviews";
 import CoachNotifications from "./views/CoachNotifications";
-import CoachAI from "./views/CoachAI";
 import CoachAssessment from "./views/CoachAssessment";
 import CoachProfile from "./views/CoachProfile";
 import CoachSettings from "./views/CoachSettings";
@@ -24,8 +23,8 @@ import { PageTransition } from "../../components/PageTransition";
  * - Schedule & Class Detail: Xem lịch giảng dạy, chi tiết lớp và đề xuất mở lớp mới.
  * - Attendance & Assessment: Điểm danh học viên theo buổi và chấm điểm đánh giá tiến bộ sau ca tập.
  * - Members & Member Profile: Quản lý danh sách học viên, hồ sơ bệnh lý, mục tiêu và chỉ số cơ thể.
- * - Curriculum: Xây dựng và quản lý giáo án bài tập (sets, reps, trọng lượng).
- * - Chat, Reviews & Coach AI: Trao đổi với học viên, xem đánh giá chất lượng và trợ lý AI gợi ý giáo án.
+ * - Homework: Soạn, giao và theo dõi bài tập về nhà.
+ * - Chat & Reviews: Trao đổi với học viên và xem đánh giá chất lượng.
  * 
  * @param onExit Callback khi HLV thoát hoặc đăng xuất
  */
@@ -93,7 +92,7 @@ export default function CoachPortal({ onExit }: { onExit?: () => void } = {}) {
       case "member-profile":
         return <CoachMemberProfile memberId={selectedMemberId} navigateTo={navigateTo} />;
       case "curriculum":
-        return <CoachCurriculum initialTab="library" />;
+        return <CoachHomeworksTab />;
       case "chat":
         return <CoachChat initialMemberId={selectedMemberId} />;
       case "reviews":
@@ -103,7 +102,7 @@ export default function CoachPortal({ onExit }: { onExit?: () => void } = {}) {
       case "notifications":
         return <CoachNotifications />;
       case "ai":
-        return <CoachCurriculum initialTab="ai" initialMemberId={selectedMemberId} />;
+        return <CoachHomeworksTab />;
       case "profile":
         return <CoachProfile navigateTo={navigateTo} />;
       case "settings":

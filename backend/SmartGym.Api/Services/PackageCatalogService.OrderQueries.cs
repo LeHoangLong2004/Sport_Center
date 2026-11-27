@@ -15,15 +15,23 @@ public sealed partial class PackageCatalogService
     )
     {
         IQueryable<Subscription> query = db
-            .Subscriptions.AsNoTracking()
+            .Subscriptions
             .Include(subscription => subscription.User)
             .Include(subscription => subscription.Package);
+        if (!memberId.HasValue)
+            query = query.AsNoTracking();
         if (memberId.HasValue)
             query = query.Where(subscription => subscription.UserId == memberId.Value);
 
         var subscriptions = await query
             .OrderByDescending(subscription => subscription.CreatedAt)
             .ToListAsync(cancellationToken);
+
+        // Reconcile already-paid renewal rows created before the effective
+        // expiration was also persisted on the current subscription row.
+        if (memberId.HasValue)
+            await ReconcileMembershipRenewalEndDateAsync(subscriptions, cancellationToken);
+
         var subOrders = subscriptions
             .Select(subscription =>
                 MapOrder(
@@ -198,6 +206,63 @@ public sealed partial class PackageCatalogService
         }
 
         return subOrders.OrderByDescending(o => o.CreatedAt).ToArray();
+    }
+
+    private async Task ReconcileMembershipRenewalEndDateAsync(
+        IReadOnlyCollection<Subscription> subscriptions,
+        CancellationToken cancellationToken
+    )
+    {
+        var today = DateTime.UtcNow.Date;
+        var current = subscriptions
+            .Where(subscription => subscription.PaymentStatus == PaymentStatus.Completed
+                && subscription.StartDate.Date <= today
+                && subscription.EndDate.Date >= today
+                && subscription.PackageSnapshotJson != null)
+            .Select(subscription => new
+            {
+                Subscription = subscription,
+                Package = DeserializeSnapshot(subscription),
+            })
+            .Where(item => item.Package.Category == "membership"
+                && !string.IsNullOrWhiteSpace(item.Package.Tier)
+                && !string.Equals(item.Package.Tier, "basic", StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(item => item.Subscription.StartDate)
+            .FirstOrDefault();
+
+        if (current == null) return;
+
+        var effectiveEnd = current.Subscription.EndDate.Date;
+        var sameTierPaid = subscriptions
+            .Where(subscription => subscription.PaymentStatus == PaymentStatus.Completed
+                && subscription.PackageSnapshotJson != null)
+            .Select(subscription => new
+            {
+                Subscription = subscription,
+                Package = DeserializeSnapshot(subscription),
+            })
+            .Where(item => item.Package.Category == "membership"
+                && string.Equals(item.Package.Tier?.Trim(), current.Package.Tier?.Trim(), StringComparison.OrdinalIgnoreCase))
+            .OrderBy(item => item.Subscription.StartDate)
+            .ToList();
+
+        var changed = false;
+        foreach (var renewal in sameTierPaid)
+        {
+            var startDay = renewal.Subscription.StartDate.Date;
+            if (startDay < current.Subscription.StartDate.Date || startDay > effectiveEnd.AddDays(1))
+                continue;
+            if (renewal.Subscription.EndDate.Date <= effectiveEnd)
+                continue;
+
+            effectiveEnd = renewal.Subscription.EndDate.Date;
+            changed = true;
+        }
+
+        if (!changed || effectiveEnd <= current.Subscription.EndDate.Date) return;
+
+        current.Subscription.EndDate = effectiveEnd;
+        await db.SaveChangesAsync(cancellationToken);
     }
 }
 

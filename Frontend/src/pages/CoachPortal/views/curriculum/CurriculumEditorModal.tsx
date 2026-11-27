@@ -36,11 +36,14 @@ export const CurriculumEditorModal: React.FC<CurriculumEditorModalProps> = ({
 
   return createPortal(
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
-          <h3 className="font-bold text-slate-900 dark:text-white text-base">
-            {editingId === "new" ? "Tạo kế hoạch tập luyện" : "Chỉnh sửa kế hoạch tập luyện"}
-          </h3>
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-600 dark:text-emerald-400">Kế hoạch huấn luyện</p>
+            <h3 className="mt-0.5 font-bold text-slate-900 dark:text-white text-base">
+              {editingId === "new" ? "Tạo kế hoạch tập luyện" : "Chỉnh sửa kế hoạch tập luyện"}
+            </h3>
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -50,8 +53,8 @@ export const CurriculumEditorModal: React.FC<CurriculumEditorModalProps> = ({
           </button>
         </div>
 
-        <div className="p-5 overflow-y-auto flex flex-col gap-4 text-xs">
-          <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 px-3.5 py-3 text-slate-600 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-slate-300">
+        <div className="px-6 py-5 overflow-y-auto flex flex-col gap-5 text-sm">
+          <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 text-[13px] leading-5 text-slate-600 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-slate-300">
             Kế hoạch mô tả mục tiêu và nội dung tập có thể áp dụng cho một học viên hoặc cả lớp. Giáo án triển khai riêng cho từng ca dạy nằm trong chi tiết lớp học.
           </div>
           {error && (
@@ -61,8 +64,8 @@ export const CurriculumEditorModal: React.FC<CurriculumEditorModalProps> = ({
             </div>
           )}
 
-          <div>
-            <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+          <div className="space-y-1.5">
+            <label className="font-semibold text-slate-700 dark:text-slate-300 block">
               Tên kế hoạch: <span className="text-rose-500">*</span>
             </label>
             <input
@@ -71,13 +74,13 @@ export const CurriculumEditorModal: React.FC<CurriculumEditorModalProps> = ({
               placeholder="VD: Yoga nền tảng – cải thiện thăng bằng và độ linh hoạt"
               value={draft.name}
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-              className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400 font-medium"
+              className="w-full h-11 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 font-medium"
             />
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
                 Bộ môn:
               </label>
               <select
@@ -90,7 +93,7 @@ export const CurriculumEditorModal: React.FC<CurriculumEditorModalProps> = ({
                     sport: selected?.name || "",
                   });
                 }}
-                className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
               >
                 {sports.length === 0 ? (
                   <option value="">Chưa có bộ môn</option>
@@ -104,13 +107,13 @@ export const CurriculumEditorModal: React.FC<CurriculumEditorModalProps> = ({
               </select>
             </div>
             <div>
-              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
                 Trình độ:
               </label>
               <select
                 value={draft.level}
                 onChange={(e) => setDraft({ ...draft, level: e.target.value })}
-                className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
               >
                 {["Cơ bản", "Trung cấp", "Nâng cao"].map((l) => (
                   <option key={l} value={l}>
@@ -129,17 +132,17 @@ export const CurriculumEditorModal: React.FC<CurriculumEditorModalProps> = ({
                 step={15}
                 value={draft.duration}
                 onChange={(e) => setDraft({ ...draft, duration: Number(e.target.value) })}
-                className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
               />
             </div>
             <div>
-              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
                 Trạng thái:
               </label>
               <select
                 value={draft.status === "Nháp" ? "Nháp" : "Đã duyệt"}
                 onChange={(e) => setDraft({ ...draft, status: e.target.value as any })}
-                className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium"
+                className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium"
               >
                 <option value="Đã duyệt">Sẵn sàng giao</option>
                 <option value="Nháp">Bản nháp</option>
@@ -147,19 +150,25 @@ export const CurriculumEditorModal: React.FC<CurriculumEditorModalProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+            <div className="mb-3">
+              <h4 className="font-bold text-slate-800 dark:text-slate-100">Cấu trúc kế hoạch</h4>
+              <p className="mt-0.5 text-xs text-slate-500">Thiết lập thời lượng và tần suất tập mỗi tuần.</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">Thời lượng kế hoạch (tuần):</label>
-              <input type="number" min={1} max={104} value={outline.durationWeeks} onChange={(e) => updateOutline({ ...outline, durationWeeks: Math.max(1, Number(e.target.value) || 1) })} className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
+              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">Thời lượng kế hoạch (tuần)</label>
+              <input type="number" min={1} max={104} value={outline.durationWeeks} onChange={(e) => updateOutline({ ...outline, durationWeeks: Math.max(1, Number(e.target.value) || 1) })} className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
             </div>
             <div>
-              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">Số buổi mỗi tuần:</label>
-              <input type="number" min={1} max={14} value={outline.sessionsPerWeek} onChange={(e) => updateOutline({ ...outline, sessionsPerWeek: Math.max(1, Number(e.target.value) || 1) })} className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
+              <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">Số buổi mỗi tuần</label>
+              <input type="number" min={1} max={14} value={outline.sessionsPerWeek} onChange={(e) => updateOutline({ ...outline, sessionsPerWeek: Math.max(1, Number(e.target.value) || 1) })} className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
+            </div>
             </div>
           </div>
 
           <div>
-            <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+            <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
               Mục tiêu luyện tập:
             </label>
             <input
@@ -167,12 +176,12 @@ export const CurriculumEditorModal: React.FC<CurriculumEditorModalProps> = ({
               placeholder="VD: Tăng sức mạnh cốt lõi, giảm áp lực thắt lưng..."
               value={draft.goal}
               onChange={(e) => setDraft({ ...draft, goal: e.target.value })}
-              className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+              className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
             />
           </div>
 
           <div>
-            <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+            <label className="font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
               Mô tả / Lưu ý khi tập:
             </label>
             <textarea
@@ -180,13 +189,13 @@ export const CurriculumEditorModal: React.FC<CurriculumEditorModalProps> = ({
               placeholder="Ghi chú thêm về nhịp thở, tư thế chuẩn..."
               value={draft.description}
               onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-              className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+              className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
             />
           </div>
 
           {/* Course outline editor */}
-          <div className="pt-2">
-            <div className="flex items-center justify-between mb-2">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+            <div className="flex items-center justify-between gap-4 mb-4">
               <div>
                 <span className="font-bold text-slate-800 dark:text-slate-200">Lộ trình theo buổi ({outline.sessions.length})</span>
                 <p className="text-[11px] text-slate-500 mt-0.5">Mỗi kế hoạch gồm các buổi theo thứ tự; có thể bổ sung chi tiết dần.</p>
@@ -204,7 +213,7 @@ export const CurriculumEditorModal: React.FC<CurriculumEditorModalProps> = ({
               {outline.sessions.map((session, i) => (
                   <div
                     key={`${session.sessionNumber}-${i}`}
-                    className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 flex flex-col gap-3"
+                    className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 flex flex-col gap-3.5"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-bold text-slate-800 dark:text-slate-200">Buổi {session.sessionNumber}</span>
@@ -213,7 +222,7 @@ export const CurriculumEditorModal: React.FC<CurriculumEditorModalProps> = ({
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div><label className="text-[11px] font-semibold text-slate-500">Tuần</label><input type="number" min={1} max={outline.durationWeeks} value={session.weekNumber} onChange={(e) => updateSession(i, { weekNumber: Math.min(outline.durationWeeks, Math.max(1, Number(e.target.value) || 1)) })} className="w-full p-2 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" /></div>
                       <div><label className="text-[11px] font-semibold text-slate-500">Chủ đề buổi</label><input value={session.title} onChange={(e) => updateSession(i, { title: e.target.value })} placeholder="VD: Làm quen nhịp thở" className="w-full p-2 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" /></div>
                     </div>
@@ -240,7 +249,7 @@ export const CurriculumEditorModal: React.FC<CurriculumEditorModalProps> = ({
           </div>
         </div>
 
-        <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2.5 shrink-0 bg-slate-50/50 dark:bg-slate-850">
+        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 shrink-0 bg-white/95 dark:bg-slate-900/95">
           <button
             type="button"
             onClick={onClose}

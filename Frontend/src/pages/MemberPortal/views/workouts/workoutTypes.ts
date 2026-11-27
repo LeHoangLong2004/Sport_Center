@@ -12,6 +12,7 @@ export interface HomeworkExercise {
 export interface HomeworkPlan {
   id: string;
   planName: string;
+  planType?: "training_plan" | "homework" | string;
   description?: string | null;
   goal?: string | null;
   level?: string | null;

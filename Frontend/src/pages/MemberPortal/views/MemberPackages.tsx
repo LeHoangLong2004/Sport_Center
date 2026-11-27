@@ -194,7 +194,7 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
     if (!selectedPackage) return;
     const pkgName = selectedPackage.name;
     try {
-      await PackageAPI.checkout(
+      const checkout = await PackageAPI.checkout(
         selectedPackage.id,
         checkoutDuration,
         method
@@ -208,6 +208,14 @@ export default function MemberPackages({ onNavigate, onCheckout }: Props) {
             : `Thanh toán thành công gói "${pkgName}"! Quyền lợi đã được kích hoạt ngay lập tức.`,
       });
       await loadData();
+      // Use the order returned by the successful checkout as well as refreshing
+      // the list, so the newly paid renewal is reflected even if the GET is stale.
+      if (checkout.order?.status === "paid") {
+        setOrders((current) => [
+          checkout.order,
+          ...current.filter((order) => order.id !== checkout.order.id),
+        ]);
+      }
       try {
         const channel = new BroadcastChannel("smartgym_orders_sync");
         channel.postMessage({ type: "ORDER_CREATED", timestamp: Date.now() });

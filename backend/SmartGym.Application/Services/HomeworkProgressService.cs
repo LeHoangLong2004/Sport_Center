@@ -165,7 +165,9 @@ public class HomeworkProgressService : IHomeworkProgressService
             Status = p.Status,
             ProgressPct = p.ProgressPct,
             AssignedDate = p.AssignedDate,
-            DueDate = p.DueDate,
+            DueDate = string.Equals(p.Plan?.PlanType, "homework", StringComparison.OrdinalIgnoreCase)
+                ? p.DueDate
+                : null,
             CompletedAt = p.CompletedAt,
             Notes = p.Notes,
             CompletedExerciseIds = DeserializeCompletedIds(p.CompletedExerciseIdsJson),

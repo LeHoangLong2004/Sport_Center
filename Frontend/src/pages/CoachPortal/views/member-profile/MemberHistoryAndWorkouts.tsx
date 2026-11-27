@@ -1,5 +1,5 @@
 import React from "react";
-import { Calendar, CheckCircle2, AlertCircle, Clock, Dumbbell, Sparkles, XCircle } from "lucide-react";
+import { Calendar, CheckCircle2, AlertCircle, Clock, Dumbbell, XCircle } from "lucide-react";
 import type { CoachScreen } from "../../types";
 import type { MemberAttendanceHistoryItem, MemberWorkoutItem } from "./types";
 import { getAttendanceStatusInfo } from "./attendanceHelper";
@@ -108,31 +108,30 @@ export const MemberHistoryAndWorkouts: React.FC<MemberHistoryAndWorkoutsProps> =
         </div>
       </div>
 
-      {/* Kế hoạch tập luyện đã giao */}
+      {/* Bài tập về nhà đã giao */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-xs">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <Dumbbell className="w-4 h-4 text-slate-500" />
-            <h2 className="font-bold text-sm text-slate-900 dark:text-white">Kế hoạch tập luyện đã giao</h2>
+            <h2 className="font-bold text-sm text-slate-900 dark:text-white">Bài tập về nhà đã giao</h2>
             <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 font-semibold text-slate-600 dark:text-slate-300">
-              {assignedWorkouts.length} kế hoạch
+              {assignedWorkouts.length} bài tập
             </span>
           </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => navigateTo("ai", { memberId: memberId || undefined })}
+              onClick={() => navigateTo("curriculum", { memberId: memberId || undefined })}
               className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800 transition-colors shadow-2xs cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>AI gợi ý bài tiếp theo</span>
+              <span>＋ Soạn bài tập</span>
             </button>
             <button
               type="button"
               onClick={() => navigateTo("curriculum")}
               className="text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 cursor-pointer"
             >
-              + Thủ công
+              + Soạn bài tập
             </button>
           </div>
         </div>
@@ -140,7 +139,7 @@ export const MemberHistoryAndWorkouts: React.FC<MemberHistoryAndWorkoutsProps> =
         <div className="divide-y divide-slate-100 dark:divide-slate-800/60 p-6 space-y-6">
           {assignedWorkouts.length === 0 ? (
             <div className="p-8 text-center text-xs text-slate-400">
-              Chưa có kế hoạch tập luyện nào được giao cho học viên này.
+              Chưa có bài tập về nhà nào được giao cho học viên này.
             </div>
           ) : (
             assignedWorkouts.map((workout) => {
@@ -167,7 +166,7 @@ export const MemberHistoryAndWorkouts: React.FC<MemberHistoryAndWorkoutsProps> =
                           <>
                             <span>•</span>
                             <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                              Buổi tập: {workout.dueDate}
+                              Hạn hoàn thành: {workout.dueDate}
                             </span>
                           </>
                         )}

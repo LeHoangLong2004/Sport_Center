@@ -65,9 +65,7 @@ export const AppointmentCustomerSelector: React.FC<AppointmentCustomerSelectorPr
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
-        <span className="font-bold text-slate-700 text-[11px] uppercase tracking-wider">
-          1. Khách hàng
-        </span>
+        <span className="text-xs font-semibold text-slate-500">Loại khách</span>
         {/* Small Segmented Switch */}
         <div className="flex p-0.5 bg-slate-100 rounded-lg text-[11px] font-semibold">
           <button
@@ -78,7 +76,7 @@ export const AppointmentCustomerSelector: React.FC<AppointmentCustomerSelectorPr
             }}
             className={`px-2.5 py-0.5 rounded-md transition cursor-pointer ${
               customerMode === "member"
-                ? "bg-emerald-600 text-white shadow-xs font-bold"
+                ? "bg-white text-emerald-700 shadow-sm font-bold"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -92,7 +90,7 @@ export const AppointmentCustomerSelector: React.FC<AppointmentCustomerSelectorPr
             }}
             className={`px-2.5 py-0.5 rounded-md transition cursor-pointer ${
               customerMode === "guest"
-                ? "bg-emerald-600 text-white shadow-xs font-bold"
+                ? "bg-white text-emerald-700 shadow-sm font-bold"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -104,9 +102,9 @@ export const AppointmentCustomerSelector: React.FC<AppointmentCustomerSelectorPr
       {customerMode === "member" ? (
         <div className="relative" ref={memberDropdownRef}>
           {selectedMember ? (
-            <div className="flex items-center justify-between p-2 bg-emerald-50/80 border border-emerald-200 rounded text-xs">
+            <div className="flex items-center justify-between p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-xl text-sm">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-emerald-600 text-white font-bold text-[10px] flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-emerald-600 text-white font-bold text-xs flex items-center justify-center">
                   {(selectedMember.fullName || selectedMember.name || "M")
                     .slice(0, 2)
                     .toUpperCase()}
@@ -114,7 +112,7 @@ export const AppointmentCustomerSelector: React.FC<AppointmentCustomerSelectorPr
                 <span className="font-bold text-slate-800">
                   {selectedMember.fullName || selectedMember.name}
                 </span>
-                <span className="text-slate-500 text-[11px]">
+                <span className="text-slate-500 text-xs">
                   ({selectedMember.phoneNumber || "Chưa có SĐT"})
                 </span>
               </div>
@@ -124,7 +122,7 @@ export const AppointmentCustomerSelector: React.FC<AppointmentCustomerSelectorPr
                   setSelectedMember(null);
                   setMemberSearch("");
                 }}
-                className="text-[11px] font-semibold text-emerald-600 hover:underline cursor-pointer"
+                className="text-xs font-semibold text-emerald-600 hover:underline cursor-pointer"
               >
                 Đổi
               </button>
@@ -142,7 +140,7 @@ export const AppointmentCustomerSelector: React.FC<AppointmentCustomerSelectorPr
                     setMemberSearch(e.target.value);
                     setShowMemberDropdown(true);
                   }}
-                  className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-slate-500"
+                  className="w-full pl-9 pr-3 py-3 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500"
                 />
               </div>
 

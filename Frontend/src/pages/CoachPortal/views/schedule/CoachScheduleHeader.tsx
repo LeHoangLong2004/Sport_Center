@@ -1,5 +1,5 @@
 import React from "react";
-import { Calendar, Clock, Bell, Plus } from "lucide-react";
+import { Calendar, Bell } from "lucide-react";
 import type { MainTab } from "./types";
 
 interface Props {
@@ -7,9 +7,6 @@ interface Props {
   setActiveTab: (tab: MainTab) => void;
   pendingInvitationsCount: number;
   requestsCount: number;
-  onOpenClassProposal?: () => void;
-  onOpenSlotModal?: () => void;
-  onOpenRequestModal?: () => void;
 }
 
 export function CoachScheduleHeader({
@@ -17,7 +14,6 @@ export function CoachScheduleHeader({
   setActiveTab,
   pendingInvitationsCount,
   requestsCount,
-  onOpenSlotModal,
 }: Props) {
   return (
     <div className="flex flex-col gap-4">
@@ -31,16 +27,6 @@ export function CoachScheduleHeader({
             Theo dõi ca dạy lớp nhóm, lịch kèm PT 1–1 và quản lý điều chỉnh ca làm việc.
           </p>
         </div>
-        {onOpenSlotModal && (
-          <button
-            type="button"
-            onClick={onOpenSlotModal}
-            className="self-start sm:self-center inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 rounded-xl shadow-sm transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Đăng ca rảnh 1–1</span>
-          </button>
-        )}
       </div>
 
       {/* Segmented Subtabs */}
@@ -56,19 +42,6 @@ export function CoachScheduleHeader({
         >
           <Calendar className="w-3.5 h-3.5" />
           <span>Lịch dạy & PT 1–1</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("availability")}
-          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-            activeTab === "availability"
-              ? "bg-emerald-600 text-white shadow-2xs"
-              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
-          }`}
-        >
-          <Clock className="w-3.5 h-3.5" />
-          <span>Khung giờ rảnh</span>
         </button>
 
         <button

@@ -1,8 +1,8 @@
 import type { SessionStatus } from "../../services/api";
 
-export type MainTab = "schedule" | "availability" | "requests";
+export type MainTab = "schedule" | "requests";
 export type ViewMode = "week" | "list";
-export type TypeFilter = "all" | "group" | "pt" | "open_pt";
+export type TypeFilter = "all" | "group" | "pt";
 export type SportFilter = "all" | string;
 export type StatusFilter = "all" | SessionStatus;
 

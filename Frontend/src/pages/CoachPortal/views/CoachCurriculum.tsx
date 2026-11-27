@@ -41,7 +41,6 @@ export default function CoachCurriculum({
   const [deleteTarget, setDeleteTarget] = useState<MockCurriculum | null>(null);
   const [isAssigning, setIsAssigning] = useState(false);
   const [assignTarget, setAssignTarget] = useState<{ curricId: string; curricName: string; sport?: string; level?: string } | null>(null);
-  const [assignDeadline, setAssignDeadline] = useState("");
   const [assignNote, setAssignNote] = useState("");
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; msg: string } | null>(null);
   const [loading, setLoading] = useState(false);
@@ -231,13 +230,11 @@ export default function CoachCurriculum({
         type,
         id,
         name,
-        deadline: assignDeadline,
         note: assignNote,
       });
       await reloadCurricula();
       setAssignTarget(null);
-      setFeedback({ type: "success", msg: `Đã giao kế hoạch "${assignTarget.curricName}" cho ${name} thành công!` });
-      setActiveTab("homework");
+      setFeedback({ type: "success", msg: `Đã giao kế hoạch tập luyện "${assignTarget.curricName}" cho ${name} thành công!` });
       setTimeout(() => setFeedback(null), 3500);
     } catch (error: any) {
       console.error("Failed to assign coach curriculum", error);
@@ -295,8 +292,11 @@ export default function CoachCurriculum({
   const uniqueClasses = useMemo(() => {
     const map = new Map<string, { id: string; name: string }>();
     sessions.forEach((session) => {
-      if (!map.has(session.classId)) {
-        map.set(session.classId, { id: session.classId, name: session.className.split("–")[0].trim() });
+      const courseId = session.courseId || session.classId;
+      const courseName = session.courseName?.trim()
+        || session.className.replace(/\s*\(Buổi\s+\d+\)\s*$/i, "").trim();
+      if (!map.has(courseId)) {
+        map.set(courseId, { id: courseId, name: courseName });
       }
     });
     return Array.from(map.values());
@@ -393,9 +393,7 @@ export default function CoachCurriculum({
           </div>
 
           {activeTab === "homework" ? (
-            <CoachHomeworksTab
-              onCreateWithAi={() => { setAiReturnTab("homework"); setShowAiComposer(true); }}
-            />
+            <CoachHomeworksTab />
           ) : <>
           <CurriculumHeader
             curricula={curricula}
@@ -454,8 +452,6 @@ export default function CoachCurriculum({
 
           <CurriculumAssignModal
             assignTarget={assignTarget}
-            assignDeadline={assignDeadline}
-            setAssignDeadline={setAssignDeadline}
             assignNote={assignNote}
             setAssignNote={setAssignNote}
             uniqueClasses={uniqueClasses}

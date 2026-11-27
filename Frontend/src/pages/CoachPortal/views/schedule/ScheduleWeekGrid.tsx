@@ -1,4 +1,3 @@
-import { Sparkles } from "lucide-react";
 import type { CoachScreen } from "../../types";
 import { DAYS_NAMES, TIME_ROWS, type UnifiedScheduleItem } from "./types";
 
@@ -6,11 +5,9 @@ interface Props {
   weekDates: string[];
   todayStr: string;
   filteredSessions: UnifiedScheduleItem[];
-  onSelectOpenSlot: (item: UnifiedScheduleItem) => void;
   onSelectPtSession: (item: UnifiedScheduleItem) => void;
   navigateTo: (s: CoachScreen, extra?: { sessionId?: string; memberId?: string }) => void;
   onSwitchToList?: () => void;
-  onOpenSlotModal?: (defaultDate?: string, defaultHour?: string) => void;
   nearestSessionInfo?: any;
   onJumpToWeek?: (offset: number) => void;
 }
@@ -19,10 +16,8 @@ export default function ScheduleWeekGrid({
   weekDates,
   todayStr,
   filteredSessions,
-  onSelectOpenSlot,
   onSelectPtSession,
   navigateTo,
-  onOpenSlotModal,
 }: Props) {
   return (
     <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 shadow-sm">
@@ -74,28 +69,18 @@ export default function ScheduleWeekGrid({
               return (
                 <div
                   key={di}
-                  onClick={() => onOpenSlotModal?.(colDate, hour)}
-                  className="p-1.5 border-r border-slate-100 dark:border-slate-800/60 last:border-0 relative space-y-1.5 min-h-[92px] group/cell hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 cursor-pointer transition-colors"
-                  title="Bấm để đăng ca rảnh 1–1 vào khung giờ này"
+                  className="p-1.5 border-r border-slate-100 dark:border-slate-800/60 last:border-0 relative space-y-1.5 min-h-[92px]"
                 >
-                  {cellSessions.length === 0 && (
-                    <div className="hidden group-hover/cell:flex items-center justify-center h-full text-[11px] font-medium text-emerald-600 dark:text-emerald-400 border border-dashed border-emerald-300/80 dark:border-emerald-700/80 rounded-lg p-2 pointer-events-none">
-                      + Đăng ca rảnh
-                    </div>
-                  )}
                   {cellSessions.map((sessionItem) => {
                     const isPT = sessionItem.type === "pt";
-                    const isOpenPT = sessionItem.type === "open_pt";
-                    const isPendingApproval = !isPT && !isOpenPT && sessionItem.approvalStatus === "pending";
+                    const isPendingApproval = !isPT && sessionItem.approvalStatus === "pending";
                     return (
                       <button
                         key={sessionItem.id}
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (isOpenPT) {
-                            onSelectOpenSlot(sessionItem);
-                          } else if (isPT) {
+                          if (isPT) {
                             onSelectPtSession(sessionItem);
                           } else {
                             navigateTo("class-detail", { sessionId: sessionItem.id });
@@ -104,8 +89,6 @@ export default function ScheduleWeekGrid({
                         className={`w-full text-left p-2.5 rounded-xl border transition-all flex flex-col justify-between shadow-xs hover:shadow-md cursor-pointer ${
                           isPendingApproval
                             ? "bg-slate-50/70 dark:bg-slate-950/30 border-slate-300 dark:border-slate-700"
-                            : isOpenPT
-                            ? "bg-slate-50/70 dark:bg-slate-950/30 border-dashed border-slate-300 dark:border-slate-700 hover:border-slate-500 hover:bg-slate-50"
                             : isPT
                             ? "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200/90 dark:border-emerald-800/60 hover:border-emerald-400"
                             : "bg-slate-50 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 hover:border-slate-400"
@@ -115,14 +98,12 @@ export default function ScheduleWeekGrid({
                           <div className="flex items-center justify-between gap-1 mb-1">
                             <span
                               className={`text-[9px] font-extrabold uppercase tracking-wide px-1.5 py-0.2 rounded ${
-                                isOpenPT
-                                  ? "bg-slate-100 text-slate-800 dark:bg-slate-900/60 dark:text-slate-300 border border-slate-200 dark:border-slate-800"
-                                  : isPT
+                                isPT
                                   ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
                                   : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
                               }`}
                             >
-                              {isOpenPT ? "Trống 1–1" : isPT ? "PT 1–1" : sessionItem.sport}
+                              {isPT ? "PT 1–1" : sessionItem.sport}
                             </span>
 
                             <span className="text-[10px] text-slate-400 ">
@@ -131,9 +112,7 @@ export default function ScheduleWeekGrid({
                           </div>
 
                           <div className="text-xs font-semibold text-slate-800 dark:text-slate-100 line-clamp-1">
-                            {isOpenPT
-                              ? sessionItem.className
-                              : isPT
+                            {isPT
                               ? sessionItem.memberName
                               : sessionItem.className}
                           </div>
@@ -141,11 +120,7 @@ export default function ScheduleWeekGrid({
 
                         <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center justify-between mt-1 pt-1 border-t border-slate-100 dark:border-slate-700/40">
                           <span className="truncate">{sessionItem.room}</span>
-                          {isOpenPT ? (
-                            <span className="text-slate-600 dark:text-slate-400 font-semibold truncate flex items-center gap-0.5">
-                              <Sparkles className="w-2.5 h-2.5" /> Mở nhận HV
-                            </span>
-                          ) : isPT ? (
+                          {isPT ? (
                             <span className="text-emerald-600 dark:text-emerald-400 font-medium truncate max-w-[80px]">
                               {sessionItem.goal}
                             </span>
