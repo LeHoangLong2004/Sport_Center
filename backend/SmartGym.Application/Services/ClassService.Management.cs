@@ -49,10 +49,23 @@ public sealed partial class ClassService
             return (false, "Vui lòng chọn các ngày học trong tuần cho khóa học.");
         }
 
+        if (request.DaysOfWeek.Any(day => day < 0 || day > 6))
+        {
+            return (false, "Ngày học trong tuần không hợp lệ.");
+        }
+
+        var startDateInCenter = CenterTime.ToLocal(scheduleTimeUtc).Date;
+        var startWeekday = (int)startDateInCenter.DayOfWeek;
+        if (!request.DaysOfWeek.Contains(startWeekday))
+        {
+            var weekdayNames = new[] { "Chủ nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy" };
+            return (false, $"Ngày bắt đầu khóa học là {weekdayNames[startWeekday]}, vui lòng chọn ngày này trong lịch tập hàng tuần.");
+        }
+
         var weeks = Math.Max(1, request.Weeks.GetValueOrDefault(10));
         var totalSessions = Math.Max(1, request.TotalSessions.GetValueOrDefault(request.DaysOfWeek.Count * weeks));
 
-        var targetDays = request.DaysOfWeek.Select(day => day % 7).ToHashSet();
+        var targetDays = request.DaysOfWeek.ToHashSet();
         var facilitySettings = await _classRepository.GetFacilitySchedulingSettingsAsync(request.FacilityId);
         if (facilitySettings is null)
             return (false, "Không tìm thấy cấu hình phòng tập.");
@@ -92,28 +105,24 @@ public sealed partial class ClassService
         // remote database requests for every generated session.
         var conflictRangeStart = sessionTimes[0].AddDays(-1);
         var conflictRangeEnd = sessionTimes[^1].AddMinutes(request.DurationMinutes);
-        var existingClassesTask = _classRepository.GetClassesForScheduleConflictsAsync(
+        // These repositories share the scoped SmartGymDbContext. EF Core does not
+        // allow overlapping queries on one DbContext, so execute each read in order.
+        var existingClasses = await _classRepository.GetClassesForScheduleConflictsAsync(
             request.CoachId,
             request.FacilityId,
             conflictRangeStart,
             conflictRangeEnd);
-        var centerCapacityTask = _classRepository.GetCenterTotalCapacityAsync();
-        var centerClassesTask = _classRepository.GetClassesForCenterScheduleConflictsAsync(
-            conflictRangeStart,
-            conflictRangeEnd);
-        var centerCourseSessionsTask = _classRepository.GetCenterCourseSessionsForScheduleConflictsAsync(
-            conflictRangeStart,
-            conflictRangeEnd);
-        var existingPtSessionsTask = _ptSessionRepository.GetSessionsByCoachInRangeAsync(
+        var existingPtSessions = await _ptSessionRepository.GetSessionsByCoachInRangeAsync(
             request.CoachId,
             conflictRangeStart,
             conflictRangeEnd);
-        await Task.WhenAll(existingClassesTask, existingPtSessionsTask, centerCapacityTask, centerClassesTask, centerCourseSessionsTask);
-        var existingClasses = await existingClassesTask;
-        var existingPtSessions = await existingPtSessionsTask;
-        var centerCapacity = await centerCapacityTask;
-        var centerClasses = await centerClassesTask;
-        var centerCourseSessions = await centerCourseSessionsTask;
+        var centerCapacity = await _classRepository.GetCenterTotalCapacityAsync();
+        var centerClasses = await _classRepository.GetClassesForCenterScheduleConflictsAsync(
+            conflictRangeStart,
+            conflictRangeEnd);
+        var centerCourseSessions = await _classRepository.GetCenterCourseSessionsForScheduleConflictsAsync(
+            conflictRangeStart,
+            conflictRangeEnd);
         var availabilitySlots = request.CoachId == Guid.Empty
             ? Array.Empty<(DateTime StartTime, DateTime EndTime)>()
             : await _classRepository.GetCoachAvailabilitySlotsInRangeAsync(

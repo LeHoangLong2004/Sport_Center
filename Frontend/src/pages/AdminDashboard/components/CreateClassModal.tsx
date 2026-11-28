@@ -16,7 +16,7 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = 'manager
   const {
     isCoachMode, formData, setFormData, handleChange,
     sports, facilities, coaches, currentCoachName,
-    loadingData, loading, error, success, leadTimeValidation, handleSubmit,
+    loadingData, loading, error, success, leadTimeValidation, weekdayValidation, handleSubmit,
   } = useCreateClassForm({ editData, mode, onSuccess, onClose });
 
   // Lock scroll on background elements
@@ -279,6 +279,7 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = 'manager
                   sports={sports} facilities={facilities} coaches={coaches}
                   currentCoachName={currentCoachName} loadingData={loadingData}
                     isCoachMode={isCoachMode} isEditing={!!editData} leadTimeValidation={leadTimeValidation}
+                    weekdayValidation={weekdayValidation}
                 />
               </div>
 
@@ -300,7 +301,7 @@ export function CreateClassModal({ onClose, onSuccess, editData, mode = 'manager
                   </button>
                   <button
                     type="submit"
-                    disabled={loading || (leadTimeValidation !== null && !leadTimeValidation.valid)}
+                    disabled={loading || (leadTimeValidation !== null && !leadTimeValidation.valid) || (weekdayValidation !== null && !weekdayValidation.valid)}
                     className="px-6 py-2.5 text-sm font-bold text-white rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-600/30"
                   >
                     {loading ? (
