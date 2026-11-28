@@ -15,6 +15,7 @@ interface CreateClassFormFieldsProps {
   isCoachMode: boolean;
   isEditing: boolean;
   leadTimeValidation: { valid: boolean; message: string } | null;
+  weekdayValidation: { valid: boolean; message: string } | null;
 }
 
 const WEEK_DAYS = [
@@ -66,6 +67,7 @@ export function CreateClassFormFields({
   isCoachMode,
   isEditing,
   leadTimeValidation,
+  weekdayValidation,
 }: CreateClassFormFieldsProps) {
   const isRecurring = !!formData.isRecurring;
   const isPtOneToOne = formData.trainingMode === 'PT_ONE_TO_ONE';
@@ -340,6 +342,11 @@ export function CreateClassFormFields({
                     );
                   })}
                 </div>
+                {weekdayValidation && !weekdayValidation.valid && (
+                  <p role="alert" className="mt-2 text-xs font-semibold text-rose-700 dark:text-rose-300">
+                    {weekdayValidation.message}
+                  </p>
+                )}
               </div>
 
               {/* Weeks + Total */}

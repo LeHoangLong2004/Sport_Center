@@ -166,6 +166,20 @@ export function useCreateClassForm({ editData, mode = "manager", onSuccess, onCl
     return { valid: true, message: "" };
   })();
 
+  const weekdayValidation = (() => {
+    if (!formData.isRecurring || !formData.scheduleDate || !formData.daysOfWeek?.length) return null;
+    const [year, month, day] = formData.scheduleDate.split('-').map(Number);
+    const startWeekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+    if (!Number.isFinite(startWeekday)) return null;
+    const weekdayNames = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+    return formData.daysOfWeek.includes(startWeekday)
+      ? { valid: true, message: '' }
+      : {
+          valid: false,
+          message: `Ngày bắt đầu khóa học là ${weekdayNames[startWeekday]}, hãy chọn ngày này trong lịch tập hàng tuần.`,
+        };
+  })();
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => {
@@ -189,6 +203,19 @@ export function useCreateClassForm({ editData, mode = "manager", onSuccess, onCl
 
       if (!scheduleDate || !scheduleTime) {
         throw new Error('Vui lòng chọn đầy đủ ngày và giờ học.');
+      }
+
+      if (formData.isRecurring) {
+        const selectedDays = formData.daysOfWeek || [];
+        if (selectedDays.length === 0) {
+          throw new Error('Vui lòng chọn ít nhất một ngày tập trong tuần.');
+        }
+        const [year, month, day] = scheduleDate.split('-').map(Number);
+        const startWeekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+        if (!selectedDays.includes(startWeekday)) {
+          const weekdayNames = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+          throw new Error(`Ngày bắt đầu khóa học là ${weekdayNames[startWeekday]}, hãy chọn ngày này trong lịch tập hàng tuần.`);
+        }
       }
 
       const startDateTime = new Date(`${scheduleDate}T${scheduleTime}:00+07:00`);
@@ -296,6 +323,7 @@ export function useCreateClassForm({ editData, mode = "manager", onSuccess, onCl
     error,
     success,
     leadTimeValidation,
+    weekdayValidation,
     handleSubmit
   };
 }
