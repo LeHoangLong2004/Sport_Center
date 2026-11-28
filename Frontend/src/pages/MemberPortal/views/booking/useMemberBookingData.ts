@@ -5,6 +5,55 @@ import { getRealCoachAvatar } from "../../utils/coachAvatar";
 import { getCounterPendingIds, removeCounterPendingId } from "./bookingTypes";
 import { centerDateParts, parseScheduleTime } from "../../../../utils/scheduleTimeHelper";
 
+const enrichRecurringClass = async (item: any) => {
+  const totalSessions = Number(item.totalSessions ?? item.TotalSessions ?? 1);
+  if (totalSessions <= 1) return item;
+
+  const existingDays = String(item.courseDaysOfWeek ?? item.CourseDaysOfWeek ?? "").trim();
+  const hasCompleteCourseInfo = Boolean(
+    (item.courseStartDate ?? item.CourseStartDate) &&
+    (item.courseEndDate ?? item.CourseEndDate) &&
+    Number(item.courseWeeks ?? item.CourseWeeks) > 0 &&
+    existingDays,
+  );
+  if (hasCompleteCourseInfo) return item;
+
+  try {
+    const detail = await MemberAPI.getClassDetail(String(item.id ?? item.Id));
+    const rawSessions = detail?.sessions ?? detail?.Sessions ?? [];
+    const scheduledSessions = (Array.isArray(rawSessions) ? rawSessions : [])
+      .map((session: any) => parseScheduleTime(session.scheduleTime ?? session.ScheduleTime))
+      .filter((date: Date) => !Number.isNaN(date.getTime()))
+      .sort((left: Date, right: Date) => left.getTime() - right.getTime());
+
+    if (scheduledSessions.length === 0) return item;
+
+    const weekdayNumbers = [...new Set(scheduledSessions.map((date: Date) => {
+      const weekday = centerDateParts(date).weekday;
+      return ({ Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 } as Record<string, number>)[weekday];
+    }).filter((day: number | undefined): day is number => day !== undefined))]
+      .sort((left, right) => (left === 0 ? 7 : left) - (right === 0 ? 7 : right));
+
+    const weekStarts = new Set(scheduledSessions.map((date: Date) => {
+      const parts = centerDateParts(date);
+      const localDate = new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day)));
+      localDate.setUTCDate(localDate.getUTCDate() - ((localDate.getUTCDay() + 6) % 7));
+      return localDate.toISOString().slice(0, 10);
+    }));
+
+    return {
+      ...item,
+      totalSessions,
+      courseStartDate: item.courseStartDate ?? item.CourseStartDate ?? scheduledSessions[0].toISOString(),
+      courseEndDate: item.courseEndDate ?? item.CourseEndDate ?? scheduledSessions[scheduledSessions.length - 1].toISOString(),
+      courseWeeks: Number(item.courseWeeks ?? item.CourseWeeks) || weekStarts.size,
+      courseDaysOfWeek: existingDays || weekdayNumbers.join(","),
+    };
+  } catch {
+    return item;
+  }
+};
+
 export function useMemberBookingData() {
   const [mySessions, setMySessions] = useState<MemberSessionItem[]>([]);
   const [groupClasses, setGroupClasses] = useState<any[]>([]);
@@ -27,11 +76,14 @@ export function useMemberBookingData() {
       // Tải lớp trước để màn khám phá có thể hiển thị ngay khi nguồn dữ liệu chính phản hồi.
       // Lịch cá nhân, PT, HLV và môn học không nên giữ spinner của danh sách lớp.
       const availableClasses = await MemberAPI.getAvailableClasses();
+      const normalizedClasses = await Promise.all(
+        (Array.isArray(availableClasses) ? availableClasses : []).map(enrichRecurringClass),
+      );
       const mapAvailableClasses = (coachList: any[]) => {
         const coachById = new Map(
           (Array.isArray(coachList) ? coachList : []).map((coach: any) => [String(coach.id), coach])
         );
-        return (Array.isArray(availableClasses) ? availableClasses : []).map((item: any) => {
+        return normalizedClasses.map((item: any) => {
         const start = parseScheduleTime(item.scheduleTime);
         const durationMinutes = Number(item.durationMinutes || 60);
         const end = new Date(start.getTime() + durationMinutes * 60000);
@@ -154,6 +206,10 @@ export function useMemberBookingData() {
           durationMinutes: Number(booking.durationMinutes || 60),
           sessionNumber: booking.sessionNumber ?? 1,
           totalSessions: booking.totalSessions ?? 1,
+          courseStartDate: booking.courseStartDate,
+          courseEndDate: booking.courseEndDate,
+          courseWeeks: booking.courseWeeks ?? 0,
+          courseDaysOfWeek: booking.courseDaysOfWeek,
           status: effectiveStatus,
           bookingStatus: effectiveStatus,
         };

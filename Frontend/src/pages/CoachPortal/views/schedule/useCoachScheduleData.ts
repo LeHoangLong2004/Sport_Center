@@ -260,29 +260,6 @@ export function useCoachScheduleData(weekDates: string[]) {
     setRequests((prev) => [req, ...prev]);
   };
 
-  const respondInvitation = async (id: string, action: "accept" | "reject", note?: string) => {
-    await CoachAPI.respondSubstituteInvitation(id, action, note);
-    setInvitations((prev) =>
-      prev.map((inv) =>
-        inv.id === id
-          ? {
-              ...inv,
-              status: action === "accept" ? "substitute_accepted" : "substitute_declined",
-              managerNote: note
-                ? `${inv.managerNote ? inv.managerNote + " | " : ""}Bạn: ${note}`
-                : inv.managerNote,
-            }
-          : inv,
-      ),
-    );
-    if (action === "accept") {
-      try {
-        const schData = await CoachAPI.getSchedule();
-        setRawSessions(schData);
-      } catch {}
-    }
-  };
-
   return {
     rawSessions,
     requests,
@@ -295,6 +272,5 @@ export function useCoachScheduleData(weekDates: string[]) {
     removeOpenSlot,
     toggleSlot,
     addRequest,
-    respondInvitation,
   };
 }

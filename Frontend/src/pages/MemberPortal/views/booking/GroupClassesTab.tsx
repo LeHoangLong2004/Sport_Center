@@ -14,7 +14,7 @@ import {
 import { CoachAvatar } from "../../utils/coachAvatar";
 import type { MemberSessionItem } from "../../types";
 import { type CancelBookingTarget } from "./bookingTypes";
-import { parseScheduleTime } from "../../../../utils/scheduleTimeHelper";
+import { formatCenterDate, parseScheduleTime } from "../../../../utils/scheduleTimeHelper";
 import { EarlyBookingModal } from "./EarlyBookingModal";
 
 interface GroupClassesTabProps {
@@ -50,6 +50,10 @@ export const GroupClassesTab: React.FC<GroupClassesTabProps> = ({
   getBookingStatus,
   isInactiveBookingStatus,
 }) => {
+  const weekdayLabels: Record<number, string> = {
+    0: "Chủ nhật", 1: "Thứ 2", 2: "Thứ 3", 3: "Thứ 4",
+    4: "Thứ 5", 5: "Thứ 6", 6: "Thứ 7",
+  };
   const [lockedTarget, setLockedTarget] = useState<{
     item: any;
     opensAtDateStr: string;
@@ -120,6 +124,26 @@ export const GroupClassesTab: React.FC<GroupClassesTabProps> = ({
             const isPaymentPending = rawBookingStatus === "pending_payment";
             const booked = Boolean(bookedSession) && !isCounterPending && !isPaymentPending;
             const isFull = item.registeredCount >= item.capacity;
+            const totalCourseSessions = Number(item.totalSessions ?? item.TotalSessions ?? 1);
+            const courseDays = String(item.courseDaysOfWeek ?? item.CourseDaysOfWeek ?? "")
+              .split(",")
+              .map((day: string) => day.trim())
+              .filter((day: string) => day !== "" && /^\d+$/.test(day))
+              .map((day: string) => weekdayLabels[Number(day)])
+              .filter(Boolean)
+              .sort((left: string, right: string) => {
+                const order = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
+                return order.indexOf(left) - order.indexOf(right);
+              });
+            if (courseDays.length === 0 && item.scheduleTime) {
+              const startDate = parseScheduleTime(item.scheduleTime);
+              if (!Number.isNaN(startDate.getTime())) {
+                courseDays.push(weekdayLabels[startDate.getDay()]);
+              }
+            }
+            const courseWeeks = Number(item.courseWeeks ?? item.CourseWeeks) || Math.ceil(totalCourseSessions / Math.max(1, courseDays.length));
+            const courseStartDate = item.courseStartDate ?? item.CourseStartDate ?? item.scheduleTime;
+            const courseEndDate = item.courseEndDate ?? item.CourseEndDate ?? item.scheduleTime;
 
             const classStartMs =
               item.startMs ??
@@ -196,6 +220,20 @@ export const GroupClassesTab: React.FC<GroupClassesTabProps> = ({
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 line-clamp-2 leading-relaxed">
                     {item.description}
                   </p>
+
+                  {totalCourseSessions > 1 && (
+                    <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-2.5 text-[11px] text-slate-600 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-slate-300 space-y-1">
+                      <p className="font-bold text-emerald-800 dark:text-emerald-300">
+                        Khóa học: {totalCourseSessions} buổi · {courseWeeks} tuần
+                      </p>
+                      <p>
+                        Thời gian: {courseStartDate ? formatCenterDate(courseStartDate) : "Đang cập nhật"}
+                        {" – "}
+                        {courseEndDate ? formatCenterDate(courseEndDate) : "Đang cập nhật"}
+                      </p>
+                      <p>Ngày tập: {courseDays.length ? courseDays.join(" · ") : "Đang cập nhật"}</p>
+                    </div>
+                  )}
 
                   {/* Coach mini profile */}
                   <div className="mt-4 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-100 dark:border-slate-700/60 flex items-center justify-between">

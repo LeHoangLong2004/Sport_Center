@@ -6,6 +6,17 @@ namespace SmartGym.Application.Common;
 
 public static class FacilityConflictValidator
 {
+    public static string? ValidateCenterCapacity(int? centerTotalCapacity, int requestedCapacity, int overlappingCapacity)
+    {
+        if (centerTotalCapacity is not > 0)
+            return null;
+
+        if (overlappingCapacity + requestedCapacity > centerTotalCapacity.Value)
+            return $"Tổng sĩ số các lớp trùng giờ trên toàn trung tâm vượt tổng sức chứa các phòng ({centerTotalCapacity.Value} người).";
+
+        return null;
+    }
+
     // Older active classes may predate approval_status and have NULL/empty values.
     // They are still live bookings and must continue occupying room capacity.
     public static bool IsBlockingClass(GroupClass item)

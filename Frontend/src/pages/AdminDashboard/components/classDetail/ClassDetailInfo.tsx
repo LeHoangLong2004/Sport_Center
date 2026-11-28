@@ -39,6 +39,7 @@ export function ClassDetailInfo({ classDetail, isPendingProposal }: ClassDetailI
   const courseEnd = lastSession
     ? new Date(parseScheduleTime(lastSession.scheduleTime).getTime() + classDetail.durationMinutes * 60_000)
     : new Date(scheduleDate.getTime() + classDetail.durationMinutes * 60_000);
+  const sessionEnd = new Date(scheduleDate.getTime() + classDetail.durationMinutes * 60_000);
 
   return (
     <>
@@ -90,9 +91,9 @@ export function ClassDetailInfo({ classDetail, isPendingProposal }: ClassDetailI
               </p>
             )}
           </div>
-          {!isRecurring && <p className="text-[11px] text-slate-500 mt-1">
-            {formatCenterTime(scheduleDate)} ({classDetail.durationMinutes}p)
-          </p>}
+          <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+            Giờ: {formatCenterTime(scheduleDate)} – {formatCenterTime(sessionEnd)} ({classDetail.durationMinutes} phút/buổi)
+          </p>
         </div>
 
         <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-xs flex flex-col justify-between">

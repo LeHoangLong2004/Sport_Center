@@ -2,28 +2,13 @@ import React from "react";
 import { User, Calendar, MapPin, Clock } from "lucide-react";
 import type { SubstituteInvitation } from "../../../services/api";
 import { INVITATION_STATUS_BADGE } from "../types";
-import { CoachInvitationActions } from "./CoachInvitationActions";
 
 interface CoachInvitationCardProps {
   invitation: SubstituteInvitation;
-  isProcessing: boolean;
-  isDeclineInputVisible: boolean;
-  declineReason: string;
-  onRespondInvitation?: (id: string, action: "accept" | "reject", note?: string) => Promise<void>;
-  onSetDeclineReason: (id: string, reason: string) => void;
-  onSetShowDeclineInput: (id: string | null) => void;
-  onAction: (id: string, action: "accept" | "reject") => void;
 }
 
 export function CoachInvitationCard({
   invitation: inv,
-  isProcessing,
-  isDeclineInputVisible,
-  declineReason,
-  onRespondInvitation,
-  onSetDeclineReason,
-  onSetShowDeclineInput,
-  onAction,
 }: CoachInvitationCardProps) {
   const isPending =
     inv.status === "pending" || inv.status === "waiting_substitute";
@@ -117,21 +102,6 @@ export function CoachInvitationCard({
           )}
         </div>
       </div>
-
-      {/* Action Area */}
-      {isPending && onRespondInvitation && (
-        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2">
-          <CoachInvitationActions
-            invitationId={inv.id}
-            isProcessing={isProcessing}
-            isDeclineInputVisible={isDeclineInputVisible}
-            declineReason={declineReason}
-            onSetDeclineReason={onSetDeclineReason}
-            onSetShowDeclineInput={onSetShowDeclineInput}
-            onAction={onAction}
-          />
-        </div>
-      )}
     </div>
   );
 }

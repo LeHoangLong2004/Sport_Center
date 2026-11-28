@@ -246,7 +246,7 @@ export function FacilityFormModal({
                     className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
                   />
                 </div>
-                <p className="col-span-2 text-[11px] text-slate-500">Nhập 1 để giới hạn một lớp cùng giờ. Có thể khai báo tổng sức chứa để kiểm soát sĩ số cộng dồn khi nhiều lớp dùng chung phòng.</p>
+                <p className="col-span-2 text-[11px] text-slate-500">Nhập 1 để giới hạn một lớp cùng giờ. Tổng sức chứa giới hạn sĩ số cộng dồn trong phòng này; giới hạn toàn trung tâm được tính bằng tổng sức chứa của các phòng đã cấu hình.</p>
               </div>
             </div>
           )}

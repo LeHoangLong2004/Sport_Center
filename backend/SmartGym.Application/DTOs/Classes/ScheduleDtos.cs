@@ -25,6 +25,10 @@ public class MemberClassBookingDto
     public Guid? ParentId { get; set; }
     public int SessionNumber { get; set; } = 1;
     public int TotalSessions { get; set; } = 1;
+    public DateTime? CourseStartDate { get; set; }
+    public DateTime? CourseEndDate { get; set; }
+    public int CourseWeeks { get; set; }
+    public string? CourseDaysOfWeek { get; set; }
 }
 
 public class MemberPtSessionDto

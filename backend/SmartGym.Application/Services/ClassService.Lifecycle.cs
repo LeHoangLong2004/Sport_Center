@@ -61,6 +61,21 @@ public sealed partial class ClassService
         if (restoreFacilityConflict is not null)
             return (false, "Không thể khôi phục: " + restoreFacilityConflict);
 
+        var restoreCenterCapacity = await _classRepository.GetCenterTotalCapacityAsync();
+        var restoreCenterClasses = await _classRepository.GetClassesForCenterScheduleConflictsAsync(restoreStart, restoreEnd);
+        var restoreCenterCourseSessions = await _classRepository.GetCenterCourseSessionsForScheduleConflictsAsync(restoreStart, restoreEnd);
+        var restoreCenterOccupancy = restoreCenterClasses
+            .Where(c => c.Id != classId && FacilityConflictValidator.IsBlockingClass(c))
+            .Where(c => Overlaps(restoreStart, restoreEnd, c.ScheduleTime, c.DurationMinutes))
+            .Sum(c => c.Capacity)
+            + restoreCenterCourseSessions
+                .Where(courseSession => restoreStart < courseSession.EndTime && courseSession.StartTime < restoreEnd)
+                .Sum(courseSession => courseSession.Capacity);
+        var restoreCenterConflict = FacilityConflictValidator.ValidateCenterCapacity(
+            restoreCenterCapacity, targetClass.Capacity, restoreCenterOccupancy);
+        if (restoreCenterConflict is not null)
+            return (false, "Không thể khôi phục: " + restoreCenterConflict);
+
         if (targetClass.CoachId.HasValue)
         {
             var newStart = targetClass.ScheduleTime;
@@ -199,6 +214,21 @@ public sealed partial class ClassService
             var facilityConflict = FacilityConflictValidator.Validate(facilitySettings, session.Capacity, overlappingFacilityClasses);
             if (facilityConflict is not null)
                 return (false, $"Không thể duyệt buổi {session.SessionNumber}: {facilityConflict}");
+
+            var centerCapacity = await _classRepository.GetCenterTotalCapacityAsync();
+            var centerClasses = await _classRepository.GetClassesForCenterScheduleConflictsAsync(sessionStart, sessionEnd);
+            var centerCourseSessions = await _classRepository.GetCenterCourseSessionsForScheduleConflictsAsync(sessionStart, sessionEnd);
+            var centerOverlappingCapacity = centerClasses
+                .Where(c => !courseSessionIds.Contains(c.Id) && FacilityConflictValidator.IsBlockingClass(c))
+                .Where(c => Overlaps(sessionStart, sessionEnd, c.ScheduleTime, c.DurationMinutes))
+                .Sum(c => c.Capacity)
+                + centerCourseSessions
+                    .Where(courseSession => sessionStart < courseSession.EndTime && courseSession.StartTime < sessionEnd)
+                    .Sum(courseSession => courseSession.Capacity);
+            var centerConflict = FacilityConflictValidator.ValidateCenterCapacity(
+                centerCapacity, session.Capacity, centerOverlappingCapacity);
+            if (centerConflict is not null)
+                return (false, $"Không thể duyệt buổi {session.SessionNumber}: {centerConflict}");
         }
 
         return await _classRepository.ApproveClassAsync(classId);

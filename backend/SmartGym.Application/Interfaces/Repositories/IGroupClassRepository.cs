@@ -15,6 +15,9 @@ public interface IGroupClassRepository
     Task<IEnumerable<GroupClass>> GetClassesForScheduleConflictsAsync(Guid coachId, Guid facilityId, DateTime from, DateTime to);
     Task<IReadOnlyCollection<(DateTime StartTime, DateTime EndTime)>> GetCoachAvailabilitySlotsInRangeAsync(Guid coachId, DateTime from, DateTime to);
     Task<FacilitySchedulingSettings?> GetFacilitySchedulingSettingsAsync(Guid facilityId);
+    Task<int?> GetCenterTotalCapacityAsync();
+    Task<IEnumerable<GroupClass>> GetClassesForCenterScheduleConflictsAsync(DateTime from, DateTime to);
+    Task<IReadOnlyCollection<(DateTime StartTime, DateTime EndTime, int Capacity)>> GetCenterCourseSessionsForScheduleConflictsAsync(DateTime from, DateTime to);
     Task<IEnumerable<GroupClass>> GetCourseSessionsAsync(Guid classId);
     Task<bool> HasCoachAvailabilityConflictAsync(Guid coachId, DateTime startTime, DateTime endTime);
     Task<IEnumerable<ClassResponse>> GetAllClassesAsync();

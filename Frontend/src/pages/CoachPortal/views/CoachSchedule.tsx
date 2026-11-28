@@ -62,22 +62,18 @@ export default function CoachSchedule({ navigateTo }: Props) {
     allUnifiedSessions,
     loading,
     addRequest,
-    respondInvitation,
   } = useCoachScheduleData(weekDates);
 
   const pendingInvitationsCount = useMemo(
     () =>
       invitations.filter(
-        (inv) => inv.status === "pending" || inv.status === "waiting_substitute",
+        (inv) => ["approved", "đã duyệt"].includes(String(inv.status).trim().toLowerCase()),
       ).length,
     [invitations],
   );
 
   const SPORT_OPTIONS = useMemo(() => {
     const set = new Set<string>();
-    sportOptions.forEach((s) => {
-      if (s) set.add(s);
-    });
     allUnifiedSessions.forEach((s) => {
       if (s.sport) set.add(s.sport);
     });
@@ -231,7 +227,6 @@ export default function CoachSchedule({ navigateTo }: Props) {
         <CoachRequestsTab
           requests={requests}
           invitations={invitations}
-          onRespondInvitation={respondInvitation}
           onOpenCreateRequest={() => {
             setIsRequestModalOpen(true);
           }}
