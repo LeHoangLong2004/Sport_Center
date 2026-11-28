@@ -35,6 +35,20 @@ public class HomeworkProgressRepository : IHomeworkProgressRepository
         string? notes,
         CancellationToken cancellationToken = default)
     {
+        // Manual homework creation already wraps plan creation and assignment in a
+        // transaction. Reuse it instead of trying to open a nested transaction.
+        if (_context.Database.CurrentTransaction is not null)
+        {
+            return await AssignMissingBatchCoreAsync(
+                planId,
+                assignedBy,
+                memberIds,
+                dueDate,
+                notes,
+                cancellationToken,
+                ownsTransaction: false);
+        }
+
         var strategy = _context.Database.CreateExecutionStrategy();
         return await strategy.ExecuteAsync(() => AssignMissingBatchCoreAsync(
             planId,
@@ -42,7 +56,8 @@ public class HomeworkProgressRepository : IHomeworkProgressRepository
             memberIds,
             dueDate,
             notes,
-            cancellationToken));
+            cancellationToken,
+            ownsTransaction: true));
     }
 
     private async Task<HomeworkBatchAssignmentResult> AssignMissingBatchCoreAsync(
@@ -51,15 +66,16 @@ public class HomeworkProgressRepository : IHomeworkProgressRepository
         IReadOnlyCollection<Guid> memberIds,
         DateTime? dueDate,
         string? notes,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool ownsTransaction)
     {
         var requestedMembers = memberIds.Where(id => id != Guid.Empty).Distinct().ToHashSet();
         if (requestedMembers.Count == 0)
             return new HomeworkBatchAssignmentResult(Array.Empty<HomeworkProgress>(), new HashSet<Guid>());
 
-        await using var transaction = await _context.Database.BeginTransactionAsync(
-            IsolationLevel.Serializable,
-            cancellationToken);
+        await using var transaction = ownsTransaction
+            ? await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken)
+            : null;
 
         var existing = await _context.HomeworkProgresses
             .Where(progress => progress.PlanId == planId && requestedMembers.Contains(progress.MemberId))
@@ -88,7 +104,8 @@ public class HomeworkProgressRepository : IHomeworkProgressRepository
             await _context.SaveChangesAsync(cancellationToken);
         }
 
-        await transaction.CommitAsync(cancellationToken);
+        if (transaction is not null)
+            await transaction.CommitAsync(cancellationToken);
 
         var assignments = await _context.HomeworkProgresses
             .AsNoTracking()
@@ -109,7 +126,9 @@ public class HomeworkProgressRepository : IHomeworkProgressRepository
                   FROM class_bookings b
                   INNER JOIN classes c ON c.id = b.class_id
                   WHERE (c.id = {0} OR c.parent_id = {0})
-                    AND LOWER(COALESCE(b.status, '')) NOT IN ('cancelled', 'rejected', 'class_cancelled')",
+                    AND c.status = TRUE
+                    AND LOWER(COALESCE(c.approval_status, 'approved')) = 'approved'
+                    AND LOWER(COALESCE(b.status, '')) IN ('confirmed', 'swapped', 'approved')",
                 classId)
             .ToListAsync(cancellationToken);
 
