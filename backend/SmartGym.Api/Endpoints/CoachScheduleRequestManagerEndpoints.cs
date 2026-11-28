@@ -335,6 +335,31 @@ public static class CoachScheduleRequestManagerEndpoints
             if (facilityConflict is not null) return facilityConflict;
         }
 
+        if (!isSubstitute)
+        {
+            var centerCapacityRows = await db.Database.SqlQueryRaw<CenterCapacityRow>(
+                "SELECT SUM(total_capacity)::int AS \"Capacity\" FROM facilities WHERE total_capacity > 0").ToListAsync();
+            var centerCapacity = centerCapacityRows.SingleOrDefault()?.Capacity;
+            var classOccupancyRows = await db.Database.SqlQueryRaw<CenterOccupancyRow>(@"
+                SELECT COALESCE(SUM(capacity), 0)::int AS ""Capacity""
+                FROM classes
+                WHERE id <> {0} AND status = true AND COALESCE(approval_status, 'approved') NOT IN ('pending', 'rejected')
+                  AND schedule_time < {1}
+                  AND schedule_time + (COALESCE(duration_minutes, 60) * INTERVAL '1 minute') > {2}",
+                sessionId, end, scheduleStart).ToListAsync();
+            var courseOccupancyRows = await db.Database.SqlQueryRaw<CenterOccupancyRow>(@"
+                SELECT COALESCE(SUM(cc.capacity), 0)::int AS ""Capacity""
+                FROM class_sessions cs INNER JOIN class_courses cc ON cc.id = cs.course_id
+                WHERE cc.approval_status = 'approved' AND cs.status IN ('scheduled', 'rescheduled')
+                  AND cs.id <> {0} AND cs.start_at < {1} AND cs.end_at > {2}",
+                sessionId, end, scheduleStart).ToListAsync();
+            var centerConflict = FacilityConflictValidator.ValidateCenterCapacity(
+                centerCapacity,
+                request.ClassCapacity,
+                classOccupancyRows.Single().Capacity + courseOccupancyRows.Single().Capacity);
+            if (centerConflict is not null) return centerConflict;
+        }
+
         return null;
     }
 
@@ -490,6 +515,9 @@ public static class CoachScheduleRequestManagerEndpoints
         public int Capacity { get; set; }
         public string? FirstConflictName { get; set; }
     }
+
+    private sealed class CenterCapacityRow { public int? Capacity { get; set; } }
+    private sealed class CenterOccupancyRow { public int Capacity { get; set; } }
 
     public sealed class AvailableCoachModel
     {

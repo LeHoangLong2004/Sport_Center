@@ -103,6 +103,23 @@ public sealed partial class SupabaseGroupClassRepository
                 .Select(cb =>
                 {
                     var targetClass = classes.FirstOrDefault(c => c.Id == cb.ClassId);
+                    var courseRootId = targetClass?.ParentId ?? targetClass?.Id;
+                    var courseSessions = courseRootId.HasValue
+                        ? classes.Where(c => c.Status && (c.Id == courseRootId.Value || c.ParentId == courseRootId.Value)).ToList()
+                        : new List<ClassSqlRawModel>();
+                    var orderedCourseSessions = courseSessions.OrderBy(c => c.ScheduleTime).ToList();
+                    var courseLocalDates = orderedCourseSessions
+                        .Select(c => CenterTime.ToLocal(c.ScheduleTime).Date)
+                        .ToList();
+                    var courseWeeks = courseLocalDates
+                        .Select(date => date.AddDays(-(((int)date.DayOfWeek + 6) % 7)))
+                        .Distinct()
+                        .Count();
+                    var courseDays = orderedCourseSessions
+                        .Select(c => (int)CenterTime.ToLocal(c.ScheduleTime).DayOfWeek)
+                        .Distinct()
+                        .OrderBy(day => day)
+                        .Select(day => day.ToString());
                     var sport =
                         targetClass != null
                             ? sports.FirstOrDefault(s => s.Id == targetClass.SportId)
@@ -145,6 +162,10 @@ public sealed partial class SupabaseGroupClassRepository
                         ParentId = targetClass?.ParentId,
                         SessionNumber = targetClass?.SessionNumber ?? 1,
                         TotalSessions = targetClass?.TotalSessions ?? 1,
+                        CourseStartDate = orderedCourseSessions.Count > 0 ? AsUtc(orderedCourseSessions[0].ScheduleTime) : null,
+                        CourseEndDate = orderedCourseSessions.Count > 0 ? AsUtc(orderedCourseSessions[^1].ScheduleTime) : null,
+                        CourseWeeks = courseWeeks,
+                        CourseDaysOfWeek = courseDays.Any() ? string.Join(",", courseDays) : null,
                     };
                 })
                 .OrderBy(x => x.ScheduleTime)

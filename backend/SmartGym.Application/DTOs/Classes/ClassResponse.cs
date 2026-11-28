@@ -25,5 +25,9 @@ public sealed record ClassResponse(
     decimal? Price = null,
     Guid? ParentId = null,
     int SessionNumber = 1,
-    int TotalSessions = 1
+    int TotalSessions = 1,
+    DateTime? CourseStartDate = null,
+    DateTime? CourseEndDate = null,
+    int CourseWeeks = 0,
+    string? CourseDaysOfWeek = null
 );

@@ -97,13 +97,23 @@ public sealed partial class ClassService
             request.FacilityId,
             conflictRangeStart,
             conflictRangeEnd);
+        var centerCapacityTask = _classRepository.GetCenterTotalCapacityAsync();
+        var centerClassesTask = _classRepository.GetClassesForCenterScheduleConflictsAsync(
+            conflictRangeStart,
+            conflictRangeEnd);
+        var centerCourseSessionsTask = _classRepository.GetCenterCourseSessionsForScheduleConflictsAsync(
+            conflictRangeStart,
+            conflictRangeEnd);
         var existingPtSessionsTask = _ptSessionRepository.GetSessionsByCoachInRangeAsync(
             request.CoachId,
             conflictRangeStart,
             conflictRangeEnd);
-        await Task.WhenAll(existingClassesTask, existingPtSessionsTask);
+        await Task.WhenAll(existingClassesTask, existingPtSessionsTask, centerCapacityTask, centerClassesTask, centerCourseSessionsTask);
         var existingClasses = await existingClassesTask;
         var existingPtSessions = await existingPtSessionsTask;
+        var centerCapacity = await centerCapacityTask;
+        var centerClasses = await centerClassesTask;
+        var centerCourseSessions = await centerCourseSessionsTask;
         var availabilitySlots = request.CoachId == Guid.Empty
             ? Array.Empty<(DateTime StartTime, DateTime EndTime)>()
             : await _classRepository.GetCoachAvailabilitySlotsInRangeAsync(
@@ -148,6 +158,18 @@ public sealed partial class ClassService
             var facilityConflict = FacilityConflictValidator.Validate(facilitySettings, request.Capacity, overlappingFacilityClasses);
             if (facilityConflict is not null)
                 return (false, $"Buổi {i + 1} ({CenterTime.ToLocal(sessionStart):dd/MM/yyyy HH:mm}): {facilityConflict}");
+
+            var centerOverlappingCapacity = centerClasses
+                .Where(FacilityConflictValidator.IsBlockingClass)
+                .Where(c => Overlaps(sessionStart, sessionEnd, c.ScheduleTime, c.DurationMinutes))
+                .Sum(c => c.Capacity)
+                + centerCourseSessions
+                    .Where(courseSession => sessionStart < courseSession.EndTime && courseSession.StartTime < sessionEnd)
+                    .Sum(courseSession => courseSession.Capacity);
+            var centerConflict = FacilityConflictValidator.ValidateCenterCapacity(
+                centerCapacity, request.Capacity, centerOverlappingCapacity);
+            if (centerConflict is not null)
+                return (false, $"Buổi {i + 1} ({CenterTime.ToLocal(sessionStart):dd/MM/yyyy HH:mm}): {centerConflict}");
         }
 
         // Tạo buổi gốc (Root Session: Session 1)
@@ -321,6 +343,21 @@ public sealed partial class ClassService
                 var facilityConflict = FacilityConflictValidator.Validate(facilitySettings, request.Capacity, overlappingFacilityClasses);
                 if (facilityConflict is not null)
                     return (false, facilityConflict);
+
+                var centerCapacity = await _classRepository.GetCenterTotalCapacityAsync();
+                var centerClasses = await _classRepository.GetClassesForCenterScheduleConflictsAsync(newStart, newEnd);
+                var centerCourseSessions = await _classRepository.GetCenterCourseSessionsForScheduleConflictsAsync(newStart, newEnd);
+                var centerOverlappingCapacity = centerClasses
+                    .Where(c => c.Id != classId && FacilityConflictValidator.IsBlockingClass(c))
+                    .Where(c => Overlaps(newStart, newEnd, c.ScheduleTime, c.DurationMinutes))
+                    .Sum(c => c.Capacity)
+                    + centerCourseSessions
+                        .Where(courseSession => newStart < courseSession.EndTime && courseSession.StartTime < newEnd)
+                        .Sum(courseSession => courseSession.Capacity);
+                var centerConflict = FacilityConflictValidator.ValidateCenterCapacity(
+                    centerCapacity, request.Capacity, centerOverlappingCapacity);
+                if (centerConflict is not null)
+                    return (false, centerConflict);
             }
 
             var updatedClass = new GroupClass(

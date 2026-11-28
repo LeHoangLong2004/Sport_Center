@@ -293,6 +293,7 @@ namespace SmartGym.Api.Endpoints
                       LEFT JOIN coaches source_coach ON source_coach.id = r.coach_id
                       LEFT JOIN users source_user ON source_user.id = source_coach.user_id
                       WHERE r.substitute_coach_id = {0}
+                        AND LOWER(TRIM(r.status)) = 'approved'
                       ORDER BY r.created_at DESC", coachId.Value).ToListAsync();
 
                 return Results.Ok(rows.Select(r => new

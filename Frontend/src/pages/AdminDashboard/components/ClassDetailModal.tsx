@@ -282,19 +282,19 @@ export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: Class
             </button>
           </div>
         ) : classDetail && (
-          <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 shrink-0">
+          <div className="px-4 sm:px-6 py-4 border-t border-gray-100 bg-gray-50 flex flex-wrap sm:flex-nowrap justify-end gap-2 shrink-0">
             {canManagerAdjustSession && (
               <button
                 type="button"
                 onClick={() => setShowManagerAdjustment(true)}
-                className="px-4 py-2 text-sm font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors cursor-pointer"
+                className="shrink-0 whitespace-nowrap px-3 py-2 text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors cursor-pointer"
               >
                 Dời lịch / Dạy thay
               </button>
             )}
             <button 
               onClick={() => onEdit(classDetail)} 
-              className="px-5 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+              className="shrink-0 whitespace-nowrap px-3 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
             >
               Sửa thông tin
             </button>
@@ -302,7 +302,7 @@ export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: Class
               <button
                 onClick={() => setShowConfirmCancelCourse(true)}
                 disabled={isCancelling || isRestoring}
-                className="px-5 py-2 text-sm font-semibold text-white bg-red-800 rounded-lg hover:bg-red-900 transition-colors disabled:opacity-50 cursor-pointer"
+                className="shrink-0 whitespace-nowrap px-3 py-2 text-xs font-semibold text-white bg-red-800 rounded-lg hover:bg-red-900 transition-colors disabled:opacity-50 cursor-pointer"
               >
                 Hủy khóa học
               </button>
@@ -310,7 +310,7 @@ export function ClassDetailModal({ classId, onClose, onEdit, onApproval }: Class
             <button 
               onClick={() => classDetail.status === false ? setShowConfirmRestore(true) : setShowConfirmCancel(true)}
               disabled={isCancelling || isRestoring}
-              className={`px-5 py-2 text-sm font-semibold text-white rounded-lg transition-colors flex items-center gap-2 cursor-pointer ${classDetail.status === false ? 'bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400' : 'bg-red-600 hover:bg-red-700 disabled:bg-red-400'}`}
+              className={`shrink-0 whitespace-nowrap px-3 py-2 text-xs font-semibold text-white rounded-lg transition-colors flex items-center gap-2 cursor-pointer ${classDetail.status === false ? 'bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400' : 'bg-red-600 hover:bg-red-700 disabled:bg-red-400'}`}
             >
               {(isCancelling || isRestoring) && (
                 <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">

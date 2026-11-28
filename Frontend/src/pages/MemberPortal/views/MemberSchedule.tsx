@@ -93,6 +93,15 @@ export default function MemberSchedule({ onNavigate }: Props) {
           status: resolveSessionStatus(s.status, s.date, s.endTime, s.startTime),
         }));
         setSessions(normalized);
+        setSelectedSession((current) => {
+          if (!current) return current;
+          const currentClassId = String((current as any).classId || current.id);
+          return normalized.find((session) =>
+            session.id === current.id ||
+            String((session as any).classId || "") === currentClassId ||
+            String((session as any).bookingId || "") === current.id,
+          ) ?? current;
+        });
         saveMemberData(storageKey, normalized);
         return;
       }
@@ -110,6 +119,24 @@ export default function MemberSchedule({ onNavigate }: Props) {
       refreshSessions();
     });
     return unsub;
+  }, []);
+
+  useEffect(() => {
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") {
+        void refreshSessions();
+      }
+    };
+
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    const refreshInterval = window.setInterval(refreshWhenVisible, 30_000);
+
+    return () => {
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+      window.clearInterval(refreshInterval);
+    };
   }, []);
 
   // Fetch already reviewed sessions

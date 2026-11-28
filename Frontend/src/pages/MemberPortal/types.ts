@@ -43,6 +43,10 @@ export interface MemberSessionItem {
   parentId?: string;
   sessionNumber?: number;
   totalSessions?: number;
+  courseStartDate?: string;
+  courseEndDate?: string;
+  courseWeeks?: number;
+  courseDaysOfWeek?: string;
   isAbsenceReported?: boolean;
 }
 

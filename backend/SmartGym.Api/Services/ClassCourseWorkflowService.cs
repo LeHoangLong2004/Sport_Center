@@ -231,6 +231,9 @@ public sealed class ClassCourseWorkflowService(SmartGymDbContext db, ClassSchedu
 
     private async Task<string?> FindConflictAsync(Guid coachId, Guid facilityId, int requestedCapacity, IReadOnlyList<ScheduledSessionPreview> sessions, Guid? excludedCourseId = null)
     {
+        var centerCapacityRows = await db.Database.SqlQueryRaw<CenterCapacityRow>(
+            "SELECT SUM(total_capacity)::int AS \"Capacity\" FROM facilities WHERE total_capacity > 0").ToListAsync();
+        var centerCapacity = centerCapacityRows.SingleOrDefault()?.Capacity;
         var settingsRows = await db.Database.SqlQueryRaw<FacilitySettingsRow>(
             "SELECT allow_concurrent_classes AS \"AllowConcurrentClasses\", max_concurrent_classes AS \"MaxConcurrentClasses\", total_capacity AS \"TotalCapacity\" FROM facilities WHERE id = {0}", facilityId).ToListAsync();
         var settings = settingsRows.SingleOrDefault();
@@ -270,6 +273,26 @@ public sealed class ClassCourseWorkflowService(SmartGymDbContext db, ClassSchedu
                 facilitySettings, requestedCapacity, occupancy.ClassCount, occupancy.Capacity, occupancy.FirstConflictName);
             if (facilityConflict != null)
                 return $"Buổi {session.SessionNumber}: {facilityConflict}";
+
+            var courseOccupancyRows = await db.Database.SqlQueryRaw<CenterOccupancyRow>(
+                """
+                SELECT COALESCE(SUM(cc.capacity), 0)::int AS "Capacity"
+                  FROM class_sessions cs INNER JOIN class_courses cc ON cc.id = cs.course_id
+                  WHERE cc.approval_status = 'approved' AND cs.status IN ('scheduled', 'rescheduled')
+                    AND cs.course_id <> {0} AND cs.start_at < {1} AND cs.end_at > {2}
+                """, excludedCourseId ?? Guid.Empty, session.EndAt.UtcDateTime, session.StartAt.UtcDateTime).ToListAsync();
+            var legacyOccupancyRows = await db.Database.SqlQueryRaw<CenterOccupancyRow>(
+                """
+                SELECT COALESCE(SUM(capacity), 0)::int AS "Capacity"
+                  FROM classes
+                  WHERE status = TRUE AND COALESCE(approval_status, 'approved') NOT IN ('pending', 'rejected')
+                    AND schedule_time < {0}
+                    AND schedule_time + (COALESCE(duration_minutes, 60) * INTERVAL '1 minute') > {1}
+                """, session.EndAt.UtcDateTime, session.StartAt.UtcDateTime).ToListAsync();
+            var centerOccupancy = courseOccupancyRows.Single().Capacity + legacyOccupancyRows.Single().Capacity;
+            var centerConflict = FacilityConflictValidator.ValidateCenterCapacity(centerCapacity, requestedCapacity, centerOccupancy);
+            if (centerConflict != null)
+                return $"Buổi {session.SessionNumber}: {centerConflict}";
         }
         return null;
     }
@@ -300,4 +323,6 @@ public sealed class ClassCourseWorkflowService(SmartGymDbContext db, ClassSchedu
     private sealed class PricingRow { public decimal PricePerSession { get; set; } }
     private sealed class FacilitySettingsRow { public bool AllowConcurrentClasses { get; set; } public int MaxConcurrentClasses { get; set; } public int? TotalCapacity { get; set; } }
     private sealed class FacilityOccupancyRow { public int ClassCount { get; set; } public int Capacity { get; set; } public string? FirstConflictName { get; set; } }
+    private sealed class CenterCapacityRow { public int? Capacity { get; set; } }
+    private sealed class CenterOccupancyRow { public int Capacity { get; set; } }
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Check, Inbox, Send, Sparkles } from "lucide-react";
+import { Plus, Inbox, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import {
   CoachAPI,
@@ -17,7 +17,6 @@ interface Props {
   invitations?: SubstituteInvitation[];
   onOpenCreateRequest: () => void;
   onOpenClassProposal?: () => void;
-  onRespondInvitation?: (id: string, action: "accept" | "reject", note?: string) => Promise<void>;
 }
 
 export default function CoachRequestsTab({
@@ -25,20 +24,14 @@ export default function CoachRequestsTab({
   invitations = [],
   onOpenCreateRequest,
   onOpenClassProposal,
-  onRespondInvitation,
 }: Props) {
-  const pendingInvitations = invitations.filter(
-    (inv) => inv.status === "pending" || inv.status === "waiting_substitute",
+  const approvedInvitations = invitations.filter(
+    (inv) => ["approved", "đã duyệt"].includes(String(inv.status).trim().toLowerCase()),
   );
 
   const [activeSubTab, setActiveSubTab] = useState<"invitations" | "my_requests" | "class_proposals">(
-    pendingInvitations.length > 0 ? "invitations" : "my_requests",
+    approvedInvitations.length > 0 ? "invitations" : "my_requests",
   );
-
-  const [respondingId, setRespondingId] = useState<string | null>(null);
-  const [declineReason, setDeclineReason] = useState<Record<string, string>>({});
-  const [showDeclineInput, setShowDeclineInput] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<string | null>(null);
 
   const [classProposals, setClassProposals] = useState<CoachClassProposal[]>([]);
   const [loadingProposals, setLoadingProposals] = useState(false);
@@ -116,34 +109,6 @@ export default function CoachRequestsTab({
     }
   };
 
-  const handleAction = async (id: string, action: "accept" | "reject") => {
-    if (!onRespondInvitation) return;
-    setRespondingId(id);
-    setFeedback(null);
-    try {
-      const note = declineReason[id] || "";
-      await onRespondInvitation(id, action, note);
-      const msg =
-        action === "accept"
-          ? "Bạn đã đồng ý nhận dạy thay ca này! Lớp học đã được cập nhật."
-          : "Bạn đã từ chối lời mời dạy thay.";
-      setFeedback(msg);
-      if (action === "accept") {
-        toast.success(msg);
-      } else {
-        toast.info(msg);
-      }
-      setShowDeclineInput(null);
-      setTimeout(() => setFeedback(null), 5000);
-    } catch (err: any) {
-      const errMsg = err?.message || "Có lỗi xảy ra khi xử lý lời mời.";
-      setFeedback(errMsg);
-      toast.error(errMsg);
-    } finally {
-      setRespondingId(null);
-    }
-  };
-
   return (
     <div className="flex flex-col gap-6">
       {/* Sub-tab Navigation */}
@@ -159,12 +124,7 @@ export default function CoachRequestsTab({
             }`}
           >
             <Inbox className="w-3.5 h-3.5" />
-            <span>Lời mời dạy thay</span>
-            {pendingInvitations.length > 0 && (
-              <span className="px-1.5 py-0.2 text-[10px] font-bold bg-rose-500 text-white rounded-full">
-                {pendingInvitations.length}
-              </span>
-            )}
+            <span>Lời mời dạy thay ({approvedInvitations.length})</span>
           </button>
 
           <button
@@ -218,24 +178,10 @@ export default function CoachRequestsTab({
         )}
       </div>
 
-      {feedback && (
-        <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 rounded-xl text-emerald-800 dark:text-emerald-300 text-sm flex items-center gap-2">
-          <Check className="w-4 h-4" />
-          <span>{feedback}</span>
-        </div>
-      )}
-
       {/* 1. Lời mời dạy thay gửi đến tôi */}
       {activeSubTab === "invitations" && (
         <CoachInvitationsList
-          invitations={invitations}
-          respondingId={respondingId}
-          declineReason={declineReason}
-          showDeclineInput={showDeclineInput}
-          onRespondInvitation={onRespondInvitation}
-          onSetDeclineReason={(id, reason) => setDeclineReason((prev) => ({ ...prev, [id]: reason }))}
-          onSetShowDeclineInput={setShowDeclineInput}
-          onAction={handleAction}
+          invitations={approvedInvitations}
         />
       )}
 

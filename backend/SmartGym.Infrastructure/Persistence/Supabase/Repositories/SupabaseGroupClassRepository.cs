@@ -42,6 +42,41 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             : new FacilitySchedulingSettings(row.AllowConcurrentClasses, Math.Max(1, row.MaxConcurrentClasses), row.TotalCapacity);
     }
 
+    public async Task<int?> GetCenterTotalCapacityAsync()
+    {
+        var rows = await _dbContext.Database.SqlQueryRaw<CenterCapacitySqlRow>(
+            "SELECT SUM(total_capacity)::int AS \"Capacity\" FROM facilities WHERE total_capacity > 0").ToListAsync();
+        return rows.SingleOrDefault()?.Capacity;
+    }
+
+    public async Task<IEnumerable<GroupClass>> GetClassesForCenterScheduleConflictsAsync(DateTime from, DateTime to)
+    {
+        var models = await _dbContext.Database.SqlQueryRaw<ClassSqlRawModel>(
+            """
+            SELECT id, sport_id, facility_id, coach_id, class_name, schedule_time, duration_minutes,
+                   capacity, current_enrolled, status, approval_status, parent_id, session_number, total_sessions,
+                   price_per_session_snapshot, course_fee_snapshot
+            FROM classes
+            WHERE schedule_time < {0}
+              AND schedule_time + (COALESCE(duration_minutes, 60) * INTERVAL '1 minute') > {1}
+            """, AsUtc(to), AsUtc(from)).ToListAsync();
+        return models.Select(ToDomain).ToList();
+    }
+
+    public async Task<IReadOnlyCollection<(DateTime StartTime, DateTime EndTime, int Capacity)>> GetCenterCourseSessionsForScheduleConflictsAsync(DateTime from, DateTime to)
+    {
+        var rows = await _dbContext.Database.SqlQueryRaw<CenterCourseSessionSqlRow>(
+            """
+            SELECT cs.start_at AS "StartTime", cs.end_at AS "EndTime", cc.capacity AS "Capacity"
+            FROM class_sessions cs
+            INNER JOIN class_courses cc ON cc.id = cs.course_id
+            WHERE cc.approval_status = 'approved'
+              AND cs.status IN ('scheduled', 'rescheduled')
+              AND cs.start_at < {0} AND cs.end_at > {1}
+            """, AsUtc(to), AsUtc(from)).ToListAsync();
+        return rows.Select(row => (row.StartTime, row.EndTime, row.Capacity)).ToList();
+    }
+
     public async Task<IEnumerable<GroupClass>> GetCourseSessionsAsync(Guid classId)
     {
         var rows = await _dbContext.Database.SqlQueryRaw<ClassSqlRawModel>(
@@ -248,6 +283,18 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
     private static DateTime AsUtc(DateTimeOffset value)
         => value.UtcDateTime;
 
+    private sealed class CenterCapacitySqlRow
+    {
+        public int? Capacity { get; set; }
+    }
+
+    private sealed class CenterCourseSessionSqlRow
+    {
+        public DateTime StartTime { get; set; }
+        public DateTime EndTime { get; set; }
+        public int Capacity { get; set; }
+    }
+
     private static DateTime AsUtc(DateTime value)
         => value.Kind switch
         {
@@ -341,7 +388,11 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                    co.bio AS "CoachBio", co.rating AS "CoachRating", co.experience_years AS "CoachExperienceYears",
                    price.price_per_session * GREATEST(COALESCE(c.total_sessions, 1), 1) AS "Price",
                    c.parent_id AS "ParentId", COALESCE(c.session_number, 1) AS "SessionNumber",
-                   GREATEST(COALESCE(c.total_sessions, 1), 1) AS "TotalSessions"
+                   GREATEST(COALESCE(c.total_sessions, 1), 1) AS "TotalSessions",
+                   COALESCE(course_schedule."CourseStartDate", c.schedule_time) AS "CourseStartDate",
+                   COALESCE(course_schedule."CourseEndDate", c.schedule_time) AS "CourseEndDate",
+                   COALESCE(course_schedule."CourseWeeks", 1) AS "CourseWeeks",
+                   COALESCE(course_schedule."CourseDaysOfWeek", EXTRACT(DOW FROM timezone('Asia/Bangkok', c.schedule_time))::int::text) AS "CourseDaysOfWeek"
             FROM classes c
             LEFT JOIN sports s ON s.id = c.sport_id
             LEFT JOIN facilities f ON f.id = c.facility_id
@@ -361,6 +412,20 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
                 ORDER BY p.effective_from DESC, p.created_at DESC
                 LIMIT 1
             ) price ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT MIN(session.schedule_time) AS "CourseStartDate",
+                       MAX(session.schedule_time) AS "CourseEndDate",
+                       COUNT(DISTINCT date_trunc('week', timezone('Asia/Bangkok', session.schedule_time)))::int AS "CourseWeeks",
+                       STRING_AGG(
+                           DISTINCT EXTRACT(DOW FROM timezone('Asia/Bangkok', session.schedule_time))::int::text,
+                           ',' ORDER BY EXTRACT(DOW FROM timezone('Asia/Bangkok', session.schedule_time))::int::text
+                       ) AS "CourseDaysOfWeek"
+                FROM classes session
+                WHERE (session.id = COALESCE(c.parent_id, c.id)
+                       OR session.parent_id = COALESCE(c.parent_id, c.id))
+                  AND session.status = TRUE
+                  AND LOWER(COALESCE(session.approval_status, 'approved')) = 'approved'
+            ) course_schedule ON TRUE
             WHERE c.status = TRUE AND LOWER(c.approval_status) = 'approved'
               AND c.schedule_time > {0}
               AND (c.parent_id IS NULL OR c.session_number = 1)
@@ -392,7 +457,11 @@ public sealed partial class SupabaseGroupClassRepository : IGroupClassRepository
             Price: c.Price,
             ParentId: c.ParentId,
             SessionNumber: c.SessionNumber,
-            TotalSessions: c.TotalSessions
+            TotalSessions: c.TotalSessions,
+            CourseStartDate: c.CourseStartDate.HasValue ? AsUtc(c.CourseStartDate.Value) : null,
+            CourseEndDate: c.CourseEndDate.HasValue ? AsUtc(c.CourseEndDate.Value) : null,
+            CourseWeeks: c.CourseWeeks,
+            CourseDaysOfWeek: c.CourseDaysOfWeek
         )).ToList();
     }
 
@@ -510,6 +579,10 @@ internal sealed class AvailableClassSqlRawModel
     public Guid? ParentId { get; set; }
     public int SessionNumber { get; set; }
     public int TotalSessions { get; set; }
+    public DateTime? CourseStartDate { get; set; }
+    public DateTime? CourseEndDate { get; set; }
+    public int CourseWeeks { get; set; }
+    public string? CourseDaysOfWeek { get; set; }
 }
 
 internal sealed record CurrentSportClassPriceLookup(

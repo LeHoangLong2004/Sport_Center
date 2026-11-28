@@ -3,6 +3,7 @@ import { Calendar, Clock, MapPin, ShieldCheck, Star, Phone, MessageCircle, Check
 import { CoachAvatar } from "../../utils/coachAvatar";
 import type { MemberSessionItem } from "../../types";
 import { type CancelBookingTarget } from "./bookingTypes";
+import { centerDateParts, formatCenterDate } from "../../../../utils/scheduleTimeHelper";
 
 interface MyClassesTabProps {
   myActiveClasses?: MemberSessionItem[];
@@ -17,6 +18,10 @@ interface CourseEnrollment {
   booking: MemberSessionItem;
   sessionCount: number;
   courseName: string;
+  courseWeeks: number;
+  courseStartDate: string | Date;
+  courseEndDate: string | Date;
+  courseDays: string[];
 }
 
 export const MyClassesTab: React.FC<MyClassesTabProps> = ({
@@ -77,7 +82,46 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
         .replace(/\s*[-–—]?\s*Buổi\s*\d+\s*$/i, "")
         .trim();
 
-      return [{ booking: nextSession, sessionCount: totalSessions, courseName }];
+      const weekdayLabels: Record<number, string> = {
+        0: "Chủ nhật", 1: "Thứ 2", 2: "Thứ 3", 3: "Thứ 4",
+        4: "Thứ 5", 5: "Thứ 6", 6: "Thứ 7",
+      };
+      const courseDays = String((nextSession as any).courseDaysOfWeek || "")
+        .split(",")
+        .map((day: string) => day.trim())
+        .filter((day: string) => day !== "" && /^\d+$/.test(day))
+        .map((day: string) => weekdayLabels[Number(day)])
+        .filter(Boolean)
+        .sort((left: string, right: string) => {
+          const order = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
+          return order.indexOf(left) - order.indexOf(right);
+        });
+      const fallbackDays = [...new Set(sessions.map((session) => {
+        const weekday = centerDateParts(getSessionTimes(session).start).weekday;
+        const weekdayIndex: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+        return weekdayLabels[weekdayIndex[weekday]];
+      }).filter(Boolean))];
+      const dateKeys = sessions.map((session) => {
+        const parts = centerDateParts(getSessionTimes(session).start);
+        return `${parts.year}-${parts.month}-${parts.day}`;
+      }).sort();
+      const weekKeys = new Set(dateKeys.map((dateKey) => {
+        const date = new Date(`${dateKey}T00:00:00Z`);
+        date.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 6) % 7));
+        return date.toISOString().slice(0, 10);
+      }));
+      const courseStartDate = (nextSession as any).courseStartDate || dateKeys[0] || getSessionTimes(nextSession).start;
+      const courseEndDate = (nextSession as any).courseEndDate || dateKeys[dateKeys.length - 1] || getSessionTimes(nextSession).start;
+
+      return [{
+        booking: nextSession,
+        sessionCount: totalSessions,
+        courseName,
+        courseWeeks: Number((nextSession as any).courseWeeks) || weekKeys.size || 1,
+        courseStartDate,
+        courseEndDate,
+        courseDays: courseDays.length ? courseDays : fallbackDays,
+      }];
     }).sort((a, b) => getSessionTimes(a.booking).start.getTime() - getSessionTimes(b.booking).start.getTime());
   }, [allSessions, getBookingStatus, now]);
 
@@ -107,12 +151,18 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {courses.map(({ booking, sessionCount, courseName }) => {
+          {courses.map(({ booking, sessionCount, courseName, courseWeeks, courseStartDate, courseEndDate, courseDays }) => {
             const rawStatus = String(getBookingStatus(booking) || "").toLowerCase();
             const isPending = rawStatus === "pending";
             const { start, end } = getSessionTimes(booking);
             const isOngoing = start.getTime() <= now && now <= end.getTime();
             const formattedDate = dateLabel(booking.date);
+            const formattedCourseStart = typeof courseStartDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(courseStartDate)
+              ? courseStartDate.split("-").reverse().join("/")
+              : formatCenterDate(courseStartDate);
+            const formattedCourseEnd = typeof courseEndDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(courseEndDate)
+              ? courseEndDate.split("-").reverse().join("/")
+              : formatCenterDate(courseEndDate);
 
             return (
               <article
@@ -126,7 +176,7 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
                         {booking.sport || "Lớp nhóm"} · Khóa học
                       </span>
                       <h4 className="text-base font-black text-slate-900 dark:text-white mt-2">{courseName}</h4>
-                      <p className="text-xs text-slate-500 mt-1">{sessionCount} buổi trong khóa</p>
+                      <p className="text-xs text-slate-500 mt-1">{sessionCount} buổi · {courseWeeks} tuần</p>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-[11px] font-bold border shrink-0 ${isPending
                       ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
@@ -143,6 +193,13 @@ export const MyClassesTab: React.FC<MyClassesTabProps> = ({
                     <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                       <MapPin className="w-4 h-4 shrink-0" />
                       <span>{booking.room || "Chưa cập nhật địa điểm"}</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-slate-600 dark:text-slate-400">
+                      <Calendar className="w-4 h-4 shrink-0" />
+                      <span>
+                        Khóa học: {formattedCourseStart} – {formattedCourseEnd}
+                        <br />Ngày tập: {courseDays.length ? courseDays.join(" · ") : "Đang cập nhật"}
+                      </span>
                     </div>
                   </div>
 

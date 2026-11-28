@@ -5,24 +5,10 @@ import { CoachInvitationCard } from "./CoachInvitationCard";
 
 interface CoachInvitationsListProps {
   invitations: SubstituteInvitation[];
-  respondingId: string | null;
-  declineReason: Record<string, string>;
-  showDeclineInput: string | null;
-  onRespondInvitation?: (id: string, action: "accept" | "reject", note?: string) => Promise<void>;
-  onSetDeclineReason: (id: string, reason: string) => void;
-  onSetShowDeclineInput: (id: string | null) => void;
-  onAction: (id: string, action: "accept" | "reject") => void;
 }
 
 export function CoachInvitationsList({
   invitations,
-  respondingId,
-  declineReason,
-  showDeclineInput,
-  onRespondInvitation,
-  onSetDeclineReason,
-  onSetShowDeclineInput,
-  onAction,
 }: CoachInvitationsListProps) {
   if (invitations.length === 0) {
     return (
@@ -39,13 +25,6 @@ export function CoachInvitationsList({
         <CoachInvitationCard
           key={inv.id}
           invitation={inv}
-          isProcessing={respondingId === inv.id}
-          isDeclineInputVisible={showDeclineInput === inv.id}
-          declineReason={declineReason[inv.id] || ""}
-          onRespondInvitation={onRespondInvitation}
-          onSetDeclineReason={onSetDeclineReason}
-          onSetShowDeclineInput={onSetShowDeclineInput}
-          onAction={onAction}
         />
       ))}
     </div>
