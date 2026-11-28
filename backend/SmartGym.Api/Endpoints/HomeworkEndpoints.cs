@@ -1,4 +1,5 @@
 using System;
+using System.Data;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -56,71 +57,84 @@ public static class HomeworkEndpoints
                             return access.ErrorCode == "unauthorized" ? Results.Unauthorized() : Results.Forbid();
                     }
 
-                    await using var transaction = await db.Database.BeginTransactionAsync(context.RequestAborted);
+                    var strategy = db.Database.CreateExecutionStrategy();
                     try
                     {
-                        var now = DateTime.UtcNow;
-                        var plan = new SmartGym.Domain.Entities.WorkoutPlan
+                        return await strategy.ExecuteAsync(async () =>
                         {
-                            Id = Guid.NewGuid(),
-                            CoachId = coachId.Value,
-                            SportId = request.SportId,
-                            PlanName = request.PlanName.Trim(),
-                            Goal = request.Goal?.Trim(),
-                            Level = request.Level?.Trim(),
-                            DurationMinutes = request.DurationMinutes,
-                            Status = Flow5PlanStatuses.Approved,
-                            PlanType = "homework",
-                            Source = Flow5PlanSources.Manual,
-                            Version = 1,
-                            ApprovedAt = now,
-                            ApprovedBy = coachId.Value,
-                            CreatedAt = now,
-                            UpdatedAt = now,
-                            Exercises = request.Exercises.Select((exercise, index) => new SmartGym.Domain.Entities.WorkoutPlanExercise
+                            await using var transaction = await db.Database.BeginTransactionAsync(
+                                IsolationLevel.Serializable,
+                                context.RequestAborted);
+                            try
                             {
-                                Id = Guid.NewGuid(),
-                                Name = exercise.Name.Trim(),
-                                Sets = exercise.Sets,
-                                Reps = exercise.Reps,
-                                Duration = exercise.Duration,
-                                Rest = exercise.Rest,
-                                Note = exercise.Note,
-                                Order = index + 1
-                            }).ToList()
-                        };
+                                var now = DateTime.UtcNow;
+                                var plan = new SmartGym.Domain.Entities.WorkoutPlan
+                                {
+                                    Id = Guid.NewGuid(),
+                                    CoachId = coachId.Value,
+                                    SportId = request.SportId,
+                                    PlanName = request.PlanName.Trim(),
+                                    Goal = request.Goal?.Trim(),
+                                    Level = request.Level?.Trim(),
+                                    DurationMinutes = request.DurationMinutes,
+                                    Status = Flow5PlanStatuses.Approved,
+                                    PlanType = "homework",
+                                    Source = Flow5PlanSources.Manual,
+                                    Version = 1,
+                                    ApprovedAt = now,
+                                    ApprovedBy = coachId.Value,
+                                    CreatedAt = now,
+                                    UpdatedAt = now,
+                                    Exercises = request.Exercises.Select((exercise, index) => new SmartGym.Domain.Entities.WorkoutPlanExercise
+                                    {
+                                        Id = Guid.NewGuid(),
+                                        Name = exercise.Name.Trim(),
+                                        Sets = exercise.Sets,
+                                        Reps = exercise.Reps,
+                                        Duration = exercise.Duration,
+                                        Rest = exercise.Rest,
+                                        Note = exercise.Note,
+                                        Order = index + 1
+                                    }).ToList()
+                                };
 
-                        db.WorkoutPlans.Add(plan);
-                        await db.SaveChangesAsync(context.RequestAborted);
+                                db.WorkoutPlans.Add(plan);
+                                await db.SaveChangesAsync(context.RequestAborted);
 
-                        var result = await assignmentService.AssignAsync(
-                            coachId.Value,
-                            plan.Id,
-                            new AssignFlow5PlanRequest
+                                var result = await assignmentService.AssignAsync(
+                                    coachId.Value,
+                                    plan.Id,
+                                    new AssignFlow5PlanRequest
+                                    {
+                                        Target = request.Target,
+                                        DueDate = request.DueDate.HasValue ? new DateTimeOffset(request.DueDate.Value) : null,
+                                        Notes = request.Notes?.Trim()
+                                    },
+                                    context.RequestAborted);
+
+                                if (!result.IsSuccess || result.Data == null)
+                                {
+                                    await transaction.RollbackAsync(context.RequestAborted);
+                                    return (IResult)Results.BadRequest(new { message = result.ErrorMessage });
+                                }
+
+                                await transaction.CommitAsync(context.RequestAborted);
+                                return (IResult)Results.Ok(new
+                                {
+                                    planId = plan.Id,
+                                    assignedCount = result.Data.AssignedCount,
+                                    skippedCount = result.Data.SkippedCount
+                                });
+                            }
+                            catch
                             {
-                                Target = request.Target,
-                                DueDate = request.DueDate.HasValue ? new DateTimeOffset(request.DueDate.Value) : null,
-                                Notes = request.Notes?.Trim()
-                            },
-                            context.RequestAborted);
-
-                        if (!result.IsSuccess || result.Data == null)
-                        {
-                            await transaction.RollbackAsync(context.RequestAborted);
-                            return Results.BadRequest(new { message = result.ErrorMessage });
-                        }
-
-                        await transaction.CommitAsync(context.RequestAborted);
-                        return Results.Ok(new
-                        {
-                            planId = plan.Id,
-                            assignedCount = result.Data.AssignedCount,
-                            skippedCount = result.Data.SkippedCount
+                                await transaction.RollbackAsync(context.RequestAborted);
+                                throw;
+                            }
                         });
                     }
                     catch (Exception ex)
                     {
-                        await transaction.RollbackAsync(context.RequestAborted);
                         return Results.BadRequest(new { message = ex.InnerException?.Message ?? ex.Message });
                     }
                 }
@@ -148,6 +162,7 @@ public static class HomeworkEndpoints
 
                     var assignments = await db.HomeworkProgresses
                         .AsNoTracking()
+                        .Include(homework => homework.Member)
                         .Include(homework => homework.Plan)
                             .ThenInclude(plan => plan!.Exercises)
                         .Where(homework => homework.AssignedBy == coachId.Value ||
